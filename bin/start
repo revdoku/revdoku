@@ -101,6 +101,19 @@ if [[ $FORCE_BUILD -eq 0 ]]; then
   note "parts stay cached, so the next attempt resumes — not from zero."
   echo "" >&2
 
+  note "Don't want to wait for the download?"
+  note "You can compile Revdoku locally instead. This skips the download"
+  note "but takes 3-10 minutes of CPU time. Steps:"
+  note "  1. Cancel — press ${c_bld}Ctrl${c_off}${c_dim}+${c_bld}C${c_off}${c_dim} (or ${c_bld}control${c_off}${c_dim}+${c_bld}C${c_off}${c_dim} on macOS)."
+  note "  2. Then run this command:"
+  note "       ${c_bld}./bin/start --build${c_off}"
+  note "Local build still needs internet for source code, but does not"
+  note "need GitHub Container Registry — useful on networks that block it."
+  echo "" >&2
+
+  note "(image: ${IMAGE})"
+  echo "" >&2
+
   # Clean Ctrl+C handling: without this, a SIGINT during `docker pull`
   # exits the pull non-zero, the `if` falls through, and the script
   # silently kicks off `docker compose up --build` — a 5-10 min source
@@ -109,7 +122,18 @@ if [[ $FORCE_BUILD -eq 0 ]]; then
   # falls through to Compose's own container-stop handling.
   trap '
     echo >&2
-    echo "${c_ylw}!${c_off} Cancelled — Revdoku did not start. Re-run ${c_bld}./bin/start${c_off} to resume." >&2
+    echo "${c_ylw}!${c_off} Cancelled — Revdoku did not start." >&2
+    echo "" >&2
+    echo "${c_dim}   What now?${c_off}" >&2
+    echo "" >&2
+    echo "${c_dim}   • To retry the download later (e.g. on a faster connection), run:${c_off}" >&2
+    echo "${c_dim}       ${c_off}${c_bld}./bin/start${c_off}" >&2
+    echo "" >&2
+    echo "${c_dim}   • To skip the download entirely and compile from source instead${c_off}" >&2
+    echo "${c_dim}     (~3-10 min, no GitHub Container Registry access required), run:${c_off}" >&2
+    echo "${c_dim}       ${c_off}${c_bld}./bin/start --build${c_off}" >&2
+    echo "" >&2
+    echo "${c_dim}   Already-downloaded parts were kept, so a retry resumes — not from zero.${c_off}" >&2
     exit 130
   ' INT
 
