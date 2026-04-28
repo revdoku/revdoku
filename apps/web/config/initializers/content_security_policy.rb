@@ -25,9 +25,6 @@ Rails.application.configure do
 
     # Allow inline styles for PDF.js rendering and shadcn/ui components
     policy.style_src :self, :unsafe_inline
-
-    # Extension hook for deployments to append additional source domains.
-    Revdoku.extend_content_security_policy(policy)
   end
 
   # Generate nonces for inline scripts
@@ -36,4 +33,19 @@ Rails.application.configure do
 
   # Enforce the Content Security Policy
   config.content_security_policy_report_only = false
+end
+
+# Apply edition-specific CSP extensions AFTER all initializers have loaded.
+# Rails sorts initializers by full path, so this file (apps/web/config/...)
+# runs before any sibling-edition initializers (apps/web/ee/config/...) — at
+# the time the policy block above executes, only the no-op
+# extend_content_security_policy from 00_revdoku.rb is in scope. Any override
+# in a later-loaded initializer is not registered yet. Deferring to
+# after_initialize guarantees the override is registered before we apply it.
+# The CSP middleware reads this mutable policy object on every request, so
+# post-boot mutations propagate to served headers.
+Rails.application.config.after_initialize do
+  if (policy = Rails.application.config.content_security_policy)
+    Revdoku.extend_content_security_policy(policy)
+  end
 end

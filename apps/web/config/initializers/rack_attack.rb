@@ -7,6 +7,15 @@ class Rack::Attack
   # Use Rails cache for throttle data (Solid Cache in production)
   Rack::Attack.cache.store = Rails.cache
 
+  # Resolve the real client IP, honoring config.action_dispatch.trusted_proxies.
+  # Rack::Attack's req.ip is the immediate socket peer, so behind Cloudflare it
+  # collapses every visitor onto one edge IP. ActionDispatch::Request#remote_ip
+  # walks X-Forwarded-For, skipping known proxy CIDRs (see
+  # ee/config/initializers/production_proxy.rb).
+  def self.client_ip(req)
+    ActionDispatch::Request.new(req.env).remote_ip
+  end
+
   # ============================================================================
   # SAFELISTS
   # ============================================================================
@@ -32,7 +41,7 @@ class Rack::Attack
   # Throttle login attempts by IP address (5 requests per 20 seconds)
   throttle("logins/ip", limit: 5, period: 20.seconds) do |req|
     if req.path == "/users/sign_in" && req.post?
-      req.ip
+      client_ip(req)
     end
   end
 
@@ -46,7 +55,7 @@ class Rack::Attack
   # Throttle OTP verification attempts (5 per minute per IP)
   throttle("otp_verify/ip", limit: 5, period: 60.seconds) do |req|
     if req.path == "/users/sign_in/verify" && req.post?
-      req.ip
+      client_ip(req)
     end
   end
 
@@ -57,7 +66,7 @@ class Rack::Attack
   # 5 registration attempts per 15 minutes per IP
   throttle("registrations/ip", limit: 5, period: 15.minutes) do |req|
     if req.path == "/users" && req.post?
-      req.ip
+      client_ip(req)
     end
   end
 
@@ -71,7 +80,7 @@ class Rack::Attack
   # OTP confirmation verification: 10 per 15 minutes per IP
   throttle("confirm_verify/ip", limit: 10, period: 15.minutes) do |req|
     if req.path == "/users/confirm_email/verify" && req.post?
-      req.ip
+      client_ip(req)
     end
   end
 
@@ -82,7 +91,7 @@ class Rack::Attack
   # General API rate limit: 300 requests per minute per IP
   throttle("api/ip", limit: 300, period: 1.minute) do |req|
     if req.path.start_with?("/api/")
-      req.ip
+      client_ip(req)
     end
   end
 
@@ -104,21 +113,21 @@ class Rack::Attack
   # Report creation (AI inspection): 10 per minute per IP
   throttle("reports/create/ip", limit: 10, period: 1.minute) do |req|
     if req.path =~ %r{^/api/v1/reports/?$} && req.post?
-      req.ip
+      client_ip(req)
     end
   end
 
   # Checklist generation (AI): 5 per minute per IP
   throttle("checklists/generate/ip", limit: 5, period: 1.minute) do |req|
     if req.path =~ %r{^/api/v1/checklists/generate/?$} && req.post?
-      req.ip
+      client_ip(req)
     end
   end
 
   # Report status polling: 60 per minute per IP (1 per second)
   throttle("reports/status/ip", limit: 60, period: 1.minute) do |req|
     if req.path =~ %r{^/api/v1/reports/[\w-]+/status/?$} && req.get?
-      req.ip
+      client_ip(req)
     end
   end
 
@@ -133,7 +142,7 @@ class Rack::Attack
   # Report export: 20 per minute per IP
   throttle("reports/export/ip", limit: 20, period: 1.minute) do |req|
     if req.path =~ %r{^/api/v1/reports/[\w-]+/export/?$} && req.post?
-      req.ip
+      client_ip(req)
     end
   end
 
@@ -144,14 +153,14 @@ class Rack::Attack
   # View invitation page: 15 per minute per IP
   throttle("invitations/show/ip", limit: 15, period: 1.minute) do |req|
     if req.path =~ %r{^/invitations/} && req.get?
-      req.ip
+      client_ip(req)
     end
   end
 
   # Accept invitation: 5 per minute per IP
   throttle("invitations/accept/ip", limit: 5, period: 1.minute) do |req|
     if req.path =~ %r{^/invitations/.+/accept} && req.post?
-      req.ip
+      client_ip(req)
     end
   end
 
@@ -163,7 +172,7 @@ class Rack::Attack
   throttle("uploads/ip", limit: 30, period: 1.minute) do |req|
     if (req.path =~ %r{^/api/v1/envelopes/[\w-]+/files} ||
         req.path =~ %r{^/api/v1/document_file_revisions}) && req.post?
-      req.ip
+      client_ip(req)
     end
   end
 
@@ -173,7 +182,7 @@ class Rack::Attack
 
   # Block suspicious requests (commonly probed paths)
   blocklist("block-suspicious-paths") do |req|
-    Rack::Attack::Fail2Ban.filter("suspicious-paths-#{req.ip}", maxretry: 3, findtime: 10.minutes, bantime: 1.hour) do
+    Rack::Attack::Fail2Ban.filter("suspicious-paths-#{client_ip(req)}", maxretry: 3, findtime: 10.minutes, bantime: 1.hour) do
       # Block requests to common attack vectors
       req.path.include?("wp-admin") ||
         req.path.include?("wp-login") ||
@@ -229,7 +238,7 @@ ActiveSupport::Notifications.subscribe("throttle.rack_attack") do |_name, _start
   redacted_path = req.path.gsub(RACK_ATTACK_PREFIX_ID_PATTERN, '/\1_[REDACTED]')
   Rails.logger.warn(
     "[Rack::Attack] Throttled #{req.env['rack.attack.match_discriminator']} " \
-    "#{req.request_method} #{redacted_path} from #{req.ip}"
+    "#{req.request_method} #{redacted_path} from #{Rack::Attack.client_ip(req)}"
   )
 end
 
@@ -238,6 +247,6 @@ ActiveSupport::Notifications.subscribe("blocklist.rack_attack") do |_name, _star
   req = payload[:request]
   redacted_path = req.path.gsub(RACK_ATTACK_PREFIX_ID_PATTERN, '/\1_[REDACTED]')
   Rails.logger.warn(
-    "[Rack::Attack] Blocked #{req.request_method} #{redacted_path} from #{req.ip}"
+    "[Rack::Attack] Blocked #{req.request_method} #{redacted_path} from #{Rack::Attack.client_ip(req)}"
   )
 end
