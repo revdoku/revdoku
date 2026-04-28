@@ -19,11 +19,9 @@
  Revdoku is an open-source AI-powered platform for reviewing important documents. It automates line-by-line checks, identifies errors, verifies data against references, and runs custom scripts to ensure accuracy.
 </p>
 
----
-
 ## Demo video
 
- <video alt="revdoku demo video" src="https://github.com/user-attachments/assets/96aff121-65d9-4bcb-ad7d-6baad433f9c8" controls width="720"></video>
+ <video alt="revdoku demo video" src="https://github.com/user-attachments/assets/ab5644df-483b-4ae9-9be8-d7782bda51b6" controls width="720"></video>
 
 ## Features
 
