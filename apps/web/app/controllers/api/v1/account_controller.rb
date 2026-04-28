@@ -49,6 +49,9 @@ class Api::V1::AccountController < Api::BaseController
           # Data region is nil unless a multi-region overlay is loaded.
           # UI renders "n/a" when nil.
           data_region: (Revdoku.respond_to?(:current_data_region) ? Revdoku.current_data_region&.slice("id", "name", "location") : nil),
+          inbound_email_address: current_account.inbound_email_address,
+          inbound_email_ingress_configured: InboundEmailIngress.configured?,
+          inbound_email_ingress_provider: InboundEmailIngress.provider
         }
       }
     })
