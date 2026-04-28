@@ -77,6 +77,17 @@ class Account < ApplicationRecord
 
   before_create :assign_inbound_token
 
+  # The per-account address that receives inbound PDFs. Returns nil unless
+  # the operator has set INBOUND_EMAIL_DOMAIN — without it the address is
+  # meaningless (no MX record routes anywhere). The UI renders the "Not
+  # configured" state when this is nil. Operators must additionally set
+  # INBOUND_EMAIL_INGRESS for delivery to actually work; the API exposes
+  # both states separately as inbound_email_ingress_configured.
+  def inbound_email_address
+    domain = ENV["INBOUND_EMAIL_DOMAIN"].to_s.strip
+    return nil if domain.empty?
+    "uploads+#{inbound_token}@#{domain}"
+  end
 
   scope :personal, -> { where(personal: true) }
   scope :team, -> { where(personal: false) }

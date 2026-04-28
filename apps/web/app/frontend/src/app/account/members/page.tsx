@@ -17,7 +17,7 @@ import {
 import { Pencil, Check, Copy } from 'lucide-react';
 import { ACCOUNT_COLORS } from '@/lib/account-colors';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
-import InboundEmailCard from '@ee/components/InboundEmailCard';
+import InboundEmailCard from '@/components/InboundEmailCard';
 
 interface Member {
   id: number;

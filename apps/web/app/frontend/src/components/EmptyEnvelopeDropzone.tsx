@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react';
 import FileDropZone from '@/components/FileDropZone';
-import { InboundEmailHint } from '@ee/components/InboundEmailHint';
+import { InboundEmailHint } from '@/components/InboundEmailHint';
 
 interface EmptyEnvelopeDropzoneProps {
   /** Icon rendered above the headline. */

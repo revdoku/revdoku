@@ -1517,6 +1517,9 @@ export class ApiClient {
         default_font_scale?: number | null;
         primary_color?: string | null;
         data_region?: { id: string; name: string; location: string } | null;
+        inbound_email_address?: string | null;
+        inbound_email_ingress_configured?: boolean;
+        inbound_email_ingress_provider?: string | null;
       };
     };
   }> {
