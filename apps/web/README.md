@@ -16,7 +16,7 @@ A document inspection and auditing system that uses AI to analyze documents agai
 |----------|-------------|---------|
 | `PORT` | Rails server port | `3000` |
 | `REVDOKU_DOC_API_URL` | AI processing server URL | `http://localhost:4001` |
-| `MAILER_SENDER` | Default email sender | `noreply@revdoku.com` |
+| `DEFAULT_FROM_EMAIL` | Default email sender (display-name form OK) | `Revdoku <no-reply@revdoku.com>` |
 | `RAILS_CORS_ORIGINS` | Allowed CORS origins | `http://localhost:3000,http://localhost:3036` |
 
 ### Production (via credentials or env vars)

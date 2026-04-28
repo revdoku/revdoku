@@ -55,12 +55,12 @@ class User < ApplicationRecord
 
   # Validations
   validates :first_name, presence: true
-  validates :last_name, presence: true
   validates :email, presence: true,
                     uniqueness: { case_sensitive: false, if: :will_save_change_to_email? }
   validate :email_canonical_must_be_unique, if: :will_save_change_to_email?
 
   before_validation :set_email_canonical, if: :will_save_change_to_email?
+  before_validation :derive_names_from_email_if_blank, on: :create
 
   GMAIL_DOMAINS = %w[gmail.com googlemail.com].freeze
 
@@ -281,6 +281,23 @@ class User < ApplicationRecord
 
   def set_email_canonical
     self.email_canonical = self.class.canonicalize_email(email)
+  end
+
+  # Auto-fill first_name / last_name from the email local-part when they
+  # weren't supplied (the simplified email-only signup form). Splits on
+  # `.`, `_`, `-`, capitalizes each segment. Skips fields that are
+  # already set so OAuth (auth.info.first_name / last_name) and any
+  # admin/console-driven creation flows are unaffected.
+  def derive_names_from_email_if_blank
+    return if email.blank?
+    return if first_name.present? && last_name.present?
+
+    local = email.split("@", 2).first.to_s.split("+", 2).first
+    parts = local.split(/[._\-]+/).reject(&:blank?).map(&:capitalize)
+    return if parts.empty?
+
+    self.first_name = parts.shift if first_name.blank?
+    self.last_name  = parts.join(" ") if last_name.blank?
   end
 
 

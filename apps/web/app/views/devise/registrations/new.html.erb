@@ -49,26 +49,16 @@
         </div>
       <% end %>
 
-      <div class="rounded-md -space-y-px">
-        <div class="flex">
-          <div class="w-1/2">
-            <%= f.label :first_name, class: "sr-only" %>
-            <%= f.text_field :first_name, autofocus: true, autocomplete: "given-name",
-                placeholder: "First name", required: true,
-                class: "appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-tl-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" %>
-          </div>
-          <div class="w-1/2">
-            <%= f.label :last_name, class: "sr-only" %>
-            <%= f.text_field :last_name, autocomplete: "family-name",
-                placeholder: "Last name", required: true,
-                class: "appearance-none rounded-none relative block w-full px-3 py-2 border border-l-0 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-tr-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" %>
-          </div>
-        </div>
+      <%# Email-only signup. First/last name are auto-derived from the email
+          local-part (User#derive_names_from_email_if_blank) so a fresh user
+          types one field. OAuth, admin, and console paths still set names
+          explicitly when they have them. %>
+      <div class="<%= Revdoku.password_based_login? ? 'rounded-md -space-y-px' : '' %>">
         <div>
           <%= f.label :email, class: "sr-only" %>
-          <%= f.email_field :email, autocomplete: "email",
+          <%= f.email_field :email, autofocus: true, autocomplete: "email",
               placeholder: "Your work email", required: true,
-              class: "appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 #{Revdoku.password_based_login? ? '' : 'rounded-b-md'} focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" %>
+              class: "appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 #{Revdoku.password_based_login? ? 'rounded-t-md rounded-none' : 'rounded-md'} focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" %>
         </div>
 
         <% if Revdoku.password_based_login? %>
