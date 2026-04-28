@@ -5,7 +5,7 @@
 <h1 align="center">Revdoku</h1>
 
 <p align="center">
-  <strong>Revdoku is an open-source AI-powered platform for reviewing important documents</strong>
+  <strong>Revdoku is an open-source AI-powered platform for reviewing important documents.</strong>
 </p>
 
 <p align="center">
@@ -45,7 +45,7 @@ Hosted version is available at [www.revdoku.com](https://www.revdoku.com/).
 Drop a document, run a checklist, read the report. 
 
 <details>
-<summary><strong>▶ Watch all 18 demo walkthroughs</strong> &nbsp;<sub>(click to expand)</sub></summary>
+<summary><strong>▶ Watch all demo walkthroughs</strong> &nbsp;<sub>(click to expand)</sub></summary>
 
 <br/>
 
@@ -204,7 +204,9 @@ Bug reports and PRs welcome! For larger changes, open a GitHub Discussion first 
 
 ## License
 
-Revdoku is released under the **[GNU Affero General Public License v3.0](LICENSE)** (AGPL-3.0). For commercial licensing, contact **[support@revdoku.com](mailto:support@revdoku.com)**.
+Revdoku is open source, licensed under the GNU Affero General Public
+License v3 (AGPLv3) — see [LICENSE](./LICENSE). A commercial license
+is also available; contact sales@revdoku.com.
 
 ---
 
