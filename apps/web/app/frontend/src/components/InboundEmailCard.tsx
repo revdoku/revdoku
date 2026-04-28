@@ -7,17 +7,13 @@ import { Button } from '@/components/ui/button';
 
 export default function InboundEmailCard() {
   const [address, setAddress] = useState<string | null>(null);
-<<<<<<< Updated upstream
   const [configured, setConfigured] = useState<boolean | null>(null);
   const [loaded, setLoaded] = useState(false);
-=======
->>>>>>> Stashed changes
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     ApiClient.getAccountProfile()
-<<<<<<< Updated upstream
       .then((r) => {
         if (cancelled) return;
         setAddress(r?.profile?.current_account?.inbound_email_address ?? null);
@@ -25,10 +21,6 @@ export default function InboundEmailCard() {
         setLoaded(true);
       })
       .catch(() => { if (!cancelled) setLoaded(true); });
-=======
-      .then((r) => { if (!cancelled) setAddress(r?.profile?.current_account?.inbound_email_address ?? null); })
-      .catch(() => {});
->>>>>>> Stashed changes
     return () => { cancelled = true; };
   }, []);
 
@@ -43,14 +35,10 @@ export default function InboundEmailCard() {
     }
   };
 
-<<<<<<< Updated upstream
   if (!loaded) return null;
 
   const isConfigured = configured === true && !!address;
   const hasAddress = !!address;
-=======
-  if (!address) return null;
->>>>>>> Stashed changes
 
   return (
     <Card>
@@ -58,7 +46,6 @@ export default function InboundEmailCard() {
         <div className="flex items-center gap-2 flex-wrap">
           <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
           <span className="text-sm font-medium">Upload via Email</span>
-<<<<<<< Updated upstream
           {isConfigured ? (
             <span className="text-xs text-muted-foreground">— forward a PDF, we'll create an envelope.</span>
           ) : (
@@ -109,37 +96,6 @@ export default function InboundEmailCard() {
             )}
           </p>
         )}
-=======
-          <span className="text-xs text-muted-foreground">— forward a PDF, we'll create an envelope.</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div
-            role="textbox"
-            aria-readonly="true"
-            aria-label="Inbound email address"
-            tabIndex={0}
-            className="font-mono text-sm min-w-0 flex-1 py-1.5 px-3 border border-input rounded-md bg-background text-foreground break-all select-all cursor-text"
-          >
-            {address}
-          </div>
-          <Button
-            onClick={handleCopy}
-            variant="secondary"
-            size="icon"
-            className="shrink-0"
-            title={copied ? 'Copied' : 'Copy address'}
-            aria-label={copied ? 'Copied' : 'Copy address'}
-          >
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-          </Button>
-          <Link
-            to="/logs?category=email_upload"
-            className="text-xs text-primary hover:underline whitespace-nowrap"
-          >
-            View activity →
-          </Link>
-        </div>
->>>>>>> Stashed changes
       </CardContent>
     </Card>
   );
