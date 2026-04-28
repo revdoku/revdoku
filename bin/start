@@ -95,23 +95,10 @@ done
 if [[ $FORCE_BUILD -eq 0 ]]; then
   IMAGE="${REVDOKU_IMAGE:-ghcr.io/revdoku/revdoku:latest}"
 
-  heading "Downloading Revdoku"
-  note "This is a one-time download. On a fast connection it finishes in"
-  note "under a minute; on slow connections it can take 5-10 minutes (or"
-  note "longer). You will see download progress bars below — that is"
-  note "normal, the screen is not frozen."
-  note ""
-  note "If you want to stop and try later:"
-  note "  • macOS:            hold the  ${c_bld}control${c_off}${c_dim}  key and press  ${c_bld}C${c_off}${c_dim}  once, then wait."
-  note "  • Windows / Linux:  hold       ${c_bld}Ctrl${c_off}${c_dim}     and press  ${c_bld}C${c_off}${c_dim}  once, then wait."
-  note "The script will quit cleanly. Already-downloaded parts are kept,"
-  note "so next time will be faster — it does not start over from zero."
-  note ""
-  note "If progress bars stop moving for more than a few minutes, your"
-  note "internet may be slow or blocked. Stopping and trying again on a"
-  note "different network usually fixes it."
-  note ""
-  note "(image: ${IMAGE})"
+  heading "Downloading Revdoku... (one-time, ~1-10 min)"
+  note "Progress bars below are normal — the screen is not frozen."
+  note "To cancel: press ${c_bld}Ctrl${c_off}${c_dim}+${c_bld}C${c_off}${c_dim} (or ${c_bld}control${c_off}${c_dim}+${c_bld}C${c_off}${c_dim} on macOS). Already-downloaded"
+  note "parts stay cached, so the next attempt resumes — not from zero."
   echo "" >&2
 
   # Clean Ctrl+C handling: without this, a SIGINT during `docker pull`
@@ -122,10 +109,7 @@ if [[ $FORCE_BUILD -eq 0 ]]; then
   # falls through to Compose's own container-stop handling.
   trap '
     echo >&2
-    echo "${c_ylw}!${c_off} Cancelled — Revdoku did not start." >&2
-    echo "${c_dim}   To try again later, run:  ./bin/start${c_off}" >&2
-    echo "${c_dim}   Already-downloaded parts were kept, so the next attempt${c_off}" >&2
-    echo "${c_dim}   will resume from where it left off — not from zero.${c_off}" >&2
+    echo "${c_ylw}!${c_off} Cancelled — Revdoku did not start. Re-run ${c_bld}./bin/start${c_off} to resume." >&2
     exit 130
   ' INT
 
