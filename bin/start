@@ -94,15 +94,51 @@ done
 
 if [[ $FORCE_BUILD -eq 0 ]]; then
   IMAGE="${REVDOKU_IMAGE:-ghcr.io/revdoku/revdoku:latest}"
-  echo "${c_grn}${c_bld}✓${c_off} preflight OK — pulling prebuilt image: ${IMAGE}"
-  if docker pull "$IMAGE" 2>&1 | tail -5; then
+
+  heading "Downloading Revdoku"
+  note "This is a one-time download. On a fast connection it finishes in"
+  note "under a minute; on slow connections it can take 5-10 minutes (or"
+  note "longer). You will see download progress bars below — that is"
+  note "normal, the screen is not frozen."
+  note ""
+  note "If you want to stop and try later:"
+  note "  • macOS:            hold the  ${c_bld}control${c_off}${c_dim}  key and press  ${c_bld}C${c_off}${c_dim}  once, then wait."
+  note "  • Windows / Linux:  hold       ${c_bld}Ctrl${c_off}${c_dim}     and press  ${c_bld}C${c_off}${c_dim}  once, then wait."
+  note "The script will quit cleanly. Already-downloaded parts are kept,"
+  note "so next time will be faster — it does not start over from zero."
+  note ""
+  note "If progress bars stop moving for more than a few minutes, your"
+  note "internet may be slow or blocked. Stopping and trying again on a"
+  note "different network usually fixes it."
+  note ""
+  note "(image: ${IMAGE})"
+  echo "" >&2
+
+  # Clean Ctrl+C handling: without this, a SIGINT during `docker pull`
+  # exits the pull non-zero, the `if` falls through, and the script
+  # silently kicks off `docker compose up --build` — a 5-10 min source
+  # compile when the user just wanted to cancel. Trap is scoped to the
+  # pull phase only; cleared before exec'ing Compose so runtime Ctrl+C
+  # falls through to Compose's own container-stop handling.
+  trap '
+    echo >&2
+    echo "${c_ylw}!${c_off} Cancelled — Revdoku did not start." >&2
+    echo "${c_dim}   To try again later, run:  ./bin/start${c_off}" >&2
+    echo "${c_dim}   Already-downloaded parts were kept, so the next attempt${c_off}" >&2
+    echo "${c_dim}   will resume from where it left off — not from zero.${c_off}" >&2
+    exit 130
+  ' INT
+
+  if docker pull "$IMAGE"; then
+    trap - INT
     echo "${c_grn}${c_bld}✓${c_off} image ready — starting Revdoku"
     exec docker compose up "$@"
   fi
+  trap - INT
   echo ""
-  echo "${c_ylw}!${c_off} pull failed — check that the package exists and is Public at:"
+  echo "${c_ylw}!${c_off} download failed — check that the image is published and Public at:"
   echo "${c_dim}    https://github.com/revdoku/revdoku/pkgs/container/revdoku${c_off}"
-  echo "${c_ylw}!${c_off} falling back to local build (one-time, ~3-10 min)..."
+  echo "${c_ylw}!${c_off} building from source instead (one-time, ~3-10 min)..."
   echo ""
 fi
 
