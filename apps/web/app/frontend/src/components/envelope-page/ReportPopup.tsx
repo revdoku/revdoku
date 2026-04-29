@@ -15,9 +15,10 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
-import { EllipsisVertical, Check, ArrowUpToLine } from "lucide-react";
+import { Link2 } from "lucide-react";
 import { showToast } from "@/lib/toast";
-import { ApiClient } from "@/lib/api-client";
+import { ApiClient, type IReportShareLink, type ShareReportOptions } from "@/lib/api-client";
+import { ApiError } from "@/lib/api-error";
 // REVDOKU_CATCH_CHANGES_RULE_ID replaced by CheckType.CHANGE via getCheckTypes()
 
 interface ReportPopupProps {
@@ -134,6 +135,12 @@ export default function ReportPopup({
 }: ReportPopupProps) {
   const reportIframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeContentHeight, setIframeContentHeight] = useState<number | null>(null);
+  const [sharingReport, setSharingReport] = useState(false);
+  const [lastShareUrl, setLastShareUrl] = useState<string | null>(null);
+  const [shareLinksOpen, setShareLinksOpen] = useState(false);
+  const [shareLinksLoading, setShareLinksLoading] = useState(false);
+  const [shareLinks, setShareLinks] = useState<IReportShareLink[]>([]);
+  const [defaultShareLinkExpiration, setDefaultShareLinkExpiration] = useState(30);
 
   // Local highlight mode state — independent from envelope viewer
   const [localHighlightMode, setLocalHighlightMode] = useState<HighlightMode>(highlightMode ?? 0);
@@ -297,6 +304,7 @@ export default function ReportPopup({
     const filterLabel = doc.getElementById('revdoku-filter-label') as HTMLSpanElement | null;
     if (filterBtn && filterMenu && filterLabel) {
       const applyFilter = (filter: string) => {
+        doc!.body?.setAttribute('data-current-check-filter', filter);
         // Mirror the chosen item's content into the button label
         const item = filterMenu.querySelector<HTMLDivElement>(`[data-filter-value="${filter}"]`);
         if (item) filterLabel.innerHTML = item.innerHTML;
@@ -448,6 +456,7 @@ export default function ReportPopup({
     const fontUp = doc.getElementById('revdoku-font-up');
     const applyFontScale = (scale: number) => {
       currentFontScale = scale;
+      doc!.body?.setAttribute('data-current-font-scale', String(scale));
       // Scale label text font size
       doc!.querySelectorAll('foreignObject div[data-base-font-size]').forEach(el => {
         const base = parseFloat(el.getAttribute('data-base-font-size') || '14');
@@ -485,6 +494,7 @@ export default function ReportPopup({
     if (hlSelect) {
       hlSelect.addEventListener('change', () => {
         const mode = parseInt(hlSelect.value, 10);
+        doc!.body?.setAttribute('data-current-highlight-mode', String(mode));
         const modes = ['rectangle', 'dot', 'underline', 'bracket'];
         const activeClass = `revdoku-hl-${modes[mode] || 'rectangle'}`;
         doc!.querySelectorAll('.revdoku-hl').forEach(el => {
@@ -502,6 +512,7 @@ export default function ReportPopup({
     };
     if (fontFamilySelect) {
       fontFamilySelect.addEventListener('change', () => {
+        doc!.body?.setAttribute('data-current-font-family', fontFamilySelect.value);
         const css = fontFamilyMap[fontFamilySelect.value] || fontFamilySelect.value;
         doc!.body.style.fontFamily = css;
         doc!.querySelectorAll('foreignObject div').forEach(el => {
@@ -732,9 +743,157 @@ export default function ReportPopup({
     'toggle-user-js-output': { attr: 'data-section', value: 'user-js-output' },
   };
 
+  const getReportDocument = (): Document | null => {
+    try {
+      return reportIframeRef.current?.contentDocument || reportIframeRef.current?.contentWindow?.document || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const getReportCheckbox = (doc: Document | null, id: string, fallback: boolean): boolean => {
+    const checkbox = doc?.getElementById(id) as HTMLInputElement | null;
+    return checkbox ? checkbox.checked : fallback;
+  };
+
+  const daysUntil = (isoDate: string): number => {
+    const expiresAt = new Date(isoDate).getTime();
+    if (!Number.isFinite(expiresAt)) return defaultShareLinkExpiration;
+    return Math.max(0, Math.ceil((expiresAt - Date.now()) / 86_400_000));
+  };
+
+  const formatShareDate = (isoDate: string): string => {
+    const date = new Date(isoDate);
+    if (Number.isNaN(date.getTime())) return isoDate;
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+  };
+
+  const copyShareUrl = async (url: string | null | undefined, expiresInDays?: number) => {
+    if (!url) {
+      showToast('This share link cannot be copied.', 'error', 4000);
+      return;
+    }
+
+    await navigator.clipboard.writeText(url);
+    const days = expiresInDays ?? defaultShareLinkExpiration;
+    const suffix = days === 1 ? 'day' : 'days';
+    showToast(`Share link copied. Warning: it expires in ${days} ${suffix}.`, 'info', 6000);
+  };
+
+  const loadReportShares = async () => {
+    if (!currentReport || shareLinksLoading) return;
+
+    setShareLinksLoading(true);
+    try {
+      const response = await ApiClient.listReportShares({ report_id: currentReport.id });
+      setShareLinks(response.report_shares);
+      setDefaultShareLinkExpiration(response.default_share_link_expiration || 30);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not load share links';
+      showToast(message, 'error', 4000);
+    } finally {
+      setShareLinksLoading(false);
+    }
+  };
+
+  const toggleShareLinks = async () => {
+    const nextOpen = !shareLinksOpen;
+    setShareLinksOpen(nextOpen);
+    if (nextOpen) await loadReportShares();
+  };
+
+  const revokeShareLink = async (shareId: string) => {
+    try {
+      const response = await ApiClient.revokeReportShare(shareId);
+      setShareLinks((links) => links.map((link) => link.id === shareId ? response.report_share : link));
+      showToast('Share link expired.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not expire share link';
+      showToast(message, 'error', 4000);
+    }
+  };
+
+  const getServerShareOptions = (): ShareReportOptions => {
+    const doc = getReportDocument();
+    const fontScaleValue = Number(doc?.body?.getAttribute('data-current-font-scale') || fontScale);
+    const highlightValue = Number(
+      (doc?.getElementById('revdoku-highlight-select') as HTMLSelectElement | null)?.value
+      ?? doc?.body?.getAttribute('data-current-highlight-mode')
+      ?? localHighlightMode
+    );
+
+    return {
+      title: envelopeTitle,
+      format: 'html',
+      check_filter: (doc?.body?.getAttribute('data-current-check-filter') || doc?.body?.getAttribute('data-initial-check-filter') || checkFilter) as CheckFilterType,
+      layout_mode: reportLayoutMode,
+      include_rules: getReportCheckbox(doc, 'toggle-rules', false),
+      include_technical_info: getReportCheckbox(doc, 'toggle-technical-info', false),
+      show_checklist_name: getReportCheckbox(doc, 'toggle-checklist-name', false),
+      show_title_info: getReportCheckbox(doc, 'toggle-envelope-title', true),
+      show_compliance_summary: getReportCheckbox(doc, 'toggle-compliance-summary', false),
+      show_compliance_percent: getReportCheckbox(doc, 'toggle-compliance-percent', true),
+      show_default_footer: true,
+      show_annotations: getReportCheckbox(doc, 'revdoku-checks-toggle', showAnnotations),
+      show_pages_with_checks: getReportCheckbox(doc, 'toggle-pages-with-checks', true),
+      show_pages_without_checks: getReportCheckbox(doc, 'toggle-pages-without-checks', true),
+      show_page_images: getReportCheckbox(doc, 'toggle-page-images', true),
+      show_check_details: getReportCheckbox(doc, 'toggle-check-details', true),
+      show_extracted_data: getReportCheckbox(doc, 'toggle-extracted-data', false),
+      show_checklist_info: getReportCheckbox(doc, 'toggle-checklist-info', true),
+      show_checklist_general_prompt: getReportCheckbox(doc, 'toggle-checklist-general-prompt', true),
+      show_checklist_rules_summary: getReportCheckbox(doc, 'toggle-checklist-rules-summary', true),
+      show_checklist_rules_details: getReportCheckbox(doc, 'toggle-checklist-rules-details', true),
+      show_checklist_envelope_rules: getReportCheckbox(doc, 'toggle-checklist-envelope-rules', true),
+      show_timezone: getReportCheckbox(doc, 'toggle-show-timezone', true),
+      show_revision_comparison: getReportCheckbox(doc, 'toggle-revision-comparison', true),
+      show_check_attribution: getReportCheckbox(doc, 'toggle-check-attribution', false),
+      show_envelope_datetime: getReportCheckbox(doc, 'toggle-envelope-datetime', true),
+      show_envelope_revisions_info: getReportCheckbox(doc, 'toggle-envelope-revisions-info', true),
+      show_checklist_ai_model: getReportCheckbox(doc, 'toggle-checklist-ai-model', false),
+      show_page_filenames: getReportCheckbox(doc, 'toggle-page-filenames', true),
+      show_page_summary_icons: getReportCheckbox(doc, 'toggle-page-summary-icons', true),
+      show_group_header: getReportCheckbox(doc, 'toggle-group-header', true),
+      show_group_checklist: getReportCheckbox(doc, 'toggle-group-checklist', false),
+      show_group_pages: getReportCheckbox(doc, 'toggle-group-pages', true),
+      show_group_footer: getReportCheckbox(doc, 'toggle-group-footer', true),
+      show_checklist_ai_model_details: getReportCheckbox(doc, 'toggle-checklist-ai-model-details', false),
+      show_document_history: getReportCheckbox(doc, 'toggle-document-history', false),
+      show_tags: getReportCheckbox(doc, 'toggle-tags', true),
+      show_user_js_1_output: getReportCheckbox(doc, 'toggle-user-js-output', true),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      font_scale: Number.isFinite(fontScaleValue) ? fontScaleValue : fontScale,
+      font_family: (doc?.body?.getAttribute('data-current-font-family') || (doc?.getElementById('revdoku-font-family-select') as HTMLSelectElement | null)?.value || fontFamily) as string | undefined,
+      highlight_mode: Number.isFinite(highlightValue) ? highlightValue : localHighlightMode,
+      align_labels_to_top: getReportCheckbox(doc, 'revdoku-align-top', alignLabelsToTop ?? false),
+    };
+  };
+
   /** Save clean HTML matching what the user currently sees (hidden sections stripped from DOM) */
   const saveCleanReportAsHtml = () => {
     downloadHtmlFile(getCleanReportHtml(reportContent, reportIframeRef, toggleToSectionMap));
+  };
+
+  const shareReport = async () => {
+    if (!currentReport || reportLoading || sharingReport) return;
+
+    setSharingReport(true);
+    try {
+      const response = await ApiClient.shareReport(currentReport.id, getServerShareOptions());
+      setLastShareUrl(response.share.url);
+      setDefaultShareLinkExpiration(response.share.default_share_link_expiration || 30);
+      try {
+        await copyShareUrl(response.share.url, response.share.expires_in_days);
+      } catch {
+        showToast(`Share link created. Warning: it expires in ${response.share.expires_in_days} days.`, 'info', 6000);
+      }
+      if (shareLinksOpen) await loadReportShares();
+    } catch (error) {
+const message = error instanceof Error ? error.message : 'Could not create share link';
+      showToast(message, 'error', 4000);
+    } finally {
+      setSharingReport(false);
+    }
   };
 
   /** Dev-only: save the full HTML with interactive options panel intact */
@@ -761,7 +920,7 @@ export default function ReportPopup({
       >
         {/* Row 1: Title + Close */}
         <div className="flex items-center justify-between px-2 sm:px-4 py-2 border-b border-border rounded-t-lg">
-          <h2 className="text-sm font-semibold text-foreground shrink-0">Report</h2>
+          <h2 className="text-sm font-semibold text-foreground shrink-0">Share Report</h2>
           <button
             onClick={onClose}
             className="w-7 h-7 flex items-center justify-center rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
@@ -773,22 +932,113 @@ export default function ReportPopup({
           </button>
         </div>
 
-        {/* Row 2: Layout mode only — all other controls are in the report's sticky toolbar */}
-        <div className="flex items-center gap-2 px-2 sm:px-4 py-1.5 border-b border-border bg-muted/30 flex-wrap">
+        {/* Row 2: Layout mode (left) + Copy / Save (right) */}
+        <div className="flex items-center justify-between gap-2 px-2 sm:px-4 py-1.5 border-b border-border bg-muted/30 flex-wrap">
 
           {/* Page Previews */}
-          <select
-            value={reportLayoutMode}
-            onChange={async (e) => {
-              const newValue = e.target.value as ReportLayoutMode;
-              setReportLayoutMode(newValue);
-              await generateReport(newValue);
-            }}
-            className="h-7 px-2 py-0 text-xs border border-border rounded-md bg-card text-foreground"
-          >
-            <option value="full">Full</option>
-            <option value="compact">Compact</option>
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={reportLayoutMode}
+              onChange={async (e) => {
+                const newValue = e.target.value as ReportLayoutMode;
+                setReportLayoutMode(newValue);
+                await generateReport(newValue);
+              }}
+              className="h-7 px-2 py-0 text-xs border border-border rounded-md bg-card text-foreground"
+            >
+              <option value="full">Full</option>
+              <option value="compact">Compact</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Copy split button */}
+            <div className="inline-flex rounded-lg shadow-sm">
+              <button
+                disabled={reportLoading}
+                className={`inline-flex items-center px-3 py-1.5 text-sm font-medium text-secondary-foreground bg-card border border-border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ${reportLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent hover:border-muted-foreground hover:shadow-md'}`}
+                onClick={copyReportAsHtml}
+              >
+                <svg className="w-4 h-4 sm:mr-1.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <span className="hidden sm:inline">Copy</span>
+              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    disabled={reportLoading}
+                    className={`self-stretch inline-flex items-center justify-center px-2.5 text-sm text-secondary-foreground bg-card border border-l-0 border-border rounded-r-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ${reportLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent hover:border-muted-foreground'}`}
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={copyReportAsHtml}>
+                    Copy
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={async () => {
+                    const text = formatReportAsText();
+                    if (text) {
+                      navigator.clipboard.writeText(text)
+                        .then(() => showToast('Copied as text!'));
+                    }
+                  }}>
+                    Copy As Text
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Save split button */}
+            <div className="inline-flex rounded-lg shadow-sm">
+              <button
+                disabled={reportLoading}
+                className={`inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-indigo-600 border border-transparent rounded-l-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ${reportLoading ? 'opacity-50 cursor-not-allowed' : 'hover:from-indigo-600 hover:to-indigo-700 hover:shadow-md'}`}
+                onClick={handlePrintPdf}
+              >
+                <svg className="w-4 h-4 sm:mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span className="hidden sm:inline">Save</span>
+              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    disabled={reportLoading}
+                    className={`self-stretch inline-flex items-center justify-center px-2.5 text-sm text-white bg-gradient-to-r from-indigo-500 to-indigo-600 border border-transparent border-l border-l-indigo-400/30 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ${reportLoading ? 'opacity-50 cursor-not-allowed' : 'hover:from-indigo-600 hover:to-indigo-700'}`}
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handlePrintPdf}>
+                    Print / PDF...
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={saveCleanReportAsHtml}>
+                    Save as HTML
+                  </DropdownMenuItem>
+                  {onExportChecksCsv && (
+                    <DropdownMenuItem onClick={onExportChecksCsv}>
+                      Export Checks to CSV
+                    </DropdownMenuItem>
+                  )}
+                  {import.meta.env.DEV && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={saveReportAsHtmlWithOptions}>
+                        Save as HTML (dev)
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
         </div>
 
         <div className="flex-1 overflow-auto border-0 rounded-md">
@@ -811,94 +1061,112 @@ export default function ReportPopup({
           )}
         </div>
 
+        {shareLinksOpen && (
+          <div className="border-t border-border bg-blue-50/70 px-2 sm:px-4 py-2">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div>
+                <div className="text-xs font-semibold text-blue-950">Shared links</div>
+                <div className="text-[11px] text-blue-800">
+                  Anyone with a link can view this frozen report snapshot. New links expire in {defaultShareLinkExpiration} days.
+                </div>
+              </div>
+              <button
+                type="button"
+                className="text-xs text-blue-700 hover:text-blue-900 underline underline-offset-2"
+                onClick={loadReportShares}
+                disabled={shareLinksLoading}
+              >
+                {shareLinksLoading ? 'Refreshing...' : 'Refresh'}
+              </button>
+            </div>
+
+            <div className="max-h-36 overflow-y-auto rounded-md border border-blue-100 bg-white">
+              {shareLinksLoading && shareLinks.length === 0 ? (
+                <div className="px-3 py-3 text-xs text-muted-foreground">Loading share links...</div>
+              ) : shareLinks.length === 0 ? (
+                <div className="px-3 py-3 text-xs text-muted-foreground">No shared links for this report yet.</div>
+              ) : (
+                shareLinks.map((share) => (
+                  <div key={share.id} className="flex items-center gap-2 px-3 py-2 border-b border-blue-50 last:border-b-0">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-xs font-medium text-slate-900">{share.title || 'Shared report'}</span>
+                        <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${share.active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                          {share.active ? 'Active' : 'Expired'}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500">
+                        Expires {formatShareDate(share.expired_at)} · {share.view_count} {share.view_count === 1 ? 'view' : 'views'}
+                        {share.last_viewed_at && ` · last viewed ${formatShareDate(share.last_viewed_at)}`}
+                      </div>
+                    </div>
+                    {share.url && (
+                      <button
+                        type="button"
+                        className="shrink-0 rounded border border-blue-200 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50"
+                        onClick={() => copyShareUrl(share.url, daysUntil(share.expired_at))}
+                      >
+                        Copy
+                      </button>
+                    )}
+                    {share.url && (
+                      <a
+                        href={share.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="shrink-0 rounded border border-slate-200 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        Open
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      className="shrink-0 rounded border border-red-200 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      disabled={!share.active}
+                      onClick={() => revokeShareLink(share.id)}
+                    >
+                      Expire
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Footer - Action Buttons */}
         <div className="flex items-center justify-end px-2 sm:px-4 py-2 border-t border-border gap-2">
-          {/* Copy split button */}
-          <div className="inline-flex rounded-lg shadow-sm">
+          <div className="mr-auto flex min-w-0 items-center gap-2">
+            {lastShareUrl && (
+              <a
+                href={lastShareUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="min-w-0 truncate text-xs text-primary underline underline-offset-2"
+                title={lastShareUrl}
+              >
+                Latest shared link
+              </a>
+            )}
             <button
-              disabled={reportLoading}
-              className={`inline-flex items-center px-3 py-1.5 text-sm font-medium text-secondary-foreground bg-card border border-border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ${reportLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent hover:border-muted-foreground hover:shadow-md'}`}
-              onClick={copyReportAsHtml}
+              type="button"
+              className="rounded border border-blue-200 px-2 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50"
+              onClick={toggleShareLinks}
+              disabled={!currentReport || shareLinksLoading}
             >
-              <svg className="w-4 h-4 sm:mr-1.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              <span className="hidden sm:inline">Copy</span>
+              {shareLinksOpen ? 'Hide links' : 'Manage links'}
             </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  disabled={reportLoading}
-                  className={`self-stretch inline-flex items-center justify-center px-2.5 text-sm text-secondary-foreground bg-card border border-l-0 border-border rounded-r-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ${reportLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent hover:border-muted-foreground'}`}
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={copyReportAsHtml}>
-                  Copy
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={async () => {
-                  const text = formatReportAsText();
-                  if (text) {
-                    navigator.clipboard.writeText(text)
-                      .then(() => showToast('Copied as text!'));
-                  }
-                }}>
-                  Copy As Text
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
 
-          {/* Save split button */}
-          <div className="inline-flex rounded-lg shadow-sm">
-            <button
-              disabled={reportLoading}
-              className={`inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-indigo-600 border border-transparent rounded-l-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ${reportLoading ? 'opacity-50 cursor-not-allowed' : 'hover:from-indigo-600 hover:to-indigo-700 hover:shadow-md'}`}
-              onClick={handlePrintPdf}
-            >
-              <svg className="w-4 h-4 sm:mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              <span className="hidden sm:inline">Save</span>
-            </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  disabled={reportLoading}
-                  className={`self-stretch inline-flex items-center justify-center px-2.5 text-sm text-white bg-gradient-to-r from-indigo-500 to-indigo-600 border border-transparent border-l border-l-indigo-400/30 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 ${reportLoading ? 'opacity-50 cursor-not-allowed' : 'hover:from-indigo-600 hover:to-indigo-700'}`}
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handlePrintPdf}>
-                  Print / PDF...
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={saveCleanReportAsHtml}>
-                  Save as HTML
-                </DropdownMenuItem>
-                {onExportChecksCsv && (
-                  <DropdownMenuItem onClick={onExportChecksCsv}>
-                    Export Checks to CSV
-                  </DropdownMenuItem>
-                )}
-                {import.meta.env.DEV && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={saveReportAsHtmlWithOptions}>
-                      Save as HTML (dev)
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <button
+            disabled={reportLoading || sharingReport || !currentReport}
+            className={`inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 border border-transparent rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${(reportLoading || sharingReport || !currentReport) ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-600 hover:to-blue-700 hover:shadow-md'}`}
+            onClick={shareReport}
+            title="Create secure share link"
+          >
+            <Link2 className="w-4 h-4 sm:mr-1.5 text-white/85" />
+            <span className="hidden sm:inline">{sharingReport ? 'Sharing...' : 'Share'}</span>
+          </button>
 
           <button
             className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-secondary-foreground bg-card border border-border rounded-lg shadow-sm hover:bg-accent hover:border-muted-foreground hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200"

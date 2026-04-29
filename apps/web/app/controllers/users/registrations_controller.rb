@@ -2,6 +2,7 @@
 
 class Users::RegistrationsController < Devise::RegistrationsController
   include Devise::Controllers::Rememberable
+  include EmailOtpConfirmationFlow
   include RateLimitedEmailCache
 
   layout "devise"
@@ -44,12 +45,8 @@ class Users::RegistrationsController < Devise::RegistrationsController
       resource.save
 
       if resource.persisted?
-        code = resource.generate_login_otp!
-        UserMailer.confirmation_otp(resource, code).deliver_later
-        Rails.logger.info("[OTP] Confirmation code sent to #{resource.email}")
-
-        session[:confirmation_email] = resource.email
-        return redirect_to users_confirm_email_path
+        issue_signup_confirmation_otp!(resource)
+        return redirect_to signup_confirmation_path_for(resource)
       end
     end
 
@@ -66,25 +63,34 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   # GET /users/confirm_email
   def confirm_email
-    @email = session[:confirmation_email]
+    user = signup_confirmation_user_from_params_or_session
+    @email = user&.email || session[:confirmation_email]
+    @confirmation_token = params[:confirmation_token].presence
+    @confirmation_token ||= signup_confirmation_token(user) if user
+
     unless @email
       redirect_to new_user_registration_path, alert: "Please sign up first."
       return
     end
+
+    remember_signup_confirmation(user) if user
   end
 
   # POST /users/confirm_email/verify
   def verify_confirmation
-    email = params[:email]&.downcase&.strip
+    token = params[:confirmation_token].presence
+    user = signup_confirmation_user_from_token(token)
+    email = user&.email || params[:email]&.downcase&.strip
     code = params[:code]&.strip
     @email = email
+    @confirmation_token = token
 
     if email.blank? || code.blank?
       flash.now[:alert] = "Please enter your verification code."
       return render :confirm_email, status: :unprocessable_entity
     end
 
-    user = User.find_by(email: email)
+    user ||= find_user_by_canonical_email(email)
 
     if user&.verify_login_otp(code)
       Rails.logger.info("[OTP] Confirmation code verified for #{email}")
@@ -93,6 +99,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
       user.personal_account&.complete_setup!
 
       session.delete(:confirmation_email)
+      session.delete(:confirmation_user_id)
       session.delete(:utm_params)
       sign_in(:user, user, event: :authentication)
       remember_me(user)
@@ -106,27 +113,26 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   # POST /users/confirm_email/resend
   def resend_confirmation
-    @email = session[:confirmation_email]
+    user = signup_confirmation_user_from_params_or_session
+    @email = user&.email || session[:confirmation_email]
+    @confirmation_token = params[:confirmation_token].presence
+    @confirmation_token ||= signup_confirmation_token(user) if user
 
-    unless @email
+    unless @email && user
       redirect_to new_user_registration_path, alert: "Please sign up first."
       return
     end
 
-    user = User.find_by(email: @email)
-
-    if user
-      sent_count = otp_send_count(@email)
-      if sent_count >= 3
-        flash.now[:alert] = "Too many code requests. Please wait a few minutes."
-        return render :confirm_email, status: :too_many_requests
-      end
-
-      code = user.generate_login_otp!
-      increment_otp_send_count(@email)
-      UserMailer.confirmation_otp(user, code).deliver_later
-      Rails.logger.info("[OTP] Confirmation code resent to #{@email}")
+    sent_count = otp_send_count(@email)
+    if sent_count >= 3
+      flash.now[:alert] = "Too many code requests. Please wait a few minutes."
+      return render :confirm_email, status: :too_many_requests
     end
+
+    code = user.generate_login_otp!
+    increment_otp_send_count(@email)
+    UserMailer.confirmation_otp(user, code).deliver_later
+    Rails.logger.info("[OTP] Confirmation code resent to #{@email}")
 
     flash.now[:notice] = "A new code has been sent to #{@email}."
     render :confirm_email
@@ -135,6 +141,8 @@ class Users::RegistrationsController < Devise::RegistrationsController
   protected
 
   def build_resource(hash = {})
+    hash ||= {}
+
     if session[:utm_params].present?
       hash.merge!(session[:utm_params].slice(*ApplicationController::UTM_KEYS))
     end
@@ -167,9 +175,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
 
   def find_existing_user(email)
-    return nil if email.blank?
-    canonical = User.canonicalize_email(email)
-    User.find_by(email_canonical: canonical) if canonical
+    find_user_by_canonical_email(email)
   end
 
   # Redirect to confirm page without revealing whether the email exists.

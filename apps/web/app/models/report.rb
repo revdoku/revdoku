@@ -14,6 +14,7 @@ class Report < AccountRecord
   belongs_to :envelope_revision, touch: true
 
   has_many :checks, dependent: :destroy
+  has_many :report_shares, dependent: :destroy
   # Reference files are pinned on the envelope_revision (not the report) so
   # re-runs reuse the same uploads. This delegation lets existing callers
   # ask for the report's reference files without thinking about the layer.

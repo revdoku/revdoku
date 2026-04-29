@@ -27,9 +27,66 @@ import { EXPORT_RENDER_MODE } from './constants';
 import { IPageInfoExtended } from '../schemas/common-server';
 import { enrichAndRenderFilesRelatedToEnvelopeRevision } from './document-utils';
 import Handlebars from 'handlebars';
+import { parse as parseHtml } from 'node-html-parser';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+
+// For shared-snapshot exports: map every togglable section's `data-section` /
+// `data-section-group` attribute to the `initial_show_*` flag that gates it.
+// When the flag is false on a shared snapshot, the matching DOM is removed
+// post-render so the section's data is absent from the saved HTML rather
+// than merely hidden via CSS. Live (non-shared) exports keep the existing
+// `display:none` behavior so users can flip toggles in the report's gear menu.
+const SHARED_SNAPSHOT_SECTION_FLAGS: Record<string, string> = {
+  'envelope-title': 'initial_show_title_info',
+  'envelope-revisions-info': 'initial_show_envelope_revisions_info',
+  'compliance-percent': 'initial_show_compliance_percent',
+  'envelope-datetime': 'initial_show_envelope_datetime',
+  'show-timezone': 'initial_show_timezone',
+  'checklist-name': 'initial_show_checklist_name',
+  'checklist-ai-model': 'initial_show_checklist_ai_model',
+  'checklist-ai-model-details': 'initial_show_checklist_ai_model_details',
+  'tags': 'initial_show_tags',
+  'compliance-summary': 'initial_show_compliance_summary',
+  'revision-comparison': 'initial_show_revision_comparison',
+  'user-js-output': 'initial_show_user_js_1_output',
+  'checklist-info': 'initial_show_checklist_info',
+  'checklist-general-prompt': 'initial_show_checklist_general_prompt',
+  'checklist-rules-summary': 'initial_show_checklist_rules_summary',
+  'checklist-rules-details': 'initial_show_checklist_rules_details',
+  'checklist-envelope-rules': 'initial_show_checklist_envelope_rules',
+  'page-images': 'initial_show_page_images',
+  'page-filenames': 'initial_show_page_filenames',
+  'page-summary-icons': 'initial_show_page_summary_icons',
+  'check-details': 'initial_show_check_details',
+  'extracted-data': 'initial_show_extracted_data',
+  'check-attribution': 'initial_show_check_attribution',
+  'rules': 'initial_include_rules',
+  'technical-info': 'initial_include_technical_info',
+  'document-history': 'initial_show_document_history',
+};
+const SHARED_SNAPSHOT_GROUP_FLAGS: Record<string, string> = {
+  'group-header': 'initial_show_group_header',
+  'group-checklist': 'initial_show_group_checklist',
+  'group-pages': 'initial_show_group_pages',
+  'group-footer': 'initial_show_group_footer',
+};
+
+function stripDisabledSectionsForShare(html: string, ctx: Record<string, unknown>): string {
+  const doc = parseHtml(html);
+  for (const [section, flag] of Object.entries(SHARED_SNAPSHOT_SECTION_FLAGS)) {
+    if (!ctx[flag]) {
+      doc.querySelectorAll(`[data-section="${section}"]`).forEach(el => el.remove());
+    }
+  }
+  for (const [group, flag] of Object.entries(SHARED_SNAPSHOT_GROUP_FLAGS)) {
+    if (!ctx[flag]) {
+      doc.querySelectorAll(`[data-section-group="${group}"]`).forEach(el => el.remove());
+    }
+  }
+  return doc.toString();
+}
 
 // Get the directory name for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -267,6 +324,8 @@ export const generateReport = async (
     user_js_1_output_template,
     user_js_1_output_data,
     initial_show_user_js_1_output,
+    is_shared_snapshot,
+    share_footer_brand = 'cloud',
   }: {
     title: string,
     envelope_id?: string,
@@ -357,6 +416,11 @@ export const generateReport = async (
     user_js_1_output_template?: string,
     user_js_1_output_data?: Record<string, unknown>,
     initial_show_user_js_1_output?: boolean,
+    /** When true, the Handlebars `shareGate` helper hard-strips any section whose
+     *  `initial_show_*` flag is false — so a shared snapshot's HTML omits disabled
+     *  data entirely rather than hiding it via CSS. */
+    is_shared_snapshot?: boolean,
+    share_footer_brand?: 'core' | 'cloud',
   }
 ) => {
   if (!report) {
@@ -967,6 +1031,11 @@ export const generateReport = async (
       ? JSON.stringify(user_js_1_output_data)
       : null,
     initial_show_user_js_1_output: initial_show_user_js_1_output !== undefined ? initial_show_user_js_1_output : true,
+    // Shared-snapshot mode: when true, the `shareGate` template helper hard-strips
+    // any section whose `initial_show_*` flag is false (so disabled data is absent
+    // from the saved HTML, not merely hidden via CSS).
+    is_shared_snapshot: !!is_shared_snapshot,
+    share_footer_brand,
     // Font family CSS for body style
     font_family_css: getFontFamilyCss(font_family, 'browser'),
     // Check icon SVGs (font-independent)
@@ -977,7 +1046,13 @@ export const generateReport = async (
   };
 
   // Render the template
-  const html = reportTemplate(templateContext);
+  let html = reportTemplate(templateContext);
+
+  // For shared snapshots, hard-strip any section whose toggle is off so
+  // disabled data is absent from the saved HTML (vs. merely hidden via CSS).
+  if (is_shared_snapshot) {
+    html = stripDisabledSectionsForShare(html, templateContext);
+  }
 
   return html;
 };

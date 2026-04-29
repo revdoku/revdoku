@@ -23,6 +23,7 @@
   <%= form_tag(users_verify_confirmation_path, method: :post, class: "mt-8 space-y-6") do %>
     <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
     <%= hidden_field_tag :email, @email %>
+    <%= hidden_field_tag :confirmation_token, @confirmation_token if @confirmation_token.present? %>
 
     <div class="rounded-md shadow-sm">
       <div>
@@ -43,7 +44,8 @@
   <% end %>
 
   <div class="text-center space-y-2">
-    <%= button_to "Resend code", users_resend_confirmation_path, method: :post, class: "text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 bg-transparent border-none cursor-pointer" %>
+    <% resend_params = @confirmation_token.present? ? { confirmation_token: @confirmation_token } : {} %>
+    <%= button_to "Resend code", users_resend_confirmation_path, method: :post, params: resend_params, class: "text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 bg-transparent border-none cursor-pointer" %>
     <br>
     <%= link_to "Back to sign up", new_user_registration_path, class: "text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" %>
   </div>

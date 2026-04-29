@@ -31,10 +31,14 @@
 - **No issue forgotten.** Past failed checks carry forward to the next revision automatically.
 - **Add Manual Issues and Per Document Rules** add per document (envelope) rules and checks (re-checked in new revisions automatically).
 - **Security** Documents and sensitive data are encrypted with 256-bit AES.  
-- **Shareable reports.** Export PDF or HTML with every finding rendered inline on the page.
+- **Shareable reports.** Export PDF or HTML with every finding rendered inline, or create public share links for frozen report snapshots.
 - **Custom Scripts.** Run custom scripts over found values for additional analysis like counting, sum by categories and more. 
 - **Cloud or Local LLM** Connects to cloud AI or local LLM for full privacy. 
 - **Upload via Email** Send documents to special per-account email address and documetns are automatically uploaded to your account.
+
+### Sharing reports
+
+Core includes public `/shared/<token>` report links out of the box. Set `SHARE_REPORT_ENABLED=false` to disable sharing instance-wide. Without `AWS_S3_SHARED_BUCKET`, self-hosted installs store shared snapshots on local disk under `storage/shared_reports/`.
 
 Hosted version is available at [www.revdoku.com](https://www.revdoku.com/).
 

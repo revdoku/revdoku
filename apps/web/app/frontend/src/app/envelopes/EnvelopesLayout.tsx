@@ -71,6 +71,7 @@ export default function EnvelopesLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try { return localStorage.getItem('revdoku_list_sidebar_collapsed') === 'true'; } catch { return false; }
   });
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => {
@@ -80,11 +81,16 @@ export default function EnvelopesLayout() {
     });
   }, []);
 
-  // Listen for sidebar toggle from global hamburger button in header (desktop only).
-  // On mobile (<lg), the sidebar component handles the event itself to open the drawer overlay.
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
+
+  // The global hamburger button in the header (`layout.tsx`) dispatches a
+  // `sidebar:toggle` document event. We own both branches here so there's a
+  // single source of truth: desktop ≥ lg toggles the icon-rail collapse;
+  // mobile < lg toggles the drawer overlay rendered inside EnvelopeListSidebar.
   useEffect(() => {
     const handler = () => {
-      if (window.innerWidth >= 1024) toggleSidebar(); // lg breakpoint
+      if (window.innerWidth >= 1024) toggleSidebar();
+      else setMobileOpen(prev => !prev);
     };
     document.addEventListener('sidebar:toggle', handler);
     return () => document.removeEventListener('sidebar:toggle', handler);
@@ -397,6 +403,8 @@ export default function EnvelopesLayout() {
           onCreateEnvelopeWithFiles={createEnvelopeWithFiles}
           onManageTags={() => setTagManagementOpen(true)}
           onCreateTag={() => setNewLabelDialogOpen(true)}
+          mobileOpen={mobileOpen}
+          closeMobile={closeMobile}
         />
         <div className="flex-1 min-w-0 flex flex-col overflow-y-auto">
           <Outlet />

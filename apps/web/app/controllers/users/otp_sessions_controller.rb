@@ -2,6 +2,7 @@
 
 class Users::OtpSessionsController < DeviseController
   include Devise::Controllers::Rememberable
+  include EmailOtpConfirmationFlow
   include RateLimitedEmailCache
 
   layout "devise"
@@ -29,20 +30,12 @@ class Users::OtpSessionsController < DeviseController
       return render :new, status: :unprocessable_entity
     end
 
-    user = User.find_by(email: email)
+    user = find_user_by_canonical_email(email)
 
     if user
-      # Rate limit: max 3 OTP sends per email per 5 minutes
-      sent_count = otp_send_count(email)
-      if sent_count >= 3
-        flash.now[:alert] = "Too many code requests. Please wait a few minutes."
-        return render :new, status: :too_many_requests
-      end
-
-      code = user.generate_login_otp!
-      increment_otp_send_count(email)
-      UserMailer.login_otp(user, code).deliver_later
-      Rails.logger.info("[OTP] Login code sent to #{email}")
+      return send_login_otp(user, submitted_email: email)
+    elsif sign_in_auto_signup_enabled?
+      return create_signup_from_sign_in(email)
     else
       Rails.logger.info("[OTP] Login code requested for unknown email #{email}")
     end
@@ -63,7 +56,7 @@ class Users::OtpSessionsController < DeviseController
       return render :verify, status: :unprocessable_entity
     end
 
-    user = User.find_by(email: email)
+    user = find_user_by_canonical_email(email)
 
     if user&.verify_login_otp(code)
       Rails.logger.info("[OTP] Login code verified for #{email}")
@@ -128,4 +121,55 @@ class Users::OtpSessionsController < DeviseController
     end
   end
 
+  def send_login_otp(user, submitted_email:)
+    # Rate limit by stored account email so plus aliases cannot bypass it.
+    sent_count = otp_send_count(user.email)
+    if sent_count >= 3
+      flash.now[:alert] = "Too many code requests. Please wait a few minutes."
+      return render :new, status: :too_many_requests
+    end
+
+    code = user.generate_login_otp!
+    increment_otp_send_count(user.email)
+    UserMailer.login_otp(user, code).deliver_later
+    Rails.logger.info("[OTP] Login code sent to #{user.email}")
+
+    @email = submitted_email
+    flash.now[:notice] = "If this email is registered, a 6-digit code was sent to #{submitted_email}."
+    render :verify, status: :unprocessable_entity
+  end
+
+  def create_signup_from_sign_in(email)
+    user = User.new(email: email)
+    if session[:utm_params].present?
+      session[:utm_params].slice(*ApplicationController::UTM_KEYS).each do |key, value|
+        user[key] = value if User.column_names.include?(key.to_s)
+      end
+    end
+    user.skip_confirmation_notification! if user.respond_to?(:skip_confirmation_notification!)
+
+    if user.save
+      issue_signup_confirmation_otp!(user)
+      return redirect_to signup_confirmation_path_for(user)
+    end
+
+    if (existing_user = find_user_by_canonical_email(email))
+      return send_login_otp(existing_user, submitted_email: email)
+    end
+
+    Rails.logger.info("[OTP] Auto signup failed for #{email}: #{user.errors.full_messages.inspect}")
+    @email = email
+    flash.now[:alert] = user.errors.full_messages.to_sentence.presence || "We could not start sign-up for this email."
+    render :new, status: :unprocessable_entity
+  rescue ActiveRecord::RecordNotUnique
+    if (existing_user = find_user_by_canonical_email(email))
+      return send_login_otp(existing_user, submitted_email: email)
+    end
+
+    raise
+  end
+
+  def sign_in_auto_signup_enabled?
+    Revdoku.registration_enabled? && Revdoku.sign_in_auto_signup_enabled?
+  end
 end

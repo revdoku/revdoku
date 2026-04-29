@@ -95,6 +95,47 @@ export interface ExportReportOptions {
   align_labels_to_top?: boolean;
 }
 
+export interface ShareReportResponse {
+  share: {
+    id: string;
+    report_id: string;
+    envelope_id: string;
+    url: string;
+    expired_at: string;
+    expires_in_days: number;
+    default_share_link_expiration: number;
+    byte_size: number;
+    html_sha256: string;
+  };
+}
+
+export interface IReportShareLink {
+  id: string;
+  report_id: string;
+  envelope_id: string;
+  title: string | null;
+  url: string | null;
+  active: boolean;
+  expired_at: string;
+  view_count: number;
+  last_viewed_at: string | null;
+  created_at: string;
+  created_by_name: string | null;
+  byte_size: number | null;
+  html_sha256: string | null;
+}
+
+export interface ListReportSharesResponse {
+  report_shares: IReportShareLink[];
+  default_share_link_expiration: number;
+  share_report_enabled: boolean;
+}
+
+export interface ShareReportOptions extends ExportReportOptions {
+  title?: string;
+  expires_in_days?: number;
+}
+
 export class ApiClient {
   // Account members with permissions and limits
   static async getAccountMembers(): Promise<{
@@ -1348,6 +1389,46 @@ export class ApiClient {
         highlight_mode,
         align_labels_to_top,
       })
+    });
+
+    if (!response.ok) {
+      throw await parseApiError(response);
+    }
+
+    return apiJsonResponse(response);
+  }
+
+  static async shareReport(
+    reportId: string,
+    opts: ShareReportOptions = {}
+  ): Promise<ShareReportResponse> {
+    const response = await apiRequest(`/reports/${reportId}/share`, {
+      method: 'POST',
+      body: JSON.stringify({ ...opts, format: 'html' })
+    });
+
+    if (!response.ok) {
+      throw await parseApiError(response);
+    }
+
+    return apiJsonResponse(response);
+  }
+
+  static async listReportShares(params: { report_id?: string } = {}): Promise<ListReportSharesResponse> {
+    const query = new URLSearchParams();
+    if (params.report_id) query.set('report_id', params.report_id);
+
+    const response = await apiRequest(`/report_shares${query.toString() ? `?${query.toString()}` : ''}`);
+    if (!response.ok) {
+      throw await parseApiError(response);
+    }
+
+    return apiJsonResponse(response);
+  }
+
+  static async revokeReportShare(shareId: string): Promise<{ report_share: IReportShareLink }> {
+    const response = await apiRequest(`/report_shares/${shareId}`, {
+      method: 'DELETE',
     });
 
     if (!response.ok) {

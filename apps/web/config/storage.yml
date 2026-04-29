@@ -6,8 +6,29 @@ local:
   service: Disk
   root: <%= Rails.root.join("storage") %>
 
-# Amazon S3 for production file storage
-# Configure via environment variables
+shared_reports:
+  <% if Rails.env.production? && ENV["REVDOKU_INSECURE_LOCAL_DEV_PROD_HARNESS"].blank? && ENV["AWS_S3_SHARED_BUCKET"].present? %>
+  service: S3
+  access_key_id: <%= ENV["AWS_ACCESS_KEY_ID"] %>
+  secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"] %>
+  region: <%= ENV.fetch("AWS_REGION", "us-east-1") %>
+  bucket: <%= ENV["AWS_S3_SHARED_BUCKET"] %>
+  <% if ENV["AWS_S3_SHARED_ENDPOINT"].presence || ENV["AWS_S3_ENDPOINT"].presence %>
+  endpoint: <%= ENV["AWS_S3_SHARED_ENDPOINT"].presence || ENV["AWS_S3_ENDPOINT"] %>
+  force_path_style: true
+  <% end %>
+  <% else %>
+  service: Disk
+  root: <%= Rails.root.join(Rails.env.test? ? "tmp/storage/shared_reports" : "storage/shared_reports") %>
+  <% end %>
+
+# Amazon S3 for production file storage. Only emitted when the operator
+# has actually selected S3 as the active storage backend — otherwise Rails
+# eager-loads the service at boot and crashes with a generic
+# Aws::S3::Bucket "missing :name" if AWS_S3_BUCKET happens to be blank
+# (production-v1.0.149 deploy failure). The 99_required_env_boot_check
+# initializer validates the AWS_* values before this YAML gets read.
+<% if ENV["ACTIVE_STORAGE_SERVICE"] == "amazon" %>
 amazon:
   service: S3
   access_key_id: <%= ENV["AWS_ACCESS_KEY_ID"] %>
@@ -18,6 +39,7 @@ amazon:
   endpoint: <%= ENV["AWS_S3_ENDPOINT"] %>
   force_path_style: true
   <% end %>
+<% end %>
 
 # Google Cloud Storage (alternative)
 # google:

@@ -129,6 +129,8 @@ interface IReportExportBody {
   user_js_1_output_template?: string;
   user_js_1_output_data?: Record<string, unknown>;
   initial_show_user_js_1_output?: boolean;
+  is_shared_snapshot?: boolean;
+  share_footer_brand?: 'core' | 'cloud';
 }
 
 interface IReportExportSuccess extends IReply {
@@ -163,6 +165,19 @@ const reportExportPlugin: FastifyPluginAsync = async (app) => {
         if (request.headers['content-type'] !== 'application/json') {
           reply.code(415);
           throw new Error('Must be application/json');
+        }
+
+        // Hard invariant: the doc-api never accepts pre-rendered HTML from any
+        // caller. Report HTML is generated *here* by `generateReport` from the
+        // structured `report` / `checklist` / `document` fields; nothing else.
+        // We reject the request loudly if a caller tries to slip an `html`
+        // payload into the body — this rules out an entire class of attacks
+        // where a compromised Rails or a misbehaving internal caller could
+        // smuggle script-laden HTML into a shared snapshot.
+        const body = request.body as unknown;
+        if (body && typeof body === 'object' && !Array.isArray(body) && 'html' in (body as Record<string, unknown>)) {
+          reply.code(400);
+          throw new Error('Field `html` is not accepted on /export — HTML is rendered server-side from structured data only');
         }
       },
     },
@@ -244,6 +259,8 @@ const reportExportPlugin: FastifyPluginAsync = async (app) => {
           user_js_1_output_template,
           user_js_1_output_data,
           initial_show_user_js_1_output,
+          is_shared_snapshot,
+          share_footer_brand,
         }: IReportExportBody = request.body;
 
         if (!report) {
@@ -352,6 +369,8 @@ const reportExportPlugin: FastifyPluginAsync = async (app) => {
               user_js_1_output_template,
               user_js_1_output_data,
               initial_show_user_js_1_output: initial_show_user_js_1_output,
+              is_shared_snapshot,
+              share_footer_brand,
             }
           );
 

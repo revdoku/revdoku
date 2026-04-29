@@ -69,6 +69,17 @@ module Revdoku
     ENV.fetch("REVDOKU_REGISTRATION_ENABLED", "true").downcase.in?(%w[true 1 yes])
   end
 
+  # In OTP mode, a new email submitted on the sign-in screen can start the
+  # same email-confirmation signup flow as /users/sign_up. Operators with a
+  # stricter posture can disable this without closing explicit registration.
+  def self.sign_in_auto_signup_enabled?
+    ENV.fetch("REVDOKU_SIGN_IN_AUTO_SIGNUP_ENABLED", "true").downcase.in?(%w[true 1 yes])
+  end
+
+  def self.share_report_enabled?
+    ENV.fetch("SHARE_REPORT_ENABLED", "true").downcase.in?(%w[true 1 yes])
+  end
+
   # Sign-in mode. One install uses exactly one method.
   #   otp                       — Email-OTP magic codes (requires SMTP).
   #   password                  — Email + password with Devise confirmation email

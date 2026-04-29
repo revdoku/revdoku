@@ -25,6 +25,7 @@ class Account < ApplicationRecord
   has_many :envelopes, dependent: :destroy
   has_many :checklists, dependent: :destroy
   has_many :reports, dependent: :destroy
+  has_many :report_shares, dependent: :destroy
   has_many :checks, dependent: :destroy
   has_many :tags, dependent: :destroy
   has_many :document_files, dependent: :destroy
@@ -215,6 +216,13 @@ class Account < ApplicationRecord
 
   def full_audit_logging?
     security_settings[:full_audit_logging]
+  end
+
+  def report_sharing_allowed?
+    Revdoku.share_report_enabled? &&
+      report_share_max_days.to_i.positive? &&
+      !hipaa_enabled? &&
+      !security_level_high?
   end
 
 
