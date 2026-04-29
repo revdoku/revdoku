@@ -72,7 +72,7 @@ Rails.application.configure do
     config.action_mailer.smtp_settings = {
       address: ENV.fetch("SMTP_SERVER"),
       port: ENV.fetch("SMTP_PORT", 587).to_i,
-      domain: ENV.fetch("SMTP_DOMAIN") { ENV.fetch("APP_HOST", "localhost") },
+      domain: ENV["SMTP_DOMAIN"].presence || ENV.fetch("APP_HOST", "localhost"),
       user_name: ENV.fetch("SMTP_USERNAME"),
       password: ENV.fetch("SMTP_PASSWORD"),
       authentication: :plain,
@@ -97,4 +97,14 @@ Rails.application.configure do
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
 
+  # Local prod-mode boot (bin/start) allows requests from localhost so the
+  # operator can browse http://localhost:3001 against this prod-config Rails
+  # without the host authorizer middleware returning 403. The flag is only
+  # set by bin/start; real deployments boot without it and keep the strict
+  # default (host check enforced via Kamal-injected APP_HOST).
+  # Development-only — see lockbox.rb for the full description.
+  if ENV["REVDOKU_INSECURE_LOCAL_DEV_PROD_HARNESS"].present?
+    config.hosts << "localhost"
+    config.hosts << "127.0.0.1"
+  end
 end

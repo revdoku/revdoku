@@ -17,6 +17,10 @@ class ReportPolicy < ApplicationPolicy
     can_export?
   end
 
+  def share?
+    can_export?
+  end
+
   def status?
     can_view_report?
   end

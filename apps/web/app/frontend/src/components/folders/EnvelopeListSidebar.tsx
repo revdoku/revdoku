@@ -63,6 +63,12 @@ interface EnvelopeListSidebarProps {
   onCreateEnvelopeWithFiles?: (files: File[]) => void;
   onManageTags?: () => void;
   onCreateTag?: () => void;
+  /** Mobile drawer open state, controlled by EnvelopesLayout — the layout owns
+   *  the `sidebar:toggle` listener and decides desktop-collapse vs. mobile-drawer
+   *  based on viewport width. The sidebar only closes the drawer (on overlay
+   *  click and on nav-item activation). */
+  mobileOpen: boolean;
+  closeMobile: () => void;
 }
 
 
@@ -109,8 +115,9 @@ const EnvelopeListSidebar = React.memo(function EnvelopeListSidebar({
   onCreateEnvelopeWithFiles,
   onManageTags,
   onCreateTag,
+  mobileOpen,
+  closeMobile,
 }: EnvelopeListSidebarProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(loadExpandedIds);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 // Build tag tree
@@ -133,23 +140,12 @@ const EnvelopeListSidebar = React.memo(function EnvelopeListSidebar({
     });
   }, [activeTab, tags]);
 
-  // Open mobile drawer when burger button is clicked on small screens
-  useEffect(() => {
-    const handler = () => {
-      if (window.innerWidth < 1024) {
-        setMobileOpen(prev => !prev);
-      }
-    };
-    document.addEventListener('sidebar:toggle', handler);
-    return () => document.removeEventListener('sidebar:toggle', handler);
-  }, []);
-
   const handleOpenFilePicker = () => fileInputRef.current?.click();
   const handleFilesPicked = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0 && onCreateEnvelopeWithFiles) {
       onCreateEnvelopeWithFiles(files);
-      setMobileOpen(false);
+      closeMobile();
     }
     e.target.value = '';
   };
@@ -214,7 +210,7 @@ const EnvelopeListSidebar = React.memo(function EnvelopeListSidebar({
 
   const handleSelect = (selection: SidebarSelection) => {
     onSidebarSelect(selection);
-    setMobileOpen(false);
+    closeMobile();
   };
 
   // Render a single tag tree item (recursive)
@@ -268,12 +264,14 @@ const EnvelopeListSidebar = React.memo(function EnvelopeListSidebar({
     );
   }, [activeTab, complianceFilter, archiveTab, expandedIds, recursiveTagCounts, toggleExpand]);
 
-  // --- Collapsed (icon-only) sidebar ---
-  if (collapsed) {
-    // In collapsed mode, show only root-level tags (Gmail behavior)
-    const rootTags = tagTree.map(n => n.tag);
-    return (
-      <aside className="hidden lg:flex lg:flex-col w-[68px] border-r border-border bg-background flex-shrink-0 items-center py-3 gap-1">
+  // --- Collapsed (icon-only) desktop sidebar ---
+  // Computed as a variable (not an early return) so the mobile drawer in the
+  // final return below stays mounted regardless of `collapsed`. Without this
+  // a previously-collapsed desktop session leaves the mobile hamburger with
+  // nothing to toggle, because the early-return path skipped the drawer JSX.
+  const rootTags = tagTree.map(n => n.tag);
+  const collapsedAside = collapsed ? (
+    <aside className="hidden lg:flex lg:flex-col w-[68px] border-r border-border bg-background flex-shrink-0 items-center py-3 gap-1">
         {/* Circular open-file button */}
         <button
           onClick={handleOpenFilePicker}
@@ -347,8 +345,7 @@ const EnvelopeListSidebar = React.memo(function EnvelopeListSidebar({
           </>
         )}
       </aside>
-    );
-  }
+  ) : null;
 
   // --- Expanded sidebar content (shared between desktop and mobile drawer) ---
   const sidebarContent = (
@@ -374,7 +371,7 @@ const EnvelopeListSidebar = React.memo(function EnvelopeListSidebar({
                 <Upload className="h-4 w-4 mr-2" />
                 Open File...
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { onCreateEnvelope(); setMobileOpen(false); }}>
+              <DropdownMenuItem onClick={() => { onCreateEnvelope(); closeMobile(); }}>
                 <FileText className="h-4 w-4 mr-2" />
                 Empty Envelope
               </DropdownMenuItem>
@@ -430,7 +427,7 @@ const EnvelopeListSidebar = React.memo(function EnvelopeListSidebar({
         <div className="space-y-0.5">
           {onManageTags && (
             <button
-              onClick={() => { onManageTags(); setMobileOpen(false); }}
+              onClick={() => { onManageTags(); closeMobile(); }}
               className="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             >
               <Settings className="h-4 w-4 flex-shrink-0" />
@@ -446,7 +443,7 @@ const EnvelopeListSidebar = React.memo(function EnvelopeListSidebar({
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Labels</span>
               {onCreateTag && (
                 <button
-                  onClick={() => { onCreateTag(); setMobileOpen(false); }}
+                  onClick={() => { onCreateTag(); closeMobile(); }}
                   className="w-6 h-6 rounded-full inline-flex items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                   title="Create new label"
                   aria-label="Create new label"
@@ -487,20 +484,22 @@ const EnvelopeListSidebar = React.memo(function EnvelopeListSidebar({
           <div className="w-64 bg-background border-r border-border shadow-lg flex flex-col">
             <div className="flex items-center justify-between p-3 border-b border-border">
               <span className="font-semibold text-sm">Envelopes</span>
-              <button onClick={() => setMobileOpen(false)} className="p-1 rounded hover:bg-muted">
+              <button onClick={() => closeMobile()} className="p-1 rounded hover:bg-muted">
                 <X className="h-4 w-4" />
               </button>
             </div>
             {sidebarContent}
           </div>
-          <div className="flex-1 bg-black/20" onClick={() => setMobileOpen(false)} />
+          <div className="flex-1 bg-black/20" onClick={() => closeMobile()} />
         </div>
       )}
 
-      {/* Desktop expanded sidebar */}
-      <aside className="hidden lg:flex lg:flex-col w-60 border-r border-border bg-background flex-shrink-0">
-        {sidebarContent}
-      </aside>
+      {/* Desktop sidebar — collapsed icon rail or expanded full sidebar */}
+      {collapsedAside ?? (
+        <aside className="hidden lg:flex lg:flex-col w-60 border-r border-border bg-background flex-shrink-0">
+          {sidebarContent}
+        </aside>
+      )}
 
       </>
   );

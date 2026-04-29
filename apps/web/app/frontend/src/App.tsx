@@ -30,6 +30,7 @@ export default function App() {
           <Route path="/account/profile" element={<AccountLayout />} />
           <Route path="/account/security" element={<AccountLayout />} />
           <Route path="/account/members" element={<AccountLayout />} />
+          <Route path="/account/report-shares" element={<AccountLayout />} />
           <Route path="/account/ai" element={<AccountLayout />} />
           <Route path="/account/api" element={<AccountLayout />} />
           {extraAppRoutes}

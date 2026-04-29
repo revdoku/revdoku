@@ -24,8 +24,8 @@ shared:
       # provider with a working key (e.g. account BYOK on OpenRouter,
       # operator ENV on OpenAI, etc.).
       defaults:
-        inspection: "any:gpt-normal"
-        checklist_generation: "any:gpt-normal"
+        inspection: "any:gemini-flash-lite"
+        checklist_generation: "any:gemini-flash-lite"
         text_extraction: "any:gemini-flash-lite"
 
       # User-facing aliases. Each id is `any:<name>`. Picker shows only

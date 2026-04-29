@@ -6,8 +6,8 @@ class Api::V1::ReportsController < Api::BaseController
 
   MAX_CONCURRENT_REVIEWS = 2
 
-  before_action :set_report, only: [:show, :update, :status, :export, :reset, :cancel, :resume, :page_texts]
-  before_action :authorize_report, only: [:show, :update, :status, :export, :reset, :cancel, :resume, :page_texts]
+  before_action :set_report, only: [:show, :update, :status, :export, :reset, :cancel, :resume, :page_texts, :share]
+  before_action :authorize_report, only: [:show, :update, :status, :export, :reset, :cancel, :resume, :page_texts, :share]
   before_action :set_envelope_for_create, only: [:create, :create_stub]
   before_action :ensure_envelope_not_archived!, only: [:create, :create_stub, :reset]
   before_action :ensure_report_not_processing!, only: [:reset]
@@ -20,6 +20,12 @@ class Api::V1::ReportsController < Api::BaseController
 
   # PATCH /api/v1/reports/:id
   def update
+    return if performed?
+    unless @report
+      render_api_not_found("Report")
+      return
+    end
+
     if params[:label_font_scale].present?
       @report.label_font_scale = params[:label_font_scale]
     end
@@ -843,6 +849,12 @@ class Api::V1::ReportsController < Api::BaseController
 
   # POST /api/v1/reports/:id/export
   def export
+    return if performed?
+    unless @report
+      render_api_not_found("Report")
+      return
+    end
+
     unless @report.job_status_completed? || @report.checks.exists?
       render_api_bad_request(
         "Report is not ready for export (status: #{@report.job_status})",
@@ -851,135 +863,7 @@ class Api::V1::ReportsController < Api::BaseController
       return
     end
 
-    envelope = @report.envelope_revision.envelope
-    envelope_revision = @report.envelope_revision
-    document_file_revisions = envelope_revision.document_file_revisions.includes(:document_file, file_attachment: :blob, rendered_pages_cache_attachment: :blob)
-
-    # Get previous revision info for comparison
-    previous_revision_data = build_previous_revision_data(envelope_revision)
-
-    # Always fetch audit logs (HTML report toggles sections via inline JS)
-    audit_logs_data = fetch_envelope_audit_logs(envelope)
-
-    # Validate layout_mode parameter
-    valid_layout_modes = %w[compact detailed full]
-    layout_mode = params[:layout_mode]
-    layout_mode = "full" unless valid_layout_modes.include?(layout_mode)
-
-    check_filter = params[:check_filter]
-    check_filter = "failed" unless %w[failed passed all changes rechecks failed_only].include?(check_filter)
-    include_passed = %w[all passed].include?(check_filter)
-
-    # Resolve AI model display info
-    ai_model_id = @report.ai_model
-    ai_model_entry = AiModelResolver.find_model(ai_model_id, account: current_account)
-    ai_model_display_name = ai_model_entry ? AiModelResolver.display_name(ai_model_entry) : ai_model_id
-    # Resolve the underlying model's actual ID and provider (aliases point to models via model_id)
-    ai_model_actual_id = ai_model_entry&.dig(:model_id) || ai_model_id
-    ai_underlying_model = ai_model_actual_id != ai_model_id ? AiModelResolver.find_model(ai_model_actual_id, account: current_account) : ai_model_entry
-    # Derive provider and location from underlying model ID
-    underlying_model_id = (ai_underlying_model || ai_model_entry || {})[:id] || ai_model_actual_id
-    parsed_underlying = underlying_model_id ? AiModelResolver.parse_model_id(underlying_model_id) : {}
-    ai_model_provider = parsed_underlying[:provider]
-
-    export_request = {
-      title: envelope.title,
-      envelope_id: envelope.prefix_id,
-      document_files_revisions: serialize_document_file_revisions_for_export(document_file_revisions, envelope_revision),
-      report: serialize_report_for_export(@report),
-      checklist: serialize_checklist_for_export_from_report(@report),
-      document: serialize_envelope_revision_for_export(envelope_revision),
-      previous_revision: previous_revision_data,
-      include_passed_checks: include_passed,
-      check_filter: check_filter,
-      # Always send all-true so doc-api renders all sections; HTML toggles visibility via inline JS
-      include_rules: true,
-      include_technical_info: true,
-      output_type: "html",
-      audit_logs: audit_logs_data,
-      layout_mode: layout_mode,
-      show_checklist_name: true,
-      show_title_info: true,
-      show_compliance_summary: true,
-      show_default_footer: true,
-      # Revdoku release string (e.g. "1.0.77") rendered in the always-visible
-      # branding header + footer of the exported report. Sourced from
-      # Revdoku.app_version_string (00_revdoku.rb) which reads /VERSION at
-      # the monorepo root.
-      app_version: Revdoku.app_version_string,
-      # User's original preferences for initial visibility in the HTML
-      initial_show_title_info: params[:show_title_info] != false && params[:show_title_info] != "false",
-      initial_show_checklist_name: params[:show_checklist_name] != false && params[:show_checklist_name] != "false",
-      initial_show_compliance_summary: params[:show_compliance_summary] == true || params[:show_compliance_summary] == "true",
-      initial_show_compliance_percent: params[:show_compliance_percent] != false && params[:show_compliance_percent] != "false",
-      initial_include_rules: params[:include_rules] == true || params[:include_rules] == "true",
-      initial_include_technical_info: params[:include_technical_info] == true || params[:include_technical_info] == "true",
-      initial_show_default_footer: params[:show_default_footer] != false && params[:show_default_footer] != "false",
-      # Annotations (Tier 1 — changes image rendering)
-      show_annotations: params[:show_annotations] != false && params[:show_annotations] != "false",
-      # Page visibility toggles (Tier 2 — CSS toggles via inline script)
-      initial_show_pages_with_checks: params[:show_pages_with_checks] != false && params[:show_pages_with_checks] != "false",
-      initial_show_pages_without_checks: params[:show_pages_without_checks] != false && params[:show_pages_without_checks] != "false",
-      # Content toggles (Tier 2 — always render, control initial CSS visibility)
-      initial_show_page_images: params[:show_page_images] != false && params[:show_page_images] != "false",
-      initial_show_check_details: params[:show_check_details] != false && params[:show_check_details] != "false",
-      # Off by default — only render the raw `val=…` badges when the user
-      # opts in via the export gear menu.
-      initial_show_extracted_data: params[:show_extracted_data] == true || params[:show_extracted_data] == "true",
-      # AI model info for display in technical section
-      ai_model_id: ai_model_id,
-      ai_model_display_name: ai_model_display_name,
-      ai_model_stars: ai_model_entry&.dig(:stars),
-      ai_model_stars_display: ai_model_entry ? AiModelResolver.star_rating(ai_model_entry) : nil,
-      ai_model_credits_per_page: ai_model_entry&.dig(:credits_per_page) || AiModelResolver::DEFAULT_CREDITS_PER_PAGE,
-      ai_model_hipaa: ai_model_entry ? AiModelResolver.parse_alias_id(ai_model_entry[:id])[:hipaa] : false,
-      ai_model_location: parsed_underlying[:geo]&.upcase,
-      ai_model_actual_id: ai_model_actual_id,
-      ai_model_provider: ai_model_provider.present? ? AiModelResolver.provider_name(ai_model_provider) : nil,
-      ai_model_model_name: ai_underlying_model&.dig(:name),
-      ai_model_description: ai_model_entry&.dig(:description),
-      timezone: params[:timezone].presence || current_user.time_zone || "UTC",
-      font_scale: params[:font_scale].present? ? params[:font_scale].to_f : 1.0,
-      font_family: params[:font_family].presence || @report.font_family,
-      highlight_mode: params[:highlight_mode].present? ? params[:highlight_mode].to_i : @report.highlight_mode,
-      # Checklist section toggles
-      initial_show_checklist_info: params[:show_checklist_info] != false && params[:show_checklist_info] != "false",
-      initial_show_checklist_general_prompt: params[:show_checklist_general_prompt] != false && params[:show_checklist_general_prompt] != "false",
-      initial_show_checklist_rules_summary: params[:show_checklist_rules_summary] != false && params[:show_checklist_rules_summary] != "false",
-      initial_show_checklist_rules_details: params[:show_checklist_rules_details] != false && params[:show_checklist_rules_details] != "false",
-      initial_show_checklist_envelope_rules: params[:show_checklist_envelope_rules] != false && params[:show_checklist_envelope_rules] != "false",
-      # Misc toggles
-      initial_show_timezone: params[:show_timezone] != false && params[:show_timezone] != "false",
-      initial_show_revision_comparison: params[:show_revision_comparison] != false && params[:show_revision_comparison] != "false",
-      initial_show_check_attribution: params[:show_check_attribution] != false && params[:show_check_attribution] != "false",
-      # New header/pages toggles
-      initial_show_envelope_datetime: params[:show_envelope_datetime] != false && params[:show_envelope_datetime] != "false",
-      initial_show_envelope_revisions_info: params[:show_envelope_revisions_info] != false && params[:show_envelope_revisions_info] != "false",
-      initial_show_checklist_ai_model: params[:show_checklist_ai_model] != false && params[:show_checklist_ai_model] != "false",
-      initial_show_page_filenames: params[:show_page_filenames] != false && params[:show_page_filenames] != "false",
-      initial_show_page_summary_icons: params[:show_page_summary_icons] != false && params[:show_page_summary_icons] != "false",
-      # Section group toggles
-      initial_show_group_header: params[:show_group_header] != false && params[:show_group_header] != "false",
-      initial_show_group_checklist: params[:show_group_checklist] != false && params[:show_group_checklist] != "false",
-      initial_show_group_pages: params[:show_group_pages] != false && params[:show_group_pages] != "false",
-      initial_show_group_footer: params[:show_group_footer] != false && params[:show_group_footer] != "false",
-      # Checklist AI model details toggle (default off — only short badge shown by default)
-      initial_show_checklist_ai_model_details: params[:show_checklist_ai_model_details] == true || params[:show_checklist_ai_model_details] == "true",
-      # Document History section
-      revisions_history: build_revisions_history(envelope),
-      initial_show_document_history: params[:show_document_history] == true || params[:show_document_history] == "true",
-      # Tags
-      tags: envelope.tags.ordered.map { |t| { name: t.name, color: t.color } },
-      initial_show_tags: params[:show_tags] != false && params[:show_tags] != "false",
-      align_labels_to_top: params[:align_labels_to_top] == true || params[:align_labels_to_top] == "true",
-      user_js_1_output_template: params[:user_js_1_output_template],
-      user_js_1_output_data: params[:user_js_1_output_data]&.to_unsafe_h,
-      initial_show_user_js_1_output: params[:show_user_js_1_output] != false && params[:show_user_js_1_output] != "false"
-    }
-
-    Rails.logger.info("[EXPORT] label_font_scale: #{@report.label_font_scale}, pages_layout: #{@report.pages_layout_json_aggregated}")
-
-    revdoku_doc_api_response = RevdokuDocApiClient.client.export_report(export_request)
+    revdoku_doc_api_response = export_report_via_doc_api(@report, params)
 
     if revdoku_doc_api_response[:success]
 
@@ -994,7 +878,229 @@ class Api::V1::ReportsController < Api::BaseController
     end
   end
 
+  # POST /api/v1/reports/:id/share
+  def share
+    return if performed?
+
+    unless @report.job_status_completed? || @report.checks.exists?
+      render_api_bad_request(
+        "Report is not ready for sharing (status: #{@report.job_status})",
+        code: "REPORT_NOT_READY"
+      )
+      return
+    end
+
+    unless current_account.report_sharing_allowed?
+      render_api_forbidden("Report sharing is disabled for this account")
+      return
+    end
+
+    # The shared snapshot's HTML is generated only by the doc-api from
+    # structured server-side data. Strip fields a client could use to smuggle
+    # HTML or unescaped script-output templates into the saved snapshot.
+    export_params = params
+      .except(:html, :user_js_1_output_template, :user_js_1_output_data)
+      .merge(suppress_user_js_output: true, is_shared_snapshot: true)
+    revdoku_doc_api_response = export_report_via_doc_api(@report, export_params)
+    unless revdoku_doc_api_response[:success]
+      render_api_error(revdoku_doc_api_response[:message], status: :unprocessable_entity, code: "REVDOKU_DOC_API_ERROR")
+      return
+    end
+
+    html = revdoku_doc_api_response[:data].to_s
+
+    envelope_revision = @report.envelope_revision
+    envelope = envelope_revision.envelope
+    token = ReportShare.generate_token
+    share = nil
+
+    ReportShare.transaction do
+      share = current_account.report_shares.create!(
+        report: @report,
+        envelope: envelope,
+        envelope_revision: envelope_revision,
+        created_by: current_user,
+        token: token,
+        token_digest: ReportShare.digest_token(token),
+        title: params[:title].presence || envelope.title,
+        expired_at: report_share_expired_at
+      )
+      share.attach_html!(html, trusted_append_html: shared_report_user_script_markup(envelope, @report))
+    end
+
+    render_api_created({
+      share: serialize_report_share(share.reload, token: token)
+    })
+  rescue ActiveRecord::RecordInvalid => e
+    render_api_validation_error(e.record)
+  rescue ArgumentError => e
+    render_api_bad_request(e.message, code: "INVALID_SHARED_REPORT")
+  end
+
   private
+
+  def export_report_via_doc_api(report, export_params)
+    export_request = build_report_export_request(report, export_params)
+    Rails.logger.info("[EXPORT] label_font_scale: #{report.label_font_scale}, pages_layout: #{report.pages_layout_json_aggregated}")
+    RevdokuDocApiClient.client.export_report(export_request)
+  end
+
+  def build_report_export_request(report, export_params)
+    envelope = report.envelope_revision.envelope
+    envelope_revision = report.envelope_revision
+    document_file_revisions = envelope_revision.document_file_revisions.includes(:document_file, file_attachment: :blob, rendered_pages_cache_attachment: :blob)
+
+    # Always fetch audit logs because HTML report toggles sections via inline JS.
+    audit_logs_data = fetch_envelope_audit_logs(envelope)
+
+    valid_layout_modes = %w[compact detailed full]
+    layout_mode = export_params[:layout_mode]
+    layout_mode = "full" unless valid_layout_modes.include?(layout_mode)
+
+    check_filter = export_params[:check_filter]
+    check_filter = "failed" unless %w[failed passed all changes rechecks failed_only].include?(check_filter)
+    include_passed = %w[all passed].include?(check_filter)
+
+    ai_model_id = report.ai_model
+    ai_model_entry = AiModelResolver.find_model(ai_model_id, account: current_account)
+    ai_model_display_name = ai_model_entry ? AiModelResolver.display_name(ai_model_entry) : ai_model_id
+    ai_model_actual_id = ai_model_entry&.dig(:model_id) || ai_model_id
+    ai_underlying_model = ai_model_actual_id != ai_model_id ? AiModelResolver.find_model(ai_model_actual_id, account: current_account) : ai_model_entry
+    underlying_model_id = (ai_underlying_model || ai_model_entry || {})[:id] || ai_model_actual_id
+    parsed_underlying = underlying_model_id ? AiModelResolver.parse_model_id(underlying_model_id) : {}
+    ai_model_provider = parsed_underlying[:provider]
+    user_script_output = export_params[:suppress_user_js_output] ? {} : (Array(report.user_scripts_output).first || {})
+
+    {
+      title: envelope.title,
+      envelope_id: envelope.prefix_id,
+      document_files_revisions: serialize_document_file_revisions_for_export(document_file_revisions, envelope_revision),
+      report: serialize_report_for_export(report),
+      checklist: serialize_checklist_for_export_from_report(report),
+      document: serialize_envelope_revision_for_export(envelope_revision),
+      previous_revision: build_previous_revision_data(envelope_revision),
+      include_passed_checks: include_passed,
+      check_filter: check_filter,
+      # Always render all sections; HTML controls only initial visibility.
+      include_rules: true,
+      include_technical_info: true,
+      output_type: "html",
+      audit_logs: audit_logs_data,
+      layout_mode: layout_mode,
+      show_checklist_name: true,
+      show_title_info: true,
+      show_compliance_summary: true,
+      show_default_footer: true,
+      app_version: Revdoku.app_version_string,
+      initial_show_title_info: export_params[:show_title_info] != false && export_params[:show_title_info] != "false",
+      initial_show_checklist_name: export_params[:show_checklist_name] != false && export_params[:show_checklist_name] != "false",
+      initial_show_compliance_summary: export_params[:show_compliance_summary] == true || export_params[:show_compliance_summary] == "true",
+      initial_show_compliance_percent: export_params[:show_compliance_percent] != false && export_params[:show_compliance_percent] != "false",
+      initial_include_rules: export_params[:include_rules] == true || export_params[:include_rules] == "true",
+      initial_include_technical_info: export_params[:include_technical_info] == true || export_params[:include_technical_info] == "true",
+      initial_show_default_footer: export_params[:show_default_footer] != false && export_params[:show_default_footer] != "false",
+      show_annotations: export_params[:show_annotations] != false && export_params[:show_annotations] != "false",
+      initial_show_pages_with_checks: export_params[:show_pages_with_checks] != false && export_params[:show_pages_with_checks] != "false",
+      initial_show_pages_without_checks: export_params[:show_pages_without_checks] != false && export_params[:show_pages_without_checks] != "false",
+      initial_show_page_images: export_params[:show_page_images] != false && export_params[:show_page_images] != "false",
+      initial_show_check_details: export_params[:show_check_details] != false && export_params[:show_check_details] != "false",
+      initial_show_extracted_data: export_params[:show_extracted_data] == true || export_params[:show_extracted_data] == "true",
+      ai_model_id: ai_model_id,
+      ai_model_display_name: ai_model_display_name,
+      ai_model_stars: ai_model_entry&.dig(:stars),
+      ai_model_stars_display: ai_model_entry ? AiModelResolver.star_rating(ai_model_entry) : nil,
+      ai_model_credits_per_page: ai_model_entry&.dig(:credits_per_page) || AiModelResolver::DEFAULT_CREDITS_PER_PAGE,
+      ai_model_hipaa: ai_model_entry ? AiModelResolver.parse_alias_id(ai_model_entry[:id])[:hipaa] : false,
+      ai_model_location: parsed_underlying[:geo]&.upcase,
+      ai_model_actual_id: ai_model_actual_id,
+      ai_model_provider: ai_model_provider.present? ? AiModelResolver.provider_name(ai_model_provider) : nil,
+      ai_model_model_name: ai_underlying_model&.dig(:name),
+      ai_model_description: ai_model_entry&.dig(:description),
+      timezone: export_params[:timezone].presence || current_user.time_zone || "UTC",
+      font_scale: export_params[:font_scale].present? ? export_params[:font_scale].to_f : 1.0,
+      font_family: export_params[:font_family].presence || report.font_family,
+      highlight_mode: export_params[:highlight_mode].present? ? export_params[:highlight_mode].to_i : report.highlight_mode,
+      initial_show_checklist_info: export_params[:show_checklist_info] != false && export_params[:show_checklist_info] != "false",
+      initial_show_checklist_general_prompt: export_params[:show_checklist_general_prompt] != false && export_params[:show_checklist_general_prompt] != "false",
+      initial_show_checklist_rules_summary: export_params[:show_checklist_rules_summary] != false && export_params[:show_checklist_rules_summary] != "false",
+      initial_show_checklist_rules_details: export_params[:show_checklist_rules_details] != false && export_params[:show_checklist_rules_details] != "false",
+      initial_show_checklist_envelope_rules: export_params[:show_checklist_envelope_rules] != false && export_params[:show_checklist_envelope_rules] != "false",
+      initial_show_timezone: export_params[:show_timezone] != false && export_params[:show_timezone] != "false",
+      initial_show_revision_comparison: export_params[:show_revision_comparison] != false && export_params[:show_revision_comparison] != "false",
+      initial_show_check_attribution: export_params[:show_check_attribution] != false && export_params[:show_check_attribution] != "false",
+      initial_show_envelope_datetime: export_params[:show_envelope_datetime] != false && export_params[:show_envelope_datetime] != "false",
+      initial_show_envelope_revisions_info: export_params[:show_envelope_revisions_info] != false && export_params[:show_envelope_revisions_info] != "false",
+      initial_show_checklist_ai_model: export_params[:show_checklist_ai_model] != false && export_params[:show_checklist_ai_model] != "false",
+      initial_show_page_filenames: export_params[:show_page_filenames] != false && export_params[:show_page_filenames] != "false",
+      initial_show_page_summary_icons: export_params[:show_page_summary_icons] != false && export_params[:show_page_summary_icons] != "false",
+      initial_show_group_header: export_params[:show_group_header] != false && export_params[:show_group_header] != "false",
+      initial_show_group_checklist: export_params[:show_group_checklist] != false && export_params[:show_group_checklist] != "false",
+      initial_show_group_pages: export_params[:show_group_pages] != false && export_params[:show_group_pages] != "false",
+      initial_show_group_footer: export_params[:show_group_footer] != false && export_params[:show_group_footer] != "false",
+      initial_show_checklist_ai_model_details: export_params[:show_checklist_ai_model_details] == true || export_params[:show_checklist_ai_model_details] == "true",
+      revisions_history: build_revisions_history(envelope),
+      initial_show_document_history: export_params[:show_document_history] == true || export_params[:show_document_history] == "true",
+      tags: envelope.tags.ordered.map { |t| { name: t.name, color: t.color } },
+      initial_show_tags: export_params[:show_tags] != false && export_params[:show_tags] != "false",
+      align_labels_to_top: export_params[:align_labels_to_top] == true || export_params[:align_labels_to_top] == "true",
+      user_js_1_output_template: export_params[:user_js_1_output_template].presence || user_script_output[:template] || user_script_output["template"],
+      user_js_1_output_data: unsafe_hash_param(export_params[:user_js_1_output_data]) || user_script_output[:data] || user_script_output["data"],
+      initial_show_user_js_1_output: export_params[:show_user_js_1_output] != false && export_params[:show_user_js_1_output] != "false",
+      is_shared_snapshot: export_params[:is_shared_snapshot] == true || export_params[:is_shared_snapshot] == "true",
+      share_footer_brand: Revdoku.hosted_cloud? ? "cloud" : "core"
+    }
+  end
+
+  def report_share_expired_at
+    requested_days = params[:expires_in_days].presence&.to_i || ReportShare::DEFAULT_SHARE_LINK_EXPIRATION
+    max_days = current_account.report_share_max_days.to_i
+    days = requested_days.clamp(1, max_days)
+    days.days.from_now
+  end
+
+  def serialize_report_share(share, token:)
+    days = ((share.expired_at - Time.current) / 1.day).ceil
+
+    {
+      id: share.prefix_id,
+      report_id: share.report.prefix_id,
+      envelope_id: share.envelope.prefix_id,
+      url: shared_report_url(token),
+      expired_at: share.expired_at.iso8601,
+      expires_in_days: [days, 0].max,
+      default_share_link_expiration: ReportShare::DEFAULT_SHARE_LINK_EXPIRATION,
+      byte_size: share.byte_size,
+      html_sha256: share.html_sha256
+    }
+  end
+
+  def shared_report_user_script_markup(envelope, report)
+    user_script = Array(envelope.user_scripts).first
+    code = user_script && (user_script[:code] || user_script["code"])
+    return nil if code.blank?
+
+    payload = {
+      name: user_script[:name] || user_script["name"] || "Script",
+      code: code,
+      checks: serialize_checks(report.checks.includes(:created_by))
+    }
+
+    <<~HTML
+      <section id="revdoku-shared-script-runner" style="margin: 12px 0; padding: 12px 24px; background: #fef9c3; border: 1px solid #facc15; border-radius: 8px;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <strong style="font-size: 13px; color: #713f12;">#{ERB::Util.html_escape(payload[:name])}</strong>
+          <button id="revdoku-run-shared-script" type="button" style="border: 1px solid #ca8a04; background: #fff7ed; color: #713f12; border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer;">Run script</button>
+          <span id="revdoku-shared-script-status" style="font-size: 12px; color: #854d0e;">Script ready</span>
+        </div>
+        <div id="revdoku-shared-script-output" style="margin-top: 10px;"></div>
+      </section>
+      <template id="revdoku-share-script-payload">#{ERB::Util.json_escape(payload.to_json)}</template>
+    HTML
+  end
+
+  def unsafe_hash_param(value)
+    value.respond_to?(:to_unsafe_h) ? value.to_unsafe_h : value
+  end
 
   # Resolve the checklist originally used for this report and copy its
   # user_scripts onto the owning envelope (no-op if envelope already has any).
@@ -1027,6 +1133,8 @@ class Api::V1::ReportsController < Api::BaseController
   end
 
   def authorize_report
+    return if performed?
+
     authorize @report
   end
 

@@ -46,6 +46,9 @@ Rails.application.routes.draw do
   get "accounts/select", to: "accounts#select", as: :select_account
   post "accounts/select", to: "accounts#choose", as: :choose_account
 
+  # Public shared report snapshots.
+  get "shared/:token", to: "report_shares#show", as: :shared_report
+
   # Account & Team Management
   resources :accounts do
     member do
@@ -183,6 +186,7 @@ Rails.application.routes.draw do
           post :create_stub
         end
         member do
+          post :share
           post :export
           get :status
           get :page_texts
@@ -192,6 +196,8 @@ Rails.application.routes.draw do
         end
         resources :checks, only: [:create]
       end
+
+      resources :report_shares, only: [:index, :destroy]
 
       # Checks (standalone)
       resources :checks, only: [:update, :destroy]

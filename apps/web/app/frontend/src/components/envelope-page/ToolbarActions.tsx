@@ -1,5 +1,5 @@
 import type { IChecklist, IRule, IEnvelopeRevision, IReport, IEnvelopePermissions } from "@revdoku/lib";
-import { ClipboardCheck, Lock, FileDown, Paperclip } from "lucide-react";
+import { ClipboardCheck, Lock, Share2, Paperclip } from "lucide-react";
 import OnboardingHint from "@/components/OnboardingHint";
 
 interface RefFileMeta {
@@ -226,33 +226,33 @@ export default function ToolbarActions({
           })()}
         </div>
 
-        {/* Right: Report + Review */}
+        {/* Right: Share + Review */}
         <div className="flex items-center space-x-1.5 flex-shrink-0">
           {currentReport && (currentReport.checks?.length ?? 0) > 0 && (
             showOnboardingHints ? (
               <OnboardingHint
                 hintKey={`guide-share-${envelopeId}`}
-                message="Export your review report"
+                message="Share your review report"
                 position="bottom"
                 align="end"
               >
                 <button
                   onClick={() => generateReport()}
                   className="py-1 px-3 rounded-md text-sm font-medium bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white hover:from-indigo-600 hover:to-pink-600 transition-all flex items-center gap-1"
-                  title="Report"
+                  title="Share"
                 >
-                  <FileDown className="h-4 w-4" />
-                  <span className="hidden sm:inline">Report</span>
+                  <Share2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Share</span>
                 </button>
               </OnboardingHint>
             ) : (
               <button
                 onClick={() => generateReport()}
                 className="py-1 px-3 rounded-md text-sm font-medium bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white hover:from-indigo-600 hover:to-pink-600 transition-all flex items-center gap-1"
-                title="Report"
+                title="Share"
               >
-                <FileDown className="h-4 w-4" />
-                <span className="hidden sm:inline">Report</span>
+                <Share2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Share</span>
               </button>
             )
           )}

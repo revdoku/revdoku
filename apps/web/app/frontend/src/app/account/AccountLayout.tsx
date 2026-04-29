@@ -1,11 +1,12 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { User, Users, Shield, Sparkles, KeyRound } from 'lucide-react';
+import { User, Users, Shield, Sparkles, KeyRound, Share2 } from 'lucide-react';
 import AccountProfilePage from './profile/page';
 import AccountSecurityPage from './security/page';
 import AccountMembersPage from './members/page';
 import AccountApiPage from './api/page';
 import AccountAiPage from './ai/page';
+import AccountReportSharesPage from './report-shares/page';
 import { extraAccountTabs } from '@ee/app/account/tabs';
 
 // Base tabs render in every build. Extra tabs come from the @ee overlay
@@ -13,6 +14,7 @@ import { extraAccountTabs } from '@ee/app/account/tabs';
 const BASE_TABS = [
   { value: 'profile',  path: '/account/profile',  label: 'Profile',  Icon: User,     Page: AccountProfilePage },
   { value: 'members',  path: '/account/members',  label: 'Account',  Icon: Users,    Page: AccountMembersPage },
+  { value: 'report_shares', path: '/account/report-shares', label: 'Report Shares', Icon: Share2, Page: AccountReportSharesPage },
   { value: 'security', path: '/account/security', label: 'Security', Icon: Shield,   Page: AccountSecurityPage },
   { value: 'ai',       path: '/account/ai',       label: 'AI',       Icon: Sparkles, Page: AccountAiPage },
   { value: 'api',      path: '/account/api',      label: 'API',      Icon: KeyRound, Page: AccountApiPage },
@@ -24,6 +26,7 @@ const TAB_ORDER = [
   'profile',
   'subscription',
   'members',
+  'report_shares',
   'security',
   'ai',
   'api',
