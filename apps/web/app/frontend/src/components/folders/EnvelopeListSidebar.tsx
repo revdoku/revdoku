@@ -120,7 +120,7 @@ const EnvelopeListSidebar = React.memo(function EnvelopeListSidebar({
 }: EnvelopeListSidebarProps) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(loadExpandedIds);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-// Build tag tree
+  // Build tag tree
   const tagTree = useMemo(() => buildTagTree(tags), [tags]);
 
   // Auto-expand ancestors of activeTab so the selected label is always visible
@@ -375,7 +375,7 @@ const EnvelopeListSidebar = React.memo(function EnvelopeListSidebar({
                 <FileText className="h-4 w-4 mr-2" />
                 Empty Envelope
               </DropdownMenuItem>
-              </DropdownMenuContent>
+            </DropdownMenuContent>
           </DropdownMenu>
         </div>
         <input ref={fileInputRef} type="file" hidden multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.gif" onChange={handleFilesPicked} />
@@ -501,7 +501,7 @@ const EnvelopeListSidebar = React.memo(function EnvelopeListSidebar({
         </aside>
       )}
 
-      </>
+    </>
   );
 });
 

@@ -8,13 +8,14 @@ class ReportSharesController < ActionController::Base
     return render_unavailable(status: share ? :gone : :not_found) unless share&.available?
 
     html = share.html_file.download
-    nonce = nil
-    if html.include?('id="revdoku-share-script-payload"')
-      nonce = SecureRandom.base64(18)
+    nonce = SecureRandom.base64(18)
+    has_script_runner = html.include?('id="revdoku-share-script-payload"')
+    html = inject_shared_report_provenance_banner(html, share, nonce)
+    if has_script_runner
       html = inject_shared_report_runner(html, nonce)
     end
 
-    set_public_report_content_security_policy(script_nonce: nonce)
+    set_public_report_content_security_policy(script_nonce: nonce, allow_eval: has_script_runner)
     share.record_view!
     send_data(
       html,
@@ -43,8 +44,14 @@ class ReportSharesController < ActionController::Base
     response.set_header("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet")
   end
 
-  def set_public_report_content_security_policy(script_nonce: nil)
-    script_src = script_nonce ? "script-src 'nonce-#{script_nonce}' 'unsafe-inline' 'unsafe-eval'" : "script-src 'none'"
+  def set_public_report_content_security_policy(script_nonce: nil, allow_eval: false)
+    script_src = if script_nonce
+      parts = ["script-src", "'nonce-#{script_nonce}'"]
+      parts << "'unsafe-inline'" << "'unsafe-eval'" if allow_eval
+      parts.join(" ")
+    else
+      "script-src 'none'"
+    end
     response.set_header(
       "Content-Security-Policy",
       [
@@ -61,6 +68,46 @@ class ReportSharesController < ActionController::Base
         "frame-ancestors 'none'"
       ].join("; ")
     )
+  end
+
+  def inject_shared_report_provenance_banner(html, share, nonce)
+    shared_by = share.created_by&.name.presence || "a Revdoku user"
+    shared_at_iso = share.created_at.iso8601
+    escaped_name = ERB::Util.html_escape(shared_by)
+    escaped_iso = ERB::Util.html_escape(shared_at_iso)
+    escaped_nonce = ERB::Util.html_escape(nonce)
+
+    banner = <<~HTML
+      <div id="revdoku-shared-report-banner" style="box-sizing:border-box;width:100%;background:#f8fafc;border-bottom:1px solid #dbe3ef;color:#475569;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;line-height:1.45;padding:10px 18px;">
+        <div style="box-sizing:border-box;max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-weight:700;color:#0f172a;">Shared report</span>
+          <span>Shared by <span style="font-weight:600;color:#1f2937;">#{escaped_name}</span> on <time datetime="#{escaped_iso}" data-revdoku-shared-at="#{escaped_iso}">#{escaped_iso}</time>.</span>
+        </div>
+      </div>
+      <script nonce="#{escaped_nonce}">
+      (() => {
+        const node = document.querySelector('[data-revdoku-shared-at]');
+        if (!node) return;
+        const date = new Date(node.getAttribute('datetime') || '');
+        if (Number.isNaN(date.getTime())) return;
+        node.textContent = new Intl.DateTimeFormat(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          timeZoneName: 'short'
+        }).format(date);
+        node.title = date.toISOString();
+      })();
+      </script>
+    HTML
+
+    if html.match?(%r{<body\b[^>]*>}i)
+      html.sub(%r{(<body\b[^>]*>)}i, "\\1\n#{banner}")
+    else
+      "#{banner}\n#{html}"
+    end
   end
 
   def inject_shared_report_runner(html, nonce)

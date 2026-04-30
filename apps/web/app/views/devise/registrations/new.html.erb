@@ -15,6 +15,12 @@
   <% current_region = (Revdoku.respond_to?(:current_data_region) ? Revdoku.current_data_region : nil) %>
 
   <div class="space-y-4 sm:space-y-6">
+    <% if flash[:alert] %>
+      <div class="bg-red-50 border border-red-200 rounded-md p-4">
+        <p class="text-sm text-red-700"><%= flash[:alert] %></p>
+      </div>
+    <% end %>
+
     <% if Revdoku.google_auth_enabled? %>
       <div>
         <%= button_to user_google_oauth2_omniauth_authorize_path, method: :post, data: { turbo: false }, class: "w-full inline-flex justify-center items-center py-3 px-4 border border-[#747775] dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-800 text-base font-medium text-[#1F1F1F] dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700" do %>

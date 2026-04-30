@@ -170,7 +170,24 @@ class ReportCreationService
     revdoku_doc_api_request[:skip_rendered_files_response] = true if cache_covers_full_batch
 
     Rails.logger.info "ReportCreationService#call_batch: pages #{pages} (offset=#{page_offset}, cache_full=#{cache_covers_full_batch})"
-    revdoku_doc_api_response = RevdokuDocApiClient.client.create_report(revdoku_doc_api_request)
+    model_attempts = Array(@inspection_model_configs).presence || [revdoku_doc_api_request[:model_config]]
+    revdoku_doc_api_response = nil
+    model_attempts.each_with_index do |model_config, idx|
+      revdoku_doc_api_request[:model_config] = model_config
+      @resolved_model_config = model_config
+      Rails.logger.info "ReportCreationService#call_batch: trying model #{model_config[:id] || model_config['id']} (#{idx + 1}/#{model_attempts.length})" if model_attempts.length > 1
+
+      revdoku_doc_api_response = RevdokuDocApiClient.client.create_report(revdoku_doc_api_request)
+      return revdoku_doc_api_response if revdoku_doc_api_response[:success]
+
+      break unless should_try_next_alias_target?(revdoku_doc_api_response, idx, model_attempts.length)
+
+      Rails.logger.warn(
+        "ReportCreationService#call_batch: model #{model_config[:id] || model_config['id']} failed " \
+        "(#{revdoku_doc_api_response[:error_code] || revdoku_doc_api_response[:http_status] || revdoku_doc_api_response[:message]}), " \
+        "trying next alias target"
+      )
+    end
 
     # NOTE: rendered_files from the response are NOT cached here. CreateReportJob
     # accumulates them across all batches and flushes once at the end via
@@ -223,6 +240,20 @@ class ReportCreationService
   rescue => e
     Rails.logger.warn "batch_fully_cached? check failed: #{e.message}"
     false
+  end
+
+  def should_try_next_alias_target?(response, idx, total_attempts)
+    return false unless idx < total_attempts - 1
+
+    code = response[:error_code].to_s
+    return false if code.start_with?("PDF_RENDER")
+    return true if code.start_with?("AI_")
+
+    status = response[:http_status].to_i
+    return true if [400, 401, 403, 429, 500, 502, 503, 504].include?(status)
+
+    message = response[:message].to_s
+    message.match?(/AI service|Provider rejected|AI request rejected|Model not found|does not support vision|structured output/i)
   end
 
   # Append checks from a batch result to an existing report
@@ -371,7 +402,12 @@ class ReportCreationService
     # (api_key + base_url) from Account#ai_provider_keys for the resolved
     # provider. Without the kwarg the resolver emits `api_key_source:
     # "env"` and doc-api falls through to the ENV-var shared key.
-    model_config = AiModelResolver.resolve(ai_model, operation: :inspection, account: envelope_revision.account)
+    model_configs = AiModelResolver.resolve_alias_chain(ai_model, operation: :inspection, account: envelope_revision.account)
+    if model_configs.empty?
+      raise AiModelResolver::ModelNotFoundError, "AI model '#{ai_model}' is not available. Please open the checklist settings and select a valid AI model."
+    end
+    model_config = model_configs.first
+    @inspection_model_configs = model_configs
     @resolved_model_config = model_config
 
     # Separate cheap vision model used for text extraction:

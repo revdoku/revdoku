@@ -6,12 +6,27 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+function findNodeModuleDir(packageName: string, startDir: string = __dirname): string {
+  let dir = startDir;
+  while (true) {
+    const candidate = path.join(dir, 'node_modules', packageName);
+    if (fs.existsSync(candidate)) return candidate;
+
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+
+  throw new Error(`Unable to locate ${packageName} from ${startDir}`);
+}
+
+const PDFJS_DIST_DIR = findNodeModuleDir('pdfjs-dist');
 const PDFJS_PATHS = {
-  cMapUrl: path.join(__dirname, '../../node_modules/pdfjs-dist/cmaps/'),
-  standardFontDataUrl: path.join(__dirname, '../../node_modules/pdfjs-dist/standard_fonts/'),
-  buildDir: path.resolve(__dirname, '../../node_modules/pdfjs-dist/build'),
-  cmapsDir: path.resolve(__dirname, '../../node_modules/pdfjs-dist/cmaps'),
-  standardFontsDir: path.resolve(__dirname, '../../node_modules/pdfjs-dist/standard_fonts'),
+  cMapUrl: path.join(PDFJS_DIST_DIR, 'cmaps/'),
+  standardFontDataUrl: path.join(PDFJS_DIST_DIR, 'standard_fonts/'),
+  buildDir: path.join(PDFJS_DIST_DIR, 'build'),
+  cmapsDir: path.join(PDFJS_DIST_DIR, 'cmaps'),
+  standardFontsDir: path.join(PDFJS_DIST_DIR, 'standard_fonts'),
 } as const;
 
 import { createCanvas, Image } from 'canvas';
@@ -28,6 +43,41 @@ import sharp from 'sharp';
 import { RENDERED_PAGES_JPEG_QUALITY, RENDERED_PAGES_PDF_DEFAULT_DPI, RENDERED_PAGES_PDF_TO_PNG_OUTPUT_DPI, MIN_PDF_RENDER_DPI, CONVERT_TO_JPEG_BEFORE_SENDING_TO_AI } from './constants';
 
 const PUPPETEER_TEMP_PREFIX = 'revdoku-doc-api-puppeteer-';
+
+function envInt(name: string, fallback: number, min: number): number {
+  const value = parseInt(process.env[name] || '', 10);
+  return Number.isFinite(value) ? Math.max(min, value) : fallback;
+}
+
+const PUPPETEER_RENDER_ATTEMPTS = envInt('PDF_RENDER_PUPPETEER_ATTEMPTS', 2, 1);
+const PUPPETEER_RENDER_TIMEOUT_MS = envInt('PDF_RENDER_PUPPETEER_TIMEOUT_MS', 120_000, 10_000);
+
+class PdfRenderError extends Error {
+  code: string;
+  cause?: unknown;
+
+  constructor(message: string, code: string, cause?: unknown) {
+    super(message);
+    this.name = 'PdfRenderError';
+    this.code = code;
+    this.cause = cause;
+  }
+}
+
+function isPuppeteerRetryableError(error: unknown): boolean {
+  const err = error as { name?: string; message?: string };
+  const message = String(err?.message || error || '');
+  return err?.name === 'TimeoutError' ||
+    /Waiting failed|Navigation timeout|Protocol error|Target closed|Session closed|detached|ERR_|Failed to fetch/i.test(message);
+}
+
+function toPdfRenderError(error: unknown, fileName: string): PdfRenderError {
+  const timeout = isPuppeteerRetryableError(error) && /Waiting failed|timeout/i.test(String((error as any)?.message || error || ''));
+  const message = timeout
+    ? `Document rendering timed out while preparing PDF pages for ${fileName}.`
+    : `Document rendering failed while preparing PDF pages for ${fileName}.`;
+  return new PdfRenderError(message, timeout ? 'PDF_RENDER_TIMEOUT' : 'PDF_RENDER_FAILED', error);
+}
 
 /**
  * Removes a temp directory with retry logic.
@@ -809,6 +859,35 @@ async function convertPdfToImagesWithPuppeteer(
   renderScale: number,
   pageNumbers?: number[]  // 1-indexed page numbers to render (undefined = all)
 ): Promise<IPDFToImageResult> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= PUPPETEER_RENDER_ATTEMPTS; attempt++) {
+    try {
+      return await convertPdfToImagesWithPuppeteerAttempt(
+        fileName, pdfData, metadata, pageDimensions, maxScalingFactor, renderScale, pageNumbers, attempt
+      );
+    } catch (error) {
+      lastError = error;
+      const retryable = isPuppeteerRetryableError(error);
+      console.warn(`convertPdfToImages: Puppeteer render attempt ${attempt}/${PUPPETEER_RENDER_ATTEMPTS} failed for ${fileName}: ${error}`);
+      if (!retryable || attempt >= PUPPETEER_RENDER_ATTEMPTS) break;
+      await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+    }
+  }
+
+  throw toPdfRenderError(lastError, fileName);
+}
+
+async function convertPdfToImagesWithPuppeteerAttempt(
+  fileName: string,
+  pdfData: Uint8Array,
+  metadata: string,
+  pageDimensions: IPageInfo[],
+  maxScalingFactor: number,
+  renderScale: number,
+  pageNumbers: number[] | undefined,  // 1-indexed page numbers to render (undefined = all)
+  attempt: number
+): Promise<IPDFToImageResult> {
   let browser: Browser | null = null;
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), PUPPETEER_TEMP_PREFIX));
   fs.chmodSync(tempDir, 0o700);
@@ -823,7 +902,7 @@ async function convertPdfToImagesWithPuppeteer(
       : pageDimensions;
     // Log AFTER computing effectiveDims so the message reflects the real render count
     // (was previously logging pageDimensions.length which is always the full PDF size).
-    console.debug('convertPdfToImages', `Puppeteer fallback: rendering ${fileName} (${effectiveDims.length} of ${pageDimensions.length} pages, renderScale=${renderScale.toFixed(3)}, targetScale=${maxScalingFactor.toFixed(3)})`);
+    console.debug('convertPdfToImages', `Puppeteer renderer: rendering ${fileName} (${effectiveDims.length} of ${pageDimensions.length} pages, renderScale=${renderScale.toFixed(3)}, targetScale=${maxScalingFactor.toFixed(3)}, attempt=${attempt}/${PUPPETEER_RENDER_ATTEMPTS})`);
     const scales = effectiveDims.map(() => renderScale);
     // 0-indexed page indices for Puppeteer JS (convert from 1-based pageNumbers)
     const pageIndices = pageNumbers ? pageNumbers.map(pn => pn - 1) : null;
@@ -833,16 +912,20 @@ async function convertPdfToImagesWithPuppeteer(
 
     // Encode PDF as base64 to embed in HTML
     const pdfBase64 = Buffer.from(pdfData).toString('base64');
+    const browserImageMime = CONVERT_TO_JPEG_BEFORE_SENDING_TO_AI ? 'image/jpeg' : 'image/png';
+    const browserImageQuality = CONVERT_TO_JPEG_BEFORE_SENDING_TO_AI
+      ? Math.max(0.1, Math.min(1, RENDERED_PAGES_JPEG_QUALITY / 100))
+      : undefined;
 
     // Build self-contained HTML that loads pdfjs and renders all pages
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>body{margin:0;background:white}</style></head>
 <body>
 <script type="module">
-  import * as pdfjsLib from 'file://${pdfjsBuildDir}/pdf.min.mjs';
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'file://${pdfjsBuildDir}/pdf.worker.min.mjs';
-
   try {
+    const pdfjsLib = await import('file://${pdfjsBuildDir}/pdf.min.mjs');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'file://${pdfjsBuildDir}/pdf.worker.min.mjs';
+
     const pdfBytes = Uint8Array.from(atob("${pdfBase64}"), c => c.charCodeAt(0));
     const pdf = await pdfjsLib.getDocument({
       data: pdfBytes,
@@ -855,9 +938,11 @@ async function convertPdfToImagesWithPuppeteer(
     const pageIndices = ${JSON.stringify(pageIndices)};
     const pagesToRender = pageIndices || Array.from({length: pdf.numPages}, (_, i) => i);
     const results = [];
+    window.__PDF_RENDER_PROGRESS = { rendered: 0, total: pagesToRender.length, page: null };
 
     for (let idx = 0; idx < pagesToRender.length; idx++) {
       const i = pagesToRender[idx];
+      window.__PDF_RENDER_PROGRESS = { rendered: idx, total: pagesToRender.length, page: i + 1 };
       const page = await pdf.getPage(i + 1);
       const scale = scales[idx] || scales[0] || 1.0;
       const viewport = page.getViewport({ scale });
@@ -869,8 +954,9 @@ async function convertPdfToImagesWithPuppeteer(
       results.push({
         width: canvas.width,
         height: canvas.height,
-        dataUrl: canvas.toDataURL('image/png')
+        dataUrl: canvas.toDataURL(${JSON.stringify(browserImageMime)}, ${browserImageQuality == null ? 'undefined' : browserImageQuality})
       });
+      window.__PDF_RENDER_PROGRESS = { rendered: idx + 1, total: pagesToRender.length, page: i + 1 };
     }
 
     window.__PDF_RENDER_RESULTS = results;
@@ -899,10 +985,23 @@ async function convertPdfToImagesWithPuppeteer(
     });
 
     const page = await browser.newPage();
+    page.on('pageerror', err => console.warn(`convertPdfToImages: Puppeteer page error for ${fileName}: ${err.message}`));
     await page.goto(`file://${htmlPath}`, { waitUntil: 'domcontentloaded' });
 
     // Wait for rendering to complete
-    await page.waitForFunction('window.__PDF_RENDERED === true', { timeout: 120000 });
+    try {
+      await page.waitForFunction(
+        'window.__PDF_RENDERED === true || window.__PDF_RENDER_ERROR',
+        { timeout: PUPPETEER_RENDER_TIMEOUT_MS }
+      );
+    } catch (waitError) {
+      const progress = await page.evaluate(() => (window as any).__PDF_RENDER_PROGRESS).catch(() => null);
+      if (progress) {
+        console.warn(`convertPdfToImages: Puppeteer render timed out for ${fileName}; progress=${JSON.stringify(progress)}`);
+        (waitError as any).renderProgress = progress;
+      }
+      throw waitError;
+    }
 
     // Check for errors
     const renderError = await page.evaluate(() => (window as any).__PDF_RENDER_ERROR);
@@ -924,8 +1023,8 @@ async function convertPdfToImagesWithPuppeteer(
     const outputImages: string[] = [];
     for (let i = 0; i < renderResults.length; i++) {
       const result = renderResults[i];
-      // Extract base64 PNG data from data URL
-      const base64Data = result.dataUrl.replace(/^data:image\/png;base64,/, '');
+      // Extract base64 image data from the data URL.
+      const base64Data = result.dataUrl.replace(/^data:image\/(?:png|jpeg);base64,/, '');
       const imageBuffer = Buffer.from(base64Data, 'base64');
 
       // Downscale from high-DPI render to target dimensions if needed
@@ -1072,22 +1171,54 @@ export async function convertPdfToImages(
   const { page_dimensions, maxScalingFactor, renderScale } = await calculatePageDimensions(pdfDoc, pdfToImageOptions, pageNumbers);
   const totalPageCount = pdfDoc.numPages;
 
-  // 6. Render based on config
+  const finalizeResult = async (result: IPDFToImageResult): Promise<IPDFToImageResult> => {
+    result.totalPageCount = totalPageCount;
+    return result;
+  };
+
+  const cleanupPdfToImage = async () => {
+    try {
+      await pdfToImage.removeGeneratedImagesOnDisk();
+    } catch (cleanupError) {
+      console.debug('convertPdfToImages', `Error cleaning pdfjs temp files: ${cleanupError}`);
+    }
+  };
+
+  // 6. Render based on the PDF analysis above. The selected renderer stays
+  // primary, and the other renderer is only a last-resort fallback when the
+  // selected engine itself fails.
   if (config.renderingMode === 'puppeteer') {
-    console.debug('convertPdfToImages', `Using Puppeteer fallback for ${fileName}`);
-    // Clean up pdfToImage before switching to Puppeteer
-    await pdfToImage.removeGeneratedImagesOnDisk();
+    console.debug('convertPdfToImages', `Using Puppeteer renderer for ${fileName}`);
+    try {
+      const puppeteerResult = await convertPdfToImagesWithPuppeteer(
+        fileName, pdfData, metadata, page_dimensions, maxScalingFactor, renderScale, pageNumbers
+      );
+      await cleanupPdfToImage();
+      return finalizeResult(puppeteerResult);
+    } catch (primaryError) {
+      console.warn(`convertPdfToImages: Puppeteer renderer failed for ${fileName}; trying pdfjs-canvas fallback: ${primaryError}`);
+      try {
+        return finalizeResult(await renderWithPdfjsCanvas(pdfToImage, pdfDoc, page_dimensions, maxScalingFactor, renderScale, metadata, pageNumbers));
+      } catch (fallbackError) {
+        throw new PdfRenderError(
+          `Document rendering failed for ${fileName}; Puppeteer and pdfjs-canvas both failed.`,
+          'PDF_RENDER_FAILED',
+          { primaryError, fallbackError }
+        );
+      }
+    }
+  }
+
+  // Default: pdfjs-canvas first, then Puppeteer if node-canvas/pdfjs fails.
+  try {
+    return finalizeResult(await renderWithPdfjsCanvas(pdfToImage, pdfDoc, page_dimensions, maxScalingFactor, renderScale, metadata, pageNumbers));
+  } catch (primaryError) {
+    console.warn(`convertPdfToImages: pdfjs-canvas renderer failed for ${fileName}; trying Puppeteer fallback: ${primaryError}`);
     const puppeteerResult = await convertPdfToImagesWithPuppeteer(
       fileName, pdfData, metadata, page_dimensions, maxScalingFactor, renderScale, pageNumbers
     );
-    puppeteerResult.totalPageCount = totalPageCount;
-    return puppeteerResult;
+    return finalizeResult(puppeteerResult);
   }
-
-  // Default: pdfjs-canvas
-  const canvasResult = await renderWithPdfjsCanvas(pdfToImage, pdfDoc, page_dimensions, maxScalingFactor, renderScale, metadata, pageNumbers);
-  canvasResult.totalPageCount = totalPageCount;
-  return canvasResult;
 }
 
 

@@ -42,8 +42,10 @@ class Api::V1::ReportSharesController < Api::BaseController
   def ensure_report_sharing_available!
     return if current_account&.report_sharing_allowed?
 
+
     render_api_forbidden("Report sharing is disabled for this account")
   end
+
 
   def set_report_share
     @report_share = policy_scope(ReportShare).find_by_prefix_id(params[:id])

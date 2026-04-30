@@ -9,6 +9,7 @@ const DEFAULTS: FeaturesConfig = {
   sessions_management: false,
   checklist_versions: false,
   one_time_credits: false,
+  one_time_credits_purchasable: false,
 };
 
 export function useFeatureFlags(): FeaturesConfig {

@@ -18,7 +18,7 @@ module EmailOtpConfirmationFlow
   def issue_signup_confirmation_otp!(user)
     code = user.generate_login_otp!
     UserMailer.confirmation_otp(user, code).deliver_later
-    Rails.logger.info("[OTP] Confirmation code sent to #{user.email}")
+    Rails.logger.info("[OTP] Confirmation code sent to #{User.redact_email(user.email)}")
     remember_signup_confirmation(user)
     code
   end

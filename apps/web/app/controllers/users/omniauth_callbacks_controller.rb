@@ -28,15 +28,15 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
         # This adds an extra verification layer for HIPAA-grade compliance.
         code = @user.generate_login_otp!
         UserMailer.login_otp(@user, code).deliver_later
-        Rails.logger.info("[OTP] Login code sent to #{@user.email} via #{kind} OAuth flow (high-security)")
+        Rails.logger.info("[OTP] Login code sent to #{User.redact_email(@user.email)} via #{kind} OAuth flow (high-security)")
 
         flash[:notice] = "We sent a 6-digit code to #{@user.email}. Check your inbox."
         redirect_to new_user_session_path(email: @user.email, oauth_verified: true)
       else
         # Regular accounts: Google already verified identity, sign in directly.
+        @user.complete_account_setup!
         flash[:notice] = "Signed in with #{kind}."
         sign_in @user, event: :authentication
-        remember_me(@user)
         redirect_to after_sign_in_path_for(@user)
       end
     else

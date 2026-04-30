@@ -273,7 +273,7 @@ class Api::V1::Account::AiProviderKeysController < Api::BaseController
 
   # Set of built-in alias identifiers a custom alias must not collide with.
   # Includes both the alias-id suffix (after the region prefix) and the
-  # display name, lowercased, so neither "gpt-normal" nor "GPT · Standard"
+  # display name, lowercased, so neither "gpt-standard" nor "GPT · Standard"
   # can be re-used as a custom alias.
   def builtin_alias_names_set
     Set.new.tap do |set|

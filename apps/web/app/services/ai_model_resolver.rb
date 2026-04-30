@@ -24,9 +24,8 @@
 #   .provider_name(provider_key)                   — "Google Cloud", "OpenAI", etc.
 #                                                     Reads `name:` from the catalog row.
 #   .parse_model_id(id)                            — {provider, model_name}
-#   .parse_alias_id(id)                            — legacy shim; aliases are gone so
-#                                                     this just returns parse_model_id
-#                                                     output plus hipaa: from provider
+#   .parse_alias_id(id)                            — alias-aware parser, including
+#                                                     legacy alias id canonicalization
 #   .display_name(entry), .star_rating(entry)      — UI helpers
 #   .effective_region                              — "any" by default; reads
 #                                                     account.preferred_region
@@ -197,11 +196,10 @@ class AiModelResolver
   def self.find_model(model_id, account: nil)
     return nil if model_id.blank?
     # Aliases live in the active region's catalog slice and are 2-segment
-    # ("<region>:<alias-name>" — e.g. "any:gpt-normal"). Resolve them before
+    # ("<region>:<alias-name>" — e.g. "any:gemini-basic"). Resolve them before
     # parsing for the 3-segment concrete-model shape, which would reject
     # 2-segment ids by giving them an empty region segment.
-    aliased = aliases_hash[model_id.to_s]
-    return find_model_by_alias(model_id.to_s, aliased, account: account) if aliased
+    return resolve_alias(model_id.to_s, account: account) if alias_id?(model_id)
 
     parsed = parse_model_id(model_id)
     return nil if parsed[:region].blank?  # Reject 3-segment ids without a region
@@ -261,9 +259,21 @@ class AiModelResolver
     (region_slice[:aliases] || {}).transform_keys(&:to_s)
   end
 
+  # Backwards-compatibility map for alias ids that were stored before the
+  # catalog moved to semantic tier names. These ids should not appear in the
+  # picker, but existing checklists/reports/accounts must still resolve.
+  def self.legacy_aliases_hash
+    (region_slice[:legacy_aliases] || {}).transform_keys(&:to_s).transform_values(&:to_s)
+  end
+
+  def self.canonical_alias_id(model_id)
+    id = model_id.to_s
+    legacy_aliases_hash[id] || id
+  end
+
   # True when the given id is an alias (vs a concrete model id).
   def self.alias_id?(model_id)
-    aliases_hash.key?(model_id.to_s)
+    aliases_hash.key?(canonical_alias_id(model_id))
   end
 
   # Resolve an alias id to its concrete model hash; nil if no target is
@@ -276,11 +286,13 @@ class AiModelResolver
   # consistently. Returns nil when the alias's region doesn't match the
   # account's lock (caller should fall back to its plan-default model).
   def self.resolve_alias(alias_id, account: nil)
-    entry = aliases_hash[alias_id.to_s]
+    requested_alias_id = alias_id.to_s
+    alias_id = canonical_alias_id(requested_alias_id)
+    entry = aliases_hash[alias_id]
     return nil unless entry
 
     locked_region = locked_region_for(account)
-    return nil if locked_region && alias_region(alias_id.to_s) != locked_region
+    return nil if locked_region && alias_region(alias_id) != locked_region
 
     raw_targets = Array(entry[:targets])
     targets = account&.respond_to?(:hipaa_enabled?) && account.hipaa_enabled? \
@@ -290,7 +302,47 @@ class AiModelResolver
     return nil unless resolved
     model = all_models.find { |m| m[:id] == resolved }
     return nil unless model
-    model.merge(alias_id: alias_id.to_s, resolved_from_alias: true)
+    model.merge(
+      alias_id: alias_id,
+      legacy_alias_id: requested_alias_id == alias_id ? nil : requested_alias_id,
+      resolved_from_alias: true
+    )
+  end
+
+  # Resolve every available target behind an alias in YAML order. This is
+  # intentionally separate from resolve_alias, which picks the first available
+  # target for normal single-shot resolution. Batch review uses the full chain
+  # so a provider-side failure can try the next configured target without
+  # inventing a second source of ordering truth.
+  def self.resolve_alias_chain(alias_id, operation: :inspection, account: nil)
+    unless alias_id?(alias_id)
+      resolved = resolve(alias_id, operation: operation, account: account)
+      return resolved ? [resolved] : []
+    end
+
+    requested_alias_id = alias_id.to_s
+    alias_id = canonical_alias_id(requested_alias_id)
+    entry = aliases_hash[alias_id]
+    return [] unless entry
+
+    locked_region = locked_region_for(account)
+    return [] if locked_region && alias_region(alias_id) != locked_region
+
+    raw_targets = Array(entry[:targets])
+    targets = account&.respond_to?(:hipaa_enabled?) && account.hipaa_enabled? \
+      ? raw_targets.map { |t| append_hipaa_suffix(t) } \
+      : raw_targets
+
+    targets.filter_map do |target_id|
+      model = all_models.find { |m| m[:id] == target_id }
+      next nil unless model && provider_available?(model[:provider_key], account: account)
+
+      resolve(target_id, operation: operation, account: account).merge(
+        alias_id: alias_id,
+        legacy_alias_id: requested_alias_id == alias_id ? nil : requested_alias_id,
+        resolved_from_alias: true
+      )
+    end
   end
 
   # All aliases as a flat list of hashes suitable for API responses. Each
@@ -429,16 +481,18 @@ class AiModelResolver
   # either shape opaquely and get a uniform hash.
   def self.parse_alias_id(id)
     if alias_id?(id)
+      canonical_id = canonical_alias_id(id)
       resolved = resolve_alias(id)
       provider_key = resolved&.dig(:provider_key)
       return {
-        region: parse_model_id(id)[:region],
+        region: canonical_id.split(":", 2).first.to_s,
         provider: provider_key.to_s,
-        model_name: id.to_s.split(":", 3).last,
+        model_name: canonical_id.split(":", 2).last,
         hipaa: provider_key ? !!provider_for(provider_key)&.dig(:hipaa) : false,
         subtypes: [],
-        name: aliases_hash[id.to_s][:name].to_s,
-        alias_id: id.to_s
+        name: aliases_hash[canonical_id][:name].to_s,
+        alias_id: canonical_id,
+        legacy_alias_id: id.to_s == canonical_id ? nil : id.to_s
       }
     end
     parsed = parse_model_id(id)
@@ -757,7 +811,7 @@ class AiModelResolver
 
     config_hash = {
       id: model[:id],
-      alias_id: model[:id],                   # No aliases anymore; echo id for callers that still read alias_id
+      alias_id: model[:alias_id] || model[:id],
       provider: provider_key,
       base_url: account_base_url || provider[:base_url] || model[:base_url],
       api_key_env_var: api_key_env_var(provider_key),

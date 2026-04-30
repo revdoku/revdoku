@@ -63,10 +63,10 @@ class RevdokuDocApiClient < ApplicationClient
       # deliberate: that pipeline matches the `api.key` pattern in
       # SENSITIVE_PATTERNS and would collapse this to the generic error.
       notify_revdoku_doc_api_error(e, method: "create_report")
-      { success: false, message: extract_json_message(e) }
+      { success: false, message: extract_json_message(e), error_code: extract_json_error_code(e), http_status: status_for_exception(e) }
     rescue ApplicationClient::Error => e
       notify_revdoku_doc_api_error(e, method: "create_report")
-      { success: false, message: parse_error_message(e) }
+      { success: false, message: parse_error_message(e), error_code: extract_json_error_code(e), http_status: status_for_exception(e) }
     end
   end
 
@@ -271,15 +271,13 @@ class RevdokuDocApiClient < ApplicationClient
   # `api.key` pattern in SENSITIVE_PATTERNS and collapse the message to
   # the generic "AI processing failed" string.
   def extract_json_message(exception)
-    body = exception.message.to_s
-    JSON.parse(body)["message"].to_s.presence || self.class.generic_error
-  rescue JSON::ParserError
-    self.class.generic_error
+    extract_json_error_payload(exception)["message"].to_s.presence || self.class.generic_error
   end
 
   def parse_error_message(exception)
     raw = begin
-      error_data = JSON.parse(exception.message)
+      error_data = extract_json_error_payload(exception)
+      raise JSON::ParserError if error_data.empty?
       error_data["message"] || error_data["error"] || exception.message
     rescue JSON::ParserError
       # Handle "STATUS_CODE - JSON" format from ApplicationClient (e.g. "402 - {\"message\":\"...\"}")
@@ -295,6 +293,36 @@ class RevdokuDocApiClient < ApplicationClient
       end
     end
     sanitize_error_for_user(raw)
+  end
+
+  def extract_json_error_code(exception)
+    payload = extract_json_error_payload(exception)
+    payload["error_code"].to_s.presence || payload["code"].to_s.presence
+  end
+
+  def extract_json_error_payload(exception)
+    body = exception.message.to_s
+    json = if body.strip.start_with?("{")
+      body
+    elsif (json_start = body.index("{"))
+      body[json_start..]
+    end
+    return {} if json.blank?
+    JSON.parse(json)
+  rescue JSON::ParserError
+    {}
+  end
+
+  def status_for_exception(exception)
+    case exception
+    when ApplicationClient::Unauthorized then 401
+    when ApplicationClient::Forbidden then 403
+    when ApplicationClient::UnprocessableEntity then 422
+    when ApplicationClient::RateLimit then 429
+    when ApplicationClient::InternalError then 500
+    else
+      exception.message.to_s[/\A(\d{3})\s+-/, 1]&.to_i
+    end
   end
 
   SENSITIVE_PATTERNS = /

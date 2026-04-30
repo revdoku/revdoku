@@ -15,11 +15,26 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
-import { Link2 } from "lucide-react";
+import {
+  Check,
+  Globe2,
+  Link2,
+  LockKeyhole,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { showToast } from "@/lib/toast";
 import { ApiClient, type IReportShareLink, type ShareReportOptions } from "@/lib/api-client";
-import { ApiError } from "@/lib/api-error";
 // REVDOKU_CATCH_CHANGES_RULE_ID replaced by CheckType.CHANGE via getCheckTypes()
+
+type ShareAccessMode = 'private' | 'public';
 
 interface ReportPopupProps {
   currentReport: IReport | null;
@@ -141,6 +156,8 @@ export default function ReportPopup({
   const [shareLinksLoading, setShareLinksLoading] = useState(false);
   const [shareLinks, setShareLinks] = useState<IReportShareLink[]>([]);
   const [defaultShareLinkExpiration, setDefaultShareLinkExpiration] = useState(30);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareAccessMode, setShareAccessMode] = useState<ShareAccessMode>('private');
 
   // Local highlight mode state — independent from envelope viewer
   const [localHighlightMode, setLocalHighlightMode] = useState<HighlightMode>(highlightMode ?? 0);
@@ -874,9 +891,16 @@ export default function ReportPopup({
     downloadHtmlFile(getCleanReportHtml(reportContent, reportIframeRef, toggleToSectionMap));
   };
 
-  const shareReport = async () => {
+  const openShareDialog = () => {
+    if (!currentReport || reportLoading || sharingReport) return;
+    setShareAccessMode('private');
+    setShareDialogOpen(true);
+  };
+
+  const createPublicShareLink = async () => {
     if (!currentReport || reportLoading || sharingReport) return;
 
+    setShareDialogOpen(false);
     setSharingReport(true);
     try {
       const response = await ApiClient.shareReport(currentReport.id, getServerShareOptions());
@@ -889,7 +913,7 @@ export default function ReportPopup({
       }
       if (shareLinksOpen) await loadReportShares();
     } catch (error) {
-const message = error instanceof Error ? error.message : 'Could not create share link';
+      const message = error instanceof Error ? error.message : 'Could not create share link';
       showToast(message, 'error', 4000);
     } finally {
       setSharingReport(false);
@@ -909,7 +933,11 @@ const message = error instanceof Error ? error.message : 'Could not create share
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" tabIndex={-1} onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}>
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      tabIndex={-1}
+      onKeyDown={(e) => { if (e.key === 'Escape' && !shareDialogOpen) onClose(); }}
+    >
       <div
         className="bg-card rounded-lg shadow-lg border border-border p-1 w-full sm:w-[900px] max-w-[98%] max-h-[100dvh] sm:max-h-[90vh] flex flex-col"
         style={{
@@ -1161,8 +1189,8 @@ const message = error instanceof Error ? error.message : 'Could not create share
           <button
             disabled={reportLoading || sharingReport || !currentReport}
             className={`inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 border border-transparent rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${(reportLoading || sharingReport || !currentReport) ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-600 hover:to-blue-700 hover:shadow-md'}`}
-            onClick={shareReport}
-            title="Create secure share link"
+            onClick={openShareDialog}
+            title="Share report"
           >
             <Link2 className="w-4 h-4 sm:mr-1.5 text-white/85" />
             <span className="hidden sm:inline">{sharingReport ? 'Sharing...' : 'Share'}</span>
@@ -1176,6 +1204,103 @@ const message = error instanceof Error ? error.message : 'Could not create share
           </button>
         </div>
       </div>
+
+      <Dialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Share report</DialogTitle>
+            <DialogDescription>
+              Choose who can access this report. Public links are frozen snapshots of the current report view.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="overflow-hidden rounded-lg border border-border">
+            <div
+              role="button"
+              tabIndex={0}
+              className={`grid w-full cursor-pointer grid-cols-[40px_minmax(0,1fr)_24px] items-center gap-3 px-4 py-4 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-inset ${shareAccessMode === 'private' ? 'bg-muted/60' : 'hover:bg-muted/40'}`}
+              onClick={() => setShareAccessMode('private')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setShareAccessMode('private');
+                }
+              }}
+              aria-pressed={shareAccessMode === 'private'}
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-muted-foreground">
+                <LockKeyhole className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-foreground">Keep private</span>
+                <span className="block text-sm text-muted-foreground">
+                  Members of your account can view this envelope and report.
+                </span>
+                <a
+                  href="/account/members"
+                  className="mt-1 inline-flex text-xs font-medium text-primary underline underline-offset-2 hover:no-underline"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
+                  Add members to account
+                </a>
+              </span>
+              {shareAccessMode === 'private' && <Check className="h-5 w-5 text-primary" />}
+            </div>
+
+            <button
+              type="button"
+              className={`grid w-full grid-cols-[40px_minmax(0,1fr)_24px] items-center gap-3 border-t border-border px-4 py-4 text-left transition-colors ${shareAccessMode === 'public' ? 'bg-muted/60' : 'hover:bg-muted/40'}`}
+              onClick={() => setShareAccessMode('public')}
+              aria-pressed={shareAccessMode === 'public'}
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-muted-foreground">
+                <Globe2 className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-foreground">Create public link</span>
+                <span className="block text-sm text-muted-foreground">
+                  Anyone with the link can view this report snapshot.
+                </span>
+              </span>
+              {shareAccessMode === 'public' && <Check className="h-5 w-5 text-primary" />}
+            </button>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            Don&apos;t share personal information or third-party content without permission, and see our{' '}
+            <a
+              href="https://revdoku.com/acceptable-use/"
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2 hover:no-underline"
+            >
+              Usage Policy
+            </a>{' '}
+            (opens in a new tab).
+          </p>
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShareDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={createPublicShareLink}
+              disabled={shareAccessMode !== 'public' || sharingReport || !currentReport || reportLoading}
+            >
+              {sharingReport ? 'Creating...' : 'Create share link'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
