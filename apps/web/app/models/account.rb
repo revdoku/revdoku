@@ -366,12 +366,12 @@ class Account < ApplicationRecord
              else nil
              end
     # Discard stale stored preference if the model no longer exists in the new
-    # catalog. Users who had an old alias ID saved (`us:standard`, etc.) will
-    # land on the system default until they re-pick via the UI — per the
-    # provider-centric rewrite's "no data migration" stance. Pass `self` so
-    # user-defined custom-provider models survive this check.
+    # catalog. Legacy alias IDs (`us:standard`, etc.) are canonicalized by the
+    # resolver first. Pass `self` so user-defined custom-provider models
+    # survive this check.
     stored = nil if stored.present? && AiModelResolver.find_model(stored, account: self).nil?
     default_id = stored.presence || AiModelResolver.default_model_id(operation)
+    default_id = AiModelResolver.canonical_alias_id(default_id) if AiModelResolver.alias_id?(default_id)
 
     if hipaa_enabled?
       unless AiModelResolver.model_is_hipaa_eligible?(default_id)

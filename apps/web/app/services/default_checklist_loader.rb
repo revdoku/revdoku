@@ -52,7 +52,7 @@ class DefaultChecklistLoader
         #   1. any per-account override (default_checklist_model column)
         #   2. AiModelResolver.default_model_id(:inspection) → the current
         #      region's inspection default from config/ai_models.yml
-        #      (shared.defaults.<region>.inspection), currently "us:standard"
+        #      (shared.defaults.<region>.inspection)
         #   3. HIPAA fallback (AiModelResolver.first_hipaa_model_id) when the
         #      account is HIPAA-enabled and the region default isn't HIPAA-certified
         # So changing the default for everyone is a one-line ai_models.yml edit;

@@ -9,6 +9,13 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   before_action :ensure_registration_enabled!, only: [:new, :create]
 
+  # GET /users/sign_up
+  def new
+    super do |resource|
+      resource.email = flash[:email] if resource.email.blank? && flash[:email].present?
+    end
+  end
+
   # POST /users
   def create
     build_resource(sign_up_params)
@@ -20,9 +27,8 @@ class Users::RegistrationsController < Devise::RegistrationsController
       resource.save
 
       if resource.persisted?
-        resource.personal_account&.complete_setup!
+        resource.complete_account_setup!
         sign_in(:user, resource, event: :authentication)
-        remember_me(resource)
         return redirect_to after_sign_in_path_for(resource)
       end
     elsif Revdoku.login_mode_password?
@@ -32,8 +38,8 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
       if resource.persisted?
         if resource.confirmed? || !resource.respond_to?(:confirmation_required?) || !resource.confirmation_required?
+          resource.complete_account_setup!
           sign_in(:user, resource, event: :authentication)
-          remember_me(resource)
           return redirect_to after_sign_in_path_for(resource)
         end
         flash[:notice] = "A confirmation email has been sent. Please check your inbox to finish signing up."
@@ -46,6 +52,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
       if resource.persisted?
         issue_signup_confirmation_otp!(resource)
+        increment_otp_send_count(resource.email)
         return redirect_to signup_confirmation_path_for(resource)
       end
     end
@@ -54,7 +61,11 @@ class Users::RegistrationsController < Devise::RegistrationsController
     # validation errors surfaced back to the form.
     existing = find_existing_user(resource.email)
     if existing && Revdoku.login_mode_otp?
-      handle_email_conflict(resource, existing)
+      if existing.respond_to?(:confirmed?) && !existing.confirmed?
+        send_existing_signup_confirmation_otp(existing)
+      else
+        handle_email_conflict(resource, existing)
+      end
     else
       clean_up_passwords resource
       respond_with resource
@@ -92,20 +103,25 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
     user ||= find_user_by_canonical_email(email)
 
+    if user&.respond_to?(:access_locked?) && user.access_locked?
+      Rails.logger.warn("[OTP] Confirmation code verification blocked for locked user #{User.redact_email(email)}")
+      flash.now[:alert] = "Your account is locked. Contact support."
+      return render :confirm_email, status: :locked
+    end
+
     if user&.verify_login_otp(code)
-      Rails.logger.info("[OTP] Confirmation code verified for #{email}")
+      Rails.logger.info("[OTP] Confirmation code verified for #{User.redact_email(email)}")
 
       user.confirm unless user.confirmed?
-      user.personal_account&.complete_setup!
+      user.complete_account_setup!
 
       session.delete(:confirmation_email)
       session.delete(:confirmation_user_id)
       session.delete(:utm_params)
       sign_in(:user, user, event: :authentication)
-      remember_me(user)
       redirect_to after_sign_in_path_for(user)
     else
-      Rails.logger.warn("[OTP] Failed confirmation code verification for #{email}")
+      Rails.logger.warn("[OTP] Failed confirmation code verification for #{User.redact_email(email)}")
       flash.now[:alert] = "Invalid or expired code. Please try again."
       render :confirm_email, status: :unprocessable_entity
     end
@@ -123,6 +139,11 @@ class Users::RegistrationsController < Devise::RegistrationsController
       return
     end
 
+    if user.respond_to?(:access_locked?) && user.access_locked?
+      redirect_to new_user_registration_path, alert: "Your account is locked. Contact support."
+      return
+    end
+
     sent_count = otp_send_count(@email)
     if sent_count >= 3
       flash.now[:alert] = "Too many code requests. Please wait a few minutes."
@@ -132,7 +153,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
     code = user.generate_login_otp!
     increment_otp_send_count(@email)
     UserMailer.confirmation_otp(user, code).deliver_later
-    Rails.logger.info("[OTP] Confirmation code resent to #{@email}")
+    Rails.logger.info("[OTP] Confirmation code resent to #{User.redact_email(@email)}")
 
     flash.now[:notice] = "A new code has been sent to #{@email}."
     render :confirm_email
@@ -188,12 +209,25 @@ class Users::RegistrationsController < Devise::RegistrationsController
     if sent_count < 2
       UserMailer.account_exists(existing_user, request.user_agent).deliver_later
       Rails.cache.write(cache_key, sent_count + 1, expires_in: 15.minutes)
-      Rails.logger.info("[SIGNUP] Account-exists email sent for #{email}")
+      Rails.logger.info("[SIGNUP] Account-exists email sent for #{User.redact_email(email)}")
     else
-      Rails.logger.info("[SIGNUP] Rate-limited account-exists email for #{email}")
+      Rails.logger.info("[SIGNUP] Rate-limited account-exists email for #{User.redact_email(email)}")
     end
 
     session[:confirmation_email] = email
     redirect_to users_confirm_email_path
+  end
+
+  def send_existing_signup_confirmation_otp(user)
+    sent_count = otp_send_count(user.email)
+    if sent_count >= 3
+      remember_signup_confirmation(user)
+      redirect_to signup_confirmation_path_for(user), alert: "Too many code requests. Please wait a few minutes."
+      return
+    end
+
+    issue_signup_confirmation_otp!(user)
+    increment_otp_send_count(user.email)
+    redirect_to signup_confirmation_path_for(user)
   end
 end

@@ -85,7 +85,11 @@ class EnvelopesController < ApplicationController
         full_audit_logging: current_account.full_audit_logging?,
         audit_retention_days: current_account.audit_retention_days
       }
-      response[:features] = Revdoku.feature_flags
+      features = Revdoku.feature_flags
+      if Revdoku.respond_to?(:credit_packs_purchasable?)
+        features = features.merge(one_time_credits_purchasable: Revdoku.credit_packs_purchasable?)
+      end
+      response[:features] = features
     else
       response[:authenticated] = false
     end
@@ -147,8 +151,8 @@ class EnvelopesController < ApplicationController
   def ensure_account!
     return if current_account.present?
 
-    # Auto-create personal account if missing (data recovery)
-    current_user.create_default_account
+    # Auto-create and complete personal account setup if missing (data recovery)
+    current_user.complete_account_setup!
     @current_account = nil # clear memoized value
     return if current_account.present?
 

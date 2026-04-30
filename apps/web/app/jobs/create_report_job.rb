@@ -426,7 +426,7 @@ class CreateReportJob < ApplicationJob
     # ids (e.g. "::custom_llm_1:mymodel") resolve through Account#provider_models.
     # Falls back to DEFAULT_BATCH_PAGE_SIZE when neither resolves.
     resolved = if AiModelResolver.alias_id?(ai_model_id)
-      AiModelResolver.resolve_alias(ai_model_id)
+      AiModelResolver.resolve_alias(ai_model_id, account: account)
     else
       AiModelResolver.find_model(ai_model_id, account: account)
     end

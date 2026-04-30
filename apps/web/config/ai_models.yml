@@ -24,9 +24,9 @@ shared:
       # provider with a working key (e.g. account BYOK on OpenRouter,
       # operator ENV on OpenAI, etc.).
       defaults:
-        inspection: "any:gemini-flash-lite"
-        checklist_generation: "any:gemini-flash-lite"
-        text_extraction: "any:gemini-flash-lite"
+        inspection: "any:gemini-basic"
+        checklist_generation: "any:gemini-basic"
+        text_extraction: "any:gemini-basic"
 
       # User-facing aliases. Each id is `any:<name>`. Picker shows only
       # these; concrete provider models exist under `providers:` below
@@ -52,30 +52,30 @@ shared:
         # Concrete model rows live under `providers.<key>.models[]` below;
         # those keep their literal brand+version names. Aliases sit on top.
         #
-        # Fallback order across ALL aliases is fixed: OpenAI → OpenRouter →
-        # Google Cloud. Each alias's `targets:` list is that global order
-        # filtered to providers that actually serve the family.
-        "any:gemini-flash":
+        # Fallback order lives on each alias's `targets:` list. Keep the
+        # highest-preference direct provider first for that family, followed
+        # by broker/fallback providers that serve the same high-level model.
+        "any:gemini-standard":
           name: "Gemini · Standard"
           description: "Google Gemini family. Balanced workhorse for inspections."
           stars: 4
           targets:
-            - "any:openrouter:google/gemini-3.1-flash-image-preview"
             - "any:google_cloud:gemini-3.1-flash-image-preview"
-        "any:gemini-flash-lite":
+            - "any:openrouter:google/gemini-3.1-flash-image-preview"
+        "any:gemini-basic":
           name: "Gemini · Basic"
           description: "Google Gemini family. Cheapest member; good for first-pass and high-volume runs."
           stars: 3
           targets:
-            - "any:openrouter:google/gemini-3.1-flash-lite-preview"
             - "any:google_cloud:gemini-3.1-flash-lite-preview"
-        "any:gemini-pro":
+            - "any:openrouter:google/gemini-3.1-flash-lite-preview"
+        "any:gemini-deep":
           name: "Gemini · Deep"
           description: "Google Gemini family. Top-tier reasoning for the trickiest pages."
           stars: 5
           targets:
-            - "any:openrouter:google/gemini-3-pro-preview"
             - "any:google_cloud:gemini-3-pro-preview"
+            - "any:openrouter:google/gemini-3-pro-preview"
         "any:gpt-basic":
           name: "GPT · Basic"
           description: "OpenAI GPT family. Cost-effective workhorse for high-volume document review. Same family as Standard, smaller and faster."
@@ -83,7 +83,7 @@ shared:
           targets:
             - "any:openai:gpt-4.1-mini-2025-04-14"
             - "any:openrouter:openai/gpt-4.1-mini"
-        "any:gpt-normal":
+        "any:gpt-standard":
           name: "GPT · Standard"
           description: "OpenAI GPT family. Reliable general-purpose model for most reviews."
           stars: 3
@@ -97,6 +97,20 @@ shared:
           targets:
             - "any:openai:gpt-5.2-2025-12-11"
             - "any:openrouter:openai/gpt-5.2"
+
+      legacy_aliases:
+        "any:gemini-flash": "any:gemini-standard"
+        "any:gemini-flash-lite": "any:gemini-basic"
+        "any:gemini-pro": "any:gemini-deep"
+        "any:gpt-normal": "any:gpt-standard"
+        "::gemini-flash": "any:gemini-standard"
+        "::gemini-flash-lite": "any:gemini-basic"
+        "::gemini-pro": "any:gemini-deep"
+        "::gpt-4.1": "any:gpt-standard"
+        "::gpt-5.2": "any:gpt-deep"
+        "us:basic": "any:gemini-basic"
+        "us:standard": "any:gemini-standard"
+        "us:premium": "any:gemini-deep"
 
       providers:
         openrouter:
@@ -131,7 +145,7 @@ shared:
             provider:
               data_collection: "deny"
               zdr: true
-              allow_fallbacks: false
+              allow_fallbacks: true
               require_parameters: true
           models:
             - id: "any:openrouter:openai/gpt-4.1"

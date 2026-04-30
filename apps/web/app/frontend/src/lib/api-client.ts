@@ -1684,6 +1684,7 @@ export class ApiClient {
       purchased: number;
       total: number;
       purchased_expires_at: string | null;
+      one_time_credits_purchasable?: boolean;
       account_id: string;
       account_name: string;
       plan: {

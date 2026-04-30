@@ -59,6 +59,13 @@ class Rack::Attack
     end
   end
 
+  # Throttle second-factor verification attempts (5 per minute per IP)
+  throttle("two_factor_verify/ip", limit: 5, period: 60.seconds) do |req|
+    if req.path == "/users/sign_in/two_factor" && req.post?
+      client_ip(req)
+    end
+  end
+
   # ----------------------------------------------------------------------------
   # Registration throttling (prevent mass account creation)
   # ----------------------------------------------------------------------------

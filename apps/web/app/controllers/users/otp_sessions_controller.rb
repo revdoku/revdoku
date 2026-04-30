@@ -5,6 +5,8 @@ class Users::OtpSessionsController < DeviseController
   include EmailOtpConfirmationFlow
   include RateLimitedEmailCache
 
+  MAX_TWO_FACTOR_ATTEMPTS = 5
+
   layout "devise"
 
   before_action :ensure_email_auth_enabled!, only: [:create]
@@ -18,6 +20,8 @@ class Users::OtpSessionsController < DeviseController
       @email = params[:email]
       return render :verify
     end
+
+    @email = params[:email].presence || flash[:email]
   end
 
   # POST /users/sign_in
@@ -32,12 +36,20 @@ class Users::OtpSessionsController < DeviseController
 
     user = find_user_by_canonical_email(email)
 
+    if user&.respond_to?(:access_locked?) && user.access_locked?
+      Rails.logger.warn("[OTP] Login code blocked for locked user #{User.redact_email(email)}")
+      flash.now[:alert] = "Your account is locked. Contact support."
+      return render :new, status: :locked
+    end
+
     if user
+      return send_signup_confirmation_otp(user, submitted_email: email) if signup_confirmation_pending?(user)
+
       return send_login_otp(user, submitted_email: email)
     elsif sign_in_auto_signup_enabled?
       return create_signup_from_sign_in(email)
     else
-      Rails.logger.info("[OTP] Login code requested for unknown email #{email}")
+      Rails.logger.info("[OTP] Login code requested for unknown email #{User.redact_email(email)}")
     end
 
     # Paranoid mode: always show "code sent" regardless of email existence
@@ -58,26 +70,30 @@ class Users::OtpSessionsController < DeviseController
 
     user = find_user_by_canonical_email(email)
 
-    if user&.verify_login_otp(code)
-      Rails.logger.info("[OTP] Login code verified for #{email}")
+    if user&.respond_to?(:access_locked?) && user.access_locked?
+      Rails.logger.warn("[OTP] Login code verification blocked for locked user #{User.redact_email(email)}")
+      flash.now[:alert] = "Your account is locked. Contact support."
+      return render :verify, status: :locked
+    end
 
-      # OTP verification proves email ownership — confirm if not yet confirmed
-      unless user.confirmed?
-        user.confirm
-        user.personal_account&.complete_setup!
-      end
+    if user&.verify_login_otp(code)
+      Rails.logger.info("[OTP] Login code verified for #{User.redact_email(email)}")
+
+      # OTP verification proves email ownership — confirm if not yet confirmed.
+      user.confirm unless user.confirmed?
+      user.complete_account_setup!
 
       if user.two_factor_enabled?
         # Store user ID in session for 2FA verification step
         session[:otp_pending_user_id] = user.id
+        session[:otp_pending_2fa_attempts] = 0
         return render :two_factor
       end
 
       sign_in(:user, user, event: :authentication)
-      remember_me(user)
       redirect_to post_login_path(user)
     else
-      Rails.logger.warn("[OTP] Failed login code verification for #{email}")
+      Rails.logger.warn("[OTP] Failed login code verification for #{User.redact_email(email)}")
       flash.now[:alert] = "Invalid or expired code. Please try again."
       render :verify, status: :unprocessable_entity
     end
@@ -92,12 +108,29 @@ class Users::OtpSessionsController < DeviseController
       return
     end
 
+    if user.respond_to?(:access_locked?) && user.access_locked?
+      session.delete(:otp_pending_user_id)
+      session.delete(:otp_pending_2fa_attempts)
+      redirect_to new_user_session_path, alert: "Your account is locked. Contact support."
+      return
+    end
+
     if user.verify_otp(params[:otp_attempt])
       session.delete(:otp_pending_user_id)
+      session.delete(:otp_pending_2fa_attempts)
+      user.complete_account_setup!
       sign_in(:user, user, event: :authentication)
-      remember_me(user)
       redirect_to post_login_path(user)
     else
+      attempts = session[:otp_pending_2fa_attempts].to_i + 1
+      session[:otp_pending_2fa_attempts] = attempts
+      if attempts >= MAX_TWO_FACTOR_ATTEMPTS
+        session.delete(:otp_pending_user_id)
+        session.delete(:otp_pending_2fa_attempts)
+        redirect_to new_user_session_path, alert: "Too many verification attempts. Please sign in again."
+        return
+      end
+
       flash.now[:alert] = "Invalid verification code. Please try again."
       render :two_factor, status: :unprocessable_entity
     end
@@ -132,11 +165,30 @@ class Users::OtpSessionsController < DeviseController
     code = user.generate_login_otp!
     increment_otp_send_count(user.email)
     UserMailer.login_otp(user, code).deliver_later
-    Rails.logger.info("[OTP] Login code sent to #{user.email}")
+    Rails.logger.info("[OTP] Login code sent to #{User.redact_email(user.email)}")
 
     @email = submitted_email
     flash.now[:notice] = "If this email is registered, a 6-digit code was sent to #{submitted_email}."
     render :verify, status: :unprocessable_entity
+  end
+
+  def signup_confirmation_pending?(user)
+    Revdoku.login_mode_otp? &&
+      user.respond_to?(:confirmed?) &&
+      !user.confirmed?
+  end
+
+  def send_signup_confirmation_otp(user, submitted_email:)
+    sent_count = otp_send_count(user.email)
+    if sent_count >= 3
+      @email = submitted_email
+      flash.now[:alert] = "Too many code requests. Please wait a few minutes."
+      return render :new, status: :too_many_requests
+    end
+
+    issue_signup_confirmation_otp!(user)
+    increment_otp_send_count(user.email)
+    redirect_to signup_confirmation_path_for(user)
   end
 
   def create_signup_from_sign_in(email)
@@ -149,15 +201,14 @@ class Users::OtpSessionsController < DeviseController
     user.skip_confirmation_notification! if user.respond_to?(:skip_confirmation_notification!)
 
     if user.save
-      issue_signup_confirmation_otp!(user)
-      return redirect_to signup_confirmation_path_for(user)
+      return send_signup_confirmation_otp(user, submitted_email: email)
     end
 
     if (existing_user = find_user_by_canonical_email(email))
       return send_login_otp(existing_user, submitted_email: email)
     end
 
-    Rails.logger.info("[OTP] Auto signup failed for #{email}: #{user.errors.full_messages.inspect}")
+    Rails.logger.info("[OTP] Auto signup failed for #{User.redact_email(email)}: #{user.errors.full_messages.inspect}")
     @email = email
     flash.now[:alert] = user.errors.full_messages.to_sentence.presence || "We could not start sign-up for this email."
     render :new, status: :unprocessable_entity

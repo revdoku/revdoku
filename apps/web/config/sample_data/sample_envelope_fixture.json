@@ -4,7 +4,7 @@
   "checklist_snapshot": {
     "name": "Invoice Review",
     "system_prompt": "You are a senior accounts payable auditor with forensic accounting experience. Review invoices for completeness, arithmetic accuracy, and potential compliance issues. You must independently verify every calculation — never trust stated totals.",
-    "ai_model": "us:standard",
+    "ai_model": "any:gemini-standard",
     "rules": [
       {
         "order": 0,
@@ -59,7 +59,7 @@
     }
   ],
   "report": {
-    "ai_model": "us:standard",
+    "ai_model": "any:gemini-standard",
     "pages_layout": {
       "label_font_scale": 1,
       "content_bounding_boxes": {

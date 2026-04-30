@@ -19,7 +19,7 @@ COPY apps/web/vite.config.ts apps/web/postcss.config.cjs apps/web/tailwind.confi
 COPY apps/web/config/vite.json ./config/
 RUN npm ci
 
-COPY apps/web/app/frontend ./app/frontend
+COPY apps/web/ ./
 RUN npm run build
 
 # ── Stage 2: doc-api (Fastify, TypeScript) bundle ───────────────────────

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Ban, Copy, ExternalLink, Link2, RefreshCw } from 'lucide-react';
 import { ApiClient, type IReportShareLink } from '@/lib/api-client';
+import { ApiError } from '@/lib/api-error';
 import { showToast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,9 +30,10 @@ export default function AccountReportSharesPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [defaultExpiration, setDefaultExpiration] = useState(30);
-  const [sharingEnabled, setSharingEnabled] = useState(true);
+  const [sharingEnabled, setSharingEnabled] = useState<boolean | null>(null);
 
   const loadShares = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -43,8 +45,16 @@ export default function AccountReportSharesPage() {
       setDefaultExpiration(response.default_share_link_expiration || 30);
       setSharingEnabled(response.share_report_enabled);
       setError(null);
+      setErrorCode(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load report shares');
+      const apiError = err instanceof ApiError ? err : null;
+      setSharingEnabled(false);
+      setErrorCode(apiError?.code || null);
+      setError(
+        apiError?.code === 'PAID_PLAN_REQUIRED'
+          ? 'Report sharing is available on paid plans only in the cloud version of Revdoku.'
+          : err instanceof Error ? err.message : 'Failed to load report shares'
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -54,6 +64,17 @@ export default function AccountReportSharesPage() {
   useEffect(() => { loadShares(); }, [loadShares]);
 
   const activeShares = useMemo(() => shares.filter((share) => share.active), [shares]);
+  const paidPlanRequired = errorCode === 'PAID_PLAN_REQUIRED';
+  const sharingStatusLabel = sharingEnabled === null
+    ? 'Checking'
+    : paidPlanRequired ? 'Requires paid plan' : `Sharing ${sharingEnabled ? 'enabled' : 'disabled'}`;
+  const sharingStatusClass = sharingEnabled === null
+    ? 'bg-slate-50 text-slate-700 border-slate-200'
+    : sharingEnabled
+      ? 'bg-green-50 text-green-800 border-green-200'
+      : paidPlanRequired
+        ? 'bg-amber-50 text-amber-800 border-amber-200'
+        : 'bg-red-50 text-red-800 border-red-200';
 
   const copyShare = async (share: IReportShareLink) => {
     if (!share.url) return;
@@ -90,8 +111,8 @@ export default function AccountReportSharesPage() {
           <div className="rounded-md border bg-background px-3 py-2">
             <span className="font-semibold">{shares.length}</span> total
           </div>
-          <div className={`rounded-md border px-3 py-2 ${sharingEnabled ? 'bg-green-50 text-green-800 border-green-200' : 'bg-amber-50 text-amber-800 border-amber-200'}`}>
-            Sharing {sharingEnabled ? 'enabled' : 'disabled'}
+          <div className={`rounded-md border px-3 py-2 ${sharingStatusClass}`}>
+            {sharingStatusLabel}
           </div>
           <Button
             type="button"
@@ -116,7 +137,14 @@ export default function AccountReportSharesPage() {
           {loading ? (
             <div className="h-24 animate-pulse rounded-md bg-muted" />
           ) : error ? (
-            <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>
+            <div className="flex flex-wrap items-center gap-3 rounded-md bg-destructive/10 p-4 text-sm text-destructive">
+              <span>{error}</span>
+              {paidPlanRequired && (
+                <Button type="button" variant="outline" size="sm" asChild>
+                  <a href="/account/subscription">Upgrade</a>
+                </Button>
+              )}
+            </div>
           ) : shares.length === 0 ? (
             <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
               No shared report links yet.

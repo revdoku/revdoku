@@ -199,9 +199,22 @@ interface IReportCreateSuccess extends IReply {
 interface IReportCreateError extends IReply {
   success: false;
   message: string;
+  error_code?: string;
+  pages_processed?: number;
 }
 
 type IReportCreateReply = IReportCreateSuccess | IReportCreateError;
+
+function documentRenderErrorCode(error: any): string | null {
+  const code = error?.code || error?.cause?.code;
+  if (code === 'PDF_RENDER_TIMEOUT' || code === 'PDF_RENDER_FAILED') return code;
+
+  const message = String(error?.message || '');
+  const stack = String(error?.stack || '');
+  if (/Document rendering timed out|Waiting failed: \d+ms exceeded/.test(message)) return 'PDF_RENDER_TIMEOUT';
+  if (/convertPdfToImages|Puppeteer pdfjs rendering failed/.test(stack) || /Document rendering failed/.test(message)) return 'PDF_RENDER_FAILED';
+  return null;
+}
 
 /* ────────────────────────────────────────────────────────────────
    Route plugin
@@ -411,6 +424,17 @@ const reportCreatePlugin: FastifyPluginAsync = async (app) => {
           );
         } catch (aiError: any) {
           const errMsg = friendlyAIErrorMessage(aiError);
+          const renderErrorCode = documentRenderErrorCode(aiError);
+          if (renderErrorCode) {
+            app.log.error({ err: aiError, stack: aiError?.stack, envelope_revision_id, report_id, error_code: renderErrorCode }, 'report/create: document rendering failed before AI call');
+            reply.code(renderErrorCode === 'PDF_RENDER_TIMEOUT' ? 503 : 422).send({
+              success: false,
+              error_code: renderErrorCode,
+              message: errMsg,
+              pages_processed: 0
+            });
+            return;
+          }
 
           // Log the full stack trace for non-AI-provider errors. Messages
           // like "Cannot read properties of undefined (reading 'width')"
@@ -430,6 +454,7 @@ const reportCreatePlugin: FastifyPluginAsync = async (app) => {
           if (isAuthAIError(aiError)) {
             reply.code(401).send({
               success: false,
+              error_code: 'AI_AUTH',
               message: errMsg,
               pages_processed: 0
             });
@@ -438,6 +463,7 @@ const reportCreatePlugin: FastifyPluginAsync = async (app) => {
           if (aiError?.error?.type === 'invalid_request_error') {
             reply.code(400).send({
               success: false,
+              error_code: 'AI_INVALID_REQUEST',
               message: `AI Model Error: ${errMsg}`,
               pages_processed: 0
             });
@@ -446,6 +472,7 @@ const reportCreatePlugin: FastifyPluginAsync = async (app) => {
           if (errMsg.includes('Model not found')) {
             reply.code(400).send({
               success: false,
+              error_code: 'AI_MODEL_NOT_FOUND',
               message: errMsg,
               pages_processed: 0
             });
@@ -454,6 +481,7 @@ const reportCreatePlugin: FastifyPluginAsync = async (app) => {
           if (errMsg.includes('does not support vision')) {
             reply.code(400).send({
               success: false,
+              error_code: 'AI_UNSUPPORTED_MODEL',
               message: errMsg,
               pages_processed: 0
             });
@@ -464,6 +492,7 @@ const reportCreatePlugin: FastifyPluginAsync = async (app) => {
           if (isTransientAIError(aiError)) {
             reply.code(503).send({
               success: false,
+              error_code: 'AI_TRANSIENT',
               message: `AI processing failed: ${errMsg}`,
               pages_processed: 0
             });
@@ -473,6 +502,7 @@ const reportCreatePlugin: FastifyPluginAsync = async (app) => {
           /* Fallback for any other AI failure */
           reply.code(500).send({
             success: false,
+            error_code: 'AI_FAILED',
             message: `AI processing failed: ${errMsg}`,
             pages_processed: 0
           });

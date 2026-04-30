@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "openssl"
+
 class User < ApplicationRecord
   # Assemble devise modules based on the instance's login mode. Cloud (OTP)
   # deployments skip :database_authenticatable entirely so the password
@@ -31,12 +33,8 @@ class User < ApplicationRecord
   has_prefix_id :user
   has_encrypted :otp_secret
 
-  # First-user-wins admin bootstrap. Fires only in password-based login
-  # modes (OTP uses a different signup path).
-  if Revdoku.password_based_login?
-    after_create :auto_promote_to_admin_on_fresh_install,
-                 if: :eligible_for_first_user_admin_bootstrap?
-  end
+  # First-user-wins admin bootstrap runs from complete_account_setup!, after
+  # the configured login mode has proved control of the email address.
 
   # Accounts
   has_many :memberships, class_name: "AccountMember", dependent: :destroy
@@ -158,7 +156,7 @@ class User < ApplicationRecord
   def generate_login_otp!
     code = SecureRandom.random_number(10**6).to_s.rjust(6, "0")
     update!(
-      login_otp_digest: Digest::SHA256.hexdigest(code),
+      login_otp_digest: self.class.login_otp_digest_for(code),
       login_otp_sent_at: Time.current,
       login_otp_attempts: 0
     )
@@ -170,7 +168,9 @@ class User < ApplicationRecord
     return false if login_otp_sent_at < 10.minutes.ago
     return false if login_otp_attempts >= 5
 
-    if Digest::SHA256.hexdigest(code.to_s) == login_otp_digest
+    expected_digest = self.class.login_otp_digest_for(code)
+    if login_otp_digest.bytesize == expected_digest.bytesize &&
+       ActiveSupport::SecurityUtils.secure_compare(expected_digest, login_otp_digest)
       clear_login_otp!
       true
     else
@@ -205,7 +205,7 @@ class User < ApplicationRecord
 
       # OAuth proves email ownership — confirm if not yet confirmed, then run deferred setup
       user.confirm unless user.confirmed?
-      user.personal_account&.complete_setup!
+      user.complete_account_setup!
 
       user
     else
@@ -227,21 +227,25 @@ class User < ApplicationRecord
           expires_at: auth.credentials.expires_at ? Time.at(auth.credentials.expires_at) : nil
         )
       end
-      new_user.reload.personal_account&.complete_setup!
+      new_user.reload.complete_account_setup!
       new_user
     end
   end
 
   # Account management
   def create_default_account
-    return if personal_account.present?
+    if (account = personal_account)
+      return account
+    end
 
     account = owned_accounts.create!(
       name: "#{first_name}'s Personal Account",
       personal: true
     )
     memberships.create!(account: account, role: :owner)
+    association(:personal_account).reset
     # Checklists, default plan, and sample envelope created via complete_setup! (called after confirmation or OAuth)
+    account
   end
 
   # Devise's RegistrationsController calls this internally;
@@ -262,21 +266,55 @@ class User < ApplicationRecord
   # Without :database_authenticatable there is no encrypted_password,
   # so we provide a stable, per-user value instead.
   def rememberable_value
-    "#{id}-#{created_at.to_i}"
+    "#{id}-#{created_at.to_i}-#{updated_at.to_i}-#{otp_required_for_login? ? 1 : 0}"
+  end
+
+  def self.redact_email(email)
+    local, domain = email.to_s.downcase.strip.split("@", 2)
+    return "[blank]" if local.blank? && domain.blank?
+    return "[invalid-email]" if domain.blank?
+
+    visible = local[0, 2]
+    "#{visible}***@#{domain}"
   end
 
   def self.ransackable_attributes(auth_object = nil)
     %w[email first_name last_name admin created_at utm_source utm_medium utm_campaign]
   end
 
+  def complete_account_setup!
+    return unless email_verified_for_account_setup?
+
+    account = create_default_account
+    return unless account
+
+    notify_signup = !account.setup_completed?
+    account.complete_setup!
+    auto_promote_to_admin_on_fresh_install if Revdoku.password_based_login? && eligible_for_first_user_admin_bootstrap?
+    notify_admin_of_signup if notify_signup && account.setup_completed?
+  end
+
 
   private
+
+  def self.login_otp_digest_for(code)
+    key = Rails.application.key_generator.generate_key("revdoku-login-otp-digest", 32)
+    OpenSSL::HMAC.hexdigest("SHA256", key, code.to_s)
+  end
 
   def email_canonical_must_be_unique
     return if email_canonical.blank?
     scope = User.where(email_canonical: email_canonical)
     scope = scope.where.not(id: id) if persisted?
     errors.add(:email, "is already taken (an account with this email already exists)") if scope.exists?
+  end
+
+  def email_verified_for_account_setup?
+    return true unless respond_to?(:confirmed?)
+    return true if confirmed?
+    return true if respond_to?(:confirmation_required?) && !confirmation_required?
+
+    false
   end
 
   def set_email_canonical
@@ -301,9 +339,6 @@ class User < ApplicationRecord
   end
 
 
-  after_create :create_default_account
-  after_commit :notify_admin_of_signup, on: :create
-
   def notify_admin_of_signup
     UserMailer.signup_notification(self).deliver_later
   rescue => e
@@ -321,7 +356,7 @@ class User < ApplicationRecord
     update_column(:admin, true)
     Rails.logger.info(
       "[Bootstrap] First user auto-promoted to admin." \
-      " login_mode=#{Revdoku.login_mode} user_id=#{id} email=#{email.inspect}"
+      " login_mode=#{Revdoku.login_mode} user_id=#{id} email=#{self.class.redact_email(email)}"
     )
   end
 end

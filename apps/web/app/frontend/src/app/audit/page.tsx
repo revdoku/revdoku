@@ -188,7 +188,7 @@ export default function AuditPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Show: All events</SelectItem>
-              </SelectContent>
+            </SelectContent>
           </Select>
           {envelopeId && (
             <span className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-muted px-2.5 py-1 rounded-md">

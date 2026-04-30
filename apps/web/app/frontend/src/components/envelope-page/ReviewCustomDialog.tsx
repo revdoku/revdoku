@@ -254,7 +254,7 @@ export default function ReviewCustomDialog({
       })
       .catch(() => { });
     // Fetch credit balance when dialog opens
-}, [isOpen]);
+  }, [isOpen]);
 
   // Initialize checklist selection and trackChanges when dialog opens
   useEffect(() => {
@@ -974,6 +974,7 @@ export default function ReviewCustomDialog({
             </label>
           )}
 
+
           {/* Confirm-before-run banner — surfaces only when user hits Run
               Review with one or more empty reference-file slots. Amber tint
               (warning, not error) differentiates from the blue ref-files
@@ -1235,4 +1236,3 @@ function RefFileCombobox({
     </div>
   );
 }
-

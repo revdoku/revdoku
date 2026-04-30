@@ -20,6 +20,7 @@ export interface FeaturesConfig {
   sessions_management: boolean;
   checklist_versions: boolean;
   one_time_credits: boolean;
+  one_time_credits_purchasable?: boolean;
   // Optional feature flag — undefined is falsy so the Review dialog's
   // credit block stays hidden when not declared.
   show_review_credits?: boolean;

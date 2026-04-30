@@ -13,6 +13,7 @@ class ApplicationController < ActionController::Base
   before_action :set_security_headers
   before_action :capture_utm_params
   before_action :configure_permitted_parameters, if: :devise_controller?
+  before_action :prevent_auth_page_caching, if: :devise_controller?
   before_action :set_current_context
 
   def authenticate_admin_user!
@@ -70,6 +71,12 @@ class ApplicationController < ActionController::Base
     response.set_header("Referrer-Policy", "strict-origin-when-cross-origin")
     response.set_header("X-Content-Type-Options", "nosniff")
     response.set_header("X-Frame-Options", "DENY")
+  end
+
+  def prevent_auth_page_caching
+    response.set_header("Cache-Control", "no-store, max-age=0")
+    response.set_header("Pragma", "no-cache")
+    response.set_header("Expires", "0")
   end
 
   def layout_by_resource
