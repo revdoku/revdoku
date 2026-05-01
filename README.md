@@ -28,7 +28,9 @@
 </p>
 
 <p align="center">
-  <a href="revdoku-demo.mp4">Watch the MP4 demo</a>
+  <video controls width="720" poster="revdoku-demo-poster.jpg">
+    <source src="revdoku-demo.webm" type="video/webm" />
+  </video>
 </p>
 
 ## Features
@@ -115,14 +117,119 @@ Full playlist on YouTube → <https://www.youtube.com/playlist?list=PLoSGpfRUg7y
 
 ## Quick start
 
-Revdoku workks on macOS, Linux, and **Windows (via WSL).**
+Choose the path that matches how you want to run Revdoku.
 
+### Cloud hosted
 
-**You'll need** 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine on Linux) 
+Use this if you want Revdoku without installing Docker, running a server, or
+managing backups.
+
+Sign up at [app.revdoku.com](https://app.revdoku.com/).
+
+### Local install (for a single user)
+
+This is the recommended path for local laptop/computer use. It creates a local Revdoku
+data folder, generates the required secrets once, starts the Docker app, and
+keeps your data on your computer.
+
+**You'll need**
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) running.
+- On Windows, use [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) for this command.
+
+Open Terminal on macOS/Linux, or WSL on Windows, then run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/revdoku/revdoku/main/install-local.sh | sh
+```
+
+When it finishes, open <http://localhost:3000>. The first account you create
+becomes the local admin.
+
+The installer creates `~/.revdoku` with:
+
+- `revdoku.env` - generated local secrets, including the key required to read encrypted local data.
+- `compose.yml` - Docker Compose configuration.
+- `storage/` - SQLite databases and uploaded files.
+- `revdoku` - helper command for start, stop, update, logs, status, open, and backup.
+
+Keep this folder together. To move Revdoku to a new computer or make a backup,
+run:
+
+```bash
+~/.revdoku/revdoku backup
+```
+
+Do not copy only `storage/`. The `revdoku.env` file contains the key needed to
+read your local documents and saved provider keys.
+
+Native Windows PowerShell install is experimental:
+
+```powershell
+Invoke-WebRequest -UseBasicParsing https://raw.githubusercontent.com/revdoku/revdoku/main/install-local.ps1 -OutFile "$env:TEMP\revdoku-install-local.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\revdoku-install-local.ps1"
+```
+
+### Self-host on a server
+
+Use this path for a private team server, VPS, homelab, or internal network
+install. This uses the prebuilt Docker image, but you own the domain, HTTPS,
+configuration, updates, and backups.
+
+**You'll need**
+- A Linux server with Docker Engine and the Docker Compose plugin.
+- A domain or internal hostname that points to the server.
+- A TLS proxy such as Caddy, nginx, Traefik, or Cloudflare Tunnel.
+
+1. **Clone and configure Revdoku:**
+
+   ```bash
+   git clone https://github.com/revdoku/revdoku.git
+   cd revdoku
+   cp env.example .env.local
+   ```
+
+2. **Edit `.env.local`:**
+
+   Fill in every `[REQUIRED]` value. At minimum, generate the four secrets,
+   set the first admin email/password, and set the public URL:
+
+   ```bash
+   APP_HOST=revdoku.yourdomain.com
+   APP_PROTOCOL=https
+   ```
+
+   If HTTPS terminates at your proxy, also set:
+
+   ```bash
+   REVDOKU_FORCE_SSL=true
+   ```
+
+3. **Start Revdoku:**
+
+   ```bash
+   ./bin/start -d
+   ```
+
+4. **Point your HTTPS proxy at Revdoku:**
+
+   Forward external HTTPS traffic to `http://127.0.0.1:3000` on the server.
+
+Before inviting other users:
+
+- Back up `.env.local` and the Docker volume `revdoku_storage` together.
+- Do not run `docker compose down -v` unless you intentionally want to delete local data.
+- Decide whether public signups should stay enabled. For a private server, set `REVDOKU_REGISTRATION_ENABLED=false` after creating the first admin user.
+- Configure SMTP in `.env.local` if you need email confirmation, password resets, or invitations.
+- Configure AI provider keys inside the app under **Account -> AI -> Providers**, or set operator-wide keys in `.env.local`.
+
+### Manual install from source (for advanced users)
+
+Use this path if you want to clone the repository, edit configuration manually,
+or rebuild the image locally for development.
+
+**You'll need**
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine on Linux)
 - [Git](https://git-scm.com/downloads)
 - If you are on Windows: [WSL for Windows](https://learn.microsoft.com/en-us/windows/wsl/install)
-
 
 1. **Open a terminal.**
    
@@ -201,7 +308,7 @@ See [env.example](https://github.com/revdoku/revdoku/blob/main/env.example) for 
 
 ## Security
 
-- All uploaded files and sensitive data fields in the database are encrypted at rest with AES-256-GCM encryption using `LOCKBOX_MASTER_KEY` defined in `.env.local`. SQLite uses WAL mode.
+- All uploaded files and sensitive data fields in the database are encrypted at rest with AES-256-GCM encryption using `LOCKBOX_MASTER_KEY` defined in `.env.local` or the local installer `revdoku.env`. SQLite uses WAL mode.
 - Users may setup 2-factor authentication for signing in.
 - Logs are created and available in /logs
 - No telemetry.
