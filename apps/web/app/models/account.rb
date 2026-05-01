@@ -351,7 +351,7 @@ class Account < ApplicationRecord
     # HIPAA filter — accounts with hipaa_enabled get filtered to providers
     # flagged `hipaa: true`.
     if hipaa_enabled?
-      return false unless AiModelResolver.model_is_hipaa_eligible?(ai_model)
+      return false unless AiModelResolver.model_is_hipaa?(ai_model)
     end
 
     true
@@ -374,7 +374,7 @@ class Account < ApplicationRecord
     default_id = AiModelResolver.canonical_alias_id(default_id) if AiModelResolver.alias_id?(default_id)
 
     if hipaa_enabled?
-      unless AiModelResolver.model_is_hipaa_eligible?(default_id)
+      unless AiModelResolver.model_is_hipaa?(default_id)
         hipaa_default = AiModelResolver.first_hipaa_model_id
         return hipaa_default if hipaa_default
       end

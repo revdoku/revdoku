@@ -46,6 +46,8 @@ class Api::V1::Account::AiProviderKeysController < Api::BaseController
       models_list = entry.is_a?(Hash) ? Array(entry["models"]).select do |m|
         m.is_a?(Hash) && m["alias"].to_s.strip.present? && m["model_id"].to_s.strip.present?
       end : []
+      entry_base_url = entry.is_a?(Hash) ? entry["base_url"].to_s.strip.presence : nil
+      catalog_base_url = catalog&.dig(:base_url).to_s.strip.presence
       {
         provider: provider,
         name: catalog&.dig(:name) || provider.humanize,
@@ -61,8 +63,8 @@ class Api::V1::Account::AiProviderKeysController < Api::BaseController
         key_suffix: entry.is_a?(Hash) ? mask(entry["api_key"]) : nil,
         model_id: entry.is_a?(Hash) ? entry["model_id"].to_s.strip.presence : nil,
         default_model_id: catalog&.dig(:default_model_id).to_s.presence,
-        base_url: entry.is_a?(Hash) ? entry["base_url"].to_s.strip.presence : nil,
-        default_base_url: catalog&.dig(:base_url).to_s.presence,
+        base_url: entry_base_url ? AiModelResolver.normalize_localhost_base_url(entry_base_url) : nil,
+        default_base_url: catalog_base_url ? AiModelResolver.normalize_localhost_base_url(catalog_base_url) : nil,
         # User-defined custom-provider models — each row carries its own
         # `revdoku_options` (per-row preset). Structured objects leave
         # room for stars / description without a format change.
@@ -148,10 +150,10 @@ class Api::V1::Account::AiProviderKeysController < Api::BaseController
     #      reject. When BYOK is disabled at the instance level, the resolver
     #      will fall through to the operator's <PROVIDER_KEY>_API_KEY env var
     #      at request time, so doc-api still works.
-    #   2. base_url / models writes require the per-row catalog flag
-    #      (`custom: true`). The instance-wide `byok_customizable` flag
-    #      controls whether the row is even reachable in the UI; this
-    #      controller guard is defence in depth against direct API calls.
+    #   2. base_url / models writes require BOTH the instance flag
+    #      (Revdoku.byok_customizable_enabled?) AND the per-row catalog flag
+    #      (`custom: true`). This matters for hosted cloud: a tenant-supplied
+    #      base_url is an SSRF surface.
     has_api_key  = params.key?(:api_key)  && params[:api_key].to_s.strip.present?
     has_model_id = params.key?(:model_id)
     has_enabled  = params.key?(:enabled)
@@ -180,6 +182,10 @@ class Api::V1::Account::AiProviderKeysController < Api::BaseController
       has_models = false
     end
 
+    if (has_base_url || has_models) && !Revdoku.byok_customizable_enabled?
+      return render_api_forbidden("Custom LLM endpoints are not allowed on this instance.")
+    end
+
     unless has_api_key || has_model_id || has_enabled || has_base_url || has_models
       return render_api_bad_request("provide api_key, model_id, enabled, base_url, or models")
     end
@@ -189,7 +195,7 @@ class Api::V1::Account::AiProviderKeysController < Api::BaseController
     kwargs[:enabled]  = ActiveModel::Type::Boolean.new.cast(params[:enabled]) if has_enabled
     # Empty string clears the preference; any non-empty string wins.
     kwargs[:model_id] = params[:model_id].to_s if has_model_id
-    kwargs[:base_url] = params[:base_url].to_s if has_base_url
+    kwargs[:base_url] = AiModelResolver.normalize_localhost_base_url(params[:base_url].to_s) if has_base_url
 
     if has_models
       raw = params[:models]

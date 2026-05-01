@@ -21,7 +21,15 @@
 
 ## Demo video
 
- <video alt="revdoku demo video" src="https://github.com/user-attachments/assets/ab5644df-483b-4ae9-9be8-d7782bda51b6" controls width="720"></video>
+<p align="center">
+  <a href="revdoku-demo.mp4">
+    <img src="revdoku-demo-poster.jpg" width="720" alt="Watch the Revdoku demo video" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="revdoku-demo.mp4">Watch the MP4 demo</a>
+</p>
 
 ## Features
 
@@ -169,6 +177,11 @@ Note: if you type `code .` and press Enter it will open the whole folder for edi
    - OpenRouter <openrouter.ai>. **IMPORTANT**: DO enable zero-data retention (ZDR) in <https://openrouter.ai/settings/privacy> and disable training to avoid your documents and files being captured by AI providers)
    - Local LLM (LM Studio, Ollama and others)
    - Custom LLM providers
+
+   When Revdoku runs in Docker and the LLM runs on the same computer, use
+   `host.docker.internal` instead of `localhost` in the provider URL. Examples:
+   LM Studio `http://host.docker.internal:1234/v1`, Ollama
+   `http://host.docker.internal:11434/v1`.
 
 Note for power users: to rebuild from source instead of pulling the prebuilt docker image use: 
 
