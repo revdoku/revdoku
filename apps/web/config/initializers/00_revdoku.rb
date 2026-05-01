@@ -187,16 +187,30 @@ module Revdoku
 
   def self.feature_flags
     FEATURE_DEFAULTS.keys.each_with_object({}) do |flag, hash|
-      hash[flag] = feature_enabled?(flag)
+      hash[flag] = case flag.to_sym
+      when :byok_customizable then byok_customizable_enabled?
+      when :byok_enabled then byok_enabled?
+      when :hipaa_mode then hipaa_mode_enabled?
+      else feature_enabled?(flag)
+      end
     end
   end
 
   # Thin wrappers around feature_enabled?. Kept as explicit methods so callers
   # can find gates by name and so we have a single site to extend semantics
   # later (e.g. owner-role-only, region-based allowlists).
-  def self.byok_enabled?              = feature_enabled?(:byok_enabled)
-  def self.byok_customizable_enabled? = feature_enabled?(:byok_customizable)
-  def self.hipaa_mode_enabled?        = feature_enabled?(:hipaa_mode)
+  def self.byok_enabled? = feature_enabled?(:byok_enabled)
+
+  # Tenant-supplied custom provider URLs are an SSRF surface in hosted cloud:
+  # doc-api would make server-side HTTP requests to arbitrary hosts. Keep this
+  # available for self-host / single-tenant installs, but hard-disable it for
+  # REVDOKU_HOSTED_CLOUD=true even if a feature overlay accidentally leaves the
+  # flag on.
+  def self.byok_customizable_enabled?
+    feature_enabled?(:byok_customizable) && !hosted_cloud?
+  end
+
+  def self.hipaa_mode_enabled? = feature_enabled?(:hipaa_mode)
 
   # Deployment-wide AI catalog region. The catalog has a
   # `shared.regions.<name>` tree; this is the single region all model

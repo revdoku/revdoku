@@ -114,14 +114,14 @@ class EnvelopeFixtureImporter
 
     def build_snapshot(account, fixture)
       if fixture["checklist_snapshot"].is_a?(Hash)
-        build_checklist_data_from_fixture(fixture["checklist_snapshot"])
+        build_checklist_data_from_fixture(account, fixture["checklist_snapshot"])
       else
         build_checklist_data_from_template(account, fixture["checklist_name"])
       end
     end
 
     # Returns a hash (not a record) with checklist data for inspection_context
-    def build_checklist_data_from_fixture(snapshot_data)
+    def build_checklist_data_from_fixture(account, snapshot_data)
       rules = (snapshot_data["rules"] || []).map.with_index do |r, idx|
         {
           "id" => "fixture_rule_#{idx}",
@@ -136,7 +136,7 @@ class EnvelopeFixtureImporter
         "id" => "fixture_#{SecureRandom.hex(8)}",
         "name" => snapshot_data["name"] || "Imported Checklist",
         "system_prompt" => snapshot_data["system_prompt"],
-        "ai_model" => snapshot_data["ai_model"],
+        "ai_model" => normalize_fixture_ai_model(account, snapshot_data["ai_model"]),
         "highlight_mode" => snapshot_data["highlight_mode"] || 0,
         "track_changes" => snapshot_data["track_changes"] || false,
         "rules" => rules
@@ -169,7 +169,7 @@ class EnvelopeFixtureImporter
 
     def create_report(account, revision, checklist_data, report_data = {})
       report_data ||= {}
-      ai_model = report_data["ai_model"] || checklist_data["ai_model"]
+      ai_model = normalize_fixture_ai_model(account, report_data["ai_model"] || checklist_data["ai_model"])
 
       inspection_context = {
         "checklist" => checklist_data,
@@ -229,6 +229,43 @@ class EnvelopeFixtureImporter
           check_index: rule_order
         )
       end
+    end
+
+    def normalize_fixture_ai_model(account, requested_id)
+      requested = requested_id.to_s.presence
+      return requested if fixture_model_available?(account, requested)
+
+      fallback = first_available_ai_model_id(account)
+      if requested.present? && fallback.present? && requested != fallback
+        Rails.logger.warn(
+          "EnvelopeFixtureImporter: fixture AI model #{requested.inspect} is unavailable for account #{account.prefix_id}; " \
+          "using #{fallback.inspect}"
+        )
+      end
+      fallback || requested
+    end
+
+    def fixture_model_available?(account, model_id)
+      return false if model_id.blank?
+      AiModelResolver.find_model(model_id, account: account).present?
+    rescue => e
+      Rails.logger.warn("EnvelopeFixtureImporter: failed to resolve fixture AI model #{model_id.inspect}: #{e.class} - #{e.message}")
+      false
+    end
+
+    def first_available_ai_model_id(account)
+      candidates =
+        AiModelResolver.aliases_for_account(account: account)
+          .select { |entry| entry[:available] }
+          .map { |entry| entry[:id] }
+      candidates.concat(AiModelResolver.models_for_account(account: account, operation: :inspection).map { |entry| entry[:id] })
+      candidates << (account.default_ai_model(:inspection) rescue nil)
+      candidates << AiModelResolver.default_model_id(:inspection)
+
+      candidates.compact.map(&:to_s).find { |candidate| fixture_model_available?(account, candidate) }
+    rescue => e
+      Rails.logger.warn("EnvelopeFixtureImporter: failed to choose fallback AI model for account #{account.prefix_id}: #{e.class} - #{e.message}")
+      nil
     end
   end
 end

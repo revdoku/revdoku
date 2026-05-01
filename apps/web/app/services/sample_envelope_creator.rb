@@ -15,13 +15,21 @@ class SampleEnvelopeCreator
 
   class << self
     def create_for_account(account)
-      return if account.envelopes.any? # idempotency guard
+      if account.envelopes.any?
+        Rails.logger.info("SampleEnvelopeCreator: skipped for account #{account.prefix_id}; account already has envelopes")
+        return
+      end
 
       fixture = load_fixture
-      return unless fixture
+      unless fixture
+        Rails.logger.warn("SampleEnvelopeCreator: fixture missing or unreadable at #{FIXTURE_PATH}")
+        return
+      end
 
       result = EnvelopeFixtureImporter.call(account, fixture)
-      unless result[:success]
+      if result[:success]
+        Rails.logger.info("SampleEnvelopeCreator: created sample envelope for account #{account.prefix_id}")
+      else
         Rails.logger.warn("SampleEnvelopeCreator: import failed: #{result[:message]}")
       end
     end

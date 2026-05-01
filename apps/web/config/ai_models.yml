@@ -257,7 +257,7 @@ shared:
 
         custom_llm_1:
           name: "Custom LLM 1"
-          base_url: "http://localhost:1234/v1"
+          base_url: "http://host.docker.internal:1234/v1"
           temperature: 0.1
           default_model_id: "gemma-family"
           # "Custom LLM" covers anything OpenAI-compatible the operator can

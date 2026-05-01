@@ -272,14 +272,14 @@ export default function ProviderKeyRow({
   // sticks even when rows have different families (e.g. one Gemma, one
   // generic OpenAI-compat).
   const saveCustomSettings = async () => {
-    // Base URL is required. The catalog default (http://localhost:1234/v1)
-    // only works for LM Studio running on the same host — anyone else
-    // needs to be explicit. Models with empty ids are dropped on save;
-    // the provider just won't appear in the picker until at least one
-    // non-empty id remains.
+    // Base URL is required. In Docker installs, local host services such
+    // as LM Studio/Ollama must be reached via host.docker.internal because
+    // localhost resolves inside the Revdoku container. Models with empty
+    // ids are dropped on save; the provider just won't appear in the picker
+    // until at least one non-empty id remains.
     const trimmedUrl = baseUrlDraft.trim();
     if (trimmedUrl.length === 0) {
-      setBaseUrlError('Base URL is required (e.g. http://localhost:1234/v1 for LM Studio, http://localhost:11434/v1 for Ollama, or the full URL of a remote endpoint).');
+      setBaseUrlError('Base URL is required (LM Studio: http://host.docker.internal:1234/v1, Ollama: http://host.docker.internal:11434/v1, or the full URL of a remote endpoint).');
       return;
     }
     setBaseUrlError(null);
@@ -636,7 +636,7 @@ export default function ProviderKeyRow({
                 setBaseUrlDraft(e.target.value);
                 if (baseUrlError) setBaseUrlError(null);
               }}
-              placeholder={defaultBaseUrl ?? 'http://localhost:1234/v1'}
+              placeholder={defaultBaseUrl ?? 'http://host.docker.internal:1234/v1'}
               disabled={localSaving}
               aria-invalid={!!baseUrlError}
               aria-describedby={`base-url-hint-${providerKey}`}
@@ -651,7 +651,7 @@ export default function ProviderKeyRow({
               </p>
             ) : (
               <p id={`base-url-hint-${providerKey}`} className="text-[11px] text-muted-foreground">
-                Full URL including <code>/v1</code>. LM Studio: <code>http://localhost:1234/v1</code>. Ollama: <code>http://localhost:11434/v1</code>. Remote endpoints are fine too.
+                Full URL including <code>/v1</code>. Docker installs: LM Studio <code>http://host.docker.internal:1234/v1</code>, Ollama <code>http://host.docker.internal:11434/v1</code>. Remote endpoints are fine too.
               </p>
             )}
           </div>
@@ -699,10 +699,10 @@ export default function ProviderKeyRow({
                         type="text"
                         value={m.model_id}
                         onChange={(e) => updateModelRow(idx, { model_id: e.target.value })}
-                        placeholder="gemma-3-9b-instruct"
+                        placeholder="gemma-4-26b-a4b"
                         disabled={localSaving}
                         aria-label={`Model id ${idx + 1}`}
-                        title="Sent verbatim to the upstream endpoint (e.g. gemma-3-9b-instruct, llama3.2, google/gemma-4-e4b)."
+                        title="Sent verbatim to the upstream endpoint (e.g. google/gemma-4-26b-a4b)."
                         className="rounded-md border border-input bg-background text-foreground px-2 py-1 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-ring"
                       />
                       <select
@@ -734,7 +734,7 @@ export default function ProviderKeyRow({
               </>
             )}
             <p className="text-[11px] text-muted-foreground">
-              <strong>Alias</strong> is the friendly name shown in the picker (and on the Aliases tab). It must be unique within this provider and must not match a built-in alias. <strong>Model id</strong> is the literal name sent to your endpoint (<code>llama3.2</code>, <code>gemma-3-9b-instruct</code>, etc.) — use <code>mymodel</code> when the endpoint doesn't care. The preset bundles options / grid_mode / coord-scale for that model family — pick <code>none</code> for a plain OpenAI-compat call.
+              <strong>Alias</strong> is the friendly name shown in the picker (and on the Aliases tab). It must be unique within this provider and must <strong>not</strong>not match a built-in alias. <strong>Model id</strong> is the literal model id sent to your endpoint (<code>gemma-4-26b-a4b</code>, etc.) — use <code>mymodel</code> when the endpoint doesn't care. The preset bundles options for that model family: use <code>revdoku_g_gemma_1</code> for a Gemma family models.
             </p>
           </div>
 

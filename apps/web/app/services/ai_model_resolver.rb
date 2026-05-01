@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "uri"
+
 # AI model catalog resolver.
 #
 # The YAML at config/ai_models.yml is organised as
@@ -559,7 +561,7 @@ class AiModelResolver
     # `byok_customizable`. Operators on shared multi-tenant cloud should
     # leave it false to avoid the SSRF surface a tenant-supplied base_url
     # would open.
-    return false if provider[:custom] && !Revdoku.feature_enabled?(:byok_customizable)
+    return false if provider[:custom] && !Revdoku.byok_customizable_enabled?
 
     true
   end
@@ -687,6 +689,7 @@ class AiModelResolver
     base = models_visible_in_catalog
     providers_hash.each do |provider_key, provider|
       next unless provider[:custom]
+      next unless provider_feature_enabled?(provider_key)
       base = base.reject { |m| m[:provider_key] == provider_key.to_s }
       user_models = account.respond_to?(:provider_models) ? account.provider_models(provider_key) : []
       provider_display = provider[:name].to_s.presence || "Custom"
@@ -747,6 +750,9 @@ class AiModelResolver
 
     provider_key = model[:provider_key]
     provider = provider_for(provider_key) || {}
+    unless provider_feature_enabled?(provider_key)
+      raise ModelNotFoundError, "AI provider '#{provider_key}' is not available on this instance."
+    end
 
     # Key resolution — precedence (most-specific wins):
     #   1. account.ai_provider_key(provider) → decrypted api_key inlined into
@@ -789,7 +795,7 @@ class AiModelResolver
 
     # Per-account base_url override: honoured ONLY for `custom: true` rows.
     account_base_url = nil
-    if provider[:custom] && account_entry.is_a?(Hash)
+    if provider[:custom] && Revdoku.byok_customizable_enabled? && account_entry.is_a?(Hash)
       account_base_url = account_entry["base_url"].to_s.strip.presence
     end
 
@@ -809,11 +815,13 @@ class AiModelResolver
     # default. Unknown preset keys resolve to an empty hash (= no-op).
     preset = preset_for(model[:revdoku_options])
 
+    resolved_base_url = normalize_localhost_base_url(account_base_url || provider[:base_url] || model[:base_url])
+
     config_hash = {
       id: model[:id],
       alias_id: model[:alias_id] || model[:id],
       provider: provider_key,
-      base_url: account_base_url || provider[:base_url] || model[:base_url],
+      base_url: resolved_base_url,
       api_key_env_var: api_key_env_var(provider_key),
       # Precedence: model > preset > provider. Mirrors how `options` /
       # `response_format` / `grid_mode` / `ai_coord_scale` already resolve.
@@ -844,6 +852,33 @@ class AiModelResolver
   end
 
   private_class_method :models_visible_in_catalog
+
+  LOCALHOST_NAMES = %w[localhost 127.0.0.1 ::1].freeze
+
+  # In Docker, localhost means "inside the Revdoku container", not the
+  # operator's machine. Rewrite local custom-provider endpoints at resolution
+  # time so existing saved Account#ai_provider_keys rows keep working after
+  # the Docker Compose host-gateway mapping is added.
+  def self.normalize_localhost_base_url(url)
+    raw = url.to_s
+    return raw if raw.blank? || !running_in_container?
+
+    uri = URI.parse(raw)
+    return raw unless LOCALHOST_NAMES.include?(uri.host)
+
+    uri.host = "host.docker.internal"
+    uri.to_s
+  rescue URI::InvalidURIError
+    raw
+  end
+
+  def self.running_in_container?
+    return true if ENV.fetch("REVDOKU_RUNNING_IN_DOCKER", "false").downcase.in?(%w[true 1 yes])
+
+    File.exist?("/.dockerenv")
+  end
+
+  private_class_method :running_in_container?
 
   # Inject identity headers so every upstream sees who's calling.
   #

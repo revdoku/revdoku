@@ -73,6 +73,7 @@ ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development" \
+    REVDOKU_RUNNING_IN_DOCKER="true" \
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true" \
     PUPPETEER_EXECUTABLE_PATH="/usr/bin/chromium"
 
