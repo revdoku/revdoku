@@ -22,15 +22,11 @@
 ## Demo video
 
 <p align="center">
-  <a href="revdoku-demo.mp4">
-    <img src="revdoku-demo-poster.jpg" width="720" alt="Watch the Revdoku demo video" />
-  </a>
+  <video src="https://github.com/user-attachments/assets/15f4de25-3b73-47ea-8f6a-c73e436907e8" controls width="720"></video>
 </p>
 
 <p align="center">
-  <video controls width="720" poster="revdoku-demo-poster.jpg">
-    <source src="revdoku-demo.webm" type="video/webm" />
-  </video>
+  <a href="https://github.com/user-attachments/assets/15f4de25-3b73-47ea-8f6a-c73e436907e8">Watch the demo video</a>
 </p>
 
 ## Features
