@@ -13,10 +13,13 @@ set -eu
 
 APP_DIR="${REVDOKU_HOME:-$HOME/.revdoku}"
 IMAGE="${REVDOKU_IMAGE:-ghcr.io/revdoku/revdoku:latest}"
-PORT="${REVDOKU_PORT:-3000}"
+DEFAULT_PORT="${REVDOKU_DEFAULT_LOCAL_PORT:-3217}"
+REQUESTED_PORT="${REVDOKU_PORT:-}"
+PORT=""
 CONTAINER_NAME="${REVDOKU_CONTAINER_NAME:-revdoku-local}"
 PROJECT_NAME="${REVDOKU_PROJECT_NAME:-$CONTAINER_NAME}"
 DRY_RUN="${REVDOKU_INSTALL_DRY_RUN:-0}"
+ENV_CHANGED="0"
 
 ENV_FILE="$APP_DIR/revdoku.env"
 COMPOSE_FILE="$APP_DIR/compose.yml"
@@ -78,9 +81,68 @@ check_docker() {
   fi
 }
 
+pull_image() {
+  if [ "${REVDOKU_SKIP_PULL:-0}" = "1" ]; then
+    info "Skipping image pull because REVDOKU_SKIP_PULL=1"
+    return
+  fi
+
+  if ! docker compose pull; then
+    info "Image pull failed; continuing with any local or cached image."
+  fi
+}
+
+env_file_value() {
+  key="$1"
+  [ -f "$ENV_FILE" ] || return 1
+  sed -n "s/^${key}=//p" "$ENV_FILE" | tail -n 1
+}
+
+port_available() {
+  port="$1"
+  if command -v nc >/dev/null 2>&1; then
+    ! nc -z 127.0.0.1 "$port" >/dev/null 2>&1
+    return
+  fi
+
+  if command -v lsof >/dev/null 2>&1; then
+    ! lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1
+    return
+  fi
+
+  return 0
+}
+
+choose_port() {
+  port="$DEFAULT_PORT"
+  max=$((DEFAULT_PORT + 50))
+  while [ "$port" -le "$max" ]; do
+    if port_available "$port"; then
+      printf '%s\n' "$port"
+      return
+    fi
+    port=$((port + 1))
+  done
+
+  die "could not find a free localhost port in ${DEFAULT_PORT}-${max}; set REVDOKU_PORT and run again"
+}
+
+ensure_env_setting() {
+  key="$1"
+  value="$2"
+  if ! grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
+    printf '%s=%s\n' "$key" "$value" >> "$ENV_FILE"
+    ENV_CHANGED="1"
+  fi
+}
+
 write_env_file() {
   if [ -f "$ENV_FILE" ]; then
     info "Keeping existing $ENV_FILE"
+    ensure_env_setting "REVDOKU_PORT" "$PORT"
+    ensure_env_setting "REVDOKU_LOCAL_ACCESS" "helper"
+    ensure_env_setting "REVDOKU_LOCAL_ACCESS_SECRET" "$(random_hex 32)"
+    ensure_env_setting "REVDOKU_REGISTRATION_ENABLED" "false"
     return
   fi
 
@@ -97,9 +159,12 @@ write_env_file() {
     printf 'LOCKBOX_MASTER_KEY=%s\n' "$(random_hex 32)"
     printf 'PREFIX_ID_SALT=%s\n' "$(random_hex 32)"
     printf 'REVDOKU_DOC_API_KEY=%s\n' "$(random_hex 32)"
+    printf 'REVDOKU_LOCAL_ACCESS_SECRET=%s\n' "$(random_hex 32)"
     printf '\n'
+    printf 'REVDOKU_PORT=%s\n' "$PORT"
+    printf 'REVDOKU_LOCAL_ACCESS=helper\n'
     printf 'REVDOKU_LOGIN_MODE=password_no_confirmation\n'
-    printf 'REVDOKU_REGISTRATION_ENABLED=true\n'
+    printf 'REVDOKU_REGISTRATION_ENABLED=false\n'
     printf 'APP_HOST=localhost\n'
     printf 'APP_PROTOCOL=http\n'
   } > "$tmp"
@@ -154,8 +219,6 @@ write_helper() {
 set -eu
 
 REVDOKU_HOME="${REVDOKU_HOME:-$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)}"
-PORT="${REVDOKU_PORT:-3000}"
-URL="http://localhost:${PORT}"
 
 cd "$REVDOKU_HOME"
 
@@ -163,6 +226,16 @@ die() {
   printf '\nERROR: %s\n' "$*" >&2
   exit 1
 }
+
+env_value() {
+  key="$1"
+  [ -f revdoku.env ] || return 1
+  sed -n "s/^${key}=//p" revdoku.env | tail -n 1
+}
+
+file_port="$(env_value REVDOKU_PORT 2>/dev/null || true)"
+PORT="${REVDOKU_PORT:-${file_port:-3217}}"
+URL="http://localhost:${PORT}"
 
 ensure_local_data() {
   if [ -d storage ] && [ ! -f revdoku.env ]; then
@@ -175,15 +248,38 @@ ensure_local_data() {
 }
 
 open_url() {
+  url="${1:-$URL}"
   if command -v open >/dev/null 2>&1; then
-    open "$URL" >/dev/null 2>&1 || true
+    open "$url" >/dev/null 2>&1 || true
   elif command -v xdg-open >/dev/null 2>&1; then
-    xdg-open "$URL" >/dev/null 2>&1 || true
+    xdg-open "$url" >/dev/null 2>&1 || true
   elif command -v cmd.exe >/dev/null 2>&1; then
-    cmd.exe /c start "" "$URL" >/dev/null 2>&1 || true
+    cmd.exe /c start "" "$url" >/dev/null 2>&1 || true
   else
-    printf '%s\n' "$URL"
+    printf '%s\n' "$url"
   fi
+}
+
+wait_for_health() {
+  url="http://127.0.0.1:${PORT}/up"
+  i=0
+  while [ "$i" -lt 60 ]; do
+    if curl -fsS "$url" >/dev/null 2>&1; then
+      return 0
+    fi
+    i=$((i + 1))
+    sleep 2
+  done
+  return 1
+}
+
+local_access_url() {
+  output="$(docker compose exec -T revdoku bin/rails runner 'puts Revdoku::LocalAccess.issue_url!' 2>/dev/null)" || return 1
+  printf '%s\n' "$output" | tail -n 1
+}
+
+local_access_error() {
+  die "Could not create a local sign-in link. The running image may not include Core local access yet. Run '$0 update' after publishing a new image, or test local source with: docker build -t revdoku-local-current . && REVDOKU_IMAGE=revdoku-local-current REVDOKU_SKIP_PULL=1 sh install-local.sh"
 }
 
 case "${1:-help}" in
@@ -209,8 +305,20 @@ case "${1:-help}" in
   status)
     docker compose ps
     ;;
+  login-url)
+    ensure_local_data
+    login_url="$(local_access_url)" || local_access_error
+    [ -n "$login_url" ] || local_access_error
+    printf '%s\n' "$login_url"
+    ;;
   open)
-    open_url
+    ensure_local_data
+    docker compose up -d
+    wait_for_health || die "Revdoku started, but did not become ready. Run '$0 logs' for details."
+    login_url="$(local_access_url)" || local_access_error
+    [ -n "$login_url" ] || local_access_error
+    printf 'Opening %s\n' "$login_url"
+    open_url "$login_url"
     ;;
   backup)
     ensure_local_data
@@ -247,7 +355,8 @@ Commands:
   update   Pull the latest image and restart
   logs     Follow container logs
   status   Show container status
-  open     Open Revdoku in your browser
+  open     Start Revdoku and open a one-time local sign-in link
+  login-url Print a one-time local sign-in link
   backup   Create a portable backup of the local Revdoku folder
 
 Data folder:
@@ -285,6 +394,15 @@ wait_for_health() {
 mkdir -p "$APP_DIR" "$BACKUP_DIR"
 umask 077
 
+existing_port="$(env_file_value REVDOKU_PORT 2>/dev/null || true)"
+if [ -n "$REQUESTED_PORT" ]; then
+  PORT="$REQUESTED_PORT"
+elif [ -n "$existing_port" ]; then
+  PORT="$existing_port"
+else
+  PORT="$(choose_port)"
+fi
+
 write_env_file
 mkdir -p "$STORAGE_DIR"
 write_compose_file
@@ -302,8 +420,12 @@ info ""
 info "Starting Revdoku. The first download can take a few minutes."
 (
   cd "$APP_DIR"
-  docker compose pull
-  docker compose up -d
+  pull_image
+  if [ "$ENV_CHANGED" = "1" ]; then
+    docker compose up -d --force-recreate
+  else
+    docker compose up -d
+  fi
 )
 
 if wait_for_health; then
@@ -311,7 +433,8 @@ if wait_for_health; then
   info "Revdoku is ready:"
   info "  http://localhost:${PORT}"
   info ""
-  info "Create your account in the browser. The first account becomes the local admin."
+  info "Opening a one-time local sign-in link. Use this command later:"
+  info "  $HELPER_FILE open"
   info ""
   info "Local data folder:"
   info "  $APP_DIR"
@@ -323,7 +446,7 @@ if wait_for_health; then
   info "  $HELPER_FILE stop"
   info "  $HELPER_FILE update"
   info "  $HELPER_FILE backup"
-  open_url "http://localhost:${PORT}"
+  "$HELPER_FILE" open
 else
   info ""
   info "Revdoku was started, but the health check did not pass yet."

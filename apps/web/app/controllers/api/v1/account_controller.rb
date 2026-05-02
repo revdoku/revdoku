@@ -205,7 +205,7 @@ class Api::V1::AccountController < Api::BaseController
       value: new_key.token,
       expires: new_key.expires_at,
       httponly: true,
-      secure: !Rails.env.development?,
+      secure: Rails.application.config.force_ssl,
       same_site: :lax
     }
 

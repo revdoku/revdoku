@@ -42,6 +42,10 @@ Rails.application.routes.draw do
     end
   end
 
+  if Revdoku.local_access_enabled?
+    get "users/local_access", to: "users/local_access#show", as: :users_local_access
+  end
+
   # Account selection (post-login)
   get "accounts/select", to: "accounts#select", as: :select_account
   post "accounts/select", to: "accounts#choose", as: :choose_account

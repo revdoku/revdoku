@@ -11,13 +11,14 @@ provided for native PowerShell testing.
 param(
   [string]$InstallDir = $(if ($env:REVDOKU_HOME) { $env:REVDOKU_HOME } else { Join-Path $env:APPDATA "Revdoku" }),
   [string]$Image = $(if ($env:REVDOKU_IMAGE) { $env:REVDOKU_IMAGE } else { "ghcr.io/revdoku/revdoku:latest" }),
-  [int]$Port = $(if ($env:REVDOKU_PORT) { [int]$env:REVDOKU_PORT } else { 3000 }),
+  [int]$Port = $(if ($env:REVDOKU_PORT) { [int]$env:REVDOKU_PORT } else { 0 }),
   [string]$ContainerName = $(if ($env:REVDOKU_CONTAINER_NAME) { $env:REVDOKU_CONTAINER_NAME } else { "revdoku-local" }),
   [string]$ProjectName = $(if ($env:REVDOKU_PROJECT_NAME) { $env:REVDOKU_PROJECT_NAME } else { "" }),
   [switch]$DryRun
 )
 
 $ErrorActionPreference = "Stop"
+$EnvChanged = $false
 
 if ([string]::IsNullOrWhiteSpace($ProjectName)) {
   $ProjectName = $ContainerName
@@ -49,6 +50,53 @@ function New-RandomHex([int]$Bytes) {
   -join ($buffer | ForEach-Object { $_.ToString("x2") })
 }
 
+function Get-EnvFileValue([string]$Key) {
+  if (-not (Test-Path $EnvFile)) {
+    return $null
+  }
+
+  $line = Get-Content -Path $EnvFile | Where-Object { $_ -match "^$([regex]::Escape($Key))=" } | Select-Object -Last 1
+  if ($line) {
+    return ($line -replace "^$([regex]::Escape($Key))=", "")
+  }
+  return $null
+}
+
+function Test-PortAvailable([int]$CandidatePort) {
+  try {
+    $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Parse("127.0.0.1"), $CandidatePort)
+    $listener.Start()
+    $listener.Stop()
+    return $true
+  } catch {
+    return $false
+  }
+}
+
+function Get-AvailablePort {
+  $defaultPort = if ($env:REVDOKU_DEFAULT_LOCAL_PORT) { [int]$env:REVDOKU_DEFAULT_LOCAL_PORT } else { 3217 }
+  for ($candidate = $defaultPort; $candidate -le ($defaultPort + 50); $candidate++) {
+    if (Test-PortAvailable $candidate) {
+      return $candidate
+    }
+  }
+
+  throw "Could not find a free localhost port in $defaultPort-$($defaultPort + 50); set REVDOKU_PORT and run again."
+}
+
+function Ensure-EnvSetting([string]$Key, [string]$Value) {
+  if (-not (Test-Path $EnvFile)) {
+    return
+  }
+
+  $existing = Get-Content -Path $EnvFile | Where-Object { $_ -match "^$([regex]::Escape($Key))=" } | Select-Object -First 1
+  if (-not $existing) {
+    $encoding = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::AppendAllText($EnvFile, "`n$Key=$Value", $encoding)
+    $script:EnvChanged = $true
+  }
+}
+
 function Assert-Docker {
   if ($DryRun -or $env:REVDOKU_INSTALL_DRY_RUN -eq "1") {
     return
@@ -69,9 +117,25 @@ function Assert-Docker {
   }
 }
 
+function Pull-Image {
+  if ($env:REVDOKU_SKIP_PULL -eq "1") {
+    Write-Info "Skipping image pull because REVDOKU_SKIP_PULL=1"
+    return
+  }
+
+  docker compose pull
+  if ($LASTEXITCODE -ne 0) {
+    Write-Info "Image pull failed; continuing with any local or cached image."
+  }
+}
+
 function Write-EnvFile {
   if (Test-Path $EnvFile) {
     Write-Info "Keeping existing $EnvFile"
+    Ensure-EnvSetting -Key "REVDOKU_PORT" -Value "$Port"
+    Ensure-EnvSetting -Key "REVDOKU_LOCAL_ACCESS" -Value "helper"
+    Ensure-EnvSetting -Key "REVDOKU_LOCAL_ACCESS_SECRET" -Value "$(New-RandomHex 32)"
+    Ensure-EnvSetting -Key "REVDOKU_REGISTRATION_ENABLED" -Value "false"
     return
   }
 
@@ -87,9 +151,12 @@ function Write-EnvFile {
     "LOCKBOX_MASTER_KEY=$(New-RandomHex 32)"
     "PREFIX_ID_SALT=$(New-RandomHex 32)"
     "REVDOKU_DOC_API_KEY=$(New-RandomHex 32)"
+    "REVDOKU_LOCAL_ACCESS_SECRET=$(New-RandomHex 32)"
     ""
+    "REVDOKU_PORT=$Port"
+    "REVDOKU_LOCAL_ACCESS=helper"
     "REVDOKU_LOGIN_MODE=password_no_confirmation"
-    "REVDOKU_REGISTRATION_ENABLED=true"
+    "REVDOKU_REGISTRATION_ENABLED=false"
     "APP_HOST=localhost"
     "APP_PROTOCOL=http"
   ) -join "`n"
@@ -151,16 +218,29 @@ services:
 function Write-Helper {
   $content = @'
 param(
-  [ValidateSet("start", "stop", "restart", "update", "logs", "status", "open", "backup", "help")]
+  [ValidateSet("start", "stop", "restart", "update", "logs", "status", "open", "login-url", "backup", "help")]
   [string]$Command = "help"
 )
 
 $ErrorActionPreference = "Stop"
 $HomeDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$Port = if ($env:REVDOKU_PORT) { [int]$env:REVDOKU_PORT } else { 3000 }
-$Url = "http://localhost:$Port"
 
 Set-Location $HomeDir
+
+function Get-EnvFileValue([string]$Key) {
+  if (-not (Test-Path "revdoku.env")) {
+    return $null
+  }
+
+  $line = Get-Content -Path "revdoku.env" | Where-Object { $_ -match "^$([regex]::Escape($Key))=" } | Select-Object -Last 1
+  if ($line) {
+    return ($line -replace "^$([regex]::Escape($Key))=", "")
+  }
+  return $null
+}
+
+$Port = if ($env:REVDOKU_PORT) { [int]$env:REVDOKU_PORT } elseif (Get-EnvFileValue "REVDOKU_PORT") { [int](Get-EnvFileValue "REVDOKU_PORT") } else { 3217 }
+$Url = "http://localhost:$Port"
 
 function Assert-LocalData {
   if ((Test-Path "storage") -and -not (Test-Path "revdoku.env")) {
@@ -170,6 +250,31 @@ function Assert-LocalData {
   if (-not (Test-Path "revdoku.env")) {
     throw "revdoku.env is missing from $HomeDir. It contains the key needed to read local data."
   }
+}
+
+function Wait-ForHealth {
+  $healthUrl = "http://127.0.0.1:$Port/up"
+  for ($i = 0; $i -lt 60; $i++) {
+    try {
+      Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 3 | Out-Null
+      return $true
+    } catch {
+      Start-Sleep -Seconds 2
+    }
+  }
+  return $false
+}
+
+function Get-LocalAccessUrl {
+  $output = docker compose exec -T revdoku bin/rails runner "puts Revdoku::LocalAccess.issue_url!" 2>$null
+  if ($LASTEXITCODE -eq 0 -and $output) {
+    return ($output | Select-Object -Last 1).Trim()
+  }
+  return $null
+}
+
+function Throw-LocalAccessError {
+  throw "Could not create a local sign-in link. The running image may not include Core local access yet. Run this helper with update after publishing a new image, or test local source with: docker build -t revdoku-local-current .; `$env:REVDOKU_IMAGE='revdoku-local-current'; `$env:REVDOKU_SKIP_PULL='1'; powershell -ExecutionPolicy Bypass -File .\install-local.ps1"
 }
 
 switch ($Command) {
@@ -195,8 +300,26 @@ switch ($Command) {
   "status" {
     docker compose ps
   }
+  "login-url" {
+    Assert-LocalData
+    $loginUrl = Get-LocalAccessUrl
+    if (-not $loginUrl) {
+      Throw-LocalAccessError
+    }
+    Write-Host $loginUrl
+  }
   "open" {
-    Start-Process $Url
+    Assert-LocalData
+    docker compose up -d
+    if (-not (Wait-ForHealth)) {
+      throw "Revdoku started, but did not become ready. Run this helper with logs for details."
+    }
+    $loginUrl = Get-LocalAccessUrl
+    if (-not $loginUrl) {
+      Throw-LocalAccessError
+    }
+    Write-Host "Opening $loginUrl"
+    Start-Process $loginUrl
   }
   "backup" {
     Assert-LocalData
@@ -247,7 +370,8 @@ Commands:
   update   Pull the latest image and restart
   logs     Follow container logs
   status   Show container status
-  open     Open Revdoku in your browser
+  open     Start Revdoku and open a one-time local sign-in link
+  login-url Print a one-time local sign-in link
   backup   Create a portable backup of the local Revdoku folder
 
 Data folder:
@@ -280,6 +404,15 @@ function Wait-ForHealth {
 
 New-Item -ItemType Directory -Force -Path $InstallDir, $BackupDir | Out-Null
 
+if ($Port -eq 0) {
+  $existingPort = Get-EnvFileValue "REVDOKU_PORT"
+  if ($existingPort) {
+    $Port = [int]$existingPort
+  } else {
+    $Port = Get-AvailablePort
+  }
+}
+
 Write-EnvFile
 New-Item -ItemType Directory -Force -Path $StorageDir | Out-Null
 Write-ComposeFile
@@ -298,8 +431,12 @@ Write-Info ""
 Write-Info "Starting Revdoku. The first download can take a few minutes."
 Push-Location $InstallDir
 try {
-  docker compose pull
-  docker compose up -d
+  Pull-Image
+  if ($EnvChanged) {
+    docker compose up -d --force-recreate
+  } else {
+    docker compose up -d
+  }
 } finally {
   Pop-Location
 }
@@ -309,7 +446,8 @@ if (Wait-ForHealth) {
   Write-Info "Revdoku is ready:"
   Write-Info "  http://localhost:$Port"
   Write-Info ""
-  Write-Info "Create your account in the browser. The first account becomes the local admin."
+  Write-Info "Opening a one-time local sign-in link. Use this command later:"
+  Write-Info "  powershell -ExecutionPolicy Bypass -File `"$HelperFile`" open"
   Write-Info ""
   Write-Info "Local data folder:"
   Write-Info "  $InstallDir"
@@ -321,7 +459,7 @@ if (Wait-ForHealth) {
   Write-Info "  powershell -ExecutionPolicy Bypass -File `"$HelperFile`" stop"
   Write-Info "  powershell -ExecutionPolicy Bypass -File `"$HelperFile`" update"
   Write-Info "  powershell -ExecutionPolicy Bypass -File `"$HelperFile`" backup"
-  Start-Process "http://localhost:$Port"
+  powershell -ExecutionPolicy Bypass -File "$HelperFile" open
 } else {
   Write-Info ""
   Write-Info "Revdoku was started, but the health check did not pass yet."
