@@ -76,6 +76,56 @@ module Revdoku
     ENV.fetch("REVDOKU_SIGN_IN_AUTO_SIGNUP_ENABLED", "true").downcase.in?(%w[true 1 yes])
   end
 
+  LOCAL_ACCESS_HOSTS = %w[localhost 127.0.0.1 ::1].freeze
+
+  def self.local_access_enabled?
+    ENV.fetch("REVDOKU_LOCAL_ACCESS", "").downcase == "helper" &&
+      core_edition? &&
+      self_hosted? &&
+      login_mode_password_no_confirmation? &&
+      local_access_host_allowed?(ENV.fetch("APP_HOST", "localhost")) &&
+      ENV["REVDOKU_LOCAL_ACCESS_SECRET"].to_s.bytesize >= 32
+  end
+
+  def self.local_access_host_allowed?(host)
+    normalized = normalize_local_access_host(host)
+    LOCAL_ACCESS_HOSTS.include?(normalized)
+  end
+
+  def self.normalize_local_access_host(host)
+    normalized = host.to_s.downcase.strip
+    if (match = normalized.match(/\A\[([^\]]+)\](?::\d+)?\z/))
+      return match[1]
+    end
+
+    return normalized.split(":", 2).first if normalized.count(":") == 1
+
+    normalized
+  end
+
+  def self.local_access_base_url
+    protocol = ENV.fetch("APP_PROTOCOL", "http").to_s.strip.presence || "http"
+    host = ENV.fetch("APP_HOST", "localhost").to_s.strip.presence || "localhost"
+    port = ENV["REVDOKU_PORT"].to_s.strip.presence
+    "#{protocol}://#{local_access_authority(host, port)}"
+  end
+
+  def self.local_access_authority(host, port)
+    normalized = host.to_s.strip
+    return normalized if normalized.match?(/\A\[[^\]]+\]:\d+\z/)
+    return normalized if normalized.match?(/\A[^:]+:\d+\z/)
+
+    host_part = if normalized.start_with?("[") && normalized.end_with?("]")
+      normalized
+    elsif normalized.include?(":")
+      "[#{normalized}]"
+    else
+      normalized
+    end
+
+    port ? "#{host_part}:#{port}" : host_part
+  end
+
   def self.share_report_enabled?
     ENV.fetch("SHARE_REPORT_ENABLED", "true").downcase.in?(%w[true 1 yes])
   end

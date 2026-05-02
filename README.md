@@ -138,8 +138,8 @@ Open Terminal on macOS/Linux, or WSL on Windows, then run:
 curl -fsSL https://raw.githubusercontent.com/revdoku/revdoku/main/install-local.sh | sh
 ```
 
-When it finishes, open <http://localhost:3000>. The first account you create
-becomes the local admin.
+When it finishes, the installer opens a one-time local sign-in link. No email
+or password is needed for the local single-user install.
 
 The installer creates `~/.revdoku` with:
 
@@ -147,6 +147,15 @@ The installer creates `~/.revdoku` with:
 - `compose.yml` - Docker Compose configuration.
 - `storage/` - SQLite databases and uploaded files.
 - `revdoku` - helper command for start, stop, update, logs, status, open, and backup.
+
+Run this any time later to start Revdoku and open a fresh local sign-in link:
+
+```bash
+~/.revdoku/revdoku open
+```
+
+The local installer binds Revdoku to `127.0.0.1` only and uses the first free
+port starting at `3217`, saved in `revdoku.env`.
 
 Keep this folder together. To move Revdoku to a new computer or make a backup,
 run:
