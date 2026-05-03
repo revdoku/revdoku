@@ -38,6 +38,7 @@ class Api::V1::AiModelsController < Api::BaseController
         #            (also gated by instance byok_customizable).
         byok: p[:byok],
         custom: p[:custom],
+        local_runtime: p[:local_runtime],
         base_url: p[:base_url],
         default_base_url: p[:default_base_url],
         models: p[:models]

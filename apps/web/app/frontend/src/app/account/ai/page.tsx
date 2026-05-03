@@ -15,6 +15,21 @@ type ProviderRow = NonNullable<ModelsResponse['providers']>[number];
 type AccountKey = Awaited<ReturnType<typeof ApiClient.listProviderKeys>>['keys'][number];
 type RevdokuOptionPreset = NonNullable<ModelsResponse['revdoku_option_presets']>[number];
 
+const aliasHasConfiguredProvider = (model: IAIModelOption) =>
+  (model.providers || []).some((provider) => provider.configured);
+
+const cleanAliasName = (name: string) =>
+  name.replace(/\s*\(NO providers configured!\)\s*$/i, '');
+
+const sortConfiguredAliasesFirst = (aliases: IAIModelOption[]) => {
+  const order = new Map(aliases.map((alias, index) => [alias.id, index]));
+  return [...aliases].sort((a, b) => {
+    const rankDiff = Number(!aliasHasConfiguredProvider(a)) - Number(!aliasHasConfiguredProvider(b));
+    if (rankDiff !== 0) return rankDiff;
+    return (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0);
+  });
+};
+
 export default function AccountAiPage() {
   const [models, setModels] = useState<IAIModelOption[]>([]);
   const [aliases, setAliases] = useState<IAIModelOption[]>([]);
@@ -28,7 +43,9 @@ export default function AccountAiPage() {
   const [byokEnabled, setByokEnabled] = useState(false);
   const [customizableEnabled, setCustomizableEnabled] = useState(false);
   const [generationModel, setGenerationModel] = useState<string>('');
+  const [generationDefault, setGenerationDefault] = useState<string>('');
   const [inspectionModel, setInspectionModel] = useState<string>('');
+  const [inspectionDefault, setInspectionDefault] = useState<string>('');
   const [textExtractionModel, setTextExtractionModel] = useState<string>('');
   const [textExtractionDefault, setTextExtractionDefault] = useState<string>('');
   // Deployment-locked region (server-side default; not a per-account
@@ -57,7 +74,7 @@ export default function AccountAiPage() {
     // configuring the corresponding provider key. The dropdown marks
     // disabled ones with "— configure <provider> key" so the user knows
     // they need to set up credentials before reviews can run.
-    const aliasesPayload = modelsRes.aliases || [];
+    const aliasesPayload = sortConfiguredAliasesFirst(modelsRes.aliases || []);
     const concreteModelsPayload = modelsRes.models || [];
     // Picker shows aliases + user's Custom-LLM models only — never the
     // cloud-provider concrete models (those exist purely as alias targets).
@@ -80,13 +97,17 @@ export default function AccountAiPage() {
     // eslint-disable-next-line no-console
     console.log('[account/ai] refresh: accountKeys →', (keysRes.keys || []).map(k => ({ provider: k.provider, byok: k.byok, custom: k.custom, base_url: k.base_url, configured: k.configured, model_count: k.models?.length ?? 0 })));
 
-    const extractionDefault = modelsRes.default_text_extraction_model_id || '';
-    setTextExtractionDefault(extractionDefault);
+    const defaultInspectionModel = modelsRes.default_model_id || '';
+    const defaultGenerationModel = modelsRes.default_checklist_generation_model_id || defaultInspectionModel;
+    const defaultExtractionModel = modelsRes.default_text_extraction_model_id || '';
+    setInspectionDefault(defaultInspectionModel);
+    setGenerationDefault(defaultGenerationModel);
+    setTextExtractionDefault(defaultExtractionModel);
 
     const acct = profileRes.profile.current_account;
-    setGenerationModel(acct.default_checklist_generation_model || modelsRes.default_model_id || '');
-    setInspectionModel(acct.default_checklist_model || modelsRes.default_model_id || '');
-    setTextExtractionModel(acct.default_text_extraction_model || extractionDefault);
+    setGenerationModel(acct.default_checklist_generation_model || defaultGenerationModel);
+    setInspectionModel(acct.default_checklist_model || defaultInspectionModel);
+    setTextExtractionModel(acct.default_text_extraction_model || defaultExtractionModel);
   }, []);
 
   useEffect(() => {
@@ -112,8 +133,8 @@ export default function AccountAiPage() {
         default_checklist_model: inspectionModel || null,
         default_text_extraction_model: textExtractionModel || null,
       });
-      setGenerationModel(result.default_checklist_generation_model || '');
-      setInspectionModel(result.default_checklist_model || '');
+      setGenerationModel(result.default_checklist_generation_model || generationDefault);
+      setInspectionModel(result.default_checklist_model || inspectionDefault);
       setTextExtractionModel(result.default_text_extraction_model || textExtractionDefault);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -157,10 +178,23 @@ export default function AccountAiPage() {
       // Strip the trailing "(NO providers configured!)" suffix added by
       // serialize_alias when nothing's wired up — we want clean chips
       // here even for unavailable aliases.
-      const cleanName = (a.name || a.id).replace(/\s*\(NO providers configured!\)\s*$/i, '');
+      const cleanName = cleanAliasName(a.name || a.id);
       arr.push(cleanName);
       aliasesByTargetId.set(t, arr);
     });
+  });
+
+  const providerOrder = new Map(providers.map((provider, index) => [provider.provider_key, index]));
+  const providerRank = (provider: ProviderRow, accountKey?: AccountKey) => {
+    if (provider.available) return 0;
+    if (accountKey?.configured) return 1;
+    if (provider.local_runtime) return 2;
+    return 3;
+  };
+  const sortedProviders = [...providers].sort((a, b) => {
+    const rankDiff = providerRank(a, keyByProvider.get(a.provider_key)) - providerRank(b, keyByProvider.get(b.provider_key));
+    if (rankDiff !== 0) return rankDiff;
+    return (providerOrder.get(a.provider_key) ?? 0) - (providerOrder.get(b.provider_key) ?? 0);
   });
 
   return (
@@ -316,7 +350,8 @@ export default function AccountAiPage() {
             <CardDescription>
               Friendly names the picker shows during reviews and checklist
               generation. Each alias resolves to the first configured provider
-              from its target list — set keys on the <strong>Providers</strong> tab.
+              from its target list. Working aliases are shown first — set keys
+              on the <strong>Providers</strong> tab.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -345,6 +380,7 @@ export default function AccountAiPage() {
                 };
               });
               const resolvedRow = targetRows.find(r => r.configured);
+              const aliasName = cleanAliasName(a.name || a.id);
               return (
                 <div
                   key={a.id}
@@ -357,8 +393,17 @@ export default function AccountAiPage() {
                             the Providers tab — consistent visual language
                             for "this is an alias name". */}
                         <span className="text-sm px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 font-medium">
-                          {a.name}
+                          {aliasName}
                         </span>
+                        {resolvedRow ? (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                            Configured
+                          </span>
+                        ) : (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300">
+                            Not configured
+                          </span>
+                        )}
                         <span className="text-amber-500 dark:text-amber-400 text-xs">
                           {starRating(a.stars)}
                         </span>
@@ -496,7 +541,7 @@ export default function AccountAiPage() {
             <CardTitle>Providers</CardTitle>
             <CardDescription>
               {byokEnabled
-                ? "Setup API keys for a AI providers below."
+                ? "Set up API keys for AI providers below. Ready providers are shown first."
                 : "Providers available on this server."}
             </CardDescription>
           </CardHeader>
@@ -504,7 +549,7 @@ export default function AccountAiPage() {
             {providers.length === 0 && (
               <p className="text-sm text-muted-foreground">No providers configured in this instance.</p>
             )}
-            {providers.map(p => {
+            {sortedProviders.map(p => {
               const acctKey = keyByProvider.get(p.provider_key);
               return (
                 <ProviderKeyRow
@@ -519,6 +564,7 @@ export default function AccountAiPage() {
                   customizableEnabled={customizableEnabled}
                   byok={!!p.byok}
                   custom={!!p.custom}
+                  localRuntime={!!p.local_runtime}
                   accountKey={acctKey && acctKey.configured ? {
                     enabled: acctKey.enabled,
                     keySuffix: acctKey.key_suffix,

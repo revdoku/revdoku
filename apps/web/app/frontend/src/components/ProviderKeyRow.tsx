@@ -102,6 +102,7 @@ export interface ProviderKeyRowProps {
   //             models list. Implies the custom-LLM editor block.
   byok: boolean;
   custom: boolean;
+  localRuntime?: boolean;
   // Per-account key state (null when this account hasn't configured one;
   // may still be available via env fallback — see `source`).
   accountKey: {
@@ -171,6 +172,7 @@ export default function ProviderKeyRow({
   customizableEnabled,
   byok,
   custom,
+  localRuntime = false,
   accountKey,
   models,
   modelId: _modelId,
@@ -322,6 +324,13 @@ export default function ProviderKeyRow({
   // this deployment cannot bring their own key, so we skip nuance that
   // implies they could.
   const statusChip = (() => {
+    if (localRuntime && available) {
+      return {
+        text: 'Ready',
+        color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
+        tooltip: 'Ollama is configured and this local provider is ready to use.',
+      };
+    }
     if (!byokEnabled) {
       return available
         ? { text: BUILT_IN_KEY_LABEL, color: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300', tooltip: BUILT_IN_KEY_TOOLTIP }
@@ -403,6 +412,7 @@ export default function ProviderKeyRow({
                 {statusChip.text}
               </span>
               {hipaaEligible && <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">HIPAA-eligible</span>}
+              {localRuntime && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Local runtime</span>}
             </div>
             <div className="text-xs text-muted-foreground mt-0.5 ml-5">
               {modelCount} model{modelCount === 1 ? '' : 's'}
@@ -422,6 +432,7 @@ export default function ProviderKeyRow({
                 {statusChip.text}
               </span>
               {hipaaEligible && <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">HIPAA-eligible</span>}
+              {localRuntime && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Local runtime</span>}
             </div>
             <div className="text-xs text-muted-foreground mt-0.5">
               {modelCount} model{modelCount === 1 ? '' : 's'}
@@ -507,7 +518,24 @@ export default function ProviderKeyRow({
           This provider's key is configured by the operator (built-in). Per-account keys are disabled for {providerName} on this instance.
         </p>
       )}
-      {!byok && !available && (
+      {localRuntime && available && (
+        <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-2">
+          Ready: <strong>Local Gemma · Basic</strong> uses Google Gemma 4 E4B through Ollama on this computer or laptop.
+          After the model is downloaded, it works fully offline as long as Ollama and Revdoku are running.
+        </p>
+      )}
+      {localRuntime && !available && (
+        <p className="text-xs text-muted-foreground mt-2">
+          Install Ollama on the host, run <code className="text-[11px]">ollama pull gemma4:e4b</code>, then set
+          <code className="text-[11px]"> LOCAL_OLLAMA_API_KEY=ollama</code> and
+          <code className="text-[11px]"> LOCAL_OLLAMA_BASE_URL=http://host.docker.internal:11434/v1</code>.
+          If Docker cannot reach Ollama, configure Ollama with <code className="text-[11px]">OLLAMA_HOST=0.0.0.0:11434</code> and keep port 11434 private.
+          Local installs can also run <code className="text-[11px]">~/.revdoku/revdoku enable-ollama</code>.
+          After setup, Revdoku shows <strong>Local Gemma · Basic</strong>, which uses Google Gemma 4 E4B through
+          Ollama on your local computer or laptop.
+        </p>
+      )}
+      {!localRuntime && !byok && !available && (
         <p className="text-xs text-muted-foreground mt-2">
           Operator-managed only — set the <code className="text-[11px]">{providerKey.toUpperCase()}_API_KEY</code> environment variable on the server to enable this provider.
         </p>
@@ -734,7 +762,7 @@ export default function ProviderKeyRow({
               </>
             )}
             <p className="text-[11px] text-muted-foreground">
-              <strong>Alias</strong> is the friendly name shown in the picker (and on the Aliases tab). It must be unique within this provider and must <strong>not</strong>not match a built-in alias. <strong>Model id</strong> is the literal model id sent to your endpoint (<code>gemma-4-26b-a4b</code>, etc.) — use <code>mymodel</code> when the endpoint doesn't care. The preset bundles options for that model family: use <code>revdoku_g_gemma_1</code> for a Gemma family models.
+              <strong>Alias</strong> is the friendly name shown in the picker (and on the Aliases tab). It must be unique within this provider and must <strong>not</strong> match a built-in alias. <strong>Model id</strong> is the literal model id sent to your endpoint (<code>gemma-4-26b-a4b</code>, etc.) — use <code>mymodel</code> when the endpoint doesn't care. The preset bundles options for that model family: use <code>revdoku_g_gemma_1</code> for Gemma-family models.
             </p>
           </div>
 

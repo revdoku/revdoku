@@ -123,7 +123,10 @@ function Pull-Image {
     return
   }
 
-  docker compose pull
+  Write-Info "Downloading Revdoku Docker image:"
+  Write-Info "  $Image"
+  Write-Info "Docker will show layer download progress below."
+  docker pull $Image
   if ($LASTEXITCODE -ne 0) {
     Write-Info "Image pull failed; continuing with any local or cached image."
   }
@@ -218,7 +221,7 @@ services:
 function Write-Helper {
   $content = @'
 param(
-  [ValidateSet("start", "stop", "restart", "update", "logs", "status", "open", "login-url", "backup", "help")]
+  [ValidateSet("start", "stop", "restart", "update", "logs", "status", "open", "login-url", "enable-ollama", "backup", "help")]
   [string]$Command = "help"
 )
 
@@ -237,6 +240,30 @@ function Get-EnvFileValue([string]$Key) {
     return ($line -replace "^$([regex]::Escape($Key))=", "")
   }
   return $null
+}
+
+function Set-EnvFileValue([string]$Key, [string]$Value) {
+  $path = Join-Path $HomeDir "revdoku.env"
+  $lines = if (Test-Path $path) { Get-Content -Path $path } else { @() }
+  $found = $false
+  $updated = @()
+
+  foreach ($line in $lines) {
+    if ($line -match "^$([regex]::Escape($Key))=") {
+      $updated += "$Key=$Value"
+      $found = $true
+    } else {
+      $updated += $line
+    }
+  }
+
+  if (-not $found) {
+    $updated += ""
+    $updated += "$Key=$Value"
+  }
+
+  $encoding = New-Object System.Text.UTF8Encoding($false)
+  [System.IO.File]::WriteAllText($path, (($updated -join "`n") + "`n"), $encoding)
 }
 
 $Port = if ($env:REVDOKU_PORT) { [int]$env:REVDOKU_PORT } elseif (Get-EnvFileValue "REVDOKU_PORT") { [int](Get-EnvFileValue "REVDOKU_PORT") } else { 3217 }
@@ -293,6 +320,21 @@ switch ($Command) {
     Assert-LocalData
     docker compose pull
     docker compose up -d
+  }
+  "enable-ollama" {
+    Assert-LocalData
+    $apiKey = if ($env:LOCAL_OLLAMA_API_KEY) { $env:LOCAL_OLLAMA_API_KEY } else { "ollama" }
+    $baseUrl = if ($env:LOCAL_OLLAMA_BASE_URL) { $env:LOCAL_OLLAMA_BASE_URL } else { "http://host.docker.internal:11434/v1" }
+    Set-EnvFileValue -Key "LOCAL_OLLAMA_API_KEY" -Value $apiKey
+    Set-EnvFileValue -Key "LOCAL_OLLAMA_BASE_URL" -Value $baseUrl
+    if (-not (Get-Command ollama -ErrorAction SilentlyContinue)) {
+      Write-Host "Warning: the 'ollama' command was not found in this shell. Install Ollama and run: ollama pull gemma4:e4b"
+    }
+    docker compose up -d --force-recreate
+    Write-Host "Local Ollama is enabled for Revdoku."
+    Write-Host "Install Ollama on this machine, then run: ollama pull gemma4:e4b"
+    Write-Host "If Docker cannot reach Ollama, configure Ollama with OLLAMA_HOST=0.0.0.0:11434 and keep port 11434 private."
+    Write-Host "After sign-in, choose Local Gemma in Account -> AI."
   }
   "logs" {
     docker compose logs -f --tail=200
@@ -372,6 +414,7 @@ Commands:
   status   Show container status
   open     Start Revdoku and open a one-time local sign-in link
   login-url Print a one-time local sign-in link
+  enable-ollama Configure Revdoku to use local Ollama
   backup   Create a portable backup of the local Revdoku folder
 
 Data folder:
@@ -443,10 +486,10 @@ try {
 
 if (Wait-ForHealth) {
   Write-Info ""
-  Write-Info "Revdoku is ready:"
-  Write-Info "  http://localhost:$Port"
+  Write-Info "Revdoku is running on localhost:$Port."
+  Write-Info "Do not open that address directly; use the helper so you get a one-time local sign-in link."
   Write-Info ""
-  Write-Info "Opening a one-time local sign-in link. Use this command later:"
+  Write-Info "Opening Revdoku now. Use this command later:"
   Write-Info "  powershell -ExecutionPolicy Bypass -File `"$HelperFile`" open"
   Write-Info ""
   Write-Info "Local data folder:"

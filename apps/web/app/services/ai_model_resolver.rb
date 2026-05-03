@@ -375,6 +375,12 @@ class AiModelResolver
 
       raw_targets = Array(entry[:targets])
       targets = hipaa ? raw_targets.map { |t| append_hipaa_suffix(t) } : raw_targets
+      next unless targets.any? do |target_id|
+        base_target_id = target_id.to_s.split("+").first
+        model = all_models.find { |m| m[:id] == base_target_id }
+        model && provider_feature_enabled?(model[:provider_key])
+      end
+
       resolved = first_available_target(targets, account: account)
       resolved_model = resolved && all_models.find { |m| m[:id] == resolved }
       {
@@ -563,6 +569,11 @@ class AiModelResolver
     # would open.
     return false if provider[:custom] && !Revdoku.byok_customizable_enabled?
 
+    # Local runtimes are valid for Core and self-host installs only. Hosted
+    # cloud must never advertise or resolve a provider that points at an
+    # internal service name such as http://ollama:11434.
+    return false if provider[:local_runtime] && Revdoku.hosted_cloud?
+
     true
   end
 
@@ -588,6 +599,11 @@ class AiModelResolver
 
     if provider[:custom]
       return true if account.respond_to?(:provider_models) && account.provider_models(provider_key).any?
+      return true if ENV[api_key_env_var(provider_key)].present?
+      return false
+    end
+
+    if provider[:local_runtime]
       return true if ENV[api_key_env_var(provider_key)].present?
       return false
     end
@@ -672,6 +688,7 @@ class AiModelResolver
         # instance `byok_customizable`).
         byok: !!provider[:byok],
         custom: !!provider[:custom],
+        local_runtime: !!provider[:local_runtime],
         base_url: account_base_url,
         default_base_url: default_base_url,
         models: models_for_ui

@@ -5,7 +5,7 @@
 <h1 align="center">Revdoku</h1>
 
 <p align="center">
-  <strong>Open-source AI document review.</strong>
+  <strong>Open-source document review with AI.</strong>
 </p>
 
 <p align="center">
@@ -15,13 +15,20 @@
   <img alt="Node" src="https://img.shields.io/badge/node-20+-339933" />
 </p>
 
-Revdoku helps you review important documents. Upload a file, run a checklist,
+Revdoku helps you review important documents visually, line by line. Upload a file, run a checklist,
 and see the issues Revdoku finds. It can check rules line by line, compare
 values with reference files, run custom scripts, and create reports.
 
 ## Quick Install
 
-The easiest local install is one command. You need Docker Desktop first.
+Use this for a single-user desktop install on this computer.
+
+Other ways to use Revdoku: [Hosted Cloud](#hosted-cloud) - [Self-host on a server](#self-host-on-a-server)
+
+Required software:
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) on macOS or Windows
+- Docker Engine with Docker Compose on Linux
 
 Open Terminal on macOS or Linux. On Windows, open WSL. Then run:
 
@@ -38,8 +45,6 @@ The installer will:
 
 No email or password is needed for the local single-user install.
 
-## Run It Again
-
 After install, use this command any time:
 
 ```bash
@@ -48,6 +53,137 @@ After install, use this command any time:
 
 This starts Revdoku if needed and opens a fresh local sign-in link.
 
+Do not open `http://localhost:3217` directly. That is the normal app URL and
+may show the email/password sign-in page. Use `~/.revdoku/revdoku open`
+instead.
+
+### Create a Desktop Shortcut
+
+A shortcut should run the Revdoku helper command. Do not make a shortcut or
+bookmark to `http://localhost:3217`. The helper starts Revdoku if needed and
+opens a fresh local sign-in link.
+
+macOS:
+
+```bash
+cat > "$HOME/Desktop/Revdoku.command" <<'EOF'
+#!/bin/sh
+"$HOME/.revdoku/revdoku" open
+EOF
+chmod +x "$HOME/Desktop/Revdoku.command"
+```
+
+Double-click `Revdoku.command` on your Desktop. If macOS blocks it the first
+time, right-click it and choose `Open`.
+
+Linux desktop:
+
+```bash
+mkdir -p "$HOME/.local/share/applications"
+cat > "$HOME/.local/share/applications/revdoku.desktop" <<'EOF'
+[Desktop Entry]
+Name=Revdoku
+Comment=Open Revdoku
+Exec=sh -lc "$HOME/.revdoku/revdoku open"
+Terminal=false
+Type=Application
+Categories=Office;
+EOF
+chmod +x "$HOME/.local/share/applications/revdoku.desktop"
+```
+
+Some Linux desktops may ask you to mark the launcher as trusted.
+
+Windows with WSL:
+
+Create a normal Windows shortcut. Use this as the shortcut target:
+
+```text
+C:\Windows\System32\wsl.exe -e bash -lc "$HOME/.revdoku/revdoku open"
+```
+
+If you use a named WSL distro, include it:
+
+```text
+C:\Windows\System32\wsl.exe -d Ubuntu -e bash -lc "$HOME/.revdoku/revdoku open"
+```
+
+Replace `Ubuntu` with your WSL distro name if needed.
+
+### First Steps
+
+1. Run `~/.revdoku/revdoku open`
+2. Add an AI provider in `Settings -> AI -> Providers`, or enable Ollama
+3. Upload a document and run a checklist
+
+Revdoku can start without an AI provider, but reviews need either a cloud
+provider key or Ollama.
+
+### Configure Cloud AI
+
+In Revdoku, open the top-right menu and select:
+
+- `Settings`
+- `AI`
+- `Providers`
+
+Add the API keys for the providers you want to use. Revdoku stores them in
+encrypted form.
+
+### Use Ollama for Local AI
+
+You can use Revdoku with local AI through Ollama. Revdoku does not install
+Ollama or download models for you.
+
+1. Install Ollama:
+
+   - macOS or Windows: download it from <https://ollama.com/download>
+   - Linux:
+
+     ```bash
+     curl -fsSL https://ollama.com/install.sh | sh
+     ```
+
+2. Download the local model:
+
+   ```bash
+   ollama pull gemma4:e4b
+   ```
+
+   `gemma4:e4b` is the recommended local default. It is an edge Gemma 4 model
+   with text and image input support. It is about 9.6 GB.
+
+   Revdoku runs in Docker and connects to Ollama through
+   `http://host.docker.internal:11434/v1`. If Revdoku cannot reach Ollama,
+   configure Ollama with `OLLAMA_HOST=0.0.0.0:11434` and restart Ollama. Keep
+   port `11434` private or firewalled, because this can expose Ollama on your
+   host network. See the [Ollama FAQ](https://docs.ollama.com/faq) for the
+   exact setup steps for macOS, Linux, and Windows.
+
+3. Enable Ollama in Revdoku:
+
+   ```bash
+   ~/.revdoku/revdoku enable-ollama
+   ```
+
+   If this command is missing, rerun the install command once. It keeps your
+   data and updates the local helper command.
+
+This only adds the Ollama configuration to Revdoku. It keeps your data and
+restarts the local container.
+
+After this, `Settings -> AI -> Providers` should show `Local Ollama` as ready.
+Model pickers will include `Local Gemma · Basic`.
+
+`Local Gemma · Basic` uses Google Gemma 4 E4B through Ollama on your own
+computer or laptop. After the model is downloaded, it works fully offline as
+long as Revdoku and Ollama are running.
+
+This does not make local AI the default automatically. After sign-in, open
+`Account -> AI` and choose `Local Gemma · Basic` where you want to use it.
+
+## Local Commands
+
 Useful commands:
 
 ```bash
@@ -55,6 +191,7 @@ Useful commands:
 ~/.revdoku/revdoku stop
 ~/.revdoku/revdoku logs
 ~/.revdoku/revdoku update
+~/.revdoku/revdoku enable-ollama
 ~/.revdoku/revdoku backup
 ```
 
@@ -74,14 +211,30 @@ To make a backup:
 Do not copy only `storage/`. The `revdoku.env` file has the key needed to read
 your documents and saved provider keys.
 
+## Reset Local Install
+
+This removes the current local install from Docker and moves the data folder
+aside. Do this only when you want a fresh local install.
+
+```bash
+~/.revdoku/revdoku stop
+mv ~/.revdoku ~/.revdoku.old.$(date +%Y%m%d-%H%M%S)
+docker rm -f revdoku-local 2>/dev/null || true
+```
+
+Do not delete the old folder until you are sure you do not need the local data.
+
 ## Demo Video
 
 <p align="center">
-  <video src="https://github.com/user-attachments/assets/15f4de25-3b73-47ea-8f6a-c73e436907e8" controls width="720"></video>
+  <a href="revdoku-demo.mp4">
+    <img src="revdoku-demo-poster.jpg" width="720" alt="Watch the Revdoku demo video" />
+  </a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/user-attachments/assets/15f4de25-3b73-47ea-8f6a-c73e436907e8">Watch the demo video</a>
+  <a href="revdoku-demo.mp4">Watch the MP4 demo</a> ·
+  <a href="revdoku-demo.webm">Watch the WebM demo</a>
 </p>
 
 ## Features
@@ -251,7 +404,8 @@ Supported options include:
 - OpenAI
 - Google Cloud
 - OpenRouter
-- local LLMs such as LM Studio and Ollama
+- Local Ollama with `gemma4:e4b`
+- other local LLMs such as LM Studio
 - custom LLM providers
 
 When Revdoku runs in Docker and your local LLM runs on the same computer, use
@@ -281,8 +435,7 @@ local disk under `storage/shared_reports/`.
 
 All configuration uses environment variables.
 
-See [env.example](https://github.com/revdoku/revdoku/blob/main/env.example) for
-the full list.
+See [env.example](./env.example) for the full list.
 
 ## Security
 
