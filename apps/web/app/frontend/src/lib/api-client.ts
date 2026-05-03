@@ -580,6 +580,7 @@ export class ApiClient {
       //            models list. UI gates editor visibility on this.
       byok: boolean;
       custom: boolean;
+      local_runtime?: boolean;
       base_url: string | null;
       default_base_url: string | null;
       models: Array<{ id: string; name: string; credits_per_page?: number; stars?: number; max_pages?: number; description?: string }>;

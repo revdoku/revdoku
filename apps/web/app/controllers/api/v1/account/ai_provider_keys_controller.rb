@@ -37,8 +37,13 @@ class Api::V1::Account::AiProviderKeysController < Api::BaseController
   # decrypted key — only a boolean "configured" and the last-4 suffix.
   def index
     keys = current_account.ai_provider_keys || {}
-    catalog_providers = AiModelResolver.providers_hash.keys.map(&:to_s)
-    all_provider_keys = (catalog_providers + keys.keys).uniq
+    catalog_providers = AiModelResolver.providers_hash.keys.map(&:to_s).select do |provider|
+      AiModelResolver.provider_feature_enabled?(provider)
+    end
+    all_provider_keys = (catalog_providers + keys.keys).uniq.select do |provider|
+      catalog = AiModelResolver.provider_for(provider)
+      catalog.nil? || AiModelResolver.provider_feature_enabled?(provider)
+    end
 
     rows = all_provider_keys.map do |provider|
       entry = keys[provider]
@@ -103,6 +108,9 @@ class Api::V1::Account::AiProviderKeysController < Api::BaseController
     return render_api_bad_request("provider is required") if provider.blank?
 
     catalog = AiModelResolver.provider_for(provider)
+    unless catalog && AiModelResolver.provider_feature_enabled?(provider)
+      return render_api_forbidden("AI provider '#{provider}' is not available on this instance.")
+    end
     model_id = current_account.provider_model_id(provider).presence ||
                catalog&.dig(:default_model_id).to_s.presence
     return render_api_bad_request("no model configured for #{provider}") if model_id.blank?
@@ -134,6 +142,9 @@ class Api::V1::Account::AiProviderKeysController < Api::BaseController
     return render_api_bad_request("provider is required") if provider.blank?
 
     catalog = AiModelResolver.provider_for(provider)
+    unless catalog && AiModelResolver.provider_feature_enabled?(provider)
+      return render_api_forbidden("AI provider '#{provider}' is not available on this instance.")
+    end
     is_byok_provider   = !!catalog&.dig(:byok)
     is_custom_provider = !!catalog&.dig(:custom)
 

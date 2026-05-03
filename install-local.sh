@@ -87,7 +87,10 @@ pull_image() {
     return
   fi
 
-  if ! docker compose pull; then
+  info "Downloading Revdoku Docker image:"
+  info "  $IMAGE"
+  info "Docker will show layer download progress below."
+  if ! docker pull "$IMAGE"; then
     info "Image pull failed; continuing with any local or cached image."
   fi
 }
@@ -233,6 +236,32 @@ env_value() {
   sed -n "s/^${key}=//p" revdoku.env | tail -n 1
 }
 
+set_env_setting() {
+  key="$1"
+  value="$2"
+  tmp="$(mktemp "${REVDOKU_HOME}/revdoku.env.XXXXXX")"
+  found=0
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      "${key}="*)
+        printf '%s=%s\n' "$key" "$value"
+        found=1
+        ;;
+      *)
+        printf '%s\n' "$line"
+        ;;
+    esac
+  done < revdoku.env > "$tmp"
+
+  if [ "$found" = "0" ]; then
+    printf '\n%s=%s\n' "$key" "$value" >> "$tmp"
+  fi
+
+  chmod 600 "$tmp" 2>/dev/null || true
+  mv "$tmp" revdoku.env
+}
+
 file_port="$(env_value REVDOKU_PORT 2>/dev/null || true)"
 PORT="${REVDOKU_PORT:-${file_port:-3217}}"
 URL="http://localhost:${PORT}"
@@ -299,6 +328,19 @@ case "${1:-help}" in
     docker compose pull
     docker compose up -d
     ;;
+  enable-ollama)
+    ensure_local_data
+    set_env_setting "LOCAL_OLLAMA_API_KEY" "${LOCAL_OLLAMA_API_KEY:-ollama}"
+    set_env_setting "LOCAL_OLLAMA_BASE_URL" "${LOCAL_OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}"
+    if ! command -v ollama >/dev/null 2>&1; then
+      printf "Warning: the 'ollama' command was not found in this shell. Install Ollama and run: ollama pull gemma4:e4b\n"
+    fi
+    docker compose up -d --force-recreate
+    printf 'Local Ollama is enabled for Revdoku.\n'
+    printf 'Install Ollama on this machine, then run: ollama pull gemma4:e4b\n'
+    printf 'If Docker cannot reach Ollama, configure Ollama with OLLAMA_HOST=0.0.0.0:11434 and keep port 11434 private.\n'
+    printf 'After sign-in, choose Local Gemma in Account -> AI.\n'
+    ;;
   logs)
     docker compose logs -f --tail=200
     ;;
@@ -357,6 +399,7 @@ Commands:
   status   Show container status
   open     Start Revdoku and open a one-time local sign-in link
   login-url Print a one-time local sign-in link
+  enable-ollama Configure Revdoku to use local Ollama
   backup   Create a portable backup of the local Revdoku folder
 
 Data folder:
@@ -430,10 +473,10 @@ info "Starting Revdoku. The first download can take a few minutes."
 
 if wait_for_health; then
   info ""
-  info "Revdoku is ready:"
-  info "  http://localhost:${PORT}"
+  info "Revdoku is running on localhost:${PORT}."
+  info "Do not open that address directly; use the helper so you get a one-time local sign-in link."
   info ""
-  info "Opening a one-time local sign-in link. Use this command later:"
+  info "Opening Revdoku now. Use this command later:"
   info "  $HELPER_FILE open"
   info ""
   info "Local data folder:"

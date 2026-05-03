@@ -97,6 +97,12 @@ shared:
           targets:
             - "any:openai:gpt-5.2-2025-12-11"
             - "any:openrouter:openai/gpt-5.2"
+        "any:local-gemma-basic":
+          name: "Local Gemma · Basic"
+          description: "Gemma 4 E4B through local Ollama. Private and zero provider cost, but quality and speed depend on this machine."
+          stars: 1
+          targets:
+            - "any:local_ollama:gemma4:e4b"
 
       legacy_aliases:
         "any:gemini-flash": "any:gemini-standard"
@@ -254,6 +260,27 @@ shared:
               revdoku_options: "revdoku_g_gemma_1"
               description: "Premium Gemini direct from Google."
               description_checklist: "Best for complex documents."
+
+        local_ollama:
+          name: "Local Ollama"
+          base_url: "<%= ENV.fetch("LOCAL_OLLAMA_BASE_URL", "http://host.docker.internal:11434/v1") %>"
+          temperature: 0.1
+          default_model_id: "gemma4:e4b"
+          # Local runtimes are operator-controlled. Core/self-host can expose
+          # them when LOCAL_OLLAMA_API_KEY is set; hosted cloud filters them
+          # out in AiModelResolver.provider_feature_enabled?.
+          local_runtime: true
+          byok: false
+          custom: false
+          models:
+            - id: "any:local_ollama:gemma4:e4b"
+              name: "Gemma 4 E4B (Ollama)"
+              credits_per_page: 0
+              stars: 1
+              max_pages: 3
+              revdoku_options: "revdoku_g_gemma_1"
+              description: "Local Gemma 4 E4B served by Ollama. Zero provider cost; requires Ollama and the model to be installed."
+              description_checklist: "Local Gemma 4 E4B via Ollama."
 
         custom_llm_1:
           name: "Custom LLM 1"
