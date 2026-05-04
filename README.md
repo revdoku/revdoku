@@ -153,10 +153,13 @@ encrypted form.
 
 ### Use Ollama for Local AI
 
-You can use Revdoku with local AI through Ollama. Revdoku does not install
-Ollama or download models for you.
+You can use Revdoku with local AI through Ollama engine for complete privacy (no documents will be leaving your laptop!). 
 
-1. Install Ollama:
+Video demo of how Revdoku works with local LLM `Google Gemma 4` via Ollama 
+
+https://github.com/user-attachments/assets/68b8c709-bca8-42eb-9835-d108f0bb9c60
+
+1. Install Ollama (the engine for interacting with local LLMs)
 
    - macOS or Windows: download it from <https://ollama.com/download>
    - Linux:
