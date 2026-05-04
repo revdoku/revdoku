@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { AlertCircle, ClipboardCheck, Info, Search, Sparkles, Paperclip, Loader2, X, Check, Upload } from 'lucide-react';
+import { AlertCircle, ClipboardCheck, Info, Search, Settings, Sparkles, Paperclip, Loader2, X, Check, Upload } from 'lucide-react';
 import { scanChecklistForMarkers, CHECKLIST_SYSTEM_PROMPT_SCOPE } from '@/lib/rule-file-markers';
 import type { ScopedPromptMarker } from '@/lib/rule-file-markers';
 import {
@@ -639,6 +639,9 @@ export default function ReviewCustomDialog({
   const titleIconColor = isError ? 'text-red-500' : isCancelled ? 'text-blue-500' : 'text-indigo-500';
   const dialogTitle = title || 'Review Envelope';
   const buttonLabel = submitLabel || 'Run Review';
+  const openAiSettings = () => {
+    window.location.href = '/account/ai';
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -919,28 +922,41 @@ export default function ReviewCustomDialog({
                   <Sparkles className="h-3.5 w-3.5 text-indigo-500 flex-shrink-0" />
                   {isError ? 'Try a different AI:' : 'AI:'}
                 </label>
-                {enabledModels.length > 0 ? (
-                  <select
-                    value={selected}
-                    onChange={(e) => setModelOverride(e.target.value)}
-                    className="flex-1 min-w-0 py-1.5 px-2 border border-border rounded text-sm bg-background text-foreground"
-                  >
-                    {enabledModels.map(m => (
-                      <option key={m.id} value={m.id}>{formatModelOptionLabel(m)}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <span className="text-xs text-muted-foreground">
-                    No AI models available.{' '}
-                    <a
-                      href="/account/ai"
-                      onClick={(e) => { e.preventDefault(); window.location.href = '/account/ai'; }}
-                      className="text-indigo-600 dark:text-indigo-400 underline hover:opacity-80"
+                <div className="flex flex-1 min-w-0 items-center gap-2">
+                  {enabledModels.length > 0 ? (
+                    <select
+                      value={selected}
+                      onChange={(e) => setModelOverride(e.target.value)}
+                      className="flex-1 min-w-0 py-1.5 px-2 border border-border rounded text-sm bg-background text-foreground"
                     >
-                      Configure a provider →
-                    </a>
-                  </span>
-                )}
+                      {enabledModels.map(m => (
+                        <option key={m.id} value={m.id}>{formatModelOptionLabel(m)}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="flex-1 min-w-0 text-xs text-muted-foreground">
+                      No AI models available.{' '}
+                      <a
+                        href="/account/ai"
+                        onClick={(e) => { e.preventDefault(); openAiSettings(); }}
+                        className="text-indigo-600 dark:text-indigo-400 underline hover:opacity-80"
+                      >
+                        Configure a provider →
+                      </a>
+                    </span>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={openAiSettings}
+                    className="h-[34px] w-[34px] shrink-0"
+                    title="Open AI settings"
+                    aria-label="Open AI settings"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             );
           })()}
