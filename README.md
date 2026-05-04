@@ -15,23 +15,18 @@
   <img alt="Node" src="https://img.shields.io/badge/node-20+-339933" />
 </p>
 
-Revdoku helps you review important documents visually, line by line. Upload a file, run a checklist,
-and see the issues Revdoku finds. It can check rules line by line, compare
+Revdoku helps you review important documents visually, line by line. Upload a file, run a checklist, and see the issues Revdoku finds. It can check rules line by line, compare
 values with reference files, run custom scripts, and create reports.
 
-## Demo Video
+## Demo 
 
-<video width="640" controls poster="revdoku-demo-poster.jpg">
-  <source src="https://github.com/revdoku/revdoku/raw/refs/heads/main/revdoku-demo.mp4" type="video/mp4">
-  <source src="https://github.com/revdoku/revdoku/raw/refs/heads/main/revdoku-demo.webm" type="video/webm">
-  Your browser does not support the video tag.
-</video>
+**Screenshot**
 
-<p align="center">
-  <a href="revdoku-demo.mp4">revdoku-video.mp4</a> ·
-  <a href="revdoku-demo.webm">revdoku-video.webm</a>
-</p>
+![Revdoko demo poster](revdoku-demo-poster.jpg)
 
+**Video**
+
+https://github.com/user-attachments/assets/ac41ab35-37f1-46e3-855f-40195ab35c48.mp4
 
 ## Features
 
@@ -455,13 +450,7 @@ Report security issues privately:
 
 <security@revdoku.com>
 
-Please do not open public GitHub issues for security reports.
-
-## More Demos
-
-Full playlist on YouTube:
-
-<https://www.youtube.com/playlist?list=PLoSGpfRUg7ywQ7kbEiCuXNI5nN-CRxbZe>
+Please, do not open public GitHub issues for security reports.
 
 ## Contributing
 
