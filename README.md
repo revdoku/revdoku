@@ -19,6 +19,32 @@ Revdoku helps you review important documents visually, line by line. Upload a fi
 and see the issues Revdoku finds. It can check rules line by line, compare
 values with reference files, run custom scripts, and create reports.
 
+## Demo Video
+
+<video width="640" controls poster="revdoku-demo-poster.jpg">
+  <source src="https://github.com/revdoku/revdoku/raw/refs/heads/main/revdoku-demo.mp4" type="video/mp4">
+  <source src="https://github.com/revdoku/revdoku/raw/refs/heads/main/revdoku-demo.webm" type="video/webm">
+  Your browser does not support the video tag.
+</video>
+
+<p align="center">
+  <a href="revdoku-demo.mp4">revdoku-video.mp4</a> ·
+  <a href="revdoku-demo.webm">revdoku-video.webm</a>
+</p>
+
+
+## Features
+
+- **Checklist review.** Check a document against your own rules.
+- **Precise highlights.** See the exact line, number, or clause that needs review.
+- **Cross-document checks.** Compare a document with a quote, agreement, policy, or other reference file.
+- **Revision tracking.** Upload a new version and keep track of what changed.
+- **Reports and public links.** Export reports or create public report links.
+- **Custom scripts.** Add small scripts for checks such as totals, counts, and categories.
+- **Cloud or local AI.** Use cloud AI providers or local tools such as LM Studio and Ollama.
+- **Email upload.** Send files to a per-account email address for upload.
+- **Encryption.** Documents and sensitive data are encrypted at rest.
+
 ## Quick Install
 
 Use this for a single-user desktop install on this computer.
@@ -224,30 +250,6 @@ docker rm -f revdoku-local 2>/dev/null || true
 
 Do not delete the old folder until you are sure you do not need the local data.
 
-## Demo Video
-
-<p align="center">
-  <a href="revdoku-demo.mp4">
-    <img src="revdoku-demo-poster.jpg" width="720" alt="Watch the Revdoku demo video" />
-  </a>
-</p>
-
-<p align="center">
-  <a href="revdoku-demo.mp4">Watch the MP4 demo</a> ·
-  <a href="revdoku-demo.webm">Watch the WebM demo</a>
-</p>
-
-## Features
-
-- **Checklist review.** Check a document against your own rules.
-- **Precise highlights.** See the exact line, number, or clause that needs review.
-- **Cross-document checks.** Compare a document with a quote, agreement, policy, or other reference file.
-- **Revision tracking.** Upload a new version and keep track of what changed.
-- **Reports and public links.** Export reports or create public report links.
-- **Custom scripts.** Add small scripts for checks such as totals, counts, and categories.
-- **Cloud or local AI.** Use cloud AI providers or local tools such as LM Studio and Ollama.
-- **Email upload.** Send files to a per-account email address for upload.
-- **Encryption.** Documents and sensitive data are encrypted at rest.
 
 ## Hosted Cloud
 
