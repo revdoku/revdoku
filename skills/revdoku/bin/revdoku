@@ -1,0 +1,1097 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DEFAULT_URL="https://app.revdoku.com"
+CREDENTIALS_PATH="${REVDOKU_CREDENTIALS:-${HOME}/.revdoku/credentials}"
+DEFAULT_WORKSPACE_PATH="${REVDOKU_DEFAULT_WORKSPACE_FILE:-${CREDENTIALS_PATH}.workspace}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+BASE_URL="${REVDOKU_URL:-$DEFAULT_URL}"
+API_KEY="${REVDOKU_API_KEY:-}"
+TITLE="${REVDOKU_WORKSPACE_TITLE:-}"
+DESCRIPTION="${REVDOKU_WORKSPACE_DESCRIPTION:-}"
+EXPIRES_IN_DAYS="${REVDOKU_EXPIRES_IN_DAYS:-}"
+UPLOAD_MODE="${REVDOKU_UPLOAD_MODE:-auto}"
+WORKSPACE_ID="${REVDOKU_WORKSPACE_ID:-}"
+METADATA_JSON="${REVDOKU_WORKSPACE_METADATA:-}"
+PUBLISH="${REVDOKU_PUBLISH:-false}"
+PERMANENT_PUBLICATION="${REVDOKU_PERMANENT_PUBLICATION:-true}"
+RESTORE_VERSION_ID="${REVDOKU_RESTORE_VERSION_ID:-}"
+RESTORE_COMMENT="${REVDOKU_RESTORE_COMMENT:-}"
+GRANT_TOKEN="${REVDOKU_GRANT_TOKEN:-}"
+BROWSER_LOGIN_PATH="${REVDOKU_BROWSER_LOGIN_PATH:-/workspaces}"
+TAG_PATHS=()
+AGENT_NAME="${REVDOKU_AGENT_NAME:-cli}"
+AGENT_CLIENT="${REVDOKU_AGENT_CLIENT:-revdoku}"
+AGENT_VERSION="${REVDOKU_AGENT_VERSION:-0.1.0}"
+AGENT_RUN_ID="${REVDOKU_AGENT_RUN_ID:-}"
+AGENT_PROJECT="${REVDOKU_AGENT_PROJECT:-}"
+AGENT_TASK="${REVDOKU_AGENT_TASK:-}"
+LOGIN="false"
+ACTION="store"
+PATH_TO_STORE=""
+
+die() {
+  echo "error: $1" >&2
+  exit 1
+}
+
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "requires $1"
+}
+
+usage() {
+  cat <<USAGE
+Usage: revdoku [options] PATH
+
+Options:
+  --api-key KEY             Revdoku API key. Defaults to REVDOKU_API_KEY or $CREDENTIALS_PATH.
+  --url URL                 Revdoku app URL. Defaults to REVDOKU_URL or $DEFAULT_URL.
+  --title TITLE             Workspace title.
+  --description TEXT        Short workspace description.
+  --tag-path PATH           Add a workspace label such as website or projects/work. Can be repeated.
+  --workspace-id ID         Store into an existing Revdoku workspace instead of creating a new one.
+                            Defaults to a workspace remembered from a selected-workspace grant.
+  --metadata JSON           Optional JSON for agent lookup, for example {"project":"site"}.
+  --publish                 Publish the workspace as a permanent public site after storing files.
+  --expires-in-days DAYS    Advanced: expire the public site after DAYS instead of keeping it permanent.
+  --login                   Request an email code and save an API key to $CREDENTIALS_PATH.
+  --list-workspaces         Print available workspaces and metadata as JSON.
+  --list-versions           Print version history for --workspace-id as JSON.
+  --restore-version ID      Restore a workspace version as a new latest version; requires --workspace-id.
+  --restore-comment TEXT    Optional comment for --restore-version.
+  --list-public-workspaces  Print active public workspace links as JSON.
+  --account-status          Print account, plan, and storage status as JSON.
+  --dashboard-link          Print a one-time browser login link for the Revdoku dashboard.
+  --library-link            Print a one-time browser login link for Library settings.
+  --access-link             Print a one-time browser login link for Account > Access.
+  --browser-login PATH      Print a one-time browser login link for an internal Revdoku path.
+  --upload-mode MODE        auto, direct, or multipart. Defaults to auto.
+  --exchange-grant TOKEN    Exchange a one-time app grant and save the API key.
+  --grant-token TOKEN       Alias for --exchange-grant.
+  -h, --help                Show this help.
+USAGE
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --api-key)
+      [[ $# -ge 2 ]] || die "--api-key requires a value"
+      API_KEY="$2"
+      shift 2
+      ;;
+    --url)
+      [[ $# -ge 2 ]] || die "--url requires a value"
+      BASE_URL="$2"
+      shift 2
+      ;;
+    --title)
+      [[ $# -ge 2 ]] || die "--title requires a value"
+      TITLE="$2"
+      shift 2
+      ;;
+    --description)
+      [[ $# -ge 2 ]] || die "--description requires a value"
+      DESCRIPTION="$2"
+      shift 2
+      ;;
+    --tag-path)
+      [[ $# -ge 2 ]] || die "--tag-path requires a value"
+      TAG_PATHS+=("$2")
+      shift 2
+      ;;
+    --workspace-id)
+      [[ $# -ge 2 ]] || die "--workspace-id requires a value"
+      WORKSPACE_ID="$2"
+      shift 2
+      ;;
+    --metadata)
+      [[ $# -ge 2 ]] || die "--metadata requires a JSON object"
+      METADATA_JSON="$2"
+      shift 2
+      ;;
+    --publish)
+      PUBLISH="true"
+      shift
+      ;;
+    --expires-in-days)
+      [[ $# -ge 2 ]] || die "--expires-in-days requires a value"
+      EXPIRES_IN_DAYS="$2"
+      PERMANENT_PUBLICATION="false"
+      shift 2
+      ;;
+    --login)
+      LOGIN="true"
+      shift
+      ;;
+    --list-workspaces)
+      ACTION="list_workspaces"
+      shift
+      ;;
+    --list-versions)
+      ACTION="list_versions"
+      shift
+      ;;
+    --restore-version)
+      [[ $# -ge 2 ]] || die "--restore-version requires a workspace version id"
+      ACTION="restore_version"
+      RESTORE_VERSION_ID="$2"
+      shift 2
+      ;;
+    --restore-comment)
+      [[ $# -ge 2 ]] || die "--restore-comment requires a value"
+      RESTORE_COMMENT="$2"
+      shift 2
+      ;;
+    --list-public-workspaces)
+      ACTION="list_public_workspaces"
+      shift
+      ;;
+    --account-status)
+      ACTION="account_status"
+      shift
+      ;;
+    --dashboard-link)
+      ACTION="browser_login"
+      BROWSER_LOGIN_PATH="/workspaces"
+      shift
+      ;;
+    --library-link)
+      ACTION="browser_login"
+      BROWSER_LOGIN_PATH="/library"
+      shift
+      ;;
+    --access-link)
+      ACTION="browser_login"
+      BROWSER_LOGIN_PATH="/account/access"
+      shift
+      ;;
+    --browser-login)
+      [[ $# -ge 2 ]] || die "--browser-login requires an internal Revdoku path"
+      ACTION="browser_login"
+      BROWSER_LOGIN_PATH="$2"
+      shift 2
+      ;;
+    --upload-mode)
+      [[ $# -ge 2 ]] || die "--upload-mode requires a value"
+      UPLOAD_MODE="$2"
+      shift 2
+      ;;
+    --exchange-grant|--grant-token)
+      [[ $# -ge 2 ]] || die "$1 requires a value"
+      ACTION="exchange_grant"
+      GRANT_TOKEN="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      die "unknown option: $1"
+      ;;
+    *)
+      PATH_TO_STORE="$1"
+      shift
+      ;;
+  esac
+done
+
+[[ -n "$PATH_TO_STORE" ]] || PATH_TO_STORE="${1:-.}"
+BASE_URL="${BASE_URL%/}"
+
+need_cmd curl
+need_cmd openssl
+need_cmd base64
+need_cmd find
+
+if [[ -x "${SCRIPT_DIR}/jq" ]]; then
+  JQ_BIN="${SCRIPT_DIR}/jq"
+elif command -v jq >/dev/null 2>&1; then
+  JQ_BIN="$(command -v jq)"
+else
+  die "requires jq"
+fi
+
+API_KEY_FROM_CREDENTIALS="false"
+if [[ -z "$API_KEY" && -f "$CREDENTIALS_PATH" ]]; then
+  API_KEY="$(tr -d '\r\n' < "$CREDENTIALS_PATH")"
+  API_KEY_FROM_CREDENTIALS="true"
+fi
+
+if [[ -z "$WORKSPACE_ID" && "$API_KEY_FROM_CREDENTIALS" == "true" && -f "$DEFAULT_WORKSPACE_PATH" ]]; then
+  WORKSPACE_ID="$(tr -d '\r\n' < "$DEFAULT_WORKSPACE_PATH")"
+fi
+
+if [[ -n "$METADATA_JSON" ]]; then
+  METADATA_JSON="$(printf "%s" "$METADATA_JSON" | "$JQ_BIN" -c 'if type == "object" then . else error("metadata must be a JSON object") end')" || die "--metadata must be a JSON object"
+else
+  METADATA_JSON="{}"
+fi
+
+api_url() {
+  printf "%s%s" "$BASE_URL" "$1"
+}
+
+json_string() {
+  "$JQ_BIN" -rn --arg value "$1" '$value'
+}
+
+agent_header_args() {
+  printf "%s\0" \
+    "-H" "User-Agent: Revdoku/${AGENT_VERSION} (${AGENT_CLIENT})" \
+    "-H" "X-Revdoku-Agent: ${AGENT_NAME}" \
+    "-H" "X-Revdoku-Agent-Client: ${AGENT_CLIENT}" \
+    "-H" "X-Revdoku-Agent-Version: ${AGENT_VERSION}"
+  [[ -n "$AGENT_RUN_ID" ]] && printf "%s\0" "-H" "X-Revdoku-Agent-Run-Id: ${AGENT_RUN_ID}"
+  [[ -n "$AGENT_PROJECT" ]] && printf "%s\0" "-H" "X-Revdoku-Agent-Project: ${AGENT_PROJECT}"
+  [[ -n "$AGENT_TASK" ]] && printf "%s\0" "-H" "X-Revdoku-Agent-Task: ${AGENT_TASK}"
+}
+
+http_json() {
+  local method="$1"
+  local path="$2"
+  local payload="$3"
+  local auth="${4:-true}"
+  local body_file status message code agent_args=()
+  LAST_HTTP_STATUS=""
+  LAST_ERROR_CODE=""
+  LAST_ERROR_MESSAGE=""
+  body_file="$(mktemp)"
+
+  while IFS= read -r -d '' value; do
+    agent_args+=("$value")
+  done < <(agent_header_args)
+
+  local args=(-sS -o "$body_file" -w "%{http_code}" -X "$method" "$(api_url "$path")" "${agent_args[@]}" -H "Content-Type: application/json")
+  if [[ "$auth" == "true" ]]; then
+    args+=(-H "Authorization: Bearer $API_KEY")
+  fi
+  args+=(--data "$payload")
+
+  status="$(curl "${args[@]}")" || {
+    rm -f "$body_file"
+    return 1
+  }
+
+  if [[ "$status" -lt 200 || "$status" -ge 300 ]]; then
+    message="$("$JQ_BIN" -r '.error.message // .message // empty' "$body_file" 2>/dev/null || true)"
+    code="$("$JQ_BIN" -r '.error.code // empty' "$body_file" 2>/dev/null || true)"
+    rm -f "$body_file"
+    LAST_HTTP_STATUS="$status"
+    LAST_ERROR_CODE="$code"
+    LAST_ERROR_MESSAGE="$message"
+    [[ -n "$message" ]] || message="HTTP $status"
+    [[ -n "$code" ]] && message="${message} (${code})"
+    echo "error: $message" >&2
+    if [[ "$auth" == "true" && ( "$status" == "401" || "$status" == "403" ) ]]; then
+      echo "Run again with --login to reconnect and save a fresh Revdoku API key." >&2
+    fi
+    return 1
+  fi
+
+  cat "$body_file"
+  rm -f "$body_file"
+}
+
+prompt_read() {
+  local prompt="$1"
+  local value
+  if [[ -r /dev/tty && -w /dev/tty ]]; then
+    printf "%s" "$prompt" > /dev/tty
+    IFS= read -r value < /dev/tty
+  elif [[ -t 0 ]]; then
+    printf "%s" "$prompt" >&2
+    IFS= read -r value
+  else
+    die "REVDOKU_API_KEY is required. Run interactively with --login to create one."
+  fi
+  printf "%s" "$value"
+}
+
+request_agent_key() {
+  local email code payload response key attempts
+  attempts=0
+
+  while true; do
+    attempts=$((attempts + 1))
+    email="$(prompt_read "Email: ")"
+    [[ -n "$email" ]] || die "email is required"
+
+    payload="$("$JQ_BIN" -nc --arg email "$email" '{email:$email}')"
+    if http_json POST "/api/v1/agent_auth/request_code" "$payload" false >/dev/null; then
+      break
+    fi
+
+    if [[ "$LAST_ERROR_CODE" != "SIGNUP_BLOCKED" ]]; then
+      die "could not start email verification"
+    fi
+    [[ "$attempts" -lt 3 ]] || die "could not start email verification"
+    echo "Please use a permanent email address. Disposable or blocked email domains are not accepted." >&2
+  done
+
+  echo "A Revdoku verification code was sent to $email." >&2
+
+  code="$(prompt_read "Code: ")"
+  [[ -n "$code" ]] || die "code is required"
+
+  payload="$("$JQ_BIN" -nc --arg email "$email" --arg code "$code" '{email:$email, code:$code, label:"Revdoku workspace client"}')"
+  response="$(http_json POST "/api/v1/agent_auth/verify_code" "$payload" false)"
+  key="$("$JQ_BIN" -r '.data.api_key // empty' <<<"$response")"
+  [[ -n "$key" ]] || die "verification did not return an API key"
+
+  mkdir -p "$(dirname "$CREDENTIALS_PATH")"
+  umask 077
+  printf "%s\n" "$key" > "$CREDENTIALS_PATH"
+  echo "Saved Revdoku API key to $CREDENTIALS_PATH" >&2
+  echo "This is a one-time setup. Future runs will reuse the saved key automatically." >&2
+  API_KEY="$key"
+}
+
+if [[ "$ACTION" != "exchange_grant" && ( "$LOGIN" == "true" || -z "$API_KEY" ) ]]; then
+  request_agent_key
+fi
+
+[[ "$ACTION" == "exchange_grant" || -n "$API_KEY" ]] || die "REVDOKU_API_KEY is required"
+case "$UPLOAD_MODE" in
+  auto|direct|multipart) ;;
+  *) die "--upload-mode must be auto, direct, or multipart" ;;
+esac
+case "$PUBLISH" in
+  true|false) ;;
+  *) die "REVDOKU_PUBLISH must be true or false" ;;
+esac
+case "$PERMANENT_PUBLICATION" in
+  true|false) ;;
+  *) die "REVDOKU_PERMANENT_PUBLICATION must be true or false" ;;
+esac
+if [[ "$PERMANENT_PUBLICATION" == "false" && -z "$EXPIRES_IN_DAYS" ]]; then
+  EXPIRES_IN_DAYS="7"
+fi
+if [[ -n "$EXPIRES_IN_DAYS" ]]; then
+  [[ "$EXPIRES_IN_DAYS" =~ ^[0-9]+$ && "$EXPIRES_IN_DAYS" -gt 0 ]] || die "--expires-in-days must be a positive number of days"
+fi
+
+list_workspaces() {
+  http_json GET "/api/v1/workspaces" "{}"
+}
+
+list_versions() {
+  [[ -n "$WORKSPACE_ID" ]] || die "--list-versions requires --workspace-id"
+  http_json GET "/api/v1/workspaces/${WORKSPACE_ID}/versions" "{}"
+}
+
+restore_version() {
+  local payload
+  [[ -n "$WORKSPACE_ID" ]] || die "--restore-version requires --workspace-id"
+  [[ -n "$RESTORE_VERSION_ID" ]] || die "--restore-version requires a workspace version id"
+  payload="$("$JQ_BIN" -nc \
+    --arg version_id "$RESTORE_VERSION_ID" \
+    --arg comment "$RESTORE_COMMENT" \
+    '{version_id:$version_id} + (if $comment != "" then {comment:$comment} else {} end)')"
+  http_json POST "/api/v1/workspaces/${WORKSPACE_ID}/rollback" "$payload"
+}
+
+account_status() {
+  http_json GET "/api/v1/account/credits" "{}" | "$JQ_BIN" -c '
+    .data.credits as $credits
+    | ($credits.account_limits // {}) as $limits
+    | {
+        success: (.success // true),
+        data: {
+          account: {
+            id: $credits.account_id,
+            name: $credits.account_name
+          },
+          plan: ($credits.plan // {}),
+          storage: {
+            used_bytes: $limits.used_storage_bytes,
+            used_human: $limits.used_storage_human,
+            available_bytes: $limits.available_storage_bytes,
+            available_human: $limits.available_storage_human,
+            max_mb: $limits.max_storage_mb,
+            max_human: $limits.max_storage_human,
+            max_file_size_mb: $limits.max_file_size_mb,
+            max_file_size_human: $limits.max_file_size_human
+          },
+          connections: {
+            max: $limits.max_account_connections,
+            active_api_keys_count: $limits.active_api_keys_count,
+            api_rate_limit_requests_per_minute: $limits.api_rate_limit_requests_per_minute
+          },
+          credits: {
+            balance: $credits.balance,
+            subscription: $credits.subscription,
+            purchased: $credits.purchased,
+            total: $credits.total,
+            purchased_expires_at: $credits.purchased_expires_at,
+            next_refill_at: $credits.next_refill_at,
+            one_time_credits_purchasable: $credits.one_time_credits_purchasable
+          }
+        }
+      }'
+}
+
+exchange_grant() {
+  local payload response key workspace_access default_workspace_id
+  [[ -n "$GRANT_TOKEN" ]] || die "grant token is required"
+  payload="$("$JQ_BIN" -nc --arg grant_token "$GRANT_TOKEN" '{grant_token:$grant_token, label:"Revdoku workspace client"}')"
+  response="$(http_json POST "/api/v1/agent_auth/exchange_grant" "$payload" false)"
+  key="$("$JQ_BIN" -r '.data.api_key // empty' <<<"$response")"
+  [[ -n "$key" ]] || die "grant exchange did not return an API key"
+  workspace_access="$("$JQ_BIN" -r '.data.workspace_access // "all"' <<<"$response")"
+  default_workspace_id="$("$JQ_BIN" -r 'if (.data.workspace_access == "selected") then ((.data.workspace_ids // []) | map(select(startswith("wrk_"))) | .[0] // empty) else empty end' <<<"$response")"
+
+  mkdir -p "$(dirname "$CREDENTIALS_PATH")"
+  umask 077
+  printf "%s\n" "$key" > "$CREDENTIALS_PATH"
+  echo "Saved Revdoku API key to $CREDENTIALS_PATH" >&2
+  if [[ "$workspace_access" == "selected" && -n "$default_workspace_id" ]]; then
+    printf "%s\n" "$default_workspace_id" > "$DEFAULT_WORKSPACE_PATH"
+    echo "Saved default Revdoku workspace to $DEFAULT_WORKSPACE_PATH" >&2
+  else
+    rm -f "$DEFAULT_WORKSPACE_PATH"
+  fi
+  echo "This is a one-time setup. Future runs will reuse the saved key automatically." >&2
+  printf "%s\n" "$("$JQ_BIN" -c '{success:(.success // true), data:{account_id:.data.account_id, account_name:.data.account_name, workspace_access:.data.workspace_access, workspace_ids:(.data.workspace_ids // []), workspace_permissions:(.data.workspace_permissions // {}), account_connection_limits:.data.account_connection_limits, manage_access:.data.manage_access, guidance:.data.guidance, link_hint:"If opening links from a terminal, Cmd-click on macOS or Ctrl-click on Windows/Linux when supported."}}' <<<"$response")"
+}
+
+list_public_workspaces() {
+  http_json GET "/api/v1/publications" "{}" | "$JQ_BIN" -c '
+    .data.publications
+    | map(select(.active == true and .kind == "workspace_bundle" and (.public_url // .url // .managed_url // "") != ""))
+    | group_by(.workspace_id)
+    | map({
+        workspace_id: .[0].workspace_id,
+        publications: map({
+          id,
+          title,
+          url: (.public_url // .url // .managed_url),
+          permanent: (.permanent // false),
+          expires_at,
+          created_at,
+          view_count
+        })
+      })
+    | {data:{public_workspaces:., link_hint:"If opening links from a terminal, Cmd-click on macOS or Ctrl-click on Windows/Linux when supported."}}'
+}
+
+print_terminal_link_hint() {
+  if [[ -t 2 ]]; then
+    echo "Tip: Cmd-click the link on macOS, or Ctrl-click it on Windows/Linux, if your terminal supports clickable links." >&2
+  fi
+}
+
+browser_login_link() {
+  local payload response url expires redirect_path
+  payload="$("$JQ_BIN" -nc --arg redirect_path "$BROWSER_LOGIN_PATH" '{redirect_path:$redirect_path}')"
+  response="$(http_json POST "/api/v1/agent_auth/browser_login_link" "$payload")"
+  url="$("$JQ_BIN" -r '.data.url // empty' <<<"$response")"
+  expires="$("$JQ_BIN" -r '.data.expires_in_seconds // empty' <<<"$response")"
+  redirect_path="$("$JQ_BIN" -r '.data.redirect_path // empty' <<<"$response")"
+  [[ -n "$url" ]] || die "browser login response did not include url"
+  echo "Open Revdoku: $url" >&2
+  [[ -n "$redirect_path" ]] && echo "Destination: $redirect_path" >&2
+  [[ -n "$expires" ]] && echo "This link is single-use and expires in ${expires} seconds." >&2
+  print_terminal_link_hint
+  printf "%s\n" "$url"
+}
+
+case "$ACTION" in
+  list_workspaces)
+    list_workspaces
+    exit 0
+    ;;
+  list_versions)
+    list_versions
+    exit 0
+    ;;
+  restore_version)
+    restore_version
+    exit 0
+    ;;
+  list_public_workspaces)
+    list_public_workspaces
+    exit 0
+    ;;
+  account_status)
+    account_status
+    exit 0
+    ;;
+  browser_login)
+    browser_login_link
+    exit 0
+    ;;
+  exchange_grant)
+    exchange_grant
+    exit 0
+    ;;
+esac
+
+[[ -e "$PATH_TO_STORE" ]] || die "$PATH_TO_STORE does not exist"
+
+abs_path() {
+  local path="$1"
+  if [[ -d "$path" ]]; then
+    (cd "$path" && pwd)
+  else
+    local dir base
+    dir="$(dirname "$path")"
+    base="$(basename "$path")"
+    printf "%s/%s" "$(cd "$dir" && pwd)" "$base"
+  fi
+}
+
+ROOT_PATH="$(abs_path "$PATH_TO_STORE")"
+
+default_title() {
+  basename "$ROOT_PATH"
+}
+
+has_index_file() {
+  if [[ -f "$ROOT_PATH" ]]; then
+    [[ "$(basename "$ROOT_PATH")" == "index.html" ]]
+  else
+    [[ -f "$ROOT_PATH/index.html" ]]
+  fi
+}
+
+content_type_for() {
+  local file="$1"
+  local lower="${file##*.}"
+  lower="$(printf "%s" "$lower" | tr '[:upper:]' '[:lower:]')"
+  case "$lower" in
+    html|htm) echo "text/html" ;;
+    css) echo "text/css" ;;
+    js|mjs|cjs) echo "text/javascript" ;;
+    map) echo "application/json" ;;
+    webmanifest) echo "application/manifest+json" ;;
+    json) echo "application/json" ;;
+    txt) echo "text/plain" ;;
+    md) echo "text/markdown" ;;
+    png) echo "image/png" ;;
+    jpg|jpeg) echo "image/jpeg" ;;
+    webp) echo "image/webp" ;;
+    gif) echo "image/gif" ;;
+    avif) echo "image/avif" ;;
+    bmp) echo "image/bmp" ;;
+    ico) echo "image/x-icon" ;;
+    svg) echo "image/svg+xml" ;;
+    woff) echo "font/woff" ;;
+    woff2) echo "font/woff2" ;;
+    ttf) echo "font/ttf" ;;
+    otf) echo "font/otf" ;;
+    wasm) echo "application/wasm" ;;
+    pdf) echo "application/pdf" ;;
+    xml) echo "application/xml" ;;
+    rss) echo "application/rss+xml" ;;
+    atom) echo "application/atom+xml" ;;
+    mp4) echo "video/mp4" ;;
+    mov) echo "video/quicktime" ;;
+    webm) echo "video/webm" ;;
+    mp3) echo "audio/mpeg" ;;
+    ogg) echo "audio/ogg" ;;
+    wav) echo "audio/wav" ;;
+    *) echo "application/octet-stream" ;;
+  esac
+}
+
+file_size() {
+  wc -c < "$1" | tr -d '[:space:]'
+}
+
+md5_base64() {
+  openssl dgst -md5 -binary "$1" | base64 | tr -d '\r\n'
+}
+
+sha256_file() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$1" | awk '{print $1}'
+  else
+    openssl dgst -sha256 "$1" | awk '{print $2}'
+  fi
+}
+
+relative_path_for() {
+  local file="$1"
+  if [[ -f "$ROOT_PATH" ]]; then
+    basename "$file"
+  else
+    printf "%s" "${file#"$ROOT_PATH"/}"
+  fi
+}
+
+create_workspace() {
+  local title payload response id
+  title="$TITLE"
+  [[ -n "$title" ]] || title="$(default_title)"
+  payload="$(workspace_payload "$title")"
+  response="$(http_json POST "/api/v1/workspaces" "$payload")" || die "workspace create failed"
+  id="$("$JQ_BIN" -r '.data.workspace.id // empty' <<<"$response")"
+  [[ -n "$id" ]] || die "workspace create response did not include id"
+  printf "%s" "$id"
+}
+
+tag_paths_json() {
+  if [[ "${#TAG_PATHS[@]}" -eq 0 ]]; then
+    printf "[]"
+  else
+    "$JQ_BIN" -nc '$ARGS.positional' --args "${TAG_PATHS[@]}"
+  fi
+}
+
+workspace_payload() {
+  local title="$1"
+  local tag_paths
+  tag_paths="$(tag_paths_json)"
+  "$JQ_BIN" -nc \
+    --arg title "$title" \
+    --arg description "$DESCRIPTION" \
+    --argjson metadata "$METADATA_JSON" \
+    --argjson tag_paths "$tag_paths" \
+    '{
+      workspace: (
+        {title: $title, metadata: $metadata}
+        + (if $description != "" then {description: $description} else {} end)
+        + (if ($tag_paths | length) > 0 then {tag_paths: $tag_paths} else {} end)
+      )
+    }'
+}
+
+workspace_update_payload() {
+  local tag_paths
+  tag_paths="$(tag_paths_json)"
+  "$JQ_BIN" -nc \
+    --arg title "$TITLE" \
+    --arg description "$DESCRIPTION" \
+    --argjson metadata "$METADATA_JSON" \
+    --argjson tag_paths "$tag_paths" \
+    '{
+      workspace: (
+        {}
+        + (if $title != "" then {title: $title} else {} end)
+        + (if $description != "" then {description: $description} else {} end)
+        + (if ($metadata | length) > 0 then {metadata: $metadata} else {} end)
+        + (if ($tag_paths | length) > 0 then {tag_paths: $tag_paths} else {} end)
+      )
+    }'
+}
+
+workspace_update_needed() {
+  [[ "$METADATA_JSON" != "{}" || -n "$DESCRIPTION" || "${#TAG_PATHS[@]}" -gt 0 ]]
+}
+
+put_direct_upload() {
+  local upload_json="$1"
+  local file="$2"
+  local url header_args=()
+  url="$("$JQ_BIN" -r '.url // empty' <<<"$upload_json")"
+  [[ -n "$url" ]] || return 1
+
+  while IFS=$'\t' read -r key value; do
+    [[ -n "$key" ]] || continue
+    header_args+=(-H "${key}: ${value}")
+  done < <("$JQ_BIN" -r '.headers // {} | to_entries[] | [.key, .value] | @tsv' <<<"$upload_json")
+
+  curl -fsS -X PUT "${header_args[@]}" --data-binary "@${file}" "$url" >/dev/null
+}
+
+put_publish_session_upload() {
+  local session_id="$1"
+  local rel="$2"
+  local upload_json="$3"
+  local file="$4"
+  local refresh_response refreshed_upload
+
+  if put_direct_upload "$upload_json" "$file"; then
+    return 0
+  fi
+
+  echo "Upload URL failed for $rel; refreshing upload URL and retrying." >&2
+  refresh_response="$(http_json POST "/api/v1/publish/${session_id}/uploads/refresh" "{}")" || return 1
+  refreshed_upload="$("$JQ_BIN" -c --arg path "$rel" '.data.publish_session.uploads[]? | select(.path == $path) | .upload' <<<"$refresh_response" | head -n 1)"
+  if [[ -z "$refreshed_upload" || "$refreshed_upload" == "null" ]]; then
+    echo "Upload for $rel was already accepted by Revdoku." >&2
+    return 0
+  fi
+
+  put_direct_upload "$refreshed_upload" "$file"
+}
+
+publish_session_retryable_error() {
+  case "$LAST_ERROR_CODE" in
+    PUBLISH_SESSION_STALE|PUBLISH_SESSION_EXPIRED|PUBLISH_SESSION_NOT_PENDING)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+upload_file_direct() {
+  local workspace_id="$1"
+  local file="$2"
+  local rel filename content_type size checksum sha256 payload response direct_upload signed_id
+  rel="$(relative_path_for "$file")"
+  filename="$(basename "$file")"
+  content_type="$(content_type_for "$file")"
+  size="$(file_size "$file")"
+  checksum="$(md5_base64 "$file")"
+  sha256="$(sha256_file "$file")"
+
+  payload="$("$JQ_BIN" -nc \
+    --arg workspace_id "$workspace_id" \
+    --arg relative_path "$rel" \
+    --arg filename "$filename" \
+    --argjson byte_size "$size" \
+    --arg checksum "$checksum" \
+    --arg content_type "$content_type" \
+    --arg sha256 "$sha256" \
+    '{workspace_id:$workspace_id, relative_path:$relative_path, blob:{filename:$filename, byte_size:$byte_size, checksum:$checksum, content_type:$content_type, sha256:$sha256, purpose:"workspace_file"}}')"
+  response="$(http_json POST "/api/v1/direct_uploads" "$payload")" || return 1
+  direct_upload="$("$JQ_BIN" -c '.data.direct_upload // empty' <<<"$response")"
+  signed_id="$("$JQ_BIN" -r '.data.signed_id // empty' <<<"$response")"
+  [[ -n "$direct_upload" && -n "$signed_id" ]] || return 1
+
+  put_direct_upload "$direct_upload" "$file" || return 1
+
+  payload="$("$JQ_BIN" -nc --arg signed_blob_id "$signed_id" --arg relative_path "$rel" --arg name "$filename" \
+    '{signed_blob_id:$signed_blob_id, relative_path:$relative_path, name:$name}')"
+  http_json POST "/api/v1/workspaces/${workspace_id}/files" "$payload" >/dev/null
+}
+
+upload_file_multipart() {
+  local workspace_id="$1"
+  local file="$2"
+  local rel filename content_type body_file status message agent_args=()
+  rel="$(relative_path_for "$file")"
+  filename="$(basename "$file")"
+  content_type="$(content_type_for "$file")"
+  body_file="$(mktemp)"
+  while IFS= read -r -d '' value; do
+    agent_args+=("$value")
+  done < <(agent_header_args)
+  status="$(curl -sS -o "$body_file" -w "%{http_code}" \
+    -X POST "$(api_url "/api/v1/workspaces/${workspace_id}/files")" \
+    "${agent_args[@]}" \
+    -H "Authorization: Bearer $API_KEY" \
+    -F "relative_path=${rel}" \
+    -F "name=${filename}" \
+    -F "file=@${file};filename=${filename};type=${content_type}")" || {
+      rm -f "$body_file"
+      return 1
+  }
+  if [[ "$status" -lt 200 || "$status" -ge 300 ]]; then
+    message="$("$JQ_BIN" -r '.error.message // .message // empty' "$body_file" 2>/dev/null || true)"
+    rm -f "$body_file"
+    [[ -n "$message" ]] || message="HTTP $status"
+    echo "error: upload failed for $rel: $message" >&2
+    return 1
+  fi
+  rm -f "$body_file"
+}
+
+upload_file() {
+  local workspace_id="$1"
+  local file="$2"
+  local rel
+  rel="$(relative_path_for "$file")"
+  echo "Uploading $rel" >&2
+
+  if [[ "$UPLOAD_MODE" != "multipart" ]]; then
+    if upload_file_direct "$workspace_id" "$file"; then
+      return 0
+    fi
+    if [[ "$UPLOAD_MODE" == "direct" ]]; then
+      echo "Direct upload failed for $rel; retrying with multipart upload." >&2
+    else
+      echo "Direct upload failed for $rel; retrying with compatibility upload." >&2
+    fi
+  fi
+
+  upload_file_multipart "$workspace_id" "$file"
+}
+
+publish_workspace() {
+  local workspace_id="$1"
+  local payload response response_file url
+  if [[ "$PERMANENT_PUBLICATION" == "true" ]]; then
+    payload="$("$JQ_BIN" -nc --argjson metadata "$METADATA_JSON" '{permanent:true, entrypoint:"index.html", metadata:$metadata}')"
+  else
+    payload="$("$JQ_BIN" -nc --argjson expires_in_days "$EXPIRES_IN_DAYS" --argjson metadata "$METADATA_JSON" '{expires_in_days:$expires_in_days, entrypoint:"index.html", metadata:$metadata}')"
+  fi
+  response_file="$(mktemp)"
+  if ! http_json POST "/api/v1/workspaces/${workspace_id}/publish" "$payload" > "$response_file"; then
+    rm -f "$response_file"
+    if [[ "$LAST_ERROR_CODE" == "PUBLIC_STORAGE_NOT_CONFIGURED" ]]; then
+      echo "Public publishing is not configured for this Revdoku deployment." >&2
+      echo "Private workspace storage is still available: $workspace_id" >&2
+    fi
+    die "workspace publish failed"
+  fi
+  response="$(cat "$response_file")"
+  rm -f "$response_file"
+  url="$("$JQ_BIN" -r '.data.publication.public_url // .data.publication.url // .data.publication.managed_url // empty' <<<"$response")"
+  [[ -n "$url" ]] || die "publish response did not include url"
+  printf "%s\n" "$url"
+}
+
+publish_session_manifest_json() {
+  local file_list="$1"
+  local manifest_lines rel filename content_type size checksum sha256
+  manifest_lines="$(mktemp)"
+  while IFS= read -r -d '' file; do
+    rel="$(relative_path_for "$file")"
+    filename="$(basename "$file")"
+    content_type="$(content_type_for "$file")"
+    size="$(file_size "$file")"
+    checksum="$(md5_base64 "$file")"
+    sha256="$(sha256_file "$file")"
+    "$JQ_BIN" -nc \
+      --arg path "$rel" \
+      --argjson byte_size "$size" \
+      --arg content_type "$content_type" \
+      --arg checksum "$checksum" \
+      --arg sha256 "$sha256" \
+      '{path:$path, byte_size:$byte_size, content_type:$content_type, checksum:$checksum, sha256:$sha256}' >> "$manifest_lines"
+  done < "$file_list"
+  "$JQ_BIN" -sc '.' "$manifest_lines"
+  rm -f "$manifest_lines"
+}
+
+publish_session_payload() {
+  local manifest_json="$1"
+  local title tag_paths expires_in_days
+  title="$TITLE"
+  [[ -n "$title" ]] || title="$(default_title)"
+  tag_paths="$(tag_paths_json)"
+  expires_in_days="${EXPIRES_IN_DAYS:-7}"
+  "$JQ_BIN" -nc \
+    --arg title "$title" \
+    --arg description "$DESCRIPTION" \
+    --arg workspace_id "$WORKSPACE_ID" \
+    --arg permanent "$PERMANENT_PUBLICATION" \
+    --argjson expires_in_days "$expires_in_days" \
+    --argjson metadata "$METADATA_JSON" \
+    --argjson tag_paths "$tag_paths" \
+    --argjson files "$manifest_json" \
+    '{
+      title: $title,
+      workspace_title: $title,
+      entrypoint: "index.html",
+      metadata: $metadata,
+      files: $files
+    }
+    + (if $workspace_id != "" then {workspace_id: $workspace_id} else {} end)
+    + (if $description != "" then {workspace_description: $description} else {} end)
+    + (if ($tag_paths | length) > 0 then {workspace_tag_paths: $tag_paths} else {} end)
+    + (if $permanent == "true" then {permanent: true} else {expires_in_days: $expires_in_days} end)'
+}
+
+publish_session_file_for_path() {
+  local rel="$1"
+  if [[ -f "$ROOT_PATH" ]]; then
+    printf "%s" "$ROOT_PATH"
+  else
+    printf "%s/%s" "$ROOT_PATH" "$rel"
+  fi
+}
+
+publish_workspace_session_attempt() {
+  local file_list="$1"
+  local manifest_json payload response session_id workspace_id upload_line rel upload_json file finalize_url final_response url
+  manifest_json="$(publish_session_manifest_json "$file_list")"
+  payload="$(publish_session_payload "$manifest_json")"
+  if ! response="$(http_json POST "/api/v1/publish" "$payload")"; then
+    return 1
+  fi
+
+  session_id="$("$JQ_BIN" -r '.data.publish_session.id // empty' <<<"$response")"
+  workspace_id="$("$JQ_BIN" -r '.data.publish_session.workspace_id // empty' <<<"$response")"
+  [[ -n "$session_id" ]] || {
+    die "publish session response did not include id"
+  }
+  [[ -n "$workspace_id" ]] && echo "Workspace: $workspace_id" >&2
+  echo "Publish session: $session_id" >&2
+
+  while IFS= read -r upload_line; do
+    [[ -n "$upload_line" ]] || continue
+    rel="$("$JQ_BIN" -r '.path' <<<"$upload_line")"
+    upload_json="$("$JQ_BIN" -c '.upload' <<<"$upload_line")"
+    file="$(publish_session_file_for_path "$rel")"
+    [[ -f "$file" ]] || {
+      die "publish session asked for unknown upload path: $rel"
+    }
+    echo "Uploading $rel" >&2
+    if ! put_publish_session_upload "$session_id" "$rel" "$upload_json" "$file"; then
+      return 1
+    fi
+  done < <("$JQ_BIN" -c '.data.publish_session.uploads[]?' <<<"$response")
+
+  finalize_url="$("$JQ_BIN" -r '.data.finalize.url // empty' <<<"$response")"
+  [[ -n "$finalize_url" ]] || {
+    die "publish session response did not include finalize URL"
+  }
+  if ! final_response="$(http_json POST "$finalize_url" "{}")"; then
+    return 1
+  fi
+
+  url="$("$JQ_BIN" -r '.data.publication.public_url // .data.publication.url // .data.publication.managed_url // empty' <<<"$final_response")"
+  [[ -n "$url" ]] || die "publish response did not include url"
+  printf "%s\n" "$url"
+}
+
+publish_workspace_session() {
+  local file_list publish_url
+  file_list="$(mktemp)"
+  if ! collect_files > "$file_list"; then
+    rm -f "$file_list"
+    return 1
+  fi
+  if [[ ! -s "$file_list" ]]; then
+    rm -f "$file_list"
+    die "no files found to publish after safety exclusions"
+  fi
+
+  if publish_url="$(publish_workspace_session_attempt "$file_list")"; then
+    rm -f "$file_list"
+    printf "%s\n" "$publish_url"
+    return 0
+  fi
+
+  if publish_session_retryable_error; then
+    echo "Publish session became stale or expired; starting a fresh publish session." >&2
+    if publish_url="$(publish_workspace_session_attempt "$file_list")"; then
+      rm -f "$file_list"
+      printf "%s\n" "$publish_url"
+      return 0
+    fi
+  fi
+
+  rm -f "$file_list"
+  return 1
+}
+
+workspace_id_for_storage() {
+  if [[ -n "$WORKSPACE_ID" ]]; then
+    if workspace_update_needed; then
+      local payload
+      payload="$(workspace_update_payload)"
+      http_json PATCH "/api/v1/workspaces/${WORKSPACE_ID}" "$payload" >/dev/null
+    fi
+    printf "%s" "$WORKSPACE_ID"
+  else
+    create_workspace
+  fi
+}
+
+store_workspace() {
+  local workspace_id file file_list
+  file_list="$(mktemp)"
+  if ! collect_files > "$file_list"; then
+    rm -f "$file_list"
+    return 1
+  fi
+  if [[ ! -s "$file_list" ]]; then
+    rm -f "$file_list"
+    die "no files found to store after safety exclusions"
+  fi
+
+  workspace_id="$(workspace_id_for_storage)"
+  echo "Workspace: $workspace_id" >&2
+  while IFS= read -r -d '' file; do
+    upload_file "$workspace_id" "$file"
+  done < "$file_list"
+  rm -f "$file_list"
+  printf "%s" "$workspace_id"
+}
+
+verify_published_url() {
+  local url="$1"
+  curl -fsSL --max-time 15 "$url" -o /dev/null || {
+    echo "error: published URL was created but did not respond: $url" >&2
+    return 1
+  }
+}
+
+collect_files() {
+  if [[ -f "$ROOT_PATH" ]]; then
+    if should_skip_storage_path "$ROOT_PATH"; then
+      die "refusing to store sensitive local file: $(basename "$ROOT_PATH")"
+    fi
+    printf "%s\0" "$ROOT_PATH"
+    return
+  fi
+
+  find "$ROOT_PATH" \
+    \( -type d \( -name ".git" -o -name ".hg" -o -name ".svn" -o -name ".revdoku" -o -name ".terraform" -o -name "node_modules" \) -prune \) \
+    -o -type f -print0 |
+    while IFS= read -r -d '' file; do
+      if should_skip_storage_path "$file"; then
+        echo "Skipping sensitive or local-only file: $(relative_path_for "$file")" >&2
+        continue
+      fi
+      printf "%s\0" "$file"
+    done
+}
+
+should_skip_storage_path() {
+  local file="$1"
+  local rel name lower_rel lower_name secret_pattern
+  rel="$(relative_path_for "$file")"
+  name="$(basename "$file")"
+  lower_rel="$(printf "%s" "$rel" | tr '[:upper:]' '[:lower:]')"
+  lower_name="$(printf "%s" "$name" | tr '[:upper:]' '[:lower:]')"
+  secret_pattern='(^|[._/-])(secret|secrets|credential|credentials|token|tokens|apikey|api[._-]?key|private[._-]?key)([._/-]|$)'
+
+  case "$lower_name" in
+    .ds_store|.env|*.pem|*.key|*.p12|*.pfx|*.crt|*.cer|*.der|*.kdb|*.jks|*.mobileprovision)
+      return 0
+      ;;
+    .env.*)
+      return 0
+      ;;
+  esac
+
+  [[ "$lower_name" =~ ^id_(rsa|dsa|ecdsa|ed25519)(\.pub)?$ ]] && return 0
+  [[ "$lower_name" =~ $secret_pattern || "$lower_rel" =~ $secret_pattern ]] && return 0
+
+  return 1
+}
+
+if [[ "$PUBLISH" == "true" ]]; then
+  if ! has_index_file; then
+    echo "No index.html found; Revdoku will publish a generated file listing." >&2
+  fi
+  if [[ "$UPLOAD_MODE" != "multipart" ]]; then
+    if publish_url="$(publish_workspace_session)"; then
+      verify_published_url "$publish_url"
+      echo "Published: $publish_url" >&2
+      print_terminal_link_hint
+      printf "%s\n" "$publish_url"
+      exit 0
+    fi
+    [[ "$UPLOAD_MODE" == "direct" ]] && die "direct publish session failed"
+    echo "Direct publish session failed; retrying with compatibility upload." >&2
+  fi
+fi
+
+workspace_id="$(store_workspace)"
+echo "Stored workspace: $workspace_id" >&2
+
+if [[ "$PUBLISH" == "true" ]]; then
+  publish_url="$(publish_workspace "$workspace_id")"
+  verify_published_url "$publish_url"
+  echo "Published: $publish_url" >&2
+  print_terminal_link_hint
+  printf "%s\n" "$publish_url"
+else
+  printf "%s\n" "$workspace_id"
+fi
