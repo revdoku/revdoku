@@ -54,6 +54,7 @@ Options:
                             Defaults to a workspace remembered from a selected-workspace grant.
   --metadata JSON           Optional JSON for agent lookup, for example {"project":"site"}.
   --publish                 Publish the workspace as a permanent public site after storing files.
+  --unpublish               Unpublish --workspace-id while keeping its reserved public URL for later republish.
   --expires-in-days DAYS    Advanced: expire the public site after DAYS instead of keeping it permanent.
   --login                   Request an email code and save an API key to $CREDENTIALS_PATH.
   --list-workspaces         Print available workspaces and metadata as JSON.
@@ -112,6 +113,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --publish)
       PUBLISH="true"
+      shift
+      ;;
+    --unpublish)
+      ACTION="unpublish_workspace"
       shift
       ;;
     --expires-in-days)
@@ -396,6 +401,24 @@ restore_version() {
   http_json POST "/api/v1/workspaces/${WORKSPACE_ID}/rollback" "$payload"
 }
 
+unpublish_workspace() {
+  [[ -n "$WORKSPACE_ID" ]] || die "--unpublish requires --workspace-id"
+  http_json POST "/api/v1/workspaces/${WORKSPACE_ID}/unpublish" "{}" | "$JQ_BIN" -c '
+    .data.publication as $publication
+    | {
+        success: (.success // true),
+        data: {
+          publication: $publication,
+          workspace_id: $publication.workspace_id,
+          public_id: $publication.public_id,
+          public_url: ($publication.public_url // $publication.url // $publication.managed_url),
+          active: ($publication.active // false),
+          revoked_at: $publication.revoked_at,
+          guidance: "The public site is unpublished. Republish this same workspace to restore the same URL."
+        }
+      }'
+}
+
 account_status() {
   http_json GET "/api/v1/account/credits" "{}" | "$JQ_BIN" -c '
     .data.credits as $credits
@@ -469,8 +492,10 @@ list_public_workspaces() {
         workspace_id: .[0].workspace_id,
         publications: map({
           id,
+          public_id,
           title,
           url: (.public_url // .url // .managed_url),
+          active: (.active // false),
           permanent: (.permanent // false),
           expires_at,
           created_at,
@@ -512,6 +537,10 @@ case "$ACTION" in
     ;;
   restore_version)
     restore_version
+    exit 0
+    ;;
+  unpublish_workspace)
+    unpublish_workspace
     exit 0
     ;;
   list_public_workspaces)

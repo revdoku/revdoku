@@ -38,9 +38,13 @@ for structured workspace work:
   describing what this agent is doing. Unlock with `workspace_unlock_file` after
   the write. If Revdoku returns `FILE_LOCKED`, do not overwrite; report who owns
   the lock and the lock message, then coordinate or wait.
-- Use `workspace_publish` only when the user asks for a public URL. If it
-  returns `PUBLIC_STORAGE_NOT_CONFIGURED`, keep using the private workspace and
-  tell the user public publishing is not configured for this deployment yet.
+- Use `workspace_publish` only when the user asks for a public URL. Republish an
+  existing workspace by passing the same `workspace_id`; Revdoku keeps the same
+  public URL across unpublish and republish. If publishing returns
+  `PUBLIC_STORAGE_NOT_CONFIGURED`, keep using the private workspace and tell the
+  user public publishing is not configured for this deployment yet.
+- Use `workspace_unpublish` when the user asks to unpublish a public workspace.
+  Tell the user that republishing the same workspace restores the same URL.
 - Use `workspace_publication_list` when the user asks which workspaces are
   public or asks for existing public links.
 - Use `revdoku_browser_login_link` when the user asks to open the Revdoku
