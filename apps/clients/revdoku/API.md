@@ -368,12 +368,13 @@ Publication responses include:
 - `permanent`: `true` when the link has no expiration.
 - `expires_at`: ISO timestamp for expiring links, omitted for permanent links.
 - `active`: `true` while the publication is usable.
+- `public_id`: stable DNS-safe workspace slug. It is generated on first publish and reused for that workspace.
 - `spa_mode`: `true` when nested public routes fall back to the entrypoint.
 
 Expiring publications stop serving after `expires_at`. Revdoku also schedules a
 cleanup job at that time to purge the public files.
 
-Workspace publishes overwrite the stable `<public_id>/...` public prefix. For workspace bundles, `public_id` is the DNS-safe workspace publication slug used as the public storage prefix. Published changes may take a short CDN cache window to appear globally. When wildcard workspace subdomains are configured, public URLs use `https://<workspace-slug>.<publication-domain>/`.
+Workspace publishes overwrite the stable `<public_id>/...` public prefix. For workspace bundles, `public_id` is the DNS-safe workspace publication slug used as the public storage prefix. It is generated on first publish and remains reserved for that workspace across unpublish and republish. Published changes may take a short CDN cache window to appear globally. When wildcard workspace subdomains are configured, public URLs use `https://<workspace-slug>.<publication-domain>/`.
 
 If public object storage is not configured for the deployment, publish requests
 return `503` with error code `PUBLIC_STORAGE_NOT_CONFIGURED`. Treat the
@@ -475,7 +476,14 @@ curl -fsS "$REVDOKU_URL/api/v1/publications?workspace_id=wrk_..." \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
-Revoke a publication:
+Unpublish a workspace while reserving the same public URL for later republish:
+
+```sh
+curl -fsS -X POST "$REVDOKU_URL/api/v1/workspaces/wrk_.../unpublish" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY"
+```
+
+The older publication-id revoke endpoint is still accepted for compatibility:
 
 ```sh
 curl -fsS -X DELETE "$REVDOKU_URL/api/v1/publications/pub_..." \
@@ -487,6 +495,7 @@ curl -fsS -X DELETE "$REVDOKU_URL/api/v1/publications/pub_..." \
 1. Create or find a workspace using a clear title, optional labels, and optional metadata such as project, task, or run id.
 2. Upload files into stable relative paths.
 3. Keep using the workspace as private virtual storage.
-4. Publish only when a public link is needed.
-5. List `/api/v1/publications` to discover active public links instead of
+4. Publish only when a public link is needed, and republish the same workspace to keep the same URL.
+5. Unpublish with `/api/v1/workspaces/:id/unpublish` when the public site should stop serving.
+6. List `/api/v1/publications` to discover active public links instead of
    inferring public state from workspace metadata.
