@@ -38,11 +38,16 @@ for structured workspace work:
   describing what this agent is doing. Unlock with `workspace_unlock_file` after
   the write. If Revdoku returns `FILE_LOCKED`, do not overwrite; report who owns
   the lock and the lock message, then coordinate or wait.
-- Use `workspace_publish` only when the user asks for a public URL. Republish an
-  existing workspace by passing the same `workspace_id`; Revdoku keeps the same
-  public URL across unpublish and republish. If publishing returns
-  `PUBLIC_STORAGE_NOT_CONFIGURED`, keep using the private workspace and tell the
-  user public publishing is not configured for this deployment yet.
+- Use `workspace_publish` only when the user asks for a public URL. When updating
+  an existing public project, republish that same `workspace_id`; Revdoku keeps
+  the same public URL and this does not use another live-site slot. If publishing
+  a new workspace returns `PUBLICATION_LIMIT_REACHED`, keep the private workspace,
+  list current public workspaces with `workspace_publication_list`, and ask the
+  user whether to republish/update one existing public workspace, unpublish one
+  current workspace, or upgrade. Never unpublish without confirmation. If
+  publishing returns `PUBLIC_STORAGE_NOT_CONFIGURED`, keep using the private
+  workspace and tell the user public publishing is not configured for this
+  deployment yet.
 - Use `workspace_unpublish` when the user asks to unpublish a public workspace.
   Tell the user that republishing the same workspace restores the same URL.
 - Use `workspace_publication_list` when the user asks which workspaces are
@@ -58,7 +63,7 @@ for structured workspace work:
   when the user asks to publish or wants a public URL.
 
 For non-agent service integrations, point users to
-`apps/clients/revdoku/API.md`. The HTTP API exposes the same storage
+`apps/clients/revdoku/api.md`. The HTTP API exposes the same storage
 model as MCP: workspaces, files, direct uploads, public workspace publications,
 and publication listing.
 
@@ -103,7 +108,7 @@ link.
 ~/.revdoku/bin/revdoku {file-or-dir}
 ```
 
-The script stores files privately and prints the workspace id. If no API key is available, run it interactively and it will ask for the user's email, send a Revdoku verification code, ask for the code, save the API key to `~/.revdoku/credentials`, then store the files. New confirmed accounts start on the Free plan with 5 GB storage and three total account connections: the owner plus two agent or API connections. This is a one-time setup; future runs reuse the saved key automatically. If Revdoku rejects a disposable or blocked email address, ask the user for a permanent email address and retry. The client is Bash + curl only; do not use Ruby for this workflow.
+The script stores files privately and prints the workspace id. If no API key is available, run it interactively and it will ask for the user's email, send a Revdoku verification code, ask for the code, save the API key to `~/.revdoku/credentials`, then store the files. New confirmed accounts start on the Free plan with 2 GB storage, ten live public sites, and three total account connections: the owner plus two agent or API connections. This is a one-time setup; future runs reuse the saved key automatically. If Revdoku rejects a disposable or blocked email address, ask the user for a permanent email address and retry. The client is Bash + curl only; do not use Ruby for this workflow.
 
 Under the hood this is a Revdoku private workspace file flow by default:
 
@@ -115,7 +120,7 @@ Under the hood this is a Revdoku private workspace file flow by default:
 
 If direct upload links fail, the default `--upload-mode auto` retries with multipart workspace upload. This still only stores files privately. When storing a directory, the CLI skips common local-only and secret-looking paths such as `.env`, private keys, credential/token files, `.git`, `.revdoku`, `.terraform`, and `node_modules`. If every file is skipped, the CLI stops before creating an empty workspace. If the user asks to store a skipped file intentionally, confirm that they understand it may contain secrets before using the API directly.
 
-To also create a permanent public workspace site URL, pass `--publish`. For HTML workspaces, publish the directory whose contents should become the site root. If `index.html` exists, it is served at the root URL. If not, Revdoku publishes a generated file listing. Add `--expires-in-days DAYS` only when the user explicitly asks for an expiring link; Revdoku stops serving expired publications and purges their public files with a scheduled cleanup job. If publishing returns `PUBLIC_STORAGE_NOT_CONFIGURED`, the private workspace was still stored; report that public publishing is not configured yet and do not retry destructively.
+To also create a permanent public workspace site URL, pass `--publish`. To update an existing public site, pass `--workspace-id` for that same public workspace so Revdoku republishes the existing URL instead of creating a new live public site. For HTML workspaces, publish the directory whose contents should become the site root. If `index.html` exists, it is served at the root URL. If not, Revdoku publishes a generated file listing. Add `--expires-in-days DAYS` only when the user explicitly asks for an expiring link; Revdoku stops serving expired publications and purges their public files with a scheduled cleanup job. If publishing returns `PUBLICATION_LIMIT_REACHED`, keep the stored private workspace, list public workspaces with `--list-public-workspaces`, and ask whether to republish/update an existing public workspace, unpublish one current workspace, or upgrade. If publishing returns `PUBLIC_STORAGE_NOT_CONFIGURED`, the private workspace was still stored; report that public publishing is not configured yet and do not retry destructively.
 
 Subfolders are supported and must be preserved. When publishing a static site,
 upload from the site root so relative paths such as `assets/app.css`,

@@ -30,6 +30,7 @@ AGENT_TASK="${REVDOKU_AGENT_TASK:-}"
 LOGIN="false"
 ACTION="store"
 PATH_TO_STORE=""
+LAST_PUBLISH_SESSION_WORKSPACE_ID=""
 
 die() {
   echo "error: $1" >&2
@@ -764,6 +765,19 @@ publish_session_retryable_error() {
   esac
 }
 
+publication_limit_error() {
+  [[ "$LAST_ERROR_CODE" == "PUBLICATION_LIMIT_REACHED" ]]
+}
+
+print_publication_limit_guidance() {
+  echo "Live public site limit reached for this account." >&2
+  if [[ -n "$LAST_PUBLISH_SESSION_WORKSPACE_ID" ]]; then
+    echo "Private workspace storage is still available: $LAST_PUBLISH_SESSION_WORKSPACE_ID" >&2
+  fi
+  echo "To update an existing public site, rerun with --workspace-id for that public workspace; republishing keeps the same URL and does not use another live-site slot." >&2
+  echo "To publish a new site, list current public workspaces with --list-public-workspaces, then ask before unpublishing one with --unpublish, or open /pricing to upgrade." >&2
+}
+
 upload_file_direct() {
   local workspace_id="$1"
   local file="$2"
@@ -862,6 +876,9 @@ publish_workspace() {
     if [[ "$LAST_ERROR_CODE" == "PUBLIC_STORAGE_NOT_CONFIGURED" ]]; then
       echo "Public publishing is not configured for this Revdoku deployment." >&2
       echo "Private workspace storage is still available: $workspace_id" >&2
+    elif publication_limit_error; then
+      LAST_PUBLISH_SESSION_WORKSPACE_ID="$workspace_id"
+      print_publication_limit_guidance
     fi
     die "workspace publish failed"
   fi
@@ -944,6 +961,7 @@ publish_workspace_session_attempt() {
 
   session_id="$("$JQ_BIN" -r '.data.publish_session.id // empty' <<<"$response")"
   workspace_id="$("$JQ_BIN" -r '.data.publish_session.workspace_id // empty' <<<"$response")"
+  LAST_PUBLISH_SESSION_WORKSPACE_ID="$workspace_id"
   [[ -n "$session_id" ]] || {
     die "publish session response did not include id"
   }
@@ -1107,7 +1125,13 @@ if [[ "$PUBLISH" == "true" ]]; then
       printf "%s\n" "$publish_url"
       exit 0
     fi
-    [[ "$UPLOAD_MODE" == "direct" ]] && die "direct publish session failed"
+    if publication_limit_error && [[ -z "$WORKSPACE_ID" && -n "$LAST_PUBLISH_SESSION_WORKSPACE_ID" ]]; then
+      WORKSPACE_ID="$LAST_PUBLISH_SESSION_WORKSPACE_ID"
+    fi
+    if [[ "$UPLOAD_MODE" == "direct" ]]; then
+      publication_limit_error && print_publication_limit_guidance
+      die "direct publish session failed"
+    fi
     echo "Direct publish session failed; retrying with compatibility upload." >&2
   fi
 fi
