@@ -399,21 +399,21 @@ restore_version() {
     --arg version_id "$RESTORE_VERSION_ID" \
     --arg comment "$RESTORE_COMMENT" \
     '{version_id:$version_id} + (if $comment != "" then {comment:$comment} else {} end)')"
-  http_json POST "/api/v1/workspaces/${WORKSPACE_ID}/rollback" "$payload"
+  http_json POST "/api/v1/workspaces/${WORKSPACE_ID}/versions/restore" "$payload"
 }
 
 unpublish_workspace() {
   [[ -n "$WORKSPACE_ID" ]] || die "--unpublish requires --workspace-id"
-  http_json POST "/api/v1/workspaces/${WORKSPACE_ID}/unpublish" "{}" | "$JQ_BIN" -c '
+  http_json DELETE "/api/v1/workspaces/${WORKSPACE_ID}/publication" "{}" | "$JQ_BIN" -c '
     .data.publication as $publication
     | {
         success: (.success // true),
         data: {
           publication: $publication,
           workspace_id: $publication.workspace_id,
-          public_id: $publication.public_id,
-          public_url: ($publication.public_url // $publication.url // $publication.managed_url),
-          active: ($publication.active // false),
+          public_slug: $publication.public_slug,
+          public_url: $publication.public_url,
+          status: $publication.status,
           revoked_at: $publication.revoked_at,
           guidance: "The public site is unpublished. Republish this same workspace to restore the same URL."
         }
@@ -487,20 +487,20 @@ exchange_grant() {
 list_public_workspaces() {
   http_json GET "/api/v1/publications" "{}" | "$JQ_BIN" -c '
     .data.publications
-    | map(select(.active == true and .kind == "workspace_bundle" and (.public_url // .url // .managed_url // "") != ""))
+    | map(select(.status == "published" and .kind == "workspace_bundle" and (.public_url // "") != ""))
     | group_by(.workspace_id)
     | map({
         workspace_id: .[0].workspace_id,
         publications: map({
           id,
-          public_id,
+          public_slug,
           title,
-          url: (.public_url // .url // .managed_url),
-          active: (.active // false),
+          url: .public_url,
+          status,
           permanent: (.permanent // false),
           expires_at,
           created_at,
-          view_count
+          hits: (.analytics.hits_all_time // 0)
         })
       })
     | {data:{public_workspaces:., link_hint:"If opening links from a terminal, Cmd-click on macOS or Ctrl-click on Windows/Linux when supported."}}'
@@ -744,7 +744,7 @@ put_publish_session_upload() {
   fi
 
   echo "Upload URL failed for $rel; refreshing upload URL and retrying." >&2
-  refresh_response="$(http_json POST "/api/v1/publish/${session_id}/uploads/refresh" "{}")" || return 1
+  refresh_response="$(http_json POST "/api/v1/publish_sessions/${session_id}/uploads/refresh" "{}")" || return 1
   refreshed_upload="$("$JQ_BIN" -c --arg path "$rel" '.data.publish_session.uploads[]? | select(.path == $path) | .upload' <<<"$refresh_response" | head -n 1)"
   if [[ -z "$refreshed_upload" || "$refreshed_upload" == "null" ]]; then
     echo "Upload for $rel was already accepted by Revdoku." >&2
@@ -791,13 +791,13 @@ upload_file_direct() {
 
   payload="$("$JQ_BIN" -nc \
     --arg workspace_id "$workspace_id" \
-    --arg relative_path "$rel" \
+    --arg path "$rel" \
     --arg filename "$filename" \
     --argjson byte_size "$size" \
     --arg checksum "$checksum" \
     --arg content_type "$content_type" \
     --arg sha256 "$sha256" \
-    '{workspace_id:$workspace_id, relative_path:$relative_path, blob:{filename:$filename, byte_size:$byte_size, checksum:$checksum, content_type:$content_type, sha256:$sha256, purpose:"workspace_file"}}')"
+    '{workspace_id:$workspace_id, path:$path, blob:{filename:$filename, byte_size:$byte_size, checksum:$checksum, content_type:$content_type, sha256:$sha256, purpose:"workspace_file"}}')"
   response="$(http_json POST "/api/v1/direct_uploads" "$payload")" || return 1
   direct_upload="$("$JQ_BIN" -c '.data.direct_upload // empty' <<<"$response")"
   signed_id="$("$JQ_BIN" -r '.data.signed_id // empty' <<<"$response")"
@@ -805,8 +805,8 @@ upload_file_direct() {
 
   put_direct_upload "$direct_upload" "$file" || return 1
 
-  payload="$("$JQ_BIN" -nc --arg signed_blob_id "$signed_id" --arg relative_path "$rel" --arg name "$filename" \
-    '{signed_blob_id:$signed_blob_id, relative_path:$relative_path, name:$name}')"
+  payload="$("$JQ_BIN" -nc --arg signed_blob_id "$signed_id" --arg path "$rel" --arg name "$filename" \
+    '{signed_blob_id:$signed_blob_id, path:$path, name:$name}')"
   http_json POST "/api/v1/workspaces/${workspace_id}/files" "$payload" >/dev/null
 }
 
@@ -825,7 +825,7 @@ upload_file_multipart() {
     -X POST "$(api_url "/api/v1/workspaces/${workspace_id}/files")" \
     "${agent_args[@]}" \
     -H "Authorization: Bearer $API_KEY" \
-    -F "relative_path=${rel}" \
+    -F "path=${rel}" \
     -F "name=${filename}" \
     -F "file=@${file};filename=${filename};type=${content_type}")" || {
       rm -f "$body_file"
@@ -871,7 +871,7 @@ publish_workspace() {
     payload="$("$JQ_BIN" -nc --argjson expires_in_days "$EXPIRES_IN_DAYS" --argjson metadata "$METADATA_JSON" '{expires_in_days:$expires_in_days, entrypoint:"index.html", metadata:$metadata}')"
   fi
   response_file="$(mktemp)"
-  if ! http_json POST "/api/v1/workspaces/${workspace_id}/publish" "$payload" > "$response_file"; then
+  if ! http_json POST "/api/v1/workspaces/${workspace_id}/publication" "$payload" > "$response_file"; then
     rm -f "$response_file"
     if [[ "$LAST_ERROR_CODE" == "PUBLIC_STORAGE_NOT_CONFIGURED" ]]; then
       echo "Public publishing is not configured for this Revdoku deployment." >&2
@@ -884,7 +884,7 @@ publish_workspace() {
   fi
   response="$(cat "$response_file")"
   rm -f "$response_file"
-  url="$("$JQ_BIN" -r '.data.publication.public_url // .data.publication.url // .data.publication.managed_url // empty' <<<"$response")"
+  url="$("$JQ_BIN" -r '.data.publication.public_url // empty' <<<"$response")"
   [[ -n "$url" ]] || die "publish response did not include url"
   printf "%s\n" "$url"
 }
@@ -955,7 +955,7 @@ publish_workspace_session_attempt() {
   local manifest_json payload response session_id workspace_id upload_line rel upload_json file finalize_url final_response url
   manifest_json="$(publish_session_manifest_json "$file_list")"
   payload="$(publish_session_payload "$manifest_json")"
-  if ! response="$(http_json POST "/api/v1/publish" "$payload")"; then
+  if ! response="$(http_json POST "/api/v1/publish_sessions" "$payload")"; then
     return 1
   fi
 
@@ -990,7 +990,7 @@ publish_workspace_session_attempt() {
     return 1
   fi
 
-  url="$("$JQ_BIN" -r '.data.publication.public_url // .data.publication.url // .data.publication.managed_url // empty' <<<"$final_response")"
+  url="$("$JQ_BIN" -r '.data.publication.public_url // empty' <<<"$final_response")"
   [[ -n "$url" ]] || die "publish response did not include url"
   printf "%s\n" "$url"
 }

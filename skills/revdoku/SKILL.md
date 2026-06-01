@@ -51,7 +51,9 @@ for structured workspace work:
 - Use `workspace_unpublish` when the user asks to unpublish a public workspace.
   Tell the user that republishing the same workspace restores the same URL.
 - Use `workspace_publication_list` when the user asks which workspaces are
-  public or asks for existing public links.
+  public or asks for existing public links. Publication list rows include a
+  `hits` value derived from the API's `analytics.hits_all_time`; treat `0` as
+  either no recorded hits or analytics hidden for the current plan.
 - Use `revdoku_browser_login_link` when the user asks to open the Revdoku
   dashboard, manage agent/API access, manage billing, or use another Revdoku UI
   page the tool cannot show directly. Use `/workspaces` for the dashboard,
@@ -164,7 +166,7 @@ To publish with MCP, include `"publish": true`.
 - `--exchange-grant TOKEN`: exchange a one-time grant copied from the Revdoku
   app and save the returned API key.
 - `--list-workspaces`: print available workspaces and metadata as JSON.
-- `--list-public-workspaces`: print active public workspace publications and URLs as JSON.
+- `--list-public-workspaces`: print active public workspace publications and URLs as JSON. Each publication includes `hits`, derived from `analytics.hits_all_time` in the HTTP API.
 - `--account-status`: print account, plan, and storage status as JSON. If unauthorized, run again with `--login`.
 - `--upload-mode MODE`: `auto`, `direct`, or `multipart`; default `auto`.
 
@@ -174,7 +176,7 @@ To publish with MCP, include `"publish": true`.
 - If `--publish` was used, share the public URL and keep the printed `Workspace: ...` id for future updates.
 - If publishing fails with `PUBLIC_STORAGE_NOT_CONFIGURED`, share the workspace
   id as private storage and say public publishing is not configured yet.
-- If asked which workspaces are public, run `~/.revdoku/bin/revdoku --list-public-workspaces` and summarize the workspace ids and URLs.
+- If asked which workspaces are public, run `~/.revdoku/bin/revdoku --list-public-workspaces` and summarize the workspace ids, URLs, and hit totals when useful.
 - If asked to roll back a workspace, list versions first, confirm the target
   version, then run `~/.revdoku/bin/revdoku --workspace-id wrk_... --restore-version wrkrv_...`.
   Explain that Revdoku creates a new latest version and keeps newer versions in
