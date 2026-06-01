@@ -150,23 +150,23 @@ Multipart upload is easiest for small and medium files:
 ```sh
 curl -fsS "$REVDOKU_URL/api/v1/workspaces/wrk_.../files" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
-  -F "relative_path=index.html" \
+  -F "path=index.html" \
   -F "file=@dist/index.html;type=text/html"
 ```
 
-Uploading the same `relative_path` creates a new version of that file.
+Uploading the same `path` creates a new version of that file.
 
 ### Publish a Workspace
 
 Publish explicitly when the workspace should have a public URL:
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/workspaces/wrk_.../publish" \
+curl -fsS "$REVDOKU_URL/api/v1/workspaces/wrk_.../publication" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "entrypoint": "index.html",
-    "site_type": "spa",
+    "site_mode": "spa",
     "permanent": true
   }'
 ```
@@ -178,17 +178,16 @@ Example response:
   "data": {
     "id": "pub_...",
     "workspace_id": "wrk_...",
-    "public_id": "bright-canvas-a7k2",
-    "url": "https://bright-canvas-a7k2.revdoku.site/",
-    "public_url": "https://bright-canvas-a7k2.revdoku.site/",
-    "managed_url": "https://bright-canvas-a7k2.revdoku.site/",
-    "active": true,
+    "public_slug": "bright-canvas-meadow",
+    "public_url": "https://bright-canvas-meadow.revdoku.site/",
+    "status": "published",
+    "site_mode": "spa",
     "permanent": true
   }
 }
 ```
 
-Use `site_type: "static"` for ordinary static sites. Use `site_type: "spa"` for
+Use `site_mode: "static"` for ordinary static sites. Use `site_mode: "spa"` for
 React/Vite-style apps where deep links should fall back to `index.html`.
 
 ### Publish a Folder Efficiently
@@ -199,13 +198,13 @@ only changed bytes, then finalizes the publication.
 Create the session:
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/publish" \
+curl -fsS "$REVDOKU_URL/api/v1/publish_sessions" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "workspace_title": "Marketing site",
     "entrypoint": "index.html",
-    "site_type": "spa",
+    "site_mode": "spa",
     "permanent": true,
     "files": [
       {
@@ -226,14 +225,14 @@ upload URLs.
 Finalize the session:
 
 ```sh
-curl -fsS -X POST "$REVDOKU_URL/api/v1/publish/pus_.../finalize" \
+curl -fsS -X POST "$REVDOKU_URL/api/v1/publish_sessions/pus_.../finalize" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
 If an upload URL expires, refresh it:
 
 ```sh
-curl -fsS -X POST "$REVDOKU_URL/api/v1/publish/pus_.../uploads/refresh" \
+curl -fsS -X POST "$REVDOKU_URL/api/v1/publish_sessions/pus_.../uploads/refresh" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -277,7 +276,7 @@ Example response while DNS is still pending:
       ]
     },
     "publication": {
-      "public_url": "https://bright-canvas-a7k2.revdoku.site/"
+      "public_url": "https://bright-canvas-meadow.revdoku.site/"
     },
     "limits": {
       "active_count": 1,
@@ -295,7 +294,7 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/workspaces/wrk_.../custom_domains/pcd_...
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
-When active, the publication `url` and `public_url` switch to the custom domain.
+When active, the publication `public_url` switches to the custom domain.
 The managed `https://<workspace-slug>.revdoku.site/` URL keeps working.
 
 For apex domains such as `example.com`, the DNS provider must support ALIAS,
@@ -319,33 +318,48 @@ Example paid response:
 {
   "data": {
     "range": "30d",
-    "analyticsStartedAt": "2026-05-22T00:00:00.000Z",
-    "lastEventAt": "2026-05-26T18:32:14.000Z",
+    "first_event_at": "2026-05-22T09:12:33.000Z",
+    "last_event_at": "2026-05-26T18:32:14.000Z",
     "totals": {
-      "allTimeViews": 8420,
-      "rangeViews": 1204,
-      "rangeVisitors": 822,
-      "assetHits": 330,
-      "notFoundHits": 18,
-      "botHits": 91
+      "hits_all_time": 8420,
+      "hits": 1204,
+      "visitors": 822,
+      "hits_not_found": 18,
+      "hits_bots": 91
     },
-    "series": [
-      { "bucket": "2026-05-26", "views": 120, "visitors": 84 }
+    "daily": [
+      { "date": "2026-05-26", "hits": 120, "visitors": 84, "hits_not_found": 2, "hits_bots": 9 }
     ],
-    "topReferrers": [
-      { "referrer": "Direct", "views": 420 }
+    "workspaces": [
+      {
+        "workspace_id": "wrk_abc123",
+        "workspace_title": "Docs",
+        "publication_id": "pub_abc123",
+        "public_slug": "docs",
+        "url": "https://docs.revdoku.site/",
+        "hits": 1204
+      }
     ],
-    "topCountries": [
-      { "country": "US", "views": 510 }
+    "paths": [
+      { "path": "/", "hits": 650 }
     ],
-    "topCrawlers": [
-      { "crawler": "GPTBot", "hits": 91 }
+    "referrers": [
+      { "referrer": "direct", "hits": 420 }
+    ],
+    "countries": [
+      { "country": "US", "hits": 510 }
+    ],
+    "bots": [
+      { "bot": "GPTBot", "hits": 91 }
+    ],
+    "paths_not_found": [
+      { "workspace_id": "wrk_abc123", "publication_id": "pub_abc123", "public_slug": "docs", "path": "/old-page", "hits": 18 }
     ]
   }
 }
 ```
 
-`rangeVisitors` is a sum of each day's unique visitor count, not a global unique
+`visitors` is a sum of each day's unique visitor count, not a global unique
 visitor count across the whole range.
 
 ## API Reference
@@ -486,7 +500,7 @@ Multipart upload:
 ```sh
 curl -fsS "$REVDOKU_URL/api/v1/workspaces/wrk_.../files" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
-  -F "relative_path=assets/app.js" \
+  -F "path=assets/app.js" \
   -F "file=@dist/assets/app.js;type=application/javascript"
 ```
 
@@ -495,7 +509,7 @@ Attach an already uploaded blob:
 ```json
 {
   "signed_blob_id": "...",
-  "relative_path": "assets/app.js",
+  "path": "assets/app.js",
   "name": "app.js"
 }
 ```
@@ -520,7 +534,7 @@ Create an upload descriptor:
 ```json
 {
   "workspace_id": "wrk_...",
-  "relative_path": "dist/index.html",
+  "path": "dist/index.html",
   "blob": {
     "filename": "index.html",
     "byte_size": 1234,
@@ -541,11 +555,11 @@ Then attach `data.signed_id` with `POST /api/v1/workspaces/:workspace_id/files`.
 | --- | --- | --- |
 | `GET` | `/api/v1/workspaces/:id/versions` | List workspace versions. |
 | `GET` | `/api/v1/workspaces/:id/versions/:version_id` | Read one workspace version. |
-| `POST` | `/api/v1/workspaces/:id/rollback` | Restore a historical version. |
+| `POST` | `/api/v1/workspaces/:id/versions/restore` | Restore a historical version. |
 | `GET` | `/api/v1/workspaces/:workspace_id/files/:id/versions` | List file versions. |
 | `GET` | `/api/v1/workspaces/:workspace_id/files/:id/versions/:version_id/content` | Download one file version. |
 
-#### POST /api/v1/workspaces/:id/rollback
+#### POST /api/v1/workspaces/:id/versions/restore
 
 ```json
 {
@@ -554,30 +568,30 @@ Then attach `data.signed_id` with `POST /api/v1/workspaces/:workspace_id/files`.
 }
 ```
 
-Rollback is non-destructive. Revdoku creates a new latest version linked to the
+Restore is non-destructive. Revdoku creates a new latest version linked to the
 selected historical version.
 
 ### Publishing Endpoints
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/v1/workspaces/:id/publish` | Publish a workspace. |
-| `POST` | `/api/v1/workspaces/:id/unpublish` | Stop serving a workspace. |
+| `POST` | `/api/v1/workspaces/:id/publication` | Publish a workspace. |
+| `DELETE` | `/api/v1/workspaces/:id/publication` | Stop serving a workspace. |
 | `GET` | `/api/v1/publications` | List public workspace links. |
 | `GET` | `/api/v1/publications/:id` | Read one publication. |
 | `PATCH` | `/api/v1/publications/:id` | Update publication settings. |
 | `DELETE` | `/api/v1/publications/:id` | Revoke a publication. |
 | `GET` | `/api/v1/publications/:id/manifest` | Read the published file manifest. |
-| `POST` | `/api/v1/publish` | Create a publish session. |
-| `POST` | `/api/v1/publish/:id/uploads/refresh` | Refresh upload URLs. |
-| `POST` | `/api/v1/publish/:id/finalize` | Finalize a publish session. |
+| `POST` | `/api/v1/publish_sessions` | Create a publish session. |
+| `POST` | `/api/v1/publish_sessions/:id/uploads/refresh` | Refresh upload URLs. |
+| `POST` | `/api/v1/publish_sessions/:id/finalize` | Finalize a publish session. |
 
-#### POST /api/v1/workspaces/:id/publish
+#### POST /api/v1/workspaces/:id/publication
 
 ```json
 {
   "entrypoint": "index.html",
-  "site_type": "spa",
+  "site_mode": "spa",
   "permanent": true
 }
 ```
@@ -586,17 +600,17 @@ Publication response fields:
 
 | Field | Meaning |
 | --- | --- |
-| `url` | Best share URL. Custom domain when active, otherwise managed URL. |
 | `public_url` | Same public website URL returned for users and agents. |
-| `managed_url` | Stable `*.revdoku.site` URL when configured. |
 | `asset_base_url` | Direct public object-storage/CDN directory. |
-| `public_id` | Stable DNS-safe workspace publication slug. |
-| `active` | Whether the publication currently serves. |
+| `public_slug` | Stable DNS-safe workspace publication slug. |
+| `status` | `published`, `unpublished`, or another lifecycle status. |
 | `permanent` | `true` when there is no expiration. |
 | `expires_at` | Expiration timestamp for temporary publications. |
-| `spa_mode` | Whether deep links fall back to the entrypoint. |
+| `site_mode` | Whether deep links fall back to the entrypoint. |
+| `analytics.hits_all_time` | Cached all-time website hits; `null` when analytics numbers are hidden. |
+| `analytics.last_event_at` | Latest recorded analytics event timestamp; `null` when hidden or not recorded yet. |
 
-#### POST /api/v1/publish
+#### POST /api/v1/publish_sessions
 
 Use this for larger folders and AI-generated websites.
 
@@ -606,7 +620,7 @@ Use this for larger folders and AI-generated websites.
   "workspace_description": "Generated launch assets",
   "workspace_tag_paths": ["website", "ai-agent"],
   "entrypoint": "index.html",
-  "site_type": "spa",
+  "site_mode": "spa",
   "permanent": true,
   "files": [
     {
@@ -677,39 +691,43 @@ Paid responses include:
 
 | Field | Meaning |
 | --- | --- |
-| `totals.allTimeViews` | Total recorded page views. |
-| `totals.rangeViews` | Page views in the selected range. |
-| `totals.rangeVisitors` | Sum of daily unique visitors in the selected range. |
-| `totals.assetHits` | Static asset hits. |
-| `totals.notFoundHits` | 404 hits. |
-| `totals.botHits` | Likely or known crawler hits. |
-| `series` | Daily views and visitors. |
-| `topSites` | Highest-traffic publication slugs. |
-| `topPaths` | Highest-traffic paths. |
-| `topReferrers` | Top referrer hosts, with `Direct` for no referrer. |
-| `topCountries` | Top country codes. |
-| `topCrawlers` | Known crawler hits. |
-| `top404Paths` | Highest-traffic missing paths. |
+| `first_event_at` | First recorded event timestamp in the selected range. |
+| `last_event_at` | Last recorded event timestamp in the selected range. |
+| `totals.hits_all_time` | Total recorded website hits. |
+| `totals.hits` | Website hits in the selected range. |
+| `totals.visitors` | Sum of daily unique visitors in the selected range. |
+| `totals.hits_not_found` | Missing-path hits. |
+| `totals.hits_bots` | Likely or known bot hits. |
+| `daily` | Daily website hits and visitors. |
+| `workspaces` | Highest-traffic published workspaces. |
+| `paths` | Highest-traffic paths. |
+| `referrers` | Referrer hosts, with `direct` for no referrer. |
+| `countries` | Country codes. |
+| `bots` | Bot hits grouped by bot name. |
+| `paths_not_found` | Highest-traffic missing paths. |
 
 Free responses hide numbers:
 
 ```json
 {
   "data": {
-    "analyticsStartedAt": null,
-    "lastEventAt": null,
-    "analytics": {
-      "access": "locked",
-      "locked": true,
-      "redacted": true,
-      "upgrade_required": true,
-      "value_label": "[hidden]"
-    },
+    "range": "30d",
+    "first_event_at": null,
+    "last_event_at": null,
     "totals": {
-      "allTimeViews": null,
-      "rangeViews": null
+      "hits_all_time": null,
+      "hits": null,
+      "visitors": null,
+      "hits_not_found": null,
+      "hits_bots": null
     },
-    "series": []
+    "daily": [],
+    "workspaces": [],
+    "paths": [],
+    "referrers": [],
+    "countries": [],
+    "bots": [],
+    "paths_not_found": []
   }
 }
 ```
@@ -756,11 +774,11 @@ Free responses hide numbers:
 ### Keep Workspace URLs Stable
 
 Republish the same workspace when updating a website. Revdoku keeps the same
-`public_id` and managed URL across unpublish and republish.
+`public_slug` and public URL across unpublish and republish.
 
 ### Prefer Publish Sessions for Agents
 
-Agents publishing generated sites should use `POST /api/v1/publish` instead of
+Agents publishing generated sites should use `POST /api/v1/publish_sessions` instead of
 uploading every file manually. Publish sessions reuse unchanged files and return
 a short `deploy_summary` that is easy to show to users.
 

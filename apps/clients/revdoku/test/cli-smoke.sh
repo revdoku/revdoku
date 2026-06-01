@@ -128,7 +128,7 @@ if [[ -n "$selected_grant_token" && "$selected_grant_token" != "null" ]]; then
     curl -fsS "${REVDOKU_URL%/}/api/v1/workspaces/${selected_workspace_id}/files" \
       -H "Authorization: Bearer $(tr -d '\r\n' < "${tmp_home_selected}/.revdoku/credentials")"
   )"
-  selected_found="$(printf "%s" "$selected_files_json" | jq -r '.data.files[]?.relative_path | select(. == "selected.txt")' | head -n 1)"
+  selected_found="$(printf "%s" "$selected_files_json" | jq -r '.data.files[]?.path | select(. == "selected.txt")' | head -n 1)"
   [[ "$selected_found" == "selected.txt" ]] || die "selected grant did not store into the remembered workspace"
 fi
 
@@ -191,11 +191,11 @@ files_json="$(
     -H "Authorization: Bearer $(tr -d '\r\n' < "${tmp_home}/.revdoku/credentials")"
 )"
 for path in index.html notes.txt; do
-  found="$(printf "%s" "$files_json" | jq -r --arg path "$path" '.data.files[]?.relative_path | select(. == $path)' | head -n 1)"
+  found="$(printf "%s" "$files_json" | jq -r --arg path "$path" '.data.files[]?.path | select(. == $path)' | head -n 1)"
   [[ "$found" == "$path" ]] || die "stored file missing from workspace: $path"
 done
 for path in .env id_rsa config/api-token.txt; do
-  found="$(printf "%s" "$files_json" | jq -r --arg path "$path" '.data.files[]?.relative_path | select(. == $path)' | head -n 1)"
+  found="$(printf "%s" "$files_json" | jq -r --arg path "$path" '.data.files[]?.path | select(. == $path)' | head -n 1)"
   [[ -z "$found" ]] || die "sensitive file should not have been stored: $path"
 done
 
