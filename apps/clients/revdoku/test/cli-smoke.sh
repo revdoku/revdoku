@@ -38,6 +38,8 @@ tmp_home_selected="$(mktemp -d)"
 tmp_data="$(mktemp -d)"
 tmp_selected_data="$(mktemp -d)"
 tmp_sensitive="$(mktemp -d)"
+tmp_data_root="$(basename "$tmp_data")"
+tmp_selected_data_root="$(basename "$tmp_selected_data")"
 cleanup_workspace_id=""
 cleanup_selected_workspace_id=""
 
@@ -128,8 +130,9 @@ if [[ -n "$selected_grant_token" && "$selected_grant_token" != "null" ]]; then
     curl -fsS "${REVDOKU_URL%/}/api/v1/workspaces/${selected_workspace_id}/files" \
       -H "Authorization: Bearer $(tr -d '\r\n' < "${tmp_home_selected}/.revdoku/credentials")"
   )"
-  selected_found="$(printf "%s" "$selected_files_json" | jq -r '.data.files[]?.path | select(. == "selected.txt")' | head -n 1)"
-  [[ "$selected_found" == "selected.txt" ]] || die "selected grant did not store into the remembered workspace"
+  selected_expected_path="${tmp_selected_data_root}/selected.txt"
+  selected_found="$(printf "%s" "$selected_files_json" | jq -r --arg path "$selected_expected_path" '.data.files[]?.path | select(. == $path)' | head -n 1)"
+  [[ "$selected_found" == "$selected_expected_path" ]] || die "selected grant did not store into the remembered workspace"
 fi
 
 printf 'REVDOKU_SECRET=do-not-upload\n' > "${tmp_sensitive}/.env"
@@ -190,11 +193,11 @@ files_json="$(
   curl -fsS "${REVDOKU_URL%/}/api/v1/workspaces/${workspace_id}/files" \
     -H "Authorization: Bearer $(tr -d '\r\n' < "${tmp_home}/.revdoku/credentials")"
 )"
-for path in index.html notes.txt; do
+for path in "${tmp_data_root}/index.html" "${tmp_data_root}/notes.txt"; do
   found="$(printf "%s" "$files_json" | jq -r --arg path "$path" '.data.files[]?.path | select(. == $path)' | head -n 1)"
   [[ "$found" == "$path" ]] || die "stored file missing from workspace: $path"
 done
-for path in .env id_rsa config/api-token.txt; do
+for path in "${tmp_data_root}/.env" "${tmp_data_root}/id_rsa" "${tmp_data_root}/config/api-token.txt"; do
   found="$(printf "%s" "$files_json" | jq -r --arg path "$path" '.data.files[]?.path | select(. == $path)' | head -n 1)"
   [[ -z "$found" ]] || die "sensitive file should not have been stored: $path"
 done
