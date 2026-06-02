@@ -76,6 +76,33 @@ Errors are wrapped in `error`:
 Use `error.code` for recovery logic. Use `request_id` when debugging with
 support.
 
+## Hosted MCP for Claude/ChatGPT Cloud
+
+Cloud agents that support custom remote MCP connectors connect to Revdoku through
+the production remote MCP endpoint:
+
+```text
+https://app.revdoku.com/mcp
+```
+
+Add that URL as a Claude custom connector, or in ChatGPT use the custom
+connector/custom MCP app/developer-mode MCP surface available to the account. If
+that ChatGPT surface is not available, use the local CLI or local stdio MCP
+instead. The connector uses Revdoku OAuth discovery, authorization-code PKCE,
+and Bearer tokens. Users approve the connection in Revdoku and can revoke it
+later from `/account/access`.
+
+Hosted MCP supports JSON-response Streamable HTTP and stateful Streamable
+HTTP/SSE sessions. OAuth metadata uses `REVDOKU_MCP_PUBLIC_BASE_URL` when set,
+so local HTTPS tunnels and reverse-proxy deployments can publish a stable public
+resource URL.
+
+Hosted MCP exposes cloud-safe workspace tools for reading, creating, updating,
+publishing, republishing, and analytics. It intentionally does not expose
+local-path tools because cloud connectors cannot read a user's local filesystem. Use
+the Revdoku CLI or local stdio MCP for local folder uploads; hosted MCP can then
+update and republish the same `workspace_id`.
+
 ## Common Workflows
 
 ### Connect an Agent

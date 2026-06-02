@@ -263,11 +263,12 @@ http_json() {
   local path="$2"
   local payload="$3"
   local auth="${4:-true}"
-  local body_file status message code agent_args=()
+  local body_file status message code retry_after attempt agent_args=()
   LAST_HTTP_STATUS=""
   LAST_ERROR_CODE=""
   LAST_ERROR_MESSAGE=""
   body_file="$(mktemp)"
+  attempt=0
 
   while IFS= read -r -d '' value; do
     agent_args+=("$value")
@@ -279,14 +280,31 @@ http_json() {
   fi
   args+=(--data "$payload")
 
-  status="$(curl "${args[@]}")" || {
-    rm -f "$body_file"
-    return 1
-  }
+  while true; do
+    : > "$body_file"
+    status="$(curl "${args[@]}")" || {
+      rm -f "$body_file"
+      return 1
+    }
 
-  if [[ "$status" -lt 200 || "$status" -ge 300 ]]; then
+    if [[ "$status" -ge 200 && "$status" -lt 300 ]]; then
+      cat "$body_file"
+      rm -f "$body_file"
+      return 0
+    fi
+
     message="$("$JQ_BIN" -r '.error.message // .message // empty' "$body_file" 2>/dev/null || true)"
     code="$("$JQ_BIN" -r '.error.code // empty' "$body_file" 2>/dev/null || true)"
+    retry_after="$("$JQ_BIN" -r '.error.details.retry_after // empty' "$body_file" 2>/dev/null || true)"
+
+    if [[ "$status" == "429" && "$attempt" -lt 20 ]]; then
+      [[ "$retry_after" =~ ^[0-9]+$ && "$retry_after" -gt 0 ]] || retry_after=5
+      attempt=$((attempt + 1))
+      echo "Rate limited while calling $path; retrying in ${retry_after}s..." >&2
+      sleep "$retry_after"
+      continue
+    fi
+
     rm -f "$body_file"
     LAST_HTTP_STATUS="$status"
     LAST_ERROR_CODE="$code"
@@ -298,10 +316,7 @@ http_json() {
       echo "Run again with --login to reconnect and save a fresh Revdoku API key." >&2
     fi
     return 1
-  fi
-
-  cat "$body_file"
-  rm -f "$body_file"
+  done
 }
 
 prompt_read() {
@@ -582,6 +597,21 @@ default_title() {
   basename "$ROOT_PATH"
 }
 
+effective_metadata_json() {
+  if [[ -d "$ROOT_PATH" ]]; then
+    "$JQ_BIN" -nc \
+      --arg root "$(basename "$ROOT_PATH")" \
+      --argjson metadata "$METADATA_JSON" \
+      '$metadata | if has("publication_root_directory") then . else . + {publication_root_directory: $root} end'
+  else
+    printf "%s" "$METADATA_JSON"
+  fi
+}
+
+default_entrypoint() {
+  printf "index.html"
+}
+
 has_index_file() {
   if [[ -f "$ROOT_PATH" ]]; then
     [[ "$(basename "$ROOT_PATH")" == "index.html" ]]
@@ -653,7 +683,23 @@ relative_path_for() {
   if [[ -f "$ROOT_PATH" ]]; then
     basename "$file"
   else
-    printf "%s" "${file#"$ROOT_PATH"/}"
+    printf "%s/%s" "$(basename "$ROOT_PATH")" "${file#"$ROOT_PATH"/}"
+  fi
+}
+
+local_file_for_relative_path() {
+  local rel="$1"
+  local root_name
+  if [[ -f "$ROOT_PATH" ]]; then
+    printf "%s" "$ROOT_PATH"
+    return
+  fi
+
+  root_name="$(basename "$ROOT_PATH")"
+  if [[ "$rel" == "$root_name/"* ]]; then
+    printf "%s/%s" "$ROOT_PATH" "${rel#"$root_name"/}"
+  else
+    printf "%s/%s" "$ROOT_PATH" "$rel"
   fi
 }
 
@@ -678,12 +724,13 @@ tag_paths_json() {
 
 workspace_payload() {
   local title="$1"
-  local tag_paths
+  local tag_paths metadata
   tag_paths="$(tag_paths_json)"
+  metadata="$(effective_metadata_json)"
   "$JQ_BIN" -nc \
     --arg title "$title" \
     --arg description "$DESCRIPTION" \
-    --argjson metadata "$METADATA_JSON" \
+    --argjson metadata "$metadata" \
     --argjson tag_paths "$tag_paths" \
     '{
       workspace: (
@@ -864,11 +911,13 @@ upload_file() {
 
 publish_workspace() {
   local workspace_id="$1"
-  local payload response response_file url
+  local payload response response_file url entrypoint metadata
+  entrypoint="$(default_entrypoint)"
+  metadata="$(effective_metadata_json)"
   if [[ "$PERMANENT_PUBLICATION" == "true" ]]; then
-    payload="$("$JQ_BIN" -nc --argjson metadata "$METADATA_JSON" '{permanent:true, entrypoint:"index.html", metadata:$metadata}')"
+    payload="$("$JQ_BIN" -nc --arg entrypoint "$entrypoint" --argjson metadata "$metadata" '{permanent:true, entrypoint:$entrypoint, metadata:$metadata}')"
   else
-    payload="$("$JQ_BIN" -nc --argjson expires_in_days "$EXPIRES_IN_DAYS" --argjson metadata "$METADATA_JSON" '{expires_in_days:$expires_in_days, entrypoint:"index.html", metadata:$metadata}')"
+    payload="$("$JQ_BIN" -nc --arg entrypoint "$entrypoint" --argjson expires_in_days "$EXPIRES_IN_DAYS" --argjson metadata "$metadata" '{expires_in_days:$expires_in_days, entrypoint:$entrypoint, metadata:$metadata}')"
   fi
   response_file="$(mktemp)"
   if ! http_json POST "/api/v1/workspaces/${workspace_id}/publication" "$payload" > "$response_file"; then
@@ -914,24 +963,27 @@ publish_session_manifest_json() {
 
 publish_session_payload() {
   local manifest_json="$1"
-  local title tag_paths expires_in_days
+  local title tag_paths expires_in_days entrypoint metadata
   title="$TITLE"
   [[ -n "$title" ]] || title="$(default_title)"
   tag_paths="$(tag_paths_json)"
   expires_in_days="${EXPIRES_IN_DAYS:-7}"
+  entrypoint="$(default_entrypoint)"
+  metadata="$(effective_metadata_json)"
   "$JQ_BIN" -nc \
     --arg title "$title" \
     --arg description "$DESCRIPTION" \
     --arg workspace_id "$WORKSPACE_ID" \
     --arg permanent "$PERMANENT_PUBLICATION" \
+    --arg entrypoint "$entrypoint" \
     --argjson expires_in_days "$expires_in_days" \
-    --argjson metadata "$METADATA_JSON" \
+    --argjson metadata "$metadata" \
     --argjson tag_paths "$tag_paths" \
     --argjson files "$manifest_json" \
     '{
       title: $title,
       workspace_title: $title,
-      entrypoint: "index.html",
+      entrypoint: $entrypoint,
       metadata: $metadata,
       files: $files
     }
@@ -943,11 +995,7 @@ publish_session_payload() {
 
 publish_session_file_for_path() {
   local rel="$1"
-  if [[ -f "$ROOT_PATH" ]]; then
-    printf "%s" "$ROOT_PATH"
-  else
-    printf "%s/%s" "$ROOT_PATH" "$rel"
-  fi
+  local_file_for_relative_path "$rel"
 }
 
 publish_workspace_session_attempt() {
