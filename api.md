@@ -98,10 +98,14 @@ so local HTTPS tunnels and reverse-proxy deployments can publish a stable public
 resource URL.
 
 Hosted MCP exposes cloud-safe workspace tools for reading, creating, updating,
-publishing, republishing, and analytics. It intentionally does not expose
-local-path tools because cloud connectors cannot read a user's local filesystem. Use
-the Revdoku CLI or local stdio MCP for local folder uploads; hosted MCP can then
-update and republish the same `workspace_id`.
+archiving, unarchiving, permanent delete, publishing, republishing, and
+analytics. It intentionally does not expose local-path tools because cloud
+connectors cannot read a user's local filesystem. Use the Revdoku CLI or local
+stdio MCP for local folder uploads; hosted MCP can then update and republish the
+same `workspace_id`. `workspace_list` and `workspace_get` include workspace ids,
+website metadata, publication lifecycle state, and action metadata such as
+`archive.required_action` and `delete.confirmation` so agents can handle ids
+internally instead of asking users to type them.
 
 ## Common Workflows
 
@@ -463,11 +467,13 @@ Common `redirect_path` values:
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/v1/workspaces` | List workspaces. |
+| `GET` | `/api/v1/workspaces` | List active workspaces by default. Use `?archived=true` to list archived workspaces. |
 | `POST` | `/api/v1/workspaces` | Create a workspace. |
 | `GET` | `/api/v1/workspaces/:id` | Read a workspace. |
 | `PATCH` | `/api/v1/workspaces/:id` | Update workspace metadata. |
-| `DELETE` | `/api/v1/workspaces/:id` | Archive a workspace. |
+| `POST` | `/api/v1/workspaces/:id/archive` | Archive a normal unpublished workspace. |
+| `POST` | `/api/v1/workspaces/:id/unarchive` | Restore an archived normal workspace. |
+| `DELETE` | `/api/v1/workspaces/:id` | Permanently delete a normal archived unpublished workspace with confirmation. |
 | `GET` | `/api/v1/tags` | List reusable workspace labels. |
 
 #### GET /api/v1/workspaces
@@ -476,6 +482,26 @@ Common `redirect_path` values:
 curl -fsS "$REVDOKU_URL/api/v1/workspaces" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
+
+By default, this returns active workspaces. To list archived workspaces, call:
+
+```sh
+curl -fsS "$REVDOKU_URL/api/v1/workspaces?archived=true" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY"
+```
+
+Workspace list/detail responses include effective lifecycle action metadata:
+
+| Field | Meaning |
+| --- | --- |
+| `website` | Current or latest website publication metadata, including `public_url`, `status`, `published`, and `lifecycle_active`. |
+| `publication_lifecycle_active` | `true` when a publication is active enough to block archive/delete, even if the public artifacts are unavailable. |
+| `archive.allowed` | Whether the current principal can archive now. |
+| `archive.required_action` | `unpublish_first` when the workspace must be unpublished before archive. |
+| `unarchive.allowed` | Whether the current principal can restore an archived workspace now. |
+| `delete.allowed` | Whether the current principal can permanently delete now. |
+| `delete.required_action` | `unpublish_first` when the workspace must be unpublished before permanent delete; `archive_first` when it must be archived before permanent delete. |
+| `delete.confirmation` | Exact internal confirmation string, for example `delete wrk_...`; clients should pass it to DELETE after human confirmation, not ask users to type workspace ids. |
 
 #### POST /api/v1/workspaces
 
@@ -504,6 +530,37 @@ curl -fsS "$REVDOKU_URL/api/v1/workspaces" \
   }
 }
 ```
+
+#### Archive, unarchive, and permanent delete
+
+Library workspaces cannot be archived, unarchived, or deleted. Normal workspaces
+with active published websites must be unpublished first. Permanent delete also
+requires the workspace to be archived first.
+
+```sh
+curl -fsS -X POST "$REVDOKU_URL/api/v1/workspaces/wrk_.../archive" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY"
+```
+
+```sh
+curl -fsS -X POST "$REVDOKU_URL/api/v1/workspaces/wrk_.../unarchive" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY"
+```
+
+Permanent delete requires an archived workspace and the exact confirmation
+string returned by `GET /api/v1/workspaces` or `GET /api/v1/workspaces/:id` in
+`delete.confirmation`.
+
+```sh
+curl -fsS -X DELETE "$REVDOKU_URL/api/v1/workspaces/wrk_..." \
+  -H "Authorization: Bearer $REVDOKU_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "confirmation": "delete wrk_..." }'
+```
+
+UI and agent clients should ask users to confirm by workspace title or natural
+language. The `delete wrk_...` phrase is an API safeguard for the client to pass
+internally.
 
 ### File Endpoints
 
@@ -774,6 +831,13 @@ Free responses hide numbers:
 | --- | --- | --- |
 | `404` | `WORKSPACE_NOT_FOUND` | Workspace does not exist or is not visible to this key. |
 | `404` | `FILE_NOT_FOUND` | File does not exist or is not visible to this key. |
+| `403` | `LIBRARY_WORKSPACE_IMMUTABLE` | Library workspace cannot be archived, unarchived, or deleted. |
+| `403` | `WORKSPACE_DELETE_ADMIN_REQUIRED` | Only an account administrator can permanently delete this workspace, except for empty archived unpublished cleanup workspaces created by the same user. |
+| `409` | `WORKSPACE_PUBLICATION_ACTIVE` | Unpublish this workspace before archiving or deleting it. |
+| `409` | `WORKSPACE_ALREADY_ARCHIVED` | Workspace is already archived. |
+| `409` | `WORKSPACE_NOT_ARCHIVED` | Workspace is not archived; archive it before permanent delete, or only unarchive archived workspaces. |
+| `422` | `WORKSPACE_DELETE_CONFIRMATION_REQUIRED` | Pass the exact `delete.confirmation` value with the delete request. |
+| `403` | `WORKSPACE_ARCHIVED` | Workspace is archived and cannot be edited until it is unarchived. |
 | `423` | `FILE_LOCKED` | Another key owns an active file lock. |
 
 ### Publishing Errors

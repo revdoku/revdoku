@@ -45,12 +45,22 @@ cleanup_selected_workspace_id=""
 
 cleanup() {
   if [[ "$KEEP_WORKSPACE" != "true" && -n "$cleanup_workspace_id" && -s "${tmp_home}/.revdoku/credentials" ]]; then
+    cleanup_token="$(tr -d '\r\n' < "${tmp_home}/.revdoku/credentials")"
+    curl -fsS -X POST "${REVDOKU_URL%/}/api/v1/workspaces/${cleanup_workspace_id}/archive" \
+      -H "Authorization: Bearer ${cleanup_token}" >/dev/null 2>&1 || true
     curl -fsS -X DELETE "${REVDOKU_URL%/}/api/v1/workspaces/${cleanup_workspace_id}" \
-      -H "Authorization: Bearer $(tr -d '\r\n' < "${tmp_home}/.revdoku/credentials")" >/dev/null 2>&1 || true
+      -H "Authorization: Bearer ${cleanup_token}" \
+      -H "Content-Type: application/json" \
+      -d "{\"confirmation\":\"delete ${cleanup_workspace_id}\"}" >/dev/null 2>&1 || true
   fi
   if [[ "$KEEP_WORKSPACE" != "true" && -n "$cleanup_selected_workspace_id" && -s "${tmp_home_selected}/.revdoku/credentials" ]]; then
+    cleanup_selected_token="$(tr -d '\r\n' < "${tmp_home_selected}/.revdoku/credentials")"
+    curl -fsS -X POST "${REVDOKU_URL%/}/api/v1/workspaces/${cleanup_selected_workspace_id}/archive" \
+      -H "Authorization: Bearer ${cleanup_selected_token}" >/dev/null 2>&1 || true
     curl -fsS -X DELETE "${REVDOKU_URL%/}/api/v1/workspaces/${cleanup_selected_workspace_id}" \
-      -H "Authorization: Bearer $(tr -d '\r\n' < "${tmp_home_selected}/.revdoku/credentials")" >/dev/null 2>&1 || true
+      -H "Authorization: Bearer ${cleanup_selected_token}" \
+      -H "Content-Type: application/json" \
+      -d "{\"confirmation\":\"delete ${cleanup_selected_workspace_id}\"}" >/dev/null 2>&1 || true
   fi
   rm -rf "$tmp_home" "$tmp_home_selected" "$tmp_data" "$tmp_selected_data" "$tmp_sensitive"
 }
