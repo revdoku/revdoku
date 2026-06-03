@@ -501,7 +501,15 @@ Workspace list/detail responses include effective lifecycle action metadata:
 | `unarchive.allowed` | Whether the current principal can restore an archived workspace now. |
 | `delete.allowed` | Whether the current principal can permanently delete now. |
 | `delete.required_action` | `unpublish_first` when the workspace must be unpublished before permanent delete; `archive_first` when it must be archived before permanent delete. |
-| `delete.confirmation` | Exact internal confirmation string, for example `delete wrk_...`; clients should pass it to DELETE after human confirmation, not ask users to type workspace ids. |
+| `delete.confirmation` | Opaque internal confirmation token returned by the API; clients should pass it exactly to DELETE after human confirmation, not ask users to type workspace ids. |
+
+Archived workspaces are read-only until unarchived. Metadata edits, label changes,
+file changes, direct upload targets, reference file uploads, thumbnail uploads,
+workspace duplication, publication updates, and custom-domain mutations return
+`WORKSPACE_ARCHIVED`. Read/list endpoints, unarchive, permanent delete, and
+publication cleanup remain available when otherwise permitted. Copying files
+out of an archived workspace is allowed when the caller has read access to the
+source and write access to an active target workspace.
 
 #### POST /api/v1/workspaces
 
@@ -547,20 +555,24 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/workspaces/wrk_.../unarchive" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
-Permanent delete requires an archived workspace and the exact confirmation
-string returned by `GET /api/v1/workspaces` or `GET /api/v1/workspaces/:id` in
+Permanent delete requires an archived workspace and the opaque confirmation
+token returned by `GET /api/v1/workspaces` or `GET /api/v1/workspaces/:id` in
 `delete.confirmation`.
 
 ```sh
 curl -fsS -X DELETE "$REVDOKU_URL/api/v1/workspaces/wrk_..." \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{ "confirmation": "delete wrk_..." }'
+  -d '{ "confirmation": "<delete.confirmation from workspace list/detail>" }'
 ```
 
 UI and agent clients should ask users to confirm by workspace title or natural
-language. The `delete wrk_...` phrase is an API safeguard for the client to pass
-internally.
+language, then pass `delete.confirmation` internally.
+
+Permanent deletion is **not** a bulk operation. Workspaces must be
+deleted one at a time via `DELETE /api/v1/workspaces/:id` so each removal is
+confirmed individually. The `POST /api/v1/workspaces/bulk` endpoint accepts
+only `archive` and `unarchive` operations and rejects `delete`.
 
 ### File Endpoints
 
@@ -669,6 +681,10 @@ selected historical version.
 | `POST` | `/api/v1/publish_sessions` | Create a publish session. |
 | `POST` | `/api/v1/publish_sessions/:id/uploads/refresh` | Refresh upload URLs. |
 | `POST` | `/api/v1/publish_sessions/:id/finalize` | Finalize a publish session. |
+
+Archived workspaces cannot be published, republished, direct-publish finalized,
+or have publication settings updated until they are unarchived. Unpublish and
+publication revoke endpoints remain available for cleanup.
 
 #### POST /api/v1/workspaces/:id/publication
 
@@ -836,7 +852,7 @@ Free responses hide numbers:
 | `409` | `WORKSPACE_PUBLICATION_ACTIVE` | Unpublish this workspace before archiving or deleting it. |
 | `409` | `WORKSPACE_ALREADY_ARCHIVED` | Workspace is already archived. |
 | `409` | `WORKSPACE_NOT_ARCHIVED` | Workspace is not archived; archive it before permanent delete, or only unarchive archived workspaces. |
-| `422` | `WORKSPACE_DELETE_CONFIRMATION_REQUIRED` | Pass the exact `delete.confirmation` value with the delete request. |
+| `422` | `WORKSPACE_DELETE_CONFIRMATION_REQUIRED` | Pass the opaque `delete.confirmation` value returned by workspace list/detail with the delete request. |
 | `403` | `WORKSPACE_ARCHIVED` | Workspace is archived and cannot be edited until it is unarchived. |
 | `423` | `FILE_LOCKED` | Another key owns an active file lock. |
 
