@@ -24,6 +24,10 @@ for structured workspace work:
 
 - Use `workspace_create`, `workspace_list`, `workspace_get`, and workspace
   metadata to find or create the right project workspace when useful.
+  `workspace_list` and `workspace_get` include workspace ids, website metadata,
+  publication lifecycle state, and action metadata such as
+  `archive.required_action` and `delete.confirmation`; use those fields for
+  follow-up tool calls instead of asking users to type workspace ids.
 - Use `workspace_tag_list` before creating organized workspaces. Prefer
   meaningful titles, concise descriptions, and simple reusable labels such as
   `website`, `draft`, `ai-agent`, or slash groups such as `projects/work`.
@@ -50,6 +54,19 @@ for structured workspace work:
   deployment yet.
 - Use `workspace_unpublish` when the user asks to unpublish a public workspace.
   Tell the user that republishing the same workspace restores the same URL.
+- Use `workspace_archive` and `workspace_unarchive` for normal workspace
+  lifecycle cleanup. Library workspaces cannot be archived or unarchived.
+  Published workspaces must be unpublished before archive; if
+  `archive.required_action` is `unpublish_first`, unpublish first only after
+  user confirmation.
+- Use `workspace_delete_permanently` only when the user explicitly asks to
+  delete a normal archived unpublished workspace. Confirm destructive intent by
+  workspace title or natural language, then pass the `delete.confirmation` value
+  returned by `workspace_list` or `workspace_get`; do not ask users to type the
+  `wrk_...` id. If `delete.required_action` is `unpublish_first`, unpublish
+  first only after user confirmation. If `delete.required_action` is
+  `archive_first`, archive the workspace before permanent delete.
+  `workspace_delete` is a legacy alias with the same confirmation requirement.
 - Use `workspace_publication_list` when the user asks which workspaces are
   public or asks for existing public links. Publication list rows include a
   `hits` value derived from the API's `analytics.hits_all_time`; treat `0` as
