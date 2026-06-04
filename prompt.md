@@ -1,4 +1,4 @@
-Connect this AI agent or MCP client to my Revdoku account.
+Connect this AI agent or MCP client to my Revdoku account so it can create, update, and publish websites with Revdoku.
 
 User action: paste this whole message into the agent chat or connector setup. Do not share your Revdoku password or an API key.
 
@@ -21,8 +21,8 @@ Agent instructions for Codex, Claude Code, Claude Desktop, Claude.ai, ChatGPT, O
 10. If this prompt includes a one-time grant, exchange that grant first using the local Revdoku MCP tool or CLI command shown in the grant details.
 11. If no one-time grant is available, request an email code from /api/v1/agent_auth/request_code, ask me for the emailed code, then verify it with /api/v1/agent_auth/verify_code.
 12. Store the returned revdoku_ API key securely in the local Revdoku credentials store or the agent's secret storage.
-13. Use that key to store, read, and update private bucket files in Revdoku. If you call the HTTP API directly, send agent identification headers such as X-Revdoku-Agent, X-Revdoku-Agent-Client, X-Revdoku-Agent-Version, and X-Revdoku-Agent-Task so Revdoku can show changes as agent activity instead of plain user activity. Publish a bucket only when I explicitly ask for a public link. When publishing a website, create or update index.html as the default root page unless I ask for a different entrypoint. New account connections get read/write access to normal buckets and read access to the Library bucket by default.
-14. When creating a bucket, choose a short descriptive title, add a concise description, and assign relevant existing labels. With MCP, call bucket_tag_list before choosing labels; otherwise call GET /api/v1/tags. Prefer simple labels such as website, draft, ai-agent, or slash groups such as projects/work.
+13. Use that key to create and update Revdoku buckets as durable website/project storage. Save web projects with useful relative paths, including index.html as the default root page when publishing a website unless I ask for a different entrypoint. If you call the HTTP API directly, send agent identification headers such as X-Revdoku-Agent, X-Revdoku-Agent-Client, X-Revdoku-Agent-Version, and X-Revdoku-Agent-Task so Revdoku can show changes as agent activity instead of plain user activity. Publish a bucket only when I explicitly ask for a public link. New account connections get read/write access to normal buckets and read access to the Library bucket by default.
+14. When creating a bucket, choose a short descriptive title, add a concise description, and assign relevant existing labels. With MCP, call bucket_tag_list before choosing labels; otherwise call GET /api/v1/tags. Prefer simple labels such as website, draft, landing-page, ai-agent, or slash groups such as projects/work.
 15. If I ask to open the Revdoku dashboard, manage access, agents, API keys, or pricing, create a one-time browser login link. Use /buckets for the dashboard, /account/access for access, and /pricing for plans. Tell me the link is single-use and expires quickly; if shown in a terminal, I can usually Cmd-click it on macOS or Ctrl-click it on Windows/Linux. If Revdoku says browser login links are disabled because two-factor authentication is enabled or required, tell me to open Revdoku through the normal browser sign-in flow instead.
 
 Do not print, paste, or log the API key.

@@ -1,19 +1,20 @@
 ---
 name: revdoku
 description: >
-  Store files privately in Revdoku cloud storage, or publish folders as websites
-  when the user asks for a public link.
+  Create, update, and publish websites with Revdoku buckets; store files
+  privately until the user asks for a public link.
 ---
 
-# Revdoku Bucket Storage
+# Revdoku Website Publishing
 
-Store files and folders in Revdoku as durable private bucket storage. A
-bucket can optionally be published as a public website.
+Create or update websites in Revdoku as durable bucket files. A bucket stores
+files privately first and can be published or republished as a public website.
 
-Use this skill when the user asks to upload, save, store, share through a
-bucket, or make local output available to other agents through Revdoku. If the
-user asks to publish, host, deploy, share on the web, or make a folder available
-as a public website, pass `--publish`.
+Use this skill when the user asks to publish, host, deploy, share on the web,
+create a public website, upload, save, store, share through a bucket, or make
+local output available to other agents through Revdoku. If the user asks to
+publish, host, deploy, share on the web, or make a folder available as a public
+website, pass `--publish`.
 
 If the user says "publish it all to Revdoku", publish the current project or
 current working directory with `--publish`, then return the public URL printed by
@@ -30,9 +31,12 @@ for structured bucket work:
   follow-up tool calls instead of asking users to type bucket ids.
 - Use `bucket_tag_list` before creating organized buckets. Prefer
   meaningful titles, concise descriptions, and simple reusable labels such as
-  `website`, `draft`, `ai-agent`, or slash groups such as `projects/work`.
+  `website`, `draft`, `landing-page`, `ai-agent`, or slash groups such as
+  `projects/work`.
 - Use `bucket_write_file`, `bucket_upload_file`, `bucket_read_file`,
-  and `bucket_delete_file` for private virtual-disk operations.
+  and `bucket_delete_file` for website/project file operations. Use
+  `index.html` as the default website root unless the user asks for another
+  entrypoint.
 - Use `bucket_version_list`, `bucket_version_get`, and
   `bucket_version_restore` when the user asks to inspect history or roll back
   a bucket. Restore creates a new latest version from the selected historical
