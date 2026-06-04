@@ -3,23 +3,23 @@ set -euo pipefail
 
 DEFAULT_URL="https://app.revdoku.com"
 CREDENTIALS_PATH="${REVDOKU_CREDENTIALS:-${HOME}/.revdoku/credentials}"
-DEFAULT_WORKSPACE_PATH="${REVDOKU_DEFAULT_WORKSPACE_FILE:-${CREDENTIALS_PATH}.workspace}"
+DEFAULT_BUCKET_PATH="${REVDOKU_DEFAULT_BUCKET_FILE:-${CREDENTIALS_PATH}.bucket}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 BASE_URL="${REVDOKU_URL:-$DEFAULT_URL}"
 API_KEY="${REVDOKU_API_KEY:-}"
-TITLE="${REVDOKU_WORKSPACE_TITLE:-}"
-DESCRIPTION="${REVDOKU_WORKSPACE_DESCRIPTION:-}"
+TITLE="${REVDOKU_BUCKET_TITLE:-}"
+DESCRIPTION="${REVDOKU_BUCKET_DESCRIPTION:-}"
 EXPIRES_IN_DAYS="${REVDOKU_EXPIRES_IN_DAYS:-}"
 UPLOAD_MODE="${REVDOKU_UPLOAD_MODE:-auto}"
-WORKSPACE_ID="${REVDOKU_WORKSPACE_ID:-}"
-METADATA_JSON="${REVDOKU_WORKSPACE_METADATA:-}"
+BUCKET_ID="${REVDOKU_BUCKET_ID:-}"
+METADATA_JSON="${REVDOKU_BUCKET_METADATA:-}"
 PUBLISH="${REVDOKU_PUBLISH:-false}"
 PERMANENT_PUBLICATION="${REVDOKU_PERMANENT_PUBLICATION:-true}"
 RESTORE_VERSION_ID="${REVDOKU_RESTORE_VERSION_ID:-}"
 RESTORE_COMMENT="${REVDOKU_RESTORE_COMMENT:-}"
 GRANT_TOKEN="${REVDOKU_GRANT_TOKEN:-}"
-BROWSER_LOGIN_PATH="${REVDOKU_BROWSER_LOGIN_PATH:-/workspaces}"
+BROWSER_LOGIN_PATH="${REVDOKU_BROWSER_LOGIN_PATH:-/buckets}"
 TAG_PATHS=()
 AGENT_NAME="${REVDOKU_AGENT_NAME:-cli}"
 AGENT_CLIENT="${REVDOKU_AGENT_CLIENT:-revdoku}"
@@ -30,7 +30,7 @@ AGENT_TASK="${REVDOKU_AGENT_TASK:-}"
 LOGIN="false"
 ACTION="store"
 PATH_TO_STORE=""
-LAST_PUBLISH_SESSION_WORKSPACE_ID=""
+LAST_PUBLISH_SESSION_BUCKET_ID=""
 LAST_HTTP_STATUS=""
 LAST_ERROR_CODE=""
 LAST_ERROR_MESSAGE=""
@@ -51,21 +51,24 @@ Usage: revdoku [options] PATH
 Options:
   --api-key KEY             Revdoku API key. Defaults to REVDOKU_API_KEY or $CREDENTIALS_PATH.
   --url URL                 Revdoku app URL. Defaults to REVDOKU_URL or $DEFAULT_URL.
-  --title TITLE             Workspace title.
-  --description TEXT        Short workspace description.
-  --tag-path PATH           Add a workspace label such as website or projects/work. Can be repeated.
-  --workspace-id ID         Store into an existing Revdoku workspace instead of creating a new one.
-                            Defaults to a workspace remembered from a selected-workspace grant.
+  --title TITLE             Bucket title.
+  --description TEXT        Short bucket description.
+  --tag-path PATH           Add a bucket label such as website or projects/work. Can be repeated.
+  --bucket-id ID         Store into an existing Revdoku bucket instead of creating a new one.
+                            Defaults to a bucket remembered from a selected-bucket grant.
   --metadata JSON           Optional JSON for agent lookup, for example {"project":"site"}.
-  --publish                 Publish the workspace as a permanent public site after storing files.
-  --unpublish               Unpublish --workspace-id while keeping its reserved public URL for later republish.
+  --publish                 Publish the bucket as a permanent public site after storing files.
+  --unpublish               Unpublish --bucket-id while keeping its reserved public URL for later republish.
+  --archive                 Archive --bucket-id. Published buckets must be unpublished first.
+  --unarchive               Restore archived --bucket-id to the active bucket list.
+  --delete-bucket           Permanently delete archived unpublished --bucket-id.
   --expires-in-days DAYS    Advanced: expire the public site after DAYS instead of keeping it permanent.
   --login                   Request an email code and save an API key to $CREDENTIALS_PATH.
-  --list-workspaces         Print available workspaces and metadata as JSON.
-  --list-versions           Print version history for --workspace-id as JSON.
-  --restore-version ID      Restore a workspace version as a new latest version; requires --workspace-id.
+  --list-buckets         Print available buckets and metadata as JSON.
+  --list-versions           Print version history for --bucket-id as JSON.
+  --restore-version ID      Restore a bucket version as a new latest version; requires --bucket-id.
   --restore-comment TEXT    Optional comment for --restore-version.
-  --list-public-workspaces  Print active public workspace links as JSON.
+  --list-public-buckets  Print active public bucket links as JSON.
   --account-status          Print account, plan, and storage status as JSON.
   --dashboard-link          Print a one-time browser login link for the Revdoku dashboard.
   --library-link            Print a one-time browser login link for Library settings.
@@ -106,9 +109,9 @@ while [[ $# -gt 0 ]]; do
       TAG_PATHS+=("$2")
       shift 2
       ;;
-    --workspace-id)
-      [[ $# -ge 2 ]] || die "--workspace-id requires a value"
-      WORKSPACE_ID="$2"
+    --bucket-id)
+      [[ $# -ge 2 ]] || die "--bucket-id requires a value"
+      BUCKET_ID="$2"
       shift 2
       ;;
     --metadata)
@@ -121,7 +124,19 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --unpublish)
-      ACTION="unpublish_workspace"
+      ACTION="unpublish_bucket"
+      shift
+      ;;
+    --archive)
+      ACTION="archive_bucket"
+      shift
+      ;;
+    --unarchive)
+      ACTION="unarchive_bucket"
+      shift
+      ;;
+    --delete-bucket)
+      ACTION="delete_bucket"
       shift
       ;;
     --expires-in-days)
@@ -134,8 +149,8 @@ while [[ $# -gt 0 ]]; do
       LOGIN="true"
       shift
       ;;
-    --list-workspaces)
-      ACTION="list_workspaces"
+    --list-buckets)
+      ACTION="list_buckets"
       shift
       ;;
     --list-versions)
@@ -143,7 +158,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --restore-version)
-      [[ $# -ge 2 ]] || die "--restore-version requires a workspace version id"
+      [[ $# -ge 2 ]] || die "--restore-version requires a bucket version id"
       ACTION="restore_version"
       RESTORE_VERSION_ID="$2"
       shift 2
@@ -153,8 +168,8 @@ while [[ $# -gt 0 ]]; do
       RESTORE_COMMENT="$2"
       shift 2
       ;;
-    --list-public-workspaces)
-      ACTION="list_public_workspaces"
+    --list-public-buckets)
+      ACTION="list_public_buckets"
       shift
       ;;
     --account-status)
@@ -163,7 +178,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dashboard-link)
       ACTION="browser_login"
-      BROWSER_LOGIN_PATH="/workspaces"
+      BROWSER_LOGIN_PATH="/buckets"
       shift
       ;;
     --library-link)
@@ -238,8 +253,8 @@ if [[ -z "$API_KEY" && -f "$CREDENTIALS_PATH" ]]; then
   API_KEY_FROM_CREDENTIALS="true"
 fi
 
-if [[ -z "$WORKSPACE_ID" && "$API_KEY_FROM_CREDENTIALS" == "true" && -f "$DEFAULT_WORKSPACE_PATH" ]]; then
-  WORKSPACE_ID="$(tr -d '\r\n' < "$DEFAULT_WORKSPACE_PATH")"
+if [[ -z "$BUCKET_ID" && "$API_KEY_FROM_CREDENTIALS" == "true" && -f "$DEFAULT_BUCKET_PATH" ]]; then
+  BUCKET_ID="$(tr -d '\r\n' < "$DEFAULT_BUCKET_PATH")"
 fi
 
 if [[ -n "$METADATA_JSON" ]]; then
@@ -369,7 +384,7 @@ request_agent_key() {
   code="$(prompt_read "Code: ")"
   [[ -n "$code" ]] || die "code is required"
 
-  payload="$("$JQ_BIN" -nc --arg email "$email" --arg code "$code" '{email:$email, code:$code, label:"Revdoku workspace client"}')"
+  payload="$("$JQ_BIN" -nc --arg email "$email" --arg code "$code" '{email:$email, code:$code, label:"Revdoku bucket client"}')"
   response="$(http_json POST "/api/v1/agent_auth/verify_code" "$payload" false)"
   key="$("$JQ_BIN" -r '.data.api_key // empty' <<<"$response")"
   [[ -n "$key" ]] || die "verification did not return an API key"
@@ -406,42 +421,96 @@ if [[ -n "$EXPIRES_IN_DAYS" ]]; then
   [[ "$EXPIRES_IN_DAYS" =~ ^[0-9]+$ && "$EXPIRES_IN_DAYS" -gt 0 ]] || die "--expires-in-days must be a positive number of days"
 fi
 
-list_workspaces() {
-  http_json GET "/api/v1/workspaces" "{}"
+list_buckets() {
+  local active_response archived_response
+  active_response="$(http_json GET "/api/v1/buckets" "{}")"
+  archived_response="$(http_json GET "/api/v1/buckets?archived=true" "{}")"
+  "$JQ_BIN" -nc \
+    --argjson active "$active_response" \
+    --argjson archived "$archived_response" \
+    '
+      ($active.data.buckets // []) as $active_buckets
+      | ($archived.data.buckets // []) as $archived_buckets
+      | ($active_buckets + $archived_buckets | unique_by(.id)) as $buckets
+      | $active + {
+          data: ($active.data + {
+            buckets: $buckets,
+            active_buckets_count: ($active_buckets | length),
+            archived_buckets_count: ($archived_buckets | length),
+            includes_archived: true
+          })
+        }
+    '
 }
 
 list_versions() {
-  [[ -n "$WORKSPACE_ID" ]] || die "--list-versions requires --workspace-id"
-  http_json GET "/api/v1/workspaces/${WORKSPACE_ID}/versions" "{}"
+  [[ -n "$BUCKET_ID" ]] || die "--list-versions requires --bucket-id"
+  http_json GET "/api/v1/buckets/${BUCKET_ID}/versions" "{}"
 }
 
 restore_version() {
   local payload
-  [[ -n "$WORKSPACE_ID" ]] || die "--restore-version requires --workspace-id"
-  [[ -n "$RESTORE_VERSION_ID" ]] || die "--restore-version requires a workspace version id"
+  [[ -n "$BUCKET_ID" ]] || die "--restore-version requires --bucket-id"
+  [[ -n "$RESTORE_VERSION_ID" ]] || die "--restore-version requires a bucket version id"
   payload="$("$JQ_BIN" -nc \
     --arg version_id "$RESTORE_VERSION_ID" \
     --arg comment "$RESTORE_COMMENT" \
     '{version_id:$version_id} + (if $comment != "" then {comment:$comment} else {} end)')"
-  http_json POST "/api/v1/workspaces/${WORKSPACE_ID}/versions/restore" "$payload"
+  http_json POST "/api/v1/buckets/${BUCKET_ID}/versions/restore" "$payload"
 }
 
-unpublish_workspace() {
-  [[ -n "$WORKSPACE_ID" ]] || die "--unpublish requires --workspace-id"
-  http_json DELETE "/api/v1/workspaces/${WORKSPACE_ID}/publication" "{}" | "$JQ_BIN" -c '
+unpublish_bucket() {
+  [[ -n "$BUCKET_ID" ]] || die "--unpublish requires --bucket-id"
+  http_json DELETE "/api/v1/buckets/${BUCKET_ID}/publication" "{}" | "$JQ_BIN" -c '
     .data.publication as $publication
     | {
         success: (.success // true),
         data: {
           publication: $publication,
-          workspace_id: $publication.workspace_id,
+          bucket_id: $publication.bucket_id,
           public_slug: $publication.public_slug,
           public_url: $publication.public_url,
           status: $publication.status,
           revoked_at: $publication.revoked_at,
-          guidance: "The public site is unpublished. Republish this same workspace to restore the same URL."
+          guidance: "The public site is unpublished. Republish this same bucket to restore the same URL."
         }
       }'
+}
+
+archive_bucket() {
+  [[ -n "$BUCKET_ID" ]] || die "--archive requires --bucket-id"
+  http_json POST "/api/v1/buckets/${BUCKET_ID}/archive" "{}"
+}
+
+unarchive_bucket() {
+  [[ -n "$BUCKET_ID" ]] || die "--unarchive requires --bucket-id"
+  http_json POST "/api/v1/buckets/${BUCKET_ID}/unarchive" "{}"
+}
+
+delete_bucket() {
+  local bucket_response allowed required_action confirmation payload
+  [[ -n "$BUCKET_ID" ]] || die "--delete-bucket requires --bucket-id"
+  bucket_response="$(http_json GET "/api/v1/buckets/${BUCKET_ID}" "{}")"
+  allowed="$("$JQ_BIN" -r '.data.bucket.delete.allowed // false' <<<"$bucket_response")"
+  required_action="$("$JQ_BIN" -r '.data.bucket.delete.required_action // empty' <<<"$bucket_response")"
+  confirmation="$("$JQ_BIN" -r '.data.bucket.delete.confirmation // empty' <<<"$bucket_response")"
+
+  if [[ "$allowed" != "true" || -z "$confirmation" ]]; then
+    case "$required_action" in
+      unpublish_first)
+        die "bucket must be unpublished before permanent delete; run with --unpublish first after confirmation"
+        ;;
+      archive_first)
+        die "bucket must be archived before permanent delete; run with --archive first after confirmation"
+        ;;
+      *)
+        die "bucket cannot be permanently deleted with this connection"
+        ;;
+    esac
+  fi
+
+  payload="$("$JQ_BIN" -nc --arg confirmation "$confirmation" '{confirmation:$confirmation}')"
+  http_json DELETE "/api/v1/buckets/${BUCKET_ID}" "$payload"
 }
 
 account_status() {
@@ -485,36 +554,36 @@ account_status() {
 }
 
 exchange_grant() {
-  local payload response key workspace_access default_workspace_id
+  local payload response key bucket_access default_bucket_id
   [[ -n "$GRANT_TOKEN" ]] || die "grant token is required"
-  payload="$("$JQ_BIN" -nc --arg grant_token "$GRANT_TOKEN" '{grant_token:$grant_token, label:"Revdoku workspace client"}')"
+  payload="$("$JQ_BIN" -nc --arg grant_token "$GRANT_TOKEN" '{grant_token:$grant_token, label:"Revdoku bucket client"}')"
   response="$(http_json POST "/api/v1/agent_auth/exchange_grant" "$payload" false)"
   key="$("$JQ_BIN" -r '.data.api_key // empty' <<<"$response")"
   [[ -n "$key" ]] || die "grant exchange did not return an API key"
-  workspace_access="$("$JQ_BIN" -r '.data.workspace_access // "all"' <<<"$response")"
-  default_workspace_id="$("$JQ_BIN" -r 'if (.data.workspace_access == "selected") then ((.data.workspace_ids // []) | map(select(startswith("wrk_"))) | .[0] // empty) else empty end' <<<"$response")"
+  bucket_access="$("$JQ_BIN" -r '.data.bucket_access // "all"' <<<"$response")"
+  default_bucket_id="$("$JQ_BIN" -r 'if (.data.bucket_access == "selected") then ((.data.bucket_ids // []) | map(select(startswith("bkt_"))) | .[0] // empty) else empty end' <<<"$response")"
 
   mkdir -p "$(dirname "$CREDENTIALS_PATH")"
   umask 077
   printf "%s\n" "$key" > "$CREDENTIALS_PATH"
   echo "Saved Revdoku API key to $CREDENTIALS_PATH" >&2
-  if [[ "$workspace_access" == "selected" && -n "$default_workspace_id" ]]; then
-    printf "%s\n" "$default_workspace_id" > "$DEFAULT_WORKSPACE_PATH"
-    echo "Saved default Revdoku workspace to $DEFAULT_WORKSPACE_PATH" >&2
+  if [[ "$bucket_access" == "selected" && -n "$default_bucket_id" ]]; then
+    printf "%s\n" "$default_bucket_id" > "$DEFAULT_BUCKET_PATH"
+    echo "Saved default Revdoku bucket to $DEFAULT_BUCKET_PATH" >&2
   else
-    rm -f "$DEFAULT_WORKSPACE_PATH"
+    rm -f "$DEFAULT_BUCKET_PATH"
   fi
   echo "This is a one-time setup. Future runs will reuse the saved key automatically." >&2
-  printf "%s\n" "$("$JQ_BIN" -c '{success:(.success // true), data:{account_id:.data.account_id, account_name:.data.account_name, workspace_access:.data.workspace_access, workspace_ids:(.data.workspace_ids // []), workspace_permissions:(.data.workspace_permissions // {}), account_connection_limits:.data.account_connection_limits, manage_access:.data.manage_access, guidance:.data.guidance, link_hint:"If opening links from a terminal, Cmd-click on macOS or Ctrl-click on Windows/Linux when supported."}}' <<<"$response")"
+  printf "%s\n" "$("$JQ_BIN" -c '{success:(.success // true), data:{account_id:.data.account_id, account_name:.data.account_name, bucket_access:.data.bucket_access, bucket_ids:(.data.bucket_ids // []), bucket_permissions:(.data.bucket_permissions // {}), account_connection_limits:.data.account_connection_limits, manage_access:.data.manage_access, guidance:.data.guidance, link_hint:"If opening links from a terminal, Cmd-click on macOS or Ctrl-click on Windows/Linux when supported."}}' <<<"$response")"
 }
 
-list_public_workspaces() {
+list_public_buckets() {
   http_json GET "/api/v1/publications" "{}" | "$JQ_BIN" -c '
     .data.publications
-    | map(select(.status == "published" and .kind == "workspace_bundle" and (.public_url // "") != ""))
-    | group_by(.workspace_id)
+    | map(select(.kind == "bucket_bundle" and (.public_url // "") != "" and ((.active == true) or ((has("active") | not) and .status == "published"))))
+    | group_by(.bucket_id)
     | map({
-        workspace_id: .[0].workspace_id,
+        bucket_id: .[0].bucket_id,
         publications: map({
           id,
           public_slug,
@@ -527,7 +596,7 @@ list_public_workspaces() {
           hits: (.analytics.hits_all_time // 0)
         })
       })
-    | {data:{public_workspaces:., link_hint:"If opening links from a terminal, Cmd-click on macOS or Ctrl-click on Windows/Linux when supported."}}'
+    | {data:{public_buckets:., link_hint:"If opening links from a terminal, Cmd-click on macOS or Ctrl-click on Windows/Linux when supported."}}'
 }
 
 print_terminal_link_hint() {
@@ -561,8 +630,8 @@ browser_login_link() {
 }
 
 case "$ACTION" in
-  list_workspaces)
-    list_workspaces
+  list_buckets)
+    list_buckets
     exit 0
     ;;
   list_versions)
@@ -573,12 +642,24 @@ case "$ACTION" in
     restore_version
     exit 0
     ;;
-  unpublish_workspace)
-    unpublish_workspace
+  unpublish_bucket)
+    unpublish_bucket
     exit 0
     ;;
-  list_public_workspaces)
-    list_public_workspaces
+  archive_bucket)
+    archive_bucket
+    exit 0
+    ;;
+  unarchive_bucket)
+    unarchive_bucket
+    exit 0
+    ;;
+  delete_bucket)
+    delete_bucket
+    exit 0
+    ;;
+  list_public_buckets)
+    list_public_buckets
     exit 0
     ;;
   account_status)
@@ -721,14 +802,14 @@ local_file_for_relative_path() {
   fi
 }
 
-create_workspace() {
+create_bucket() {
   local title payload response id
   title="$TITLE"
   [[ -n "$title" ]] || title="$(default_title)"
-  payload="$(workspace_payload "$title")"
-  response="$(http_json POST "/api/v1/workspaces" "$payload")" || die "workspace create failed"
-  id="$("$JQ_BIN" -r '.data.workspace.id // empty' <<<"$response")"
-  [[ -n "$id" ]] || die "workspace create response did not include id"
+  payload="$(bucket_payload "$title")"
+  response="$(http_json POST "/api/v1/buckets" "$payload")" || die "bucket create failed"
+  id="$("$JQ_BIN" -r '.data.bucket.id // empty' <<<"$response")"
+  [[ -n "$id" ]] || die "bucket create response did not include id"
   printf "%s" "$id"
 }
 
@@ -740,7 +821,7 @@ tag_paths_json() {
   fi
 }
 
-workspace_payload() {
+bucket_payload() {
   local title="$1"
   local tag_paths metadata
   tag_paths="$(tag_paths_json)"
@@ -751,7 +832,7 @@ workspace_payload() {
     --argjson metadata "$metadata" \
     --argjson tag_paths "$tag_paths" \
     '{
-      workspace: (
+      bucket: (
         {title: $title, metadata: $metadata}
         + (if $description != "" then {description: $description} else {} end)
         + (if ($tag_paths | length) > 0 then {tag_paths: $tag_paths} else {} end)
@@ -759,7 +840,7 @@ workspace_payload() {
     }'
 }
 
-workspace_update_payload() {
+bucket_update_payload() {
   local tag_paths
   tag_paths="$(tag_paths_json)"
   "$JQ_BIN" -nc \
@@ -768,7 +849,7 @@ workspace_update_payload() {
     --argjson metadata "$METADATA_JSON" \
     --argjson tag_paths "$tag_paths" \
     '{
-      workspace: (
+      bucket: (
         {}
         + (if $title != "" then {title: $title} else {} end)
         + (if $description != "" then {description: $description} else {} end)
@@ -778,7 +859,7 @@ workspace_update_payload() {
     }'
 }
 
-workspace_update_needed() {
+bucket_update_needed() {
   [[ "$METADATA_JSON" != "{}" || -n "$DESCRIPTION" || "${#TAG_PATHS[@]}" -gt 0 ]]
 }
 
@@ -842,7 +923,7 @@ publish_session_fallback_allowed() {
   esac
 
   case "${LAST_ERROR_CODE:-}" in
-    PUBLICATION_LIMIT_REACHED|PUBLIC_STORAGE_NOT_CONFIGURED|UNAUTHORIZED|FORBIDDEN|WORKSPACE_ACCESS_DENIED|WORKSPACE_PERMISSION_DENIED|WORKSPACE_LIMIT_REACHED|STORAGE_QUOTA_EXCEEDED)
+    PUBLICATION_LIMIT_REACHED|PUBLIC_STORAGE_NOT_CONFIGURED|UNAUTHORIZED|FORBIDDEN|BUCKET_ACCESS_DENIED|BUCKET_PERMISSION_DENIED|BUCKET_LIMIT_REACHED|STORAGE_QUOTA_EXCEEDED)
       return 1
       ;;
     *)
@@ -853,15 +934,15 @@ publish_session_fallback_allowed() {
 
 print_publication_limit_guidance() {
   echo "Live public site limit reached for this account." >&2
-  if [[ -n "$LAST_PUBLISH_SESSION_WORKSPACE_ID" ]]; then
-    echo "Private workspace storage is still available: $LAST_PUBLISH_SESSION_WORKSPACE_ID" >&2
+  if [[ -n "$LAST_PUBLISH_SESSION_BUCKET_ID" ]]; then
+    echo "Private bucket storage is still available: $LAST_PUBLISH_SESSION_BUCKET_ID" >&2
   fi
-  echo "To update an existing public site, rerun with --workspace-id for that public workspace; republishing keeps the same URL and does not use another live-site slot." >&2
-  echo "To publish a new site, list current public workspaces with --list-public-workspaces, then ask before unpublishing one with --unpublish, or open /pricing to upgrade." >&2
+  echo "To update an existing public site, rerun with --bucket-id for that public bucket; republishing keeps the same URL and does not use another live-site slot." >&2
+  echo "To publish a new site, list current public buckets with --list-public-buckets, then ask before unpublishing one with --unpublish, or open /pricing to upgrade." >&2
 }
 
 upload_file_direct() {
-  local workspace_id="$1"
+  local bucket_id="$1"
   local file="$2"
   local rel filename content_type size checksum sha256 payload response direct_upload signed_id
   rel="$(relative_path_for "$file")"
@@ -872,14 +953,14 @@ upload_file_direct() {
   sha256="$(sha256_file "$file")"
 
   payload="$("$JQ_BIN" -nc \
-    --arg workspace_id "$workspace_id" \
+    --arg bucket_id "$bucket_id" \
     --arg path "$rel" \
     --arg filename "$filename" \
     --argjson byte_size "$size" \
     --arg checksum "$checksum" \
     --arg content_type "$content_type" \
     --arg sha256 "$sha256" \
-    '{workspace_id:$workspace_id, path:$path, blob:{filename:$filename, byte_size:$byte_size, checksum:$checksum, content_type:$content_type, sha256:$sha256, purpose:"workspace_file"}}')"
+    '{bucket_id:$bucket_id, path:$path, blob:{filename:$filename, byte_size:$byte_size, checksum:$checksum, content_type:$content_type, sha256:$sha256, purpose:"bucket_file"}}')"
   response="$(http_json POST "/api/v1/direct_uploads" "$payload")" || return 1
   direct_upload="$("$JQ_BIN" -c '.data.direct_upload // empty' <<<"$response")"
   signed_id="$("$JQ_BIN" -r '.data.signed_id // empty' <<<"$response")"
@@ -889,11 +970,11 @@ upload_file_direct() {
 
   payload="$("$JQ_BIN" -nc --arg signed_blob_id "$signed_id" --arg path "$rel" --arg name "$filename" \
     '{signed_blob_id:$signed_blob_id, path:$path, name:$name}')"
-  http_json POST "/api/v1/workspaces/${workspace_id}/files" "$payload" >/dev/null
+  http_json POST "/api/v1/buckets/${bucket_id}/files" "$payload" >/dev/null
 }
 
 upload_file_multipart() {
-  local workspace_id="$1"
+  local bucket_id="$1"
   local file="$2"
   local rel filename content_type body_file status message agent_args=()
   rel="$(relative_path_for "$file")"
@@ -904,7 +985,7 @@ upload_file_multipart() {
     agent_args+=("$value")
   done < <(agent_header_args)
   status="$(curl -sS -o "$body_file" -w "%{http_code}" \
-    -X POST "$(api_url "/api/v1/workspaces/${workspace_id}/files")" \
+    -X POST "$(api_url "/api/v1/buckets/${bucket_id}/files")" \
     "${agent_args[@]}" \
     -H "Authorization: Bearer $API_KEY" \
     -F "path=${rel}" \
@@ -924,14 +1005,14 @@ upload_file_multipart() {
 }
 
 upload_file() {
-  local workspace_id="$1"
+  local bucket_id="$1"
   local file="$2"
   local rel
   rel="$(relative_path_for "$file")"
   echo "Uploading $rel" >&2
 
   if [[ "$UPLOAD_MODE" != "multipart" ]]; then
-    if upload_file_direct "$workspace_id" "$file"; then
+    if upload_file_direct "$bucket_id" "$file"; then
       return 0
     fi
     if [[ "$UPLOAD_MODE" == "direct" ]]; then
@@ -941,11 +1022,11 @@ upload_file() {
     fi
   fi
 
-  upload_file_multipart "$workspace_id" "$file"
+  upload_file_multipart "$bucket_id" "$file"
 }
 
-publish_workspace() {
-  local workspace_id="$1"
+publish_bucket() {
+  local bucket_id="$1"
   local payload response response_file url entrypoint metadata
   entrypoint="$(default_entrypoint)"
   metadata="$(effective_metadata_json)"
@@ -955,16 +1036,16 @@ publish_workspace() {
     payload="$("$JQ_BIN" -nc --arg entrypoint "$entrypoint" --argjson expires_in_days "$EXPIRES_IN_DAYS" --argjson metadata "$metadata" '{expires_in_days:$expires_in_days, entrypoint:$entrypoint, metadata:$metadata}')"
   fi
   response_file="$(mktemp)"
-  if ! http_json POST "/api/v1/workspaces/${workspace_id}/publication" "$payload" > "$response_file"; then
+  if ! http_json POST "/api/v1/buckets/${bucket_id}/publication" "$payload" > "$response_file"; then
     rm -f "$response_file"
     if [[ "${LAST_ERROR_CODE:-}" == "PUBLIC_STORAGE_NOT_CONFIGURED" ]]; then
       echo "Public publishing is not configured for this Revdoku deployment." >&2
-      echo "Private workspace storage is still available: $workspace_id" >&2
+      echo "Private bucket storage is still available: $bucket_id" >&2
     elif publication_limit_error; then
-      LAST_PUBLISH_SESSION_WORKSPACE_ID="$workspace_id"
+      LAST_PUBLISH_SESSION_BUCKET_ID="$bucket_id"
       print_publication_limit_guidance
     fi
-    die "workspace publish failed"
+    die "bucket publish failed"
   fi
   response="$(cat "$response_file")"
   rm -f "$response_file"
@@ -1009,7 +1090,7 @@ publish_session_payload() {
   "$JQ_BIN" -nc \
     --arg title "$title" \
     --arg description "$DESCRIPTION" \
-    --arg workspace_id "$WORKSPACE_ID" \
+    --arg bucket_id "$BUCKET_ID" \
     --arg permanent "$PERMANENT_PUBLICATION" \
     --arg entrypoint "$entrypoint" \
     --argjson expires_in_days "$expires_in_days" \
@@ -1018,14 +1099,14 @@ publish_session_payload() {
     --argjson files "$manifest_json" \
     '{
       title: $title,
-      workspace_title: $title,
+      bucket_title: $title,
       entrypoint: $entrypoint,
       metadata: $metadata,
       files: $files
     }
-    + (if $workspace_id != "" then {workspace_id: $workspace_id} else {} end)
-    + (if $description != "" then {workspace_description: $description} else {} end)
-    + (if ($tag_paths | length) > 0 then {workspace_tag_paths: $tag_paths} else {} end)
+    + (if $bucket_id != "" then {bucket_id: $bucket_id} else {} end)
+    + (if $description != "" then {bucket_description: $description} else {} end)
+    + (if ($tag_paths | length) > 0 then {bucket_tag_paths: $tag_paths} else {} end)
     + (if $permanent == "true" then {permanent: true} else {expires_in_days: $expires_in_days} end)'
 }
 
@@ -1034,9 +1115,9 @@ publish_session_file_for_path() {
   local_file_for_relative_path "$rel"
 }
 
-publish_workspace_session_attempt() {
+publish_bucket_session_attempt() {
   local file_list="$1"
-  local manifest_json payload response response_file session_id workspace_id upload_line rel upload_json file finalize_url final_response final_response_file url
+  local manifest_json payload response response_file session_id bucket_id upload_line rel upload_json file finalize_url final_response final_response_file url
   manifest_json="$(publish_session_manifest_json "$file_list")"
   payload="$(publish_session_payload "$manifest_json")"
   response_file="$(mktemp)"
@@ -1048,12 +1129,12 @@ publish_workspace_session_attempt() {
   rm -f "$response_file"
 
   session_id="$("$JQ_BIN" -r '.data.publish_session.id // empty' <<<"$response")"
-  workspace_id="$("$JQ_BIN" -r '.data.publish_session.workspace_id // empty' <<<"$response")"
-  LAST_PUBLISH_SESSION_WORKSPACE_ID="$workspace_id"
+  bucket_id="$("$JQ_BIN" -r '.data.publish_session.bucket_id // empty' <<<"$response")"
+  LAST_PUBLISH_SESSION_BUCKET_ID="$bucket_id"
   [[ -n "$session_id" ]] || {
     die "publish session response did not include id"
   }
-  [[ -n "$workspace_id" ]] && echo "Workspace: $workspace_id" >&2
+  [[ -n "$bucket_id" ]] && echo "Bucket: $bucket_id" >&2
   echo "Publish session: $session_id" >&2
 
   while IFS= read -r upload_line; do
@@ -1088,7 +1169,7 @@ publish_workspace_session_attempt() {
   printf "%s\n" "$url"
 }
 
-publish_workspace_session() {
+publish_bucket_session() {
   local file_list publish_url publish_url_file
   file_list="$(mktemp)"
   if ! collect_files > "$file_list"; then
@@ -1101,7 +1182,7 @@ publish_workspace_session() {
   fi
 
   publish_url_file="$(mktemp)"
-  if publish_workspace_session_attempt "$file_list" > "$publish_url_file"; then
+  if publish_bucket_session_attempt "$file_list" > "$publish_url_file"; then
     publish_url="$(cat "$publish_url_file")"
     rm -f "$publish_url_file"
     rm -f "$file_list"
@@ -1111,7 +1192,7 @@ publish_workspace_session() {
 
   if publish_session_retryable_error; then
     echo "Publish session became stale or expired; starting a fresh publish session." >&2
-    if publish_workspace_session_attempt "$file_list" > "$publish_url_file"; then
+    if publish_bucket_session_attempt "$file_list" > "$publish_url_file"; then
       publish_url="$(cat "$publish_url_file")"
       rm -f "$publish_url_file"
       rm -f "$file_list"
@@ -1125,21 +1206,21 @@ publish_workspace_session() {
   return 1
 }
 
-workspace_id_for_storage() {
-  if [[ -n "$WORKSPACE_ID" ]]; then
-    if workspace_update_needed; then
+bucket_id_for_storage() {
+  if [[ -n "$BUCKET_ID" ]]; then
+    if bucket_update_needed; then
       local payload
-      payload="$(workspace_update_payload)"
-      http_json PATCH "/api/v1/workspaces/${WORKSPACE_ID}" "$payload" >/dev/null
+      payload="$(bucket_update_payload)"
+      http_json PATCH "/api/v1/buckets/${BUCKET_ID}" "$payload" >/dev/null
     fi
-    printf "%s" "$WORKSPACE_ID"
+    printf "%s" "$BUCKET_ID"
   else
-    create_workspace
+    create_bucket
   fi
 }
 
-store_workspace() {
-  local workspace_id workspace_id_file file file_list
+store_bucket() {
+  local bucket_id bucket_id_file file file_list
   file_list="$(mktemp)"
   if ! collect_files > "$file_list"; then
     rm -f "$file_list"
@@ -1150,23 +1231,23 @@ store_workspace() {
     die "no files found to store after safety exclusions"
   fi
 
-  workspace_id_file="$(mktemp)"
-  if ! workspace_id_for_storage > "$workspace_id_file"; then
-    rm -f "$workspace_id_file" "$file_list"
+  bucket_id_file="$(mktemp)"
+  if ! bucket_id_for_storage > "$bucket_id_file"; then
+    rm -f "$bucket_id_file" "$file_list"
     return 1
   fi
-  workspace_id="$(cat "$workspace_id_file")"
-  rm -f "$workspace_id_file"
-  [[ -n "$workspace_id" ]] || {
+  bucket_id="$(cat "$bucket_id_file")"
+  rm -f "$bucket_id_file"
+  [[ -n "$bucket_id" ]] || {
     rm -f "$file_list"
-    die "workspace id is required before uploading files"
+    die "bucket id is required before uploading files"
   }
-  echo "Workspace: $workspace_id" >&2
+  echo "Bucket: $bucket_id" >&2
   while IFS= read -r -d '' file; do
-    upload_file "$workspace_id" "$file"
+    upload_file "$bucket_id" "$file"
   done < "$file_list"
   rm -f "$file_list"
-  printf "%s" "$workspace_id"
+  printf "%s" "$bucket_id"
 }
 
 verify_published_url() {
@@ -1223,7 +1304,7 @@ should_skip_storage_path() {
 }
 
 publish_url_file=""
-workspace_id_file=""
+bucket_id_file=""
 
 if [[ "$PUBLISH" == "true" ]]; then
   if ! has_index_file; then
@@ -1231,7 +1312,7 @@ if [[ "$PUBLISH" == "true" ]]; then
   fi
   if [[ "$UPLOAD_MODE" != "multipart" ]]; then
     publish_url_file="$(mktemp)"
-    if publish_workspace_session > "$publish_url_file"; then
+    if publish_bucket_session > "$publish_url_file"; then
       publish_url="$(cat "$publish_url_file")"
       rm -f "$publish_url_file"
       verify_published_url "$publish_url"
@@ -1241,8 +1322,8 @@ if [[ "$PUBLISH" == "true" ]]; then
       exit 0
     fi
     rm -f "$publish_url_file"
-    if publication_limit_error && [[ -z "$WORKSPACE_ID" && -n "$LAST_PUBLISH_SESSION_WORKSPACE_ID" ]]; then
-      WORKSPACE_ID="$LAST_PUBLISH_SESSION_WORKSPACE_ID"
+    if publication_limit_error && [[ -z "$BUCKET_ID" && -n "$LAST_PUBLISH_SESSION_BUCKET_ID" ]]; then
+      BUCKET_ID="$LAST_PUBLISH_SESSION_BUCKET_ID"
     fi
     if [[ "$UPLOAD_MODE" == "direct" ]]; then
       publication_limit_error && print_publication_limit_guidance
@@ -1256,20 +1337,20 @@ if [[ "$PUBLISH" == "true" ]]; then
   fi
 fi
 
-workspace_id_file="$(mktemp)"
-if ! store_workspace > "$workspace_id_file"; then
-  rm -f "$workspace_id_file"
-  die "workspace store failed"
+bucket_id_file="$(mktemp)"
+if ! store_bucket > "$bucket_id_file"; then
+  rm -f "$bucket_id_file"
+  die "bucket store failed"
 fi
-workspace_id="$(cat "$workspace_id_file")"
-rm -f "$workspace_id_file"
-echo "Stored workspace: $workspace_id" >&2
+bucket_id="$(cat "$bucket_id_file")"
+rm -f "$bucket_id_file"
+echo "Stored bucket: $bucket_id" >&2
 
 if [[ "$PUBLISH" == "true" ]]; then
   publish_url_file="$(mktemp)"
-  if ! publish_workspace "$workspace_id" > "$publish_url_file"; then
+  if ! publish_bucket "$bucket_id" > "$publish_url_file"; then
     rm -f "$publish_url_file"
-    die "workspace publish failed"
+    die "bucket publish failed"
   fi
   publish_url="$(cat "$publish_url_file")"
   rm -f "$publish_url_file"
@@ -1278,5 +1359,5 @@ if [[ "$PUBLISH" == "true" ]]; then
   print_terminal_link_hint
   printf "%s\n" "$publish_url"
 else
-  printf "%s\n" "$workspace_id"
+  printf "%s\n" "$bucket_id"
 fi

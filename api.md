@@ -1,6 +1,6 @@
 # Revdoku API
 
-Use the Revdoku API to create workspaces, store files, publish static websites,
+Use the Revdoku API to create buckets, store files, publish static websites,
 attach custom domains, and read publication analytics.
 
 Most AI-agent users should start with the Revdoku app's copied prompt or the
@@ -55,7 +55,7 @@ Successful responses are wrapped in `data`:
 ```json
 {
   "data": {
-    "id": "wrk_..."
+    "id": "bkt_..."
   }
 }
 ```
@@ -65,8 +65,8 @@ Errors are wrapped in `error`:
 ```json
 {
   "error": {
-    "message": "Workspace not found",
-    "code": "WORKSPACE_NOT_FOUND",
+    "message": "Bucket not found",
+    "code": "BUCKET_NOT_FOUND",
     "request_id": "req_...",
     "docs_url": "https://revdoku.com/api.md"
   }
@@ -97,12 +97,12 @@ HTTP/SSE sessions. OAuth metadata uses `REVDOKU_MCP_PUBLIC_BASE_URL` when set,
 so local HTTPS tunnels and reverse-proxy deployments can publish a stable public
 resource URL.
 
-Hosted MCP exposes cloud-safe workspace tools for reading, creating, updating,
+Hosted MCP exposes cloud-safe bucket tools for reading, creating, updating,
 archiving, unarchiving, permanent delete, publishing, republishing, and
 analytics. It intentionally does not expose local-path tools because cloud
 connectors cannot read a user's local filesystem. Use the Revdoku CLI or local
 stdio MCP for local folder uploads; hosted MCP can then update and republish the
-same `workspace_id`. `workspace_list` and `workspace_get` include workspace ids,
+same `bucket_id`. `bucket_list` and `bucket_get` include bucket ids,
 website metadata, publication lifecycle state, and action metadata such as
 `archive.required_action` and `delete.confirmation` so agents can handle ids
 internally instead of asking users to type them.
@@ -136,21 +136,21 @@ curl -fsS "$REVDOKU_URL/api/v1/agent_auth/verify_code" \
     "email": "person@example.com",
     "code": "123456",
     "label": "Codex on laptop",
-    "workspace_access": "all"
+    "bucket_access": "all"
   }'
 ```
 
 Store the returned `data.api_key` securely. Follow `data.guidance` when the
 server includes it. Do not print or log the key.
 
-### Create a Workspace
+### Create a Bucket
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/workspaces" \
+curl -fsS "$REVDOKU_URL/api/v1/buckets" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "workspace": {
+    "bucket": {
       "title": "Marketing site",
       "description": "Generated launch assets",
       "tag_paths": ["website", "ai-agent"],
@@ -167,7 +167,7 @@ Example response:
 ```json
 {
   "data": {
-    "id": "wrk_...",
+    "id": "bkt_...",
     "title": "Marketing site",
     "published": false
   }
@@ -179,7 +179,7 @@ Example response:
 Multipart upload is easiest for small and medium files:
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/workspaces/wrk_.../files" \
+curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../files" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -F "path=index.html" \
   -F "file=@dist/index.html;type=text/html"
@@ -187,12 +187,12 @@ curl -fsS "$REVDOKU_URL/api/v1/workspaces/wrk_.../files" \
 
 Uploading the same `path` creates a new version of that file.
 
-### Publish a Workspace
+### Publish a Bucket
 
-Publish explicitly when the workspace should have a public URL:
+Publish explicitly when the bucket should have a public URL:
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/workspaces/wrk_.../publication" \
+curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../publication" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -208,7 +208,7 @@ Example response:
 {
   "data": {
     "id": "pub_...",
-    "workspace_id": "wrk_...",
+    "bucket_id": "bkt_...",
     "public_slug": "bright-canvas-meadow",
     "public_url": "https://bright-canvas-meadow.revdoku.site/",
     "status": "published",
@@ -233,7 +233,7 @@ curl -fsS "$REVDOKU_URL/api/v1/publish_sessions" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "workspace_title": "Marketing site",
+    "bucket_title": "Marketing site",
     "entrypoint": "index.html",
     "site_mode": "spa",
     "permanent": true,
@@ -269,10 +269,10 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/publish_sessions/pus_.../uploads/refresh"
 
 ### Add a Custom Domain
 
-Custom domains are available on paid plans. Publish the workspace first.
+Custom domains are available on paid plans. Publish the bucket first.
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/workspaces/wrk_.../custom_domains" \
+curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../custom_domains" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{ "hostname": "example.com" }'
@@ -321,12 +321,12 @@ Add every returned DNS record. Then refresh until `custom_domain.status` is
 `active`:
 
 ```sh
-curl -fsS -X POST "$REVDOKU_URL/api/v1/workspaces/wrk_.../custom_domains/pcd_.../refresh" \
+curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../custom_domains/pcd_.../refresh" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
 When active, the publication `public_url` switches to the custom domain.
-The managed `https://<workspace-slug>.revdoku.site/` URL keeps working.
+The managed `https://<bucket-slug>.revdoku.site/` URL keeps working.
 
 For apex domains such as `example.com`, the DNS provider must support ALIAS,
 ANAME, or CNAME flattening. If it does not, use `www.example.com` as the custom
@@ -361,10 +361,10 @@ Example paid response:
     "daily": [
       { "date": "2026-05-26", "hits": 120, "visitors": 84, "hits_not_found": 2, "hits_bots": 9 }
     ],
-    "workspaces": [
+    "buckets": [
       {
-        "workspace_id": "wrk_abc123",
-        "workspace_title": "Docs",
+        "bucket_id": "bkt_abc123",
+        "bucket_title": "Docs",
         "publication_id": "pub_abc123",
         "public_slug": "docs",
         "url": "https://docs.revdoku.site/",
@@ -384,7 +384,7 @@ Example paid response:
       { "bot": "GPTBot", "hits": 91 }
     ],
     "paths_not_found": [
-      { "workspace_id": "wrk_abc123", "publication_id": "pub_abc123", "public_slug": "docs", "path": "/old-page", "hits": 18 }
+      { "bucket_id": "bkt_abc123", "publication_id": "pub_abc123", "public_slug": "docs", "path": "/old-page", "hits": 18 }
     ]
   }
 }
@@ -419,18 +419,18 @@ visitor count across the whole range.
   "email": "person@example.com",
   "code": "123456",
   "label": "Codex on laptop",
-  "workspace_access": "all"
+  "bucket_access": "all"
 }
 ```
 
-For selected-workspace access, use:
+For selected-bucket access, use:
 
 ```json
 {
-  "workspace_access": "selected",
-  "workspace_ids": ["wrk_..."],
-  "workspace_permissions": {
-    "wrk_...": "write"
+  "bucket_access": "selected",
+  "bucket_ids": ["bkt_..."],
+  "bucket_permissions": {
+    "bkt_...": "write"
   }
 }
 ```
@@ -458,64 +458,64 @@ Common `redirect_path` values:
 
 | Path | Destination |
 | --- | --- |
-| `/workspaces` | Workspace dashboard. |
+| `/buckets` | Bucket dashboard. |
 | `/library` | Library settings. |
 | `/account/access` | Members, agents, and API keys. |
 | `/pricing` | Plans and upgrades. |
 
-### Workspace Endpoints
+### Bucket Endpoints
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/v1/workspaces` | List active workspaces by default. Use `?archived=true` to list archived workspaces. |
-| `POST` | `/api/v1/workspaces` | Create a workspace. |
-| `GET` | `/api/v1/workspaces/:id` | Read a workspace. |
-| `PATCH` | `/api/v1/workspaces/:id` | Update workspace metadata. |
-| `POST` | `/api/v1/workspaces/:id/archive` | Archive a normal unpublished workspace. |
-| `POST` | `/api/v1/workspaces/:id/unarchive` | Restore an archived normal workspace. |
-| `DELETE` | `/api/v1/workspaces/:id` | Permanently delete a normal archived unpublished workspace with confirmation. |
-| `GET` | `/api/v1/tags` | List reusable workspace labels. |
+| `GET` | `/api/v1/buckets` | List active buckets by default. Use `?archived=true` to list archived buckets. |
+| `POST` | `/api/v1/buckets` | Create a bucket. |
+| `GET` | `/api/v1/buckets/:id` | Read a bucket. |
+| `PATCH` | `/api/v1/buckets/:id` | Update bucket metadata. |
+| `POST` | `/api/v1/buckets/:id/archive` | Archive a normal unpublished bucket. |
+| `POST` | `/api/v1/buckets/:id/unarchive` | Restore an archived normal bucket. |
+| `DELETE` | `/api/v1/buckets/:id` | Permanently delete a normal archived unpublished bucket with confirmation. |
+| `GET` | `/api/v1/tags` | List reusable bucket labels. |
 
-#### GET /api/v1/workspaces
+#### GET /api/v1/buckets
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/workspaces" \
+curl -fsS "$REVDOKU_URL/api/v1/buckets" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
-By default, this returns active workspaces. To list archived workspaces, call:
+By default, this returns active buckets. To list archived buckets, call:
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/workspaces?archived=true" \
+curl -fsS "$REVDOKU_URL/api/v1/buckets?archived=true" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
-Workspace list/detail responses include effective lifecycle action metadata:
+Bucket list/detail responses include effective lifecycle action metadata:
 
 | Field | Meaning |
 | --- | --- |
 | `website` | Current or latest website publication metadata, including `public_url`, `status`, `published`, and `lifecycle_active`. |
 | `publication_lifecycle_active` | `true` when a publication is active enough to block archive/delete, even if the public artifacts are unavailable. |
 | `archive.allowed` | Whether the current principal can archive now. |
-| `archive.required_action` | `unpublish_first` when the workspace must be unpublished before archive. |
-| `unarchive.allowed` | Whether the current principal can restore an archived workspace now. |
+| `archive.required_action` | `unpublish_first` when the bucket must be unpublished before archive. |
+| `unarchive.allowed` | Whether the current principal can restore an archived bucket now. |
 | `delete.allowed` | Whether the current principal can permanently delete now. |
-| `delete.required_action` | `unpublish_first` when the workspace must be unpublished before permanent delete; `archive_first` when it must be archived before permanent delete. |
-| `delete.confirmation` | Opaque internal confirmation token returned by the API; clients should pass it exactly to DELETE after human confirmation, not ask users to type workspace ids. |
+| `delete.required_action` | `unpublish_first` when the bucket must be unpublished before permanent delete; `archive_first` when it must be archived before permanent delete. |
+| `delete.confirmation` | Opaque internal confirmation token returned by the API; clients should pass it exactly to DELETE after human confirmation, not ask users to type bucket ids. |
 
-Archived workspaces are read-only until unarchived. Metadata edits, label changes,
+Archived buckets are read-only until unarchived. Metadata edits, label changes,
 file changes, direct upload targets, reference file uploads, thumbnail uploads,
-workspace duplication, publication updates, and custom-domain mutations return
-`WORKSPACE_ARCHIVED`. Read/list endpoints, unarchive, permanent delete, and
+bucket duplication, publication updates, and custom-domain mutations return
+`BUCKET_ARCHIVED`. Read/list endpoints, unarchive, permanent delete, and
 publication cleanup remain available when otherwise permitted. Copying files
-out of an archived workspace is allowed when the caller has read access to the
-source and write access to an active target workspace.
+out of an archived bucket is allowed when the caller has read access to the
+source and write access to an active target bucket.
 
-#### POST /api/v1/workspaces
+#### POST /api/v1/buckets
 
 ```json
 {
-  "workspace": {
+  "bucket": {
     "title": "Marketing site",
     "description": "Generated launch assets",
     "tag_paths": ["website", "ai-agent"],
@@ -526,11 +526,11 @@ source and write access to an active target workspace.
 }
 ```
 
-#### PATCH /api/v1/workspaces/:id
+#### PATCH /api/v1/buckets/:id
 
 ```json
 {
-  "workspace": {
+  "bucket": {
     "description": "Updated purpose",
     "metadata": {
       "run": "revision-2"
@@ -541,60 +541,60 @@ source and write access to an active target workspace.
 
 #### Archive, unarchive, and permanent delete
 
-Library workspaces cannot be archived, unarchived, or deleted. Normal workspaces
+Library buckets cannot be archived, unarchived, or deleted. Normal buckets
 with active published websites must be unpublished first. Permanent delete also
-requires the workspace to be archived first.
+requires the bucket to be archived first.
 
 ```sh
-curl -fsS -X POST "$REVDOKU_URL/api/v1/workspaces/wrk_.../archive" \
+curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../archive" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
 ```sh
-curl -fsS -X POST "$REVDOKU_URL/api/v1/workspaces/wrk_.../unarchive" \
+curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../unarchive" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
-Permanent delete requires an archived workspace and the opaque confirmation
-token returned by `GET /api/v1/workspaces` or `GET /api/v1/workspaces/:id` in
+Permanent delete requires an archived bucket and the opaque confirmation
+token returned by `GET /api/v1/buckets` or `GET /api/v1/buckets/:id` in
 `delete.confirmation`.
 
 ```sh
-curl -fsS -X DELETE "$REVDOKU_URL/api/v1/workspaces/wrk_..." \
+curl -fsS -X DELETE "$REVDOKU_URL/api/v1/buckets/bkt_..." \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{ "confirmation": "<delete.confirmation from workspace list/detail>" }'
+  -d '{ "confirmation": "<delete.confirmation from bucket list/detail>" }'
 ```
 
-UI and agent clients should ask users to confirm by workspace title or natural
+UI and agent clients should ask users to confirm by bucket title or natural
 language, then pass `delete.confirmation` internally.
 
-Permanent deletion is **not** a bulk operation. Workspaces must be
-deleted one at a time via `DELETE /api/v1/workspaces/:id` so each removal is
-confirmed individually. The `POST /api/v1/workspaces/bulk` endpoint accepts
+Permanent deletion is **not** a bulk operation. Buckets must be
+deleted one at a time via `DELETE /api/v1/buckets/:id` so each removal is
+confirmed individually. The `POST /api/v1/buckets/bulk` endpoint accepts
 only `archive` and `unarchive` operations and rejects `delete`.
 
 ### File Endpoints
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/v1/workspaces/:workspace_id/files` | List files. |
-| `POST` | `/api/v1/workspaces/:workspace_id/files` | Upload or attach a file. |
-| `GET` | `/api/v1/workspaces/:workspace_id/files/:id` | Read file metadata. |
-| `GET` | `/api/v1/workspaces/:workspace_id/files/:id/download` | Download file bytes. |
-| `GET` | `/api/v1/workspaces/:workspace_id/files/:id/text` | Read a text file. |
-| `DELETE` | `/api/v1/workspaces/:workspace_id/files/:id` | Delete a file. |
-| `POST` | `/api/v1/workspaces/:workspace_id/files/lock` | Lock by path. |
-| `POST` | `/api/v1/workspaces/:workspace_id/files/:id/lock` | Lock by file id. |
-| `DELETE` | `/api/v1/workspaces/:workspace_id/files/:id/lock` | Unlock a file. |
+| `GET` | `/api/v1/buckets/:bucket_id/files` | List files. |
+| `POST` | `/api/v1/buckets/:bucket_id/files` | Upload or attach a file. |
+| `GET` | `/api/v1/buckets/:bucket_id/files/:id` | Read file metadata. |
+| `GET` | `/api/v1/buckets/:bucket_id/files/:id/download` | Download file bytes. |
+| `GET` | `/api/v1/buckets/:bucket_id/files/:id/text` | Read a text file. |
+| `DELETE` | `/api/v1/buckets/:bucket_id/files/:id` | Delete a file. |
+| `POST` | `/api/v1/buckets/:bucket_id/files/lock` | Lock by path. |
+| `POST` | `/api/v1/buckets/:bucket_id/files/:id/lock` | Lock by file id. |
+| `DELETE` | `/api/v1/buckets/:bucket_id/files/:id/lock` | Unlock a file. |
 | `POST` | `/api/v1/direct_uploads` | Create a direct-upload URL. |
 
-#### POST /api/v1/workspaces/:workspace_id/files
+#### POST /api/v1/buckets/:bucket_id/files
 
 Multipart upload:
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/workspaces/wrk_.../files" \
+curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../files" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -F "path=assets/app.js" \
   -F "file=@dist/assets/app.js;type=application/javascript"
@@ -610,7 +610,7 @@ Attach an already uploaded blob:
 }
 ```
 
-#### POST /api/v1/workspaces/:workspace_id/files/lock
+#### POST /api/v1/buckets/:bucket_id/files/lock
 
 ```json
 {
@@ -629,7 +629,7 @@ Create an upload descriptor:
 
 ```json
 {
-  "workspace_id": "wrk_...",
+  "bucket_id": "bkt_...",
   "path": "dist/index.html",
   "blob": {
     "filename": "index.html",
@@ -637,29 +637,29 @@ Create an upload descriptor:
     "checksum": "BASE64_MD5",
     "content_type": "text/html",
     "sha256": "HEX_SHA256",
-    "purpose": "workspace_file"
+    "purpose": "bucket_file"
   }
 }
 ```
 
 Upload bytes to `data.direct_upload.url` using `data.direct_upload.headers`.
-Then attach `data.signed_id` with `POST /api/v1/workspaces/:workspace_id/files`.
+Then attach `data.signed_id` with `POST /api/v1/buckets/:bucket_id/files`.
 
 ### Version Endpoints
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/v1/workspaces/:id/versions` | List workspace versions. |
-| `GET` | `/api/v1/workspaces/:id/versions/:version_id` | Read one workspace version. |
-| `POST` | `/api/v1/workspaces/:id/versions/restore` | Restore a historical version. |
-| `GET` | `/api/v1/workspaces/:workspace_id/files/:id/versions` | List file versions. |
-| `GET` | `/api/v1/workspaces/:workspace_id/files/:id/versions/:version_id/content` | Download one file version. |
+| `GET` | `/api/v1/buckets/:id/versions` | List bucket versions. |
+| `GET` | `/api/v1/buckets/:id/versions/:version_id` | Read one bucket version. |
+| `POST` | `/api/v1/buckets/:id/versions/restore` | Restore a historical version. |
+| `GET` | `/api/v1/buckets/:bucket_id/files/:id/versions` | List file versions. |
+| `GET` | `/api/v1/buckets/:bucket_id/files/:id/versions/:version_id/content` | Download one file version. |
 
-#### POST /api/v1/workspaces/:id/versions/restore
+#### POST /api/v1/buckets/:id/versions/restore
 
 ```json
 {
-  "version_id": "wrkrv_...",
+  "version_id": "bktrv_...",
   "comment": "Return to the first published draft"
 }
 ```
@@ -671,9 +671,9 @@ selected historical version.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/v1/workspaces/:id/publication` | Publish a workspace. |
-| `DELETE` | `/api/v1/workspaces/:id/publication` | Stop serving a workspace. |
-| `GET` | `/api/v1/publications` | List public workspace links. |
+| `POST` | `/api/v1/buckets/:id/publication` | Publish a bucket. |
+| `DELETE` | `/api/v1/buckets/:id/publication` | Stop serving a bucket. |
+| `GET` | `/api/v1/publications` | List public bucket links. |
 | `GET` | `/api/v1/publications/:id` | Read one publication. |
 | `PATCH` | `/api/v1/publications/:id` | Update publication settings. |
 | `DELETE` | `/api/v1/publications/:id` | Revoke a publication. |
@@ -682,11 +682,11 @@ selected historical version.
 | `POST` | `/api/v1/publish_sessions/:id/uploads/refresh` | Refresh upload URLs. |
 | `POST` | `/api/v1/publish_sessions/:id/finalize` | Finalize a publish session. |
 
-Archived workspaces cannot be published, republished, direct-publish finalized,
+Archived buckets cannot be published, republished, direct-publish finalized,
 or have publication settings updated until they are unarchived. Unpublish and
 publication revoke endpoints remain available for cleanup.
 
-#### POST /api/v1/workspaces/:id/publication
+#### POST /api/v1/buckets/:id/publication
 
 ```json
 {
@@ -702,7 +702,7 @@ Publication response fields:
 | --- | --- |
 | `public_url` | Same public website URL returned for users and agents. |
 | `asset_base_url` | Direct public object-storage/CDN directory. |
-| `public_slug` | Stable DNS-safe workspace publication slug. |
+| `public_slug` | Stable DNS-safe bucket publication slug. |
 | `status` | `published`, `unpublished`, or another lifecycle status. |
 | `permanent` | `true` when there is no expiration. |
 | `expires_at` | Expiration timestamp for temporary publications. |
@@ -716,9 +716,9 @@ Use this for larger folders and AI-generated websites.
 
 ```json
 {
-  "workspace_title": "Marketing site",
-  "workspace_description": "Generated launch assets",
-  "workspace_tag_paths": ["website", "ai-agent"],
+  "bucket_title": "Marketing site",
+  "bucket_description": "Generated launch assets",
+  "bucket_tag_paths": ["website", "ai-agent"],
   "entrypoint": "index.html",
   "site_mode": "spa",
   "permanent": true,
@@ -751,13 +751,13 @@ publish session from the same manifest and retry once.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/v1/workspaces/:workspace_id/custom_domains` | Read the workspace custom-domain state. |
-| `POST` | `/api/v1/workspaces/:workspace_id/custom_domains` | Create or replace a custom domain. |
-| `GET` | `/api/v1/workspaces/:workspace_id/custom_domains/:id` | Read one custom domain. |
-| `POST` | `/api/v1/workspaces/:workspace_id/custom_domains/:id/refresh` | Refresh DNS and certificate state. |
-| `DELETE` | `/api/v1/workspaces/:workspace_id/custom_domains/:id` | Remove a custom domain. |
+| `GET` | `/api/v1/buckets/:bucket_id/custom_domains` | Read the bucket custom-domain state. |
+| `POST` | `/api/v1/buckets/:bucket_id/custom_domains` | Create or replace a custom domain. |
+| `GET` | `/api/v1/buckets/:bucket_id/custom_domains/:id` | Read one custom domain. |
+| `POST` | `/api/v1/buckets/:bucket_id/custom_domains/:id/refresh` | Refresh DNS and certificate state. |
+| `DELETE` | `/api/v1/buckets/:bucket_id/custom_domains/:id` | Remove a custom domain. |
 
-#### POST /api/v1/workspaces/:workspace_id/custom_domains
+#### POST /api/v1/buckets/:bucket_id/custom_domains
 
 ```json
 {
@@ -799,7 +799,7 @@ Paid responses include:
 | `totals.hits_not_found` | Missing-path hits. |
 | `totals.hits_bots` | Likely or known bot hits. |
 | `daily` | Daily website hits and visitors. |
-| `workspaces` | Highest-traffic published workspaces. |
+| `buckets` | Highest-traffic published buckets. |
 | `paths` | Highest-traffic paths. |
 | `referrers` | Referrer hosts, with `direct` for no referrer. |
 | `countries` | Country codes. |
@@ -822,7 +822,7 @@ Free responses hide numbers:
       "hits_bots": null
     },
     "daily": [],
-    "workspaces": [],
+    "buckets": [],
     "paths": [],
     "referrers": [],
     "countries": [],
@@ -841,19 +841,19 @@ Free responses hide numbers:
 | `401` | `UNAUTHORIZED` | Missing, invalid, or expired API key. |
 | `403` | `FORBIDDEN` | API key is valid but not allowed for this action. |
 
-### Workspace and File Errors
+### Bucket and File Errors
 
 | HTTP | Code | Meaning |
 | --- | --- | --- |
-| `404` | `WORKSPACE_NOT_FOUND` | Workspace does not exist or is not visible to this key. |
+| `404` | `BUCKET_NOT_FOUND` | Bucket does not exist or is not visible to this key. |
 | `404` | `FILE_NOT_FOUND` | File does not exist or is not visible to this key. |
-| `403` | `LIBRARY_WORKSPACE_IMMUTABLE` | Library workspace cannot be archived, unarchived, or deleted. |
-| `403` | `WORKSPACE_DELETE_ADMIN_REQUIRED` | Only an account administrator can permanently delete this workspace, except for empty archived unpublished cleanup workspaces created by the same user. |
-| `409` | `WORKSPACE_PUBLICATION_ACTIVE` | Unpublish this workspace before archiving or deleting it. |
-| `409` | `WORKSPACE_ALREADY_ARCHIVED` | Workspace is already archived. |
-| `409` | `WORKSPACE_NOT_ARCHIVED` | Workspace is not archived; archive it before permanent delete, or only unarchive archived workspaces. |
-| `422` | `WORKSPACE_DELETE_CONFIRMATION_REQUIRED` | Pass the opaque `delete.confirmation` value returned by workspace list/detail with the delete request. |
-| `403` | `WORKSPACE_ARCHIVED` | Workspace is archived and cannot be edited until it is unarchived. |
+| `403` | `LIBRARY_BUCKET_IMMUTABLE` | Library bucket cannot be archived, unarchived, or deleted. |
+| `403` | `BUCKET_DELETE_ADMIN_REQUIRED` | Only an account administrator can permanently delete this bucket, except for empty archived unpublished cleanup buckets created by the same user. |
+| `409` | `BUCKET_PUBLICATION_ACTIVE` | Unpublish this bucket before archiving or deleting it. |
+| `409` | `BUCKET_ALREADY_ARCHIVED` | Bucket is already archived. |
+| `409` | `BUCKET_NOT_ARCHIVED` | Bucket is not archived; archive it before permanent delete, or only unarchive archived buckets. |
+| `422` | `BUCKET_DELETE_CONFIRMATION_REQUIRED` | Pass the opaque `delete.confirmation` value returned by bucket list/detail with the delete request. |
+| `403` | `BUCKET_ARCHIVED` | Bucket is archived and cannot be edited until it is unarchived. |
 | `423` | `FILE_LOCKED` | Another key owns an active file lock. |
 
 ### Publishing Errors
@@ -861,7 +861,7 @@ Free responses hide numbers:
 | HTTP | Code | Meaning |
 | --- | --- | --- |
 | `403` | `PUBLICATION_LIMIT_REACHED` | Account is at the public-site limit. |
-| `403` | `LIBRARY_WORKSPACE_PUBLISH_FORBIDDEN` | Library workspace cannot be published. |
+| `403` | `LIBRARY_BUCKET_PUBLISH_FORBIDDEN` | Library bucket cannot be published. |
 | `409` | `PUBLISH_SESSION_STALE` | Publish session is out of date; recreate or refresh. |
 | `410` | `PUBLISH_SESSION_EXPIRED` | Publish session expired; create a new one. |
 | `503` | `PUBLIC_STORAGE_NOT_CONFIGURED` | Public publishing is not configured for this deployment. |
@@ -873,14 +873,14 @@ Free responses hide numbers:
 | `403` | `CUSTOM_DOMAIN_PLAN_REQUIRED` | Current plan has no custom domains. |
 | `403` | `CUSTOM_DOMAIN_LIMIT_REACHED` | Account has reached its custom-domain limit. |
 | `422` | `CUSTOM_DOMAIN_INVALID` | Hostname is invalid or already assigned. |
-| `422` | `CUSTOM_DOMAIN_REQUIRES_PUBLICATION` | Publish the workspace before assigning a domain. |
+| `422` | `CUSTOM_DOMAIN_REQUIRES_PUBLICATION` | Publish the bucket before assigning a domain. |
 | `503` | `CUSTOM_DOMAINS_NOT_CONFIGURED` | Deployment custom-domain support is not configured. |
 
 ## Integration Guidelines
 
-### Keep Workspace URLs Stable
+### Keep Bucket URLs Stable
 
-Republish the same workspace when updating a website. Revdoku keeps the same
+Republish the same bucket when updating a website. Revdoku keeps the same
 `public_slug` and public URL across unpublish and republish.
 
 ### Prefer Publish Sessions for Agents
