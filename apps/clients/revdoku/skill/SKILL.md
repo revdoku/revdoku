@@ -77,7 +77,9 @@ for structured bucket work:
   `/library` for Library settings, `/account/access` for people/API key/agent
   access, and `/pricing` for plans. Tell the user the link is single-use,
   expires quickly, and can usually be opened from a terminal with Cmd-click on
-  macOS or Ctrl-click on Windows/Linux.
+  macOS or Ctrl-click on Windows/Linux. If Revdoku says browser login links are
+  disabled because two-factor authentication is enabled or required, tell the
+  user to open Revdoku through the normal browser sign-in flow instead.
 - Use `revdoku_store_path` for local path storage. Pass `"publish": true` only
   when the user asks to publish or wants a public URL.
 
@@ -207,7 +209,9 @@ To publish with MCP, include `"publish": true`.
   keys, billing, or another UI-only page, create a browser login link with
   `~/.revdoku/bin/revdoku --dashboard-link`, `--library-link`,
   `--access-link`, or `--browser-login /pricing`. Tell the user it is
-  single-use and expires quickly.
+  single-use and expires quickly. If Revdoku says browser login links are
+  disabled because two-factor authentication is enabled or required, tell the
+  user to open Revdoku through the normal browser sign-in flow instead.
 - If using MCP, summarize `bucket_publication_list` results instead of exposing raw JSON unless the user asks for JSON.
 - If the script created credentials, mention that they were saved to `~/.revdoku/credentials`.
 - When giving a URL that may be clicked from a terminal, add: "Cmd-click on

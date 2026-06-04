@@ -75,6 +75,7 @@ Options:
   --access-link             Print a one-time browser login link for Account > Access.
   --public-handle-link      Print a one-time browser login link for Account public handle settings.
   --browser-login PATH      Print a one-time browser login link for an internal Revdoku path.
+                            Browser login links are disabled when 2FA is enabled or required.
   --upload-mode MODE        auto, direct, or multipart. Defaults to auto.
   --exchange-grant TOKEN    Exchange a one-time app grant and save the API key.
   --grant-token TOKEN       Alias for --exchange-grant.
@@ -574,7 +575,7 @@ exchange_grant() {
     rm -f "$DEFAULT_BUCKET_PATH"
   fi
   echo "This is a one-time setup. Future runs will reuse the saved key automatically." >&2
-  printf "%s\n" "$("$JQ_BIN" -c '{success:(.success // true), data:{account_id:.data.account_id, account_name:.data.account_name, bucket_access:.data.bucket_access, bucket_ids:(.data.bucket_ids // []), bucket_permissions:(.data.bucket_permissions // {}), account_connection_limits:.data.account_connection_limits, manage_access:.data.manage_access, guidance:.data.guidance, link_hint:"If opening links from a terminal, Cmd-click on macOS or Ctrl-click on Windows/Linux when supported."}}' <<<"$response")"
+  printf "%s\n" "$("$JQ_BIN" -c '{success:(.success // true), data:{account_id:.data.account_id, account_name:.data.account_name, bucket_access:.data.bucket_access, bucket_ids:(.data.bucket_ids // []), bucket_permissions:(.data.bucket_permissions // {}), account_connection_limits:.data.account_connection_limits, manage_access:.data.manage_access, guidance:.data.guidance, link_hint:(if ((.data.manage_access.url // "") != "") then "If opening links from a terminal, Cmd-click on macOS or Ctrl-click on Windows/Linux when supported." else null end), access_hint:(if ((.data.manage_access.url // "") == "") then "No browser login link was issued. Open Revdoku through the normal browser sign-in flow to manage this agent." else null end)}}' <<<"$response")"
 }
 
 list_public_buckets() {
