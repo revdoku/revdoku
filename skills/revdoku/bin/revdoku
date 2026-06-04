@@ -16,6 +16,9 @@ BUCKET_ID="${REVDOKU_BUCKET_ID:-}"
 METADATA_JSON="${REVDOKU_BUCKET_METADATA:-}"
 PUBLISH="${REVDOKU_PUBLISH:-false}"
 PERMANENT_PUBLICATION="${REVDOKU_PERMANENT_PUBLICATION:-true}"
+PUBLICATION_ACCESS_MODE="${REVDOKU_PUBLICATION_ACCESS_MODE:-}"
+PUBLICATION_PASSWORD="${REVDOKU_PUBLICATION_PASSWORD:-}"
+PUBLICATION_REGENERATE_PASSWORD="${REVDOKU_PUBLICATION_REGENERATE_PASSWORD:-false}"
 RESTORE_VERSION_ID="${REVDOKU_RESTORE_VERSION_ID:-}"
 RESTORE_COMMENT="${REVDOKU_RESTORE_COMMENT:-}"
 GRANT_TOKEN="${REVDOKU_GRANT_TOKEN:-}"
@@ -57,18 +60,24 @@ Options:
   --bucket-id ID         Store into an existing Revdoku bucket instead of creating a new one.
                             Defaults to a bucket remembered from a selected-bucket grant.
   --metadata JSON           Optional JSON for agent lookup, for example {"project":"site"}.
-  --publish                 Publish the bucket as a permanent public site after storing files.
-  --unpublish               Unpublish --bucket-id while keeping its reserved public URL for later republish.
+  --publish                 Publish as a permanent website after storing files. Defaults to public.
+  --access-mode MODE        Website access mode: public or password. Existing sites keep their mode unless changed.
+  --protected               Alias for --access-mode password.
+  --private                 Alias for --access-mode password.
+  --public                  Alias for --access-mode public.
+  --password PASSWORD       Password for --access-mode password. Never sent in a URL.
+  --generate-password       Generate or regenerate the protected website password.
+  --unpublish               Unpublish --bucket-id while keeping its reserved URL for later republish.
   --archive                 Archive --bucket-id. Published buckets must be unpublished first.
   --unarchive               Restore archived --bucket-id to the active bucket list.
   --delete-bucket           Permanently delete archived unpublished --bucket-id.
-  --expires-in-days DAYS    Advanced: expire the public site after DAYS instead of keeping it permanent.
+  --expires-in-days DAYS    Advanced: expire the website after DAYS instead of keeping it permanent.
   --login                   Request an email code and save an API key to $CREDENTIALS_PATH.
   --list-buckets         Print available buckets and metadata as JSON.
   --list-versions           Print version history for --bucket-id as JSON.
   --restore-version ID      Restore a bucket version as a new latest version; requires --bucket-id.
   --restore-comment TEXT    Optional comment for --restore-version.
-  --list-public-buckets  Print active public bucket links as JSON.
+  --list-public-buckets  Print active website links as JSON.
   --account-status          Print account, plan, and storage status as JSON.
   --dashboard-link          Print a one-time browser login link for the Revdoku dashboard.
   --library-link            Print a one-time browser login link for Library settings.
@@ -122,6 +131,30 @@ while [[ $# -gt 0 ]]; do
       ;;
     --publish)
       PUBLISH="true"
+      shift
+      ;;
+    --access-mode)
+      [[ $# -ge 2 ]] || die "--access-mode requires public or password"
+      PUBLICATION_ACCESS_MODE="$2"
+      shift 2
+      ;;
+    --protected|--private)
+      PUBLICATION_ACCESS_MODE="password"
+      shift
+      ;;
+    --public)
+      PUBLICATION_ACCESS_MODE="public"
+      shift
+      ;;
+    --password)
+      [[ $# -ge 2 ]] || die "--password requires a value"
+      PUBLICATION_ACCESS_MODE="${PUBLICATION_ACCESS_MODE:-password}"
+      PUBLICATION_PASSWORD="$2"
+      shift 2
+      ;;
+    --generate-password)
+      PUBLICATION_ACCESS_MODE="${PUBLICATION_ACCESS_MODE:-password}"
+      PUBLICATION_REGENERATE_PASSWORD="true"
       shift
       ;;
     --unpublish)
@@ -262,6 +295,35 @@ if [[ -n "$METADATA_JSON" ]]; then
   METADATA_JSON="$(printf "%s" "$METADATA_JSON" | "$JQ_BIN" -c 'if type == "object" then . else error("metadata must be a JSON object") end')" || die "--metadata must be a JSON object"
 else
   METADATA_JSON="{}"
+fi
+
+case "$PUBLICATION_ACCESS_MODE" in
+  ""|public|password)
+    ;;
+  *)
+    die "--access-mode must be public or password"
+    ;;
+esac
+
+case "$PUBLICATION_REGENERATE_PASSWORD" in
+  true|false)
+    ;;
+  *)
+    die "REVDOKU_PUBLICATION_REGENERATE_PASSWORD must be true or false"
+    ;;
+esac
+
+if [[ -n "$PUBLICATION_PASSWORD" || "$PUBLICATION_REGENERATE_PASSWORD" == "true" ]]; then
+  [[ "${PUBLICATION_ACCESS_MODE:-password}" == "password" ]] || die "--password or --generate-password requires --access-mode password"
+  PUBLICATION_ACCESS_MODE="password"
+fi
+
+if [[ -n "$PUBLICATION_PASSWORD" && "$PUBLICATION_REGENERATE_PASSWORD" == "true" ]]; then
+  die "use either --password or --generate-password, not both"
+fi
+
+if [[ "$PUBLISH" != "true" && "$ACTION" == "store" && ( -n "$PUBLICATION_ACCESS_MODE" || -n "$PUBLICATION_PASSWORD" || "$PUBLICATION_REGENERATE_PASSWORD" == "true" ) ]]; then
+  die "publication access options require --publish"
 fi
 
 api_url() {
@@ -615,6 +677,22 @@ print_public_profile_listing_hint_from_response() {
   fi
 }
 
+print_publication_access_hint_from_response() {
+  local response="$1"
+  local access_mode password url
+  access_mode="$("$JQ_BIN" -r '.data.publication.access_mode // empty' <<<"$response" 2>/dev/null || true)"
+  [[ "$access_mode" == "password" ]] || return 0
+
+  url="$("$JQ_BIN" -r '.data.publication.public_url // empty' <<<"$response" 2>/dev/null || true)"
+  password="$("$JQ_BIN" -r '.data.publication.access_password // .data.publication.generated_password // empty' <<<"$response" 2>/dev/null || true)"
+  if [[ -n "$password" ]]; then
+    echo "Protected website password: $password" >&2
+    [[ -n "$url" ]] && echo "Open $url and enter the password. The password is not included in the URL." >&2
+  else
+    echo "Protected website password is stored, but this API key cannot view it. Use an owner publish key to retrieve or regenerate it." >&2
+  fi
+}
+
 browser_login_link() {
   local payload response url expires redirect_path
   payload="$("$JQ_BIN" -nc --arg redirect_path "$BROWSER_LOGIN_PATH" '{redirect_path:$redirect_path}')"
@@ -712,6 +790,17 @@ default_entrypoint() {
   printf "index.html"
 }
 
+publication_access_json() {
+  "$JQ_BIN" -nc \
+    --arg access_mode "$PUBLICATION_ACCESS_MODE" \
+    --arg password "$PUBLICATION_PASSWORD" \
+    --arg regenerate_password "$PUBLICATION_REGENERATE_PASSWORD" \
+    '{}
+    + (if $access_mode != "" then {access_mode: $access_mode} else {} end)
+    + (if $password != "" then {password: $password} else {} end)
+    + (if $regenerate_password == "true" then {regenerate_password: true} else {} end)'
+}
+
 has_index_file() {
   if [[ -f "$ROOT_PATH" ]]; then
     [[ "$(basename "$ROOT_PATH")" == "index.html" ]]
@@ -726,7 +815,7 @@ content_type_for() {
   lower="$(printf "%s" "$lower" | tr '[:upper:]' '[:lower:]')"
   case "$lower" in
     html|htm) echo "text/html" ;;
-    css|scss|sass|less) echo "text/css" ;;
+    css|csss|scss|sass|less|styl|stylus) echo "text/css" ;;
     js|mjs|cjs) echo "text/javascript" ;;
     map) echo "application/json" ;;
     webmanifest) echo "application/manifest+json" ;;
@@ -734,12 +823,16 @@ content_type_for() {
     txt) echo "text/plain" ;;
     md) echo "text/markdown" ;;
     png) echo "image/png" ;;
-    jpg|jpeg) echo "image/jpeg" ;;
+    apng) echo "image/apng" ;;
+    jpg|jpe|jpeg|jfif|pjp|pjpeg) echo "image/jpeg" ;;
     webp) echo "image/webp" ;;
     gif) echo "image/gif" ;;
     avif) echo "image/avif" ;;
     bmp) echo "image/bmp" ;;
-    ico) echo "image/x-icon" ;;
+    ico|cur) echo "image/x-icon" ;;
+    heic|heics) echo "image/heic" ;;
+    heif|heifs) echo "image/heif" ;;
+    jp2) echo "image/jp2" ;;
     svg) echo "image/svg+xml" ;;
     woff) echo "font/woff" ;;
     woff2) echo "font/woff2" ;;
@@ -753,9 +846,20 @@ content_type_for() {
     mp4) echo "video/mp4" ;;
     mov) echo "video/quicktime" ;;
     webm) echo "video/webm" ;;
+    m4v) echo "video/x-m4v" ;;
+    ogv) echo "video/ogg" ;;
+    avi) echo "video/x-msvideo" ;;
+    mkv) echo "video/x-matroska" ;;
+    mpg|mpeg) echo "video/mpeg" ;;
+    ts) echo "video/mp2t" ;;
+    m3u8) echo "application/vnd.apple.mpegurl" ;;
     mp3) echo "audio/mpeg" ;;
-    ogg) echo "audio/ogg" ;;
+    ogg|oga) echo "audio/ogg" ;;
     wav) echo "audio/wav" ;;
+    m4a) echo "audio/mp4" ;;
+    aac) echo "audio/aac" ;;
+    flac) echo "audio/flac" ;;
+    opus) echo "audio/opus" ;;
     *) echo "application/octet-stream" ;;
   esac
 }
@@ -916,6 +1020,10 @@ publication_limit_error() {
   [[ "${LAST_ERROR_CODE:-}" == "PUBLICATION_LIMIT_REACHED" ]]
 }
 
+private_publication_limit_error() {
+  [[ "${LAST_ERROR_CODE:-}" == "PRIVATE_PUBLICATION_LIMIT_REACHED" ]]
+}
+
 publish_session_fallback_allowed() {
   case "${LAST_HTTP_STATUS:-}" in
     401|403)
@@ -924,7 +1032,7 @@ publish_session_fallback_allowed() {
   esac
 
   case "${LAST_ERROR_CODE:-}" in
-    PUBLICATION_LIMIT_REACHED|PUBLIC_STORAGE_NOT_CONFIGURED|UNAUTHORIZED|FORBIDDEN|BUCKET_ACCESS_DENIED|BUCKET_PERMISSION_DENIED|BUCKET_LIMIT_REACHED|STORAGE_QUOTA_EXCEEDED)
+    PUBLICATION_LIMIT_REACHED|PRIVATE_PUBLICATION_LIMIT_REACHED|PUBLIC_STORAGE_NOT_CONFIGURED|PRIVATE_PUBLICATION_STORAGE_NOT_CONFIGURED|UNAUTHORIZED|FORBIDDEN|BUCKET_ACCESS_DENIED|BUCKET_PERMISSION_DENIED|BUCKET_LIMIT_REACHED|STORAGE_QUOTA_EXCEEDED)
       return 1
       ;;
     *)
@@ -940,6 +1048,14 @@ print_publication_limit_guidance() {
   fi
   echo "To update an existing public site, rerun with --bucket-id for that public bucket; republishing keeps the same URL and does not use another live-site slot." >&2
   echo "To publish a new site, list current public buckets with --list-public-buckets, then ask before unpublishing one with --unpublish, or open /pricing to upgrade." >&2
+}
+
+print_private_publication_limit_guidance() {
+  echo "Protected website limit reached for this account." >&2
+  if [[ -n "$LAST_PUBLISH_SESSION_BUCKET_ID" ]]; then
+    echo "Private bucket storage is still available: $LAST_PUBLISH_SESSION_BUCKET_ID" >&2
+  fi
+  echo "Protected websites require available Pro protected-site capacity. Publish publicly, unpublish another protected website, or update the plan." >&2
 }
 
 upload_file_direct() {
@@ -1028,13 +1144,14 @@ upload_file() {
 
 publish_bucket() {
   local bucket_id="$1"
-  local payload response response_file url entrypoint metadata
+  local payload response response_file url entrypoint metadata access
   entrypoint="$(default_entrypoint)"
   metadata="$(effective_metadata_json)"
+  access="$(publication_access_json)"
   if [[ "$PERMANENT_PUBLICATION" == "true" ]]; then
-    payload="$("$JQ_BIN" -nc --arg entrypoint "$entrypoint" --argjson metadata "$metadata" '{permanent:true, entrypoint:$entrypoint, metadata:$metadata}')"
+    payload="$("$JQ_BIN" -nc --arg entrypoint "$entrypoint" --argjson metadata "$metadata" --argjson access "$access" '{permanent:true, entrypoint:$entrypoint, metadata:$metadata} + $access')"
   else
-    payload="$("$JQ_BIN" -nc --arg entrypoint "$entrypoint" --argjson expires_in_days "$EXPIRES_IN_DAYS" --argjson metadata "$metadata" '{expires_in_days:$expires_in_days, entrypoint:$entrypoint, metadata:$metadata}')"
+    payload="$("$JQ_BIN" -nc --arg entrypoint "$entrypoint" --argjson expires_in_days "$EXPIRES_IN_DAYS" --argjson metadata "$metadata" --argjson access "$access" '{expires_in_days:$expires_in_days, entrypoint:$entrypoint, metadata:$metadata} + $access')"
   fi
   response_file="$(mktemp)"
   if ! http_json POST "/api/v1/buckets/${bucket_id}/publication" "$payload" > "$response_file"; then
@@ -1042,9 +1159,15 @@ publish_bucket() {
     if [[ "${LAST_ERROR_CODE:-}" == "PUBLIC_STORAGE_NOT_CONFIGURED" ]]; then
       echo "Public publishing is not configured for this Revdoku deployment." >&2
       echo "Private bucket storage is still available: $bucket_id" >&2
+    elif [[ "${LAST_ERROR_CODE:-}" == "PRIVATE_PUBLICATION_STORAGE_NOT_CONFIGURED" ]]; then
+      echo "Protected website publishing is not configured for this Revdoku deployment." >&2
+      echo "Private bucket storage is still available: $bucket_id" >&2
     elif publication_limit_error; then
       LAST_PUBLISH_SESSION_BUCKET_ID="$bucket_id"
       print_publication_limit_guidance
+    elif private_publication_limit_error; then
+      LAST_PUBLISH_SESSION_BUCKET_ID="$bucket_id"
+      print_private_publication_limit_guidance
     fi
     die "bucket publish failed"
   fi
@@ -1053,6 +1176,7 @@ publish_bucket() {
   url="$("$JQ_BIN" -r '.data.publication.public_url // empty' <<<"$response")"
   [[ -n "$url" ]] || die "publish response did not include url"
   print_public_profile_listing_hint_from_response "$response"
+  print_publication_access_hint_from_response "$response"
   printf "%s\n" "$url"
 }
 
@@ -1081,13 +1205,14 @@ publish_session_manifest_json() {
 
 publish_session_payload() {
   local manifest_json="$1"
-  local title tag_paths expires_in_days entrypoint metadata
+  local title tag_paths expires_in_days entrypoint metadata access
   title="$TITLE"
   [[ -n "$title" ]] || title="$(default_title)"
   tag_paths="$(tag_paths_json)"
   expires_in_days="${EXPIRES_IN_DAYS:-7}"
   entrypoint="$(default_entrypoint)"
   metadata="$(effective_metadata_json)"
+  access="$(publication_access_json)"
   "$JQ_BIN" -nc \
     --arg title "$title" \
     --arg description "$DESCRIPTION" \
@@ -1096,6 +1221,7 @@ publish_session_payload() {
     --arg entrypoint "$entrypoint" \
     --argjson expires_in_days "$expires_in_days" \
     --argjson metadata "$metadata" \
+    --argjson access "$access" \
     --argjson tag_paths "$tag_paths" \
     --argjson files "$manifest_json" \
     '{
@@ -1108,7 +1234,8 @@ publish_session_payload() {
     + (if $bucket_id != "" then {bucket_id: $bucket_id} else {} end)
     + (if $description != "" then {bucket_description: $description} else {} end)
     + (if ($tag_paths | length) > 0 then {bucket_tag_paths: $tag_paths} else {} end)
-    + (if $permanent == "true" then {permanent: true} else {expires_in_days: $expires_in_days} end)'
+    + (if $permanent == "true" then {permanent: true} else {expires_in_days: $expires_in_days} end)
+    + $access'
 }
 
 publish_session_file_for_path() {
@@ -1167,6 +1294,7 @@ publish_bucket_session_attempt() {
   url="$("$JQ_BIN" -r '.data.publication.public_url // empty' <<<"$final_response")"
   [[ -n "$url" ]] || die "publish response did not include url"
   print_public_profile_listing_hint_from_response "$final_response"
+  print_publication_access_hint_from_response "$final_response"
   printf "%s\n" "$url"
 }
 
@@ -1328,10 +1456,13 @@ if [[ "$PUBLISH" == "true" ]]; then
     fi
     if [[ "$UPLOAD_MODE" == "direct" ]]; then
       publication_limit_error && print_publication_limit_guidance
+      private_publication_limit_error && print_private_publication_limit_guidance
       die "direct publish session failed"
     fi
     if ! publish_session_fallback_allowed; then
       publication_limit_error && print_publication_limit_guidance
+      private_publication_limit_error && print_private_publication_limit_guidance
+      [[ "${LAST_ERROR_CODE:-}" == "PRIVATE_PUBLICATION_STORAGE_NOT_CONFIGURED" ]] && echo "Protected website publishing is not configured for this Revdoku deployment." >&2
       die "direct publish session failed"
     fi
     echo "Direct publish session failed; retrying with compatibility upload." >&2

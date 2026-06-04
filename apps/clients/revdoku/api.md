@@ -189,7 +189,7 @@ Uploading the same `path` creates a new version of that file.
 
 ### Publish a Bucket
 
-Publish explicitly when the bucket should have a public URL:
+Publish explicitly when the bucket should have a website URL:
 
 ```sh
 curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../publication" \
@@ -198,9 +198,15 @@ curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../publication" \
   -d '{
     "entrypoint": "index.html",
     "site_mode": "spa",
+    "access_mode": "public",
     "permanent": true
   }'
 ```
+
+For a Pro protected website, use `"access_mode": "password"`. Omit
+`password` and set `"regenerate_password": true` to generate a copyable
+password, or provide a password in the JSON body. Never put the password in the
+URL.
 
 Example response:
 
@@ -213,6 +219,7 @@ Example response:
     "public_url": "https://bright-canvas-meadow.revdoku.site/",
     "status": "published",
     "site_mode": "spa",
+    "access_mode": "public",
     "permanent": true
   }
 }
@@ -236,6 +243,8 @@ curl -fsS "$REVDOKU_URL/api/v1/publish_sessions" \
     "bucket_title": "Marketing site",
     "entrypoint": "index.html",
     "site_mode": "spa",
+    "access_mode": "password",
+    "regenerate_password": true,
     "permanent": true,
     "files": [
       {
@@ -695,6 +704,8 @@ publication revoke endpoints remain available for cleanup.
 {
   "entrypoint": "index.html",
   "site_mode": "spa",
+  "access_mode": "password",
+  "regenerate_password": true,
   "permanent": true
 }
 ```
@@ -710,6 +721,10 @@ Publication response fields:
 | `permanent` | `true` when there is no expiration. |
 | `expires_at` | Expiration timestamp for temporary publications. |
 | `site_mode` | Whether deep links fall back to the entrypoint. |
+| `access_mode` | `public` or `password`. Password-protected websites are a Pro entitlement. |
+| `password_configured` | Whether a protected website password is configured. |
+| `access_password` | Copyable stored password, returned only to account-owner publish keys. |
+| `generated_password` | Newly generated password, returned only to account-owner publish keys. |
 | `analytics.hits_all_time` | Cached all-time website hits; `null` when analytics numbers are hidden. |
 | `analytics.last_event_at` | Latest recorded analytics event timestamp; `null` when hidden or not recorded yet. |
 
@@ -724,6 +739,8 @@ Use this for larger folders and AI-generated websites.
   "bucket_tag_paths": ["website", "ai-agent"],
   "entrypoint": "index.html",
   "site_mode": "spa",
+  "access_mode": "password",
+  "regenerate_password": true,
   "permanent": true,
   "files": [
     {
