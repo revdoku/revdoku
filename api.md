@@ -447,6 +447,9 @@ For selected-bucket access, use:
 #### POST /api/v1/agent_auth/browser_login_link
 
 Requires `Authorization`.
+Disabled when the authenticated user has two-factor authentication enabled or
+the account requires two-factor authentication. In that case, open the Revdoku
+dashboard through the normal browser sign-in flow.
 
 ```json
 {
