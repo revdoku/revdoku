@@ -1,10 +1,11 @@
-# Revdoku
+# REVDOKU
 
-Revdoku is free and secure cloud storage for AI agents. Store files privately or
-publish folders as websites.
+Publish websites from Claude, ChatGPT, Codex using Revdoku.
+Few seconds from idea to a live website that you can share!
 
-Claim your free storage for you and your AI agents at
-https://REVDOKU.com
+Create a free account: 
+<https://REVDOKU.com>
 
 This repository hosts the public local client and agent skill used by Revdoku
 setup prompts.
+
