@@ -91,7 +91,7 @@ remove_credentials_if_requested() {
   case "$REMOVE_CREDENTIALS" in
     true)
       remove_path "${HOME}/.revdoku/credentials"
-      remove_path "${HOME}/.revdoku/credentials.workspace"
+      remove_path "${HOME}/.revdoku/credentials.bucket"
       ;;
     false)
       echo "Kept credentials in ${HOME}/.revdoku. Set REVDOKU_REMOVE_CREDENTIALS=true to remove them."

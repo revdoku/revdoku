@@ -9,7 +9,7 @@
   "homepage": "https://revdoku.com",
   "repository": "https://github.com/revdoku/revdoku",
   "license": "MIT",
-  "keywords": ["revdoku", "storage", "agents", "workspace", "files"],
+  "keywords": ["revdoku", "storage", "agents", "bucket", "files"],
   "interface": {
     "displayName": "Revdoku",
     "shortDescription": "Store files privately or publish websites.",
