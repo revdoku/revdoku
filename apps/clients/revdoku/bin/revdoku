@@ -56,12 +56,14 @@ Options:
   --url URL                 Revdoku app URL. Defaults to REVDOKU_URL or $DEFAULT_URL.
   --title TITLE             Bucket title.
   --description TEXT        Short bucket description.
-  --tag-path PATH           Add a bucket label such as website or projects/work. Can be repeated.
+  --tag-path PATH           Add an explicit bucket label such as website. Do not use local path segments.
   --bucket-id ID         Store into an existing Revdoku bucket instead of creating a new one.
                             Defaults to a bucket remembered from a selected-bucket grant.
   --metadata JSON           Optional JSON for agent lookup, for example {"project":"site"}.
   --publish                 Publish as a permanent website after storing files. Defaults to public.
-  --access-mode MODE        Website access mode: public, password, or password_ask_info. Existing sites keep their mode unless changed.
+  --access-mode MODE        Website access mode: public, password, or password_ask_info.
+                            password_ask_info asks visitors for email plus password.
+                            Existing sites keep their mode unless changed.
   --protected               Alias for --access-mode password.
   --private                 Alias for --access-mode password.
   --public                  Alias for --access-mode public.
@@ -72,13 +74,13 @@ Options:
   --unarchive               Restore archived --bucket-id to the active bucket list.
   --delete-bucket           Permanently delete archived unpublished --bucket-id.
   --expires-in-days DAYS    Advanced: expire the website after DAYS instead of keeping it permanent.
-  --login                   Request an email code and save an API key to $CREDENTIALS_PATH.
+  --login                   Request a privacy-preserving email code and save an API key to $CREDENTIALS_PATH.
   --list-buckets         Print available buckets and metadata as JSON.
   --list-versions           Print version history for --bucket-id as JSON.
   --restore-version ID      Restore a bucket version as a new latest version; requires --bucket-id.
   --restore-comment TEXT    Optional comment for --restore-version.
   --list-public-buckets  Print active website links as JSON.
-  --account-status          Print account, plan, and storage status as JSON.
+  --account-status          Print account, plan, and storage status as JSON; requires full-account credentials.
   --dashboard-link          Print a one-time browser login link for the Revdoku dashboard.
   --library-link            Print a one-time browser login link for Library settings.
   --access-link             Print a one-time browser login link for Account > Access.
@@ -425,7 +427,7 @@ prompt_read() {
     printf "%s" "$prompt" >&2
     IFS= read -r value
   else
-    die "REVDOKU_API_KEY is required. Run interactively with --login to create one."
+    die "REVDOKU_API_KEY is required. Run interactively with --login to connect an existing Revdoku account."
   fi
   printf "%s" "$value"
 }
@@ -436,7 +438,7 @@ request_agent_key() {
 
   while true; do
     attempts=$((attempts + 1))
-    email="$(prompt_read "Email: ")"
+    email="$(prompt_read "Email for existing Revdoku account: ")"
     [[ -n "$email" ]] || die "email is required"
 
     payload="$("$JQ_BIN" -nc --arg email "$email" '{email:$email}')"
@@ -451,15 +453,18 @@ request_agent_key() {
     echo "Please use a permanent email address. Disposable or blocked email domains are not accepted." >&2
   done
 
-  echo "A Revdoku verification code was sent to $email." >&2
+  echo "A Revdoku verification code was sent if this account can receive email-code sign-in." >&2
+  echo "If no code arrives, sign in at ${BASE_URL%/}/users/sign_in and use Copy Prompt or an app connection grant, then run with --exchange-grant TOKEN." >&2
 
   code="$(prompt_read "Code: ")"
   [[ -n "$code" ]] || die "code is required"
 
   payload="$("$JQ_BIN" -nc --arg email "$email" --arg code "$code" '{email:$email, code:$code, label:"Revdoku bucket client"}')"
-  response="$(http_json POST "/api/v1/agent_auth/verify_code" "$payload" false)"
+  if ! response="$(http_json POST "/api/v1/agent_auth/verify_code" "$payload" false)"; then
+    die "Could not verify the code. If no code arrived or the code is rejected, use browser sign-in and a one-time Revdoku connection grant."
+  fi
   key="$("$JQ_BIN" -r '.data.api_key // empty' <<<"$response")"
-  [[ -n "$key" ]] || die "verification did not return an API key"
+  [[ -n "$key" ]] || die "verification did not return an API key. If no code arrived or the code is rejected, use browser sign-in and a one-time Revdoku connection grant."
 
   mkdir -p "$(dirname "$CREDENTIALS_PATH")"
   umask 077
@@ -688,15 +693,22 @@ print_public_profile_listing_hint_from_response() {
 
 print_publication_access_hint_from_response() {
   local response="$1"
-  local access_mode password url
+  local access_mode password url share_text
   access_mode="$("$JQ_BIN" -r '.data.publication.access_mode // empty' <<<"$response" 2>/dev/null || true)"
   [[ "$access_mode" == "password" || "$access_mode" == "password_ask_info" ]] || return 0
 
-  url="$("$JQ_BIN" -r '.data.publication.public_url // empty' <<<"$response" 2>/dev/null || true)"
+  url="$("$JQ_BIN" -r '.data.publication.public_url // .data.publication.site_url // empty' <<<"$response" 2>/dev/null || true)"
   password="$("$JQ_BIN" -r '.data.publication.access_password // .data.publication.generated_password // empty' <<<"$response" 2>/dev/null || true)"
+  share_text="$("$JQ_BIN" -r '.data.publication.share_text // empty' <<<"$response" 2>/dev/null || true)"
   if [[ -n "$password" ]]; then
+    [[ -n "$url" ]] && echo "Protected website URL: $url" >&2
     echo "Protected website password: $password" >&2
-    [[ -n "$url" ]] && echo "Open $url and enter the password. The password is not included in the URL." >&2
+    if [[ "$access_mode" == "password_ask_info" ]]; then
+      echo "Visitors will enter their email and then this password. The password is not included in the URL." >&2
+    else
+      echo "Visitors will enter this password. The password is not included in the URL." >&2
+    fi
+    [[ -n "$share_text" ]] && echo "Share text: $share_text" >&2
   else
     echo "Protected website password is stored, but this API key cannot view it. Use an owner publish key to retrieve or regenerate it." >&2
   fi
@@ -1056,7 +1068,7 @@ print_publication_limit_guidance() {
     echo "Private bucket storage is still available: $LAST_PUBLISH_SESSION_BUCKET_ID" >&2
   fi
   echo "To update an existing public site, rerun with --bucket-id for that public bucket; republishing keeps the same URL and does not use another live-site slot." >&2
-  echo "To publish a new site, list current public buckets with --list-public-buckets, then ask before unpublishing one with --unpublish, or open /pricing to upgrade." >&2
+  echo "To publish a new site, list current public buckets with --list-public-buckets, then ask before unpublishing one with --unpublish. To change plan capacity, visit Revdoku in the browser." >&2
 }
 
 print_private_publication_limit_guidance() {
@@ -1399,18 +1411,18 @@ verify_published_url() {
 collect_files() {
   if [[ -f "$ROOT_PATH" ]]; then
     if should_skip_storage_path "$ROOT_PATH"; then
-      die "refusing to store sensitive local file: $(basename "$ROOT_PATH")"
+      die "refusing to store file from Revdoku upload safety list: $(basename "$ROOT_PATH")"
     fi
     printf "%s\0" "$ROOT_PATH"
     return
   fi
 
   find "$ROOT_PATH" \
-    \( -type d \( -name ".git" -o -name ".hg" -o -name ".svn" -o -name ".revdoku" -o -name ".terraform" -o -name "node_modules" \) -prune \) \
+    \( -type d \( -name ".git" -o -name ".hg" -o -name ".svn" -o -name ".revdoku" -o -name ".terraform" -o -name ".cache" -o -name ".parcel-cache" -o -name ".turbo" -o -name ".vite" -o -name "node_modules" \) -prune \) \
     -o -type f -print0 |
     while IFS= read -r -d '' file; do
       if should_skip_storage_path "$file"; then
-        echo "Skipping sensitive or local-only file: $(relative_path_for "$file")" >&2
+        echo "Skipping file from Revdoku upload safety list: $(relative_path_for "$file")" >&2
         continue
       fi
       printf "%s\0" "$file"
@@ -1419,24 +1431,38 @@ collect_files() {
 
 should_skip_storage_path() {
   local file="$1"
-  local rel name lower_rel lower_name secret_pattern
+  local rel name lower_rel lower_name part extension
   rel="$(relative_path_for "$file")"
   name="$(basename "$file")"
   lower_rel="$(printf "%s" "$rel" | tr '[:upper:]' '[:lower:]')"
   lower_name="$(printf "%s" "$name" | tr '[:upper:]' '[:lower:]')"
-  secret_pattern='(^|[._/-])(secret|secrets|credential|credentials|token|tokens|apikey|api[._-]?key|private[._-]?key)([._/-]|$)'
 
-  case "$lower_name" in
-    .ds_store|.env|*.pem|*.key|*.p12|*.pfx|*.crt|*.cer|*.der|*.kdb|*.jks|*.mobileprovision)
-      return 0
-      ;;
-    .env.*)
-      return 0
-      ;;
-  esac
+  IFS='/' read -r -a path_parts <<< "$lower_rel"
+  for part in "${path_parts[@]}"; do
+    case "$part" in
+      .ds_store|.git|.hg|.svn|.revdoku|.terraform|.cache|.parcel-cache|.turbo|.vite|node_modules)
+        return 0
+        ;;
+      .env|.npmrc|.pypirc|.netrc|id_rsa|id_rsa.pub|id_dsa|id_dsa.pub|id_ecdsa|id_ecdsa.pub|id_ed25519|id_ed25519.pub)
+        return 0
+        ;;
+      .env.*|env.local|env.production|env.staging|env.development|env.test)
+        return 0
+        ;;
+      *.pem|*.key|*.p12|*.pfx|*.crt|*.cer|*.der|*.kdb|*.jks|*.mobileprovision|api-token.*|api_key.*|credentials.*|credential.*|secrets.*|secret.*|private-key.*|private_key.*)
+        return 0
+        ;;
+    esac
+  done
 
-  [[ "$lower_name" =~ ^id_(rsa|dsa|ecdsa|ed25519)(\.pub)?$ ]] && return 0
-  [[ "$lower_name" =~ $secret_pattern || "$lower_rel" =~ $secret_pattern ]] && return 0
+  extension="${lower_name##*.}"
+  if [[ "$lower_name" == *.* && "$extension" != "$lower_name" ]]; then
+    case ".${extension}" in
+      .exe|.com|.scr|.pif|.cpl|.dll|.sys|.drv|.msi|.msp|.app|.dmg|.pkg|.deb|.rpm|.apk|.ipa|.jar|.jnlp|.run|.bin|.lnk)
+        return 0
+        ;;
+    esac
+  fi
 
   return 1
 }
