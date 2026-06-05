@@ -145,6 +145,12 @@ server includes it. Do not print or log the key.
 
 ### Create a Bucket
 
+Bucket tags are user-facing labels for organization, not filesystem
+breadcrumbs. Do not derive `tag_paths` from local parent folders, the current
+working directory, bucket titles, or domain/folder names. For website uploads,
+use a simple `website` tag only when a type label is useful; store project or
+task context in `metadata`.
+
 ```sh
 curl -fsS "$REVDOKU_URL/api/v1/buckets" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
@@ -153,7 +159,7 @@ curl -fsS "$REVDOKU_URL/api/v1/buckets" \
     "bucket": {
       "title": "Marketing site",
       "description": "Generated launch assets",
-      "tag_paths": ["website", "ai-agent"],
+      "tag_paths": ["website"],
       "metadata": {
         "project": "marketing-site",
         "task": "landing-page"
@@ -203,10 +209,15 @@ curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../publication" \
   }'
 ```
 
-For a Pro protected website, use `"access_mode": "password"`. Omit
-`password` and set `"regenerate_password": true` to generate a copyable
-password, or provide a password in the JSON body. Never put the password in the
-URL.
+For a Pro protected website, use `"access_mode": "password"`. Use
+`"access_mode": "password_ask_info"` when visitors should enter email before
+the password. Omit
+`password`; Revdoku generates a copyable password the first time protected
+access is enabled. Set `"regenerate_password": true` only when the owner
+explicitly wants to rotate the protected-site password. Agents should not ask
+users to type protected-site passwords in chat. Never put the password in the
+URL. Owner publish responses include the website URL and copyable password/share
+text when the authenticated key is allowed to see it.
 
 Example response:
 
@@ -244,7 +255,6 @@ curl -fsS "$REVDOKU_URL/api/v1/publish_sessions" \
     "entrypoint": "index.html",
     "site_mode": "spa",
     "access_mode": "password",
-    "regenerate_password": true,
     "permanent": true,
     "files": [
       {
@@ -408,12 +418,20 @@ visitor count across the whole range.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/v1/agent_auth/request_code` | Send an email verification code. |
-| `POST` | `/api/v1/agent_auth/verify_code` | Verify the email code and create an API key. |
+| `POST` | `/api/v1/agent_auth/request_code` | Request an email verification code without revealing account state. |
+| `POST` | `/api/v1/agent_auth/verify_code` | Verify the email code and create an API key when the code is valid. |
 | `POST` | `/api/v1/agent_auth/exchange_grant` | Exchange an app-created grant for an API key. |
 | `POST` | `/api/v1/agent_auth/browser_login_link` | Create a one-time dashboard login link. |
 
 #### POST /api/v1/agent_auth/request_code
+
+This endpoint does not create users and does not reveal whether the email has a
+Revdoku account, whether that account is locked, or whether browser sign-in is
+required. It always returns the same success shape for syntactically valid email
+requests. If no code arrives or verification fails, ask the user to sign in to
+Revdoku in the browser and copy a one-time connection prompt/grant from the app,
+then exchange it. Do not ask for a Revdoku password, TOTP, backup code, payment
+details, or full chat history.
 
 ```json
 {
@@ -422,6 +440,10 @@ visitor count across the whole range.
 ```
 
 #### POST /api/v1/agent_auth/verify_code
+
+Verifies the email code and returns a `revdoku_...` API key when the code is
+valid for an account that can use email-code agent sign-in. `INVALID_CODE` is
+privacy-preserving and can also mean the account needs browser sign-in.
 
 ```json
 {
@@ -473,7 +495,6 @@ Common `redirect_path` values:
 | `/buckets` | Bucket dashboard. |
 | `/library` | Library settings. |
 | `/account/access` | Members, agents, and API keys. |
-| `/pricing` | Plans and upgrades. |
 
 ### Bucket Endpoints
 
@@ -525,12 +546,16 @@ source and write access to an active target bucket.
 
 #### POST /api/v1/buckets
 
+Bucket tags are user-facing labels, not filesystem breadcrumbs. Use
+`tag_paths` only for explicit reusable labels such as `website`; store project,
+source, task, or local-folder context in `metadata`.
+
 ```json
 {
   "bucket": {
     "title": "Marketing site",
     "description": "Generated launch assets",
-    "tag_paths": ["website", "ai-agent"],
+    "tag_paths": ["website"],
     "metadata": {
       "project": "marketing-site"
     }
@@ -550,6 +575,27 @@ source and write access to an active target bucket.
   }
 }
 ```
+
+#### Bucket locks
+
+Use a bucket lock for broad folder uploads, full-site rewrites, or coordinated
+multi-file edits. Use file locks for narrow edits to specific paths.
+
+```sh
+curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../lock" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "message": "Uploading website folder", "duration_seconds": 900 }'
+```
+
+```sh
+curl -fsS -X DELETE "$REVDOKU_URL/api/v1/buckets/bkt_.../lock" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY"
+```
+
+Active bucket locks block writes, deletes, publishing changes, direct uploads,
+and file locks by other API keys. Revdoku checks the bucket lock before checking
+specific file locks. Conflicts return HTTP `423` with code `BUCKET_LOCKED`.
 
 #### Archive, unarchive, and permanent delete
 
@@ -596,6 +642,8 @@ only `archive` and `unarchive` operations and rejects `delete`.
 | `GET` | `/api/v1/buckets/:bucket_id/files/:id/download` | Download file bytes. |
 | `GET` | `/api/v1/buckets/:bucket_id/files/:id/text` | Read a text file. |
 | `DELETE` | `/api/v1/buckets/:bucket_id/files/:id` | Delete a file. |
+| `POST` | `/api/v1/buckets/:bucket_id/lock` | Lock the whole bucket. |
+| `DELETE` | `/api/v1/buckets/:bucket_id/lock` | Unlock the bucket. |
 | `POST` | `/api/v1/buckets/:bucket_id/files/lock` | Lock by path. |
 | `POST` | `/api/v1/buckets/:bucket_id/files/:id/lock` | Lock by file id. |
 | `DELETE` | `/api/v1/buckets/:bucket_id/files/:id/lock` | Unlock a file. |
@@ -633,7 +681,8 @@ Attach an already uploaded blob:
 ```
 
 Active locks block writes and deletes by other API keys. Lock conflicts return
-HTTP `423` with code `FILE_LOCKED`.
+HTTP `423` with code `FILE_LOCKED`, unless the bucket is locked first, in which
+case the API returns `BUCKET_LOCKED`.
 
 #### POST /api/v1/direct_uploads
 
@@ -666,6 +715,25 @@ Then attach `data.signed_id` with `POST /api/v1/buckets/:bucket_id/files`.
 | `POST` | `/api/v1/buckets/:id/versions/restore` | Restore a historical version. |
 | `GET` | `/api/v1/buckets/:bucket_id/files/:id/versions` | List file versions. |
 | `GET` | `/api/v1/buckets/:bucket_id/files/:id/versions/:version_id/content` | Download one file version. |
+
+#### GET /api/v1/buckets/:bucket_id/files
+
+Lists active bucket files. By default the response includes every file for
+backward compatibility. For large buckets, pass `limit` and optional `offset`
+to page through the list:
+
+```bash
+curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../files?limit=100&offset=0" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY"
+```
+
+Paginated responses include `data.pagination` with `limit`, `offset`, `count`,
+`total`, `has_more`, and `next_offset`.
+
+`GET /api/v1/buckets/:id` also accepts `include=files` to return bucket
+metadata plus current files without historical versions or legacy source-file
+payloads. Combine it with `file_limit` and `file_offset` when a bucket detail
+view should page `data.bucket.files`.
 
 #### POST /api/v1/buckets/:id/versions/restore
 
@@ -705,7 +773,6 @@ publication revoke endpoints remain available for cleanup.
   "entrypoint": "index.html",
   "site_mode": "spa",
   "access_mode": "password",
-  "regenerate_password": true,
   "permanent": true
 }
 ```
@@ -721,10 +788,11 @@ Publication response fields:
 | `permanent` | `true` when there is no expiration. |
 | `expires_at` | Expiration timestamp for temporary publications. |
 | `site_mode` | Whether deep links fall back to the entrypoint. |
-| `access_mode` | `public` or `password`. Password-protected websites are a Pro entitlement. |
+| `access_mode` | `public`, `password`, or `password_ask_info`. Password-protected websites are a Pro entitlement; `password_ask_info` asks visitors for email plus password. |
 | `password_configured` | Whether a protected website password is configured. |
 | `access_password` | Copyable stored password, returned only to account-owner publish keys. |
 | `generated_password` | Newly generated password, returned only to account-owner publish keys. |
+| `share_text` | Copyable owner-facing text containing the website link and password when visible. |
 | `analytics.hits_all_time` | Cached all-time website hits; `null` when analytics numbers are hidden. |
 | `analytics.last_event_at` | Latest recorded analytics event timestamp; `null` when hidden or not recorded yet. |
 
@@ -736,11 +804,10 @@ Use this for larger folders and AI-generated websites.
 {
   "bucket_title": "Marketing site",
   "bucket_description": "Generated launch assets",
-  "bucket_tag_paths": ["website", "ai-agent"],
+  "bucket_tag_paths": ["website"],
   "entrypoint": "index.html",
   "site_mode": "spa",
   "access_mode": "password",
-  "regenerate_password": true,
   "permanent": true,
   "files": [
     {
@@ -913,7 +980,7 @@ a short `deploy_summary` that is easy to show to users.
 
 When the API returns a limit error, tell the user what happened and suggest the
 least disruptive next action: unpublish an older site, remove an unused custom
-domain, or open `/pricing` with a browser login link.
+domain, or visit Revdoku in the browser to review plan capacity.
 
 ### Do Not Leak Secrets
 
