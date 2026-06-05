@@ -61,7 +61,7 @@ Options:
                             Defaults to a bucket remembered from a selected-bucket grant.
   --metadata JSON           Optional JSON for agent lookup, for example {"project":"site"}.
   --publish                 Publish as a permanent website after storing files. Defaults to public.
-  --access-mode MODE        Website access mode: public or password. Existing sites keep their mode unless changed.
+  --access-mode MODE        Website access mode: public, password, or password_ask_info. Existing sites keep their mode unless changed.
   --protected               Alias for --access-mode password.
   --private                 Alias for --access-mode password.
   --public                  Alias for --access-mode public.
@@ -134,7 +134,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --access-mode)
-      [[ $# -ge 2 ]] || die "--access-mode requires public or password"
+      [[ $# -ge 2 ]] || die "--access-mode requires public, password, or password_ask_info"
       PUBLICATION_ACCESS_MODE="$2"
       shift 2
       ;;
@@ -298,10 +298,13 @@ else
 fi
 
 case "$PUBLICATION_ACCESS_MODE" in
-  ""|public|password)
+  password-ask-info)
+    PUBLICATION_ACCESS_MODE="password_ask_info"
+    ;;
+  ""|public|password|password_ask_info)
     ;;
   *)
-    die "--access-mode must be public or password"
+    die "--access-mode must be public, password, or password_ask_info"
     ;;
 esac
 
@@ -314,8 +317,14 @@ case "$PUBLICATION_REGENERATE_PASSWORD" in
 esac
 
 if [[ -n "$PUBLICATION_PASSWORD" || "$PUBLICATION_REGENERATE_PASSWORD" == "true" ]]; then
-  [[ "${PUBLICATION_ACCESS_MODE:-password}" == "password" ]] || die "--password or --generate-password requires --access-mode password"
-  PUBLICATION_ACCESS_MODE="password"
+  case "${PUBLICATION_ACCESS_MODE:-password}" in
+    password|password_ask_info)
+      ;;
+    *)
+      die "--password or --generate-password requires --access-mode password or password_ask_info"
+      ;;
+  esac
+  PUBLICATION_ACCESS_MODE="${PUBLICATION_ACCESS_MODE:-password}"
 fi
 
 if [[ -n "$PUBLICATION_PASSWORD" && "$PUBLICATION_REGENERATE_PASSWORD" == "true" ]]; then
@@ -681,7 +690,7 @@ print_publication_access_hint_from_response() {
   local response="$1"
   local access_mode password url
   access_mode="$("$JQ_BIN" -r '.data.publication.access_mode // empty' <<<"$response" 2>/dev/null || true)"
-  [[ "$access_mode" == "password" ]] || return 0
+  [[ "$access_mode" == "password" || "$access_mode" == "password_ask_info" ]] || return 0
 
   url="$("$JQ_BIN" -r '.data.publication.public_url // empty' <<<"$response" 2>/dev/null || true)"
   password="$("$JQ_BIN" -r '.data.publication.access_password // .data.publication.generated_password // empty' <<<"$response" 2>/dev/null || true)"
