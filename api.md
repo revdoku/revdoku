@@ -26,7 +26,8 @@ Authorization: Bearer $REVDOKU_API_KEY
 
 ### JSON Headers
 
-Use JSON for request bodies unless an endpoint explicitly uses multipart upload:
+Use JSON for request bodies. File bytes are uploaded to the object-storage
+upload URLs returned by Revdoku, not posted through Rails:
 
 ```http
 Content-Type: application/json
@@ -182,16 +183,83 @@ Example response:
 
 ### Upload a File
 
-Multipart upload is easiest for small and medium files:
+For a single file, create a direct-upload descriptor, upload bytes to the
+returned object-storage URL, then attach the signed blob id to the bucket. The
+server opens and finalizes a one-file bucket upload session automatically.
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../files" \
+curl -fsS "$REVDOKU_URL/api/v1/direct_uploads" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
-  -F "path=index.html" \
-  -F "file=@dist/index.html;type=text/html"
+  -H "Content-Type: application/json" \
+  -d '{
+    "bucket_id": "bkt_...",
+    "path": "index.html",
+    "blob": {
+      "filename": "index.html",
+      "byte_size": 1234,
+      "checksum": "BASE64_MD5",
+      "content_type": "text/html",
+      "sha256": "HEX_SHA256",
+      "purpose": "bucket_file"
+    }
+  }'
 ```
 
 Uploading the same `path` creates a new version of that file.
+
+### Upload Multiple Files
+
+For folders or multi-file updates, open one bucket upload session, then request
+upload descriptors in client-side subbatches. Revdoku's CLI and MCP clients use
+12 files per descriptor batch. Upload each returned descriptor to object storage,
+request the next descriptor batch, and close the session once. The close call is
+the only step that creates the bucket version.
+
+If the client disconnects after some object-storage uploads complete, Revdoku
+finalizes the ready files when the session expires and releases the bucket
+write lock automatically.
+
+```sh
+curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../upload_sessions" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+Then request descriptors for one subbatch:
+
+```sh
+curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../upload_sessions/bus_.../uploads" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "files": [
+      {
+        "path": "index.html",
+        "name": "index.html",
+        "byte_size": 1234,
+        "checksum": "BASE64_MD5",
+        "content_type": "text/html",
+        "sha256": "HEX_SHA256"
+      }
+    ]
+}'
+```
+
+Use `data.uploads[].upload.url` and `data.uploads[].upload.headers` for the
+object-storage `PUT`. Do not send Revdoku authorization headers to object
+storage. Repeat descriptor subbatches until all selected files are uploaded.
+
+Close the session when all uploads are done. Use `complete:false` only when
+canceling or interrupting the upload; Revdoku will commit uploaded files that
+are already present and release the bucket lock.
+
+```sh
+curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../upload_sessions/bus_.../finalize" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"complete":true}'
+```
 
 ### Publish a Bucket
 
@@ -506,7 +574,7 @@ Common `redirect_path` values:
 | `PATCH` | `/api/v1/buckets/:id` | Update bucket metadata. |
 | `POST` | `/api/v1/buckets/:id/archive` | Archive a normal unpublished bucket. |
 | `POST` | `/api/v1/buckets/:id/unarchive` | Restore an archived normal bucket. |
-| `DELETE` | `/api/v1/buckets/:id` | Permanently delete a normal archived unpublished bucket with confirmation. |
+| `DELETE` | `/api/v1/buckets/:id` | Permanently delete a normal unpublished bucket with confirmation. |
 | `GET` | `/api/v1/tags` | List reusable bucket labels. |
 
 #### GET /api/v1/buckets
@@ -533,8 +601,8 @@ Bucket list/detail responses include effective lifecycle action metadata:
 | `archive.required_action` | `unpublish_first` when the bucket must be unpublished before archive. |
 | `unarchive.allowed` | Whether the current principal can restore an archived bucket now. |
 | `delete.allowed` | Whether the current principal can permanently delete now. |
-| `delete.required_action` | `unpublish_first` when the bucket must be unpublished before permanent delete; `archive_first` when it must be archived before permanent delete. |
-| `delete.confirmation` | Opaque internal confirmation token returned by the API; clients should pass it exactly to DELETE after human confirmation, not ask users to type bucket ids. |
+| `delete.required_action` | `unpublish_first` when the bucket must be unpublished before permanent delete. |
+| `delete.confirmation` | Confirmation phrase returned by the API; clients should pass it exactly to DELETE after human confirmation, not ask users to type bucket ids. |
 
 Archived buckets are read-only until unarchived. Metadata edits, label changes,
 file changes, direct upload targets, reference file uploads, thumbnail uploads,
@@ -600,8 +668,7 @@ specific file locks. Conflicts return HTTP `423` with code `BUCKET_LOCKED`.
 #### Archive, unarchive, and permanent delete
 
 Library buckets cannot be archived, unarchived, or deleted. Normal buckets
-with active published websites must be unpublished first. Permanent delete also
-requires the bucket to be archived first.
+with active published websites must be unpublished first.
 
 ```sh
 curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../archive" \
@@ -613,8 +680,7 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../unarchive" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
-Permanent delete requires an archived bucket and the opaque confirmation
-token returned by `GET /api/v1/buckets` or `GET /api/v1/buckets/:id` in
+Permanent delete requires the confirmation phrase returned by `GET /api/v1/buckets` or `GET /api/v1/buckets/:id` in
 `delete.confirmation`.
 
 ```sh
@@ -637,7 +703,10 @@ only `archive` and `unarchive` operations and rejects `delete`.
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/v1/buckets/:bucket_id/files` | List files. |
-| `POST` | `/api/v1/buckets/:bucket_id/files` | Upload or attach a file. |
+| `POST` | `/api/v1/buckets/:bucket_id/files` | Attach one completed direct-upload blob. |
+| `POST` | `/api/v1/buckets/:bucket_id/upload_sessions` | Open and lock a multi-file bucket upload session. |
+| `POST` | `/api/v1/buckets/:bucket_id/upload_sessions/:id/uploads` | Create direct-upload descriptors for one file subbatch. |
+| `POST` | `/api/v1/buckets/:bucket_id/upload_sessions/:id/finalize` | Commit one bucket version and close the session. |
 | `GET` | `/api/v1/buckets/:bucket_id/files/:id` | Read file metadata. |
 | `GET` | `/api/v1/buckets/:bucket_id/files/:id/download` | Download file bytes. |
 | `GET` | `/api/v1/buckets/:bucket_id/files/:id/text` | Read a text file. |
@@ -651,16 +720,8 @@ only `archive` and `unarchive` operations and rejects `delete`.
 
 #### POST /api/v1/buckets/:bucket_id/files
 
-Multipart upload:
-
-```sh
-curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../files" \
-  -H "Authorization: Bearer $REVDOKU_API_KEY" \
-  -F "path=assets/app.js" \
-  -F "file=@dist/assets/app.js;type=application/javascript"
-```
-
-Attach an already uploaded blob:
+Attach one completed direct-upload blob. Revdoku opens and finalizes a
+server-owned upload session automatically for this single-file write.
 
 ```json
 {
@@ -669,6 +730,47 @@ Attach an already uploaded blob:
   "name": "app.js"
 }
 ```
+
+#### POST /api/v1/buckets/:bucket_id/upload_sessions
+
+Open a durable multi-file upload session. Revdoku locks the bucket for writes
+until the session is finalized or expires. The request body can be empty.
+
+```json
+{}
+```
+
+#### POST /api/v1/buckets/:bucket_id/upload_sessions/:id/uploads
+
+Create direct-upload descriptors for one file subbatch.
+
+```json
+{
+  "files": [
+    {
+      "input_index": 0,
+      "path": "assets/app.js",
+      "name": "app.js",
+      "byte_size": 1234,
+      "checksum": "BASE64_MD5",
+      "content_type": "application/javascript",
+      "sha256": "HEX_SHA256"
+    }
+  ]
+}
+```
+
+Upload each returned `data.uploads[].upload` descriptor to object storage.
+Identical duplicates may be returned in `data.skipped` without an upload URL.
+
+Then call `POST /api/v1/buckets/:bucket_id/upload_sessions/:id/finalize` with
+`{"complete":true}`. Expired sessions are auto-closed and any already uploaded,
+valid files are committed into one bucket version.
+
+Finalize responses include authoritative aggregate counts such as
+`uploaded_count`, `created_count`, `updated_count`, and `skipped_count`.
+The `uploaded`, `staged`, and `skipped` arrays are capped detail samples for
+large sessions; clients should use the count fields for totals.
 
 #### POST /api/v1/buckets/:bucket_id/files/lock
 
@@ -935,11 +1037,11 @@ Free responses hide numbers:
 | `404` | `BUCKET_NOT_FOUND` | Bucket does not exist or is not visible to this key. |
 | `404` | `FILE_NOT_FOUND` | File does not exist or is not visible to this key. |
 | `403` | `LIBRARY_BUCKET_IMMUTABLE` | Library bucket cannot be archived, unarchived, or deleted. |
-| `403` | `BUCKET_DELETE_ADMIN_REQUIRED` | Only an account administrator can permanently delete this bucket, except for empty archived unpublished cleanup buckets created by the same user. |
+| `403` | `BUCKET_DELETE_ADMIN_REQUIRED` | Only an account administrator can permanently delete this bucket, except for empty unpublished cleanup buckets created by the same user. |
 | `409` | `BUCKET_PUBLICATION_ACTIVE` | Unpublish this bucket before archiving or deleting it. |
 | `409` | `BUCKET_ALREADY_ARCHIVED` | Bucket is already archived. |
-| `409` | `BUCKET_NOT_ARCHIVED` | Bucket is not archived; archive it before permanent delete, or only unarchive archived buckets. |
-| `422` | `BUCKET_DELETE_CONFIRMATION_REQUIRED` | Pass the opaque `delete.confirmation` value returned by bucket list/detail with the delete request. |
+| `409` | `BUCKET_NOT_ARCHIVED` | Bucket is not archived; only unarchive archived buckets. |
+| `422` | `BUCKET_DELETE_CONFIRMATION_REQUIRED` | Pass the `delete.confirmation` value returned by bucket list/detail with the delete request. |
 | `403` | `BUCKET_ARCHIVED` | Bucket is archived and cannot be edited until it is unarchived. |
 | `423` | `FILE_LOCKED` | Another key owns an active file lock. |
 

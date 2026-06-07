@@ -48,9 +48,6 @@ cleanup_delete_bucket() {
   local bucket_id="$2"
   local bucket_json confirmation delete_body
 
-  curl -fsS -X POST "${REVDOKU_URL%/}/api/v1/buckets/${bucket_id}/archive" \
-    -H "Authorization: Bearer ${token}" >/dev/null 2>&1 || true
-
   bucket_json="$(
     curl -fsS "${REVDOKU_URL%/}/api/v1/buckets/${bucket_id}" \
       -H "Authorization: Bearer ${token}" 2>/dev/null || true

@@ -30,6 +30,7 @@ AGENT_VERSION="${REVDOKU_AGENT_VERSION:-0.1.0}"
 AGENT_RUN_ID="${REVDOKU_AGENT_RUN_ID:-}"
 AGENT_PROJECT="${REVDOKU_AGENT_PROJECT:-}"
 AGENT_TASK="${REVDOKU_AGENT_TASK:-}"
+BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE="${REVDOKU_BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE:-12}"
 LOGIN="false"
 ACTION="store"
 PATH_TO_STORE=""
@@ -72,7 +73,7 @@ Options:
   --unpublish               Unpublish --bucket-id while keeping its reserved URL for later republish.
   --archive                 Archive --bucket-id. Published buckets must be unpublished first.
   --unarchive               Restore archived --bucket-id to the active bucket list.
-  --delete-bucket           Permanently delete archived unpublished --bucket-id.
+  --delete-bucket           Permanently delete unpublished --bucket-id.
   --expires-in-days DAYS    Advanced: expire the website after DAYS instead of keeping it permanent.
   --login                   Request a privacy-preserving email code and save an API key to $CREDENTIALS_PATH.
   --list-buckets         Print available buckets and metadata as JSON.
@@ -87,7 +88,7 @@ Options:
   --public-handle-link      Print a one-time browser login link for Account public handle settings.
   --browser-login PATH      Print a one-time browser login link for an internal Revdoku path.
                             Browser login links are disabled when 2FA is enabled or required.
-  --upload-mode MODE        auto, direct, or multipart. Defaults to auto.
+  --upload-mode MODE        auto or direct. Defaults to auto.
   --exchange-grant TOKEN    Exchange a one-time app grant and save the API key.
   --grant-token TOKEN       Alias for --exchange-grant.
   -h, --help                Show this help.
@@ -480,8 +481,8 @@ fi
 
 [[ "$ACTION" == "exchange_grant" || -n "$API_KEY" ]] || die "REVDOKU_API_KEY is required"
 case "$UPLOAD_MODE" in
-  auto|direct|multipart) ;;
-  *) die "--upload-mode must be auto, direct, or multipart" ;;
+  auto|direct) ;;
+  *) die "--upload-mode must be auto or direct" ;;
 esac
 case "$PUBLISH" in
   true|false) ;;
@@ -576,9 +577,6 @@ delete_bucket() {
     case "$required_action" in
       unpublish_first)
         die "bucket must be unpublished before permanent delete; run with --unpublish first after confirmation"
-        ;;
-      archive_first)
-        die "bucket must be archived before permanent delete; run with --archive first after confirmation"
         ;;
       *)
         die "bucket cannot be permanently deleted with this connection"
@@ -1082,64 +1080,13 @@ print_private_publication_limit_guidance() {
 upload_file_direct() {
   local bucket_id="$1"
   local file="$2"
-  local rel filename content_type size checksum sha256 payload response direct_upload signed_id
-  rel="$(relative_path_for "$file")"
-  filename="$(basename "$file")"
-  content_type="$(content_type_for "$file")"
-  size="$(file_size "$file")"
-  checksum="$(md5_base64 "$file")"
-  sha256="$(sha256_file "$file")"
-
-  payload="$("$JQ_BIN" -nc \
-    --arg bucket_id "$bucket_id" \
-    --arg path "$rel" \
-    --arg filename "$filename" \
-    --argjson byte_size "$size" \
-    --arg checksum "$checksum" \
-    --arg content_type "$content_type" \
-    --arg sha256 "$sha256" \
-    '{bucket_id:$bucket_id, path:$path, blob:{filename:$filename, byte_size:$byte_size, checksum:$checksum, content_type:$content_type, sha256:$sha256, purpose:"bucket_file"}}')"
-  response="$(http_json POST "/api/v1/direct_uploads" "$payload")" || return 1
-  direct_upload="$("$JQ_BIN" -c '.data.direct_upload // empty' <<<"$response")"
-  signed_id="$("$JQ_BIN" -r '.data.signed_id // empty' <<<"$response")"
-  [[ -n "$direct_upload" && -n "$signed_id" ]] || return 1
-
-  put_direct_upload "$direct_upload" "$file" || return 1
-
-  payload="$("$JQ_BIN" -nc --arg signed_blob_id "$signed_id" --arg path "$rel" --arg name "$filename" \
-    '{signed_blob_id:$signed_blob_id, path:$path, name:$name}')"
-  http_json POST "/api/v1/buckets/${bucket_id}/files" "$payload" >/dev/null
-}
-
-upload_file_multipart() {
-  local bucket_id="$1"
-  local file="$2"
-  local rel filename content_type body_file status message agent_args=()
-  rel="$(relative_path_for "$file")"
-  filename="$(basename "$file")"
-  content_type="$(content_type_for "$file")"
-  body_file="$(mktemp)"
-  while IFS= read -r -d '' value; do
-    agent_args+=("$value")
-  done < <(agent_header_args)
-  status="$(curl -sS -o "$body_file" -w "%{http_code}" \
-    -X POST "$(api_url "/api/v1/buckets/${bucket_id}/files")" \
-    "${agent_args[@]}" \
-    -H "Authorization: Bearer $API_KEY" \
-    -F "path=${rel}" \
-    -F "name=${filename}" \
-    -F "file=@${file};filename=${filename};type=${content_type}")" || {
-      rm -f "$body_file"
-      return 1
-  }
-  if [[ "$status" -lt 200 || "$status" -ge 300 ]]; then
-    message="$("$JQ_BIN" -r '.error.message // .message // empty' "$body_file" 2>/dev/null || true)"
-    rm -f "$body_file"
-    [[ -n "$message" ]] || message="HTTP $status"
-    echo "error: upload failed for $rel: $message" >&2
-    return 1
-  fi
-  rm -f "$body_file"
+  local file_list
+  file_list="$(mktemp)"
+  printf "%s\0" "$file" > "$file_list"
+  store_bucket_session_upload "$bucket_id" "$file_list"
+  local status=$?
+  rm -f "$file_list"
+  return "$status"
 }
 
 upload_file() {
@@ -1149,18 +1096,84 @@ upload_file() {
   rel="$(relative_path_for "$file")"
   echo "Uploading $rel" >&2
 
-  if [[ "$UPLOAD_MODE" != "multipart" ]]; then
-    if upload_file_direct "$bucket_id" "$file"; then
-      return 0
-    fi
-    if [[ "$UPLOAD_MODE" == "direct" ]]; then
-      echo "Direct upload failed for $rel; retrying with multipart upload." >&2
-    else
-      echo "Direct upload failed for $rel; retrying with compatibility upload." >&2
-    fi
-  fi
+  upload_file_direct "$bucket_id" "$file"
+}
 
-  upload_file_multipart "$bucket_id" "$file"
+bucket_upload_session_manifest_json() {
+  publish_session_manifest_json "$1"
+}
+
+bucket_upload_session_payload() {
+  "$JQ_BIN" -nc '{}'
+}
+
+prepare_bucket_upload_descriptors() {
+  local bucket_id="$1"
+  local session_id="$2"
+  local batch_json="$3"
+  local payload
+  payload="$("$JQ_BIN" -nc --argjson files "$batch_json" '{files: $files}')"
+  http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions/${session_id}/uploads" "$payload"
+}
+
+finalize_bucket_upload_session() {
+  local bucket_id="$1"
+  local session_id="$2"
+  local complete="${3:-true}"
+  [[ -n "$session_id" ]] || return 0
+  "$JQ_BIN" -nc --argjson complete "$complete" '{complete:$complete}' | {
+    local payload
+    payload="$(cat)"
+    http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions/${session_id}/finalize" "$payload" >/dev/null
+  }
+}
+
+store_bucket_session_upload() {
+  local bucket_id="$1"
+  local file_list="$2"
+  local manifest_json payload response session_id upload_line rel upload_json file batch_json batch_response failed=0 finalized=0
+  manifest_json="$(bucket_upload_session_manifest_json "$file_list")"
+  payload="$(bucket_upload_session_payload)"
+  response="$(http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions" "$payload")" || return 1
+  session_id="$("$JQ_BIN" -r '.data.bucket_upload_session.id // empty' <<<"$response")"
+  [[ -n "$session_id" ]] || die "bucket upload session response did not include id"
+  echo "Bucket upload session: $session_id" >&2
+
+  while IFS= read -r batch_json; do
+    [[ -n "$batch_json" && "$batch_json" != "[]" ]] || continue
+    batch_response="$(prepare_bucket_upload_descriptors "$bucket_id" "$session_id" "$batch_json")" || {
+      failed=1
+      break
+    }
+    while IFS= read -r upload_line; do
+      [[ -n "$upload_line" ]] || continue
+      rel="$("$JQ_BIN" -r '.path' <<<"$upload_line")"
+      upload_json="$("$JQ_BIN" -c '.upload' <<<"$upload_line")"
+      file="$(local_file_for_relative_path "$rel")"
+      [[ -f "$file" ]] || {
+        echo "error: upload session asked for unknown upload path: $rel" >&2
+        failed=1
+        break
+      }
+      echo "Uploading $rel" >&2
+      if ! put_direct_upload "$upload_json" "$file"; then
+        echo "error: upload failed for $rel" >&2
+        failed=1
+        break
+      fi
+    done < <("$JQ_BIN" -c '.data.uploads[]?' <<<"$batch_response")
+    [[ "$failed" == "0" ]] || break
+  done < <("$JQ_BIN" -c --argjson size "$BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE" 'range(0; length; $size) as $i | .[$i:($i + $size)]' <<<"$manifest_json")
+
+  if [[ "$failed" == "0" ]] && finalize_bucket_upload_session "$bucket_id" "$session_id" true; then
+    finalized=1
+  else
+    failed=1
+  fi
+  if [[ "$finalized" != "1" ]]; then
+    finalize_bucket_upload_session "$bucket_id" "$session_id" false >/dev/null 2>&1 || true
+  fi
+  return "$failed"
 }
 
 publish_bucket() {
@@ -1370,7 +1383,7 @@ bucket_id_for_storage() {
 }
 
 store_bucket() {
-  local bucket_id bucket_id_file file file_list
+  local bucket_id bucket_id_file file_list
   file_list="$(mktemp)"
   if ! collect_files > "$file_list"; then
     rm -f "$file_list"
@@ -1393,9 +1406,10 @@ store_bucket() {
     die "bucket id is required before uploading files"
   }
   echo "Bucket: $bucket_id" >&2
-  while IFS= read -r -d '' file; do
-    upload_file "$bucket_id" "$file"
-  done < "$file_list"
+  store_bucket_session_upload "$bucket_id" "$file_list" || {
+    rm -f "$file_list"
+    return 1
+  }
   rm -f "$file_list"
   printf "%s" "$bucket_id"
 }
@@ -1474,34 +1488,32 @@ if [[ "$PUBLISH" == "true" ]]; then
   if ! has_index_file; then
     echo "No index.html found; Revdoku will publish a generated file listing." >&2
   fi
-  if [[ "$UPLOAD_MODE" != "multipart" ]]; then
-    publish_url_file="$(mktemp)"
-    if publish_bucket_session > "$publish_url_file"; then
-      publish_url="$(cat "$publish_url_file")"
-      rm -f "$publish_url_file"
-      verify_published_url "$publish_url"
-      echo "Published: $publish_url" >&2
-      print_terminal_link_hint
-      printf "%s\n" "$publish_url"
-      exit 0
-    fi
+  publish_url_file="$(mktemp)"
+  if publish_bucket_session > "$publish_url_file"; then
+    publish_url="$(cat "$publish_url_file")"
     rm -f "$publish_url_file"
-    if publication_limit_error && [[ -z "$BUCKET_ID" && -n "$LAST_PUBLISH_SESSION_BUCKET_ID" ]]; then
-      BUCKET_ID="$LAST_PUBLISH_SESSION_BUCKET_ID"
-    fi
-    if [[ "$UPLOAD_MODE" == "direct" ]]; then
-      publication_limit_error && print_publication_limit_guidance
-      private_publication_limit_error && print_private_publication_limit_guidance
-      die "direct publish session failed"
-    fi
-    if ! publish_session_fallback_allowed; then
-      publication_limit_error && print_publication_limit_guidance
-      private_publication_limit_error && print_private_publication_limit_guidance
-      [[ "${LAST_ERROR_CODE:-}" == "PRIVATE_PUBLICATION_STORAGE_NOT_CONFIGURED" ]] && echo "Protected website publishing is not configured for this Revdoku deployment." >&2
-      die "direct publish session failed"
-    fi
-    echo "Direct publish session failed; retrying with compatibility upload." >&2
+    verify_published_url "$publish_url"
+    echo "Published: $publish_url" >&2
+    print_terminal_link_hint
+    printf "%s\n" "$publish_url"
+    exit 0
   fi
+  rm -f "$publish_url_file"
+  if publication_limit_error && [[ -z "$BUCKET_ID" && -n "$LAST_PUBLISH_SESSION_BUCKET_ID" ]]; then
+    BUCKET_ID="$LAST_PUBLISH_SESSION_BUCKET_ID"
+  fi
+  if [[ "$UPLOAD_MODE" == "direct" ]]; then
+    publication_limit_error && print_publication_limit_guidance
+    private_publication_limit_error && print_private_publication_limit_guidance
+    die "direct publish session failed"
+  fi
+  if ! publish_session_fallback_allowed; then
+    publication_limit_error && print_publication_limit_guidance
+    private_publication_limit_error && print_private_publication_limit_guidance
+    [[ "${LAST_ERROR_CODE:-}" == "PRIVATE_PUBLICATION_STORAGE_NOT_CONFIGURED" ]] && echo "Protected website publishing is not configured for this Revdoku deployment." >&2
+    die "direct publish session failed"
+  fi
+  echo "Direct publish session failed; retrying with bucket upload session." >&2
 fi
 
 bucket_id_file="$(mktemp)"
