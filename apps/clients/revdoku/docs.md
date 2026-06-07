@@ -71,6 +71,13 @@ Protected websites use a separate password gate. When enabled, Revdoku can:
 Visitor-provided email is shared with the site owner for access tracking. The
 gate displays that notice before access.
 
+## Website Analytics And Tracking
+
+Published websites record Revdoku analytics and browser-side client events by
+default. Use `--no-tracking` to disable both for a publish or republish. Scripts
+that need separate control can use `--no-analytics` for server-side website
+analytics and `--no-client-events` for browser-side Revdoku event tracking.
+
 ## Agents And MCP
 
 Hosted MCP clients can connect to:
