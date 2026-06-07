@@ -273,6 +273,7 @@ curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../publication" \
     "entrypoint": "index.html",
     "site_mode": "spa",
     "access_mode": "public",
+    "tracking_enabled": false,
     "permanent": true
   }'
 ```
@@ -306,6 +307,11 @@ Example response:
 
 Use `site_mode: "static"` for ordinary static sites. Use `site_mode: "spa"` for
 React/Vite-style apps where deep links should fall back to `index.html`.
+Website analytics and browser-side Revdoku event tracking are enabled by
+default. Set `"tracking_enabled": false` to disable both, or use
+`"publication_analytics_enabled"` and `"publication_client_events_enabled"` for
+separate control. `"analytics_enabled"` and `"client_events_enabled"` are
+accepted aliases.
 
 ### Publish a Folder Efficiently
 
@@ -323,6 +329,7 @@ curl -fsS "$REVDOKU_URL/api/v1/publish_sessions" \
     "entrypoint": "index.html",
     "site_mode": "spa",
     "access_mode": "password",
+    "tracking_enabled": false,
     "permanent": true,
     "files": [
       {
@@ -875,6 +882,7 @@ publication revoke endpoints remain available for cleanup.
   "entrypoint": "index.html",
   "site_mode": "spa",
   "access_mode": "password",
+  "tracking_enabled": false,
   "permanent": true
 }
 ```
@@ -895,12 +903,17 @@ Publication response fields:
 | `access_password` | Copyable stored password, returned only to account-owner publish keys. |
 | `generated_password` | Newly generated password, returned only to account-owner publish keys. |
 | `share_text` | Copyable owner-facing text containing the website link and password when visible. |
+| `publication_analytics_enabled` | Whether Revdoku records website analytics for this publication. |
+| `publication_client_events_enabled` | Whether browser-side Revdoku event tracking is enabled for this publication. |
 | `analytics.hits_all_time` | Cached all-time website hits; `null` when analytics numbers are hidden. |
 | `analytics.last_event_at` | Latest recorded analytics event timestamp; `null` when hidden or not recorded yet. |
 
 #### POST /api/v1/publish_sessions
 
 Use this for larger folders and AI-generated websites.
+It accepts the same access and analytics/tracking fields as bucket publishing,
+including `tracking_enabled`, `publication_analytics_enabled`, and
+`publication_client_events_enabled`.
 
 ```json
 {
