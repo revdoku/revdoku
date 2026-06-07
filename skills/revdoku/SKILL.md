@@ -84,12 +84,11 @@ for structured bucket work:
   `archive.required_action` is `unpublish_first`, unpublish first only after
   user confirmation.
 - Use `bucket_delete_permanently` only when the user explicitly asks to
-  delete a normal archived unpublished bucket. Confirm destructive intent by
+  delete a normal unpublished bucket. Confirm destructive intent by
   bucket title or natural language, then pass the `delete.confirmation` value
   returned by `bucket_list` or `bucket_get`; do not ask users to type the
   `bkt_...` id. If `delete.required_action` is `unpublish_first`, unpublish
-  first only after user confirmation. If `delete.required_action` is
-  `archive_first`, archive the bucket before permanent delete.
+  first only after user confirmation.
   `bucket_delete` is a legacy alias with the same confirmation requirement.
 - Use `bucket_publication_list` when the user asks which buckets are
   published or asks for existing website links. Publication list rows include a
@@ -214,7 +213,7 @@ To publish with MCP, include `"publish": true`.
 - `--unpublish`: with `--bucket-id`, unpublish a website while keeping its reserved URL for later republish.
 - `--archive`: with `--bucket-id`, archive a normal unpublished bucket.
 - `--unarchive`: with `--bucket-id`, restore an archived bucket to the active bucket list.
-- `--delete-bucket`: with `--bucket-id`, permanently delete an archived unpublished bucket. The CLI fetches and passes the server-returned `delete.confirmation` token internally; use only after explicit destructive confirmation.
+- `--delete-bucket`: with `--bucket-id`, permanently delete an unpublished bucket. The CLI fetches and passes the server-returned `delete.confirmation` token internally; use only after explicit destructive confirmation.
 - `--url URL`: Revdoku app URL, default `https://app.revdoku.com`.
 - `--login`: force the email-code login flow and refresh local credentials.
 - `--dashboard-link`: create a one-time browser login link for the Revdoku dashboard.
@@ -228,7 +227,7 @@ To publish with MCP, include `"publish": true`.
 - `--list-buckets`: print available buckets and metadata as JSON.
 - `--list-public-buckets`: print active website publications and URLs as JSON. Each publication includes `hits`, derived from `analytics.hits_all_time` in the HTTP API.
 - `--account-status`: print account, plan, and storage status as JSON with full-account credentials. Bucket-scoped agent credentials may be denied; open Revdoku in a browser to review account status when needed.
-- `--upload-mode MODE`: `auto`, `direct`, or `multipart`; default `auto`.
+- `--upload-mode MODE`: `auto` or `direct`; default `auto`. Private bucket storage uses bucket upload sessions so multi-file uploads become one bucket version.
 
 ## What To Tell The User
 
@@ -237,7 +236,7 @@ To publish with MCP, include `"publish": true`.
 - If publishing fails with `PUBLIC_STORAGE_NOT_CONFIGURED`, share the bucket
   id as private storage and say public publishing is not configured yet.
 - If asked which buckets are public, run `~/.revdoku/bin/revdoku --list-public-buckets` and summarize the bucket ids, URLs, and hit totals when useful.
-- If asked to archive, unarchive, or permanently delete a bucket using only the CLI, first run `~/.revdoku/bin/revdoku --list-buckets` and resolve the right bucket by title/status. Use `--unpublish` first only after confirmation when `delete.required_action` or `archive.required_action` says `unpublish_first`; use `--archive` before `--delete-bucket` when `delete.required_action` says `archive_first`.
+- If asked to archive, unarchive, or permanently delete a bucket using only the CLI, first run `~/.revdoku/bin/revdoku --list-buckets` and resolve the right bucket by title/status. Use `--unpublish` first only after confirmation when `delete.required_action` or `archive.required_action` says `unpublish_first`.
 - If asked to roll back a bucket, list versions first, confirm the target
   version, then run `~/.revdoku/bin/revdoku --bucket-id bkt_... --restore-version bktrv_...`.
   Explain that Revdoku creates a new latest version and keeps newer versions in
