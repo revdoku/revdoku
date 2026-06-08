@@ -508,20 +508,22 @@ visitor count across the whole range.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/v1/agent_auth/request_code` | Request an email verification code without revealing account state. |
+| `POST` | `/api/v1/agent_auth/request_code` | Request an email verification code to sign in or create a Revdoku account, without revealing prior account state. |
 | `POST` | `/api/v1/agent_auth/verify_code` | Verify the email code and create an API key when the code is valid. |
 | `POST` | `/api/v1/agent_auth/exchange_grant` | Exchange an app-created grant for an API key. |
 | `POST` | `/api/v1/agent_auth/browser_login_link` | Create a one-time dashboard login link. |
 
 #### POST /api/v1/agent_auth/request_code
 
-This endpoint does not create users and does not reveal whether the email has a
-Revdoku account, whether that account is locked, or whether browser sign-in is
-required. It always returns the same success shape for syntactically valid email
-requests. If no code arrives or verification fails, ask the user to sign in to
-Revdoku in the browser and copy a one-time connection prompt/grant from the app,
-then exchange it. Do not ask for a Revdoku password, TOTP, backup code, payment
-details, or full chat history.
+This endpoint signs in an existing Revdoku account, or creates a new account when
+the email does not have one yet (subject to signup eligibility, e.g. disposable or
+blocked domains are rejected with `SIGNUP_BLOCKED`). It does not reveal whether the
+email already had an account, whether that account is locked, or whether browser
+sign-in is required: it returns the same success shape for syntactically valid,
+eligible email requests. If no code arrives or verification fails, ask the user to
+sign in to Revdoku in the browser and copy a one-time connection prompt/grant from
+the app, then exchange it. Do not ask for a Revdoku password, TOTP, backup code,
+payment details, or full chat history.
 
 ```json
 {
@@ -532,8 +534,10 @@ details, or full chat history.
 #### POST /api/v1/agent_auth/verify_code
 
 Verifies the email code and returns a `revdoku_...` API key when the code is
-valid for an account that can use email-code agent sign-in. `INVALID_CODE` is
-privacy-preserving and can also mean the account needs browser sign-in.
+valid for an account that can use email-code agent sign-in. A new account created
+through `request_code` is confirmed and its default account is set up on the first
+successful verification. `INVALID_CODE` is privacy-preserving and can also mean the
+account needs browser sign-in.
 
 ```json
 {
