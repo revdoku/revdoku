@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "revdoku": {
+      "type": "http",
+      "url": "https://app.revdoku.com/mcp"
+    }
+  }
+}
