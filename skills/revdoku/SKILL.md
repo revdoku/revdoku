@@ -89,6 +89,9 @@ for structured bucket work:
   returned by `bucket_list` or `bucket_get`; do not ask users to type the
   `bkt_...` id. If `delete.required_action` is `unpublish_first`, unpublish
   first only after user confirmation.
+  Large deletes can start a background deletion and return
+  `deletion_started`; tell the user the bucket may remain visible with
+  `bucket_delete` progress until it disappears or a notification arrives.
   `bucket_delete` is a legacy alias with the same confirmation requirement.
 - Use `bucket_publication_list` when the user asks which buckets are
   published or asks for existing website links. Publication list rows include a

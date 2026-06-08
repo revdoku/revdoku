@@ -212,12 +212,13 @@ Uploading the same `path` creates a new version of that file.
 For folders or multi-file updates, open one bucket upload session, then request
 upload descriptors in client-side subbatches. Revdoku's CLI and MCP clients use
 12 files per descriptor batch. Upload each returned descriptor to object storage,
-request the next descriptor batch, and close the session once. The close call is
-the only step that creates the bucket version.
+then call `finalize_batch` for that subbatch before requesting much more work.
+This keeps each server-side commit bounded and resilient for large folders.
 
 If the client disconnects after some object-storage uploads complete, Revdoku
-finalizes the ready files when the session expires and releases the bucket
-write lock automatically.
+keeps files that were already finalized by `finalize_batch`. Unfinalized staged
+uploads are abandoned when the session expires, and the bucket write lock is
+released automatically.
 
 ```sh
 curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../upload_sessions" \
@@ -248,11 +249,20 @@ curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../upload_sessions/bus_.../uploads" 
 
 Use `data.uploads[].upload.url` and `data.uploads[].upload.headers` for the
 object-storage `PUT`. Do not send Revdoku authorization headers to object
-storage. Repeat descriptor subbatches until all selected files are uploaded.
+storage. After each successful descriptor subbatch, commit a bounded batch:
+
+```sh
+curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../upload_sessions/bus_.../finalize_batch" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"limit":12}'
+```
+
+Repeat descriptor and finalize subbatches until all selected files are uploaded.
 
 Close the session when all uploads are done. Use `complete:false` only when
-canceling or interrupting the upload; Revdoku will commit uploaded files that
-are already present and release the bucket lock.
+canceling or interrupting the upload; it closes the session and releases the
+lock without committing any unfinalized staged uploads.
 
 ```sh
 curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../upload_sessions/bus_.../finalize" \
@@ -260,6 +270,11 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../upload_sessions/bus_.../f
   -H "Content-Type: application/json" \
   -d '{"complete":true}'
 ```
+
+For large sessions, `finalize` may return HTTP `202` with
+`data.finalize_pending:true`, `data.remaining_files_count`, and a `Retry-After`
+header. Wait for the retry interval and call the same finalize endpoint again
+until the response no longer includes `finalize_pending:true`.
 
 ### Publish a Bucket
 
@@ -705,6 +720,14 @@ deleted one at a time via `DELETE /api/v1/buckets/:id` so each removal is
 confirmed individually. The `POST /api/v1/buckets/bulk` endpoint accepts
 only `archive` and `unarchive` operations and rejects `delete`.
 
+Large bucket deletes can return HTTP `202` with `data.bucket.deletion_started`
+and `data.delete_progress`. The bucket remains visible while the background job
+runs, with `lock.kind:"bucket_delete"` and progress fields such as
+`phase`, `total_files`, `total_versions`, and `total_items`. Poll bucket
+list/detail to show progress until the bucket disappears or a delete
+notification is delivered. If background deletion fails, the bucket is unlocked
+and a failed delete notification is sent so clients can retry.
+
 ### File Endpoints
 
 | Method | Path | Purpose |
@@ -713,7 +736,8 @@ only `archive` and `unarchive` operations and rejects `delete`.
 | `POST` | `/api/v1/buckets/:bucket_id/files` | Attach one completed direct-upload blob. |
 | `POST` | `/api/v1/buckets/:bucket_id/upload_sessions` | Open and lock a multi-file bucket upload session. |
 | `POST` | `/api/v1/buckets/:bucket_id/upload_sessions/:id/uploads` | Create direct-upload descriptors for one file subbatch. |
-| `POST` | `/api/v1/buckets/:bucket_id/upload_sessions/:id/finalize` | Commit one bucket version and close the session. |
+| `POST` | `/api/v1/buckets/:bucket_id/upload_sessions/:id/finalize_batch` | Commit a bounded subbatch of uploaded files. |
+| `POST` | `/api/v1/buckets/:bucket_id/upload_sessions/:id/finalize` | Continue finalization and close the session when no uploaded files remain. |
 | `GET` | `/api/v1/buckets/:bucket_id/files/:id` | Read file metadata. |
 | `GET` | `/api/v1/buckets/:bucket_id/files/:id/download` | Download file bytes. |
 | `GET` | `/api/v1/buckets/:bucket_id/files/:id/text` | Read a text file. |
@@ -741,7 +765,9 @@ server-owned upload session automatically for this single-file write.
 #### POST /api/v1/buckets/:bucket_id/upload_sessions
 
 Open a durable multi-file upload session. Revdoku locks the bucket for writes
-until the session is finalized or expires. The request body can be empty.
+until the session is finalized or expires. The upload-session TTL is sliding:
+successful descriptor/finalize progress refreshes the session expiry and bucket
+lock expiry. The request body can be empty.
 
 ```json
 {}
@@ -770,14 +796,20 @@ Create direct-upload descriptors for one file subbatch.
 Upload each returned `data.uploads[].upload` descriptor to object storage.
 Identical duplicates may be returned in `data.skipped` without an upload URL.
 
-Then call `POST /api/v1/buckets/:bucket_id/upload_sessions/:id/finalize` with
-`{"complete":true}`. Expired sessions are auto-closed and any already uploaded,
-valid files are committed into one bucket version.
+Then call `POST /api/v1/buckets/:bucket_id/upload_sessions/:id/finalize_batch`
+after each uploaded subbatch. Finish with
+`POST /api/v1/buckets/:bucket_id/upload_sessions/:id/finalize` and
+`{"complete":true}`. Expired sessions are auto-closed; files already committed
+with `finalize_batch` remain in the bucket, while unfinalized staged uploads are
+abandoned.
 
 Finalize responses include authoritative aggregate counts such as
 `uploaded_count`, `created_count`, `updated_count`, and `skipped_count`.
 The `uploaded`, `staged`, and `skipped` arrays are capped detail samples for
 large sessions; clients should use the count fields for totals.
+For large remaining work, `finalize` can return HTTP `202` with
+`finalize_pending:true`; retry the same finalize call after the `Retry-After`
+delay until the session closes.
 
 #### POST /api/v1/buckets/:bucket_id/files/lock
 
@@ -1035,6 +1067,27 @@ Free responses hide numbers:
 ```
 
 ## Common Errors
+
+### Rate Limits
+
+Upload-control endpoints such as direct-upload creation and bucket upload
+sessions are account-throttled. On HTTP `429`, honor the `Retry-After` header
+or `error.details.retry_after` before retrying. Clients should use bounded
+exponential backoff with jitter and should not retry indefinitely.
+
+Concurrent large uploads, finalization, deletes, and storage-counter refreshes
+can also return HTTP `409` with `DATABASE_BUSY_RETRY`. Treat this as a
+temporary contention signal: honor `Retry-After` or `error.details.retry_after`,
+use bounded exponential backoff with jitter, and retry only idempotent or
+session-keyed upload/delete control calls.
+
+| HTTP | Code | Meaning |
+| --- | --- | --- |
+| `409` | `DATABASE_BUSY_RETRY` | Related bucket changes are still committing; retry after the advertised delay. |
+| `409` | `BUCKET_FILE_PATH_INDEX_BACKFILL_PENDING` | Existing bucket file path lookup keys are being prepared; retry after the advertised delay. |
+| `429` | `RATE_LIMIT_EXCEEDED` | General account API rate limit exceeded. |
+| `429` | `PUBLISH_RATE_LIMIT_EXCEEDED` | Publishing API rate limit exceeded. |
+| `429` | `UPLOAD_RATE_LIMIT_EXCEEDED` | Upload-control API rate limit exceeded. |
 
 ### Authentication Errors
 
