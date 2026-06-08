@@ -45,6 +45,7 @@ LAST_PUBLISH_SESSION_BUCKET_ID=""
 LAST_HTTP_STATUS=""
 LAST_ERROR_CODE=""
 LAST_ERROR_MESSAGE=""
+LAST_ERROR_DETAILS_JSON=""
 
 die() {
   echo "error: $1" >&2
@@ -505,10 +506,11 @@ http_json() {
   local path="$2"
   local payload="$3"
   local auth="${4:-true}"
-  local body_file status message code request_id retry_after attempt curl_status delay agent_args=()
+  local body_file status message code request_id retry_after details_json attempt curl_status delay agent_args=()
   LAST_HTTP_STATUS=""
   LAST_ERROR_CODE=""
   LAST_ERROR_MESSAGE=""
+  LAST_ERROR_DETAILS_JSON=""
   body_file="$(mktemp)"
   attempt=0
 
@@ -539,6 +541,7 @@ http_json() {
       LAST_HTTP_STATUS=""
       LAST_ERROR_CODE=""
       LAST_ERROR_MESSAGE="Network error while calling $path"
+      LAST_ERROR_DETAILS_JSON=""
       echo "error: network error while calling $path (curl exit $curl_status)" >&2
       return 1
     fi
@@ -556,6 +559,7 @@ http_json() {
         LAST_HTTP_STATUS="$status"
         LAST_ERROR_CODE="INVALID_JSON_RESPONSE"
         LAST_ERROR_MESSAGE="Invalid JSON response from $path after HTTP $status"
+        LAST_ERROR_DETAILS_JSON=""
         echo "error: invalid JSON response from $path after HTTP $status" >&2
         return 1
       fi
@@ -568,6 +572,7 @@ http_json() {
     code="$("$JQ_BIN" -r '.error.code // empty' "$body_file" 2>/dev/null || true)"
     request_id="$("$JQ_BIN" -r '.error.request_id // .request_id // empty' "$body_file" 2>/dev/null || true)"
     retry_after="$("$JQ_BIN" -r '.error.details.retry_after // empty' "$body_file" 2>/dev/null || true)"
+    details_json="$("$JQ_BIN" -c '.error.details // {}' "$body_file" 2>/dev/null || printf '{}')"
 
     if [[ "$status" == "429" && "$attempt" -lt 20 ]]; then
       [[ "$retry_after" =~ ^[0-9]+$ && "$retry_after" -gt 0 ]] || retry_after=5
@@ -597,6 +602,7 @@ http_json() {
     LAST_HTTP_STATUS="$status"
     LAST_ERROR_CODE="$code"
     LAST_ERROR_MESSAGE="$message"
+    LAST_ERROR_DETAILS_JSON="$details_json"
     [[ -n "$message" ]] || message="HTTP $status"
     [[ -n "$code" ]] && message="${message} (${code})"
     [[ -n "$request_id" ]] && message="${message} request_id=${request_id}"
@@ -618,7 +624,7 @@ prompt_read() {
     printf "%s" "$prompt" >&2
     IFS= read -r value
   else
-    die "REVDOKU_API_KEY is required. Run interactively with --login to connect an existing Revdoku account."
+    die "REVDOKU_API_KEY is required. Run interactively with --login to sign in or create a Revdoku account."
   fi
   printf "%s" "$value"
 }
@@ -629,7 +635,7 @@ request_agent_key() {
 
   while true; do
     attempts=$((attempts + 1))
-    email="$(prompt_read "Email for existing Revdoku account: ")"
+    email="$(prompt_read "Email: ")"
     [[ -n "$email" ]] || die "email is required"
 
     payload="$("$JQ_BIN" -nc --arg email "$email" '{email:$email}')"
@@ -644,7 +650,7 @@ request_agent_key() {
     echo "Please use a permanent email address. Disposable or blocked email domains are not accepted." >&2
   done
 
-  echo "A Revdoku verification code was sent if this account can receive email-code sign-in." >&2
+  echo "A Revdoku verification code was sent to $email." >&2
   echo "If no code arrives, sign in at ${BASE_URL%/}/users/sign_in and use Copy Prompt or an app connection grant, then run with --exchange-grant TOKEN." >&2
 
   code="$(prompt_read "Code: ")"
@@ -1418,12 +1424,52 @@ finalize_bucket_upload_session_batch() {
   local bucket_id="$1"
   local session_id="$2"
   local limit="${3:-100}"
+  local attempts=0 missing_entry_json missing_path
   [[ -n "$session_id" ]] || return 0
   "$JQ_BIN" -nc --argjson limit "$limit" '{limit:$limit}' | {
     local payload
     payload="$(cat)"
-    http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions/${session_id}/finalize_batch" "$payload" >/dev/null
+    while :; do
+      if http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions/${session_id}/finalize_batch" "$payload" >/dev/null; then
+        return 0
+      fi
+
+      if [[ "${LAST_ERROR_CODE:-}" == "DIRECT_UPLOAD_NOT_FOUND" && "$attempts" -lt "$BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE" ]]; then
+        missing_entry_json="$LAST_ERROR_DETAILS_JSON"
+        missing_path="$("$JQ_BIN" -r '.path // empty' <<<"$missing_entry_json" 2>/dev/null || true)"
+        if [[ -n "$missing_path" ]] && upload_bucket_session_missing_entry "$bucket_id" "$session_id" "$missing_entry_json"; then
+          attempts=$((attempts + 1))
+          echo "Retrying bucket upload batch finalize after refreshing $missing_path." >&2
+          continue
+        fi
+      fi
+
+      return 1
+    done
   }
+}
+
+upload_bucket_session_missing_entry() {
+  local bucket_id="$1"
+  local session_id="$2"
+  local entry_json="$3"
+  local rel file response upload_json
+
+  rel="$("$JQ_BIN" -r '.path // empty' <<<"$entry_json" 2>/dev/null || true)"
+  [[ -n "$rel" ]] || return 1
+  file="$(local_file_for_relative_path "$rel")"
+  [[ -f "$file" ]] || {
+    echo "error: upload session asked to refresh unknown upload path: $rel" >&2
+    return 1
+  }
+
+  echo "Refreshing missing direct upload for $rel." >&2
+  response="$(prepare_bucket_upload_descriptors "$bucket_id" "$session_id" "[$entry_json]")" || return 1
+  upload_json="$("$JQ_BIN" -c '.data.uploads[0].upload // empty' <<<"$response")"
+  [[ -n "$upload_json" && "$upload_json" != "null" ]] || return 1
+
+  echo "Uploading $rel" >&2
+  put_direct_upload "$upload_json" "$file"
 }
 
 store_bucket_session_upload() {
