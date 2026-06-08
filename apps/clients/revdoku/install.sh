@@ -169,6 +169,8 @@ install_user_command() {
 main() {
   local codex_root="${CODEX_HOME:-${HOME}/.codex}"
   local claude_root="${CLAUDE_HOME:-${HOME}/.claude}"
+  local hermes_root="${HERMES_HOME:-${HOME}/.hermes}"
+  local openclaw_root="${OPENCLAW_HOME:-${HOME}/.openclaw}"
   local installed=0
 
   case "$AGENT" in
@@ -177,6 +179,12 @@ main() {
       installed=1
       if [[ -d "$claude_root" ]]; then
         install_skill_to "$claude_root"
+      fi
+      if [[ -d "$hermes_root" ]]; then
+        install_skill_to "$hermes_root"
+      fi
+      if [[ -d "$openclaw_root" ]]; then
+        install_skill_to "$openclaw_root"
       fi
       ;;
     codex)
@@ -187,13 +195,28 @@ main() {
       install_skill_to "$claude_root"
       installed=1
       ;;
+    hermes)
+      install_skill_to "$hermes_root"
+      installed=1
+      ;;
+    openclaw)
+      install_skill_to "$openclaw_root"
+      installed=1
+      ;;
     both)
       install_skill_to "$codex_root"
       install_skill_to "$claude_root"
       installed=1
       ;;
+    all)
+      install_skill_to "$codex_root"
+      install_skill_to "$claude_root"
+      install_skill_to "$hermes_root"
+      install_skill_to "$openclaw_root"
+      installed=1
+      ;;
     *)
-      die "invalid REVDOKU_AGENT=${AGENT}; use auto, codex, claude, or both"
+      die "invalid REVDOKU_AGENT=${AGENT}; use auto, codex, claude, hermes, openclaw, both, or all"
       ;;
   esac
 

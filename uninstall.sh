@@ -105,6 +105,8 @@ remove_credentials_if_requested() {
 main() {
   local codex_root="${CODEX_HOME:-${HOME}/.codex}"
   local claude_root="${CLAUDE_HOME:-${HOME}/.claude}"
+  local hermes_root="${HERMES_HOME:-${HOME}/.hermes}"
+  local openclaw_root="${OPENCLAW_HOME:-${HOME}/.openclaw}"
 
   case "$AGENT" in
     auto)
@@ -112,6 +114,12 @@ main() {
       remove_codex_mcp_registration "$codex_root"
       if [[ -d "$claude_root" ]]; then
         remove_skill_from "$claude_root"
+      fi
+      if [[ -d "$hermes_root" ]]; then
+        remove_skill_from "$hermes_root"
+      fi
+      if [[ -d "$openclaw_root" ]]; then
+        remove_skill_from "$openclaw_root"
       fi
       ;;
     codex)
@@ -121,13 +129,26 @@ main() {
     claude)
       remove_skill_from "$claude_root"
       ;;
+    hermes)
+      remove_skill_from "$hermes_root"
+      ;;
+    openclaw)
+      remove_skill_from "$openclaw_root"
+      ;;
     both)
       remove_skill_from "$codex_root"
       remove_codex_mcp_registration "$codex_root"
       remove_skill_from "$claude_root"
       ;;
+    all)
+      remove_skill_from "$codex_root"
+      remove_codex_mcp_registration "$codex_root"
+      remove_skill_from "$claude_root"
+      remove_skill_from "$hermes_root"
+      remove_skill_from "$openclaw_root"
+      ;;
     *)
-      die "invalid REVDOKU_AGENT=${AGENT}; use auto, codex, claude, or both"
+      die "invalid REVDOKU_AGENT=${AGENT}; use auto, codex, claude, hermes, openclaw, both, or all"
       ;;
   esac
 
