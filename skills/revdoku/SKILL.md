@@ -76,6 +76,14 @@ for structured bucket work:
   deployment yet. If publishing returns `PRIVATE_PUBLICATION_STORAGE_NOT_CONFIGURED`,
   keep using the private bucket and tell the user protected website publishing
   is not configured for this deployment yet.
+- Publishing is asynchronous: the publish/finalize tools wait until the site is
+  live before returning its URL (large folders no longer time out), and a
+  settings/access-only change does not re-upload files. Direct API callers poll
+  `GET /api/v1/publications/<id>` for `publish_state: "ready"` before sharing
+  `public_url`, and can retry a `failed` one — see api.md.
+- Paid plans may pass `slug_suggestions` (ordered website names) to the publish
+  tools to steer the public URL (first available wins, else a numeric suffix);
+  free plans get a generated slug. Applies only on first publish.
 - Use `bucket_unpublish` when the user asks to unpublish a website.
   Tell the user that republishing the same bucket restores the same URL.
 - Use `bucket_archive` and `bucket_unarchive` for normal bucket

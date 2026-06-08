@@ -896,6 +896,60 @@ print_public_profile_listing_hint_from_response() {
   fi
 }
 
+# Publishing is asynchronous: POST /publication and publish-session finalize
+# return 202 with a publication whose build runs in the background. Poll the
+# publication until its publish_state is terminal so we never print a live URL
+# that 404s while the bundle is still building. Echoes the final publication
+# response JSON on success (publish_state ready); non-zero on failed/timeout.
+wait_for_publication_ready() {
+  local publication_id="$1"
+  local response state err attempts=0
+  local max_attempts="${REVDOKU_PUBLISH_WAIT_MAX_ATTEMPTS:-450}"  # ~15 min at 2s
+  [[ -n "$publication_id" ]] || return 1
+  while :; do
+    response="$(http_json GET "/api/v1/publications/${publication_id}" "{}")" || return 1
+    state="$("$JQ_BIN" -r '.data.publication.publish_state // "ready"' <<<"$response")"
+    case "$state" in
+      ready|"")
+        printf '%s' "$response"
+        return 0
+        ;;
+      failed)
+        err="$("$JQ_BIN" -r '.data.publication.publish_error // "Publishing failed."' <<<"$response")"
+        echo "Publishing failed: $err" >&2
+        echo "Retry with: revdoku publish (or POST /api/v1/buckets/<bucket>/publication/retry)" >&2
+        return 2
+        ;;
+      *)
+        attempts=$((attempts + 1))
+        if (( attempts > max_attempts )); then
+          echo "Timed out waiting for the publish to finish. It may still complete in the background." >&2
+          return 3
+        fi
+        if (( attempts == 1 || attempts % 5 == 0 )); then
+          echo "Publishing… (${state})" >&2
+        fi
+        sleep 2
+        ;;
+    esac
+  done
+}
+
+# If the given publish response is a queued/processing async publication, block
+# until it is ready and echo the ready response; otherwise echo it unchanged.
+resolve_async_publication_response() {
+  local response="$1"
+  local publication_id publish_state ready_response
+  publication_id="$("$JQ_BIN" -r '.data.publication.id // empty' <<<"$response" 2>/dev/null || true)"
+  publish_state="$("$JQ_BIN" -r '.data.publication.publish_state // "ready"' <<<"$response" 2>/dev/null || true)"
+  if [[ -n "$publication_id" && "$publish_state" != "ready" && "$publish_state" != "null" && -n "$publish_state" ]]; then
+    ready_response="$(wait_for_publication_ready "$publication_id")" || return 1
+    printf '%s' "$ready_response"
+  else
+    printf '%s' "$response"
+  fi
+}
+
 print_publication_access_hint_from_response() {
   local response="$1"
   local access_mode password url share_text
@@ -1405,7 +1459,8 @@ finalize_bucket_upload_session() {
   local bucket_id="$1"
   local session_id="$2"
   local complete="${3:-true}"
-  local payload response pending attempts=0
+  local payload response pending attempts=0 remaining
+  local max_attempts="${REVDOKU_FINALIZE_MAX_ATTEMPTS:-1000}"
   [[ -n "$session_id" ]] || return 0
   "$JQ_BIN" -nc --argjson complete "$complete" '{complete:$complete}' | {
     payload="$(cat)"
@@ -1414,7 +1469,19 @@ finalize_bucket_upload_session() {
       pending="$("$JQ_BIN" -r '.data.finalize_pending // false' <<<"$response")"
       [[ "$pending" == "true" && "$complete" == "true" ]] || return 0
       attempts=$((attempts + 1))
-      [[ "$attempts" -lt 1000 ]] || return 1
+      remaining="$("$JQ_BIN" -r '.data.remaining_files_count // .data.bucket_upload_session.remaining_files_count // empty' <<<"$response" 2>/dev/null || true)"
+      if (( attempts == 1 || attempts % 5 == 0 )); then
+        if [[ -n "$remaining" && "$remaining" != "null" ]]; then
+          echo "Still finalizing ${remaining} file(s)… (attempt ${attempts})" >&2
+        else
+          echo "Still finalizing files… (attempt ${attempts})" >&2
+        fi
+      fi
+      if (( attempts >= max_attempts )); then
+        echo "Timed out finalizing the upload session after ${attempts} attempts (~$((attempts * 2 / 60)) min)." >&2
+        echo "Files may still be processing in the background; re-run the command to resume." >&2
+        return 1
+      fi
       sleep 2
     done
   }
@@ -1475,7 +1542,7 @@ upload_bucket_session_missing_entry() {
 store_bucket_session_upload() {
   local bucket_id="$1"
   local file_list="$2"
-  local manifest_json payload response session_id upload_line rel upload_json file batch_json batch_response expected_file_count client_session_key failed=0 finalized=0 entry_json refresh_response
+  local manifest_json payload response session_id upload_line rel upload_json file batch_json batch_response expected_file_count client_session_key failed=0 finalized=0 entry_json refresh_response uploaded_index=0
   manifest_json="$(bucket_upload_session_manifest_json "$file_list")"
   expected_file_count="$("$JQ_BIN" -r 'length' <<<"$manifest_json")"
   client_session_key="$(bucket_upload_session_client_key "$bucket_id" "$manifest_json")"
@@ -1501,7 +1568,8 @@ store_bucket_session_upload() {
         failed=1
         break
       }
-      echo "Uploading $rel" >&2
+      uploaded_index=$((uploaded_index + 1))
+      echo "Uploading ${uploaded_index}/${expected_file_count}: $rel" >&2
       if ! put_direct_upload "$upload_json" "$file"; then
         if [[ "${LAST_DIRECT_UPLOAD_STATUS:-}" == "403" || "${LAST_DIRECT_UPLOAD_STATUS:-}" == "404" ]]; then
           entry_json="$("$JQ_BIN" -c --arg rel "$rel" 'map(select(.path == $rel))[0] // empty' <<<"$batch_json")"
@@ -1567,6 +1635,7 @@ publish_bucket() {
   fi
   response="$(cat "$response_file")"
   rm -f "$response_file"
+  response="$(resolve_async_publication_response "$response")" || die "bucket publish did not finish"
   url="$("$JQ_BIN" -r '.data.publication.public_url // empty' <<<"$response")"
   [[ -n "$url" ]] || die "publish response did not include url"
   print_public_profile_listing_hint_from_response "$response"
@@ -1659,6 +1728,9 @@ publish_bucket_session_attempt() {
   [[ -n "$bucket_id" ]] && echo "Bucket: $bucket_id" >&2
   echo "Publish session: $session_id" >&2
 
+  local upload_total upload_index=0
+  upload_total="$("$JQ_BIN" -r '[.data.publish_session.uploads[]?] | length' <<<"$response")"
+  [[ -n "$upload_total" && "$upload_total" != "null" ]] || upload_total=0
   while IFS= read -r upload_line; do
     [[ -n "$upload_line" ]] || continue
     rel="$("$JQ_BIN" -r '.path' <<<"$upload_line")"
@@ -1667,7 +1739,8 @@ publish_bucket_session_attempt() {
     [[ -f "$file" ]] || {
       die "publish session asked for unknown upload path: $rel"
     }
-    echo "Uploading $rel" >&2
+    upload_index=$((upload_index + 1))
+    echo "Uploading ${upload_index}/${upload_total}: $rel" >&2
     if ! put_publish_session_upload "$session_id" "$rel" "$upload_json" "$file"; then
       return 1
     fi
@@ -1684,6 +1757,7 @@ publish_bucket_session_attempt() {
   fi
   final_response="$(cat "$final_response_file")"
   rm -f "$final_response_file"
+  final_response="$(resolve_async_publication_response "$final_response")" || return 1
 
   url="$("$JQ_BIN" -r '.data.publication.public_url // empty' <<<"$final_response")"
   [[ -n "$url" ]] || die "publish response did not include url"

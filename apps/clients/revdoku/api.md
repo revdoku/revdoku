@@ -303,7 +303,18 @@ users to type protected-site passwords in chat. Never put the password in the
 URL. Owner publish responses include the website URL and copyable password/share
 text when the authenticated key is allowed to see it.
 
-Example response:
+**Website slug (paid plans).** Pass `"slug_suggestions": ["California Weather",
+"cali weather", "weather-california"]` to steer the public URL slug. Revdoku
+sanitizes each name to a slug and uses the first available one; if all are taken
+it appends a numeric suffix (`california-weather-1`). On free plans
+`slug_suggestions` is ignored and a random slug is generated (the owner can
+rename the slug later after upgrading). Slug selection only applies when first
+creating a publication; republishing keeps the existing slug.
+
+Publishing is **asynchronous**. The request returns HTTP `202 Accepted` with the
+publication in a `queued`/`processing` state — the bundle is built in the
+background (this is why large, 4k-file buckets no longer time out). Example
+response:
 
 ```json
 {
@@ -312,13 +323,39 @@ Example response:
     "bucket_id": "bkt_...",
     "public_slug": "bright-canvas-meadow",
     "public_url": "https://bright-canvas-meadow.revdoku.site/",
-    "status": "published",
+    "status": "publishing",
+    "publish_state": "queued",
+    "publish_pending": true,
     "site_mode": "spa",
     "access_mode": "public",
     "permanent": true
   }
 }
 ```
+
+#### Wait for the build (poll until live)
+
+Do **not** hand out `public_url` while `publish_state` is `queued` or
+`processing` — it 404s until the build finishes. Poll the publication until it is
+terminal:
+
+```sh
+curl -fsS "$REVDOKU_URL/api/v1/publications/pub_..." \
+  -H "Authorization: Bearer $REVDOKU_API_KEY"
+```
+
+- `publish_state: "ready"` → the site is live; use `public_url`. Owner responses
+  include the access password / share text for protected sites here (it is no
+  longer in the immediate publish response — fetch it after the build).
+- `publish_state: "failed"` → read `publish_error`; recover with
+  `POST /api/v1/buckets/bkt_.../publication/retry` (reuses the saved request, no
+  need to resend settings). The publish-failed notification email is also sent.
+- `publish_state: "queued" | "processing"` → wait ~1–2s and poll again. Waiting is
+  safe; a stuck build is auto-recovered by a background sweeper.
+
+`publish_enqueued_at` / `publish_started_at` / `publish_completed_at` are exposed
+for progress/age. Changing only settings/access (no file changes) reuses the
+existing bundle and does not re-upload files.
 
 Use `site_mode: "static"` for ordinary static sites. Use `site_mode: "spa"` for
 React/Vite-style apps where deep links should fall back to `index.html`.
@@ -368,6 +405,13 @@ Finalize the session:
 curl -fsS -X POST "$REVDOKU_URL/api/v1/publish_sessions/pus_.../finalize" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
+
+Finalize returns `202` with the publication in `publish_state: "queued"` — the
+uploaded files are written into the bucket and the bundle is built in the
+background. Poll `GET /api/v1/publications/pub_...` until `publish_state` is
+`ready` before using `public_url` (see "Wait for the build" above). Bad input
+(a stale session, a file locked by another agent, missing storage) still fails
+fast at finalize with `409`/`423`/`503`.
 
 If an upload URL expires, refresh it:
 
