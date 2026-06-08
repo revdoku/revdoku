@@ -33,7 +33,11 @@ AGENT_VERSION="${REVDOKU_AGENT_VERSION:-0.1.0}"
 AGENT_RUN_ID="${REVDOKU_AGENT_RUN_ID:-}"
 AGENT_PROJECT="${REVDOKU_AGENT_PROJECT:-}"
 AGENT_TASK="${REVDOKU_AGENT_TASK:-}"
-BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE="${REVDOKU_BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE:-12}"
+BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE="${REVDOKU_BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE:-25}"
+BUCKET_UPLOAD_CLIENT_SESSION_KEY="${REVDOKU_BUCKET_UPLOAD_CLIENT_SESSION_KEY:-}"
+HTTP_TRANSIENT_MAX_ATTEMPTS="${REVDOKU_HTTP_TRANSIENT_MAX_ATTEMPTS:-5}"
+HTTP_RETRYABLE_CONFLICT_MAX_ATTEMPTS="${REVDOKU_HTTP_RETRYABLE_CONFLICT_MAX_ATTEMPTS:-12}"
+DIRECT_UPLOAD_MAX_ATTEMPTS="${REVDOKU_DIRECT_UPLOAD_MAX_ATTEMPTS:-5}"
 LOGIN="false"
 ACTION="store"
 PATH_TO_STORE=""
@@ -400,6 +404,91 @@ json_string() {
   "$JQ_BIN" -rn --arg value "$1" '$value'
 }
 
+http_status_success() {
+  local status="${1:-}"
+  [[ "$status" =~ ^[0-9]+$ ]] && (( status >= 200 && status < 300 ))
+}
+
+http_status_retryable() {
+  case "${1:-}" in
+    408|425|429|500|502|503|504)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+http_error_code_retryable() {
+  case "${1:-}" in
+    DATABASE_BUSY_RETRY|BUCKET_FILE_PATH_INDEX_BACKFILL_PENDING|BUCKET_DELETE_BUSY|BUCKET_DELETE_ENQUEUE_FAILED)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+retry_delay_for_attempt() {
+  local attempt="${1:-1}"
+  local retry_after="${2:-}"
+  local delay
+  if [[ "$retry_after" =~ ^[0-9]+$ && "$retry_after" -gt 0 ]]; then
+    echo "$retry_after"
+    return 0
+  fi
+  case "$attempt" in
+    1) delay=1 ;;
+    2) delay=2 ;;
+    3) delay=4 ;;
+    *) delay=8 ;;
+  esac
+  echo "$delay"
+}
+
+http_success_json_replay_allowed() {
+  local method="$1"
+  local path="$2"
+  case "$method:$path" in
+    GET:*)
+      return 0
+      ;;
+    POST:/api/v1/buckets)
+      return 0
+      ;;
+    POST:*/upload_sessions|POST:*/upload_sessions/*/uploads|POST:*/upload_sessions/*/finalize|POST:*/upload_sessions/*/finalize_batch)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+http_conflict_retry_allowed() {
+  local method="$1"
+  local path="$2"
+  case "$method:$path" in
+    GET:*)
+      return 0
+      ;;
+    POST:/api/v1/buckets)
+      return 0
+      ;;
+    POST:*/upload_sessions|POST:*/upload_sessions/*/uploads|POST:*/upload_sessions/*/finalize|POST:*/upload_sessions/*/finalize_batch)
+      return 0
+      ;;
+    DELETE:/api/v1/buckets/*)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 agent_header_args() {
   printf "%s\0" \
     "-H" "User-Agent: Revdoku/${AGENT_VERSION} (${AGENT_CLIENT})" \
@@ -416,7 +505,7 @@ http_json() {
   local path="$2"
   local payload="$3"
   local auth="${4:-true}"
-  local body_file status message code retry_after attempt agent_args=()
+  local body_file status message code request_id retry_after attempt curl_status delay agent_args=()
   LAST_HTTP_STATUS=""
   LAST_ERROR_CODE=""
   LAST_ERROR_MESSAGE=""
@@ -435,12 +524,41 @@ http_json() {
 
   while true; do
     : > "$body_file"
-    status="$(curl "${args[@]}")" || {
+    if status="$(curl "${args[@]}")"; then
+      curl_status=0
+    else
+      curl_status=$?
+      if (( attempt < HTTP_TRANSIENT_MAX_ATTEMPTS )); then
+        attempt=$((attempt + 1))
+        delay="$(retry_delay_for_attempt "$attempt")"
+        echo "Network error while calling $path; retrying in ${delay}s (${attempt}/${HTTP_TRANSIENT_MAX_ATTEMPTS})..." >&2
+        sleep "$delay"
+        continue
+      fi
       rm -f "$body_file"
+      LAST_HTTP_STATUS=""
+      LAST_ERROR_CODE=""
+      LAST_ERROR_MESSAGE="Network error while calling $path"
+      echo "error: network error while calling $path (curl exit $curl_status)" >&2
       return 1
-    }
+    fi
 
-    if [[ "$status" -ge 200 && "$status" -lt 300 ]]; then
+    if http_status_success "$status"; then
+      if [[ "$status" != "204" ]] && ! "$JQ_BIN" -e . "$body_file" >/dev/null 2>&1; then
+        if http_success_json_replay_allowed "$method" "$path" && (( attempt < HTTP_TRANSIENT_MAX_ATTEMPTS )); then
+          attempt=$((attempt + 1))
+          delay="$(retry_delay_for_attempt "$attempt")"
+          echo "Invalid JSON response from $path after HTTP $status; retrying in ${delay}s (${attempt}/${HTTP_TRANSIENT_MAX_ATTEMPTS})..." >&2
+          sleep "$delay"
+          continue
+        fi
+        rm -f "$body_file"
+        LAST_HTTP_STATUS="$status"
+        LAST_ERROR_CODE="INVALID_JSON_RESPONSE"
+        LAST_ERROR_MESSAGE="Invalid JSON response from $path after HTTP $status"
+        echo "error: invalid JSON response from $path after HTTP $status" >&2
+        return 1
+      fi
       cat "$body_file"
       rm -f "$body_file"
       return 0
@@ -448,6 +566,7 @@ http_json() {
 
     message="$("$JQ_BIN" -r '.error.message // .message // empty' "$body_file" 2>/dev/null || true)"
     code="$("$JQ_BIN" -r '.error.code // empty' "$body_file" 2>/dev/null || true)"
+    request_id="$("$JQ_BIN" -r '.error.request_id // .request_id // empty' "$body_file" 2>/dev/null || true)"
     retry_after="$("$JQ_BIN" -r '.error.details.retry_after // empty' "$body_file" 2>/dev/null || true)"
 
     if [[ "$status" == "429" && "$attempt" -lt 20 ]]; then
@@ -458,12 +577,29 @@ http_json() {
       continue
     fi
 
+    if [[ "$status" == "409" ]] && http_error_code_retryable "$code" && http_conflict_retry_allowed "$method" "$path" && (( attempt < HTTP_RETRYABLE_CONFLICT_MAX_ATTEMPTS )); then
+      attempt=$((attempt + 1))
+      delay="$(retry_delay_for_attempt "$attempt" "$retry_after")"
+      echo "Server is busy while calling $path; retrying in ${delay}s (${attempt}/${HTTP_RETRYABLE_CONFLICT_MAX_ATTEMPTS})..." >&2
+      sleep "$delay"
+      continue
+    fi
+
+    if http_status_retryable "$status" && (( attempt < HTTP_TRANSIENT_MAX_ATTEMPTS )); then
+      attempt=$((attempt + 1))
+      delay="$(retry_delay_for_attempt "$attempt")"
+      echo "Transient HTTP $status while calling $path; retrying in ${delay}s (${attempt}/${HTTP_TRANSIENT_MAX_ATTEMPTS})..." >&2
+      sleep "$delay"
+      continue
+    fi
+
     rm -f "$body_file"
     LAST_HTTP_STATUS="$status"
     LAST_ERROR_CODE="$code"
     LAST_ERROR_MESSAGE="$message"
     [[ -n "$message" ]] || message="HTTP $status"
     [[ -n "$code" ]] && message="${message} (${code})"
+    [[ -n "$request_id" ]] && message="${message} request_id=${request_id}"
     echo "error: $message" >&2
     if [[ "$auth" == "true" && ( "$status" == "401" || "$status" == "403" ) ]]; then
       echo "Run again with --login to reconnect and save a fresh Revdoku API key." >&2
@@ -620,7 +756,7 @@ unarchive_bucket() {
 }
 
 delete_bucket() {
-  local bucket_response allowed required_action confirmation payload
+  local bucket_response allowed required_action confirmation payload response deletion_started total_items phase
   [[ -n "$BUCKET_ID" ]] || die "--delete-bucket requires --bucket-id"
   bucket_response="$(http_json GET "/api/v1/buckets/${BUCKET_ID}" "{}")"
   allowed="$("$JQ_BIN" -r '.data.bucket.delete.allowed // false' <<<"$bucket_response")"
@@ -639,7 +775,18 @@ delete_bucket() {
   fi
 
   payload="$("$JQ_BIN" -nc --arg confirmation "$confirmation" '{confirmation:$confirmation}')"
-  http_json DELETE "/api/v1/buckets/${BUCKET_ID}" "$payload"
+  response="$(http_json DELETE "/api/v1/buckets/${BUCKET_ID}" "$payload")" || return 1
+  deletion_started="$("$JQ_BIN" -r '.data.bucket.deletion_started // false' <<<"$response")"
+  if [[ "$deletion_started" == "true" ]]; then
+    phase="$("$JQ_BIN" -r '.data.delete_progress.phase // "queued"' <<<"$response")"
+    total_items="$("$JQ_BIN" -r '.data.delete_progress.total_items // empty' <<<"$response")"
+    if [[ -n "$total_items" ]]; then
+      echo "Bucket deletion ${phase}; ${total_items} file/version items will be removed in the background. Poll --list-buckets or bucket details for delete progress." >&2
+    else
+      echo "Bucket deletion ${phase}; removal will continue in the background. Poll --list-buckets or bucket details for delete progress." >&2
+    fi
+  fi
+  printf "%s\n" "$response"
 }
 
 account_status() {
@@ -1007,21 +1154,32 @@ tag_paths_json() {
 
 bucket_payload() {
   local title="$1"
-  local tag_paths metadata
+  local tag_paths metadata client_create_key
   tag_paths="$(tag_paths_json)"
   metadata="$(effective_metadata_json)"
+  client_create_key="$(bucket_client_create_key "$title" "$metadata" "$tag_paths")"
   "$JQ_BIN" -nc \
     --arg title "$title" \
     --arg description "$DESCRIPTION" \
+    --arg client_create_key "$client_create_key" \
     --argjson metadata "$metadata" \
     --argjson tag_paths "$tag_paths" \
     '{
       bucket: (
-        {title: $title, metadata: $metadata}
+        {title: $title, metadata: ($metadata + {"_revdoku_client_create_key": $client_create_key})}
         + (if $description != "" then {description: $description} else {} end)
         + (if ($tag_paths | length) > 0 then {tag_paths: $tag_paths} else {} end)
       )
     }'
+}
+
+bucket_client_create_key() {
+  local title="$1"
+  local metadata="$2"
+  local tag_paths="$3"
+  local digest
+  digest="$(printf "%s\n%s\n%s\n%s\n%s" "$title" "$ROOT_PATH" "$metadata" "$tag_paths" "$AGENT_RUN_ID" | openssl dgst -sha256 -hex | awk '{print $2}')"
+  printf "cli:%s" "$digest"
 }
 
 bucket_update_payload() {
@@ -1050,7 +1208,8 @@ bucket_update_needed() {
 put_direct_upload() {
   local upload_json="$1"
   local file="$2"
-  local url header_args=()
+  local url header_args=() body_file status curl_status attempt delay
+  LAST_DIRECT_UPLOAD_STATUS=""
   url="$("$JQ_BIN" -r '.url // empty' <<<"$upload_json")"
   [[ -n "$url" ]] || return 1
 
@@ -1059,7 +1218,47 @@ put_direct_upload() {
     header_args+=(-H "${key}: ${value}")
   done < <("$JQ_BIN" -r '.headers // {} | to_entries[] | [.key, .value] | @tsv' <<<"$upload_json")
 
-  curl -fsS -X PUT "${header_args[@]}" --data-binary "@${file}" "$url" >/dev/null
+  attempt=0
+  while true; do
+    body_file="$(mktemp)"
+    if status="$(curl -sS -o "$body_file" -w "%{http_code}" -X PUT "${header_args[@]}" --data-binary "@${file}" "$url")"; then
+      curl_status=0
+    else
+      curl_status=$?
+    fi
+
+    if [[ "$curl_status" == "0" ]] && http_status_success "$status"; then
+      LAST_DIRECT_UPLOAD_STATUS="$status"
+      rm -f "$body_file"
+      return 0
+    fi
+
+    if (( attempt < DIRECT_UPLOAD_MAX_ATTEMPTS )) && { [[ "$curl_status" != "0" ]] || http_status_retryable "$status"; }; then
+      attempt=$((attempt + 1))
+      delay="$(retry_delay_for_attempt "$attempt")"
+      if [[ "$curl_status" != "0" ]]; then
+        echo "Direct upload network error; retrying in ${delay}s (${attempt}/${DIRECT_UPLOAD_MAX_ATTEMPTS})..." >&2
+      else
+        echo "Direct upload HTTP $status; retrying in ${delay}s (${attempt}/${DIRECT_UPLOAD_MAX_ATTEMPTS})..." >&2
+      fi
+      rm -f "$body_file"
+      sleep "$delay"
+      continue
+    fi
+
+    if [[ "$curl_status" != "0" ]]; then
+      LAST_DIRECT_UPLOAD_STATUS=""
+      echo "error: direct upload failed (curl exit $curl_status)" >&2
+    else
+      LAST_DIRECT_UPLOAD_STATUS="$status"
+      echo "error: direct upload failed (HTTP $status)" >&2
+      if [[ -s "$body_file" ]]; then
+        cat "$body_file" >&2
+      fi
+    fi
+    rm -f "$body_file"
+    return 1
+  done
 }
 
 put_publish_session_upload() {
@@ -1163,8 +1362,28 @@ bucket_upload_session_manifest_json() {
   publish_session_manifest_json "$1"
 }
 
+bucket_upload_session_client_key() {
+  local bucket_id="$1"
+  local manifest_json="$2"
+  local digest
+  if [[ -n "$BUCKET_UPLOAD_CLIENT_SESSION_KEY" ]]; then
+    printf "%s" "$BUCKET_UPLOAD_CLIENT_SESSION_KEY"
+    return 0
+  fi
+  digest="$(printf "%s:%s" "$bucket_id" "$manifest_json" | openssl dgst -sha256 -hex | awk '{print $2}')"
+  printf "cli:%s:%s" "$bucket_id" "$digest"
+}
+
 bucket_upload_session_payload() {
-  "$JQ_BIN" -nc '{}'
+  local client_session_key="$1"
+  local expected_file_count="$2"
+  "$JQ_BIN" -nc \
+    --arg client_session_key "$client_session_key" \
+    --argjson expected_file_count "$expected_file_count" \
+    '{
+      client_session_key: $client_session_key,
+      expected_file_count: $expected_file_count
+    }'
 }
 
 prepare_bucket_upload_descriptors() {
@@ -1180,20 +1399,41 @@ finalize_bucket_upload_session() {
   local bucket_id="$1"
   local session_id="$2"
   local complete="${3:-true}"
+  local payload response pending attempts=0
   [[ -n "$session_id" ]] || return 0
   "$JQ_BIN" -nc --argjson complete "$complete" '{complete:$complete}' | {
+    payload="$(cat)"
+    while :; do
+      response="$(http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions/${session_id}/finalize" "$payload")" || return 1
+      pending="$("$JQ_BIN" -r '.data.finalize_pending // false' <<<"$response")"
+      [[ "$pending" == "true" && "$complete" == "true" ]] || return 0
+      attempts=$((attempts + 1))
+      [[ "$attempts" -lt 1000 ]] || return 1
+      sleep 2
+    done
+  }
+}
+
+finalize_bucket_upload_session_batch() {
+  local bucket_id="$1"
+  local session_id="$2"
+  local limit="${3:-100}"
+  [[ -n "$session_id" ]] || return 0
+  "$JQ_BIN" -nc --argjson limit "$limit" '{limit:$limit}' | {
     local payload
     payload="$(cat)"
-    http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions/${session_id}/finalize" "$payload" >/dev/null
+    http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions/${session_id}/finalize_batch" "$payload" >/dev/null
   }
 }
 
 store_bucket_session_upload() {
   local bucket_id="$1"
   local file_list="$2"
-  local manifest_json payload response session_id upload_line rel upload_json file batch_json batch_response failed=0 finalized=0
+  local manifest_json payload response session_id upload_line rel upload_json file batch_json batch_response expected_file_count client_session_key failed=0 finalized=0 entry_json refresh_response
   manifest_json="$(bucket_upload_session_manifest_json "$file_list")"
-  payload="$(bucket_upload_session_payload)"
+  expected_file_count="$("$JQ_BIN" -r 'length' <<<"$manifest_json")"
+  client_session_key="$(bucket_upload_session_client_key "$bucket_id" "$manifest_json")"
+  payload="$(bucket_upload_session_payload "$client_session_key" "$expected_file_count")"
   response="$(http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions" "$payload")" || return 1
   session_id="$("$JQ_BIN" -r '.data.bucket_upload_session.id // empty' <<<"$response")"
   [[ -n "$session_id" ]] || die "bucket upload session response did not include id"
@@ -1217,12 +1457,26 @@ store_bucket_session_upload() {
       }
       echo "Uploading $rel" >&2
       if ! put_direct_upload "$upload_json" "$file"; then
+        if [[ "${LAST_DIRECT_UPLOAD_STATUS:-}" == "403" || "${LAST_DIRECT_UPLOAD_STATUS:-}" == "404" ]]; then
+          entry_json="$("$JQ_BIN" -c --arg rel "$rel" 'map(select(.path == $rel))[0] // empty' <<<"$batch_json")"
+          if [[ -n "$entry_json" ]] && refresh_response="$(prepare_bucket_upload_descriptors "$bucket_id" "$session_id" "[$entry_json]")"; then
+            upload_json="$("$JQ_BIN" -c '.data.uploads[0].upload // empty' <<<"$refresh_response")"
+            if [[ -n "$upload_json" ]] && put_direct_upload "$upload_json" "$file"; then
+              continue
+            fi
+          fi
+        fi
         echo "error: upload failed for $rel" >&2
         failed=1
         break
       fi
     done < <("$JQ_BIN" -c '.data.uploads[]?' <<<"$batch_response")
     [[ "$failed" == "0" ]] || break
+
+    if ! finalize_bucket_upload_session_batch "$bucket_id" "$session_id" "$BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE"; then
+      failed=1
+      break
+    fi
   done < <("$JQ_BIN" -c --argjson size "$BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE" 'range(0; length; $size) as $i | .[$i:($i + $size)]' <<<"$manifest_json")
 
   if [[ "$failed" == "0" ]] && finalize_bucket_upload_session "$bucket_id" "$session_id" true; then
