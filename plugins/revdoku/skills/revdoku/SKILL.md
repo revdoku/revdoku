@@ -81,9 +81,17 @@ for structured bucket work:
   settings/access-only change does not re-upload files. Direct API callers poll
   `GET /api/v1/publications/<id>` for `publish_state: "ready"` before sharing
   `public_url`, and can retry a `failed` one — see api.md.
-- Paid plans may pass `slug_suggestions` (ordered website names) to the publish
+- Free plans publish a **time-limited preview** (7 days by default, not indexed by
+  Google), and the publish result's `guidance` says so — tell the user it's a free
+  preview and that they can upgrade to keep it online permanently and searchable.
+  Paid plans publish permanent sites by default; pass `expires_in_hours` for an
+  explicit lifetime. After a free preview expires its files are kept; republishing
+  (or upgrading) restores it, subject to a short re-publish cooldown
+  (`PUBLICATION_FREE_COOLDOWN`).
+- Any plan may pass `slug_suggestions` (ordered website names) to the publish
   tools to steer the public URL (first available wins, else a numeric suffix);
-  free plans get a generated slug. Applies only on first publish.
+  otherwise the slug defaults to the bucket's name. Applies on first publish; the
+  slug can be renamed later.
 - Use `bucket_unpublish` when the user asks to unpublish a website.
   Tell the user that republishing the same bucket restores the same URL.
 - Use `bucket_archive` and `bucket_unarchive` for normal bucket

@@ -303,13 +303,23 @@ users to type protected-site passwords in chat. Never put the password in the
 URL. Owner publish responses include the website URL and copyable password/share
 text when the authenticated key is allowed to see it.
 
-**Website slug (paid plans).** Pass `"slug_suggestions": ["California Weather",
-"cali weather", "weather-california"]` to steer the public URL slug. Revdoku
-sanitizes each name to a slug and uses the first available one; if all are taken
-it appends a numeric suffix (`california-weather-1`). On free plans
-`slug_suggestions` is ignored and a random slug is generated (the owner can
-rename the slug later after upgrading). Slug selection only applies when first
-creating a publication; republishing keeps the existing slug.
+**Website lifetime.** Free plans publish a **time-limited preview** — the site
+comes down after the plan's preview window (7 days by default) and `permanent` is
+ignored. Paid plans publish **permanent** sites by default; pass
+`"expires_in_hours": 48` (or the legacy `"expires_in_days"`) to set an explicit
+lifetime instead. A free plan may request a *shorter* `expires_in_hours` but never
+longer or permanent. Free previews are also excluded from search engines
+(`noindex`); indexing is a paid perk. After a free preview expires the files are
+kept — re-publishing (or upgrading) restores it; a short cooldown applies before
+the same free bucket can be re-published.
+
+**Website slug.** Pass `"slug_suggestions": ["California Weather", "cali weather",
+"weather-california"]` on any plan to steer the public URL slug. Revdoku sanitizes
+each name to a slug and uses the first available one; if all are taken it appends
+a numeric suffix (`california-weather-1`). When no suggestion is given the slug
+defaults to the **bucket's name**; a random slug is used only if that's unusable.
+Slug selection applies when first creating a publication; the slug can be renamed
+later (`PATCH .../custom_domains/public_slug`).
 
 Publishing is **asynchronous**. The request returns HTTP `202 Accepted` with the
 publication in a `queued`/`processing` state — the bundle is built in the
