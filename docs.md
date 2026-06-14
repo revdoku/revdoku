@@ -1,7 +1,7 @@
 # Revdoku Docs
 
-Revdoku stores generated files in private buckets and can publish those files as
-public or password-protected static websites. Use it when an AI agent, local
+Revdoku stores generated files in private buckets as saved drafts and can
+publish those files live as public or password-protected websites. Use it when an AI agent, local
 script, or API workflow needs a durable place to save, update, share, or publish
 project output.
 
@@ -54,10 +54,22 @@ Revdoku supports two website modes:
 
 - `static`: normal static files where `index.html` is the default entrypoint.
 - `spa`: single-page apps where app routes fall back to the entrypoint.
+- `app`: data-backed app sites that use bucket app databases and safe actions.
 
 Republishing the same bucket updates the existing website and keeps the same
 public URL. Unpublishing removes public access while keeping the bucket and
 reserved URL for later republish.
+
+Saving files does not publish them. Treat bucket writes as **Save draft** and
+publish tools as **Publish live** or **Republish live**.
+
+## App Sites
+
+App sites use a bucket-owned database and named safe actions. Public safe
+actions are visitor endpoints at `/_revdoku/app/<name>`; private safe actions
+are owner/agent-only. Agents should inspect the live data model with
+`bucket_app_database_get` before changing schema, data, or actions, and keep a
+private `revdoku.app.json` contract file in the bucket for future handoff.
 
 ## Protected Websites
 

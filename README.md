@@ -2,6 +2,8 @@
 
 Publish websites from Claude, ChatGPT, Codex, and other AI agents using Revdoku.
 A few seconds from idea to a live website you can share.
+Files are saved privately as drafts first; publishing live only happens when you
+ask for it.
 
 Create a free account: <https://revdoku.com>
 
