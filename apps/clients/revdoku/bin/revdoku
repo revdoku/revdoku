@@ -143,7 +143,6 @@ Options:
   --dashboard-link          Print a one-time browser login link for the Revdoku dashboard.
   --library-link            Print a one-time browser login link for Library settings.
   --access-link             Print a one-time browser login link for Account > Access.
-  --public-handle-link      Print a one-time browser login link for Account public handle settings.
   --browser-login PATH      Print a one-time browser login link for an internal Revdoku path.
                             Browser login links are disabled when 2FA is enabled or required.
   --upload-mode MODE        auto or direct. Defaults to auto.
@@ -317,11 +316,6 @@ while [[ $# -gt 0 ]]; do
     --access-link)
       ACTION="browser_login"
       BROWSER_LOGIN_PATH="/account/access"
-      shift
-      ;;
-    --public-handle-link|--handle-link)
-      ACTION="browser_login"
-      BROWSER_LOGIN_PATH="/account/account"
       shift
       ;;
     --browser-login)
@@ -971,15 +965,6 @@ list_public_buckets() {
 print_terminal_link_hint() {
   if [[ -t 2 ]]; then
     echo "Tip: Cmd-click the link on macOS, or Ctrl-click it on Windows/Linux, if your terminal supports clickable links." >&2
-  fi
-}
-
-print_public_profile_listing_hint_from_response() {
-  local response="$1"
-  local profile_url
-  profile_url="$("$JQ_BIN" -r '.data.publication.account_public_profile_url // .data.publication.public_profile.url // empty' <<<"$response" 2>/dev/null || true)"
-  if [[ -n "$profile_url" ]]; then
-    echo "All your public sites are listed at $profile_url" >&2
   fi
 }
 
@@ -1763,7 +1748,6 @@ publish_bucket() {
   response="$(resolve_async_publication_response "$response")" || die "bucket publish did not finish"
   url="$("$JQ_BIN" -r '.data.publication.public_url // empty' <<<"$response")"
   [[ -n "$url" ]] || die "publish response did not include url"
-  print_public_profile_listing_hint_from_response "$response"
   print_publication_access_hint_from_response "$response"
   printf "%s\n" "$url"
 }
@@ -1889,7 +1873,6 @@ publish_bucket_session_attempt() {
 
   url="$("$JQ_BIN" -r '.data.publication.public_url // empty' <<<"$final_response")"
   [[ -n "$url" ]] || die "publish response did not include url"
-  print_public_profile_listing_hint_from_response "$final_response"
   print_publication_access_hint_from_response "$final_response"
   printf "%s\n" "$url"
 }
