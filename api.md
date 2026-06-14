@@ -77,6 +77,17 @@ Errors are wrapped in `error`:
 Use `error.code` for recovery logic. Use `request_id` when debugging with
 support.
 
+### Versioning
+
+Every API response carries an `X-Revdoku-Client-Version` header (the current
+CLI/connector release). `GET /api/v1/status` also returns `server_version` (the
+running Revdoku version) and `client_version`. Clients can compare
+`client_version` against their installed version to detect and prompt for an
+update — the bundled CLI does this automatically. The MCP connector reports the
+same via the `initialize` handshake (`serverInfo.version`) and the
+`revdoku_status` tool (`mcp.server_version`). See `docs/connector-updates.md` for
+how each client refreshes after an update.
+
 ## Hosted MCP for Claude/ChatGPT Cloud
 
 Cloud agents that support custom remote MCP connectors connect to Revdoku through

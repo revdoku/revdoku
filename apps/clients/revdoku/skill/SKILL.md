@@ -283,6 +283,7 @@ deleted with it, and offer an export first.
 - `--unarchive`: with `--bucket-id`, restore an archived bucket to the active bucket list.
 - `--delete-bucket`: with `--bucket-id`, permanently delete an unpublished bucket. The CLI fetches and passes the server-returned `delete.confirmation` token internally; use only after explicit destructive confirmation.
 - `--url URL`: Revdoku app URL, default `https://app.revdoku.com`.
+- `--version`: print the installed CLI version (or `unknown` if not installed via `install.sh`). On normal runs the CLI also prints a non-blocking notice when a newer version is available; update by re-running `curl -fsSL <app-url>/install.sh | bash`. See `docs/connector-updates.md` for refreshing MCP connectors after an update.
 - `--login`: force the email-code login flow and refresh local credentials. With no path it saves credentials and exits; pass a path (for example `revdoku ./dist`) to also store files. To confirm a connection works, run `--status`.
 - `--status`: print connection status as JSON (connected, account, scope, bucket access). Works with bucket-scoped agent credentials, so this is the right way to confirm a connection — not `--account-status`.
 - `--agent NAME`: attribute uploads to a specific agent (for example `claude-code` or `codex`). The CLI auto-detects common agents and otherwise records `cli`; set this (or `REVDOKU_AGENT_NAME`) when running inside an agent that is not auto-detected so version history shows the real caller.
@@ -301,10 +302,17 @@ deleted with it, and offer an export first.
 
 ## What To Tell The User
 
-- By default, share the bucket id printed by the script. It is private storage, not a public URL.
-- If `--publish` was used, share the website URL and keep the printed `Bucket: ...` id for future updates. For protected websites, give the owner the website URL and password to share; do not append the password as a URL parameter. For `password_ask_info`, also mention that visitors will enter email before the password.
-- If publishing fails with `PUBLIC_STORAGE_NOT_CONFIGURED`, share the bucket
-  id as private storage and say public publishing is not configured yet.
+- By default, share the **`View in Revdoku:` dashboard link** the CLI prints (it
+  opens the private bucket in Revdoku), not the raw `bkt_` id. Keep the id only
+  as an internal handle for future `--bucket-id` calls.
+- If `--publish` was used, share the **website URL** and keep the printed
+  `Bucket: ...` id for future updates. For protected websites, give the owner the
+  website URL and password to share; do not append the password as a URL
+  parameter. For `password_ask_info`, also mention that visitors will enter email
+  before the password.
+- If publishing fails with `PUBLIC_STORAGE_NOT_CONFIGURED`, share the
+  `View in Revdoku:` dashboard link as private storage and say public publishing
+  is not configured yet.
 - If asked which buckets are public, run `~/.revdoku/bin/revdoku --list-public-buckets` and summarize the bucket ids, URLs, and hit totals when useful.
 - If asked to archive, unarchive, or permanently delete a bucket using only the CLI, first run `~/.revdoku/bin/revdoku --list-buckets` and resolve the right bucket by title/status. Use `--unpublish` first only after confirmation when `delete.required_action` or `archive.required_action` says `unpublish_first`.
 - If asked to roll back a bucket, list versions first, confirm the target

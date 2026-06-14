@@ -166,6 +166,18 @@ install_user_command() {
   echo "Installed command to ${USER_BIN_DIR}/revdoku"
 }
 
+# Stamp the installed client version (passed by the Rails-served bootstrap) so
+# the CLI can self-check for updates. Skipped when the value is missing or still
+# the literal placeholder (e.g. installing from a raw mirror).
+write_client_version() {
+  local version="${REVDOKU_CLIENT_VERSION:-}"
+  [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]] || return 0
+
+  local config_dir="${REVDOKU_CONFIG_DIR:-$(dirname "$USER_BIN_DIR")}"
+  mkdir -p "$config_dir"
+  printf '%s\n' "$version" > "${config_dir}/client_version"
+}
+
 main() {
   local codex_root="${CODEX_HOME:-${HOME}/.codex}"
   local claude_root="${CLAUDE_HOME:-${HOME}/.claude}"
@@ -222,6 +234,7 @@ main() {
 
   [[ "$installed" -eq 1 ]] || die "nothing installed"
   install_user_command
+  write_client_version
   echo ""
   echo "Store files with the ${SKILL_NAME} skill, or run ${USER_BIN_DIR}/revdoku directly."
 }
