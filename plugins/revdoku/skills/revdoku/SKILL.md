@@ -8,8 +8,8 @@ description: >
 # Revdoku Website Publishing
 
 Create or update websites in Revdoku as durable bucket files. A bucket stores
-files privately first and can be published or republished as a public or
-password-protected website.
+files privately first as a saved draft and can be published or republished as a
+live public or password-protected website.
 
 Use this skill when the user asks to publish, host, deploy, share on the web,
 create a public or protected website, upload, save, store, share through a
@@ -42,8 +42,10 @@ for structured bucket work:
 - Use `bucket_write_file`, `bucket_upload_file`, `bucket_read_file`,
   and `bucket_delete_file` for website/project file operations. Use
   `index.html` as the default website root unless the user asks for another
-  entrypoint. Use `bucket_file_list` with `limit` and `offset` for large buckets
-  when a partial file listing is enough; omit them only when the full list is needed.
+  entrypoint. Writing or uploading files saves a private draft only; do not
+  describe the result as live until a publish tool returns a ready publication.
+  Use `bucket_file_list` with `limit` and `offset` for large buckets when a
+  partial file listing is enough; omit them only when the full list is needed.
 - Use `bucket_version_list`, `bucket_version_get`, and
   `bucket_version_restore` when the user asks to inspect history or roll back
   a bucket. Restore creates a new latest version from the selected historical
@@ -55,11 +57,11 @@ for structured bucket work:
   `bucket_unlock_file`. Revdoku checks the bucket lock before file locks. If it
   returns `BUCKET_LOCKED` or `FILE_LOCKED`, do not overwrite; report who owns the
   lock and the lock message, then coordinate or wait.
-- Use `bucket_publish` only when the user asks for a public website URL. For
-  protected websites, use `bucket_publish_password_protected`; Revdoku generates
-  a password when needed. Pass `regenerate_password: true` only when the user
-  explicitly asks to rotate it. Never ask the user to type a protected-site
-  password in chat, and never put the password in the URL. If the user asks to
+- Use `bucket_publish` only when the user asks for a public live website URL.
+  For protected websites, use `bucket_publish_password_protected`; Revdoku
+  generates a password when needed. Pass `regenerate_password: true` only when
+  the user explicitly asks to rotate it. Never ask the user to type a
+  protected-site password in chat, and never put the password in the URL. If the user asks to
   set or change the bucket description while publishing, pass `description` on
   the publish tool or update the bucket first; password and password+email gates
   show the bucket description under the title. When updating an existing website, republish that
@@ -171,7 +173,12 @@ link.
 ~/.revdoku/bin/revdoku {file-or-dir}
 ```
 
-The CLI stores files privately and prints the bucket id. If no API key is
+The CLI stores files privately and prints the bucket id on stdout, plus a
+`View in Revdoku:` dashboard link (and, after `--publish`, the live website URL)
+on stderr. **When you report the result to the user, show the link — the
+published website URL if you published, otherwise the `View in Revdoku:`
+dashboard link — not the raw `bkt_` id.** Treat the id as an internal handle for
+follow-up `--bucket-id` calls. If no API key is
 available, run it interactively; it asks for the user's email, sends a
 verification code, saves the returned key to `~/.revdoku/credentials`, then
 reuses it on future runs. If Revdoku rejects a disposable or blocked email
@@ -213,6 +220,48 @@ MCP equivalent:
 
 To publish with MCP, include `"publish": true`.
 
+## App websites with a database
+
+Buckets can publish interactive app websites backed by a bucket-owned server
+database (Cloudflare D1). Use this for small data-backed sites: voting or
+suggestion pages, shared prompt libraries, research/link feeds that an agent
+updates over time. The flow via MCP:
+
+1. If the bucket already exists, call `bucket_app_database_get` first and
+   summarize the live data model plus safe actions before modifying schema,
+   rows, or action definitions.
+2. Create or update a private `revdoku.app.json` app contract file when useful.
+   Include app purpose, data model summary, safe actions, publish mode, and
+   rollback notes. The file is stored in the bucket draft but excluded from the
+   public live bundle.
+3. `bucket_app_database_setup` — create the database and apply SQL `schema`
+   statements, optional `seed` rows, and an `operations` manifest of named SQL
+   safe actions. Actions with `public: true` become visitor endpoints at
+   `/_revdoku/app/<name>` on the published site; actions with `public: false`
+   are owner/agent-only and invoked through `bucket_app_database_run_operation`.
+   `params` bind values from `body`, `query`, `visitor` (`key` = stable visitor
+   id, `email` on password+email sites), `system` (`uuid`, `now`), or `literal`.
+4. Write the static frontend (HTML/JS calling `/_revdoku/app/<name>` with
+   `fetch` on the same origin) into the bucket as usual.
+5. Publish with `site_type: "app"` (ordinary websites stay static-only and
+   reject app routes).
+6. Prefer `bucket_app_database_run_operation` safe actions for repeatable agent
+   workflows. Use `bucket_app_database_query` for owner-only ad hoc SQL such as
+   inspection or one-off imports; visitors never get raw SQL.
+
+Anti-spam for anonymous-write safe actions: store the owner's own Cloudflare
+Turnstile secret as `operations.turnstile.secret_key` and set
+`turnstile: true` on the action; the page renders the Turnstile widget with
+the owner's sitekey and sends `cf_turnstile_token` in the request body.
+
+Data protection rules: one database per bucket, created once — no reset,
+re-provision, or delete endpoint exists. Destructive SQL (`DROP`, WHERE-less
+`DELETE`/`UPDATE`, `PRAGMA`) is rejected on every owner path; evolve schema
+additively or create a new bucket for a fresh schema. The provider database is
+deleted only when the bucket itself is permanently deleted through the
+confirmed bucket-delete flow — warn the user that visitor-submitted data is
+deleted with it, and offer an export first.
+
 ## Options
 
 - `--expires-in-days DAYS`: advanced; make a website expire after DAYS instead of permanent.
@@ -234,7 +283,9 @@ To publish with MCP, include `"publish": true`.
 - `--unarchive`: with `--bucket-id`, restore an archived bucket to the active bucket list.
 - `--delete-bucket`: with `--bucket-id`, permanently delete an unpublished bucket. The CLI fetches and passes the server-returned `delete.confirmation` token internally; use only after explicit destructive confirmation.
 - `--url URL`: Revdoku app URL, default `https://app.revdoku.com`.
-- `--login`: force the email-code login flow and refresh local credentials.
+- `--login`: force the email-code login flow and refresh local credentials. With no path it saves credentials and exits; pass a path (for example `revdoku ./dist`) to also store files. To confirm a connection works, run `--status`.
+- `--status`: print connection status as JSON (connected, account, scope, bucket access). Works with bucket-scoped agent credentials, so this is the right way to confirm a connection — not `--account-status`.
+- `--agent NAME`: attribute uploads to a specific agent (for example `claude-code` or `codex`). The CLI auto-detects common agents and otherwise records `cli`; set this (or `REVDOKU_AGENT_NAME`) when running inside an agent that is not auto-detected so version history shows the real caller.
 - `--dashboard-link`: create a one-time browser login link for the Revdoku dashboard.
 - `--library-link`: create a one-time browser login link for Library settings.
 - `--access-link`: create a one-time browser login link for Account > Access.
@@ -245,7 +296,7 @@ To publish with MCP, include `"publish": true`.
   app and save the returned API key.
 - `--list-buckets`: print available buckets and metadata as JSON.
 - `--list-public-buckets`: print active website publications and URLs as JSON. Each publication includes `hits`, derived from `analytics.hits_all_time` in the HTTP API.
-- `--account-status`: print account, plan, and storage status as JSON with full-account credentials. Bucket-scoped agent credentials may be denied; open Revdoku in a browser to review account status when needed.
+- `--account-status`: print account, plan, and storage status as JSON with full-account credentials. Bucket-scoped agent credentials are denied this; to confirm a bucket-scoped agent connection works use `--status`, or open Revdoku in a browser to review account status when needed.
 - `--upload-mode MODE`: `auto` or `direct`; default `auto`. Private bucket storage uses bucket upload sessions so multi-file uploads become one bucket version.
 
 ## What To Tell The User

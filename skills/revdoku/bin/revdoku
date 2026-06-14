@@ -27,7 +27,7 @@ RESTORE_COMMENT="${REVDOKU_RESTORE_COMMENT:-}"
 GRANT_TOKEN="${REVDOKU_GRANT_TOKEN:-}"
 BROWSER_LOGIN_PATH="${REVDOKU_BROWSER_LOGIN_PATH:-/buckets}"
 TAG_PATHS=()
-AGENT_NAME="${REVDOKU_AGENT_NAME:-cli}"
+AGENT_NAME="${REVDOKU_AGENT_NAME:-}"
 AGENT_CLIENT="${REVDOKU_AGENT_CLIENT:-revdoku}"
 AGENT_VERSION="${REVDOKU_AGENT_VERSION:-0.1.0}"
 AGENT_RUN_ID="${REVDOKU_AGENT_RUN_ID:-}"
@@ -41,6 +41,7 @@ DIRECT_UPLOAD_MAX_ATTEMPTS="${REVDOKU_DIRECT_UPLOAD_MAX_ATTEMPTS:-5}"
 LOGIN="false"
 ACTION="store"
 PATH_TO_STORE=""
+PATH_EXPLICIT="false"
 LAST_PUBLISH_SESSION_BUCKET_ID=""
 LAST_HTTP_STATUS=""
 LAST_ERROR_CODE=""
@@ -56,6 +57,25 @@ need_cmd() {
   command -v "$1" >/dev/null 2>&1 || die "requires $1"
 }
 
+# Identify the AI agent or tool driving this CLI so uploads are attributed to
+# the real caller (claude-code, codex, ...) instead of a generic "cli".
+# Precedence: --agent flag / REVDOKU_AGENT_NAME override this entirely; this
+# function only runs as the fallback. Always degrades safely to "cli".
+detect_agent_name() {
+  if [[ -n "${CLAUDECODE:-}" || -n "${CLAUDE_CODE_ENTRYPOINT:-}" ]]; then
+    printf 'claude-code'
+  elif [[ -n "${CODEX_SANDBOX:-}" || -n "${CODEX_HOME:-}" ]]; then
+    printf 'codex'
+  elif [[ -n "${CURSOR_TRACE_ID:-}" ]]; then
+    printf 'cursor'
+  elif [[ -n "${AI_AGENT:-}" ]]; then
+    # Generic convention, e.g. AI_AGENT="claude-code_2-1-173_agent" -> "claude-code"
+    printf '%s' "${AI_AGENT%%_*}"
+  else
+    printf 'cli'
+  fi
+}
+
 usage() {
   cat <<USAGE
 Usage: revdoku [options] PATH
@@ -69,7 +89,9 @@ Options:
   --bucket-id ID         Store into an existing Revdoku bucket instead of creating a new one.
                             Defaults to a bucket remembered from a selected-bucket grant.
   --metadata JSON           Optional JSON for agent lookup, for example {"project":"site"}.
-  --publish                 Publish as a permanent website after storing files. Defaults to public.
+  --agent NAME              Attribute uploads to this agent (e.g. claude-code, codex).
+                            Defaults to REVDOKU_AGENT_NAME, then auto-detection, then cli.
+  --publish                 Publish live after saving files to a private draft bucket. Defaults to public.
   --access-mode MODE        Website access mode: public, password, or password_ask_info.
                             password_ask_info asks visitors for email plus password.
                             Existing sites keep their mode unless changed.
@@ -90,6 +112,9 @@ Options:
   --delete-bucket           Permanently delete unpublished --bucket-id.
   --expires-in-days DAYS    Advanced: expire the website after DAYS instead of keeping it permanent.
   --login                   Request a privacy-preserving email code and save an API key to $CREDENTIALS_PATH.
+                            With no PATH, exits after saving; pass PATH to also store files.
+  --status                  Print connection status as JSON (connected, account, scope).
+                            Works with bucket-scoped agent credentials.
   --list-buckets         Print available buckets and metadata as JSON.
   --list-versions           Print version history for --bucket-id as JSON.
   --restore-version ID      Restore a bucket version as a new latest version; requires --bucket-id.
@@ -144,6 +169,11 @@ while [[ $# -gt 0 ]]; do
     --metadata)
       [[ $# -ge 2 ]] || die "--metadata requires a JSON object"
       METADATA_JSON="$2"
+      shift 2
+      ;;
+    --agent)
+      [[ $# -ge 2 ]] || die "--agent requires a value"
+      AGENT_NAME="$2"
       shift 2
       ;;
     --publish)
@@ -251,6 +281,10 @@ while [[ $# -gt 0 ]]; do
       ACTION="account_status"
       shift
       ;;
+    --status)
+      ACTION="connection_status"
+      shift
+      ;;
     --dashboard-link)
       ACTION="browser_login"
       BROWSER_LOGIN_PATH="/buckets"
@@ -301,13 +335,22 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       PATH_TO_STORE="$1"
+      PATH_EXPLICIT="true"
       shift
       ;;
   esac
 done
 
-[[ -n "$PATH_TO_STORE" ]] || PATH_TO_STORE="${1:-.}"
+if [[ -z "$PATH_TO_STORE" ]]; then
+  if [[ -n "${1:-}" ]]; then
+    PATH_TO_STORE="$1"
+    PATH_EXPLICIT="true"
+  else
+    PATH_TO_STORE="."
+  fi
+fi
 BASE_URL="${BASE_URL%/}"
+[[ -n "$AGENT_NAME" ]] || AGENT_NAME="$(detect_agent_name)"
 
 need_cmd curl
 need_cmd openssl
@@ -607,8 +650,12 @@ http_json() {
     [[ -n "$code" ]] && message="${message} (${code})"
     [[ -n "$request_id" ]] && message="${message} request_id=${request_id}"
     echo "error: $message" >&2
-    if [[ "$auth" == "true" && ( "$status" == "401" || "$status" == "403" ) ]]; then
-      echo "Run again with --login to reconnect and save a fresh Revdoku API key." >&2
+    if [[ "$auth" == "true" ]]; then
+      if [[ "$code" == "ACCOUNT_ACCESS_UNAVAILABLE" ]]; then
+        echo "This connection uses bucket-scoped agent credentials, which cannot read account-level status. Verify the connection with --status, or open Revdoku in a browser for account details." >&2
+      elif [[ "$status" == "401" || "$status" == "403" ]]; then
+        echo "Run again with --login to reconnect and save a fresh Revdoku API key." >&2
+      fi
     fi
     return 1
   done
@@ -673,6 +720,12 @@ request_agent_key() {
 
 if [[ "$ACTION" != "exchange_grant" && ( "$LOGIN" == "true" || -z "$API_KEY" ) ]]; then
   request_agent_key
+fi
+
+if [[ "$LOGIN" == "true" && "$ACTION" == "store" && "$PATH_EXPLICIT" == "false" ]]; then
+  echo "Login complete. Credentials saved to $CREDENTIALS_PATH." >&2
+  echo "To store files, run: revdoku PATH (e.g. revdoku ./dist). Verify the connection with: revdoku --status." >&2
+  exit 0
 fi
 
 [[ "$ACTION" == "exchange_grant" || -n "$API_KEY" ]] || die "REVDOKU_API_KEY is required"
@@ -793,6 +846,17 @@ delete_bucket() {
     fi
   fi
   printf "%s\n" "$response"
+}
+
+connection_status() {
+  http_json GET "/api/v1/status" "{}" | "$JQ_BIN" -c '{
+    success: (.success // true),
+    data: {
+      connected: (.data.connected // true),
+      account: .data.account,
+      connection: .data.connection
+    }
+  }'
 }
 
 account_status() {
@@ -1023,6 +1087,10 @@ case "$ACTION" in
     ;;
   account_status)
     account_status
+    exit 0
+    ;;
+  connection_status)
+    connection_status
     exit 0
     ;;
   browser_login)
@@ -1725,7 +1793,10 @@ publish_bucket_session_attempt() {
   [[ -n "$session_id" ]] || {
     die "publish session response did not include id"
   }
-  [[ -n "$bucket_id" ]] && echo "Bucket: $bucket_id" >&2
+  [[ -n "$bucket_id" ]] && {
+    echo "Bucket: $bucket_id" >&2
+    echo "Saved draft bucket before live publish: $bucket_id" >&2
+  }
   echo "Publish session: $session_id" >&2
 
   local upload_total upload_index=0
@@ -1840,6 +1911,7 @@ store_bucket() {
     die "bucket id is required before uploading files"
   }
   echo "Bucket: $bucket_id" >&2
+  echo "Saved draft bucket: $bucket_id" >&2
   store_bucket_session_upload "$bucket_id" "$file_list" || {
     rm -f "$file_list"
     return 1
@@ -1927,7 +1999,7 @@ if [[ "$PUBLISH" == "true" ]]; then
     publish_url="$(cat "$publish_url_file")"
     rm -f "$publish_url_file"
     verify_published_url "$publish_url"
-    echo "Published: $publish_url" >&2
+    echo "Published live: $publish_url" >&2
     print_terminal_link_hint
     printf "%s\n" "$publish_url"
     exit 0
@@ -1957,7 +2029,7 @@ if ! store_bucket > "$bucket_id_file"; then
 fi
 bucket_id="$(cat "$bucket_id_file")"
 rm -f "$bucket_id_file"
-echo "Stored bucket: $bucket_id" >&2
+echo "Saved draft bucket: $bucket_id" >&2
 
 if [[ "$PUBLISH" == "true" ]]; then
   publish_url_file="$(mktemp)"
@@ -1968,9 +2040,14 @@ if [[ "$PUBLISH" == "true" ]]; then
   publish_url="$(cat "$publish_url_file")"
   rm -f "$publish_url_file"
   verify_published_url "$publish_url"
-  echo "Published: $publish_url" >&2
+  echo "Published live: $publish_url" >&2
+  echo "Manage in Revdoku: $BASE_URL/buckets/view?id=$bucket_id" >&2
   print_terminal_link_hint
   printf "%s\n" "$publish_url"
 else
+  # Show the owner a clickable dashboard link, not just the bkt_ id. stdout stays
+  # the bucket id so scripts and --bucket-id reuse keep working.
+  echo "View in Revdoku: $BASE_URL/buckets/view?id=$bucket_id" >&2
+  print_terminal_link_hint
   printf "%s\n" "$bucket_id"
 fi

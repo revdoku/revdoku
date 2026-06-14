@@ -176,10 +176,17 @@ Example response:
   "data": {
     "id": "bkt_...",
     "title": "Marketing site",
-    "published": false
+    "published": false,
+    "dashboard_url": "https://app.revdoku.com/buckets/view?id=bkt_..."
   }
 }
 ```
+
+Every bucket response includes `dashboard_url` — a link that opens the bucket in
+the Revdoku dashboard (private or published). Once published, the bucket also
+carries `public_url` (the live site). When reporting a bucket to a user, show the
+link — `public_url` if published, otherwise `dashboard_url` — rather than the raw
+`bkt_` id.
 
 ### Upload a File
 
@@ -369,6 +376,19 @@ existing bundle and does not re-upload files.
 
 Use `site_mode: "static"` for ordinary static sites. Use `site_mode: "spa"` for
 React/Vite-style apps where deep links should fall back to `index.html`.
+Use `site_type: "website"` for ordinary published websites (the default). Use
+`site_type: "app"` when the bucket should expose Revdoku app runtime metadata:
+bucket app database operations at `/_revdoku/app/<operation>`, usage-policy
+metadata, and optional per-bucket Worker dispatch.
+
+Publishing never includes private runtime/development files in the static
+bundle. Paths such as `.workers/**`, `.env*`, `node_modules/**`, local lockfiles,
+and executable installer/script payloads may exist in bucket storage for owner
+or agent workflows, but they are excluded from public/private published file
+manifests. Current storage safety rules still reject some secret-looking files
+such as `.env`; use Revdoku-managed secrets for credentials rather than asking
+agents or visitors to put secrets in chat or bucket files.
+
 Website analytics and browser-side Revdoku event tracking are enabled by
 default. Set `"tracking_enabled": false` to disable both, or use
 `"publication_analytics_enabled"` and `"publication_client_events_enabled"` for
@@ -786,6 +806,300 @@ list/detail to show progress until the bucket disappears or a delete
 notification is delivered. If background deletion fails, the bucket is unlocked
 and a failed delete notification is sent so clients can retry.
 
+### Bucket App Database Endpoints
+
+> Building an app? See `app-building-guide.md` for the agent prompt, the prebuilt
+> structures (incl. the reserved `_revdoku_notifications` owner-notification
+> table), and recommended patterns.
+
+Bucket app databases are for published bucket websites that need a small
+server-side data store. The public website does not receive database
+credentials and cannot submit SQL. Owners and authorized agents define schema,
+seed data, and safe actions through the API or MCP; published visitors call
+only public safe actions at `/_revdoku/app/<operation>`. The stored JSON field is
+still named `operations` for compatibility. Publish the bucket
+with `site_type: "app"`; ordinary `site_type: "website"` publications reject app
+operation routes even if a bucket database exists.
+
+For future agents, store an app contract as a private bucket file named
+`revdoku.app.json`. Include app purpose, data model summary, public/private safe
+actions, publish mode, and rollback notes. Revdoku excludes this file from the
+live published bundle.
+
+The first provider is Cloudflare D1. The stored API shape is provider-aware, so
+future database providers can be added without changing existing bucket app
+database records.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/v1/buckets/:bucket_id/app_database` | Inspect the bucket app database: status, public safe action names, and `schema_objects` (the live tables/indexes read from the database). Agents should call this before modifying schema, data, or actions. |
+| `POST` | `/api/v1/buckets/:bucket_id/app_database` | Create or ensure the bucket app database. |
+| `POST` | `/api/v1/buckets/:bucket_id/app_database/schema` | Apply owner-supplied SQL schema statements. |
+| `POST` | `/api/v1/buckets/:bucket_id/app_database/seed` | Apply owner-supplied seed SQL statements. |
+| `POST` | `/api/v1/buckets/:bucket_id/app_database/operations` | Set safe actions. `mode: "replace"` (default) sets the full set; `mode: "merge"` adds/updates the actions you send and keeps the rest, with optional `remove: [names]`. The Turnstile secret is preserved unless the body includes a `turnstile` key (pass `turnstile: {secret_key: ""}` to clear it). |
+| `POST` | `/api/v1/buckets/:bucket_id/app_database/run_operation` | Invoke a safe action as the owner/agent, including private (`public:false`) admin actions visitors cannot reach. Body: `operation`, plus `body`/`query` param values. |
+| `POST` | `/api/v1/buckets/:bucket_id/app_database/query` | Run authenticated owner SQL. Prefer safe actions for repeatable workflows. Do not use this from published sites. |
+| `POST` | `/api/v1/buckets/:bucket_id/app_database/export` | Request a provider export or backup response. |
+
+#### POST /api/v1/buckets/:bucket_id/app_database
+
+```json
+{
+  "provider_options": {
+    "jurisdiction": "eu",
+    "primary_location_hint": "weur"
+  }
+}
+```
+
+`provider_options` are optional and provider-specific. For D1 they map to
+Cloudflare database placement options when a new database is created.
+
+#### POST /api/v1/buckets/:bucket_id/app_database/schema
+
+```json
+{
+  "schema": {
+    "statements": [
+      "CREATE TABLE IF NOT EXISTS prompts (id TEXT PRIMARY KEY, title TEXT NOT NULL, body TEXT NOT NULL, category TEXT, created_by TEXT, created_at TEXT NOT NULL);",
+      "CREATE INDEX IF NOT EXISTS idx_prompts_category ON prompts(category);"
+    ]
+  }
+}
+```
+
+#### POST /api/v1/buckets/:bucket_id/app_database/seed
+
+```json
+{
+  "seed": {
+    "statements": [
+      "INSERT INTO prompts (id, title, body, category, created_by, created_at) VALUES ('starter', 'Starter prompt', 'Summarize this document.', 'writing', 'system', datetime('now'));"
+    ]
+  }
+}
+```
+
+#### POST /api/v1/buckets/:bucket_id/app_database/operations
+
+```json
+{
+  "operations": {
+    "search_prompts": {
+      "public": true,
+      "method": "GET",
+      "sql": "SELECT id, title, body, category, created_by, created_at FROM prompts WHERE COALESCE(category, '') LIKE '%' || ? || '%' AND (title LIKE '%' || ? || '%' OR body LIKE '%' || ? || '%') ORDER BY created_at DESC LIMIT 50",
+      "params": [
+        { "name": "category", "source": "query", "default": "" },
+        { "name": "q", "source": "query", "default": "" },
+        { "name": "q", "source": "query", "default": "" }
+      ]
+    },
+    "add_prompt": {
+      "public": true,
+      "method": "POST",
+      "sql": "INSERT INTO prompts (id, title, body, category, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      "params": [
+        { "name": "uuid", "source": "system" },
+        { "name": "title", "source": "body", "required": true },
+        { "name": "body", "source": "body", "required": true },
+        { "name": "category", "source": "body", "default": "" },
+        { "name": "email", "source": "visitor", "default": "anonymous" },
+        { "name": "now", "source": "system" }
+      ]
+    }
+  }
+}
+```
+
+Safe action names may contain letters, numbers, `_`, `.`, `:`, and `-`, and must
+start with a letter. `public:true` makes the action callable by the
+published website. `public:false` actions are **owner/agent-only admin
+actions** — visitors can never reach them; you invoke them with the
+`run_operation` endpoint (or the `bucket_app_database_run_operation` MCP tool).
+This keeps repeatable B2B admin actions (`advance_lead`, `approve_vendor`,
+`mark_reviewed`) as named, param-bound, reviewable safe actions instead of ad-hoc
+SQL — and they still go through the destructive-SQL guard. Supported parameter
+sources are `body`, `query`, `visitor` or `identity`, `system`, `literal`, and
+the default `input` source, which checks body first and query second. Current
+system parameters are `now` and `uuid`.
+
+Evolve an app's safe actions incrementally with `mode: "merge"` so you never have
+to resend (and risk clobbering) the whole set:
+
+```json
+{ "mode": "merge",
+  "operations": { "advance_lead": { "public": false, "method": "POST",
+    "sql": "UPDATE leads SET stage = ? WHERE id = ?",
+    "params": [ {"name":"stage","source":"body"}, {"name":"id","source":"body"} ] } } }
+```
+
+Published website code calls the safe action on the same origin:
+
+```js
+const response = await fetch("/_revdoku/app/search_prompts?q=invoice", {
+  headers: { "Accept": "application/json" }
+});
+const data = await response.json();
+```
+
+Password-and-email protected publications forward the verified visitor email to
+safe actions as visitor identity (`source: "visitor", "key": "email"`). Public
+publications receive a stable anonymous visitor id instead (`key`), useful for
+per-visitor dedup such as "one vote per visitor".
+
+#### Turnstile-protected safe actions
+
+Anonymous-write safe actions (votes, suggestions) can require a Cloudflare
+Turnstile token from the bucket owner's own Turnstile account. Store the secret
+once at the top level of the operations manifest and flag the actions:
+
+```json
+{
+  "turnstile": { "secret_key": "0x..." },
+  "operations": {
+    "add_request": {
+      "public": true,
+      "method": "POST",
+      "turnstile": true,
+      "sql": "INSERT INTO requests (id, title, visitor_key) VALUES (?, ?, ?)",
+      "params": [
+        { "name": "uuid", "source": "system" },
+        { "name": "title", "source": "body", "required": true },
+        { "name": "key", "source": "visitor" }
+      ]
+    }
+  }
+}
+```
+
+The published page renders the Turnstile widget with the owner's sitekey and
+sends the solved token as `cf_turnstile_token` (or the widget's default
+`cf-turnstile-response` field) in the request body. Rails verifies it against
+the stored secret before running the SQL; missing or failed tokens return
+`403`. The secret lives in the encrypted operations manifest and is never sent
+to the published site.
+
+#### Data protection
+
+The app database is deliberately hard to destroy or damage:
+
+- One database per bucket, created once. There is no delete, reset, or
+  re-provision endpoint; for a fresh schema, create a new bucket with its own
+  database.
+- Destructive SQL is blocked on every owner/agent path (schema, seed, owner
+  query, and operation definitions): `DROP TABLE/INDEX/VIEW/TRIGGER`,
+  `ALTER TABLE ... DROP`, `PRAGMA`, and WHERE-less `DELETE`/`UPDATE` are
+  rejected with `APP_DATABASE_DESTRUCTIVE_SQL`. Schema evolution is
+  append-only (`CREATE ...`, `ALTER TABLE ... ADD COLUMN`); row changes need a
+  `WHERE` clause.
+- The provider database is deleted only when the bucket itself is permanently
+  deleted through the confirmed bucket-delete flow (archive first, typed
+  confirmation). Export a backup via the export endpoint before deleting a
+  bucket whose app collected visitor data.
+
+#### Data residency (GDPR)
+
+Cloudflare D1 — where app personal data lives — is pinned to a fixed
+jurisdiction **at creation time**. EU Revdoku deployments set
+`PUBLICATION_APP_DATABASE_JURISDICTION=eu`, so every bucket app database
+provisioned there is created with `jurisdiction: "eu"` and stays in the EU
+without callers having to ask. A caller may still pass an explicit
+`provider_options: { jurisdiction: "eu" | "fedramp" }`, which overrides the
+deployment default; anything else falls back to the deployment default (and
+then to Cloudflare's global default if none is set). Jurisdiction cannot be
+changed after creation — to move data, create a new bucket on a deployment with
+the desired default. App Workers run on Cloudflare's **global edge** and cannot
+be region-pinned, so keep personal data in the (region-pinned) D1 database and
+avoid persisting PII in Worker-side stores.
+
+#### Local development and testing
+
+Cloudflare D1 is SQLite under the hood, so in development the same
+schema/seed/operation SQL runs against a local SQLite file with **no Cloudflare
+credentials required**. The provider is chosen automatically:
+
+- **development** → `local_sqlite` when the `sqlite3` gem is available (it is in
+  the dev/test bundle). Each bucket's database is a file under
+  `apps/web/tmp/app_databases/<id>.sqlite3`, deleted when the bucket is
+  permanently deleted.
+- **production** → always Cloudflare D1.
+- Override either way with `PUBLICATION_APP_DATABASE_PROVIDER=local_sqlite` or
+  `=cloudflare_d1` (e.g. to point dev at a real env-named `revdoku-development-*`
+  D1 database by also setting `CLOUDFLARE_D1_API_TOKEN` +
+  `PUBLICATION_CLOUDFLARE_ACCOUNT_ID`).
+
+The owner control plane (REST `/api/v1/buckets/:id/app_database/*` and the MCP
+`bucket_app_database_*` tools) works end-to-end under `bin/dev` against the
+local file. The published-visitor route `/_revdoku/app/<operation>` is normally
+served by the Cloudflare publication router, which does not run under `bin/dev`
+— exercise it locally by POSTing to the signed internal route
+`/internal/publications/:public_slug/app/:operation` with the
+`x-revdoku-worker-timestamp` / `x-revdoku-worker-signature` HMAC headers (see
+`spec/requests/internal_publication_app_data_spec.rb` for the exact signing
+recipe), or run the publication router via `wrangler dev`.
+
+App publications include a per-publication `usage_policy` in edge metadata.
+Before a request reaches Rails for `/_revdoku/app/<operation>`, the Cloudflare
+router increments KV counters for request and database-operation limits. In the
+default `enforce` mode, over-limit calls return `429` at the edge; `monitor`
+mode records counters without blocking. This keeps small public app workflows
+usable without moving high-volume traffic onto Rails.
+
+### Bucket App Workers
+
+Bucket app Workers are optional. They are for apps that need custom server-side
+code beyond named SQL safe actions. The smallest workflow is:
+
+1. Ensure the bucket app database, schema, seed data, and public safe actions via
+   the app database API or Revdoku MCP.
+2. Upload static frontend files normally.
+3. Upload Worker source under `.workers/`, for example `.workers/app.js`.
+4. Optionally upload `.workers/revdoku.app.json`:
+
+```json
+{
+  "worker": {
+    "entrypoint": ".workers/app.js",
+    "routes": ["/api/*"],
+    "compatibility_date": "2026-06-01",
+    "d1_binding": "DB"
+  }
+}
+```
+
+5. Publish with `site_type: "app"`.
+
+When `PUBLICATION_APP_WORKERS_ENABLED=true`, publish uploads `.workers` source
+to the configured Cloudflare Workers for Platforms dispatch namespace and stores
+the script name in publication edge metadata. The shared publication router then
+dispatches only matching routes (default `/api/*`) to that per-bucket Worker;
+normal static files continue to come from the published bundle. If a bucket D1
+database exists, the Worker receives it as the configured binding name (`DB` by
+default). If app Workers are disabled or no `.workers` entrypoint exists, the
+publication still works as a static app and may still use
+`/_revdoku/app/<operation>`.
+
+App Worker routes use the same app usage policy as app database routes. In
+enforce mode, the shared router throttles an over-limit request before it calls
+the per-bucket Worker.
+
+This is intentionally not a build system: Revdoku stores and uploads small Worker
+modules from `.workers`, but it does not run `npm install`, bundle imports from
+`node_modules`, or publish `.env` files.
+
+#### POST /api/v1/buckets/:bucket_id/app_database/query
+
+```json
+{
+  "sql": "SELECT COUNT(*) AS total FROM prompts",
+  "params": []
+}
+```
+
+This endpoint requires authenticated owner/agent write permission and exists
+for setup, inspection, and repair. Published apps should use named safe actions.
+
 ### File Endpoints
 
 | Method | Path | Purpose |
@@ -971,6 +1285,7 @@ publication revoke endpoints remain available for cleanup.
 {
   "entrypoint": "index.html",
   "site_mode": "spa",
+  "site_type": "app",
   "access_mode": "password",
   "tracking_enabled": false,
   "permanent": true
@@ -988,6 +1303,7 @@ Publication response fields:
 | `permanent` | `true` when there is no expiration. |
 | `expires_at` | Expiration timestamp for temporary publications. |
 | `site_mode` | Whether deep links fall back to the entrypoint. |
+| `site_type` | `website` for ordinary sites, `app` for app runtime metadata and optional per-bucket Worker dispatch. |
 | `access_mode` | `public`, `password`, or `password_ask_info`. Password-protected websites are a Pro entitlement; `password_ask_info` asks visitors for email plus password. |
 | `password_configured` | Whether a protected website password is configured. |
 | `access_password` | Copyable stored password, returned only to account-owner publish keys. |
@@ -995,6 +1311,9 @@ Publication response fields:
 | `share_text` | Copyable owner-facing text containing the website link and password when visible. |
 | `publication_analytics_enabled` | Whether Revdoku records website analytics for this publication. |
 | `publication_client_events_enabled` | Whether browser-side Revdoku event tracking is enabled for this publication. |
+| `app_database` | Bucket app database status/public safe action names when `site_type` is `app`. |
+| `app_worker` | Per-bucket Worker dispatch metadata when `site_type` is `app` and Worker source has been processed. |
+| `usage_policy` | Published app runtime usage policy when `site_type` is `app`. |
 | `analytics.hits_all_time` | Cached all-time website hits; `null` when analytics numbers are hidden. |
 | `analytics.last_event_at` | Latest recorded analytics event timestamp; `null` when hidden or not recorded yet. |
 
