@@ -1,8 +1,11 @@
 ---
 name: revdoku
 description: >
-  Create, update, and publish websites with Revdoku buckets; store files
-  privately until the user asks for a public or protected link.
+  Create, update, and publish websites with Revdoku buckets — including
+  interactive app sites backed by a per-bucket server database (visitor
+  submissions, voting/feedback dashboards, searchable support sites, owner
+  notifications), not just static pages. Store files privately until the user
+  asks for a public or protected link.
 ---
 
 # Revdoku Website Publishing
@@ -10,6 +13,13 @@ description: >
 Create or update websites in Revdoku as durable bucket files. A bucket stores
 files privately first as a saved draft and can be published or republished as a
 live public or password-protected website.
+
+Revdoku is **not static-only**: a bucket can also publish an **interactive app
+site backed by a per-bucket server database** (visitor submissions, voting /
+feedback dashboards, searchable support sites, owner notifications) with safe
+actions at `/_revdoku/app/<name>`. When the user asks for shared/multi-visitor
+data, build that real backend — see "App websites with a database" below — and
+do **not** fall back to browser `localStorage`.
 
 Use this skill when the user asks to publish, host, deploy, share on the web,
 create a public or protected website, upload, save, store, share through a
@@ -220,34 +230,57 @@ MCP equivalent:
 
 To publish with MCP, include `"publish": true`.
 
-## App websites with a database
+## App websites with a database (real backend — do not use local storage)
 
-Buckets can publish interactive app websites backed by a bucket-owned server
-database (Cloudflare D1). Use this for small data-backed sites: voting or
-suggestion pages, shared prompt libraries, research/link feeds that an agent
-updates over time. The flow via MCP:
+A bucket can publish an interactive app website backed by a bucket-owned server
+database (Cloudflare D1) with owner-defined safe actions at
+`/_revdoku/app/<name>`. Use this for any shared/multi-visitor data: voting and
+feedback dashboards, suggestion boards, searchable support sites, shared prompt
+libraries, research/link feeds. **When the user wants visitors to submit, vote,
+search, or be counted, build this backend — never substitute browser
+`localStorage`.**
 
-1. If the bucket already exists, call `bucket_app_database_get` first and
-   summarize the live data model plus safe actions before modifying schema,
-   rows, or action definitions.
-2. Create or update a private `revdoku.app.json` app contract file when useful.
-   Include app purpose, data model summary, safe actions, publish mode, and
-   rollback notes. The file is stored in the bucket draft but excluded from the
-   public live bundle.
-3. `bucket_app_database_setup` — create the database and apply SQL `schema`
-   statements, optional `seed` rows, and an `operations` manifest of named SQL
-   safe actions. Actions with `public: true` become visitor endpoints at
-   `/_revdoku/app/<name>` on the published site; actions with `public: false`
-   are owner/agent-only and invoked through `bucket_app_database_run_operation`.
-   `params` bind values from `body`, `query`, `visitor` (`key` = stable visitor
-   id, `email` on password+email sites), `system` (`uuid`, `now`), or `literal`.
-4. Write the static frontend (HTML/JS calling `/_revdoku/app/<name>` with
-   `fetch` on the same origin) into the bucket as usual.
-5. Publish with `site_type: "app"` (ordinary websites stay static-only and
-   reject app routes).
-6. Prefer `bucket_app_database_run_operation` safe actions for repeatable agent
-   workflows. Use `bucket_app_database_query` for owner-only ad hoc SQL such as
-   inspection or one-off imports; visitors never get raw SQL.
+Two ways to drive it. The `revdoku` CLI **binary itself is static-publish only**
+and cannot create the database or publish an app site, so use one of:
+
+- **MCP connector (preferred when connected):** `bucket_app_database_get`,
+  `bucket_app_database_setup`, `bucket_app_database_run_operation`,
+  `bucket_app_database_query`, `bucket_app_database_snapshot` /
+  `bucket_app_database_snapshots`, `bucket_app_database_notifications`. Publish
+  with `bucket_publish` and `site_type: "app"`.
+- **REST API (use this for CLI-only sessions where MCP is not connected):** the
+  same operations live at `/api/v1/buckets/:bucket_id/app_database/*`, and you
+  publish with `site_type: "app"`. See the **"Bucket App Database Endpoints"**
+  and `site_type: "app"` sections of `api.md`, authenticating with the API key
+  in `~/.revdoku/credentials`.
+
+Flow (identical for MCP and REST):
+
+1. Get/create the bucket. If it already exists, inspect the live schema + safe
+   actions first (`bucket_app_database_get` / `GET .../app_database`) before
+   changing schema, rows, or action definitions.
+2. Optionally write a private `revdoku.app.json` contract (purpose, data model,
+   safe actions, rollback notes). Stored in the draft, excluded from the live bundle.
+3. Create the database and apply SQL `schema` statements, optional `seed` rows,
+   and an `operations` manifest of named SQL safe actions
+   (`bucket_app_database_setup` / `POST .../app_database/{schema,seed,operations}`).
+   `public: true` actions become visitor endpoints at `/_revdoku/app/<name>`;
+   `public: false` actions are owner/agent-only (run via `run_operation`).
+   `params` bind from `body`, `query`, `visitor` (`key` = stable visitor id,
+   `email` on password+email sites), `system` (`uuid`, `now`), or `literal`.
+4. Write the static frontend (HTML/JS calling `/_revdoku/app/<name>` with `fetch`
+   on the same origin) into the bucket.
+5. **Publish with `site_type: "app"`** (ordinary `website` sites stay static-only
+   and reject app routes).
+6. Owner notifications: have a public safe action also insert a row into the
+   reserved `_revdoku_notifications` table (or use an `AFTER INSERT` trigger so
+   the public action stays one statement); Revdoku surfaces new rows as in-app
+   account notifications and via `bucket_app_database_notifications`. Use
+   `bucket_app_database_query` for owner-only ad hoc SQL; visitors never get raw SQL.
+
+Starter schemas + safe actions (waitlist, feedback/voting dashboard, searchable
+support center, leaderboards, link feeds, …) are in
+`templates/app-safe-actions.json`; see `app-building-guide.md` for conventions.
 
 Anti-spam for anonymous-write safe actions: store the owner's own Cloudflare
 Turnstile secret as `operations.turnstile.secret_key` and set
