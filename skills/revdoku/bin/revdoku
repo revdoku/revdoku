@@ -1078,12 +1078,13 @@ browser_login_link() {
 # Best-effort, throttled (~24h), never-blocking notice when the server advertises
 # a newer client/connector version than the one install.sh stamped. Compares the
 # server's /api/v1/status client_version against ~/.revdoku/client_version and
-# only nudges when the server version is strictly newer (sort -V).
+# only nudges when the server version is strictly newer (numeric compare via jq;
+# avoids relying on `sort -V`, which is unavailable on busybox/older BSD sort).
 maybe_notify_update() {
   [[ -n "$API_KEY" ]] || return 0
   command -v "$JQ_BIN" >/dev/null 2>&1 || return 0
 
-  local now last installed latest body newest
+  local now last installed latest body
   now="$(date +%s 2>/dev/null || echo 0)"
   if [[ -f "$UPDATE_CHECK_STAMP" ]]; then
     last="$(cat "$UPDATE_CHECK_STAMP" 2>/dev/null || echo 0)"
@@ -1100,8 +1101,8 @@ maybe_notify_update() {
   [[ -n "$body" ]] || return 0
   latest="$("$JQ_BIN" -r '.data.client_version // empty' <<<"$body" 2>/dev/null || true)"
   [[ -n "$latest" && "$latest" != "$installed" ]] || return 0
-  newest="$(printf '%s\n%s\n' "$installed" "$latest" | sort -V 2>/dev/null | tail -1 || echo "$latest")"
-  if [[ "$newest" == "$latest" ]]; then
+  if "$JQ_BIN" -ne --arg inst "$installed" --arg lat "$latest" \
+    '($inst | split(".") | map(tonumber? // 0)) < ($lat | split(".") | map(tonumber? // 0))' >/dev/null 2>&1; then
     echo "Revdoku CLI update available (${installed} → ${latest}). Update: curl -fsSL ${BASE_URL%/}/install.sh | bash" >&2
   fi
 }
