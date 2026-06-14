@@ -389,14 +389,13 @@ Use `site_mode: "static"` for ordinary static sites. Use `site_mode: "spa"` for
 React/Vite-style apps where deep links should fall back to `index.html`.
 Use `site_type: "website"` for ordinary published websites (the default). Use
 `site_type: "app"` when the bucket should expose Revdoku app runtime metadata:
-bucket app database operations at `/_revdoku/app/<operation>`, usage-policy
-metadata, and optional per-bucket Worker dispatch.
+bucket app database operations at `/_revdoku/app/<operation>` and usage-policy
+metadata.
 
 Publishing never includes private runtime/development files in the static
 bundle. Paths such as `.workers/**`, `.env*`, `node_modules/**`, local lockfiles,
-and executable installer/script payloads may exist in bucket storage for owner
-or agent workflows, but they are excluded from public/private published file
-manifests. Current storage safety rules still reject some secret-looking files
+and executable installer/script payloads are excluded from public/private
+published file manifests. Current storage safety rules still reject some secret-looking files
 such as `.env`; use Revdoku-managed secrets for credentials rather than asking
 agents or visitors to put secrets in chat or bucket files.
 
@@ -1057,48 +1056,6 @@ default `enforce` mode, over-limit calls return `429` at the edge; `monitor`
 mode records counters without blocking. This keeps small public app workflows
 usable without moving high-volume traffic onto Rails.
 
-### Bucket App Workers
-
-Bucket app Workers are optional. They are for apps that need custom server-side
-code beyond named SQL safe actions. The smallest workflow is:
-
-1. Ensure the bucket app database, schema, seed data, and public safe actions via
-   the app database API or Revdoku MCP.
-2. Upload static frontend files normally.
-3. Upload Worker source under `.workers/`, for example `.workers/app.js`.
-4. Optionally upload `.workers/revdoku.app.json`:
-
-```json
-{
-  "worker": {
-    "entrypoint": ".workers/app.js",
-    "routes": ["/api/*"],
-    "compatibility_date": "2026-06-01",
-    "d1_binding": "DB"
-  }
-}
-```
-
-5. Publish with `site_type: "app"`.
-
-When `PUBLICATION_APP_WORKERS_ENABLED=true`, publish uploads `.workers` source
-to the configured Cloudflare Workers for Platforms dispatch namespace and stores
-the script name in publication edge metadata. The shared publication router then
-dispatches only matching routes (default `/api/*`) to that per-bucket Worker;
-normal static files continue to come from the published bundle. If a bucket D1
-database exists, the Worker receives it as the configured binding name (`DB` by
-default). If app Workers are disabled or no `.workers` entrypoint exists, the
-publication still works as a static app and may still use
-`/_revdoku/app/<operation>`.
-
-App Worker routes use the same app usage policy as app database routes. In
-enforce mode, the shared router throttles an over-limit request before it calls
-the per-bucket Worker.
-
-This is intentionally not a build system: Revdoku stores and uploads small Worker
-modules from `.workers`, but it does not run `npm install`, bundle imports from
-`node_modules`, or publish `.env` files.
-
 #### POST /api/v1/buckets/:bucket_id/app_database/query
 
 ```json
@@ -1314,7 +1271,7 @@ Publication response fields:
 | `permanent` | `true` when there is no expiration. |
 | `expires_at` | Expiration timestamp for temporary publications. |
 | `site_mode` | Whether deep links fall back to the entrypoint. |
-| `site_type` | `website` for ordinary sites, `app` for app runtime metadata and optional per-bucket Worker dispatch. |
+| `site_type` | `website` for ordinary sites, `app` for app database/runtime metadata. |
 | `access_mode` | `public`, `password`, or `password_ask_info`. Password-protected websites are a Pro entitlement; `password_ask_info` asks visitors for email plus password. |
 | `password_configured` | Whether a protected website password is configured. |
 | `access_password` | Copyable stored password, returned only to account-owner publish keys. |
@@ -1323,7 +1280,6 @@ Publication response fields:
 | `publication_analytics_enabled` | Whether Revdoku records website analytics for this publication. |
 | `publication_client_events_enabled` | Whether browser-side Revdoku event tracking is enabled for this publication. |
 | `app_database` | Bucket app database status/public safe action names when `site_type` is `app`. |
-| `app_worker` | Per-bucket Worker dispatch metadata when `site_type` is `app` and Worker source has been processed. |
 | `usage_policy` | Published app runtime usage policy when `site_type` is `app`. |
 | `analytics.hits_all_time` | Cached all-time website hits; `null` when analytics numbers are hidden. |
 | `analytics.last_event_at` | Latest recorded analytics event timestamp; `null` when hidden or not recorded yet. |
