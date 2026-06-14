@@ -6,6 +6,21 @@ CREDENTIALS_PATH="${REVDOKU_CREDENTIALS:-${HOME}/.revdoku/credentials}"
 DEFAULT_BUCKET_PATH="${REVDOKU_DEFAULT_BUCKET_FILE:-${CREDENTIALS_PATH}.bucket}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Config dir + installed client version stamp (written by install.sh). Used for
+# `--version` and the non-blocking update notice.
+REVDOKU_CONFIG_DIR="$(dirname "$CREDENTIALS_PATH")"
+CLIENT_VERSION_FILE="${REVDOKU_CLIENT_VERSION_FILE:-${REVDOKU_CONFIG_DIR}/client_version}"
+UPDATE_CHECK_STAMP="${REVDOKU_CONFIG_DIR}/.update_check"
+
+installed_client_version() {
+  local v="unknown"
+  if [[ -f "$CLIENT_VERSION_FILE" ]]; then
+    v="$(tr -d '[:space:]' < "$CLIENT_VERSION_FILE" 2>/dev/null || true)"
+    [[ -n "$v" ]] || v="unknown"
+  fi
+  printf '%s' "$v"
+}
+
 BASE_URL="${REVDOKU_URL:-$DEFAULT_URL}"
 API_KEY="${REVDOKU_API_KEY:-}"
 TITLE="${REVDOKU_BUCKET_TITLE:-}"
@@ -29,7 +44,11 @@ BROWSER_LOGIN_PATH="${REVDOKU_BROWSER_LOGIN_PATH:-/buckets}"
 TAG_PATHS=()
 AGENT_NAME="${REVDOKU_AGENT_NAME:-}"
 AGENT_CLIENT="${REVDOKU_AGENT_CLIENT:-revdoku}"
-AGENT_VERSION="${REVDOKU_AGENT_VERSION:-0.1.0}"
+AGENT_VERSION="${REVDOKU_AGENT_VERSION:-}"
+if [[ -z "$AGENT_VERSION" ]]; then
+  AGENT_VERSION="$(installed_client_version)"
+  [[ "$AGENT_VERSION" == "unknown" ]] && AGENT_VERSION="0.1.0"
+fi
 AGENT_RUN_ID="${REVDOKU_AGENT_RUN_ID:-}"
 AGENT_PROJECT="${REVDOKU_AGENT_PROJECT:-}"
 AGENT_TASK="${REVDOKU_AGENT_TASK:-}"
@@ -321,6 +340,10 @@ while [[ $# -gt 0 ]]; do
       ACTION="exchange_grant"
       GRANT_TOKEN="$2"
       shift 2
+      ;;
+    --version)
+      printf '%s\n' "$(installed_client_version)"
+      exit 0
       ;;
     -h|--help)
       usage
@@ -1051,6 +1074,39 @@ browser_login_link() {
   print_terminal_link_hint
   printf "%s\n" "$url"
 }
+
+# Best-effort, throttled (~24h), never-blocking notice when the server advertises
+# a newer client/connector version than the one install.sh stamped. Compares the
+# server's /api/v1/status client_version against ~/.revdoku/client_version and
+# only nudges when the server version is strictly newer (sort -V).
+maybe_notify_update() {
+  [[ -n "$API_KEY" ]] || return 0
+  command -v "$JQ_BIN" >/dev/null 2>&1 || return 0
+
+  local now last installed latest body newest
+  now="$(date +%s 2>/dev/null || echo 0)"
+  if [[ -f "$UPDATE_CHECK_STAMP" ]]; then
+    last="$(cat "$UPDATE_CHECK_STAMP" 2>/dev/null || echo 0)"
+    if [[ "$now" -gt 0 && "$last" =~ ^[0-9]+$ && $((now - last)) -lt 86400 ]]; then
+      return 0
+    fi
+  fi
+  mkdir -p "$REVDOKU_CONFIG_DIR" 2>/dev/null || true
+  printf '%s' "$now" > "$UPDATE_CHECK_STAMP" 2>/dev/null || true
+
+  installed="$(installed_client_version)"
+  [[ "$installed" != "unknown" ]] || return 0
+  body="$(curl -fsS --max-time 5 "$(api_url "/api/v1/status")" -H "Authorization: Bearer $API_KEY" -H "Accept: application/json" 2>/dev/null || true)"
+  [[ -n "$body" ]] || return 0
+  latest="$("$JQ_BIN" -r '.data.client_version // empty' <<<"$body" 2>/dev/null || true)"
+  [[ -n "$latest" && "$latest" != "$installed" ]] || return 0
+  newest="$(printf '%s\n%s\n' "$installed" "$latest" | sort -V 2>/dev/null | tail -1 || echo "$latest")"
+  if [[ "$newest" == "$latest" ]]; then
+    echo "Revdoku CLI update available (${installed} → ${latest}). Update: curl -fsSL ${BASE_URL%/}/install.sh | bash" >&2
+  fi
+}
+
+maybe_notify_update || true
 
 case "$ACTION" in
   list_buckets)
