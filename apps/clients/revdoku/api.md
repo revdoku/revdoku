@@ -306,7 +306,6 @@ curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../publication" \
     "entrypoint": "index.html",
     "site_mode": "spa",
     "access_mode": "public",
-    "tracking_enabled": false,
     "permanent": true
   }'
 ```
@@ -400,10 +399,13 @@ such as `.env`; use Revdoku-managed secrets for credentials rather than asking
 agents or visitors to put secrets in chat or bucket files.
 
 Website analytics and browser-side Revdoku event tracking are enabled by
-default. Set `"tracking_enabled": false` to disable both, or use
-`"publication_analytics_enabled"` and `"publication_client_events_enabled"` for
-separate control. `"analytics_enabled"` and `"client_events_enabled"` are
-accepted aliases.
+default for every site type, including app sites (`site_type: "app"`) — leave
+them on so the owner's dashboard shows visits and view counts.
+Only set `"tracking_enabled": false` when the user explicitly asks to disable
+tracking; doing so suppresses **all** analytics for the publication (the
+dashboard will show `0 views`). Use `"publication_analytics_enabled"` and
+`"publication_client_events_enabled"` for separate control. `"analytics_enabled"`
+and `"client_events_enabled"` are accepted aliases.
 
 ### Publish a Folder Efficiently
 
@@ -421,7 +423,6 @@ curl -fsS "$REVDOKU_URL/api/v1/publish_sessions" \
     "entrypoint": "index.html",
     "site_mode": "spa",
     "access_mode": "password",
-    "tracking_enabled": false,
     "permanent": true,
     "files": [
       {
@@ -1255,7 +1256,6 @@ publication revoke endpoints remain available for cleanup.
   "site_mode": "spa",
   "site_type": "app",
   "access_mode": "password",
-  "tracking_enabled": false,
   "permanent": true
 }
 ```
