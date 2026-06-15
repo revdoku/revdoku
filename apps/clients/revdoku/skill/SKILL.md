@@ -104,6 +104,10 @@ for structured bucket work:
   tools to steer the public URL (first available wins, else a numeric suffix);
   otherwise the slug defaults to the bucket's name. Applies on first publish; the
   slug can be renamed later.
+- Website analytics (visit/view counts) and browser-side event tracking are **on
+  by default for every published website, including app sites** — do not pass
+  analytics/tracking flags unless the user explicitly asks to turn tracking off.
+  Disabling it makes the owner's dashboard show `0 views`.
 - Use `bucket_unpublish` when the user asks to unpublish a website.
   Tell the user that republishing the same bucket restores the same URL.
 - Use `bucket_archive` and `bucket_unarchive` for normal bucket
