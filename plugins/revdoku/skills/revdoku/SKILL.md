@@ -49,11 +49,16 @@ for structured bucket work:
   labels, not filesystem breadcrumbs: do not derive tags from local parent
   folders, the current working directory, bucket titles, or domain/folder names.
   For website uploads, use `website` only when a type label is useful.
-- Use `bucket_write_file`, `bucket_upload_file`, `bucket_read_file`,
-  and `bucket_delete_file` for website/project file operations. Use
+- Use `bucket_write_file`, `bucket_file_append_text`, `bucket_upload_file`,
+  `bucket_read_file`, and `bucket_delete_file` for website/project file operations. Use
   `index.html` as the default website root unless the user asks for another
   entrypoint. Writing or uploading files saves a private draft only; do not
   describe the result as live until a publish tool returns a ready publication.
+  Use `bucket_file_append_text` only for appending UTF-8 text to existing text
+  files such as `.txt`, `.md`, `.csv`, `.jsonl`, `.js`/code files, and similar
+  formats. It does not parse CSV or JSON; ordinary `.json` raw append can make
+  invalid JSON. `newline_before` defaults to true and inserts one boundary
+  newline only when the existing file lacks one.
   Use `bucket_file_list` with `limit` and `offset` for large buckets when a
   partial file listing is enough; omit them only when the full list is needed.
 - Use `bucket_version_list`, `bucket_version_get`, and
@@ -64,9 +69,10 @@ for structured bucket work:
   rewrites, or multi-file updates, call `bucket_lock` with a clear message and
   unlock with `bucket_unlock` after the work. For narrow edits, call
   `bucket_lock_files` with `path`, `file_id`, or `mask`, then unlock with
-  `bucket_unlock_file`. Revdoku checks the bucket lock before file locks. If it
-  returns `BUCKET_LOCKED` or `FILE_LOCKED`, do not overwrite; report who owns the
-  lock and the lock message, then coordinate or wait.
+  `bucket_unlock_file`. Revdoku checks the bucket lock before file locks. If an
+  append returns `BUCKET_LOCKED` or `FILE_LOCKED`, retry briefly when the lock
+  looks temporary. If it remains locked, do not overwrite; report who owns the
+  lock, the lock message, and the expiry, then coordinate or wait.
 - Use `bucket_publish` only when the user asks for a public live website URL.
   For protected websites, use `bucket_publish_password_protected`; Revdoku
   generates a password when needed. Pass `regenerate_password: true` only when
@@ -309,6 +315,7 @@ deleted with it, and offer an export first.
 - `--list-versions`: with `--bucket-id`, print bucket version history as JSON.
 - `--restore-version ID`: with `--bucket-id`, restore that bucket version as a new latest version.
 - `--restore-comment TEXT`: optional reason appended to the restore version comment.
+- `--append-text-file PATH`: with `--bucket-id`, append UTF-8 text to an existing bucket text file only. Use `--content TEXT` or `--content-file PATH`; pass `--no-newline-before` only when exact append bytes are required.
 - `--metadata JSON`: optional bucket metadata for future agent lookup, e.g. `--metadata '{"project":"marketing-site","task":"landing-page"}'`.
 - `--publish`: publish the bucket as a permanent website after storing files.
 - `--protected`: with `--publish`, publish as a password-protected website.

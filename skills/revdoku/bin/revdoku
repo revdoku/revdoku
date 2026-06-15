@@ -41,6 +41,10 @@ RESTORE_VERSION_ID="${REVDOKU_RESTORE_VERSION_ID:-}"
 RESTORE_COMMENT="${REVDOKU_RESTORE_COMMENT:-}"
 GRANT_TOKEN="${REVDOKU_GRANT_TOKEN:-}"
 BROWSER_LOGIN_PATH="${REVDOKU_BROWSER_LOGIN_PATH:-/buckets}"
+APPEND_TEXT_PATH="${REVDOKU_APPEND_TEXT_PATH:-}"
+APPEND_TEXT_CONTENT="${REVDOKU_APPEND_TEXT_CONTENT:-}"
+APPEND_TEXT_CONTENT_FILE="${REVDOKU_APPEND_TEXT_CONTENT_FILE:-}"
+APPEND_TEXT_NEWLINE_BEFORE="${REVDOKU_APPEND_TEXT_NEWLINE_BEFORE:-true}"
 TAG_PATHS=()
 AGENT_NAME="${REVDOKU_AGENT_NAME:-}"
 AGENT_CLIENT="${REVDOKU_AGENT_CLIENT:-revdoku}"
@@ -56,6 +60,7 @@ BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE="${REVDOKU_BUCKET_UPLOAD_DESCRIPTOR_BATCH_SI
 BUCKET_UPLOAD_CLIENT_SESSION_KEY="${REVDOKU_BUCKET_UPLOAD_CLIENT_SESSION_KEY:-}"
 HTTP_TRANSIENT_MAX_ATTEMPTS="${REVDOKU_HTTP_TRANSIENT_MAX_ATTEMPTS:-5}"
 HTTP_RETRYABLE_CONFLICT_MAX_ATTEMPTS="${REVDOKU_HTTP_RETRYABLE_CONFLICT_MAX_ATTEMPTS:-12}"
+HTTP_LOCK_MAX_ATTEMPTS="${REVDOKU_HTTP_LOCK_MAX_ATTEMPTS:-3}"
 DIRECT_UPLOAD_MAX_ATTEMPTS="${REVDOKU_DIRECT_UPLOAD_MAX_ATTEMPTS:-5}"
 LOGIN="false"
 ACTION="store"
@@ -138,6 +143,10 @@ Options:
   --list-versions           Print version history for --bucket-id as JSON.
   --restore-version ID      Restore a bucket version as a new latest version; requires --bucket-id.
   --restore-comment TEXT    Optional comment for --restore-version.
+  --append-text-file PATH   Append UTF-8 text to an existing bucket text file; requires --bucket-id.
+  --content TEXT            Text for --append-text-file.
+  --content-file PATH       Read text for --append-text-file from a local file, or "-" for stdin.
+  --no-newline-before       For --append-text-file, append bytes exactly without inserting a boundary newline.
   --list-public-buckets  Print active website links as JSON.
   --account-status          Print account, plan, and storage status as JSON; requires full-account credentials.
   --dashboard-link          Print a one-time browser login link for the Revdoku dashboard.
@@ -291,6 +300,26 @@ while [[ $# -gt 0 ]]; do
       RESTORE_COMMENT="$2"
       shift 2
       ;;
+    --append-text-file)
+      [[ $# -ge 2 ]] || die "--append-text-file requires a bucket-relative path"
+      ACTION="append_text_file"
+      APPEND_TEXT_PATH="$2"
+      shift 2
+      ;;
+    --content)
+      [[ $# -ge 2 ]] || die "--content requires a value"
+      APPEND_TEXT_CONTENT="$2"
+      shift 2
+      ;;
+    --content-file)
+      [[ $# -ge 2 ]] || die "--content-file requires a local file path or -"
+      APPEND_TEXT_CONTENT_FILE="$2"
+      shift 2
+      ;;
+    --no-newline-before)
+      APPEND_TEXT_NEWLINE_BEFORE="false"
+      shift
+      ;;
     --list-public-buckets)
       ACTION="list_public_buckets"
       shift
@@ -437,6 +466,19 @@ normalize_optional_bool() {
 PUBLICATION_ANALYTICS_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_ANALYTICS_ENABLED" "$PUBLICATION_ANALYTICS_ENABLED")"
 PUBLICATION_CLIENT_EVENTS_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_CLIENT_EVENTS_ENABLED" "$PUBLICATION_CLIENT_EVENTS_ENABLED")"
 PUBLICATION_TRACKING_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_TRACKING_ENABLED" "$PUBLICATION_TRACKING_ENABLED")"
+APPEND_TEXT_NEWLINE_BEFORE="$(normalize_optional_bool "REVDOKU_APPEND_TEXT_NEWLINE_BEFORE" "$APPEND_TEXT_NEWLINE_BEFORE")"
+APPEND_TEXT_NEWLINE_BEFORE="${APPEND_TEXT_NEWLINE_BEFORE:-true}"
+
+if [[ "$ACTION" == "append_text_file" ]]; then
+  [[ -n "$BUCKET_ID" ]] || die "--append-text-file requires --bucket-id"
+  [[ -n "$APPEND_TEXT_PATH" ]] || die "--append-text-file requires a bucket-relative path"
+  if [[ -n "$APPEND_TEXT_CONTENT" && -n "$APPEND_TEXT_CONTENT_FILE" ]]; then
+    die "use either --content or --content-file with --append-text-file, not both"
+  fi
+  if [[ -z "$APPEND_TEXT_CONTENT" && -z "$APPEND_TEXT_CONTENT_FILE" ]]; then
+    die "--append-text-file requires --content or --content-file"
+  fi
+fi
 
 if [[ -n "$PUBLICATION_PASSWORD" || "$PUBLICATION_REGENERATE_PASSWORD" == "true" ]]; then
   case "${PUBLICATION_ACCESS_MODE:-password}" in
@@ -550,6 +592,32 @@ http_conflict_retry_allowed() {
   esac
 }
 
+http_lock_retry_allowed() {
+  local method="$1"
+  local path="$2"
+  case "$method:$path" in
+    POST:*/files/append_text)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+lock_detail_summary() {
+  local details_json="${1:-{}}"
+  "$JQ_BIN" -r '
+    def present: select(. != null and . != "");
+    (.locked_by_api_key.label // .locked_by.name // .locked_by.email // .locked_by_api_key.id // .locked_by.id // "another actor") as $owner
+    | (.message // .kind // "" | tostring) as $message
+    | (.locked_until // "" | tostring) as $until
+    | "locked by " + $owner
+      + (if ($message | length) > 0 then " (" + $message + ")" else "" end)
+      + (if ($until | length) > 0 then " until " + $until else "" end)
+  ' <<<"$details_json" 2>/dev/null || printf 'locked by another actor'
+}
+
 agent_header_args() {
   printf "%s\0" \
     "-H" "User-Agent: Revdoku/${AGENT_VERSION} (${AGENT_CLIENT})" \
@@ -650,6 +718,14 @@ http_json() {
       continue
     fi
 
+    if [[ "$status" == "423" && ( "$code" == "BUCKET_LOCKED" || "$code" == "FILE_LOCKED" ) ]] && http_lock_retry_allowed "$method" "$path" && (( attempt < HTTP_LOCK_MAX_ATTEMPTS )); then
+      attempt=$((attempt + 1))
+      delay="$(retry_delay_for_attempt "$attempt" "$retry_after")"
+      echo "Locked while calling $path ($(lock_detail_summary "$details_json")); retrying in ${delay}s (${attempt}/${HTTP_LOCK_MAX_ATTEMPTS})..." >&2
+      sleep "$delay"
+      continue
+    fi
+
     if http_status_retryable "$status" && (( attempt < HTTP_TRANSIENT_MAX_ATTEMPTS )); then
       attempt=$((attempt + 1))
       delay="$(retry_delay_for_attempt "$attempt")"
@@ -667,6 +743,9 @@ http_json() {
     [[ -n "$code" ]] && message="${message} (${code})"
     [[ -n "$request_id" ]] && message="${message} request_id=${request_id}"
     echo "error: $message" >&2
+    if [[ "$status" == "423" && ( "$code" == "BUCKET_LOCKED" || "$code" == "FILE_LOCKED" ) ]]; then
+      echo "Lock details: $(lock_detail_summary "$details_json")" >&2
+    fi
     if [[ "$auth" == "true" ]]; then
       if [[ "$code" == "ACCOUNT_ACCESS_UNAVAILABLE" ]]; then
         echo "This connection uses bucket-scoped agent credentials, which cannot read account-level status. Verify the connection with --status, or open Revdoku in a browser for account details." >&2
@@ -801,6 +880,45 @@ restore_version() {
     --arg comment "$RESTORE_COMMENT" \
     '{version_id:$version_id} + (if $comment != "" then {comment:$comment} else {} end)')"
   http_json POST "/api/v1/buckets/${BUCKET_ID}/versions/restore" "$payload"
+}
+
+append_text_file() {
+  local content_file tmp_content payload response path
+  [[ -n "$BUCKET_ID" ]] || die "--append-text-file requires --bucket-id"
+  [[ -n "$APPEND_TEXT_PATH" ]] || die "--append-text-file requires a bucket-relative path"
+
+  tmp_content=""
+  if [[ -n "$APPEND_TEXT_CONTENT_FILE" ]]; then
+    if [[ "$APPEND_TEXT_CONTENT_FILE" == "-" ]]; then
+      tmp_content="$(mktemp)"
+      cat > "$tmp_content"
+      content_file="$tmp_content"
+    else
+      [[ -f "$APPEND_TEXT_CONTENT_FILE" ]] || die "--content-file does not exist: $APPEND_TEXT_CONTENT_FILE"
+      content_file="$APPEND_TEXT_CONTENT_FILE"
+    fi
+  else
+    tmp_content="$(mktemp)"
+    printf "%s" "$APPEND_TEXT_CONTENT" > "$tmp_content"
+    content_file="$tmp_content"
+  fi
+
+  if [[ ! -s "$content_file" ]]; then
+    [[ -z "$tmp_content" ]] || rm -f "$tmp_content"
+    die "--append-text-file content must not be empty"
+  fi
+
+  path="$APPEND_TEXT_PATH"
+  payload="$("$JQ_BIN" -Rs \
+    --arg path "$path" \
+    --argjson newline_before "$APPEND_TEXT_NEWLINE_BEFORE" \
+    '{path:$path, content: ., newline_before:$newline_before}' < "$content_file")"
+  if ! response="$(http_json POST "/api/v1/buckets/${BUCKET_ID}/files/append_text" "$payload")"; then
+    [[ -z "$tmp_content" ]] || rm -f "$tmp_content"
+    return 1
+  fi
+  [[ -z "$tmp_content" ]] || rm -f "$tmp_content"
+  printf "%s\n" "$response"
 }
 
 unpublish_bucket() {
@@ -1105,6 +1223,10 @@ case "$ACTION" in
     ;;
   restore_version)
     restore_version
+    exit 0
+    ;;
+  append_text_file)
+    append_text_file
     exit 0
     ;;
   unpublish_bucket)
