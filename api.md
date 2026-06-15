@@ -1082,6 +1082,7 @@ for setup, inspection, and repair. Published apps should use named safe actions.
 | `GET` | `/api/v1/buckets/:bucket_id/files/:id` | Read file metadata. |
 | `GET` | `/api/v1/buckets/:bucket_id/files/:id/download` | Download file bytes. |
 | `GET` | `/api/v1/buckets/:bucket_id/files/:id/text` | Read a text file. |
+| `POST` | `/api/v1/buckets/:bucket_id/files/append_text` | Append UTF-8 text to an existing text file. |
 | `DELETE` | `/api/v1/buckets/:bucket_id/files/:id` | Delete a file. |
 | `POST` | `/api/v1/buckets/:bucket_id/lock` | Lock the whole bucket. |
 | `DELETE` | `/api/v1/buckets/:bucket_id/lock` | Unlock the bucket. |
@@ -1102,6 +1103,35 @@ server-owned upload session automatically for this single-file write.
   "name": "app.js"
 }
 ```
+
+#### POST /api/v1/buckets/:bucket_id/files/append_text
+
+Append UTF-8 text to an existing bucket text file. This endpoint is only for
+text-like files such as `.txt`, `.md`, `.csv`, `.jsonl`, `.js`/code files, and
+similar formats. It does not parse CSV or JSON; appending raw text to ordinary
+`.json` usually makes invalid JSON, so prefer `.jsonl` for append workflows.
+Missing files are rejected; create the file first with the normal write/upload
+flow.
+
+```json
+{
+  "path": "leads.csv",
+  "content": "Jane Doe,jane@example.com,Acme Corp\n",
+  "newline_before": true
+}
+```
+
+`newline_before` defaults to `true`. When true, Revdoku inserts exactly one
+newline before `content` only if the existing file is non-empty, does not
+already end with `\n`, and `content` is non-empty. Set `newline_before:false`
+to append exactly the provided bytes. The endpoint creates a normal new file
+revision and holds the file row lock while reading the latest version and
+committing the appended version.
+
+Active bucket or file locks owned by another actor return HTTP `423` with
+`BUCKET_LOCKED` or `FILE_LOCKED` and structured `error.details` containing the
+lock owner, message, and expiry. Agents should retry briefly when the lock looks
+temporary; if it persists, report those details instead of overwriting.
 
 #### POST /api/v1/buckets/:bucket_id/upload_sessions
 
@@ -1453,6 +1483,10 @@ session-keyed upload/delete control calls.
 | `409` | `BUCKET_NOT_ARCHIVED` | Bucket is not archived; only unarchive archived buckets. |
 | `422` | `BUCKET_DELETE_CONFIRMATION_REQUIRED` | Pass the `delete.confirmation` value returned by bucket list/detail with the delete request. |
 | `403` | `BUCKET_ARCHIVED` | Bucket is archived and cannot be edited until it is unarchived. |
+| `404` | `BUCKET_FILE_NOT_FOUND` | Bucket file path does not exist. |
+| `422` | `UNSUPPORTED_TEXT_APPEND_TYPE` | `append_text` was used on a non-text file. |
+| `422` | `INVALID_TEXT_ENCODING` | `append_text` content or the existing file is not valid UTF-8 text. |
+| `423` | `BUCKET_LOCKED` | Another key owns an active bucket lock. |
 | `423` | `FILE_LOCKED` | Another key owns an active file lock. |
 
 ### Publishing Errors

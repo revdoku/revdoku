@@ -101,6 +101,17 @@ https://app.revdoku.com/mcp
 Local agents can use the installed `revdoku` command. Prefer MCP tools when
 available; use the CLI when the agent needs local filesystem access.
 
+For line-oriented text updates, the CLI can append to an existing bucket text
+file without rewriting the whole file:
+
+```sh
+revdoku --bucket-id bkt_... --append-text-file leads.csv --content-file new-leads.csv
+```
+
+This is only for UTF-8 text files such as `.txt`, `.md`, `.csv`, `.jsonl`, and
+code files. The CLI retries short-lived bucket/file locks for append and prints
+the lock owner, message, and expiry if the file remains locked.
+
 ## API
 
 The public API reference is available at:
