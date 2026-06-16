@@ -13,7 +13,8 @@ Install the local client:
 curl -fsSL https://revdoku.com/install.sh | bash
 ```
 
-Sign in or create a Revdoku account:
+Sign in through the browser device-code flow, or create a Revdoku account first
+if you do not have one yet:
 
 ```sh
 revdoku --login

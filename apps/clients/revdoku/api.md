@@ -135,6 +135,33 @@ curl -fsS "$REVDOKU_URL/api/v1/agent_auth/exchange_grant" \
   }'
 ```
 
+Local CLI/device-code flow:
+
+```sh
+curl -fsS "$REVDOKU_URL/oauth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_name": "Codex on laptop",
+    "redirect_uris": [],
+    "grant_types": ["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"],
+    "response_types": [],
+    "token_endpoint_auth_method": "none"
+  }'
+
+curl -fsS "$REVDOKU_URL/oauth/device_authorization" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "mcp_client_...",
+    "scope": "revdoku:mcp",
+    "resource": "https://app.revdoku.com/mcp"
+  }'
+```
+
+Open the returned `verification_uri_complete` in the browser. Poll `/oauth/token`
+with grant type `urn:ietf:params:oauth:grant-type:device_code` until the user
+approves. Local tooling may store the returned `revdoku_api_key` extension for
+REST API calls.
+
 Fallback email-code flow:
 
 ```sh
@@ -233,6 +260,10 @@ upload descriptors in client-side subbatches. Revdoku's CLI and MCP clients use
 then call `finalize_batch` for that subbatch before requesting much more work.
 This keeps each server-side commit bounded and resilient for large folders.
 
+Set `"delete_missing": true` on the upload session only for full-folder syncs.
+It is applied once, during the final `complete:true` finalize call, after all
+expected upload rows exist; `finalize_batch` never prunes omitted files.
+
 If the client disconnects after some object-storage uploads complete, Revdoku
 keeps files that were already finalized by `finalize_batch`. Unfinalized staged
 uploads are abandoned when the session expires, and the bucket write lock is
@@ -242,7 +273,7 @@ released automatically.
 curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../upload_sessions" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{}'
+  -d '{"delete_missing":true,"expected_file_count":123}'
 ```
 
 Then request descriptors for one subbatch:
@@ -379,6 +410,10 @@ curl -fsS "$REVDOKU_URL/api/v1/publications/pub_..." \
   need to resend settings). The publish-failed notification email is also sent.
 - `publish_state: "queued" | "processing"` → wait ~1–2s and poll again. Waiting is
   safe; a stuck build is auto-recovered by a background sweeper.
+- `publish_state: "unpublishing"` / `status: "unpublishing"` → an async unpublish
+  is removing public artifacts and edge metadata. Poll until `status:
+  "unpublished"` and `publish_state` is no longer `"unpublishing"` before
+  archiving or deleting the bucket.
 
 `publish_enqueued_at` / `publish_started_at` / `publish_completed_at` are exposed
 for progress/age. Changing only settings/access (no file changes) reuses the
@@ -410,7 +445,10 @@ and `"client_events_enabled"` are accepted aliases.
 ### Publish a Folder Efficiently
 
 Use publish sessions for larger folders. Revdoku compares file hashes, uploads
-only changed bytes, then finalizes the publication.
+only changed bytes, then finalizes the publication. The `files` manifest is a
+folder snapshot by default: active bucket files omitted from the manifest are
+soft-deleted during background finalize. Set `"delete_missing": false` only when
+you intentionally want an incremental publish that keeps omitted bucket files.
 
 Create the session:
 
@@ -423,6 +461,7 @@ curl -fsS "$REVDOKU_URL/api/v1/publish_sessions" \
     "entrypoint": "index.html",
     "site_mode": "spa",
     "access_mode": "password",
+    "delete_missing": true,
     "permanent": true,
     "files": [
       {
@@ -448,10 +487,11 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/publish_sessions/pus_.../finalize" \
 ```
 
 Finalize returns `202` with the publication in `publish_state: "queued"` — the
-uploaded files are written into the bucket and the bundle is built in the
-background. Poll `GET /api/v1/publications/pub_...` until `publish_state` is
-`ready` before using `public_url` (see "Wait for the build" above). Bad input
-(a stale session, a file locked by another agent, missing storage) still fails
+uploaded files are written into the bucket, omitted files are pruned when
+`delete_missing` is enabled, and the bundle is built in the background. Poll
+`GET /api/v1/publications/pub_...` until `publish_state` is `ready` before using
+`public_url` (see "Wait for the build" above). Bad input (a stale session or
+bucket revision, a file locked by another agent, missing storage) still fails
 fast at finalize with `409`/`423`/`503`.
 
 If an upload URL expires, refresh it:
@@ -593,22 +633,50 @@ visitor count across the whole range.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/v1/agent_auth/request_code` | Request an email verification code to sign in or create a Revdoku account, without revealing prior account state. |
+| `POST` | `/api/v1/agent_auth/request_code` | Request an email verification code without revealing whether the email has a Revdoku account. New hosted accounts are created in the web UI at app.revdoku.com/users/sign_up, not here. |
 | `POST` | `/api/v1/agent_auth/verify_code` | Verify the email code and create an API key when the code is valid. |
 | `POST` | `/api/v1/agent_auth/exchange_grant` | Exchange an app-created grant for an API key. |
 | `POST` | `/api/v1/agent_auth/browser_login_link` | Create a one-time dashboard login link. |
+| `POST` | `/oauth/device_authorization` | Start OAuth device authorization for local CLI/agent clients. |
+| `GET` / `POST` | `/oauth/device` | Browser page where the user enters/approves a device code. |
+| `POST` | `/oauth/token` | Exchange OAuth authorization codes, device codes, or refresh tokens. |
+
+#### OAuth Device Authorization
+
+Local agents should prefer OAuth device authorization over email-code login. The
+client registers with grant type
+`urn:ietf:params:oauth:grant-type:device_code`, calls
+`POST /oauth/device_authorization`, shows the returned `verification_uri_complete`
+and `user_code`, then polls `POST /oauth/token`.
+
+Pending poll responses use standard device-flow errors:
+
+| Error | Meaning |
+| --- | --- |
+| `authorization_pending` | User has not approved yet; wait `interval` seconds and poll again. |
+| `slow_down` | Increase the polling interval. |
+| `access_denied` | User denied the browser prompt. |
+| `expired_token` | Device code expired; start again. |
+
+Successful device-code token responses include normal OAuth fields plus
+`revdoku_api_key`, a durable `revdoku_...` key for local REST API clients.
 
 #### POST /api/v1/agent_auth/request_code
 
-This endpoint signs in an existing Revdoku account, or creates a new account when
-the email does not have one yet (subject to signup eligibility, e.g. disposable or
-blocked domains are rejected with `SIGNUP_BLOCKED`). It does not reveal whether the
-email already had an account, whether that account is locked, or whether browser
-sign-in is required: it returns the same success shape for syntactically valid,
-eligible email requests. If no code arrives or verification fails, ask the user to
-sign in to Revdoku in the browser and copy a one-time connection prompt/grant from
-the app, then exchange it. Do not ask for a Revdoku password, TOTP, backup code,
+This endpoint returns the same success shape for every syntactically valid email.
+It does not reveal whether the email has a Revdoku account, whether the account is
+locked, or whether two-factor authentication is enabled. If the email can receive
+Revdoku sign-in codes, a code is sent; otherwise the response still directs the
+user to browser sign-in/signup and the authenticated one-time connection prompt.
+If no code arrives or verification fails, ask the user to sign in to Revdoku in
+the browser and copy a one-time connection prompt/grant from the app, then exchange
+it. The response body includes `fallback_url`, `signup_url`, and a `hint` describing
+this browser-grant recovery. Do not ask for a Revdoku password, TOTP, backup code,
 payment details, or full chat history.
+
+(Self-hosted deployments may opt into account creation through this endpoint with
+`REVDOKU_AGENT_ACCOUNT_CREATION_ENABLED=true`; even then, denied or invalid signup
+attempts keep the same generic response.)
 
 ```json
 {
@@ -619,10 +687,12 @@ payment details, or full chat history.
 #### POST /api/v1/agent_auth/verify_code
 
 Verifies the email code and returns a `revdoku_...` API key when the code is
-valid for an account that can use email-code agent sign-in. A new account created
-through `request_code` is confirmed and its default account is set up on the first
-successful verification. `INVALID_CODE` is privacy-preserving and can also mean the
-account needs browser sign-in.
+valid for an account that can use email-code agent sign-in. The account's default
+account is set up on the first successful verification if needed. `INVALID_CODE` is
+privacy-preserving and can also mean the account is locked or uses two-factor
+authentication (which email-code sign-in cannot complete). Its `error.details`
+carries `fallback_url`, `signup_url`, and a `hint`, so on `INVALID_CODE` fall back
+to browser sign-in plus a one-time connection grant rather than retrying codes.
 
 ```json
 {
@@ -1140,8 +1210,16 @@ until the session is finalized or expires. The upload-session TTL is sliding:
 successful descriptor/finalize progress refreshes the session expiry and bucket
 lock expiry. The request body can be empty.
 
+For full-folder syncs, pass `"delete_missing": true` and
+`"expected_file_count"`. Missing active bucket files are soft-deleted only after
+all expected upload rows exist and the final `complete:true` finalize call runs.
+Subbatch `finalize_batch` calls commit uploaded files but do not prune.
+
 ```json
-{}
+{
+  "delete_missing": true,
+  "expected_file_count": 123
+}
 ```
 
 #### POST /api/v1/buckets/:bucket_id/upload_sessions/:id/uploads
@@ -1274,6 +1352,12 @@ selected historical version.
 | `POST` | `/api/v1/publish_sessions/:id/uploads/refresh` | Refresh upload URLs. |
 | `POST` | `/api/v1/publish_sessions/:id/finalize` | Finalize a publish session. |
 
+`GET /api/v1/publications` and `GET /api/v1/publications/:id` include the
+published file manifest by default for backward compatibility. Polling clients
+should pass `include_manifest=false` and use `published_files_count` until they
+need the full file list. `GET /api/v1/publications/:id/manifest` always returns
+the full manifest.
+
 Archived buckets cannot be published, republished, direct-publish finalized,
 or have publication settings updated until they are unarchived. Unpublish and
 publication revoke endpoints remain available for cleanup.
@@ -1314,6 +1398,14 @@ Publication response fields:
 | `analytics.hits_all_time` | Cached all-time website hits; `null` when analytics numbers are hidden. |
 | `analytics.last_event_at` | Latest recorded analytics event timestamp; `null` when hidden or not recorded yet. |
 
+#### DELETE /api/v1/buckets/:id/publication
+
+Unpublish is asynchronous. The endpoint returns `202` with `status:
+"unpublishing"` while the worker writes the unpublished marker, removes public
+artifacts, and syncs edge metadata. Poll `GET /api/v1/publications/:id` until
+`status: "unpublished"` and `publish_state` is no longer `"unpublishing"` before
+treating archive/delete as unblocked.
+
 #### POST /api/v1/publish_sessions
 
 Use this for larger folders and AI-generated websites.
@@ -1329,6 +1421,7 @@ including `tracking_enabled`, `publication_analytics_enabled`, and
   "entrypoint": "index.html",
   "site_mode": "spa",
   "access_mode": "password",
+  "delete_missing": true,
   "permanent": true,
   "files": [
     {

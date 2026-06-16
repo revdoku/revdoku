@@ -52,7 +52,10 @@ for structured bucket work:
 - Use `bucket_write_file`, `bucket_file_append_text`, `bucket_upload_file`,
   `bucket_read_file`, and `bucket_delete_file` for website/project file operations. Use
   `index.html` as the default website root unless the user asks for another
-  entrypoint. Writing or uploading files saves a private draft only; do not
+  entrypoint. A bucket of plain files with no `index.html` still publishes:
+  Revdoku auto-generates a navigation/preview index (a file listing with
+  previews, README-aware), so do not author an `index.html` for a plain file
+  bucket unless the user wants a custom landing page. Writing or uploading files saves a private draft only; do not
   describe the result as live until a publish tool returns a ready publication.
   Use `bucket_file_append_text` only for appending UTF-8 text to existing text
   files such as `.txt`, `.md`, `.csv`, `.jsonl`, `.js`/code files, and similar
@@ -328,7 +331,7 @@ deleted with it, and offer an export first.
 - `--delete-bucket`: with `--bucket-id`, permanently delete an unpublished bucket. The CLI fetches and passes the server-returned `delete.confirmation` token internally; use only after explicit destructive confirmation.
 - `--url URL`: Revdoku app URL, default `https://app.revdoku.com`.
 - `--version`: print the installed CLI version (or `unknown` if not installed via `install.sh`). On normal runs the CLI also prints a non-blocking notice when a newer version is available; update by re-running `curl -fsSL <app-url>/install.sh | bash`. See `docs/connector-updates.md` for refreshing MCP connectors after an update.
-- `--login`: force the email-code login flow and refresh local credentials. With no path it saves credentials and exits; pass a path (for example `revdoku ./dist`) to also store files. To confirm a connection works, run `--status`.
+- `--login`: open the browser device-code login flow and refresh local credentials, with privacy-preserving email-code fallback on older servers. With no path it saves credentials and exits; pass a path (for example `revdoku ./dist`) to also store files. To confirm a connection works, run `--status`.
 - `--status`: print connection status as JSON (connected, account, scope, bucket access). Works with bucket-scoped agent credentials, so this is the right way to confirm a connection — not `--account-status`.
 - `--agent NAME`: attribute uploads to a specific agent (for example `claude-code` or `codex`). The CLI auto-detects common agents and otherwise records `cli`; set this (or `REVDOKU_AGENT_NAME`) when running inside an agent that is not auto-detected so version history shows the real caller.
 - `--dashboard-link`: create a one-time browser login link for the Revdoku dashboard.
