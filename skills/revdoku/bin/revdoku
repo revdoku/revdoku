@@ -67,6 +67,8 @@ LOGIN="false"
 ACTION="store"
 PATH_TO_STORE=""
 PATH_EXPLICIT="false"
+READ_FILE_PATH=""
+OUTPUT_PATH=""
 LAST_PUBLISH_SESSION_BUCKET_ID=""
 LAST_HTTP_STATUS=""
 LAST_ERROR_CODE=""
@@ -141,6 +143,10 @@ Options:
   --status                  Print connection status as JSON (connected, account, scope).
                             Works with bucket-scoped agent credentials.
   --list-buckets         Print available buckets and metadata as JSON.
+  --list-files              Print files in --bucket-id as JSON (path, size, type, id).
+  --read-file PATH          Print the content of the bucket file at PATH (bucket-relative);
+                            requires --bucket-id. Use --output to write to a file.
+  --output FILE             Write --read-file content to FILE instead of stdout.
   --list-versions           Print version history for --bucket-id as JSON.
   --restore-version ID      Restore a bucket version as a new latest version; requires --bucket-id.
   --restore-comment TEXT    Optional comment for --restore-version.
@@ -281,6 +287,21 @@ while [[ $# -gt 0 ]]; do
     --login)
       LOGIN="true"
       shift
+      ;;
+    --list-files)
+      ACTION="list_files"
+      shift
+      ;;
+    --read-file)
+      [[ $# -ge 2 ]] || die "--read-file requires a bucket-relative PATH"
+      ACTION="read_file"
+      READ_FILE_PATH="$2"
+      shift 2
+      ;;
+    --output)
+      [[ $# -ge 2 ]] || die "--output requires a value"
+      OUTPUT_PATH="$2"
+      shift 2
       ;;
     --list-buckets)
       ACTION="list_buckets"
@@ -825,6 +846,21 @@ save_api_key() {
   API_KEY="$key"
 }
 
+open_browser_url() {
+  local url="$1"
+  [[ -n "$url" ]] || return 1
+  if command -v open >/dev/null 2>&1; then
+    open "$url" >/dev/null 2>&1 && return 0
+  fi
+  if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$url" >/dev/null 2>&1 && return 0
+  fi
+  if command -v wslview >/dev/null 2>&1; then
+    wslview "$url" >/dev/null 2>&1 && return 0
+  fi
+  return 1
+}
+
 request_device_agent_key() {
   local payload response client_id device_code user_code verification_uri_complete expires_in interval deadline now token_payload key
 
@@ -847,6 +883,11 @@ request_device_agent_key() {
   echo "Open this Revdoku link to connect:" >&2
   echo "$verification_uri_complete" >&2
   echo "Code: $user_code" >&2
+  if open_browser_url "$verification_uri_complete"; then
+    echo "Opened the approval page in your browser." >&2
+  else
+    echo "Could not open a browser automatically; paste the link above into your browser." >&2
+  fi
   echo "Waiting for browser approval..." >&2
 
   deadline=$(( $(date +%s) + expires_in ))
@@ -920,7 +961,7 @@ request_agent_key() {
     return
   fi
 
-  echo "Browser device login is unavailable on this Revdoku server; falling back to email-code login." >&2
+  echo "Browser device login is unavailable on this Revdoku server; using legacy email-code fallback." >&2
   request_email_agent_key
 }
 
@@ -979,6 +1020,48 @@ list_buckets() {
 list_versions() {
   [[ -n "$BUCKET_ID" ]] || die "--list-versions requires --bucket-id"
   http_json GET "/api/v1/buckets/${BUCKET_ID}/versions" "{}"
+}
+
+list_files() {
+  [[ -n "$BUCKET_ID" ]] || die "--list-files requires --bucket-id (or a remembered selected bucket)"
+  http_json GET "/api/v1/buckets/${BUCKET_ID}/files" "{}"
+}
+
+# Read a bucket file's content by its bucket-relative path. Uses the by_path
+# endpoint, which 302-redirects to a short-lived signed blob URL; curl -L follows
+# it (and drops the bearer on the cross-host hop, as intended).
+read_file() {
+  [[ -n "$BUCKET_ID" ]] || die "--read-file requires --bucket-id (or a remembered selected bucket)"
+  [[ -n "$READ_FILE_PATH" ]] || die "--read-file requires a bucket-relative PATH"
+  [[ -n "$API_KEY" ]] || die "No Revdoku API key. Run 'revdoku --login' first."
+
+  local encoded url body_file status message
+  encoded="$("$JQ_BIN" -rn --arg s "$READ_FILE_PATH" '$s|@uri')"
+  url="$(api_url "/api/v1/buckets/${BUCKET_ID}/files/by_path?path=${encoded}&disposition=inline")"
+  body_file="$(mktemp 2>/dev/null || mktemp -t revdoku)"
+
+  status="$(curl -sSL --max-time 120 -o "$body_file" -w "%{http_code}" \
+    -H "Authorization: Bearer $API_KEY" -H "Accept: */*" "$url" 2>/dev/null || echo "000")"
+
+  if [[ "$status" == 2* ]]; then
+    if [[ -n "$OUTPUT_PATH" ]]; then
+      mv "$body_file" "$OUTPUT_PATH"
+      echo "Saved $READ_FILE_PATH to $OUTPUT_PATH" >&2
+    else
+      cat "$body_file"
+      rm -f "$body_file"
+    fi
+    return 0
+  fi
+
+  message="$("$JQ_BIN" -r '.error.message // .message // empty' "$body_file" 2>/dev/null || true)"
+  rm -f "$body_file"
+  case "$status" in
+    401|403) die "Not authorized to read '$READ_FILE_PATH'${message:+: $message}" ;;
+    404) die "File not found at path '$READ_FILE_PATH' in bucket $BUCKET_ID" ;;
+    000) die "Network error while reading '$READ_FILE_PATH'" ;;
+    *) die "Failed to read '$READ_FILE_PATH' (HTTP ${status})${message:+: $message}" ;;
+  esac
 }
 
 restore_version() {
@@ -1365,6 +1448,14 @@ maybe_notify_update || true
 case "$ACTION" in
   list_buckets)
     list_buckets
+    exit 0
+    ;;
+  list_files)
+    list_files
+    exit 0
+    ;;
+  read_file)
+    read_file
     exit 0
     ;;
   list_versions)

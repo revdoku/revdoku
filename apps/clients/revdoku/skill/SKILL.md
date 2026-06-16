@@ -308,6 +308,22 @@ deleted only when the bucket itself is permanently deleted through the
 confirmed bucket-delete flow — warn the user that visitor-submitted data is
 deleted with it, and offer an export first.
 
+## Read existing bucket files
+
+Uploading is write-only, but you can read back existing files. Use
+`--list-files` to discover paths, then `--read-file PATH` to print one file's
+content (or save it with `--output`):
+
+```bash
+~/.revdoku/bin/revdoku --bucket-id bkt_... --list-files
+~/.revdoku/bin/revdoku --bucket-id bkt_... --read-file leads/q3.csv
+~/.revdoku/bin/revdoku --bucket-id bkt_... --read-file report.pdf --output report.pdf
+```
+
+`PATH` is bucket-relative (as shown by `--list-files`). Reads need only read
+access, so a bucket-scoped agent grant works. Prefer this over hand-rolling HTTP;
+cloud MCP clients use `bucket_file_list` + `bucket_file_read` instead.
+
 ## Options
 
 - `--expires-in-days DAYS`: advanced; make a website expire after DAYS instead of permanent.
@@ -343,6 +359,9 @@ deleted with it, and offer an export first.
 - `--exchange-grant TOKEN`: exchange a one-time grant copied from the Revdoku
   app and save the returned API key.
 - `--list-buckets`: print available buckets and metadata as JSON.
+- `--list-files`: with `--bucket-id`, print the files in a bucket as JSON (path, size, content type, id). Use this to discover what to read.
+- `--read-file PATH`: with `--bucket-id`, print the content of the bucket file at PATH (bucket-relative) to stdout. This is how you READ existing bucket files. Add `--output FILE` to save it instead. Reads need only read access.
+- `--output FILE`: with `--read-file`, write content to FILE instead of stdout.
 - `--list-public-buckets`: print active website publications and URLs as JSON. Each publication includes `hits`, derived from `analytics.hits_all_time` in the HTTP API.
 - `--account-status`: print account, plan, and storage status as JSON with full-account credentials. Bucket-scoped agent credentials are denied this; to confirm a bucket-scoped agent connection works use `--status`, or open Revdoku in a browser to review account status when needed.
 - `--upload-mode MODE`: `auto` or `direct`; default `auto`. Private bucket storage uses bucket upload sessions so multi-file uploads become one bucket version.
