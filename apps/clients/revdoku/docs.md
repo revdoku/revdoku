@@ -20,6 +20,9 @@ if you do not have one yet:
 revdoku --login
 ```
 
+For a browser-first setup page that also covers hosted MCP connectors and
+one-time local agent prompts, open `/connect/agent` in the Revdoku app.
+
 Store a local folder privately:
 
 ```sh

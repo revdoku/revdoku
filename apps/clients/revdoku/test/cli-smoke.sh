@@ -221,6 +221,24 @@ for path in "${tmp_data_root}/.env" "${tmp_data_root}/id_rsa" "${tmp_data_root}/
   [[ -z "$found" ]] || die "sensitive file should not have been stored: $path"
 done
 
+# Read files back through the CLI (--list-files / --read-file).
+cli_files_json="$(
+  HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
+    --url "$REVDOKU_URL" \
+    --bucket-id "$bucket_id" \
+    --list-files
+)"
+cli_listed_notes="$(printf "%s" "$cli_files_json" | jq -r --arg path "${tmp_data_root}/notes.txt" '.data.files[]?.path | select(. == $path)' | head -n 1)"
+[[ "$cli_listed_notes" == "${tmp_data_root}/notes.txt" ]] || die "--list-files did not list the stored notes.txt"
+
+read_notes="$(
+  HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
+    --url "$REVDOKU_URL" \
+    --bucket-id "$bucket_id" \
+    --read-file "${tmp_data_root}/notes.txt"
+)"
+[[ "$read_notes" == "revdoku CLI smoke" ]] || die "--read-file did not return the stored notes.txt content"
+
 archive_json="$(
   HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
     --url "$REVDOKU_URL" \

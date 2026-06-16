@@ -114,7 +114,10 @@ archiving, unarchiving, permanent delete, publishing, republishing, and
 analytics. It intentionally does not expose local-path tools because cloud
 connectors cannot read a user's local filesystem. Use the Revdoku CLI or local
 stdio MCP for local folder uploads; hosted MCP can then update and republish the
-same `bucket_id`. `bucket_list` and `bucket_get` include bucket ids,
+same `bucket_id`. To read existing bucket file content from a CLI or script, use
+`revdoku --list-files` / `revdoku --read-file PATH`, or `GET …/files/by_path`
+(see [Read a file's content](#read-a-files-content)); cloud MCP clients use
+`bucket_file_list` + `bucket_file_read`. `bucket_list` and `bucket_get` include bucket ids,
 website metadata, publication lifecycle state, and action metadata such as
 `archive.required_action` and `delete.confirmation` so agents can handle ids
 internally instead of asking users to type them.
@@ -123,8 +126,19 @@ internally instead of asking users to type them.
 
 ### Connect an Agent
 
-The lowest-friction flow is the app's **Copy prompt** button. It gives the agent
-a one-time grant token. Exchange it for a normal API key:
+Start with the unified browser wizard:
+
+```text
+https://app.revdoku.com/connect/agent
+```
+
+Agents and clients can discover supported auth methods at
+`GET /api/v1/agent_auth/capabilities`. The preferred local flow is OAuth device
+authorization; one-time grants are the best browser-signed fallback for local
+agent chats.
+
+The app's **Copy prompt** button gives the agent a one-time grant token. Exchange
+it for a normal API key:
 
 ```sh
 curl -fsS "$REVDOKU_URL/api/v1/agent_auth/exchange_grant" \
@@ -157,12 +171,13 @@ curl -fsS "$REVDOKU_URL/oauth/device_authorization" \
   }'
 ```
 
-Open the returned `verification_uri_complete` in the browser. Poll `/oauth/token`
-with grant type `urn:ietf:params:oauth:grant-type:device_code` until the user
-approves. Local tooling may store the returned `revdoku_api_key` extension for
-REST API calls.
+Open the returned `verification_uri_complete` in the browser. Revdoku approves
+the connection with build/publish permissions by default; users can reduce
+access later in Account → Access. Poll `/oauth/token` with grant type
+`urn:ietf:params:oauth:grant-type:device_code` until the user approves. Local
+tooling may store the returned `revdoku_api_key` extension for REST API calls.
 
-Fallback email-code flow:
+Legacy fallback email-code flow:
 
 ```sh
 curl -fsS "$REVDOKU_URL/api/v1/agent_auth/request_code" \
@@ -633,10 +648,15 @@ visitor count across the whole range.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
+| `GET` | `/connect/agent` | Unified browser wizard for local CLI, hosted MCP, and one-time prompt setup. |
+| `GET` | `/api/v1/agent_auth/capabilities` | Machine-readable agent auth manifest. |
+| `GET` | `/api/v1/agent_auth/status` | API-key status alias for agents; same connection payload as `/api/v1/status`. |
 | `POST` | `/api/v1/agent_auth/request_code` | Request an email verification code without revealing whether the email has a Revdoku account. New hosted accounts are created in the web UI at app.revdoku.com/users/sign_up, not here. |
 | `POST` | `/api/v1/agent_auth/verify_code` | Verify the email code and create an API key when the code is valid. |
 | `POST` | `/api/v1/agent_auth/exchange_grant` | Exchange an app-created grant for an API key. |
 | `POST` | `/api/v1/agent_auth/browser_login_link` | Create a one-time dashboard login link. |
+| `GET` | `/api/v1/account/agent_connection_grants` | List unused one-time grants for the signed-in browser user. |
+| `DELETE` | `/api/v1/account/agent_connection_grants/:id` | Revoke an unused one-time grant. |
 | `POST` | `/oauth/device_authorization` | Start OAuth device authorization for local CLI/agent clients. |
 | `GET` / `POST` | `/oauth/device` | Browser page where the user enters/approves a device code. |
 | `POST` | `/oauth/token` | Exchange OAuth authorization codes, device codes, or refresh tokens. |
@@ -660,6 +680,22 @@ Pending poll responses use standard device-flow errors:
 
 Successful device-code token responses include normal OAuth fields plus
 `revdoku_api_key`, a durable `revdoku_...` key for local REST API clients.
+The browser approval screen defaults to `bucket_admin` so agents can build and
+publish when the user asks. Users can reduce a connection later in
+Account → Access. Advanced one-time grant and API-key creation flows can still
+request a narrower scope up front.
+
+#### Permission scopes
+
+| Scope | Meaning |
+| --- | --- |
+| `bucket_read` | List and read allowed bucket files only. |
+| `bucket_write` | Create and update allowed private bucket files; no publishing. |
+| `bucket_admin` | Create, update, publish, unpublish, and manage allowed buckets. |
+
+One-time grants and API-key creation accept `permission_scope` / `scope` with
+these values. If omitted, agent grants and named API-key setup use
+`bucket_admin` by default.
 
 #### POST /api/v1/agent_auth/request_code
 
@@ -1149,8 +1185,9 @@ for setup, inspection, and repair. Published apps should use named safe actions.
 | `POST` | `/api/v1/buckets/:bucket_id/upload_sessions/:id/uploads` | Create direct-upload descriptors for one file subbatch. |
 | `POST` | `/api/v1/buckets/:bucket_id/upload_sessions/:id/finalize_batch` | Commit a bounded subbatch of uploaded files. |
 | `POST` | `/api/v1/buckets/:bucket_id/upload_sessions/:id/finalize` | Continue finalization and close the session when no uploaded files remain. |
+| `GET` | `/api/v1/buckets/:bucket_id/files/by_path?path=...` | Read file bytes by bucket-relative path (302 → signed URL). |
 | `GET` | `/api/v1/buckets/:bucket_id/files/:id` | Read file metadata. |
-| `GET` | `/api/v1/buckets/:bucket_id/files/:id/download` | Download file bytes. |
+| `GET` | `/api/v1/buckets/:bucket_id/files/:id/download` | Download file bytes by id (302 → signed URL). |
 | `GET` | `/api/v1/buckets/:bucket_id/files/:id/text` | Read a text file. |
 | `POST` | `/api/v1/buckets/:bucket_id/files/append_text` | Append UTF-8 text to an existing text file. |
 | `DELETE` | `/api/v1/buckets/:bucket_id/files/:id` | Delete a file. |
@@ -1160,6 +1197,40 @@ for setup, inspection, and repair. Published apps should use named safe actions.
 | `POST` | `/api/v1/buckets/:bucket_id/files/:id/lock` | Lock by file id. |
 | `DELETE` | `/api/v1/buckets/:bucket_id/files/:id/lock` | Unlock a file. |
 | `POST` | `/api/v1/direct_uploads` | Create a direct-upload URL. |
+
+#### Read a file's content
+
+You do not need to download the whole bucket to read one file. List the files to
+discover paths, then fetch a single file's bytes — by bucket-relative path (no id
+lookup) or by file id. Both return `302` to a short-lived signed URL; follow the
+redirect. Reads need only `read` permission, so bucket-scoped agent grants work.
+
+```bash
+# 1) discover files (paths, sizes, ids)
+curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../files" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY"
+
+# 2a) read by bucket-relative path (recommended; mirrors MCP bucket_file_read)
+curl -fsSL "$REVDOKU_URL/api/v1/buckets/bkt_.../files/by_path?path=leads/q3.csv&disposition=inline" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY"
+
+# 2b) read by file id
+curl -fsSL "$REVDOKU_URL/api/v1/buckets/bkt_.../files/fil_.../download?disposition=inline" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY"
+```
+
+`curl -L` follows the redirect to the signed blob URL (and drops the bearer on
+the cross-host hop, which is expected — the signed URL carries its own auth).
+`disposition=inline` views the bytes; the default `attachment` sets a download
+filename. The Revdoku CLI wraps this:
+
+```bash
+revdoku --bucket-id bkt_... --list-files
+revdoku --bucket-id bkt_... --read-file leads/q3.csv            # prints to stdout
+revdoku --bucket-id bkt_... --read-file leads/q3.csv --output q3.csv
+```
+
+Cloud MCP clients use `bucket_file_list` + `bucket_file_read` (by path) instead.
 
 #### POST /api/v1/buckets/:bucket_id/files
 
