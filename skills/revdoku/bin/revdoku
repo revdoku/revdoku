@@ -5,6 +5,7 @@ DEFAULT_URL="https://app.revdoku.com"
 CREDENTIALS_PATH="${REVDOKU_CREDENTIALS:-${HOME}/.revdoku/credentials}"
 DEFAULT_BUCKET_PATH="${REVDOKU_DEFAULT_BUCKET_FILE:-${CREDENTIALS_PATH}.bucket}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEVICE_CODE_GRANT_TYPE="urn:ietf:params:oauth:grant-type:device_code"
 
 # Config dir + installed client version stamp (written by install.sh). Used for
 # `--version` and the non-blocking update notice.
@@ -135,7 +136,7 @@ Options:
   --unarchive               Restore archived --bucket-id to the active bucket list.
   --delete-bucket           Permanently delete unpublished --bucket-id.
   --expires-in-days DAYS    Advanced: expire the website after DAYS instead of keeping it permanent.
-  --login                   Request a privacy-preserving email code and save an API key to $CREDENTIALS_PATH.
+  --login                   Connect in the browser and save an API key to $CREDENTIALS_PATH.
                             With no PATH, exits after saving; pass PATH to also store files.
   --status                  Print connection status as JSON (connected, account, scope).
                             Works with bucket-scoped agent credentials.
@@ -696,8 +697,8 @@ http_json() {
       return 0
     fi
 
-    message="$("$JQ_BIN" -r '.error.message // .message // empty' "$body_file" 2>/dev/null || true)"
-    code="$("$JQ_BIN" -r '.error.code // empty' "$body_file" 2>/dev/null || true)"
+    message="$("$JQ_BIN" -r '.error.message // .error_description // .message // empty' "$body_file" 2>/dev/null || true)"
+    code="$("$JQ_BIN" -r '.error.code // .error // empty' "$body_file" 2>/dev/null || true)"
     request_id="$("$JQ_BIN" -r '.error.request_id // .request_id // empty' "$body_file" 2>/dev/null || true)"
     retry_after="$("$JQ_BIN" -r '.error.details.retry_after // empty' "$body_file" 2>/dev/null || true)"
     details_json="$("$JQ_BIN" -c '.error.details // {}' "$body_file" 2>/dev/null || printf '{}')"
@@ -757,6 +758,46 @@ http_json() {
   done
 }
 
+http_json_quiet() {
+  local method="$1"
+  local path="$2"
+  local payload="$3"
+  local body_file status message code agent_args=()
+  LAST_HTTP_STATUS=""
+  LAST_ERROR_CODE=""
+  LAST_ERROR_MESSAGE=""
+  LAST_ERROR_DETAILS_JSON=""
+  body_file="$(mktemp)"
+
+  while IFS= read -r -d '' value; do
+    agent_args+=("$value")
+  done < <(agent_header_args)
+
+  if ! status="$(curl -sS -o "$body_file" -w "%{http_code}" -X "$method" "$(api_url "$path")" "${agent_args[@]}" -H "Content-Type: application/json" --data "$payload")"; then
+    rm -f "$body_file"
+    LAST_HTTP_STATUS=""
+    LAST_ERROR_CODE="NETWORK_ERROR"
+    LAST_ERROR_MESSAGE="Network error while calling $path"
+    LAST_ERROR_DETAILS_JSON=""
+    return 1
+  fi
+
+  if http_status_success "$status"; then
+    cat "$body_file"
+    rm -f "$body_file"
+    return 0
+  fi
+
+  message="$("$JQ_BIN" -r '.error.message // .error_description // .message // empty' "$body_file" 2>/dev/null || true)"
+  code="$("$JQ_BIN" -r '.error.code // .error // empty' "$body_file" 2>/dev/null || true)"
+  LAST_HTTP_STATUS="$status"
+  LAST_ERROR_CODE="$code"
+  LAST_ERROR_MESSAGE="$message"
+  LAST_ERROR_DETAILS_JSON="$("$JQ_BIN" -c '.error.details // {}' "$body_file" 2>/dev/null || printf '{}')"
+  rm -f "$body_file"
+  return 1
+}
+
 prompt_read() {
   local prompt="$1"
   local value
@@ -767,17 +808,86 @@ prompt_read() {
     printf "%s" "$prompt" >&2
     IFS= read -r value
   else
-    die "REVDOKU_API_KEY is required. Run interactively with --login to sign in or create a Revdoku account."
+    die "REVDOKU_API_KEY is required. Run interactively with --login to sign in (sign up first at ${BASE_URL%/}/users/sign_up if you don't have an account)."
   fi
   printf "%s" "$value"
 }
 
-request_agent_key() {
-  local email code payload response key attempts
-  attempts=0
+save_api_key() {
+  local key="$1"
+  [[ -n "$key" ]] || die "API key is required"
+  mkdir -p "$(dirname "$CREDENTIALS_PATH")"
+  umask 077
+  printf "%s\n" "$key" > "$CREDENTIALS_PATH"
+  rm -f "$DEFAULT_BUCKET_PATH"
+  echo "Saved Revdoku API key to $CREDENTIALS_PATH" >&2
+  echo "This is a one-time setup. Future runs will reuse the saved key automatically." >&2
+  API_KEY="$key"
+}
+
+request_device_agent_key() {
+  local payload response client_id device_code user_code verification_uri_complete expires_in interval deadline now token_payload key
+
+  payload="$("$JQ_BIN" -nc --arg grant "$DEVICE_CODE_GRANT_TYPE" '{client_name:"Revdoku CLI", redirect_uris:[], grant_types:[$grant,"refresh_token"], response_types:[], token_endpoint_auth_method:"none"}')"
+  response="$(http_json_quiet POST "/oauth/register" "$payload")" || return 1
+  client_id="$("$JQ_BIN" -r '.client_id // empty' <<<"$response")"
+  [[ -n "$client_id" ]] || return 1
+
+  payload="$("$JQ_BIN" -nc --arg client_id "$client_id" --arg resource "${BASE_URL%/}/mcp" '{client_id:$client_id, scope:"revdoku:mcp", resource:$resource}')"
+  response="$(http_json_quiet POST "/oauth/device_authorization" "$payload")" || return 1
+  device_code="$("$JQ_BIN" -r '.device_code // empty' <<<"$response")"
+  user_code="$("$JQ_BIN" -r '.user_code // empty' <<<"$response")"
+  verification_uri_complete="$("$JQ_BIN" -r '.verification_uri_complete // .verification_uri // empty' <<<"$response")"
+  expires_in="$("$JQ_BIN" -r '.expires_in // 600' <<<"$response")"
+  interval="$("$JQ_BIN" -r '.interval // 5' <<<"$response")"
+  [[ -n "$device_code" && -n "$user_code" && -n "$verification_uri_complete" ]] || return 1
+  [[ "$expires_in" =~ ^[0-9]+$ && "$expires_in" -gt 0 ]] || expires_in=600
+  [[ "$interval" =~ ^[0-9]+$ && "$interval" -gt 0 ]] || interval=5
+
+  echo "Open this Revdoku link to connect:" >&2
+  echo "$verification_uri_complete" >&2
+  echo "Code: $user_code" >&2
+  echo "Waiting for browser approval..." >&2
+
+  deadline=$(( $(date +%s) + expires_in ))
+  while true; do
+    now="$(date +%s)"
+    if [[ "$now" =~ ^[0-9]+$ && "$now" -ge "$deadline" ]]; then
+      die "device login expired; run --login again"
+    fi
+
+    sleep "$interval"
+    token_payload="$("$JQ_BIN" -nc --arg grant "$DEVICE_CODE_GRANT_TYPE" --arg client_id "$client_id" --arg device_code "$device_code" --arg resource "${BASE_URL%/}/mcp" '{grant_type:$grant, client_id:$client_id, device_code:$device_code, resource:$resource}')"
+    if response="$(http_json_quiet POST "/oauth/token" "$token_payload")"; then
+      key="$("$JQ_BIN" -r '.revdoku_api_key // empty' <<<"$response")"
+      [[ -n "$key" ]] || die "device login did not return a Revdoku API key"
+      save_api_key "$key"
+      return 0
+    fi
+
+    case "$LAST_ERROR_CODE" in
+      authorization_pending)
+        ;;
+      slow_down)
+        interval=$((interval + 5))
+        ;;
+      access_denied)
+        die "Revdoku connection was denied in the browser"
+        ;;
+      expired_token)
+        die "device login expired; run --login again"
+        ;;
+      *)
+        return 1
+        ;;
+    esac
+  done
+}
+
+request_email_agent_key() {
+  local email code payload response key
 
   while true; do
-    attempts=$((attempts + 1))
     email="$(prompt_read "Email: ")"
     [[ -n "$email" ]] || die "email is required"
 
@@ -786,15 +896,11 @@ request_agent_key() {
       break
     fi
 
-    if [[ "$LAST_ERROR_CODE" != "SIGNUP_BLOCKED" ]]; then
-      die "could not start email verification"
-    fi
-    [[ "$attempts" -lt 3 ]] || die "could not start email verification"
-    echo "Please use a permanent email address. Disposable or blocked email domains are not accepted." >&2
+    die "could not start email verification"
   done
 
-  echo "A Revdoku verification code was sent to $email." >&2
-  echo "If no code arrives, sign in at ${BASE_URL%/}/users/sign_in and use Copy Prompt or an app connection grant, then run with --exchange-grant TOKEN." >&2
+  echo "If $email can receive Revdoku sign-in codes, a verification code was sent." >&2
+  echo "If no code arrives, sign in or create an account at ${BASE_URL%/}/users/sign_in, then use Copy Instructions for AI or an app connection grant and run with --exchange-grant TOKEN." >&2
 
   code="$(prompt_read "Code: ")"
   [[ -n "$code" ]] || die "code is required"
@@ -806,12 +912,16 @@ request_agent_key() {
   key="$("$JQ_BIN" -r '.data.api_key // empty' <<<"$response")"
   [[ -n "$key" ]] || die "verification did not return an API key. If no code arrived or the code is rejected, use browser sign-in and a one-time Revdoku connection grant."
 
-  mkdir -p "$(dirname "$CREDENTIALS_PATH")"
-  umask 077
-  printf "%s\n" "$key" > "$CREDENTIALS_PATH"
-  echo "Saved Revdoku API key to $CREDENTIALS_PATH" >&2
-  echo "This is a one-time setup. Future runs will reuse the saved key automatically." >&2
-  API_KEY="$key"
+  save_api_key "$key"
+}
+
+request_agent_key() {
+  if request_device_agent_key; then
+    return
+  fi
+
+  echo "Browser device login is unavailable on this Revdoku server; falling back to email-code login." >&2
+  request_email_agent_key
 }
 
 if [[ "$ACTION" != "exchange_grant" && ( "$LOGIN" == "true" || -z "$API_KEY" ) ]]; then
@@ -923,7 +1033,16 @@ append_text_file() {
 
 unpublish_bucket() {
   [[ -n "$BUCKET_ID" ]] || die "--unpublish requires --bucket-id"
-  http_json DELETE "/api/v1/buckets/${BUCKET_ID}/publication" "{}" | "$JQ_BIN" -c '
+  local response publication_id publish_state status final_response
+  response="$(http_json DELETE "/api/v1/buckets/${BUCKET_ID}/publication" "{}")" || return 1
+  publication_id="$("$JQ_BIN" -r '.data.publication.id // empty' <<<"$response" 2>/dev/null || true)"
+  publish_state="$("$JQ_BIN" -r '.data.publication.publish_state // empty' <<<"$response" 2>/dev/null || true)"
+  status="$("$JQ_BIN" -r '.data.publication.status // empty' <<<"$response" 2>/dev/null || true)"
+  if [[ -n "$publication_id" && ( "$publish_state" == "unpublishing" || "$status" == "unpublishing" ) ]]; then
+    final_response="$(wait_for_publication_unpublished "$publication_id")" || return 1
+    response="$final_response"
+  fi
+  "$JQ_BIN" -c '
     .data.publication as $publication
     | {
         success: (.success // true),
@@ -936,7 +1055,7 @@ unpublish_bucket() {
           revoked_at: $publication.revoked_at,
           guidance: "The public site is unpublished. Republish this same bucket to restore the same URL."
         }
-      }'
+      }' <<<"$response"
 }
 
 archive_bucket() {
@@ -1059,7 +1178,7 @@ exchange_grant() {
 }
 
 list_public_buckets() {
-  http_json GET "/api/v1/publications" "{}" | "$JQ_BIN" -c '
+  http_json GET "/api/v1/publications?include_manifest=false" "{}" | "$JQ_BIN" -c '
     .data.publications
     | map(select(.kind == "bucket_bundle" and (.public_url // "") != "" and ((.active == true) or ((has("active") | not) and .status == "published"))))
     | group_by(.bucket_id)
@@ -1097,7 +1216,7 @@ wait_for_publication_ready() {
   local max_attempts="${REVDOKU_PUBLISH_WAIT_MAX_ATTEMPTS:-450}"  # ~15 min at 2s
   [[ -n "$publication_id" ]] || return 1
   while :; do
-    response="$(http_json GET "/api/v1/publications/${publication_id}" "{}")" || return 1
+    response="$(http_json GET "/api/v1/publications/${publication_id}?include_manifest=false" "{}")" || return 1
     state="$("$JQ_BIN" -r '.data.publication.publish_state // "ready"' <<<"$response")"
     case "$state" in
       ready|"")
@@ -1122,6 +1241,37 @@ wait_for_publication_ready() {
         sleep 2
         ;;
     esac
+  done
+}
+
+wait_for_publication_unpublished() {
+  local publication_id="$1"
+  local response state status err attempts=0
+  local max_attempts="${REVDOKU_UNPUBLISH_WAIT_MAX_ATTEMPTS:-150}"  # ~5 min at 2s
+  [[ -n "$publication_id" ]] || return 1
+  while :; do
+    response="$(http_json GET "/api/v1/publications/${publication_id}?include_manifest=false" "{}")" || return 1
+    state="$("$JQ_BIN" -r '.data.publication.publish_state // "ready"' <<<"$response")"
+    status="$("$JQ_BIN" -r '.data.publication.status // empty' <<<"$response")"
+    if [[ "$state" == "failed" ]]; then
+      err="$("$JQ_BIN" -r '.data.publication.publish_error // "Unpublishing failed."' <<<"$response")"
+      echo "Unpublishing failed: $err" >&2
+      return 2
+    fi
+    if [[ "$status" == "unpublished" && "$state" != "unpublishing" ]]; then
+      printf '%s' "$response"
+      return 0
+    fi
+
+    attempts=$((attempts + 1))
+    if (( attempts > max_attempts )); then
+      echo "Timed out waiting for unpublish to finish. It may still complete in the background." >&2
+      return 3
+    fi
+    if (( attempts == 1 || attempts % 5 == 0 )); then
+      echo "Unpublishing… (${state})" >&2
+    fi
+    sleep 2
   done
 }
 
@@ -1657,25 +1807,29 @@ bucket_upload_session_manifest_json() {
 bucket_upload_session_client_key() {
   local bucket_id="$1"
   local manifest_json="$2"
+  local delete_missing="${3:-false}"
   local digest
   if [[ -n "$BUCKET_UPLOAD_CLIENT_SESSION_KEY" ]]; then
     printf "%s" "$BUCKET_UPLOAD_CLIENT_SESSION_KEY"
     return 0
   fi
-  digest="$(printf "%s:%s" "$bucket_id" "$manifest_json" | openssl dgst -sha256 -hex | awk '{print $2}')"
+  digest="$(printf "%s:%s:%s" "$bucket_id" "$manifest_json" "$delete_missing" | openssl dgst -sha256 -hex | awk '{print $2}')"
   printf "cli:%s:%s" "$bucket_id" "$digest"
 }
 
 bucket_upload_session_payload() {
   local client_session_key="$1"
   local expected_file_count="$2"
+  local delete_missing="${3:-false}"
   "$JQ_BIN" -nc \
     --arg client_session_key "$client_session_key" \
     --argjson expected_file_count "$expected_file_count" \
+    --arg delete_missing "$delete_missing" \
     '{
       client_session_key: $client_session_key,
       expected_file_count: $expected_file_count
-    }'
+    }
+    + (if $delete_missing == "true" then {delete_missing: true} else {} end)'
 }
 
 prepare_bucket_upload_descriptors() {
@@ -1774,11 +1928,12 @@ upload_bucket_session_missing_entry() {
 store_bucket_session_upload() {
   local bucket_id="$1"
   local file_list="$2"
+  local delete_missing="${3:-false}"
   local manifest_json payload response session_id upload_line rel upload_json file batch_json batch_response expected_file_count client_session_key failed=0 finalized=0 entry_json refresh_response uploaded_index=0
   manifest_json="$(bucket_upload_session_manifest_json "$file_list")"
   expected_file_count="$("$JQ_BIN" -r 'length' <<<"$manifest_json")"
-  client_session_key="$(bucket_upload_session_client_key "$bucket_id" "$manifest_json")"
-  payload="$(bucket_upload_session_payload "$client_session_key" "$expected_file_count")"
+  client_session_key="$(bucket_upload_session_client_key "$bucket_id" "$manifest_json" "$delete_missing")"
+  payload="$(bucket_upload_session_payload "$client_session_key" "$expected_file_count" "$delete_missing")"
   response="$(http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions" "$payload")" || return 1
   session_id="$("$JQ_BIN" -r '.data.bucket_upload_session.id // empty' <<<"$response")"
   [[ -n "$session_id" ]] || die "bucket upload session response did not include id"
@@ -1819,7 +1974,7 @@ store_bucket_session_upload() {
     done < <("$JQ_BIN" -c '.data.uploads[]?' <<<"$batch_response")
     [[ "$failed" == "0" ]] || break
 
-    if ! finalize_bucket_upload_session_batch "$bucket_id" "$session_id" "$BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE"; then
+    if [[ "$delete_missing" != "true" ]] && ! finalize_bucket_upload_session_batch "$bucket_id" "$session_id" "$BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE"; then
       failed=1
       break
     fi
@@ -1923,6 +2078,7 @@ publish_session_payload() {
       bucket_title: $title,
       entrypoint: $entrypoint,
       metadata: $metadata,
+      delete_missing: true,
       files: $files
     }
     + (if $bucket_id != "" then {bucket_id: $bucket_id} else {} end)
@@ -2074,7 +2230,7 @@ store_bucket() {
   }
   echo "Bucket: $bucket_id" >&2
   echo "Saved draft bucket: $bucket_id" >&2
-  store_bucket_session_upload "$bucket_id" "$file_list" || {
+  store_bucket_session_upload "$bucket_id" "$file_list" "$PUBLISH" || {
     rm -f "$file_list"
     return 1
   }
