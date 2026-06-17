@@ -53,10 +53,13 @@ for structured bucket work:
   `bucket_read_file`, and `bucket_delete_file` for website/project file operations. Use
   `index.html` as the default website root unless the user asks for another
   entrypoint. A bucket of plain files with no `index.html` still publishes:
-  Revdoku auto-generates a navigation/preview index (a file listing with
-  previews, README-aware), so do not author an `index.html` for a plain file
+  Revdoku auto-generates an Auto-Index Page (a file listing with previews,
+  README-aware), so do not author an `index.html` for a plain file
   bucket unless the user wants a custom landing page. Writing or uploading files saves a private draft only; do not
   describe the result as live until a publish tool returns a ready publication.
+  Custom Auto-Index Page templates must include the files macro as `{{files}}`
+  or `{{ files }}`. Supported macros are `{{title}}`, `{{description}}`,
+  `{{files}}`, and `{{theme_switch}}`, with optional whitespace inside braces.
   Use `bucket_file_append_text` only for appending UTF-8 text to existing text
   files such as `.txt`, `.md`, `.csv`, `.jsonl`, `.js`/code files, and similar
   formats. It does not parse CSV or JSON; ordinary `.json` raw append can make
@@ -91,7 +94,7 @@ for structured bucket work:
   user whether to republish/update one existing public bucket, unpublish one
   current bucket, or review plan capacity on the Revdoku website. Never unpublish without confirmation. If
   publishing returns `PRIVATE_PUBLICATION_LIMIT_REACHED`, explain that protected
-  websites need available Pro protected-site capacity. If
+  websites need available protected-site capacity on the account. If
   publishing returns `PUBLIC_STORAGE_NOT_CONFIGURED`, keep using the private
   bucket and tell the user public publishing is not configured for this
   deployment yet. If publishing returns `PRIVATE_PUBLICATION_STORAGE_NOT_CONFIGURED`,
@@ -102,13 +105,14 @@ for structured bucket work:
   settings/access-only change does not re-upload files. Direct API callers poll
   `GET /api/v1/publications/<id>` for `publish_state: "ready"` before sharing
   `public_url`, and can retry a `failed` one — see api.md.
-- Free plans publish a **time-limited preview** (7 days by default, not indexed by
-  Google), and the publish result's `guidance` says so — tell the user it's a free
-  preview and that they can upgrade to keep it online permanently and searchable.
-  Paid plans publish permanent sites by default; pass `expires_in_hours` for an
-  explicit lifetime. After a free preview expires its files are kept; republishing
-  (or upgrading) restores it, subject to a short re-publish cooldown
-  (`PUBLICATION_FREE_COOLDOWN`).
+- Bucket publishing creates a normal live website and does not set an expiration.
+  Do not describe the current publish flow as a preview. Temporary preview
+  deployments are a separate future concept, not the bucket publish flow.
+- Public websites are not listed in `revdoku.com/featured` by default. Ask the
+  owner before opting in with `featured_on_community: true` or
+  `--feature-on-community`. For an already-published website, use
+  `bucket_update_publication_settings` or `revdoku --bucket-id ... --feature-on-community`;
+  do not republish only to change this setting.
 - Any plan may pass `slug_suggestions` (ordered website names) to the publish
   tools to steer the public URL (first available wins, else a numeric suffix);
   otherwise the slug defaults to the bucket's name. Applies on first publish; the
@@ -246,7 +250,7 @@ To publish with MCP, include `"publish": true`.
 ## App websites with a database (real backend — do not use local storage)
 
 A bucket can publish an interactive app website backed by a bucket-owned server
-database (Cloudflare D1) with owner-defined safe actions at
+database (Cloudflare D1) with owner-defined named actions at
 `/_revdoku/app/<name>`. Use this for any shared/multi-visitor data: voting and
 feedback dashboards, suggestion boards, searchable support sites, shared prompt
 libraries, research/link feeds. **When the user wants visitors to submit, vote,
@@ -269,13 +273,13 @@ and cannot create the database or publish an app site, so use one of:
 
 Flow (identical for MCP and REST):
 
-1. Get/create the bucket. If it already exists, inspect the live schema + safe
+1. Get/create the bucket. If it already exists, inspect the live schema + named
    actions first (`bucket_app_database_get` / `GET .../app_database`) before
    changing schema, rows, or action definitions.
 2. Optionally write a private `.revdoku.app.json` contract (purpose, data model,
-   safe actions, rollback notes). Stored in the draft, excluded from the live bundle.
+   actions, rollback notes). Stored in the draft, excluded from the live bundle.
 3. Create the database and apply SQL `schema` statements, optional `seed` rows,
-   and an `operations` manifest of named SQL safe actions
+   and an `operations` manifest of named SQL actions
    (`bucket_app_database_setup` / `POST .../app_database/{schema,seed,operations}`).
    `public: true` actions become visitor endpoints at `/_revdoku/app/<name>`;
    `public: false` actions are owner/agent-only (run via `run_operation`).
@@ -285,17 +289,17 @@ Flow (identical for MCP and REST):
    on the same origin) into the bucket.
 5. **Publish with `site_type: "app"`** (ordinary `website` sites stay static-only
    and reject app routes).
-6. Owner notifications: have a public safe action also insert a row into the
+6. Owner notifications: have a public website action also insert a row into the
    reserved `_revdoku_events` table (or use an `AFTER INSERT` trigger so
    the public action stays one statement); Revdoku surfaces new rows as in-app
    account notifications and via `bucket_app_database_notifications`. Use
    `bucket_app_database_query` for owner-only ad hoc SQL; visitors never get raw SQL.
 
-Starter schemas + safe actions (waitlist, feedback/voting dashboard, searchable
+Starter schemas + named actions (waitlist, feedback/voting dashboard, searchable
 support center, leaderboards, link feeds, …) are in
 `templates/app-safe-actions.json`; see `app-building-guide.md` for conventions.
 
-Anti-spam for anonymous-write safe actions: store the owner's own Cloudflare
+Anti-spam for anonymous-write actions: store the owner's own Cloudflare
 Turnstile secret as `operations.turnstile.secret_key` and set
 `turnstile: true` on the action; the page renders the Turnstile widget with
 the owner's sitekey and sends `cf_turnstile_token` in the request body.
@@ -326,7 +330,6 @@ cloud MCP clients use `bucket_file_list` + `bucket_file_read` instead.
 
 ## Options
 
-- `--expires-in-days DAYS`: advanced; make a website expire after DAYS instead of permanent.
 - `--title TITLE`: bucket/publication title.
 - `--description TEXT`: short bucket description.
 - `--tag-path PATH`: explicit bucket label such as `website`; can be repeated. Do not use local path segments, parent folders, bucket titles, or domain/folder names as tags.
@@ -336,9 +339,10 @@ cloud MCP clients use `bucket_file_list` + `bucket_file_read` instead.
 - `--restore-comment TEXT`: optional reason appended to the restore version comment.
 - `--append-text-file PATH`: with `--bucket-id`, append UTF-8 text to an existing bucket text file only. Use `--content TEXT` or `--content-file PATH`; pass `--no-newline-before` only when exact append bytes are required.
 - `--metadata JSON`: optional bucket metadata for future agent lookup, e.g. `--metadata '{"project":"marketing-site","task":"landing-page"}'`.
-- `--publish`: publish the bucket as a permanent website after storing files.
+- `--publish`: publish the bucket as a normal non-expiring website after storing files.
+- `--feature-on-community`: with `--publish`, opt the public website into the revdoku.com/featured listing. With only `--bucket-id`, update an already-published website's featured setting without republishing. Ask the owner before using this.
 - `--protected`: with `--publish`, publish as a password-protected website.
-- `--access-mode password_ask_info`: with `--publish`, publish as a protected website that asks visitors for email plus password.
+- `--access-mode password_ask_info`: with `--publish`, publish as a protected website that asks visitors for email plus password on Builder and Pro plans.
 - `--password PASSWORD`: advanced direct-terminal option for owners who choose their own protected website password. Do not ask users for this in chat, and do not put the password in a URL.
 - `--generate-password`: with `--publish --protected`, rotate the protected website password and show it in the owner publish response. Use only when the user explicitly asks to rotate it.
 - `--unpublish`: with `--bucket-id`, unpublish a website while keeping its reserved URL for later republish.

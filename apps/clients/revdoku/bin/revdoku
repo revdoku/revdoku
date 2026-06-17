@@ -26,18 +26,17 @@ BASE_URL="${REVDOKU_URL:-$DEFAULT_URL}"
 API_KEY="${REVDOKU_API_KEY:-}"
 TITLE="${REVDOKU_BUCKET_TITLE:-}"
 DESCRIPTION="${REVDOKU_BUCKET_DESCRIPTION:-}"
-EXPIRES_IN_DAYS="${REVDOKU_EXPIRES_IN_DAYS:-}"
 UPLOAD_MODE="${REVDOKU_UPLOAD_MODE:-auto}"
 BUCKET_ID="${REVDOKU_BUCKET_ID:-}"
 METADATA_JSON="${REVDOKU_BUCKET_METADATA:-}"
 PUBLISH="${REVDOKU_PUBLISH:-false}"
-PERMANENT_PUBLICATION="${REVDOKU_PERMANENT_PUBLICATION:-true}"
 PUBLICATION_ACCESS_MODE="${REVDOKU_PUBLICATION_ACCESS_MODE:-}"
 PUBLICATION_PASSWORD="${REVDOKU_PUBLICATION_PASSWORD:-}"
 PUBLICATION_REGENERATE_PASSWORD="${REVDOKU_PUBLICATION_REGENERATE_PASSWORD:-false}"
 PUBLICATION_ANALYTICS_ENABLED="${REVDOKU_PUBLICATION_ANALYTICS_ENABLED:-}"
 PUBLICATION_CLIENT_EVENTS_ENABLED="${REVDOKU_PUBLICATION_CLIENT_EVENTS_ENABLED:-}"
 PUBLICATION_TRACKING_ENABLED="${REVDOKU_PUBLICATION_TRACKING_ENABLED:-}"
+PUBLICATION_FEATURED_ON_COMMUNITY="${REVDOKU_FEATURED_ON_COMMUNITY:-false}"
 RESTORE_VERSION_ID="${REVDOKU_RESTORE_VERSION_ID:-}"
 RESTORE_COMMENT="${REVDOKU_RESTORE_COMMENT:-}"
 GRANT_TOKEN="${REVDOKU_GRANT_TOKEN:-}"
@@ -118,9 +117,9 @@ Options:
   --metadata JSON           Optional JSON for agent lookup, for example {"project":"site"}.
   --agent NAME              Attribute uploads to this agent (e.g. claude-code, codex).
                             Defaults to REVDOKU_AGENT_NAME, then auto-detection, then cli.
-  --publish                 Publish live after saving files to a private draft bucket. Defaults to public.
+  --publish                 Publish after saving files to a private draft bucket. Defaults to public.
   --access-mode MODE        Website access mode: public, password, or password_ask_info.
-                            password_ask_info asks visitors for email plus password.
+                            password_ask_info asks visitors for email plus password (Builder/Pro).
                             Existing sites keep their mode unless changed.
   --protected               Alias for --access-mode password.
   --private                 Alias for --access-mode password.
@@ -133,11 +132,12 @@ Options:
   --no-analytics            Disable website analytics recording.
   --client-events           Enable browser-side Revdoku event tracking.
   --no-client-events        Disable browser-side Revdoku event tracking.
+  --feature-on-community    Opt this public website into revdoku.com/featured.
+                            With --publish, applies on publish. With only --bucket-id, updates settings without republishing.
   --unpublish               Unpublish --bucket-id while keeping its reserved URL for later republish.
   --archive                 Archive --bucket-id. Published buckets must be unpublished first.
   --unarchive               Restore archived --bucket-id to the active bucket list.
   --delete-bucket           Permanently delete unpublished --bucket-id.
-  --expires-in-days DAYS    Advanced: expire the website after DAYS instead of keeping it permanent.
   --login                   Connect in the browser and save an API key to $CREDENTIALS_PATH.
                             With no PATH, exits after saving; pass PATH to also store files.
   --status                  Print connection status as JSON (connected, account, scope).
@@ -262,6 +262,10 @@ while [[ $# -gt 0 ]]; do
       PUBLICATION_CLIENT_EVENTS_ENABLED="false"
       shift
       ;;
+    --feature-on-community)
+      PUBLICATION_FEATURED_ON_COMMUNITY="true"
+      shift
+      ;;
     --unpublish)
       ACTION="unpublish_bucket"
       shift
@@ -279,10 +283,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --expires-in-days)
-      [[ $# -ge 2 ]] || die "--expires-in-days requires a value"
-      EXPIRES_IN_DAYS="$2"
-      PERMANENT_PUBLICATION="false"
-      shift 2
+      die "--expires-in-days is no longer supported for bucket publishing"
       ;;
     --login)
       LOGIN="true"
@@ -488,8 +489,13 @@ normalize_optional_bool() {
 PUBLICATION_ANALYTICS_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_ANALYTICS_ENABLED" "$PUBLICATION_ANALYTICS_ENABLED")"
 PUBLICATION_CLIENT_EVENTS_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_CLIENT_EVENTS_ENABLED" "$PUBLICATION_CLIENT_EVENTS_ENABLED")"
 PUBLICATION_TRACKING_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_TRACKING_ENABLED" "$PUBLICATION_TRACKING_ENABLED")"
+PUBLICATION_FEATURED_ON_COMMUNITY="$(normalize_optional_bool "REVDOKU_FEATURED_ON_COMMUNITY" "$PUBLICATION_FEATURED_ON_COMMUNITY")"
 APPEND_TEXT_NEWLINE_BEFORE="$(normalize_optional_bool "REVDOKU_APPEND_TEXT_NEWLINE_BEFORE" "$APPEND_TEXT_NEWLINE_BEFORE")"
 APPEND_TEXT_NEWLINE_BEFORE="${APPEND_TEXT_NEWLINE_BEFORE:-true}"
+
+if [[ "$PUBLISH" != "true" && "$ACTION" == "store" && "$PUBLICATION_FEATURED_ON_COMMUNITY" == "true" && "$PATH_EXPLICIT" == "false" ]]; then
+  ACTION="feature_on_community"
+fi
 
 if [[ "$ACTION" == "append_text_file" ]]; then
   [[ -n "$BUCKET_ID" ]] || die "--append-text-file requires --bucket-id"
@@ -517,7 +523,7 @@ if [[ -n "$PUBLICATION_PASSWORD" && "$PUBLICATION_REGENERATE_PASSWORD" == "true"
   die "use either --password or --generate-password, not both"
 fi
 
-if [[ "$PUBLISH" != "true" && "$ACTION" == "store" && ( -n "$PUBLICATION_ACCESS_MODE" || -n "$PUBLICATION_PASSWORD" || "$PUBLICATION_REGENERATE_PASSWORD" == "true" || -n "$PUBLICATION_ANALYTICS_ENABLED" || -n "$PUBLICATION_CLIENT_EVENTS_ENABLED" || -n "$PUBLICATION_TRACKING_ENABLED" ) ]]; then
+if [[ "$PUBLISH" != "true" && "$ACTION" == "store" && ( -n "$PUBLICATION_ACCESS_MODE" || -n "$PUBLICATION_PASSWORD" || "$PUBLICATION_REGENERATE_PASSWORD" == "true" || -n "$PUBLICATION_ANALYTICS_ENABLED" || -n "$PUBLICATION_CLIENT_EVENTS_ENABLED" || -n "$PUBLICATION_TRACKING_ENABLED" || "$PUBLICATION_FEATURED_ON_COMMUNITY" == "true" ) ]]; then
   die "publication options require --publish"
 fi
 
@@ -984,17 +990,6 @@ case "$PUBLISH" in
   true|false) ;;
   *) die "REVDOKU_PUBLISH must be true or false" ;;
 esac
-case "$PERMANENT_PUBLICATION" in
-  true|false) ;;
-  *) die "REVDOKU_PERMANENT_PUBLICATION must be true or false" ;;
-esac
-if [[ "$PERMANENT_PUBLICATION" == "false" && -z "$EXPIRES_IN_DAYS" ]]; then
-  EXPIRES_IN_DAYS="7"
-fi
-if [[ -n "$EXPIRES_IN_DAYS" ]]; then
-  [[ "$EXPIRES_IN_DAYS" =~ ^[0-9]+$ && "$EXPIRES_IN_DAYS" -gt 0 ]] || die "--expires-in-days must be a positive number of days"
-fi
-
 list_buckets() {
   local active_response archived_response
   active_response="$(http_json GET "/api/v1/buckets" "{}")"
@@ -1137,6 +1132,40 @@ unpublish_bucket() {
           status: $publication.status,
           revoked_at: $publication.revoked_at,
           guidance: "The public site is unpublished. Republish this same bucket to restore the same URL."
+        }
+      }' <<<"$response"
+}
+
+feature_publication_on_community() {
+  [[ -n "$BUCKET_ID" ]] || die "--feature-on-community without --publish requires --bucket-id"
+  local publications_response publication_id payload response
+  publications_response="$(http_json GET "/api/v1/publications?include_manifest=false" "{}")" || return 1
+  publication_id="$("$JQ_BIN" -r --arg bucket_id "$BUCKET_ID" '
+    [ (.data.publications // [])
+      | .[]
+      | select(.bucket_id == $bucket_id)
+      | select((.kind // "bucket_bundle") == "bucket_bundle")
+      | select((.lifecycle_active == true) or (.active == true))
+    ]
+    | sort_by(.updated_at // .created_at // "")
+    | last
+    | .id // empty
+  ' <<<"$publications_response")"
+  [[ -n "$publication_id" ]] || die "bucket has no active published website to feature"
+
+  payload="$("$JQ_BIN" -nc '{featured_on_community:true}')"
+  response="$(http_json PATCH "/api/v1/publications/${publication_id}" "$payload")" || return 1
+  "$JQ_BIN" -c '
+    .data.publication as $publication
+    | {
+        success: (.success // true),
+        data: {
+          publication: $publication,
+          bucket_id: $publication.bucket_id,
+          public_slug: $publication.public_slug,
+          public_url: $publication.public_url,
+          featured_on_community: $publication.featured_on_community,
+          guidance: "Featured listing updated without republishing the website."
         }
       }' <<<"$response"
 }
@@ -1470,6 +1499,10 @@ case "$ACTION" in
     append_text_file
     exit 0
     ;;
+  feature_on_community)
+    feature_publication_on_community
+    exit 0
+    ;;
   unpublish_bucket)
     unpublish_bucket
     exit 0
@@ -1551,13 +1584,15 @@ publication_access_json() {
     --arg analytics_enabled "$PUBLICATION_ANALYTICS_ENABLED" \
     --arg client_events_enabled "$PUBLICATION_CLIENT_EVENTS_ENABLED" \
     --arg tracking_enabled "$PUBLICATION_TRACKING_ENABLED" \
+    --arg featured_on_community "$PUBLICATION_FEATURED_ON_COMMUNITY" \
     '{}
     + (if $access_mode != "" then {access_mode: $access_mode} else {} end)
     + (if $password != "" then {password: $password} else {} end)
     + (if $regenerate_password == "true" then {regenerate_password: true} else {} end)
     + (if $analytics_enabled != "" then {publication_analytics_enabled: ($analytics_enabled == "true")} else {} end)
     + (if $client_events_enabled != "" then {publication_client_events_enabled: ($client_events_enabled == "true")} else {} end)
-    + (if $tracking_enabled != "" then {tracking_enabled: ($tracking_enabled == "true")} else {} end)'
+    + (if $tracking_enabled != "" then {tracking_enabled: ($tracking_enabled == "true")} else {} end)
+    + (if $featured_on_community == "true" then {featured_on_community: true} else {} end)'
 }
 
 has_index_file() {
@@ -1866,7 +1901,7 @@ print_private_publication_limit_guidance() {
   if [[ -n "$LAST_PUBLISH_SESSION_BUCKET_ID" ]]; then
     echo "Private bucket storage is still available: $LAST_PUBLISH_SESSION_BUCKET_ID" >&2
   fi
-  echo "Protected websites require available Pro protected-site capacity. Publish publicly, unpublish another protected website, or update the plan." >&2
+  echo "Protected websites require available protected-site capacity on the account. Publish publicly, unpublish another protected website, or update the plan." >&2
 }
 
 upload_file_direct() {
@@ -2088,11 +2123,7 @@ publish_bucket() {
   entrypoint="$(default_entrypoint)"
   metadata="$(effective_metadata_json)"
   access="$(publication_access_json)"
-  if [[ "$PERMANENT_PUBLICATION" == "true" ]]; then
-    payload="$("$JQ_BIN" -nc --arg entrypoint "$entrypoint" --argjson metadata "$metadata" --argjson access "$access" '{permanent:true, entrypoint:$entrypoint, metadata:$metadata} + $access')"
-  else
-    payload="$("$JQ_BIN" -nc --arg entrypoint "$entrypoint" --argjson expires_in_days "$EXPIRES_IN_DAYS" --argjson metadata "$metadata" --argjson access "$access" '{expires_in_days:$expires_in_days, entrypoint:$entrypoint, metadata:$metadata} + $access')"
-  fi
+  payload="$("$JQ_BIN" -nc --arg entrypoint "$entrypoint" --argjson metadata "$metadata" --argjson access "$access" '{entrypoint:$entrypoint, metadata:$metadata} + $access')"
   response_file="$(mktemp)"
   if ! http_json POST "/api/v1/buckets/${bucket_id}/publication" "$payload" > "$response_file"; then
     rm -f "$response_file"
@@ -2145,11 +2176,10 @@ publish_session_manifest_json() {
 
 publish_session_payload() {
   local manifest_json="$1"
-  local title tag_paths expires_in_days entrypoint metadata access
+  local title tag_paths entrypoint metadata access
   title="$TITLE"
   [[ -n "$title" ]] || title="$(default_title)"
   tag_paths="$(tag_paths_json)"
-  expires_in_days="${EXPIRES_IN_DAYS:-7}"
   entrypoint="$(default_entrypoint)"
   metadata="$(effective_metadata_json)"
   access="$(publication_access_json)"
@@ -2157,9 +2187,7 @@ publish_session_payload() {
     --arg title "$title" \
     --arg description "$DESCRIPTION" \
     --arg bucket_id "$BUCKET_ID" \
-    --arg permanent "$PERMANENT_PUBLICATION" \
     --arg entrypoint "$entrypoint" \
-    --argjson expires_in_days "$expires_in_days" \
     --argjson metadata "$metadata" \
     --argjson access "$access" \
     --argjson tag_paths "$tag_paths" \
@@ -2175,7 +2203,6 @@ publish_session_payload() {
     + (if $bucket_id != "" then {bucket_id: $bucket_id} else {} end)
     + (if $description != "" then {bucket_description: $description} else {} end)
     + (if ($tag_paths | length) > 0 then {bucket_tag_paths: $tag_paths} else {} end)
-    + (if $permanent == "true" then {permanent: true} else {expires_in_days: $expires_in_days} end)
     + $access'
 }
 
@@ -2401,7 +2428,7 @@ bucket_id_file=""
 
 if [[ "$PUBLISH" == "true" ]]; then
   if ! has_index_file; then
-    echo "No index.html found; Revdoku will publish a generated file listing." >&2
+    echo "No index.html found; Revdoku will publish an Auto-Index Page." >&2
   fi
   publish_url_file="$(mktemp)"
   if publish_bucket_session > "$publish_url_file"; then

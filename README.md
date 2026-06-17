@@ -60,8 +60,8 @@ revdoku --publish ./dist
 revdoku --publish --protected --generate-password ./dist
 ```
 
-Protected websites are available on Pro plans. Open the returned URL and enter the
-password — never put passwords in URL parameters.
+Protected websites require available protected-site capacity on the account. Open
+the returned URL and enter the password — never put passwords in URL parameters.
 
 In a connected agent you can also just ask in plain language, e.g. *"publish the
 `dist` folder to Revdoku"* or *"publish it as a password‑protected site."*
