@@ -370,12 +370,14 @@ text when the authenticated key is allowed to see it.
 not set an expiration. Temporary preview deployments are a separate future
 concept, not the current bucket publish flow.
 
-**Featured listing.** Public websites are not listed in the
-`/featured.json` website list by default. Pass
-`"featured_on_community": true` only when the owner explicitly wants the public
-site included in that list. For an already-published website, update
-the setting with `PATCH /api/v1/publications/:id`; do not republish only to
-change featured listing.
+**Featured listing.** Public websites and apps are not listed in the
+`/featured.json` list by default. Pass `"featured_on_community": true` only when
+the owner explicitly wants the public site included in that list. The feed is a
+top-level JSON array of marketing-site items:
+`title`, `public_slug`, `url`, `description`, `category`, `image`,
+`published_at`, and `updated_at`. For an already-published website, update the
+setting with `PATCH /api/v1/publications/:id`; do not republish only to change
+featured listing.
 
 **Website slug.** Pass `"slug_suggestions": ["California Weather", "cali weather",
 "weather-california"]` on any plan to steer the public URL slug. Revdoku sanitizes
@@ -407,7 +409,7 @@ response:
 }
 ```
 
-#### Wait for the build (poll until live)
+#### Check build status separately
 
 Do **not** hand out `public_url` while `publish_state` is `queued` or
 `processing` — it 404s until the build finishes. Poll the publication until it is
@@ -424,8 +426,8 @@ curl -fsS "$REVDOKU_URL/api/v1/publications/pub_..." \
 - `publish_state: "failed"` → read `publish_error`; recover with
   `POST /api/v1/buckets/bkt_.../publication/retry` (reuses the saved request, no
   need to resend settings). The publish-failed notification email is also sent.
-- `publish_state: "queued" | "processing"` → wait ~1–2s and poll again. Waiting is
-  safe; a stuck build is auto-recovered by a background sweeper.
+- `publish_state: "queued" | "processing"` → check again later. A stuck build is
+  auto-recovered by a background sweeper.
 - `publish_state: "unpublishing"` / `status: "unpublishing"` → an async unpublish
   is removing public artifacts and edge metadata. Poll until `status:
   "unpublished"` and `publish_state` is no longer `"unpublishing"` before
@@ -511,7 +513,7 @@ Finalize returns `202` with the publication in `publish_state: "queued"` — the
 uploaded files are written into the bucket, omitted files are pruned when
 `delete_missing` is enabled, and the bundle is built in the background. Poll
 `GET /api/v1/publications/pub_...` until `publish_state` is `ready` before using
-`public_url` (see "Wait for the build" above). Bad input (a stale session or
+`public_url` (see "Check build status separately" above). Bad input (a stale session or
 bucket revision, a file locked by another agent, missing storage) still fails
 fast at finalize with `409`/`423`/`503`.
 
@@ -949,13 +951,26 @@ For future agents, store an app contract as a private bucket file named
 actions, publish mode, and rollback notes. Revdoku excludes this file from the
 live published bundle.
 
+Starter app schemas and named-action manifests are public client files, not
+hidden MCP resources:
+
+- `https://github.com/revdoku/revdoku/tree/main/templates`
+- `https://github.com/revdoku/revdoku/blob/main/templates/app-safe-actions.json`
+
+MCP clients should call `bucket_app_database_get` and read its `template_source`
+field for these locations before adapting a starter template. Each template has
+`recommended_access` and `data_sensitivity`; follow the recommended access mode
+unless the owner explicitly overrides it. A `public: true` action means
+website-callable, not necessarily safe for an open public website; for password
+templates, publish behind the protected website gate.
+
 The first provider is Cloudflare D1. The stored API shape is provider-aware, so
 future database providers can be added without changing existing bucket app
 database records.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/v1/buckets/:bucket_id/app_database` | Inspect the bucket app database: `configured` says whether a provider is available, `database_present` / `database_ready` say whether this bucket has a database, and `schema_objects` lists live tables/views/indexes with structured `columns` / `indexed_columns` plus SQL for compatibility. Agents should call this before modifying schema, data, or actions. |
+| `GET` | `/api/v1/buckets/:bucket_id/app_database` | Inspect the bucket app database: `configured` says whether a provider is available, `database_present` / `database_ready` say whether this bucket has a database, `template_source` points to the public starter templates, and `schema_objects` lists live tables/views/indexes with structured `columns` / `indexed_columns` plus SQL for compatibility. Agents should call this before modifying schema, data, or actions. |
 | `POST` | `/api/v1/buckets/:bucket_id/app_database` | Create or ensure the bucket app database. |
 | `POST` | `/api/v1/buckets/:bucket_id/app_database/schema` | Apply owner-supplied SQL schema statements. |
 | `POST` | `/api/v1/buckets/:bucket_id/app_database/seed` | Apply owner-supplied seed SQL statements. |
