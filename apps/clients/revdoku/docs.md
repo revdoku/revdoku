@@ -70,6 +70,10 @@ Republishing the same bucket updates the existing website and keeps the same
 public URL. Unpublishing removes public access while keeping the bucket and
 reserved URL for later republish.
 
+Publish, unpublish, and large delete requests are asynchronous. After starting
+one, check the returned publication or bucket status separately before telling a
+user that the website is live, public access is removed, or deletion is finished.
+
 Saving files does not publish them. Treat bucket writes as **Save draft** and
 publish tools as **Publish** or **Republish**.
 
@@ -87,6 +91,12 @@ actions are visitor endpoints at `/_revdoku/app/<name>`; private agent actions
 are owner/agent-only. Agents should inspect the live data model with
 `bucket_app_database_get` before changing schema, data, or actions, and keep a
 private `.revdoku.app.json` contract file in the bucket for future handoff.
+Starter app database templates live in the public client repository at
+`https://github.com/revdoku/revdoku/tree/main/templates`; MCP exposes the same
+location as `bucket_app_database_get.template_source`. Follow each template's
+`recommended_access` and `data_sensitivity` metadata; templates marked
+`password` should be published behind a protected website gate unless the owner
+explicitly asks otherwise.
 
 ## Protected Websites
 

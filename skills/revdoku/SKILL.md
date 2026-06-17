@@ -31,8 +31,8 @@ as a website, pass `--publish`. For a protected website, also pass
 website password.
 
 If the user says "publish it all to Revdoku", publish the current project or
-current working directory with `--publish`, then return the website URL printed
-by the script.
+current working directory with `--publish`, then verify the returned publication
+status before saying the website is live or sharing the URL as live.
 
 When the Revdoku MCP server is connected, prefer MCP tools over shell commands
 for structured bucket work:
@@ -100,11 +100,14 @@ for structured bucket work:
   deployment yet. If publishing returns `PRIVATE_PUBLICATION_STORAGE_NOT_CONFIGURED`,
   keep using the private bucket and tell the user protected website publishing
   is not configured for this deployment yet.
-- Publishing is asynchronous: the publish/finalize tools wait until the site is
-  live before returning its URL (large folders no longer time out), and a
-  settings/access-only change does not re-upload files. Direct API callers poll
-  `GET /api/v1/publications/<id>` for `publish_state: "ready"` before sharing
-  `public_url`, and can retry a `failed` one — see api.md.
+- Publishing is asynchronous: publish/finalize starts the background build and
+  agents must check publication status separately before telling the user the
+  site is live. For MCP/API flows, call `bucket_publication_get` or
+  `GET /api/v1/publications/<id>` until `publish_state` is `ready` or `failed`
+  before sharing `public_url`; retry a `failed` one — see api.md. The shell CLI
+  may poll for convenience, but agent workflows should still treat the status
+  check as a separate step. A settings/access-only change does not re-upload
+  files.
 - Bucket publishing creates a normal live website and does not set an expiration.
   Do not describe the current publish flow as a preview. Temporary preview
   deployments are a separate future concept, not the bucket publish flow.
@@ -122,7 +125,9 @@ for structured bucket work:
   analytics/tracking flags unless the user explicitly asks to turn tracking off.
   Disabling it makes the owner's dashboard show `0 views`.
 - Use `bucket_unpublish` when the user asks to unpublish a website.
-  Tell the user that republishing the same bucket restores the same URL.
+  It starts async unpublish; call `bucket_publication_get` separately until
+  `status` is `unpublished` before archiving/deleting or saying public access is
+  removed. Tell the user that republishing the same bucket restores the same URL.
 - Use `bucket_archive` and `bucket_unarchive` for normal bucket
   lifecycle cleanup. Library buckets cannot be archived or unarchived.
   Published buckets must be unpublished before archive; if
@@ -297,7 +302,14 @@ Flow (identical for MCP and REST):
 
 Starter schemas + named actions (waitlist, feedback/voting dashboard, searchable
 support center, leaderboards, link feeds, …) are in
-`templates/app-safe-actions.json`; see `app-building-guide.md` for conventions.
+the public client repo at `https://github.com/revdoku/revdoku/tree/main/templates`
+(`templates/app-safe-actions.json`). MCP does not embed hidden templates; call
+`bucket_app_database_get` and read `template_source` for the current location.
+Every template has `recommended_access` and `data_sensitivity`; follow
+`recommended_access` unless the owner explicitly overrides it. A `public: true`
+action means website-callable, not necessarily safe for an open public site; on
+password templates those actions are intended to run behind the protected
+website gate. See `app-building-guide.md` for conventions.
 
 Anti-spam for anonymous-write actions: store the owner's own Cloudflare
 Turnstile secret as `operations.turnstile.secret_key` and set
@@ -375,16 +387,18 @@ cloud MCP clients use `bucket_file_list` + `bucket_file_read` instead.
 - By default, share the **`View in Revdoku:` dashboard link** the CLI prints (it
   opens the private bucket in Revdoku), not the raw `bkt_` id. Keep the id only
   as an internal handle for future `--bucket-id` calls.
-- If `--publish` was used, share the **website URL** and keep the printed
-  `Bucket: ...` id for future updates. For protected websites, give the owner the
-  website URL and password to share; do not append the password as a URL
-  parameter. For `password_ask_info`, also mention that visitors will enter email
-  before the password.
+- If `--publish` was used and the response/status is ready, share the **website
+  URL** and keep the printed `Bucket: ...` id for future updates. If the publish
+  response is still queued/processing, say publishing started and check status
+  separately before sharing it as live. For protected websites, give the owner
+  the website URL and password to share only once ready; do not append the
+  password as a URL parameter. For `password_ask_info`, also mention that
+  visitors will enter email before the password.
 - If publishing fails with `PUBLIC_STORAGE_NOT_CONFIGURED`, share the
   `View in Revdoku:` dashboard link as private storage and say public publishing
   is not configured yet.
 - If asked which buckets are public, run `~/.revdoku/bin/revdoku --list-public-buckets` and summarize the bucket ids, URLs, and hit totals when useful.
-- If asked to archive, unarchive, or permanently delete a bucket using only the CLI, first run `~/.revdoku/bin/revdoku --list-buckets` and resolve the right bucket by title/status. Use `--unpublish` first only after confirmation when `delete.required_action` or `archive.required_action` says `unpublish_first`.
+- If asked to archive, unarchive, or permanently delete a bucket using only the CLI, first run `~/.revdoku/bin/revdoku --list-buckets` and resolve the right bucket by title/status. Use `--unpublish` first only after confirmation when `delete.required_action` or `archive.required_action` says `unpublish_first`, then check status/listing separately until the unpublish has completed before archive/delete.
 - If asked to roll back a bucket, list versions first, confirm the target
   version, then run `~/.revdoku/bin/revdoku --bucket-id bkt_... --restore-version bktrv_...`.
   Explain that Revdoku creates a new latest version and keeps newer versions in

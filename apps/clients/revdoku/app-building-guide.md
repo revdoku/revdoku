@@ -47,7 +47,15 @@ const { ok, result } = await res.json(); // result[0].results is the row array
 
 Starter schemas and named actions for waitlists, leaderboards, voting, link
 feeds, CRM boards, changelogs, research databases, and dashboards live in
-`templates/app-safe-actions.json`.
+the public client repo at
+`https://github.com/revdoku/revdoku/tree/main/templates`
+(`templates/app-safe-actions.json`). MCP does not embed hidden templates; call
+`bucket_app_database_get` and read its `template_source` field for the current
+template location. Each template includes `recommended_access` and
+`data_sensitivity`; follow the recommended access mode unless the owner
+explicitly overrides it. `public: true` means website-callable, not necessarily
+safe for an open public website — for password templates, those actions are
+intended to run behind the protected website gate.
 
 ## Prebuilt / reserved structures
 
@@ -145,7 +153,7 @@ to read or write durable data at the edge.
 ### 2. Feedback dashboard (submit ideas, vote, rank by votes, notify owner)
 
 Use the **`feedback_dashboard`** template in
-`templates/app-safe-actions.json`. Public actions: `submit_idea` (one statement;
+the public `templates/app-safe-actions.json` manifest. Public actions: `submit_idea` (one statement;
 an `AFTER INSERT` trigger writes a row to `_revdoku_events` so the owner
 is pinged on every submission), `vote` (one vote per visitor via
 `UNIQUE(idea_id, visitor_key)` + `INSERT OR IGNORE`), and `list_ideas` (ideas
