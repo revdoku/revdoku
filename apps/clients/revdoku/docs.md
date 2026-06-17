@@ -73,7 +73,7 @@ App sites use a bucket-owned database and named safe actions. Public safe
 actions are visitor endpoints at `/_revdoku/app/<name>`; private safe actions
 are owner/agent-only. Agents should inspect the live data model with
 `bucket_app_database_get` before changing schema, data, or actions, and keep a
-private `revdoku.app.json` contract file in the bucket for future handoff.
+private `.revdoku.app.json` contract file in the bucket for future handoff.
 
 ## Protected Websites
 

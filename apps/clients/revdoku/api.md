@@ -939,7 +939,7 @@ with `site_type: "app"`; ordinary `site_type: "website"` publications reject app
 operation routes even if a bucket database exists.
 
 For future agents, store an app contract as a private bucket file named
-`revdoku.app.json`. Include app purpose, data model summary, public/private safe
+`.revdoku.app.json`. Include app purpose, data model summary, public/private safe
 actions, publish mode, and rollback notes. Revdoku excludes this file from the
 live published bundle.
 

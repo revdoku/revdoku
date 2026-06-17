@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "contract_path": "revdoku.app.json",
+  "contract_path": ".revdoku.app.json",
   "templates": [
     {
       "id": "waitlist",
