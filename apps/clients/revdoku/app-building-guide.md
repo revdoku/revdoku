@@ -10,7 +10,7 @@ and structures** you should use.
 
 - Publish the bucket with `site_type: "app"`. Ordinary `website` sites stay
   static-only and reject app routes.
-- Keep a private app contract at `revdoku.app.json` when possible. It is stored
+- Keep a private app contract at `.revdoku.app.json` when possible. It is stored
   with the bucket draft and excluded from the live published bundle. Use it to
   document purpose, data model summary, safe actions, publish mode, and rollback
   notes for future agents.
@@ -51,7 +51,15 @@ feeds, CRM boards, changelogs, research databases, and dashboards live in
 
 ## Prebuilt / reserved structures
 
-### `revdoku.app.json` — app contract (private)
+### `.revdoku.app.json` — app contract (private)
+
+Any dotfile or dot-folder (anything whose name starts with `.`, e.g.
+`.revdoku.app.json`, `.gitignore`, `.git/…`) is **never served** on the published
+website — but it is still stored and **version-tracked**, so editing it marks the
+site as having unpublished changes and republishing clears that. Dependency
+lockfiles, `wrangler.toml`, and build scripts are treated the same way. The one
+exception is **`.well-known/`** (e.g. `security.txt`, app-association files), which
+is served normally; a dotfile nested inside it (`.well-known/.secret`) is still hidden.
 
 Create or update this file before publishing an app site:
 
@@ -178,7 +186,7 @@ data is never trapped:
   in place** (that invariant is what keeps visitor data safe). To roll back,
   download a snapshot and **import its SQL into a new bucket's app database**,
   then publish that bucket. Record the snapshot you rolled from in
-  `revdoku.app.json`'s `rollback_notes`.
+  `.revdoku.app.json`'s `rollback_notes`.
 
 ## Data residency
 

@@ -272,7 +272,7 @@ Flow (identical for MCP and REST):
 1. Get/create the bucket. If it already exists, inspect the live schema + safe
    actions first (`bucket_app_database_get` / `GET .../app_database`) before
    changing schema, rows, or action definitions.
-2. Optionally write a private `revdoku.app.json` contract (purpose, data model,
+2. Optionally write a private `.revdoku.app.json` contract (purpose, data model,
    safe actions, rollback notes). Stored in the draft, excluded from the live bundle.
 3. Create the database and apply SQL `schema` statements, optional `seed` rows,
    and an `operations` manifest of named SQL safe actions
