@@ -351,14 +351,14 @@ curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../publication" \
   -d '{
     "entrypoint": "index.html",
     "site_mode": "spa",
-    "access_mode": "public",
-    "permanent": true
+    "access_mode": "public"
   }'
 ```
 
-For a Pro protected website, use `"access_mode": "password"`. Use
-`"access_mode": "password_ask_info"` when visitors should enter email before
-the password. Omit
+For a protected website, use `"access_mode": "password"`; it requires available
+protected-site capacity on the account. Use `"access_mode": "password_ask_info"`
+when visitors should enter email before the password; that email-collection gate
+is available on Builder and Pro plans. Omit
 `password`; Revdoku generates a copyable password the first time protected
 access is enabled. Set `"regenerate_password": true` only when the owner
 explicitly wants to rotate the protected-site password. Agents should not ask
@@ -366,15 +366,16 @@ users to type protected-site passwords in chat. Never put the password in the
 URL. Owner publish responses include the website URL and copyable password/share
 text when the authenticated key is allowed to see it.
 
-**Website lifetime.** Free plans publish a **time-limited preview** — the site
-comes down after the plan's preview window (7 days by default) and `permanent` is
-ignored. Paid plans publish **permanent** sites by default; pass
-`"expires_in_hours": 48` (or the legacy `"expires_in_days"`) to set an explicit
-lifetime instead. A free plan may request a *shorter* `expires_in_hours` but never
-longer or permanent. Free previews are also excluded from search engines
-(`noindex`); indexing is a paid perk. After a free preview expires the files are
-kept — re-publishing (or upgrading) restores it; a short cooldown applies before
-the same free bucket can be re-published.
+**Website lifetime.** Bucket publishing creates a normal live website and does
+not set an expiration. Temporary preview deployments are a separate future
+concept, not the current bucket publish flow.
+
+**Featured listing.** Public websites are not listed in the
+`/featured.json` website list by default. Pass
+`"featured_on_community": true` only when the owner explicitly wants the public
+site included in that list. For an already-published website, update
+the setting with `PATCH /api/v1/publications/:id`; do not republish only to
+change featured listing.
 
 **Website slug.** Pass `"slug_suggestions": ["California Weather", "cali weather",
 "weather-california"]` on any plan to steer the public URL slug. Revdoku sanitizes
@@ -441,6 +442,12 @@ Use `site_type: "website"` for ordinary published websites (the default). Use
 bucket app database operations at `/_revdoku/app/<operation>` and usage-policy
 metadata.
 
+If the bucket does not contain `index.html`, Revdoku publishes an Auto-Index Page
+that lists and previews files. Account or bucket-specific Auto-Index templates
+must include the files macro as `{{files}}` or `{{ files }}`. Supported template
+macros are `{{title}}`, `{{description}}`, `{{files}}`, and `{{theme_switch}}`,
+with optional whitespace inside the braces.
+
 Publishing never includes private runtime/development files in the static
 bundle. Paths such as `.workers/**`, `.env*`, `node_modules/**`, local lockfiles,
 and executable installer/script payloads are excluded from public/private
@@ -477,7 +484,6 @@ curl -fsS "$REVDOKU_URL/api/v1/publish_sessions" \
     "site_mode": "spa",
     "access_mode": "password",
     "delete_missing": true,
-    "permanent": true,
     "files": [
       {
         "path": "index.html",
@@ -932,8 +938,8 @@ and a failed delete notification is sent so clients can retry.
 Bucket app databases are for published bucket websites that need a small
 server-side data store. The public website does not receive database
 credentials and cannot submit SQL. Owners and authorized agents define schema,
-seed data, and safe actions through the API or MCP; published visitors call
-only public safe actions at `/_revdoku/app/<operation>`. The stored JSON field is
+seed data, and named actions through the API or MCP; published visitors call
+only public website actions at `/_revdoku/app/<operation>`. The stored JSON field is
 still named `operations` for compatibility. Publish the bucket
 with `site_type: "app"`; ordinary `site_type: "website"` publications reject app
 operation routes even if a bucket database exists.
@@ -949,13 +955,13 @@ database records.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/v1/buckets/:bucket_id/app_database` | Inspect the bucket app database: status, public safe action names, and `schema_objects` (the live tables/indexes read from the database). Agents should call this before modifying schema, data, or actions. |
+| `GET` | `/api/v1/buckets/:bucket_id/app_database` | Inspect the bucket app database: `configured` says whether a provider is available, `database_present` / `database_ready` say whether this bucket has a database, and `schema_objects` lists live tables/views/indexes with structured `columns` / `indexed_columns` plus SQL for compatibility. Agents should call this before modifying schema, data, or actions. |
 | `POST` | `/api/v1/buckets/:bucket_id/app_database` | Create or ensure the bucket app database. |
 | `POST` | `/api/v1/buckets/:bucket_id/app_database/schema` | Apply owner-supplied SQL schema statements. |
 | `POST` | `/api/v1/buckets/:bucket_id/app_database/seed` | Apply owner-supplied seed SQL statements. |
-| `POST` | `/api/v1/buckets/:bucket_id/app_database/operations` | Set safe actions. `mode: "replace"` (default) sets the full set; `mode: "merge"` adds/updates the actions you send and keeps the rest, with optional `remove: [names]`. The Turnstile secret is preserved unless the body includes a `turnstile` key (pass `turnstile: {secret_key: ""}` to clear it). |
-| `POST` | `/api/v1/buckets/:bucket_id/app_database/run_operation` | Invoke a safe action as the owner/agent, including private (`public:false`) admin actions visitors cannot reach. Body: `operation`, plus `body`/`query` param values. |
-| `POST` | `/api/v1/buckets/:bucket_id/app_database/query` | Run authenticated owner SQL. Prefer safe actions for repeatable workflows. Do not use this from published sites. |
+| `POST` | `/api/v1/buckets/:bucket_id/app_database/operations` | Set named actions. `mode: "replace"` (default) sets the full set; `mode: "merge"` adds/updates the actions you send and keeps the rest, with optional `remove: [names]`. The Turnstile secret is preserved unless the body includes a `turnstile` key (pass `turnstile: {secret_key: ""}` to clear it). |
+| `POST` | `/api/v1/buckets/:bucket_id/app_database/run_operation` | Invoke a named action as the owner/agent, including private (`public:false`) admin actions visitors cannot reach. Body: `operation`, plus `body`/`query` param values. |
+| `POST` | `/api/v1/buckets/:bucket_id/app_database/query` | Run authenticated owner SQL. Prefer named actions for repeatable workflows. Do not use this from published sites. |
 | `POST` | `/api/v1/buckets/:bucket_id/app_database/export` | Request a provider export or backup response. |
 
 #### POST /api/v1/buckets/:bucket_id/app_database
@@ -1029,19 +1035,19 @@ Cloudflare database placement options when a new database is created.
 }
 ```
 
-Safe action names may contain letters, numbers, `_`, `.`, `:`, and `-`, and must
+Action names may contain letters, numbers, `_`, `.`, `:`, and `-`, and must
 start with a letter. `public:true` makes the action callable by the
 published website. `public:false` actions are **owner/agent-only admin
 actions** — visitors can never reach them; you invoke them with the
 `run_operation` endpoint (or the `bucket_app_database_run_operation` MCP tool).
 This keeps repeatable B2B admin actions (`advance_lead`, `approve_vendor`,
-`mark_reviewed`) as named, param-bound, reviewable safe actions instead of ad-hoc
+`mark_reviewed`) as named, param-bound, reviewable actions instead of ad-hoc
 SQL — and they still go through the destructive-SQL guard. Supported parameter
 sources are `body`, `query`, `visitor` or `identity`, `system`, `literal`, and
 the default `input` source, which checks body first and query second. Current
 system parameters are `now` and `uuid`.
 
-Evolve an app's safe actions incrementally with `mode: "merge"` so you never have
+Evolve an app's actions incrementally with `mode: "merge"` so you never have
 to resend (and risk clobbering) the whole set:
 
 ```json
@@ -1051,7 +1057,7 @@ to resend (and risk clobbering) the whole set:
     "params": [ {"name":"stage","source":"body"}, {"name":"id","source":"body"} ] } } }
 ```
 
-Published website code calls the safe action on the same origin:
+Published website code calls the public website action on the same origin:
 
 ```js
 const response = await fetch("/_revdoku/app/search_prompts?q=invoice", {
@@ -1061,13 +1067,13 @@ const data = await response.json();
 ```
 
 Password-and-email protected publications forward the verified visitor email to
-safe actions as visitor identity (`source: "visitor", "key": "email"`). Public
+public website actions as visitor identity (`source: "visitor", "key": "email"`). Public
 publications receive a stable anonymous visitor id instead (`key`), useful for
 per-visitor dedup such as "one vote per visitor".
 
-#### Turnstile-protected safe actions
+#### Turnstile-protected actions
 
-Anonymous-write safe actions (votes, suggestions) can require a Cloudflare
+Anonymous-write actions (votes, suggestions) can require a Cloudflare
 Turnstile token from the bucket owner's own Turnstile account. Store the secret
 once at the top level of the operations manifest and flag the actions:
 
@@ -1173,7 +1179,7 @@ usable without moving high-volume traffic onto Rails.
 ```
 
 This endpoint requires authenticated owner/agent write permission and exists
-for setup, inspection, and repair. Published apps should use named safe actions.
+for setup, inspection, and repair. Published apps should use named actions.
 
 ### File Endpoints
 
@@ -1453,18 +1459,19 @@ Publication response fields:
 | `asset_base_url` | Direct public object-storage/CDN directory. |
 | `public_slug` | Stable DNS-safe bucket publication slug. |
 | `status` | `published`, `unpublished`, or another lifecycle status. |
-| `permanent` | `true` when there is no expiration. |
-| `expires_at` | Expiration timestamp for temporary publications. |
+| `permanent` | `true` when there is no expiration. Current bucket publishes are non-expiring. |
+| `expires_at` | Legacy/future temporary-publication timestamp; bucket publishes normally return `null`. |
 | `site_mode` | Whether deep links fall back to the entrypoint. |
 | `site_type` | `website` for ordinary sites, `app` for app database/runtime metadata. |
-| `access_mode` | `public`, `password`, or `password_ask_info`. Password-protected websites are a Pro entitlement; `password_ask_info` asks visitors for email plus password. |
+| `access_mode` | `public`, `password`, or `password_ask_info`. Protected websites require available protected-site capacity; `password_ask_info` asks visitors for email plus password and requires Builder or Pro. |
+| `featured_on_community` | Whether this public website is opted into the revdoku.com/featured list. |
 | `password_configured` | Whether a protected website password is configured. |
 | `access_password` | Copyable stored password, returned only to account-owner publish keys. |
 | `generated_password` | Newly generated password, returned only to account-owner publish keys. |
 | `share_text` | Copyable owner-facing text containing the website link and password when visible. |
 | `publication_analytics_enabled` | Whether Revdoku records website analytics for this publication. |
 | `publication_client_events_enabled` | Whether browser-side Revdoku event tracking is enabled for this publication. |
-| `app_database` | Bucket app database status/public safe action names when `site_type` is `app`. |
+| `app_database` | Bucket app database status/public action names when `site_type` is `app`. |
 | `usage_policy` | Published app runtime usage policy when `site_type` is `app`. |
 | `analytics.hits_all_time` | Cached all-time website hits; `null` when analytics numbers are hidden. |
 | `analytics.last_event_at` | Latest recorded analytics event timestamp; `null` when hidden or not recorded yet. |

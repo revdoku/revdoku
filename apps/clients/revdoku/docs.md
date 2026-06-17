@@ -54,23 +54,36 @@ in metadata instead.
 
 ## Publishing
 
-Revdoku supports two website modes:
+Revdoku supports three website modes:
 
 - `static`: normal static files where `index.html` is the default entrypoint.
 - `spa`: single-page apps where app routes fall back to the entrypoint.
-- `app`: data-backed app sites that use bucket app databases and safe actions.
+- `app`: data-backed app sites that use bucket app databases and named actions.
+
+If a published bucket does not contain `index.html`, Revdoku creates an
+Auto-Index Page that lists and previews files. Custom Auto-Index templates must
+include `{{files}}` or `{{ files }}`; supported macros are `{{title}}`,
+`{{description}}`, `{{files}}`, and `{{theme_switch}}`, with optional whitespace
+inside the braces.
 
 Republishing the same bucket updates the existing website and keeps the same
 public URL. Unpublishing removes public access while keeping the bucket and
 reserved URL for later republish.
 
 Saving files does not publish them. Treat bucket writes as **Save draft** and
-publish tools as **Publish live** or **Republish live**.
+publish tools as **Publish** or **Republish**.
+
+To feature an already-published public website on revdoku.com/featured
+without republishing files, run:
+
+```sh
+revdoku --bucket-id bkt_... --feature-on-community
+```
 
 ## App Sites
 
-App sites use a bucket-owned database and named safe actions. Public safe
-actions are visitor endpoints at `/_revdoku/app/<name>`; private safe actions
+App sites use a bucket-owned database and named actions. Public website
+actions are visitor endpoints at `/_revdoku/app/<name>`; private agent actions
 are owner/agent-only. Agents should inspect the live data model with
 `bucket_app_database_get` before changing schema, data, or actions, and keep a
 private `.revdoku.app.json` contract file in the bucket for future handoff.
@@ -80,7 +93,8 @@ private `.revdoku.app.json` contract file in the bucket for future handoff.
 Protected websites use a separate password gate. When enabled, Revdoku can:
 
 - Generate or keep a website password.
-- Ask visitors for an email before access when `password_ask_info` is selected.
+- Ask visitors for an email before access when `password_ask_info` is selected
+  on Builder and Pro plans.
 - Notify the owner on every successful protected access when access
   notifications are enabled.
 

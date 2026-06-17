@@ -3,7 +3,7 @@
 This is the default guidance for an agent (or person) building a **Revdoku app
 site** — a published bucket website backed by a per-bucket database (Cloudflare
 D1 in production, local SQLite in development). Paste the relevant parts into
-your build prompt. It describes how safe actions work and the **prebuilt tables
+your build prompt. It describes how named actions work and the **prebuilt tables
 and structures** you should use.
 
 ## Core model
@@ -12,7 +12,7 @@ and structures** you should use.
   static-only and reject app routes.
 - Keep a private app contract at `.revdoku.app.json` when possible. It is stored
   with the bucket draft and excluded from the live published bundle. Use it to
-  document purpose, data model summary, safe actions, publish mode, and rollback
+  document purpose, data model summary, actions, publish mode, and rollback
   notes for future agents.
 - The bucket gets **one database, created once** (it is never reset or
   re-provisioned; for a fresh schema, create a new bucket). The database is
@@ -21,31 +21,31 @@ and structures** you should use.
   - **schema** — `CREATE TABLE` / `CREATE INDEX` / `ALTER TABLE ... ADD COLUMN`
     (additive only; `DROP`, WHERE-less `DELETE`/`UPDATE`, and `PRAGMA` are
     rejected to protect data).
-  - **safe actions** — a named `operations` manifest of SQL templates.
+  - **named actions** — an `operations` manifest of SQL templates.
     `public: true` makes an action a visitor endpoint at
     `/_revdoku/app/<name>`. `public: false` actions are owner/agent-only admin
     actions invoked via
     `bucket_app_database_run_operation` (never reachable by visitors).
   - Use `bucket_app_database_get` first when returning to an existing app. Show
-    the live `schema_objects` and safe actions before modifying schema, data, or
+    the live `schema_objects` and named actions before modifying schema, data, or
     action definitions.
 - **Parameters** bind via `?` placeholders (always parameterize — never
   interpolate). Param sources: `body`, `query`, `visitor` (`key` = stable
   per-visitor id; `email` = verified gate email on password+email sites),
   `system` (`uuid`, `now`), `literal`, and the default `input` (body then query).
-- **Spam protection** for anonymous-write safe actions: set
+- **Spam protection** for anonymous-write actions: set
   `operations.turnstile.secret_key` (the bucket owner's own Cloudflare Turnstile
   secret) and `turnstile: true` on the action; the page sends
   `cf_turnstile_token` (or the widget's `cf-turnstile-response`) in the body.
 
-The published page calls safe actions on the same origin:
+The published page calls public website actions on the same origin:
 
 ```js
 const res = await fetch("/_revdoku/app/list_items?category=ui", { headers: { Accept: "application/json" } });
 const { ok, result } = await res.json(); // result[0].results is the row array
 ```
 
-Starter schemas and safe actions for waitlists, leaderboards, voting, link
+Starter schemas and named actions for waitlists, leaderboards, voting, link
 feeds, CRM boards, changelogs, research databases, and dashboards live in
 `templates/app-safe-actions.json`.
 
@@ -91,7 +91,7 @@ the Revdoku account**, and marks them notified. The same rows are also readable
 per bucket at any time via MCP (`bucket_app_database_notifications`) and the REST
 notifications endpoint, and shown in the bucket's view.
 
-Create the table and write to it from your safe actions:
+Create the table and write to it from your public website actions:
 
 ```sql
 CREATE TABLE IF NOT EXISTS _revdoku_events (
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS _revdoku_events (
 ```
 
 Keep `summary` short and free of sensitive data — it is shown to the owner. This
-mechanism is identical whether the safe action runs through Rails (Path A) or the
+mechanism is identical whether the named action runs through Rails (Path A) or the
 edge runtime; Revdoku reads the rows from the database either way.
 
 ### Recommended patterns
@@ -128,7 +128,7 @@ edge runtime; Revdoku reads the rows from the database either way.
   `INSERT OR IGNORE`, binding `{ "source": "visitor", "key": "key" }`.
 - **Edit-your-own-row:** scope the `WHERE` to the visitor —
   `UPDATE ... WHERE id = ? AND created_by = ?` with a `visitor` param.
-- **Admin actions** (advance lead, approve item): `public: false` safe actions
+- **Admin actions** (advance lead, approve item): `public: false` agent actions
   invoked via `bucket_app_database_run_operation`.
 
 ## Common scenarios
