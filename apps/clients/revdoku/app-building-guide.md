@@ -60,7 +60,7 @@ Create or update this file before publishing an app site:
   "purpose": "Waitlist for the launch page",
   "publish_mode": "app",
   "data_model": {
-    "tables": ["leads", "_revdoku_notifications"],
+    "tables": ["leads", "_revdoku_events"],
     "summary": "Visitor-submitted leads with owner notifications."
   },
   "safe_actions": {
@@ -73,10 +73,10 @@ Create or update this file before publishing an app site:
 
 Do not place the contract under `.revdoku/`; local clients skip that directory.
 
-### `_revdoku_notifications` — owner notifications (reserved)
+### `_revdoku_events` — owner notifications (reserved)
 
 To notify the bucket owner about activity (a new lead, a new submission), the
-app **inserts a row into a reserved `_revdoku_notifications` table**. Revdoku
+app **inserts a row into a reserved `_revdoku_events` table**. Revdoku
 sweeps it (about every 15 minutes — notifications are intentionally
 **non-real-time** in v1), surfaces un-notified rows as **in-app notifications on
 the Revdoku account**, and marks them notified. The same rows are also readable
@@ -86,7 +86,7 @@ notifications endpoint, and shown in the bucket's view.
 Create the table and write to it from your safe actions:
 
 ```sql
-CREATE TABLE IF NOT EXISTS _revdoku_notifications (
+CREATE TABLE IF NOT EXISTS _revdoku_events (
   id TEXT PRIMARY KEY,
   kind TEXT,           -- e.g. "lead", "submission", "vote"
   summary TEXT,        -- short owner-facing line (no secrets)
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS _revdoku_notifications (
 ```json
 "add_lead": {
   "public": true, "method": "POST", "turnstile": true,
-  "sql": "INSERT INTO _revdoku_notifications (id, kind, summary, created_at) VALUES (?, 'lead', ?, ?)",
+  "sql": "INSERT INTO _revdoku_events (id, kind, summary, created_at) VALUES (?, 'lead', ?, ?)",
   "params": [
     { "name": "uuid", "source": "system" },
     { "name": "summary", "source": "body", "key": "email" },
@@ -114,7 +114,7 @@ edge runtime; Revdoku reads the rows from the database either way.
 ### Recommended patterns
 
 - **Contact / lead form:** a `leads` table + a public `submit_lead` insert
-  (Turnstile on), plus a `_revdoku_notifications` insert so the owner is pinged.
+  (Turnstile on), plus a `_revdoku_events` insert so the owner is pinged.
   Owners read leads with `bucket_app_database_query`.
 - **One vote per visitor:** `UNIQUE(item_id, visitor_key)` +
   `INSERT OR IGNORE`, binding `{ "source": "visitor", "key": "key" }`.
@@ -138,7 +138,7 @@ to read or write durable data at the edge.
 
 Use the **`feedback_dashboard`** template in
 `templates/app-safe-actions.json`. Public actions: `submit_idea` (one statement;
-an `AFTER INSERT` trigger writes a row to `_revdoku_notifications` so the owner
+an `AFTER INSERT` trigger writes a row to `_revdoku_events` so the owner
 is pinged on every submission), `vote` (one vote per visitor via
 `UNIQUE(idea_id, visitor_key)` + `INSERT OR IGNORE`), and `list_ideas` (ideas
 ranked by vote count, newest as tiebreak). `hide_idea` is a private moderation
