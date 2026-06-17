@@ -302,14 +302,14 @@
     {
       "id": "feedback_dashboard",
       "title": "Feedback Dashboard",
-      "description": "Visitors submit ideas, vote once each, and see ideas ranked by votes. The owner is notified about every new submission via the reserved _revdoku_notifications outbox (written by an AFTER INSERT trigger, so the single public submit action stays one statement).",
+      "description": "Visitors submit ideas, vote once each, and see ideas ranked by votes. The owner is notified about every new submission via the reserved _revdoku_events outbox (written by an AFTER INSERT trigger, so the single public submit action stays one statement).",
       "schema": [
         "CREATE TABLE IF NOT EXISTS ideas (id TEXT PRIMARY KEY, title TEXT NOT NULL, body TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'published', visitor_key TEXT, created_at TEXT NOT NULL);",
         "CREATE TABLE IF NOT EXISTS idea_votes (id TEXT PRIMARY KEY, idea_id TEXT NOT NULL, visitor_key TEXT NOT NULL, created_at TEXT NOT NULL, UNIQUE(idea_id, visitor_key));",
-        "CREATE TABLE IF NOT EXISTS _revdoku_notifications (id TEXT PRIMARY KEY, kind TEXT, summary TEXT, created_at TEXT NOT NULL, notified_at TEXT);",
+        "CREATE TABLE IF NOT EXISTS _revdoku_events (id TEXT PRIMARY KEY, kind TEXT, summary TEXT, created_at TEXT NOT NULL, notified_at TEXT);",
         "CREATE INDEX IF NOT EXISTS idx_ideas_status_created ON ideas(status, created_at DESC);",
         "CREATE INDEX IF NOT EXISTS idx_idea_votes_idea ON idea_votes(idea_id);",
-        "CREATE TRIGGER IF NOT EXISTS notify_new_idea AFTER INSERT ON ideas BEGIN INSERT INTO _revdoku_notifications (id, kind, summary, created_at) VALUES (lower(hex(randomblob(16))), 'idea', 'New idea: ' || substr(NEW.title, 1, 80), NEW.created_at); END;"
+        "CREATE TRIGGER IF NOT EXISTS notify_new_idea AFTER INSERT ON ideas BEGIN INSERT INTO _revdoku_events (id, kind, summary, created_at) VALUES (lower(hex(randomblob(16))), 'idea', 'New idea: ' || substr(NEW.title, 1, 80), NEW.created_at); END;"
       ],
       "seed": [
         "INSERT OR IGNORE INTO ideas (id, title, body, status, created_at) VALUES ('welcome', 'What should we build next?', 'Submit your idea and upvote the ones you like.', 'published', datetime('now'));"

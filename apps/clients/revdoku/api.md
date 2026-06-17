@@ -926,7 +926,7 @@ and a failed delete notification is sent so clients can retry.
 ### Bucket App Database Endpoints
 
 > Building an app? See `app-building-guide.md` for the agent prompt, the prebuilt
-> structures (incl. the reserved `_revdoku_notifications` owner-notification
+> structures (incl. the reserved `_revdoku_events` owner-notification
 > table), and recommended patterns.
 
 Bucket app databases are for published bucket websites that need a small

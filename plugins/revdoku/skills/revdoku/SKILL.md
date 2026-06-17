@@ -286,7 +286,7 @@ Flow (identical for MCP and REST):
 5. **Publish with `site_type: "app"`** (ordinary `website` sites stay static-only
    and reject app routes).
 6. Owner notifications: have a public safe action also insert a row into the
-   reserved `_revdoku_notifications` table (or use an `AFTER INSERT` trigger so
+   reserved `_revdoku_events` table (or use an `AFTER INSERT` trigger so
    the public action stays one statement); Revdoku surfaces new rows as in-app
    account notifications and via `bucket_app_database_notifications`. Use
    `bucket_app_database_query` for owner-only ad hoc SQL; visitors never get raw SQL.
