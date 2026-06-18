@@ -311,10 +311,15 @@ action means website-callable, not necessarily safe for an open public site; on
 password templates those actions are intended to run behind the protected
 website gate. See `app-building-guide.md` for conventions.
 
-Anti-spam for anonymous-write actions: store the owner's own Cloudflare
-Turnstile secret as `operations.turnstile.secret_key` and set
-`turnstile: true` on the action; the page renders the Turnstile widget with
-the owner's sitekey and sends `cf_turnstile_token` in the request body.
+Anti-spam for anonymous-write actions: every public write action must use
+Turnstile. Call `bucket_app_database_get`, render the Turnstile widget with
+`app_database.turnstile_site_key`, and send `cf_turnstile_token` in every public
+write request body. Advanced owners may still provide their own Cloudflare
+Turnstile widget as `operations.turnstile.site_key` plus
+`operations.turnstile.secret_key`. Use a custom widget for custom domains unless
+Revdoku explicitly manages that custom hostname on the shared platform widget.
+Public operations that write `_revdoku_events` are rejected unless they are
+Turnstile-protected.
 
 Data protection rules: one database per bucket, created once — no reset,
 re-provision, or delete endpoint exists. Destructive SQL (`DROP`, WHERE-less

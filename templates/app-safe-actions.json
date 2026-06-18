@@ -69,6 +69,7 @@
         "submit_score": {
           "public": true,
           "method": "POST",
+          "turnstile": true,
           "sql": "INSERT INTO scores (id, player, score, visitor_key, created_at) VALUES (?, ?, ?, ?, ?)",
           "params": [
             { "name": "uuid", "source": "system" },
@@ -114,6 +115,7 @@
         "vote": {
           "public": true,
           "method": "POST",
+          "turnstile": true,
           "sql": "INSERT OR IGNORE INTO votes (id, item_id, visitor_key, created_at) VALUES (?, ?, ?, ?)",
           "params": [
             { "name": "uuid", "source": "system" },
@@ -209,6 +211,7 @@
         "move_opportunity": {
           "public": true,
           "method": "POST",
+          "turnstile": true,
           "sql": "UPDATE opportunities SET stage = ?, updated_at = ? WHERE id = ?",
           "params": [
             { "name": "stage", "source": "body", "required": true },
@@ -374,6 +377,7 @@
         "vote": {
           "public": true,
           "method": "POST",
+          "turnstile": true,
           "sql": "INSERT OR IGNORE INTO idea_votes (id, idea_id, visitor_key, created_at) VALUES (?, ?, ?, ?)",
           "params": [
             { "name": "uuid", "source": "system" },
@@ -394,7 +398,7 @@
       "sample_frontend_calls": [
         "fetch('/_revdoku/app/list_ideas', { headers: { Accept: 'application/json' } })",
         "fetch('/_revdoku/app/submit_idea', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, body, cf_turnstile_token }) })",
-        "fetch('/_revdoku/app/vote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idea_id }) })"
+        "fetch('/_revdoku/app/vote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idea_id, cf_turnstile_token }) })"
       ]
     },
     {
@@ -430,6 +434,7 @@
         "log_search": {
           "public": true,
           "method": "POST",
+          "turnstile": true,
           "sql": "INSERT INTO search_log (id, query, normalized_query, results_count, visitor_key, created_at) VALUES (?, ?, lower(?), ?, ?, ?)",
           "params": [
             { "name": "uuid", "source": "system" },
@@ -713,6 +718,7 @@
         "add_client_comment": {
           "public": true,
           "method": "POST",
+          "turnstile": true,
           "sql": "INSERT INTO project_comments (id, update_id, author, email, body, visitor_key, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
           "params": [
             { "name": "uuid", "source": "system" },
