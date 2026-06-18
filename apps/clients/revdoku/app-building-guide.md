@@ -52,6 +52,53 @@ const res = await fetch("/_revdoku/app/list_items?category=ui", { headers: { Acc
 const { ok, result } = await res.json(); // result[0].results is the row array
 ```
 
+### Turnstile on public writes (client integration)
+
+When `turnstile_required_for_public_writes` is true, every public **write** must
+carry a Turnstile token. Load the script, render **one visible managed widget**,
+read its token on submit, and reset it after each write:
+
+```html
+<!-- in <head> or before </body> -->
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<!-- visible widget, placed in/near the write form -->
+<div id="cf-turnstile"></div>
+```
+
+```js
+const SITE_KEY = "…";            // app_database.turnstile_site_key
+let widgetId = null;
+(function render() {
+  if (window.turnstile) widgetId = turnstile.render("#cf-turnstile", { sitekey: SITE_KEY });
+  else setTimeout(render, 100);
+})();
+
+async function submitIdea(title) {
+  const token = (widgetId !== null && turnstile.getResponse(widgetId)) || "";
+  if (!token) return alert("Please complete the verification check.");
+  const res = await fetch("/_revdoku/app/submit_idea", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title, cf_turnstile_token: token }),
+  });
+  turnstile.reset(widgetId); // fresh token for the next write
+  // handle res…
+}
+```
+
+- **Use the default (managed) appearance on a visible widget.** Do **not** use
+  `appearance: "interaction-only"` on a hidden widget: a visitor Cloudflare
+  decides to challenge would have nothing to solve, so no token is ever issued
+  and every write fails. A visible managed widget stays unobtrusive for most
+  visitors and only shows a checkbox when a challenge is actually needed.
+- A console message like `Blocked a frame with origin
+  https://challenges.cloudflare.com … Protocols, domains, and ports must match`
+  is emitted by Cloudflare's own challenge iframe and is **harmless** — it does
+  not affect token issuance, so do not chase it.
+- A complete, copy-paste reference frontend lives in the public client repo at
+  `templates/app-frontend-example/` (`index.html` + `app.js`): a single screen
+  that lists rows and submits a Turnstile-protected write.
+
 Starter schemas and named actions for waitlists, leaderboards, voting, link
 feeds, CRM boards, changelogs, research databases, and dashboards live in
 the public client repo at

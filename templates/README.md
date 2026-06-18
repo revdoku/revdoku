@@ -1,7 +1,12 @@
 # Revdoku App Templates
 
 `app-safe-actions.json` contains starter schemas and named-action manifests for
-common Revdoku app-site patterns.
+common Revdoku app-site patterns (the **backend**: schema + named actions).
+
+`app-frontend-example/` is a minimal **frontend** reference (`index.html` +
+`app.js`) showing how a published page reads a list and submits a
+Turnstile-protected public write. Use it as the client counterpart to any backend
+template that has public write actions.
 
 Public location:
 
