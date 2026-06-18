@@ -974,7 +974,8 @@ database records.
 | `POST` | `/api/v1/buckets/:bucket_id/app_database` | Create or ensure the bucket app database. |
 | `POST` | `/api/v1/buckets/:bucket_id/app_database/schema` | Apply owner-supplied SQL schema statements. |
 | `POST` | `/api/v1/buckets/:bucket_id/app_database/seed` | Apply owner-supplied seed SQL statements. |
-| `POST` | `/api/v1/buckets/:bucket_id/app_database/operations` | Set named actions. `mode: "replace"` (default) sets the full set; `mode: "merge"` adds/updates the actions you send and keeps the rest, with optional `remove: [names]`. The Turnstile secret is preserved unless the body includes a `turnstile` key (pass `turnstile: {secret_key: ""}` to clear it). |
+| `POST` | `/api/v1/buckets/:bucket_id/app_database/operations` | Set named actions. `mode: "replace"` (default) sets the full set; `mode: "merge"` adds/updates the actions you send and keeps the rest, with optional `remove: [names]`. The Turnstile key pair is preserved unless the body includes a `turnstile` key (pass `turnstile: {secret_key: ""}` to clear it). |
+| `PATCH` | `/api/v1/buckets/:bucket_id/app_database/turnstile` | Save the bucket-specific Cloudflare Turnstile `site_key` and `secret_key` without resending operations. Use this before assigning a custom domain to an app DB with public write actions. Passing a blank `secret_key` keeps the existing saved secret when a site key is already configured. |
 | `POST` | `/api/v1/buckets/:bucket_id/app_database/run_operation` | Invoke a named action as the owner/agent, including private (`public:false`) admin actions visitors cannot reach. Body: `operation`, plus `body`/`query` param values. |
 | `POST` | `/api/v1/buckets/:bucket_id/app_database/query` | Run authenticated owner SQL. Prefer named actions for repeatable workflows. Do not use this from published sites. |
 | `POST` | `/api/v1/buckets/:bucket_id/app_database/export` | Request a provider export or backup response. |
@@ -1088,13 +1089,20 @@ per-visitor dedup such as "one vote per visitor".
 
 #### Turnstile-protected actions
 
-Anonymous-write actions (votes, suggestions) can require a Cloudflare
-Turnstile token from the bucket owner's own Turnstile account. Store the secret
-once at the top level of the operations manifest and flag the actions:
+Anonymous-write actions (votes, suggestions) must require a Cloudflare
+Turnstile token. Revdoku deployments can provide a shared app Turnstile secret;
+in that case `GET /app_database` returns
+`app_database.turnstile_required_for_public_writes: true` and
+`app_database.turnstile_site_key` for the published page. Advanced owners may
+store their own site key and secret once at the top level of the operations
+manifest and flag the actions. Public operations that write `_revdoku_events`
+are rejected unless they are Turnstile-protected. Custom domains for app DBs
+with public write actions require a bucket-specific Turnstile widget whose
+allowed hostname covers that custom domain:
 
 ```json
 {
-  "turnstile": { "secret_key": "0x..." },
+  "turnstile": { "site_key": "0x...", "secret_key": "0x..." },
   "operations": {
     "add_request": {
       "public": true,
@@ -1111,12 +1119,16 @@ once at the top level of the operations manifest and flag the actions:
 }
 ```
 
-The published page renders the Turnstile widget with the owner's sitekey and
-sends the solved token as `cf_turnstile_token` (or the widget's default
-`cf-turnstile-response` field) in the request body. Rails verifies it against
-the stored secret before running the SQL; missing or failed tokens return
-`403`. The secret lives in the encrypted operations manifest and is never sent
-to the published site.
+The published page renders the Turnstile widget with
+`app_database.turnstile_site_key` (or the owner's site key when they use their
+own secret) and sends the solved token as `cf_turnstile_token` (or the widget's
+default `cf-turnstile-response` field) in every public write request body.
+Rails verifies it against the stored secret before running the SQL; missing or
+failed tokens return `403`.
+The secret lives in encrypted storage and is never sent to the published site.
+For legacy manifests that have a bucket secret but no stored site key,
+`turnstile_source` is `bucket_secret_only` and generated app code should not
+fall back to the platform site key.
 
 #### Data protection
 

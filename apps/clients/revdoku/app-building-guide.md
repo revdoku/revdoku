@@ -33,10 +33,17 @@ and structures** you should use.
   interpolate). Param sources: `body`, `query`, `visitor` (`key` = stable
   per-visitor id; `email` = verified gate email on password+email sites),
   `system` (`uuid`, `now`), `literal`, and the default `input` (body then query).
-- **Spam protection** for anonymous-write actions: set
-  `operations.turnstile.secret_key` (the bucket owner's own Cloudflare Turnstile
-  secret) and `turnstile: true` on the action; the page sends
-  `cf_turnstile_token` (or the widget's `cf-turnstile-response`) in the body.
+- **Spam protection** for anonymous-write actions: every public write action
+  must use Turnstile. Revdoku deployments can provide a shared Turnstile secret
+  and site key. `bucket_app_database_get` returns
+  `app_database.turnstile_required_for_public_writes` and
+  `app_database.turnstile_site_key`; render the Turnstile widget with that site
+  key and send `cf_turnstile_token` (or the widget's
+  `cf-turnstile-response`) in the body for every public write request.
+  Advanced owners may still pass both `operations.turnstile.site_key` and
+  `operations.turnstile.secret_key` to use their own Cloudflare Turnstile widget.
+  Bucket-specific keys are required for custom domains with public write actions
+  unless Revdoku explicitly manages that custom hostname on the shared widget.
 
 The published page calls public website actions on the same origin:
 
@@ -99,7 +106,8 @@ the Revdoku account**, and marks them notified. The same rows are also readable
 per bucket at any time via MCP (`bucket_app_database_notifications`) and the REST
 notifications endpoint, and shown in the bucket's view.
 
-Create the table and write to it from your public website actions:
+Create the table and write to it from Turnstile-protected public website
+actions:
 
 ```sql
 CREATE TABLE IF NOT EXISTS _revdoku_events (
