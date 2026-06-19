@@ -312,9 +312,13 @@ password templates those actions are intended to run behind the protected
 website gate. See `app-building-guide.md` for conventions.
 
 Anti-spam for anonymous-write actions: every public write action must use
-Turnstile. Call `bucket_app_database_get`, render the Turnstile widget with
-`app_database.turnstile_site_key`, and send `cf_turnstile_token` in every public
-write request body. On the client, load
+Turnstile, but Revdoku supplies a **built-in platform Turnstile key** for
+`*.revdoku.site` sites, so you provision nothing for normal sites. Call
+`bucket_app_database_get`, render the Turnstile widget with
+`app_database.turnstile_site_key` (the built-in key unless the bucket set its
+own — `app_database.turnstile_source` tells you which: `platform`, `bucket`, or
+`bucket_secret_only`), and send `cf_turnstile_token` in every public write
+request body. On the client, load
 `https://challenges.cloudflare.com/turnstile/v0/api.js` and render **one visible
 managed widget** (`turnstile.render("#cf-turnstile", { sitekey })`); read
 `turnstile.getResponse(id)` on submit and `turnstile.reset(id)` after each write.
@@ -322,12 +326,25 @@ Do **not** use `appearance: "interaction-only"` on a hidden widget — a challen
 visitor would have nothing to solve, so no token is issued and every write fails.
 The `Blocked a frame with origin https://challenges.cloudflare.com …` console
 message is a harmless Cloudflare warning. A copy-paste reference frontend is at
-`templates/app-frontend-example/` (`index.html` + `app.js`). Advanced owners may
-still provide their own Cloudflare Turnstile widget as
-`operations.turnstile.site_key` plus `operations.turnstile.secret_key`. Use a
-custom widget for custom domains unless Revdoku explicitly manages that custom
+`templates/app-frontend-example/` (`index.html` + `app.js`). Advanced owners can
+use their own Cloudflare Turnstile widget by saving `CLOUDFLARE_TURNSTILE_SITE_KEY`
+(a public **variable**) and `CLOUDFLARE_TURNSTILE_SECRET_KEY` (a **secret**) — via
+`bucket_env_set`, the `/variables` endpoint, or the dedicated `/turnstile` endpoint.
+Use a custom widget for custom domains unless Revdoku explicitly manages that custom
 hostname on the shared platform widget. Public operations that write
 `_revdoku_events` are rejected unless they are Turnstile-protected.
+
+### Bucket variables & secrets
+
+Buckets carry an integration env, managed with `bucket_env_get` / `bucket_env_set`
+(or REST `GET`/`PUT /api/v1/buckets/:id/variables`). **Variables** are public —
+embedded into the published site and visible to every visitor (e.g. a Turnstile
+site key, a Stripe publishable key). **Secrets** are server-only, encrypted, and
+never returned (reads show only `name` + `last4`); Revdoku uses them server-side
+(e.g. `RESEND_API_KEY`). Names are UPPER_SNAKE_CASE and the provider is implied by
+the prefix (`CLOUDFLARE_TURNSTILE_*`, `RESEND_*`, …) — never store a secret value
+as a variable. Setting `variables` replaces the full public set; `secrets` is a
+patch (non-empty sets, empty string deletes, omitted unchanged).
 
 Data protection rules: one database per bucket, created once — no reset,
 re-provision, or delete endpoint exists. Destructive SQL (`DROP`, WHERE-less
