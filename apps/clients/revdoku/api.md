@@ -115,7 +115,7 @@ analytics. It intentionally does not expose local-path tools because cloud
 connectors cannot read a user's local filesystem. Use the Revdoku CLI or local
 stdio MCP for local folder uploads; hosted MCP can then update and republish the
 same `bucket_id`. To read existing bucket file content from a CLI or script, use
-`revdoku --list-files` / `revdoku --read-file PATH`, or `GET …/files/by_path`
+`revdoku files` / `revdoku read PATH`, or `GET …/files/by_path`
 (see [Read a file's content](#read-a-files-content)); cloud MCP clients use
 `bucket_file_list` + `bucket_file_read`. `bucket_list` and `bucket_get` include bucket ids,
 website metadata, publication lifecycle state, and action metadata such as
@@ -1263,9 +1263,9 @@ the cross-host hop, which is expected — the signed URL carries its own auth).
 filename. The Revdoku CLI wraps this:
 
 ```bash
-revdoku --bucket-id bkt_... --list-files
-revdoku --bucket-id bkt_... --read-file leads/q3.csv            # prints to stdout
-revdoku --bucket-id bkt_... --read-file leads/q3.csv --output q3.csv
+revdoku --bucket-id bkt_... files
+revdoku --bucket-id bkt_... read leads/q3.csv            # prints to stdout
+revdoku --bucket-id bkt_... read leads/q3.csv --output q3.csv
 ```
 
 Cloud MCP clients use `bucket_file_list` + `bucket_file_read` (by path) instead.

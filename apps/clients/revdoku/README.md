@@ -1,9 +1,8 @@
 # REVDOKU
 
 Publish websites from Claude, ChatGPT, Codex, and other AI agents using Revdoku.
-A few seconds from idea to a live website you can share.
-Files are saved privately as drafts first; publishing live only happens when you
-ask for it.
+A few seconds from idea to a live website you can share — `revdoku p` and you
+have a URL. Nothing goes live until you publish (use `--draft` to store privately).
 
 Create a free account: <https://revdoku.com>
 
@@ -56,9 +55,19 @@ Then paste the connect prompt from the Revdoku app, or publish directly (below).
 ## Publish a website
 
 ```sh
-revdoku --publish ./dist
-revdoku --publish --protected --generate-password ./dist
+revdoku p                 # publish the current folder -> live URL
+revdoku p ./dist          # publish a specific folder
+revdoku p --protected --generate-password   # password-protected site
 ```
+
+Re-running `revdoku p` updates the **same** site (the bucket is remembered in a
+local `.revdoku` file). `revdoku open` opens it in a browser; `revdoku ls` lists
+your sites; `revdoku --help` shows every command. Start a new project with
+`revdoku init` (add `--template <id>` for a database-backed app starter).
+
+Common commands have a short alias and a full name (either works):
+`p`/`publish`, `ls`/`list`, `o`/`open`, `i`/`init`, `st`/`status`,
+`down`/`unpublish`, plus `login`.
 
 Protected websites require available protected-site capacity on the account. Open
 the returned URL and enter the password — never put passwords in URL parameters.

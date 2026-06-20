@@ -68,6 +68,18 @@ PATH_TO_STORE=""
 PATH_EXPLICIT="false"
 READ_FILE_PATH=""
 OUTPUT_PATH=""
+NO_WAIT="${REVDOKU_NO_WAIT:-false}"
+DRAFT="false"
+OPEN_DASHBOARD="false"
+INIT_TEMPLATE=""
+INIT_LIST_TEMPLATES="false"
+SHOW_PUBLISH_HINT="false"
+# Project-local binding (.revdoku): remembers the bucket so `revdoku p` keeps
+# updating the same site. Populated from the target dir, --bucket-id overrides.
+REVDOKU_PROJECT_FILE=""
+BOUND_BUCKET_ID=""
+BOUND_URL=""
+BINDING_EXISTED="false"
 LAST_PUBLISH_SESSION_BUCKET_ID=""
 LAST_HTTP_STATUS=""
 LAST_ERROR_CODE=""
@@ -104,69 +116,67 @@ detect_agent_name() {
 
 usage() {
   cat <<USAGE
-Usage: revdoku [options] PATH
+revdoku — publish a folder to the web in one command.
 
-Options:
-  --api-key KEY             Revdoku API key. Defaults to REVDOKU_API_KEY or $CREDENTIALS_PATH.
-  --url URL                 Revdoku app URL. Defaults to REVDOKU_URL or $DEFAULT_URL.
-  --title TITLE             Bucket title.
-  --description TEXT        Short bucket description.
-  --tag-path PATH           Add an explicit bucket label such as website. Do not use local path segments.
-  --bucket-id ID         Store into an existing Revdoku bucket instead of creating a new one.
-                            Defaults to a bucket remembered from a selected-bucket grant.
-  --metadata JSON           Optional JSON for agent lookup, for example {"project":"site"}.
-  --agent NAME              Attribute uploads to this agent (e.g. claude-code, codex).
-                            Defaults to REVDOKU_AGENT_NAME, then auto-detection, then cli.
-  --publish                 Publish after saving files to a private draft bucket. Defaults to public.
-  --access-mode MODE        Website access mode: public, password, or password_ask_info.
-                            password_ask_info asks visitors for email plus password (Builder/Pro).
-                            Existing sites keep their mode unless changed.
-  --protected               Alias for --access-mode password.
-  --private                 Alias for --access-mode password.
-  --public                  Alias for --access-mode public.
-  --password PASSWORD       Password for --access-mode password. Never sent in a URL.
-  --generate-password       Generate or regenerate the protected website password.
-  --tracking                Enable website analytics and browser event tracking.
-  --no-tracking             Disable website analytics and browser event tracking.
-  --analytics               Enable website analytics recording.
-  --no-analytics            Disable website analytics recording.
-  --client-events           Enable browser-side Revdoku event tracking.
-  --no-client-events        Disable browser-side Revdoku event tracking.
-  --feature-on-community    Opt this public website into revdoku.com/featured.
-                            With --publish, applies on publish. With only --bucket-id, updates settings without republishing.
-  --unpublish               Unpublish --bucket-id while keeping its reserved URL for later republish.
-  --archive                 Archive --bucket-id. Published buckets must be unpublished first.
-  --unarchive               Restore archived --bucket-id to the active bucket list.
-  --delete-bucket           Permanently delete unpublished --bucket-id.
-  --login                   Connect in the browser and save an API key to $CREDENTIALS_PATH.
-                            With no PATH, exits after saving; pass PATH to also store files.
-  --status                  Print connection status as JSON (connected, account, scope).
-                            Works with bucket-scoped agent credentials.
-  --list-buckets         Print available buckets and metadata as JSON.
-  --list-files              Print files in --bucket-id as JSON (path, size, type, id).
-  --read-file PATH          Print the content of the bucket file at PATH (bucket-relative);
-                            requires --bucket-id. Use --output to write to a file.
-  --output FILE             Write --read-file content to FILE instead of stdout.
-  --list-versions           Print version history for --bucket-id as JSON.
-  --restore-version ID      Restore a bucket version as a new latest version; requires --bucket-id.
-  --restore-comment TEXT    Optional comment for --restore-version.
-  --append-text-file PATH   Append UTF-8 text to an existing bucket text file; requires --bucket-id.
-  --content TEXT            Text for --append-text-file.
-  --content-file PATH       Read text for --append-text-file from a local file, or "-" for stdin.
-  --no-newline-before       For --append-text-file, append bytes exactly without inserting a boundary newline.
-  --list-public-buckets  Print active website links as JSON.
-  --account-status          Print account, plan, and storage status as JSON; requires full-account credentials.
-  --dashboard-link          Print a one-time browser login link for the Revdoku dashboard.
-  --library-link            Print a one-time browser login link for Library settings.
-  --access-link             Print a one-time browser login link for Account > Access.
-  --browser-login PATH      Print a one-time browser login link for an internal Revdoku path.
-                            Browser login links are disabled when 2FA is enabled or required.
-  --upload-mode MODE        auto or direct. Defaults to auto.
-  --exchange-grant TOKEN    Exchange a one-time app grant and save the API key.
-  --grant-token TOKEN       Alias for --exchange-grant.
-  -h, --help                Show this help.
+Usage: revdoku <command> [PATH] [options]
+
+Most-used commands (short alias, then full name — either works):
+  p,    publish [PATH]   Publish a folder (default: current dir) -> live URL.
+                         Re-running updates the same site (remembered in .revdoku).
+  ls,   list             List your sites and buckets.
+  o,    open             Open this folder's live site in the browser (--dashboard for the dashboard).
+  i,    init [PATH]      Scaffold a starter site + agent instructions here (--template ID, --list-templates).
+  st,   status           Show connection and account status.
+        login            Connect in the browser and save an API key.
+  down, unpublish        Take this folder's site offline (keeps the URL for later).
+
+Publish options:
+  --protected          Publish as a password-protected website (alias: --private).
+  --password PASSWORD  Set the protected-site password (never sent in a URL).
+  --generate-password  Generate/rotate the protected-site password.
+  --access-mode MODE   public, password, or password_ask_info (email + password).
+  --draft              Save a private draft instead of publishing live.
+  --no-wait            Return as soon as the URL is reserved (don't wait for the build).
+  --feature            Opt a public site into revdoku.com/featured (ask the owner first).
+  --title TEXT         --description TEXT     --tag-path LABEL     --metadata JSON
+  --no-tracking / --tracking, --no-analytics / --analytics, --no-client-events / --client-events
+
+More commands (no short alias):
+  files                List files in --bucket-id.
+  read PATH            Print a bucket file (--bucket-id; --output FILE to save).
+  versions             Show version history (--bucket-id).
+  restore ID           Restore a bucket version (--bucket-id; --restore-comment TEXT).
+  append PATH          Append text to a bucket file (--content TEXT | --content-file FILE).
+  archive | unarchive | delete    Manage a bucket (--bucket-id).
+  account              Account, plan, and storage status.
+  sites                List your public website URLs.
+  dashboard            Print a one-time browser login link to the Revdoku dashboard.
+  grant TOKEN          Exchange a one-time app grant and save the API key.
+
+Global options:
+  --bucket-id ID       Act on a specific bucket (overrides the .revdoku binding).
+  --url URL            Revdoku app URL (default $DEFAULT_URL).
+  --api-key KEY        API key (default REVDOKU_API_KEY or $CREDENTIALS_PATH).
+  --agent NAME         Attribute uploads to this agent (default auto-detected).
+  --upload-mode MODE   auto or direct (default auto).
+  --version            Print the installed client version.
+  -h, --help           Show this help.
+
+Examples:
+  revdoku p                 # publish the current folder, get a URL
+  revdoku p ./dist          # publish another folder
+  revdoku p --protected     # password-protected site
+  revdoku init --template voting && revdoku p
 USAGE
 }
+
+# ---------------------------------------------------------------------------
+# Command parsing. The first non-option token is the verb (publish, ls, open …);
+# options may appear before or after it. A bare path (`revdoku .`) means publish;
+# no args at all shows status + a hint. The most common verb is the shortest.
+# ---------------------------------------------------------------------------
+VERB_SEEN="false"
+ORIGINAL_ARGC=$#
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -210,8 +220,25 @@ while [[ $# -gt 0 ]]; do
       AGENT_NAME="$2"
       shift 2
       ;;
-    --publish)
-      PUBLISH="true"
+    --draft)
+      DRAFT="true"
+      shift
+      ;;
+    --no-wait)
+      NO_WAIT="true"
+      shift
+      ;;
+    --dashboard)
+      OPEN_DASHBOARD="true"
+      shift
+      ;;
+    --template)
+      [[ $# -ge 2 ]] || die "--template requires a template id (see: revdoku init --list-templates)"
+      INIT_TEMPLATE="$2"
+      shift 2
+      ;;
+    --list-templates)
+      INIT_LIST_TEMPLATES="true"
       shift
       ;;
     --access-mode)
@@ -262,71 +289,18 @@ while [[ $# -gt 0 ]]; do
       PUBLICATION_CLIENT_EVENTS_ENABLED="false"
       shift
       ;;
-    --feature-on-community)
+    --feature|--feature-on-community)
       PUBLICATION_FEATURED_ON_COMMUNITY="true"
       shift
-      ;;
-    --unpublish)
-      ACTION="unpublish_bucket"
-      shift
-      ;;
-    --archive)
-      ACTION="archive_bucket"
-      shift
-      ;;
-    --unarchive)
-      ACTION="unarchive_bucket"
-      shift
-      ;;
-    --delete-bucket)
-      ACTION="delete_bucket"
-      shift
-      ;;
-    --expires-in-days)
-      die "--expires-in-days is no longer supported for bucket publishing"
-      ;;
-    --login)
-      LOGIN="true"
-      shift
-      ;;
-    --list-files)
-      ACTION="list_files"
-      shift
-      ;;
-    --read-file)
-      [[ $# -ge 2 ]] || die "--read-file requires a bucket-relative PATH"
-      ACTION="read_file"
-      READ_FILE_PATH="$2"
-      shift 2
       ;;
     --output)
       [[ $# -ge 2 ]] || die "--output requires a value"
       OUTPUT_PATH="$2"
       shift 2
       ;;
-    --list-buckets)
-      ACTION="list_buckets"
-      shift
-      ;;
-    --list-versions)
-      ACTION="list_versions"
-      shift
-      ;;
-    --restore-version)
-      [[ $# -ge 2 ]] || die "--restore-version requires a bucket version id"
-      ACTION="restore_version"
-      RESTORE_VERSION_ID="$2"
-      shift 2
-      ;;
     --restore-comment)
       [[ $# -ge 2 ]] || die "--restore-comment requires a value"
       RESTORE_COMMENT="$2"
-      shift 2
-      ;;
-    --append-text-file)
-      [[ $# -ge 2 ]] || die "--append-text-file requires a bucket-relative path"
-      ACTION="append_text_file"
-      APPEND_TEXT_PATH="$2"
       shift 2
       ;;
     --content)
@@ -343,48 +317,9 @@ while [[ $# -gt 0 ]]; do
       APPEND_TEXT_NEWLINE_BEFORE="false"
       shift
       ;;
-    --list-public-buckets)
-      ACTION="list_public_buckets"
-      shift
-      ;;
-    --account-status)
-      ACTION="account_status"
-      shift
-      ;;
-    --status)
-      ACTION="connection_status"
-      shift
-      ;;
-    --dashboard-link)
-      ACTION="browser_login"
-      BROWSER_LOGIN_PATH="/buckets"
-      shift
-      ;;
-    --library-link)
-      ACTION="browser_login"
-      BROWSER_LOGIN_PATH="/library"
-      shift
-      ;;
-    --access-link)
-      ACTION="browser_login"
-      BROWSER_LOGIN_PATH="/account/access"
-      shift
-      ;;
-    --browser-login)
-      [[ $# -ge 2 ]] || die "--browser-login requires an internal Revdoku path"
-      ACTION="browser_login"
-      BROWSER_LOGIN_PATH="$2"
-      shift 2
-      ;;
     --upload-mode)
       [[ $# -ge 2 ]] || die "--upload-mode requires a value"
       UPLOAD_MODE="$2"
-      shift 2
-      ;;
-    --exchange-grant|--grant-token)
-      [[ $# -ge 2 ]] || die "$1 requires a value"
-      ACTION="exchange_grant"
-      GRANT_TOKEN="$2"
       shift 2
       ;;
     --version)
@@ -400,15 +335,72 @@ while [[ $# -gt 0 ]]; do
       break
       ;;
     -*)
-      die "unknown option: $1"
+      die "unknown option: $1 (run 'revdoku --help')"
       ;;
     *)
-      PATH_TO_STORE="$1"
-      PATH_EXPLICIT="true"
-      shift
+      if [[ "$VERB_SEEN" == "true" ]]; then
+        PATH_TO_STORE="$1"
+        PATH_EXPLICIT="true"
+        shift
+      else
+        VERB_SEEN="true"
+        case "$1" in
+          p|publish)      PUBLISH="true"; shift ;;
+          ls|list)        ACTION="list_buckets"; shift ;;
+          o|open)         ACTION="open_site"; shift ;;
+          i|init)         ACTION="init_project"; shift ;;
+          st|status)      ACTION="connection_status"; shift ;;
+          login)          LOGIN="true"; shift ;;
+          down|unpublish) ACTION="unpublish_bucket"; shift ;;
+          files)          ACTION="list_files"; shift ;;
+          read)           [[ $# -ge 2 && "$2" != -* ]] || die "read needs a bucket PATH right after it, e.g. revdoku read index.html --bucket-id ID"; ACTION="read_file"; READ_FILE_PATH="$2"; shift 2 ;;
+          versions)       ACTION="list_versions"; shift ;;
+          restore)        [[ $# -ge 2 && "$2" != -* ]] || die "restore needs a version id right after it, e.g. revdoku restore VERSION_ID --bucket-id ID"; ACTION="restore_version"; RESTORE_VERSION_ID="$2"; shift 2 ;;
+          append)         [[ $# -ge 2 && "$2" != -* ]] || die "append needs a bucket PATH right after it, e.g. revdoku append leads.csv --bucket-id ID --content-file new.csv"; ACTION="append_text_file"; APPEND_TEXT_PATH="$2"; shift 2 ;;
+          archive)        ACTION="archive_bucket"; shift ;;
+          unarchive)      ACTION="unarchive_bucket"; shift ;;
+          delete)         ACTION="delete_bucket"; shift ;;
+          account)        ACTION="account_status"; shift ;;
+          sites)          ACTION="list_public_buckets"; shift ;;
+          dashboard)      ACTION="open_site"; OPEN_DASHBOARD="true"; shift ;;
+          grant)          [[ $# -ge 2 && "$2" != -* ]] || die "grant needs a one-time grant token right after it, e.g. revdoku grant TOKEN"; ACTION="exchange_grant"; GRANT_TOKEN="$2"; shift 2 ;;
+          help)           usage; exit 0 ;;
+          version)        printf '%s\n' "$(installed_client_version)"; exit 0 ;;
+          *)
+            # Not a known verb: an existing or path-like token means "publish this".
+            if [[ -e "$1" || "$1" == .* || "$1" == /* || "$1" == \~* ]]; then
+              PUBLISH="true"
+              PATH_TO_STORE="$1"
+              PATH_EXPLICIT="true"
+              shift
+            else
+              die "unknown command: $1 (run 'revdoku --help')"
+            fi
+            ;;
+        esac
+      fi
       ;;
   esac
 done
+
+# No verb and no path token: bare `revdoku` shows status + a hint; `--feature`
+# alone toggles featured without republishing; other options-only invocations
+# default to publishing the current folder.
+if [[ "$VERB_SEEN" == "false" && "$ACTION" == "store" && "$PUBLISH" != "true" && "$LOGIN" != "true" ]]; then
+  if [[ "$ORIGINAL_ARGC" -eq 0 ]]; then
+    ACTION="connection_status"
+    SHOW_PUBLISH_HINT="true"
+  elif [[ "$PUBLICATION_FEATURED_ON_COMMUNITY" == "true" && "$PATH_EXPLICIT" == "false" ]]; then
+    # `revdoku --feature [--bucket-id ID]` updates the featured flag on the bound
+    # (or given) bucket without re-uploading files.
+    ACTION="feature_on_community"
+  else
+    PUBLISH="true"
+  fi
+fi
+
+# --draft always wins over the publish verb, regardless of argument order.
+[[ "$DRAFT" == "true" ]] && PUBLISH="false"
 
 if [[ -z "$PATH_TO_STORE" ]]; then
   if [[ -n "${1:-}" ]]; then
@@ -421,17 +413,21 @@ fi
 BASE_URL="${BASE_URL%/}"
 [[ -n "$AGENT_NAME" ]] || AGENT_NAME="$(detect_agent_name)"
 
-need_cmd curl
-need_cmd openssl
-need_cmd base64
-need_cmd find
+# `init` only scaffolds local files — it needs none of the network/JSON tools, so
+# skip these checks for it (lets `revdoku init` run on a bare checkout).
+if [[ "$ACTION" != "init_project" ]]; then
+  need_cmd curl
+  need_cmd openssl
+  need_cmd base64
+  need_cmd find
 
-if [[ -x "${SCRIPT_DIR}/jq" ]]; then
-  JQ_BIN="${SCRIPT_DIR}/jq"
-elif command -v jq >/dev/null 2>&1; then
-  JQ_BIN="$(command -v jq)"
-else
-  die "requires jq"
+  if [[ -x "${SCRIPT_DIR}/jq" ]]; then
+    JQ_BIN="${SCRIPT_DIR}/jq"
+  elif command -v jq >/dev/null 2>&1; then
+    JQ_BIN="$(command -v jq)"
+  else
+    die "requires jq"
+  fi
 fi
 
 API_KEY_FROM_CREDENTIALS="false"
@@ -443,6 +439,42 @@ fi
 if [[ -z "$BUCKET_ID" && "$API_KEY_FROM_CREDENTIALS" == "true" && -f "$DEFAULT_BUCKET_PATH" ]]; then
   BUCKET_ID="$(tr -d '\r\n' < "$DEFAULT_BUCKET_PATH")"
 fi
+
+# Project-local binding: a `.revdoku` file in the target folder remembers the
+# bucket so re-running `revdoku p` keeps updating the same site, and so `open`,
+# `unpublish`, etc. act on this folder's site without --bucket-id. An explicit
+# --bucket-id always wins. The file is never uploaded (safety-excluded).
+if [[ -d "$PATH_TO_STORE" || ! -e "$PATH_TO_STORE" ]]; then
+  REVDOKU_PROJECT_FILE="${PATH_TO_STORE%/}/.revdoku"
+else
+  REVDOKU_PROJECT_FILE="$(dirname "$PATH_TO_STORE")/.revdoku"
+fi
+if [[ -f "$REVDOKU_PROJECT_FILE" ]]; then
+  BINDING_EXISTED="true"
+  BOUND_BUCKET_ID="$(sed -n 's/^bucket_id=//p' "$REVDOKU_PROJECT_FILE" 2>/dev/null | head -n1 | tr -d '\r')"
+  BOUND_URL="$(sed -n 's/^url=//p' "$REVDOKU_PROJECT_FILE" 2>/dev/null | head -n1 | tr -d '\r')"
+fi
+if [[ -z "$BUCKET_ID" && -n "$BOUND_BUCKET_ID" ]]; then
+  BUCKET_ID="$BOUND_BUCKET_ID"
+fi
+
+# Persist (or refresh) the .revdoku binding for a directory project after a
+# successful publish/store. Silent unless it is the first time we bind.
+write_project_binding() {
+  local bucket="$1" url="$2"
+  [[ "${REVDOKU_WRITE_BINDING:-true}" == "true" ]] || return 0
+  [[ -n "$bucket" && -n "$REVDOKU_PROJECT_FILE" ]] || return 0
+  [[ -d "$PATH_TO_STORE" ]] || return 0
+  {
+    printf '# Revdoku project binding — created by `revdoku publish`. Safe to commit or gitignore.\n'
+    printf 'bucket_id=%s\n' "$bucket"
+    [[ -n "$url" ]] && printf 'url=%s\n' "$url"
+  } > "$REVDOKU_PROJECT_FILE" 2>/dev/null || return 0
+  if [[ "$BINDING_EXISTED" != "true" ]]; then
+    echo "Bound this folder to $bucket (.revdoku). Next time just run: revdoku p" >&2
+    BINDING_EXISTED="true"
+  fi
+}
 
 if [[ -n "$METADATA_JSON" ]]; then
   METADATA_JSON="$(printf "%s" "$METADATA_JSON" | "$JQ_BIN" -c 'if type == "object" then . else error("metadata must be a JSON object") end')" || die "--metadata must be a JSON object"
@@ -498,13 +530,13 @@ if [[ "$PUBLISH" != "true" && "$ACTION" == "store" && "$PUBLICATION_FEATURED_ON_
 fi
 
 if [[ "$ACTION" == "append_text_file" ]]; then
-  [[ -n "$BUCKET_ID" ]] || die "--append-text-file requires --bucket-id"
-  [[ -n "$APPEND_TEXT_PATH" ]] || die "--append-text-file requires a bucket-relative path"
+  [[ -n "$BUCKET_ID" ]] || die "append requires --bucket-id"
+  [[ -n "$APPEND_TEXT_PATH" ]] || die "append requires a bucket-relative PATH"
   if [[ -n "$APPEND_TEXT_CONTENT" && -n "$APPEND_TEXT_CONTENT_FILE" ]]; then
-    die "use either --content or --content-file with --append-text-file, not both"
+    die "use either --content or --content-file with append, not both"
   fi
   if [[ -z "$APPEND_TEXT_CONTENT" && -z "$APPEND_TEXT_CONTENT_FILE" ]]; then
-    die "--append-text-file requires --content or --content-file"
+    die "append requires --content or --content-file"
   fi
 fi
 
@@ -524,7 +556,7 @@ if [[ -n "$PUBLICATION_PASSWORD" && "$PUBLICATION_REGENERATE_PASSWORD" == "true"
 fi
 
 if [[ "$PUBLISH" != "true" && "$ACTION" == "store" && ( -n "$PUBLICATION_ACCESS_MODE" || -n "$PUBLICATION_PASSWORD" || "$PUBLICATION_REGENERATE_PASSWORD" == "true" || -n "$PUBLICATION_ANALYTICS_ENABLED" || -n "$PUBLICATION_CLIENT_EVENTS_ENABLED" || -n "$PUBLICATION_TRACKING_ENABLED" || "$PUBLICATION_FEATURED_ON_COMMUNITY" == "true" ) ]]; then
-  die "publication options require --publish"
+  die "publication options apply when publishing; remove --draft (they don't apply to a draft)"
 fi
 
 api_url() {
@@ -776,9 +808,9 @@ http_json() {
     fi
     if [[ "$auth" == "true" ]]; then
       if [[ "$code" == "ACCOUNT_ACCESS_UNAVAILABLE" ]]; then
-        echo "This connection uses bucket-scoped agent credentials, which cannot read account-level status. Verify the connection with --status, or open Revdoku in a browser for account details." >&2
+        echo "This connection uses bucket-scoped agent credentials, which cannot read account-level status. Verify the connection with 'revdoku status', or open Revdoku in a browser for account details." >&2
       elif [[ "$status" == "401" || "$status" == "403" ]]; then
-        echo "Run again with --login to reconnect and save a fresh Revdoku API key." >&2
+        echo "Run 'revdoku login' to reconnect and save a fresh Revdoku API key." >&2
       fi
     fi
     return 1
@@ -835,7 +867,7 @@ prompt_read() {
     printf "%s" "$prompt" >&2
     IFS= read -r value
   else
-    die "REVDOKU_API_KEY is required. Run interactively with --login to sign in (sign up first at ${BASE_URL%/}/users/sign_up if you don't have an account)."
+    die "REVDOKU_API_KEY is required. Run 'revdoku login' to sign in (sign up first at ${BASE_URL%/}/users/sign_up if you don't have an account)."
   fi
   printf "%s" "$value"
 }
@@ -865,6 +897,270 @@ open_browser_url() {
     wslview "$url" >/dev/null 2>&1 && return 0
   fi
   return 1
+}
+
+# `open` / `dashboard`: open this folder's live site (or the dashboard) in a
+# browser. Prefers the URL remembered in .revdoku; falls back to looking up the
+# bound bucket's publication. Prints the URL on stdout.
+open_site() {
+  if [[ "${OPEN_DASHBOARD:-false}" == "true" ]]; then
+    if [[ -n "$BUCKET_ID" ]]; then
+      BROWSER_LOGIN_PATH="/buckets/view?id=$BUCKET_ID"
+    else
+      BROWSER_LOGIN_PATH="/buckets"
+    fi
+    browser_login_link
+    return 0
+  fi
+
+  local url="$BOUND_URL"
+  if [[ -z "$url" && -n "$BUCKET_ID" ]]; then
+    # Resolve the live URL the same way feature/unpublish do: the publications
+    # list, matched by bucket id (the bucket GET payload is not relied upon).
+    local publications_response
+    publications_response="$(http_json GET "/api/v1/publications?include_manifest=false" "{}")" || die "could not look up published sites"
+    url="$("$JQ_BIN" -r --arg bucket_id "$BUCKET_ID" '
+      [ (.data.publications // [])
+        | .[]
+        | select(.bucket_id == $bucket_id)
+        | select((.kind // "bucket_bundle") == "bucket_bundle")
+        | select((.lifecycle_active == true) or (.active == true))
+      ]
+      | sort_by(.updated_at // .created_at // "")
+      | last
+      | .public_url // empty
+    ' <<<"$publications_response" 2>/dev/null || true)"
+  fi
+  [[ -n "$url" ]] || die "no published site found for this folder. Publish first with: revdoku p"
+  echo "Opening: $url" >&2
+  open_browser_url "$url" || echo "Could not open a browser automatically. Visit: $url" >&2
+  printf "%s\n" "$url"
+}
+
+revdoku_known_templates() {
+  printf '%s\n' \
+    waitlist leaderboard voting link_feed crm_board changelog \
+    research_database internal_dashboard feedback_dashboard support_center \
+    contact_inbox quote_requests booking_requests job_board_applications \
+    customer_project_portal
+}
+
+# Write heredoc (stdin) to a file, but never clobber an existing one.
+init_write_file() {
+  local dest="$1"
+  if [[ -e "$dest" ]]; then
+    cat >/dev/null
+    echo "Kept existing $dest" >&2
+    return 0
+  fi
+  mkdir -p "$(dirname "$dest")"
+  cat > "$dest"
+  echo "Created $dest" >&2
+}
+
+init_scaffold_static() {
+  local target="$1"
+  init_write_file "$target/index.html" <<'HTML'
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Revdoku site</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 40rem; margin: 4rem auto; padding: 0 1rem; line-height: 1.6; }
+    h1 { font-size: 2rem; }
+    a { color: #4f46e5; }
+  </style>
+</head>
+<body>
+  <h1>Hello from Revdoku 👋</h1>
+  <p>Edit <code>index.html</code>, then run <code>revdoku p</code> to publish updates.</p>
+</body>
+</html>
+HTML
+  init_write_file "$target/AGENTS.md" <<'MD'
+# Working in this folder with Revdoku
+
+This folder publishes to the web with Revdoku. The whole site is just static
+files (HTML/CSS/JS/assets) in this directory.
+
+## Publish / update
+- `revdoku p`            — publish this folder, print the live URL.
+- `revdoku p --protected --generate-password`  — password-protected site.
+- `revdoku open`         — open the live site. `revdoku status` — check the connection.
+
+Re-running `revdoku p` updates the SAME site (the bucket is remembered in the
+`.revdoku` file — do not delete it). `index.html` is the entry point; a folder
+with no `index.html` gets an auto-generated index page.
+
+## Want a database (forms, votes, submissions)?
+Run `revdoku init --template <id>` (see `revdoku init --list-templates`) for an
+app starter, or ask your agent to set up an app database via the Revdoku MCP
+tools (`bucket_app_database_setup`) and publish with `site_type: "app"`.
+MD
+}
+
+init_scaffold_app() {
+  local target="$1" template="$2"
+  init_write_file "$target/index.html" <<'HTML'
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Revdoku app</title>
+  <!-- Turnstile protects public writes. app.js renders ONE visible managed widget. -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 36rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+    form { display: grid; gap: .75rem; margin-bottom: 1.5rem; }
+    input { font-size: 16px; padding: .6rem .7rem; border: 1px solid #8884; border-radius: .5rem; }
+    button { font-size: 1rem; padding: .6rem 1rem; border: 0; border-radius: .5rem; background: #4f46e5; color: #fff; cursor: pointer; }
+    button:disabled { opacity: .6; }
+    #msg { min-height: 1.25rem; font-size: .9rem; color: #777; }
+    ul { list-style: none; padding: 0; } li { padding: .6rem 0; border-bottom: 1px solid #8883; }
+  </style>
+</head>
+<body>
+  <h1>Items</h1>
+  <form id="form">
+    <input id="title" placeholder="Add an item…" maxlength="200" autocomplete="off" required>
+    <!-- Visible managed widget (do NOT use a hidden interaction-only widget). -->
+    <div id="cf-turnstile"></div>
+    <button id="submit" type="submit">Add</button>
+    <span id="msg"></span>
+  </form>
+  <ul id="list"><li>Loading…</li></ul>
+  <script src="/app.js"></script>
+</body>
+</html>
+HTML
+  init_write_file "$target/app.js" <<'JS'
+/*
+ * Revdoku app frontend. Reads a list and submits a Turnstile-protected write.
+ * Backend actions are named SQL operations under /_revdoku/app/<action>.
+ * Set SITE_KEY and rename list_items/add_item to match your app database.
+ */
+(function () {
+  'use strict';
+  var API = '/_revdoku/app/';
+  // From bucket_app_database_get -> app_database.turnstile_site_key.
+  var SITE_KEY = 'YOUR_TURNSTILE_SITE_KEY';
+
+  function rowsOf(data) {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    var r = data.result;
+    if (Array.isArray(r) && r[0] && Array.isArray(r[0].results)) return r[0].results;
+    if (Array.isArray(r)) return r;
+    return data.results || data.rows || [];
+  }
+
+  // ONE visible managed widget. A hidden interaction-only widget never issues a
+  // token for challenged visitors, so every write would fail.
+  var widgetId = null;
+  function renderTurnstile() {
+    if (window.turnstile && widgetId === null) widgetId = window.turnstile.render('#cf-turnstile', { sitekey: SITE_KEY });
+  }
+  function whenReady() {
+    if (window.turnstile) { renderTurnstile(); return; }
+    var n = 0, iv = setInterval(function () {
+      if (window.turnstile) { clearInterval(iv); renderTurnstile(); } else if (++n > 100) clearInterval(iv);
+    }, 100);
+  }
+  function token() { return (widgetId !== null && window.turnstile && window.turnstile.getResponse(widgetId)) || ''; }
+  function resetToken() { try { if (widgetId !== null) window.turnstile.reset(widgetId); } catch (e) {} }
+
+  function load() {
+    return fetch(API + 'list_items', { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var ul = document.getElementById('list'); ul.textContent = '';
+        var rows = rowsOf(d);
+        if (!rows.length) { ul.innerHTML = '<li>Nothing yet.</li>'; return; }
+        rows.forEach(function (it) { var li = document.createElement('li'); li.textContent = it.title || '(untitled)'; ul.appendChild(li); });
+      })
+      .catch(function () { document.getElementById('list').innerHTML = '<li>Could not load.</li>'; });
+  }
+
+  function onSubmit(e) {
+    e.preventDefault();
+    var title = document.getElementById('title'), btn = document.getElementById('submit'), msg = document.getElementById('msg');
+    var text = title.value.trim(); if (!text) { title.focus(); return; }
+    var t = token(); if (!t) { msg.textContent = 'Please complete the verification check, then submit.'; return; }
+    btn.disabled = true; msg.textContent = 'Saving…';
+    fetch(API + 'add_item', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ title: text, cf_turnstile_token: t })
+    })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error((j && (j.error || j.message)) || ('Failed (' + r.status + ')')); return j; }); })
+      .then(function () { title.value = ''; msg.textContent = 'Saved.'; return load(); })
+      .catch(function (err) { msg.textContent = err.message || 'Could not save.'; })
+      .then(function () { resetToken(); btn.disabled = false; });
+  }
+
+  document.getElementById('form').addEventListener('submit', onSubmit);
+  whenReady(); load();
+})();
+JS
+  {
+    printf '# Working in this folder with Revdoku (app + database)\n\n'
+    printf 'This is a Revdoku **app** site: static files here PLUS a per-bucket\n'
+    printf 'database exposed through named SQL actions at `/_revdoku/app/<action>`.\n'
+    printf 'Chosen template: `%s`.\n\n' "$template"
+    printf '## Set up the database (agent, via Revdoku MCP tools)\n'
+    printf '1. `bucket_app_database_get` — read `template_source` and `app_database.turnstile_site_key`.\n'
+    printf '2. Apply the `%s` template (schema + named actions) with `bucket_app_database_setup`.\n' "$template"
+    printf '3. In `app.js`: set `SITE_KEY` to the turnstile_site_key and rename\n'
+    printf '   `list_items` / `add_item` to the actual public read/write action names.\n\n'
+    printf '## Turnstile rules (these cause most app bugs)\n'
+    printf -- '- Render ONE **visible managed** widget. Never a hidden `interaction-only`\n'
+    printf '  widget — challenged visitors get no token and every write fails.\n'
+    printf -- '- Send the token as `cf_turnstile_token` on every public write; reset after each write.\n\n'
+    printf '## Publish / update\n'
+    printf -- '- `revdoku p` to publish; protected templates: `revdoku p --protected --generate-password`.\n'
+    printf -- '- Re-running `revdoku p` updates the same site (remembered in `.revdoku`).\n'
+    printf -- '- For a real app backend, publish with `site_type: "app"` via the MCP `bucket_publish` tool.\n'
+  } > "$target/AGENTS.md.tmp"
+  if [[ -e "$target/AGENTS.md" ]]; then
+    rm -f "$target/AGENTS.md.tmp"
+    echo "Kept existing $target/AGENTS.md" >&2
+  else
+    mv "$target/AGENTS.md.tmp" "$target/AGENTS.md"
+    echo "Created $target/AGENTS.md" >&2
+  fi
+}
+
+# `init`: scaffold a starter site + agent instructions in this folder.
+init_project() {
+  local target="${PATH_TO_STORE:-.}"
+  [[ -n "$target" ]] || target="."
+
+  if [[ "${INIT_LIST_TEMPLATES:-false}" == "true" ]]; then
+    echo "App templates (use: revdoku init --template <id>):" >&2
+    revdoku_known_templates | sed 's/^/  /' >&2
+    echo "Omit --template for a plain static-site starter." >&2
+    return 0
+  fi
+
+  mkdir -p "$target"
+  if [[ -n "$INIT_TEMPLATE" ]]; then
+    if ! revdoku_known_templates | grep -qx -- "$INIT_TEMPLATE"; then
+      echo "warning: '$INIT_TEMPLATE' is not a known template id; scaffolding a generic app starter." >&2
+      echo "Known templates: $(revdoku_known_templates | tr '\n' ' ')" >&2
+    fi
+    init_scaffold_app "$target" "$INIT_TEMPLATE"
+  else
+    init_scaffold_static "$target"
+  fi
+
+  echo "" >&2
+  echo "Revdoku project ready in: $target" >&2
+  echo "Next: edit your files, then run:  revdoku p" >&2
 }
 
 request_device_agent_key() {
@@ -900,7 +1196,7 @@ request_device_agent_key() {
   while true; do
     now="$(date +%s)"
     if [[ "$now" =~ ^[0-9]+$ && "$now" -ge "$deadline" ]]; then
-      die "device login expired; run --login again"
+      die "device login expired; run 'revdoku login' again"
     fi
 
     sleep "$interval"
@@ -922,7 +1218,7 @@ request_device_agent_key() {
         die "Revdoku connection was denied in the browser"
         ;;
       expired_token)
-        die "device login expired; run --login again"
+        die "device login expired; run 'revdoku login' again"
         ;;
       *)
         return 1
@@ -947,7 +1243,7 @@ request_email_agent_key() {
   done
 
   echo "If $email can receive Revdoku sign-in codes, a verification code was sent." >&2
-  echo "If no code arrives, sign in or create an account at ${BASE_URL%/}/users/sign_in, then use Copy Instructions for AI or an app connection grant and run with --exchange-grant TOKEN." >&2
+  echo "If no code arrives, sign in or create an account at ${BASE_URL%/}/users/sign_in, then use Copy Instructions for AI or an app connection grant and run 'revdoku grant TOKEN'." >&2
 
   code="$(prompt_read "Code: ")"
   [[ -n "$code" ]] || die "code is required"
@@ -971,13 +1267,34 @@ request_agent_key() {
   request_email_agent_key
 }
 
+# `init` scaffolds locally and `open` via a saved binding both work offline —
+# run them before the auth gate so they never force a login.
+if [[ "$ACTION" == "init_project" ]]; then
+  init_project
+  exit 0
+fi
+if [[ "$ACTION" == "open_site" && "$OPEN_DASHBOARD" != "true" && -n "$BOUND_URL" ]]; then
+  open_site
+  exit 0
+fi
+
+# Bare `revdoku` with no saved credentials: show a friendly hint instead of
+# forcing the interactive login flow.
+if [[ "$ACTION" == "connection_status" && "$SHOW_PUBLISH_HINT" == "true" && -z "$API_KEY" ]]; then
+  echo "Revdoku CLI — not signed in yet." >&2
+  echo "  Sign in:   revdoku login" >&2
+  echo "  Publish:   revdoku p          (publishes the current folder)" >&2
+  echo "  Commands:  revdoku --help" >&2
+  exit 0
+fi
+
 if [[ "$ACTION" != "exchange_grant" && ( "$LOGIN" == "true" || -z "$API_KEY" ) ]]; then
   request_agent_key
 fi
 
 if [[ "$LOGIN" == "true" && "$ACTION" == "store" && "$PATH_EXPLICIT" == "false" ]]; then
   echo "Login complete. Credentials saved to $CREDENTIALS_PATH." >&2
-  echo "To store files, run: revdoku PATH (e.g. revdoku ./dist). Verify the connection with: revdoku --status." >&2
+  echo "To publish a folder, run: revdoku p (or revdoku p ./dist). Verify the connection with: revdoku status." >&2
   exit 0
 fi
 
@@ -1013,12 +1330,12 @@ list_buckets() {
 }
 
 list_versions() {
-  [[ -n "$BUCKET_ID" ]] || die "--list-versions requires --bucket-id"
+  [[ -n "$BUCKET_ID" ]] || die "versions requires --bucket-id"
   http_json GET "/api/v1/buckets/${BUCKET_ID}/versions" "{}"
 }
 
 list_files() {
-  [[ -n "$BUCKET_ID" ]] || die "--list-files requires --bucket-id (or a remembered selected bucket)"
+  [[ -n "$BUCKET_ID" ]] || die "files requires --bucket-id (or a remembered selected bucket)"
   http_json GET "/api/v1/buckets/${BUCKET_ID}/files" "{}"
 }
 
@@ -1026,9 +1343,9 @@ list_files() {
 # endpoint, which 302-redirects to a short-lived signed blob URL; curl -L follows
 # it (and drops the bearer on the cross-host hop, as intended).
 read_file() {
-  [[ -n "$BUCKET_ID" ]] || die "--read-file requires --bucket-id (or a remembered selected bucket)"
-  [[ -n "$READ_FILE_PATH" ]] || die "--read-file requires a bucket-relative PATH"
-  [[ -n "$API_KEY" ]] || die "No Revdoku API key. Run 'revdoku --login' first."
+  [[ -n "$BUCKET_ID" ]] || die "read requires --bucket-id (or a remembered selected bucket)"
+  [[ -n "$READ_FILE_PATH" ]] || die "read requires a bucket-relative PATH"
+  [[ -n "$API_KEY" ]] || die "No Revdoku API key. Run 'revdoku login' first."
 
   local encoded url body_file status message
   encoded="$("$JQ_BIN" -rn --arg s "$READ_FILE_PATH" '$s|@uri')"
@@ -1061,8 +1378,8 @@ read_file() {
 
 restore_version() {
   local payload
-  [[ -n "$BUCKET_ID" ]] || die "--restore-version requires --bucket-id"
-  [[ -n "$RESTORE_VERSION_ID" ]] || die "--restore-version requires a bucket version id"
+  [[ -n "$BUCKET_ID" ]] || die "restore requires --bucket-id"
+  [[ -n "$RESTORE_VERSION_ID" ]] || die "restore requires a bucket version id"
   payload="$("$JQ_BIN" -nc \
     --arg version_id "$RESTORE_VERSION_ID" \
     --arg comment "$RESTORE_COMMENT" \
@@ -1072,8 +1389,8 @@ restore_version() {
 
 append_text_file() {
   local content_file tmp_content payload response path
-  [[ -n "$BUCKET_ID" ]] || die "--append-text-file requires --bucket-id"
-  [[ -n "$APPEND_TEXT_PATH" ]] || die "--append-text-file requires a bucket-relative path"
+  [[ -n "$BUCKET_ID" ]] || die "append requires --bucket-id"
+  [[ -n "$APPEND_TEXT_PATH" ]] || die "append requires a bucket-relative PATH"
 
   tmp_content=""
   if [[ -n "$APPEND_TEXT_CONTENT_FILE" ]]; then
@@ -1093,7 +1410,7 @@ append_text_file() {
 
   if [[ ! -s "$content_file" ]]; then
     [[ -z "$tmp_content" ]] || rm -f "$tmp_content"
-    die "--append-text-file content must not be empty"
+    die "append content must not be empty"
   fi
 
   path="$APPEND_TEXT_PATH"
@@ -1110,7 +1427,7 @@ append_text_file() {
 }
 
 unpublish_bucket() {
-  [[ -n "$BUCKET_ID" ]] || die "--unpublish requires --bucket-id"
+  [[ -n "$BUCKET_ID" ]] || die "unpublish requires --bucket-id"
   local response publication_id publish_state status final_response
   response="$(http_json DELETE "/api/v1/buckets/${BUCKET_ID}/publication" "{}")" || return 1
   publication_id="$("$JQ_BIN" -r '.data.publication.id // empty' <<<"$response" 2>/dev/null || true)"
@@ -1137,7 +1454,7 @@ unpublish_bucket() {
 }
 
 feature_publication_on_community() {
-  [[ -n "$BUCKET_ID" ]] || die "--feature-on-community without --publish requires --bucket-id"
+  [[ -n "$BUCKET_ID" ]] || die "feature requires --bucket-id (or a folder bound via .revdoku)"
   local publications_response publication_id payload response
   publications_response="$(http_json GET "/api/v1/publications?include_manifest=false" "{}")" || return 1
   publication_id="$("$JQ_BIN" -r --arg bucket_id "$BUCKET_ID" '
@@ -1171,18 +1488,18 @@ feature_publication_on_community() {
 }
 
 archive_bucket() {
-  [[ -n "$BUCKET_ID" ]] || die "--archive requires --bucket-id"
+  [[ -n "$BUCKET_ID" ]] || die "archive requires --bucket-id"
   http_json POST "/api/v1/buckets/${BUCKET_ID}/archive" "{}"
 }
 
 unarchive_bucket() {
-  [[ -n "$BUCKET_ID" ]] || die "--unarchive requires --bucket-id"
+  [[ -n "$BUCKET_ID" ]] || die "unarchive requires --bucket-id"
   http_json POST "/api/v1/buckets/${BUCKET_ID}/unarchive" "{}"
 }
 
 delete_bucket() {
   local bucket_response allowed required_action confirmation payload response deletion_started total_items phase
-  [[ -n "$BUCKET_ID" ]] || die "--delete-bucket requires --bucket-id"
+  [[ -n "$BUCKET_ID" ]] || die "delete requires --bucket-id"
   bucket_response="$(http_json GET "/api/v1/buckets/${BUCKET_ID}" "{}")"
   allowed="$("$JQ_BIN" -r '.data.bucket.delete.allowed // false' <<<"$bucket_response")"
   required_action="$("$JQ_BIN" -r '.data.bucket.delete.required_action // empty' <<<"$bucket_response")"
@@ -1191,7 +1508,7 @@ delete_bucket() {
   if [[ "$allowed" != "true" || -z "$confirmation" ]]; then
     case "$required_action" in
       unpublish_first)
-        die "bucket must be unpublished before permanent delete; run with --unpublish first after confirmation"
+        die "bucket must be unpublished before permanent delete; run 'revdoku down' first after confirmation"
         ;;
       *)
         die "bucket cannot be permanently deleted with this connection"
@@ -1206,9 +1523,9 @@ delete_bucket() {
     phase="$("$JQ_BIN" -r '.data.delete_progress.phase // "queued"' <<<"$response")"
     total_items="$("$JQ_BIN" -r '.data.delete_progress.total_items // empty' <<<"$response")"
     if [[ -n "$total_items" ]]; then
-      echo "Bucket deletion ${phase}; ${total_items} file/version items will be removed in the background. Poll --list-buckets or bucket details for delete progress." >&2
+      echo "Bucket deletion ${phase}; ${total_items} file/version items will be removed in the background. Poll 'revdoku ls' or bucket details for delete progress." >&2
     else
-      echo "Bucket deletion ${phase}; removal will continue in the background. Poll --list-buckets or bucket details for delete progress." >&2
+      echo "Bucket deletion ${phase}; removal will continue in the background. Poll 'revdoku ls' or bucket details for delete progress." >&2
     fi
   fi
   printf "%s\n" "$response"
@@ -1338,7 +1655,7 @@ wait_for_publication_ready() {
       failed)
         err="$("$JQ_BIN" -r '.data.publication.publish_error // "Publishing failed."' <<<"$response")"
         echo "Publishing failed: $err" >&2
-        echo "Retry with: revdoku publish (or POST /api/v1/buckets/<bucket>/publication/retry)" >&2
+        echo "Retry with: revdoku p (or POST /api/v1/buckets/<bucket>/publication/retry)" >&2
         return 2
         ;;
       *)
@@ -1391,10 +1708,19 @@ wait_for_publication_unpublished() {
 # until it is ready and echo the ready response; otherwise echo it unchanged.
 resolve_async_publication_response() {
   local response="$1"
-  local publication_id publish_state ready_response
+  local publication_id publish_state early_url ready_response
   publication_id="$("$JQ_BIN" -r '.data.publication.id // empty' <<<"$response" 2>/dev/null || true)"
   publish_state="$("$JQ_BIN" -r '.data.publication.publish_state // "ready"' <<<"$response" 2>/dev/null || true)"
   if [[ -n "$publication_id" && "$publish_state" != "ready" && "$publish_state" != "null" && -n "$publish_state" ]]; then
+    # The reserved public URL is already known while the build runs — surface it
+    # immediately so it feels instant, then either return now (--no-wait) or poll.
+    early_url="$("$JQ_BIN" -r '.data.publication.public_url // empty' <<<"$response" 2>/dev/null || true)"
+    if [[ "${NO_WAIT:-false}" == "true" ]]; then
+      [[ -n "$early_url" ]] && echo "Site URL (provisioning in the background): $early_url" >&2
+      printf '%s' "$response"
+      return 0
+    fi
+    [[ -n "$early_url" ]] && echo "Building your site… it will be live at: $early_url" >&2
     ready_response="$(wait_for_publication_ready "$publication_id")" || return 1
     printf '%s' "$ready_response"
   else
@@ -1529,10 +1855,13 @@ case "$ACTION" in
     ;;
   connection_status)
     connection_status
+    if [[ "$SHOW_PUBLISH_HINT" == "true" ]]; then
+      echo "Tip: run 'revdoku p' to publish this folder, or 'revdoku --help' for all commands." >&2
+    fi
     exit 0
     ;;
-  browser_login)
-    browser_login_link
+  open_site)
+    open_site
     exit 0
     ;;
   exchange_grant)
@@ -1893,7 +2222,7 @@ print_publication_limit_guidance() {
     echo "Private bucket storage is still available: $LAST_PUBLISH_SESSION_BUCKET_ID" >&2
   fi
   echo "To update an existing public site, rerun with --bucket-id for that public bucket; republishing keeps the same URL and does not use another live-site slot." >&2
-  echo "To publish a new site, list current public buckets with --list-public-buckets, then ask before unpublishing one with --unpublish. To change plan capacity, visit Revdoku in the browser." >&2
+  echo "To publish a new site, list current public buckets with 'revdoku sites', then ask before unpublishing one with 'revdoku down'. To change plan capacity, visit Revdoku in the browser." >&2
 }
 
 print_private_publication_limit_guidance() {
@@ -2399,6 +2728,11 @@ should_skip_storage_path() {
       .ds_store|.git|.hg|.svn|.revdoku|.terraform|.cache|.parcel-cache|.turbo|.vite|node_modules)
         return 0
         ;;
+      agents.md|claude.md)
+        # Agent-instruction files (e.g. created by `revdoku init`) are dev meta,
+        # not website content — never publish them.
+        return 0
+        ;;
       .env|.npmrc|.pypirc|.netrc|id_rsa|id_rsa.pub|id_dsa|id_dsa.pub|id_ecdsa|id_ecdsa.pub|id_ed25519|id_ed25519.pub)
         return 0
         ;;
@@ -2434,8 +2768,13 @@ if [[ "$PUBLISH" == "true" ]]; then
   if publish_bucket_session > "$publish_url_file"; then
     publish_url="$(cat "$publish_url_file")"
     rm -f "$publish_url_file"
-    verify_published_url "$publish_url"
-    echo "Published live: $publish_url" >&2
+    if [[ "$NO_WAIT" == "true" ]]; then
+      echo "Provisioning in the background — it will be live shortly: $publish_url" >&2
+    else
+      verify_published_url "$publish_url"
+      echo "Published live: $publish_url" >&2
+    fi
+    write_project_binding "$LAST_PUBLISH_SESSION_BUCKET_ID" "$publish_url"
     print_terminal_link_hint
     printf "%s\n" "$publish_url"
     exit 0
@@ -2475,15 +2814,21 @@ if [[ "$PUBLISH" == "true" ]]; then
   fi
   publish_url="$(cat "$publish_url_file")"
   rm -f "$publish_url_file"
-  verify_published_url "$publish_url"
-  echo "Published live: $publish_url" >&2
+  if [[ "$NO_WAIT" == "true" ]]; then
+    echo "Provisioning in the background — it will be live shortly: $publish_url" >&2
+  else
+    verify_published_url "$publish_url"
+    echo "Published live: $publish_url" >&2
+  fi
   echo "Manage in Revdoku: $BASE_URL/buckets/view?id=$bucket_id" >&2
+  write_project_binding "$bucket_id" "$publish_url"
   print_terminal_link_hint
   printf "%s\n" "$publish_url"
 else
   # Show the owner a clickable dashboard link, not just the bkt_ id. stdout stays
   # the bucket id so scripts and --bucket-id reuse keep working.
   echo "View in Revdoku: $BASE_URL/buckets/view?id=$bucket_id" >&2
+  write_project_binding "$bucket_id" ""
   print_terminal_link_hint
   printf "%s\n" "$bucket_id"
 fi
