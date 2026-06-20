@@ -17,29 +17,50 @@ Sign in through the browser device-code flow, or create a Revdoku account first
 if you do not have one yet:
 
 ```sh
-revdoku --login
+revdoku login
 ```
 
 For a browser-first setup page that also covers hosted MCP connectors and
 one-time local agent prompts, open `/connect/agent` in the Revdoku app.
 
-Store a local folder privately:
+Publish the current folder as a public website (the headline command):
 
 ```sh
-revdoku ./dist --title "Project preview"
+revdoku p
 ```
 
-Publish a folder as a public website:
+Publish a specific folder, or save a private draft instead of going live:
 
 ```sh
-revdoku ./dist --title "Project preview" --publish
+revdoku p ./dist --title "Project preview"
+revdoku p ./dist --draft
 ```
 
 Publish a password-protected website:
 
 ```sh
-revdoku ./dist --title "Investor deck" --publish --protected --generate-password
+revdoku p ./dist --title "Investor deck" --protected --generate-password
 ```
+
+Re-running `revdoku p` updates the same site (the bucket is remembered in a local
+`.revdoku` file).
+
+Every command has a full name; the most-used ones also have a short alias (either
+form works):
+
+| Short | Full | Does |
+|-------|------|------|
+| `p`    | `publish` | Publish a folder (default `.`) live; re-run to update the same site |
+| `ls`   | `list`    | List your sites and buckets |
+| `o`    | `open`    | Open this folder's live site (`--dashboard` for the dashboard) |
+| `i`    | `init`    | Scaffold a starter site + agent files (`--template <id>`) |
+| `st`   | `status`  | Connection and account status |
+| `down` | `unpublish` | Take this folder's site offline (keeps the URL) |
+| —      | `login`   | Sign in and save an API key |
+
+Other (full name only): `files`, `read PATH`, `versions`, `restore ID`,
+`append PATH`, `archive`, `unarchive`, `delete`, `account`, `sites`, `dashboard`,
+`grant TOKEN`. Run `revdoku --help` for the full reference.
 
 ## Buckets
 
@@ -77,11 +98,15 @@ user that the website is live, public access is removed, or deletion is finished
 Saving files does not publish them. Treat bucket writes as **Save draft** and
 publish tools as **Publish** or **Republish**.
 
-To feature an already-published public website on revdoku.com/featured
-without republishing files, run:
+To feature a public website on revdoku.com/featured, add `--feature` when you
+publish, or — to update the featured flag on an already-published site **without
+re-uploading** — run `--feature` with no path (it targets the folder's `.revdoku`
+binding, or pass `--bucket-id`). Ask the owner first.
 
 ```sh
-revdoku --bucket-id bkt_... --feature-on-community
+revdoku p --feature                      # publish (or republish) and feature
+revdoku --feature                        # feature this folder's site, no re-upload
+revdoku --feature --bucket-id bkt_...    # feature a specific bucket's site
 ```
 
 ## App Sites
@@ -118,6 +143,30 @@ default. Use `--no-tracking` to disable both for a publish or republish. Scripts
 that need separate control can use `--no-analytics` for server-side website
 analytics and `--no-client-events` for browser-side Revdoku event tracking.
 
+## What Revdoku Is (And Isn't)
+
+Revdoku deliberately offers a small, fixed set of capabilities. The constraints
+are the point: they keep it simple to use and predictable to operate.
+
+What it does: host static sites and SPAs from a folder; per-bucket app databases
+with named SQL actions at `/_revdoku/app/<name>`; Turnstile-protected public
+writes; owner notifications for app submissions; public or password-protected
+access; website analytics; and an opt-in revdoku.com/featured gallery.
+
+What it intentionally does not do (and the workaround):
+
+- Custom server backends or arbitrary server code → use app-database named
+  actions; persistent state lives in the bucket database.
+- Cron jobs / scheduled server tasks → trigger work from a client or an external
+  scheduler hitting a public action.
+- A client-side AI/LLM proxy for published sites → Revdoku sites are on the
+  public internet, so an open AI key would be abused; call your own backend.
+- Importing code from another site at runtime / shared cross-account libraries →
+  vendor the assets into the bucket you publish.
+
+When something seems missing, first check whether one of the existing primitives
+already covers it before adding scope.
+
 ## Agents And MCP
 
 Hosted MCP clients can connect to:
@@ -133,7 +182,7 @@ For line-oriented text updates, the CLI can append to an existing bucket text
 file without rewriting the whole file:
 
 ```sh
-revdoku --bucket-id bkt_... --append-text-file leads.csv --content-file new-leads.csv
+revdoku append leads.csv --bucket-id bkt_... --content-file new-leads.csv
 ```
 
 This is only for UTF-8 text files such as `.txt`, `.md`, `.csv`, `.jsonl`, and

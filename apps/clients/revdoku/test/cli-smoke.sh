@@ -113,7 +113,7 @@ printf 'token placeholder\n' > "${tmp_data}/config/api-token.txt"
 exchange_json="$(
   HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
     --url "$REVDOKU_URL" \
-    --exchange-grant "$GRANT_TOKEN"
+    grant "$GRANT_TOKEN"
 )"
 
 account_id="$(printf "%s" "$exchange_json" | jq -r '.data.account_id // empty')"
@@ -123,7 +123,7 @@ account_id="$(printf "%s" "$exchange_json" | jq -r '.data.account_id // empty')"
 dashboard_link="$(
   HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
     --url "$REVDOKU_URL" \
-    --dashboard-link
+    dashboard
 )"
 [[ "$dashboard_link" == *"/agent_login/"* ]] || die "dashboard link did not return an agent browser login URL"
 
@@ -131,7 +131,7 @@ if [[ -n "$selected_grant_token" && "$selected_grant_token" != "null" ]]; then
   selected_exchange_json="$(
     HOME="$tmp_home_selected" "${CLIENT_DIR}/bin/revdoku" \
       --url "$REVDOKU_URL" \
-      --exchange-grant "$selected_grant_token"
+      grant "$selected_grant_token"
   )"
   selected_access="$(printf "%s" "$selected_exchange_json" | jq -r '.data.bucket_access // empty')"
   remembered_bucket="$(tr -d '\r\n' < "${tmp_home_selected}/.revdoku/credentials.bucket")"
@@ -141,7 +141,7 @@ if [[ -n "$selected_grant_token" && "$selected_grant_token" != "null" ]]; then
   selected_store_id="$(
     HOME="$tmp_home_selected" "${CLIENT_DIR}/bin/revdoku" \
       --url "$REVDOKU_URL" \
-      "$tmp_selected_data"
+      p --draft "$tmp_selected_data"
   )"
   cleanup_selected_bucket_id="$selected_store_id"
   [[ "$selected_store_id" == "$selected_bucket_id" ]] || die "selected grant store did not use remembered bucket"
@@ -160,19 +160,19 @@ printf 'token placeholder\n' > "${tmp_sensitive}/config/api-token.txt"
 bucket_count_before="$(
   HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
     --url "$REVDOKU_URL" \
-    --list-buckets | jq '.data.buckets | length'
+    ls | jq '.data.buckets | length'
 )"
 sensitive_output="$(
   HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
     --url "$REVDOKU_URL" \
     --title "CLI smoke skipped secrets" \
-    "$tmp_sensitive" 2>&1
+    p --draft "$tmp_sensitive" 2>&1
 )" && die "secret-only folder should not have been stored"
 [[ "$sensitive_output" == *"no files found to store after safety exclusions"* ]] || die "secret-only folder did not explain why it was not stored"
 bucket_count_after="$(
   HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
     --url "$REVDOKU_URL" \
-    --list-buckets | jq '.data.buckets | length'
+    ls | jq '.data.buckets | length'
 )"
 [[ "$bucket_count_after" == "$bucket_count_before" ]] || die "secret-only folder created an empty bucket"
 
@@ -184,7 +184,7 @@ bucket_id="$(
     --tag-path "$SMOKE_TAG_SOURCE" \
     --tag-path "$SMOKE_TAG_STATUS" \
     --metadata "{\"project\":\"${SMOKE_PROJECT}\",\"surface\":\"revdoku-client\"}" \
-    "$tmp_data"
+    p --draft "$tmp_data"
 )"
 cleanup_bucket_id="$bucket_id"
 [[ "$bucket_id" == bkt_* ]] || die "store did not return bucket id"
@@ -192,7 +192,7 @@ cleanup_bucket_id="$bucket_id"
 bucket_json="$(
   HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
     --url "$REVDOKU_URL" \
-    --list-buckets
+    ls
 )"
 
 bucket="$(printf "%s" "$bucket_json" | jq --arg id "$bucket_id" '.data.buckets[] | select(.id == $id)' | jq -s '.[0]')"
@@ -221,29 +221,29 @@ for path in "${tmp_data_root}/.env" "${tmp_data_root}/id_rsa" "${tmp_data_root}/
   [[ -z "$found" ]] || die "sensitive file should not have been stored: $path"
 done
 
-# Read files back through the CLI (--list-files / --read-file).
+# Read files back through the CLI (files / read).
 cli_files_json="$(
   HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
     --url "$REVDOKU_URL" \
     --bucket-id "$bucket_id" \
-    --list-files
+    files
 )"
 cli_listed_notes="$(printf "%s" "$cli_files_json" | jq -r --arg path "${tmp_data_root}/notes.txt" '.data.files[]?.path | select(. == $path)' | head -n 1)"
-[[ "$cli_listed_notes" == "${tmp_data_root}/notes.txt" ]] || die "--list-files did not list the stored notes.txt"
+[[ "$cli_listed_notes" == "${tmp_data_root}/notes.txt" ]] || die "files did not list the stored notes.txt"
 
 read_notes="$(
   HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
     --url "$REVDOKU_URL" \
     --bucket-id "$bucket_id" \
-    --read-file "${tmp_data_root}/notes.txt"
+    read "${tmp_data_root}/notes.txt"
 )"
-[[ "$read_notes" == "revdoku CLI smoke" ]] || die "--read-file did not return the stored notes.txt content"
+[[ "$read_notes" == "revdoku CLI smoke" ]] || die "read did not return the stored notes.txt content"
 
 archive_json="$(
   HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
     --url "$REVDOKU_URL" \
     --bucket-id "$bucket_id" \
-    --archive
+    archive
 )"
 archived_state="$(printf "%s" "$archive_json" | jq -r '.data.bucket.archived')"
 [[ "$archived_state" == "true" ]] || die "archive did not mark bucket archived"
@@ -251,7 +251,7 @@ archived_state="$(printf "%s" "$archive_json" | jq -r '.data.bucket.archived')"
 bucket_json_with_archived="$(
   HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
     --url "$REVDOKU_URL" \
-    --list-buckets
+    ls
 )"
 includes_archived="$(printf "%s" "$bucket_json_with_archived" | jq -r '.data.includes_archived')"
 archived_list_state="$(printf "%s" "$bucket_json_with_archived" | jq -r --arg id "$bucket_id" '.data.buckets[] | select(.id == $id) | .archived' | head -n 1)"
@@ -262,7 +262,7 @@ unarchive_json="$(
   HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
     --url "$REVDOKU_URL" \
     --bucket-id "$bucket_id" \
-    --unarchive
+    unarchive
 )"
 unarchived_state="$(printf "%s" "$unarchive_json" | jq -r '.data.bucket.archived')"
 [[ "$unarchived_state" == "false" ]] || die "unarchive did not restore bucket"

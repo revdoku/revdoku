@@ -10,9 +10,11 @@ description: >
 
 # Revdoku Website Publishing
 
-Create or update websites in Revdoku as durable bucket files. A bucket stores
-files privately first as a saved draft and can be published or republished as a
-live public or password-protected website.
+Create or update websites in Revdoku as durable bucket files. Publishing is the
+default with `revdoku p`: a folder goes live immediately as a public or
+password-protected website. Use `--draft` to store files privately without going
+live. Re-running `revdoku p` from the same folder updates the same site via a
+local `.revdoku` binding, so you usually do not need `--bucket-id`.
 
 Revdoku is **not static-only**: a bucket can also publish an **interactive app
 site backed by a per-bucket server database** (visitor submissions, voting /
@@ -25,14 +27,42 @@ Use this skill when the user asks to publish, host, deploy, share on the web,
 create a public or protected website, upload, save, store, share through a
 bucket, or make local output available to other agents through Revdoku. If the
 user asks to publish, host, deploy, share on the web, or make a folder available
-as a website, pass `--publish`. For a protected website, also pass
-`--protected`; Revdoku generates a password when needed. Pass
+as a website, run `revdoku p [PATH]` (default `.`). For a protected website, also
+pass `--protected`; Revdoku generates a password when needed. Pass
 `--generate-password` only when the user explicitly asks to rotate the protected
-website password.
+website password. If the user wants the files stored privately without going
+live, add `--draft`.
 
 If the user says "publish it all to Revdoku", publish the current project or
-current working directory with `--publish`, then verify the returned publication
+current working directory with `revdoku p`, then verify the returned publication
 status before saying the website is live or sharing the URL as live.
+
+## Capabilities and non-goals
+
+Revdoku is a small, fixed set of hosting primitives — stay inside it. It does:
+
+- Static and SPA website hosting.
+- Per-bucket app databases with owner-defined named SQL actions at
+  `/_revdoku/app/<name>` (the only way to run server-side logic).
+- Turnstile-protected public writes from published sites.
+- Owner notifications from app-database events.
+- Public and password/email-protected access.
+- Website analytics and browser-side event tracking.
+- An opt-in revdoku.com/featured gallery listing.
+
+It intentionally does **not** offer:
+
+- Custom server backends or arbitrary server code — use app-database named
+  actions instead.
+- Cron jobs or scheduled tasks.
+- A client-side AI/LLM proxy for published sites (public-internet abuse risk).
+- Runtime cross-site or shared-library imports — vendor the assets into the
+  bucket instead.
+
+When a request seems to need a missing capability, first check whether an
+existing primitive already covers it (an app-database named action, vendored
+assets, an event-driven notification) before expanding scope or telling the user
+it can't be done.
 
 When the Revdoku MCP server is connected, prefer MCP tools over shell commands
 for structured bucket work:
@@ -112,10 +142,13 @@ for structured bucket work:
   Do not describe the current publish flow as a preview. Temporary preview
   deployments are a separate future concept, not the bucket publish flow.
 - Public websites are not listed in `revdoku.com/featured` by default. Ask the
-  owner before opting in with `featured_on_community: true` or
-  `--feature-on-community`. For an already-published website, use
-  `bucket_update_publication_settings` or `revdoku --bucket-id ... --feature-on-community`;
-  do not republish only to change this setting.
+  owner before opting in with `featured_on_community: true` or the CLI
+  `--feature` flag. For an already-published website, use
+  `bucket_update_publication_settings` (MCP/API), or with the CLI run
+  `revdoku --feature` (no path) for the bound folder or `revdoku --feature
+  --bucket-id bkt_...` for a specific bucket — this updates the featured setting
+  without re-uploading or changing the URL. (`revdoku p --feature` also works but
+  republishes the files.)
 - Any plan may pass `slug_suggestions` (ordered website names) to the publish
   tools to steer the public URL (first available wins, else a numeric suffix);
   otherwise the slug defaults to the bucket's name. Applies on first publish; the
@@ -186,52 +219,55 @@ the MCP `revdoku_auth_exchange_grant` tool if it is available. If MCP is not
 connected, run the local client with the one-time grant from the prompt:
 
 ```bash
-~/.revdoku/bin/revdoku --url https://app.revdoku.com --exchange-grant GRANT_TOKEN
+~/.revdoku/bin/revdoku --url https://app.revdoku.com grant GRANT_TOKEN
 ```
 
 The grant can be used once and expires after 15 minutes. The client saves the
 returned API key to `~/.revdoku/credentials`. For selected-bucket grants, it
 also saves the granted bucket id to `~/.revdoku/credentials.bucket` so
-later `~/.revdoku/bin/revdoku PATH` commands store into that bucket by
+later `~/.revdoku/bin/revdoku p PATH` commands store into that bucket by
 default. Do not print or repeat the API key.
 Follow the returned guidance exactly; it tells you whether this connection is
 account-wide or limited to selected buckets, reminds you that the Library is
 read-only by default, and says to publish only when the user asks for a website
 link.
 
-## Store
+## Publish
 
 ```bash
-~/.revdoku/bin/revdoku {file-or-dir}
+~/.revdoku/bin/revdoku p {file-or-dir}
 ```
 
-The CLI stores files privately and prints the bucket id on stdout, plus a
-`View in Revdoku:` dashboard link (and, after `--publish`, the live website URL)
-on stderr. **When you report the result to the user, show the link — the
-published website URL if you published, otherwise the `View in Revdoku:`
-dashboard link — not the raw `bkt_` id.** Treat the id as an internal handle for
-follow-up `--bucket-id` calls. If no API key is
-available, run it interactively; it asks for the user's email, sends a
-verification code, saves the returned key to `~/.revdoku/credentials`, then
-reuses it on future runs. If Revdoku rejects a disposable or blocked email
-address, ask for a permanent email address and retry.
+Publishing is the default: `revdoku p [PATH]` (default `.`) uploads the folder
+and takes it **live** as a public website. To store the files privately without
+going live, add `--draft`. The CLI prints the bucket id on stdout, plus the live
+website URL (or, with `--draft`, a `View in Revdoku:` dashboard link) on stderr.
+**When you report the result to the user, show the link — the published website
+URL if you published, otherwise the `View in Revdoku:` dashboard link — not the
+raw `bkt_` id.** Treat the id as an internal handle for follow-up `--bucket-id`
+calls. If no API key is available, run it interactively; it asks for the user's
+email, sends a verification code, saves the returned key to
+`~/.revdoku/credentials`, then reuses it on future runs. If Revdoku rejects a
+disposable or blocked email address, ask for a permanent email address and retry.
 
-When storing a directory, the CLI skips only Revdoku's fixed upload safety list:
-local-only folders such as `.git`, `.revdoku`, `.terraform`, build caches, and
-`node_modules`; exact sensitive filenames such as `.env` and private-key names;
-and explicit safety masks/extensions such as `api-token.*`, `*.pem`, and
+When publishing a directory, the CLI skips only Revdoku's fixed upload safety
+list: local-only folders such as `.git`, `.revdoku`, `.terraform`, build caches,
+and `node_modules`; exact sensitive filenames such as `.env` and private-key
+names; and explicit safety masks/extensions such as `api-token.*`, `*.pem`, and
 executable installers. Normal static website paths such as `revdoku.com/dist`
 are allowed. If every file is skipped, it stops before creating an empty bucket.
 If the user asks to store a skipped file intentionally, confirm that they
 understand it may contain secrets before using the API directly.
 
-To publish, pass `--publish`; publishing defaults to public. For a protected
-website, add `--protected`; Revdoku generates a password when needed. Use
-`--generate-password` only when the user explicitly asks to rotate the password.
-To update an existing website, pass the same
-`--bucket-id`; Revdoku republishes the existing URL instead of creating a new
-live site. If publishing fails because storage or protected-site capacity is
-unavailable, keep the stored bucket private and explain the specific error.
+Publishing defaults to public. For a protected website, add `--protected`;
+Revdoku generates a password when needed. Use `--generate-password` only when the
+user explicitly asks to rotate the password. Re-running `revdoku p` from a folder
+you published before updates the same site via the local `.revdoku` binding, so
+you usually do not need `--bucket-id`; pass the same `--bucket-id` to target a
+specific bucket when there is no binding. Revdoku republishes the existing URL
+instead of creating a new live site. If publishing fails because storage or
+protected-site capacity is unavailable, keep the stored bucket private and
+explain the specific error.
 
 Subfolders are supported and must be preserved. When publishing a static site,
 upload from the site root so relative paths such as `assets/app.css`,
@@ -357,67 +393,76 @@ deleted with it, and offer an export first.
 ## Read existing bucket files
 
 Uploading is write-only, but you can read back existing files. Use
-`--list-files` to discover paths, then `--read-file PATH` to print one file's
+`files` to discover paths, then `read PATH` to print one file's
 content (or save it with `--output`):
 
 ```bash
-~/.revdoku/bin/revdoku --bucket-id bkt_... --list-files
-~/.revdoku/bin/revdoku --bucket-id bkt_... --read-file leads/q3.csv
-~/.revdoku/bin/revdoku --bucket-id bkt_... --read-file report.pdf --output report.pdf
+~/.revdoku/bin/revdoku --bucket-id bkt_... files
+~/.revdoku/bin/revdoku --bucket-id bkt_... read leads/q3.csv
+~/.revdoku/bin/revdoku --bucket-id bkt_... read report.pdf --output report.pdf
 ```
 
-`PATH` is bucket-relative (as shown by `--list-files`). Reads need only read
+`PATH` is bucket-relative (as shown by `files`). Reads need only read
 access, so a bucket-scoped agent grant works. Prefer this over hand-rolling HTTP;
 cloud MCP clients use `bucket_file_list` + `bucket_file_read` instead.
 
-## Options
+## Commands
+
+The CLI uses verb subcommands (aliases in parentheses):
+
+- `publish` (`p`) `[PATH]`: publish a folder (default `.`) **live**. Re-running updates the same site via the local `.revdoku` binding. Add `--draft` to store files privately without going live. With `--protected` it publishes a password-protected website; with `--feature` it opts the public site into the revdoku.com/featured listing.
+- `list` (`ls`): print available buckets and metadata as JSON.
+- `open` (`o`): open this folder's live site in the browser; `open --dashboard` opens the Revdoku dashboard instead.
+- `init` (`i`) `[PATH]`: scaffold a starter project. Use `--template <id>` to pick a template, `--list-templates` to print available templates.
+- `status` (`st`): print connection status as JSON (connected, account, scope, bucket access). Works with bucket-scoped agent credentials, so this is the right way to confirm a connection — not `account`.
+- `login`: open the browser device-code login flow and refresh local credentials, with privacy-preserving email-code fallback on older servers. It saves credentials and exits. To confirm a connection works afterward, run `status`.
+- `unpublish` (`down`): take the bound site offline while keeping its reserved URL for later republish. Targets the folder's `.revdoku` binding, or pass `--bucket-id`.
+- `files`: with `--bucket-id`, print the files in a bucket as JSON (path, size, content type, id). Use this to discover what to read.
+- `read PATH`: with `--bucket-id`, print the content of the bucket file at PATH (bucket-relative) to stdout. This is how you READ existing bucket files. Add `--output FILE` to save it instead. Reads need only read access.
+- `versions`: with `--bucket-id`, print bucket version history as JSON.
+- `restore ID`: with `--bucket-id`, restore that bucket version as a new latest version. Add `--restore-comment TEXT` for an optional reason.
+- `append PATH`: with `--bucket-id`, append UTF-8 text to an existing bucket text file only. Use `--content TEXT` or `--content-file FILE`; pass `--no-newline-before` only when exact append bytes are required.
+- `archive`: with `--bucket-id`, archive a normal unpublished bucket.
+- `unarchive`: with `--bucket-id`, restore an archived bucket to the active bucket list.
+- `delete`: with `--bucket-id`, permanently delete an unpublished bucket. The CLI fetches and passes the server-returned `delete.confirmation` token internally; use only after explicit destructive confirmation.
+- `account`: print account, plan, and storage status as JSON with full-account credentials. Bucket-scoped agent credentials are denied this; to confirm a bucket-scoped agent connection works use `status`, or open Revdoku in a browser to review account status when needed.
+- `sites`: print active website publications and URLs as JSON. Each publication includes `hits`, derived from `analytics.hits_all_time` in the HTTP API.
+- `dashboard`: create a one-time browser login link for the Revdoku dashboard. To reach Library settings or Account > Access, open the dashboard and navigate there.
+- `grant TOKEN`: exchange a one-time grant copied from the Revdoku app and save the returned API key.
+
+## Modifier flags
 
 - `--title TITLE`: bucket/publication title.
 - `--description TEXT`: short bucket description.
 - `--tag-path PATH`: explicit bucket label such as `website`; can be repeated. Do not use local path segments, parent folders, bucket titles, or domain/folder names as tags.
-- `--bucket-id ID`: store into an existing bucket instead of creating a new one.
-- `--list-versions`: with `--bucket-id`, print bucket version history as JSON.
-- `--restore-version ID`: with `--bucket-id`, restore that bucket version as a new latest version.
-- `--restore-comment TEXT`: optional reason appended to the restore version comment.
-- `--append-text-file PATH`: with `--bucket-id`, append UTF-8 text to an existing bucket text file only. Use `--content TEXT` or `--content-file PATH`; pass `--no-newline-before` only when exact append bytes are required.
+- `--bucket-id ID`: target an existing bucket instead of using the folder's `.revdoku` binding or creating a new one.
 - `--metadata JSON`: optional bucket metadata for future agent lookup, e.g. `--metadata '{"project":"marketing-site","task":"landing-page"}'`.
-- `--publish`: publish the bucket as a normal non-expiring website after storing files.
-- `--feature-on-community`: with `--publish`, opt the public website into the revdoku.com/featured listing. With only `--bucket-id`, update an already-published website's featured setting without republishing. Ask the owner before using this.
-- `--protected`: with `--publish`, publish as a password-protected website.
-- `--access-mode password_ask_info`: with `--publish`, publish as a protected website that asks visitors for email plus password on Builder and Pro plans.
+- `--draft`: with `publish`, store files privately without going live.
+- `--feature`: with `publish`, opt the public website into the revdoku.com/featured listing. To change only the featured flag without re-uploading, run `revdoku --feature` (bound folder) or `revdoku --feature --bucket-id bkt_...`. Ask the owner before using this.
+- `--protected` / `--private`: with `publish`, publish as a password-protected website.
+- `--public`: with `publish`, publish as a public website (the default).
+- `--access-mode password_ask_info`: with `publish`, publish as a protected website that asks visitors for email plus password on Builder and Pro plans.
 - `--password PASSWORD`: advanced direct-terminal option for owners who choose their own protected website password. Do not ask users for this in chat, and do not put the password in a URL.
-- `--generate-password`: with `--publish --protected`, rotate the protected website password and show it in the owner publish response. Use only when the user explicitly asks to rotate it.
-- `--unpublish`: with `--bucket-id`, unpublish a website while keeping its reserved URL for later republish.
-- `--archive`: with `--bucket-id`, archive a normal unpublished bucket.
-- `--unarchive`: with `--bucket-id`, restore an archived bucket to the active bucket list.
-- `--delete-bucket`: with `--bucket-id`, permanently delete an unpublished bucket. The CLI fetches and passes the server-returned `delete.confirmation` token internally; use only after explicit destructive confirmation.
+- `--generate-password`: with `publish --protected`, rotate the protected website password and show it in the owner publish response. Use only when the user explicitly asks to rotate it.
+- `--tracking` / `--no-tracking`, `--analytics` / `--no-analytics`, `--client-events` / `--no-client-events`: control website analytics and browser-side event tracking. Both are on by default; only disable when the user explicitly asks.
+- `--no-wait`: return immediately after starting `publish`/`unpublish` instead of waiting for the build/teardown.
+- `--restore-comment TEXT`: with `restore`, optional reason appended to the restore version comment.
+- `--content TEXT` / `--content-file FILE` / `--no-newline-before`: with `append`, supply the text to append (`--no-newline-before` only when exact append bytes are required).
+- `--output FILE`: with `read`, write content to FILE instead of stdout.
+- `--template <id>` / `--list-templates`: with `init`, pick a starter template or list available templates.
+- `--dashboard`: with `open`, open the Revdoku dashboard instead of the live site.
 - `--url URL`: Revdoku app URL, default `https://app.revdoku.com`.
-- `--version`: print the installed CLI version (or `unknown` if not installed via `install.sh`). On normal runs the CLI also prints a non-blocking notice when a newer version is available; update by re-running `curl -fsSL <app-url>/install.sh | bash`. See `docs/connector-updates.md` for refreshing MCP connectors after an update.
-- `--login`: open the browser device-code login flow and refresh local credentials, with privacy-preserving email-code fallback on older servers. With no path it saves credentials and exits; pass a path (for example `revdoku ./dist`) to also store files. To confirm a connection works, run `--status`.
-- `--status`: print connection status as JSON (connected, account, scope, bucket access). Works with bucket-scoped agent credentials, so this is the right way to confirm a connection — not `--account-status`.
 - `--agent NAME`: attribute uploads to a specific agent (for example `claude-code` or `codex`). The CLI auto-detects common agents and otherwise records `cli`; set this (or `REVDOKU_AGENT_NAME`) when running inside an agent that is not auto-detected so version history shows the real caller.
-- `--dashboard-link`: create a one-time browser login link for the Revdoku dashboard.
-- `--library-link`: create a one-time browser login link for Library settings.
-- `--access-link`: create a one-time browser login link for Account > Access.
-- `--browser-login PATH`: create a one-time browser login link for an internal
-  Revdoku path such as `/buckets`, `/library`, `/account/access`, or
-  `/account/security`.
-- `--exchange-grant TOKEN`: exchange a one-time grant copied from the Revdoku
-  app and save the returned API key.
-- `--list-buckets`: print available buckets and metadata as JSON.
-- `--list-files`: with `--bucket-id`, print the files in a bucket as JSON (path, size, content type, id). Use this to discover what to read.
-- `--read-file PATH`: with `--bucket-id`, print the content of the bucket file at PATH (bucket-relative) to stdout. This is how you READ existing bucket files. Add `--output FILE` to save it instead. Reads need only read access.
-- `--output FILE`: with `--read-file`, write content to FILE instead of stdout.
-- `--list-public-buckets`: print active website publications and URLs as JSON. Each publication includes `hits`, derived from `analytics.hits_all_time` in the HTTP API.
-- `--account-status`: print account, plan, and storage status as JSON with full-account credentials. Bucket-scoped agent credentials are denied this; to confirm a bucket-scoped agent connection works use `--status`, or open Revdoku in a browser to review account status when needed.
 - `--upload-mode MODE`: `auto` or `direct`; default `auto`. Private bucket storage uses bucket upload sessions so multi-file uploads become one bucket version.
+- `--version`: print the installed CLI version (or `unknown` if not installed via `install.sh`). On normal runs the CLI also prints a non-blocking notice when a newer version is available; update by re-running `curl -fsSL <app-url>/install.sh | bash`. See `docs/connector-updates.md` for refreshing MCP connectors after an update.
+- `-h` / `--help`: print usage.
 
 ## What To Tell The User
 
-- By default, share the **`View in Revdoku:` dashboard link** the CLI prints (it
-  opens the private bucket in Revdoku), not the raw `bkt_` id. Keep the id only
-  as an internal handle for future `--bucket-id` calls.
-- If `--publish` was used and the response/status is ready, share the **website
+- After `p --draft`, share the **`View in Revdoku:` dashboard link** the CLI
+  prints (it opens the private bucket in Revdoku), not the raw `bkt_` id. Keep
+  the id only as an internal handle for future `--bucket-id` calls.
+- After `p` (live publish) and the response/status is ready, share the **website
   URL** and keep the printed `Bucket: ...` id for future updates. If the publish
   response is still queued/processing, say publishing started and check status
   separately before sharing it as live. For protected websites, give the owner
@@ -427,18 +472,18 @@ cloud MCP clients use `bucket_file_list` + `bucket_file_read` instead.
 - If publishing fails with `PUBLIC_STORAGE_NOT_CONFIGURED`, share the
   `View in Revdoku:` dashboard link as private storage and say public publishing
   is not configured yet.
-- If asked which buckets are public, run `~/.revdoku/bin/revdoku --list-public-buckets` and summarize the bucket ids, URLs, and hit totals when useful.
-- If asked to archive, unarchive, or permanently delete a bucket using only the CLI, first run `~/.revdoku/bin/revdoku --list-buckets` and resolve the right bucket by title/status. Use `--unpublish` first only after confirmation when `delete.required_action` or `archive.required_action` says `unpublish_first`, then check status/listing separately until the unpublish has completed before archive/delete.
+- If asked which buckets are public, run `~/.revdoku/bin/revdoku sites` and summarize the bucket ids, URLs, and hit totals when useful.
+- If asked to archive, unarchive, or permanently delete a bucket using only the CLI, first run `~/.revdoku/bin/revdoku ls` and resolve the right bucket by title/status. Use `down` (unpublish) first only after confirmation when `delete.required_action` or `archive.required_action` says `unpublish_first`, then check status/listing separately until the unpublish has completed before archive/delete.
 - If asked to roll back a bucket, list versions first, confirm the target
-  version, then run `~/.revdoku/bin/revdoku --bucket-id bkt_... --restore-version bktrv_...`.
+  version, then run `~/.revdoku/bin/revdoku --bucket-id bkt_... restore bktrv_...`.
   Explain that Revdoku creates a new latest version and keeps newer versions in
   history.
 - If asked to open Revdoku, the dashboard, Library, all access, agents, API
   keys, or another UI-only page, create a browser login link with
-  `~/.revdoku/bin/revdoku --dashboard-link`, `--library-link`,
-  `--access-link`, or `--browser-login /buckets`. Tell the user it is
-  single-use and expires quickly. If Revdoku says browser login links are
-  disabled because two-factor authentication is enabled or required, tell the
+  `~/.revdoku/bin/revdoku dashboard` and tell the user to navigate to the page
+  they want (Library settings, Account > Access, etc.) from there. Tell the user
+  the link is single-use and expires quickly. If Revdoku says browser login links
+  are disabled because two-factor authentication is enabled or required, tell the
   user to open Revdoku through the normal browser sign-in flow instead.
 - If using MCP, summarize `bucket_publication_list` results instead of exposing raw JSON unless the user asks for JSON.
 - If the script created credentials, mention that they were saved to `~/.revdoku/credentials`.
