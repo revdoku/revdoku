@@ -36,6 +36,8 @@ live, add `--draft`.
 If the user says "publish it all to Revdoku", publish the current project or
 current working directory with `revdoku p`, then verify the returned publication
 status before saying the website is live or sharing the URL as live.
+If `revdoku` is not on `PATH`, use the installed client directly:
+`~/.revdoku/bin/revdoku {file-or-dir}`.
 
 ## Capabilities and non-goals
 
