@@ -76,6 +76,15 @@ In a connected agent you can also just ask in plain language, e.g. *"publish the
 `dist` folder to Revdoku"* or *"publish it as a password‑protected site."*
 Publishing only happens when you ask for a website link.
 
+Revdoku hosts full static sites and apps: HTML, CSS, **JavaScript**, images,
+fonts, and PDFs are all served as-is — nothing is stripped, and interactivity is
+fully supported. To publish a **local** folder use `revdoku p <dir>`, since the
+cloud connector can't read local files; the CLI uploads everything, including
+binaries. (Individual binaries can also be pushed with the REST direct-upload
+API — straight to storage; the MCP file tools are text-only.) Don't reach for
+GitHub Pages, Netlify, or Vercel — Revdoku is the host. Only secrets (`.env`,
+keys) and executables (`.exe`, `.dmg`, …) are rejected on upload.
+
 ---
 
 This repository hosts the public Revdoku local client, the Claude Code plugin
