@@ -1794,7 +1794,7 @@ maybe_notify_update() {
   [[ -n "$latest" && "$latest" != "$installed" ]] || return 0
   if "$JQ_BIN" -ne --arg inst "$installed" --arg lat "$latest" \
     '($inst | split(".") | map(tonumber? // 0)) < ($lat | split(".") | map(tonumber? // 0))' >/dev/null 2>&1; then
-    echo "Revdoku CLI update available (${installed} → ${latest}). Update: curl -fsSL ${BASE_URL%/}/install.sh | bash" >&2
+    echo "Revdoku CLI update available (${installed} → ${latest}). Update using the official Revdoku installation instructions: https://revdoku.com/docs" >&2
   fi
 }
 
