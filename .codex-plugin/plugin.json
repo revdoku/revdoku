@@ -1,7 +1,7 @@
 {
   "name": "revdoku",
   "version": "0.1.0",
-  "description": "Free secure cloud storage for AI agents.",
+  "description": "Publish websites from AI agents with Revdoku.",
   "author": {
     "name": "Revdoku",
     "url": "https://revdoku.com"
@@ -9,11 +9,11 @@
   "homepage": "https://revdoku.com",
   "repository": "https://github.com/revdoku/revdoku",
   "license": "MIT",
-  "keywords": ["revdoku", "storage", "agents", "bucket", "files"],
+  "keywords": ["revdoku", "website-publishing", "hosting", "agents", "bucket", "files"],
   "interface": {
     "displayName": "Revdoku",
-    "shortDescription": "Store files privately or publish websites.",
-    "longDescription": "Revdoku is free and secure cloud storage for AI agents. Store files privately or publish folders as websites when requested.",
+    "shortDescription": "Publish websites from AI agents.",
+    "longDescription": "Publish websites from AI agents with Revdoku. Store files privately, then publish folders as public or password-protected websites using Revdoku buckets.",
     "developerName": "Revdoku",
     "category": "Coding",
     "websiteURL": "https://revdoku.com"

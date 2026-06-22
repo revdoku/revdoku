@@ -2,13 +2,13 @@
   "name": "revdoku",
   "owner": { "name": "Revdoku", "url": "https://revdoku.com" },
   "metadata": {
-    "description": "Official Revdoku plugin — free secure cloud storage for AI agents, with private buckets and public/password-protected website publishing."
+    "description": "Official Revdoku plugin — publish websites from AI agents. Store files privately, then publish folders as public or password-protected websites using Revdoku buckets."
   },
   "plugins": [
     {
       "name": "revdoku",
       "source": "./plugins/revdoku",
-      "description": "Free secure cloud storage for AI agents — store files privately or publish folders as public/password-protected websites.",
+      "description": "Publish websites from AI agents with Revdoku — store files privately, then publish folders as public or password-protected websites using Revdoku buckets.",
       "version": "0.1.0",
       "author": { "name": "Revdoku", "url": "https://revdoku.com" },
       "homepage": "https://revdoku.com"

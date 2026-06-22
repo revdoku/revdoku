@@ -1,7 +1,7 @@
 # Revdoku — Claude Code plugin
 
-Free secure cloud storage for AI agents. Store files privately, then publish a
-folder as a public or password-protected website when you ask — Claude keeps the
+Publish websites from AI agents with Revdoku. Store files privately, then publish
+a folder as a public or password-protected website when you ask — Claude keeps the
 same URL on every republish.
 
 The plugin bundles:
