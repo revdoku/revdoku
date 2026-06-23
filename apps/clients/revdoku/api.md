@@ -375,6 +375,14 @@ users to type protected-site passwords in chat. Never put the password in the
 URL. Owner publish responses include the website URL and copyable password/share
 text when the authenticated key is allowed to see it.
 
+**Publish only one folder.** Set `"publication_root_directory": "website"` (in
+the publish request body, or as bucket `metadata`) to publish ONLY that top-level
+folder as the site — its `index.html` becomes the root (`/styles.css`, not
+`/website/styles.css`). Every other file/folder in the bucket (e.g. a `scripts/`
+folder) stays stored and version-tracked but is NOT served. This lets a bucket
+hold both a published `website/` and an unserved `scripts/` sibling. Pass an
+empty string to publish the whole bucket again.
+
 **Website lifetime.** Bucket publishing creates a normal live website and does
 not set an expiration. Temporary preview deployments are a separate future
 concept, not the current bucket publish flow.

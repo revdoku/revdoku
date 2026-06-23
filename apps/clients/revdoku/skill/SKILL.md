@@ -241,6 +241,21 @@ agents need to find the same bucket later.
 - The public installer also installs `~/.revdoku/bin/revdoku` for direct shell
   commands from copied Revdoku app prompts.
 
+## Version & updates
+
+The latest skill, CLI, MCP connector, and these instructions always live at
+**https://github.com/revdoku/revdoku** (the public repo). Check what you have:
+
+- CLI version: `revdoku --version` (the CLI also prints a non-blocking notice when
+  a newer version is available).
+- Connected platform version: the `X-Revdoku-Client-Version` response header on
+  any API call, or `GET /api/v1/status` (`server_version`). Over MCP, call
+  `revdoku_status` — it returns `mcp.server_version` and `mcp.latest_source`.
+
+If something documented here is missing, you are likely on an older version:
+re-run the installer (`curl -fsSL https://revdoku.com/install.sh | bash`) or
+reconnect the MCP connector, and compare against the public repo above.
+
 ## Connect From A Revdoku Prompt
 
 When the user copies an agent prompt from the Revdoku app, prefer
@@ -302,6 +317,14 @@ Subfolders are supported and must be preserved. When publishing a static site,
 upload from the site root so relative paths such as `assets/app.css`,
 `images/logo.png`, and `docs/readme.md` remain available at the same paths in the
 public bucket.
+
+Publish only one folder: a bucket can keep some folders out of the live site.
+Pass `--publish-folder website` (CLI) — or `publication_root_directory: "website"`
+on `bucket_publish` (MCP/REST) — to publish ONLY that top-level folder (its
+`index.html` becomes the site root). Every other file/folder (e.g. a `scripts/`
+build folder) stays stored and version-tracked in the bucket but is NOT served.
+So when a user wants `website/` live and `scripts/` kept-but-unserved in the same
+bucket, set the published folder — do not tell them the folders cannot coexist.
 
 MCP equivalent:
 
