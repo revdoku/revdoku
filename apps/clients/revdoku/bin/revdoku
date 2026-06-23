@@ -29,6 +29,7 @@ DESCRIPTION="${REVDOKU_BUCKET_DESCRIPTION:-}"
 UPLOAD_MODE="${REVDOKU_UPLOAD_MODE:-auto}"
 BUCKET_ID="${REVDOKU_BUCKET_ID:-}"
 METADATA_JSON="${REVDOKU_BUCKET_METADATA:-}"
+PUBLISH_ROOT_DIR="${REVDOKU_PUBLISH_FOLDER:-}"
 PUBLISH="${REVDOKU_PUBLISH:-false}"
 PUBLICATION_ACCESS_MODE="${REVDOKU_PUBLICATION_ACCESS_MODE:-}"
 PUBLICATION_PASSWORD="${REVDOKU_PUBLICATION_PASSWORD:-}"
@@ -138,6 +139,8 @@ Publish options:
   --draft              Save a private draft instead of publishing live.
   --no-wait            Return as soon as the URL is reserved (don't wait for the build).
   --feature            Opt a public site into revdoku.com/featured (ask the owner first).
+  --publish-folder DIR Publish ONLY this top-level folder as the site (its index.html
+                       becomes the root); other folders stay stored but unserved.
   --title TEXT         --description TEXT     --tag-path LABEL     --metadata JSON
   --no-tracking / --tracking, --no-analytics / --analytics, --no-client-events / --client-events
 
@@ -213,6 +216,11 @@ while [[ $# -gt 0 ]]; do
     --metadata)
       [[ $# -ge 2 ]] || die "--metadata requires a JSON object"
       METADATA_JSON="$2"
+      shift 2
+      ;;
+    --publish-folder|--root)
+      [[ $# -ge 2 ]] || die "--publish-folder requires a folder name (e.g. website)"
+      PUBLISH_ROOT_DIR="$2"
       shift 2
       ;;
     --agent)
@@ -324,6 +332,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --version)
       printf '%s\n' "$(installed_client_version)"
+      printf 'Latest is always at https://github.com/revdoku/revdoku (reinstall: curl -fsSL https://revdoku.com/install.sh | bash)\n' >&2
       exit 0
       ;;
     -h|--help)
@@ -1794,7 +1803,7 @@ maybe_notify_update() {
   [[ -n "$latest" && "$latest" != "$installed" ]] || return 0
   if "$JQ_BIN" -ne --arg inst "$installed" --arg lat "$latest" \
     '($inst | split(".") | map(tonumber? // 0)) < ($lat | split(".") | map(tonumber? // 0))' >/dev/null 2>&1; then
-    echo "Revdoku CLI update available (${installed} → ${latest}). Update using the official Revdoku installation instructions: https://revdoku.com/docs" >&2
+    echo "Revdoku CLI update available (${installed} → ${latest}). Reinstall: curl -fsSL https://revdoku.com/install.sh | bash — latest is always at https://github.com/revdoku/revdoku" >&2
   fi
 }
 
@@ -1887,11 +1896,33 @@ abs_path() {
 ROOT_PATH="$(abs_path "$PATH_TO_STORE")"
 
 default_title() {
-  basename "$ROOT_PATH"
+  # ROOT_PATH is absolute. Use the folder name, but if it's a generic build
+  # output dir (docs/dist/build/...), use the project (parent) dir name instead,
+  # so e.g. ~/projects/localhost3000.love/docs -> "localhost3000.love".
+  local name parent
+  name="$(basename "$ROOT_PATH")"
+  if [[ -d "$ROOT_PATH" ]]; then
+    case "$name" in
+      docs|dist|build|public|out|_site|site|www|html|htdocs|wwwroot|public_html|_public)
+        parent="$(basename "$(dirname "$ROOT_PATH")")"
+        [[ -n "$parent" && "$parent" != "/" && "$parent" != "." ]] && name="$parent"
+        ;;
+    esac
+  fi
+  printf '%s\n' "$name"
 }
 
 effective_metadata_json() {
-  if [[ -d "$ROOT_PATH" ]]; then
+  # An explicit --publish-folder wins: publish ONLY that folder of the upload as
+  # the site; everything else stays stored but unserved.
+  if [[ -n "$PUBLISH_ROOT_DIR" ]]; then
+    local root_clean
+    root_clean="$(printf "%s" "$PUBLISH_ROOT_DIR" | sed -E 's#^/+##; s#/+$##')"
+    "$JQ_BIN" -nc \
+      --arg root "$root_clean" \
+      --argjson metadata "$METADATA_JSON" \
+      '$metadata + {publication_root_directory: $root}'
+  elif [[ -d "$ROOT_PATH" ]]; then
     "$JQ_BIN" -nc \
       --arg root "$(basename "$ROOT_PATH")" \
       --argjson metadata "$METADATA_JSON" \
