@@ -167,9 +167,13 @@ for structured bucket work:
   may poll for convenience, but agent workflows should still treat the status
   check as a separate step. A settings/access-only change does not re-upload
   files.
-- Bucket publishing creates a normal live website and does not set an expiration.
-  Do not describe the current publish flow as a preview. Temporary preview
-  deployments are a separate future concept, not the bucket publish flow.
+- Bucket publishing publishes a live public website. On the **free plan** public
+  access lasts 30 days and can be extended once by re-publishing (relaunching) the
+  same bucket; **paid plans** are ongoing. Omit `expires_in_days` for ongoing
+  access (paid), or pass it to expire after N days (free is capped at 30). There is
+  no `permanent` input flag — permanence is simply a paid publish without
+  `expires_in_days`. When public access ends, the bucket and its files stay saved;
+  re-publish to bring the site back at the same URL.
 - Public websites are not listed in `revdoku.com/featured` by default. Ask the
   owner before opting in with `featured_on_community: true` or the CLI
   `--feature` flag. For an already-published website, use
