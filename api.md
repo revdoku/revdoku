@@ -383,9 +383,12 @@ folder) stays stored and version-tracked but is NOT served. This lets a bucket
 hold both a published `website/` and an unserved `scripts/` sibling. Pass an
 empty string to publish the whole bucket again.
 
-**Website lifetime.** Bucket publishing creates a normal live website and does
-not set an expiration. Temporary preview deployments are a separate future
-concept, not the current bucket publish flow.
+**Website lifetime.** Free public sites expire after 30 days; paid sites are
+permanent. Pass `expires_in_days` (a positive integer) to control it: on a free
+site you may set a *shorter* window (a longer value is capped at 30 days); on a
+paid site set it to make public access expire after N days, or omit it to stay
+permanent. When public access ends the bucket and its files stay saved, and the
+site can be relaunched (republished) to extend it.
 
 **Featured listing.** Public websites and apps are not listed in the
 `/featured.json` list by default. Pass `"featured_on_community": true` only when
@@ -1508,8 +1511,8 @@ Publication response fields:
 | `asset_base_url` | Direct public object-storage/CDN directory. |
 | `public_slug` | Stable DNS-safe bucket publication slug. |
 | `status` | `published`, `unpublished`, or another lifecycle status. |
-| `permanent` | `true` when there is no expiration. Current bucket publishes are non-expiring. |
-| `expires_at` | Legacy/future temporary-publication timestamp; bucket publishes normally return `null`. |
+| `permanent` | `true` when public access never expires (a paid site published without `expires_in_days`); `false` for free sites and any publish given an expiry. |
+| `expires_at` | ISO-8601 time when public access expires, or `null` when permanent. Controlled by the `expires_in_days` publish parameter (free is capped at 30 days). |
 | `site_mode` | Whether deep links fall back to the entrypoint. |
 | `site_type` | `website` for ordinary sites, `app` for app database/runtime metadata. |
 | `access_mode` | `public`, `password`, or `password_ask_info`. Protected websites require available protected-site capacity; `password_ask_info` asks visitors for email plus password and requires Builder or Pro. |

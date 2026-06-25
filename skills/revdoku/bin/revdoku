@@ -38,6 +38,7 @@ PUBLICATION_ANALYTICS_ENABLED="${REVDOKU_PUBLICATION_ANALYTICS_ENABLED:-}"
 PUBLICATION_CLIENT_EVENTS_ENABLED="${REVDOKU_PUBLICATION_CLIENT_EVENTS_ENABLED:-}"
 PUBLICATION_TRACKING_ENABLED="${REVDOKU_PUBLICATION_TRACKING_ENABLED:-}"
 PUBLICATION_FEATURED_ON_COMMUNITY="${REVDOKU_FEATURED_ON_COMMUNITY:-false}"
+PUBLICATION_EXPIRES_IN_DAYS="${REVDOKU_PUBLICATION_EXPIRES_IN_DAYS:-}"
 RESTORE_VERSION_ID="${REVDOKU_RESTORE_VERSION_ID:-}"
 RESTORE_COMMENT="${REVDOKU_RESTORE_COMMENT:-}"
 GRANT_TOKEN="${REVDOKU_GRANT_TOKEN:-}"
@@ -139,6 +140,9 @@ Publish options:
   --draft              Save a private draft instead of publishing live.
   --no-wait            Return as soon as the URL is reserved (don't wait for the build).
   --feature            Opt a public site into revdoku.com/featured (ask the owner first).
+  --expires-in-days N  Public access expires after N days. Free sites: max 30 (longer is
+                       capped); omit for the default 30. Paid sites: omit to stay
+                       permanent. Files stay saved; relaunch to extend.
   --publish-folder DIR Publish ONLY this top-level folder as the site (its index.html
                        becomes the root); other folders stay stored but unserved.
   --title TEXT         --description TEXT     --tag-path LABEL     --metadata JSON
@@ -300,6 +304,11 @@ while [[ $# -gt 0 ]]; do
     --feature|--feature-on-community)
       PUBLICATION_FEATURED_ON_COMMUNITY="true"
       shift
+      ;;
+    --expires-in-days)
+      [[ $# -ge 2 ]] || die "--expires-in-days requires a number of days"
+      PUBLICATION_EXPIRES_IN_DAYS="$2"
+      shift 2
       ;;
     --output)
       [[ $# -ge 2 ]] || die "--output requires a value"
@@ -531,6 +540,10 @@ PUBLICATION_ANALYTICS_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_AN
 PUBLICATION_CLIENT_EVENTS_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_CLIENT_EVENTS_ENABLED" "$PUBLICATION_CLIENT_EVENTS_ENABLED")"
 PUBLICATION_TRACKING_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_TRACKING_ENABLED" "$PUBLICATION_TRACKING_ENABLED")"
 PUBLICATION_FEATURED_ON_COMMUNITY="$(normalize_optional_bool "REVDOKU_FEATURED_ON_COMMUNITY" "$PUBLICATION_FEATURED_ON_COMMUNITY")"
+if [[ -n "$PUBLICATION_EXPIRES_IN_DAYS" ]]; then
+  [[ "$PUBLICATION_EXPIRES_IN_DAYS" =~ ^[0-9]+$ && "$PUBLICATION_EXPIRES_IN_DAYS" -gt 0 ]] \
+    || die "--expires-in-days must be a positive integer (got: $PUBLICATION_EXPIRES_IN_DAYS)"
+fi
 APPEND_TEXT_NEWLINE_BEFORE="$(normalize_optional_bool "REVDOKU_APPEND_TEXT_NEWLINE_BEFORE" "$APPEND_TEXT_NEWLINE_BEFORE")"
 APPEND_TEXT_NEWLINE_BEFORE="${APPEND_TEXT_NEWLINE_BEFORE:-true}"
 
@@ -1945,6 +1958,7 @@ publication_access_json() {
     --arg client_events_enabled "$PUBLICATION_CLIENT_EVENTS_ENABLED" \
     --arg tracking_enabled "$PUBLICATION_TRACKING_ENABLED" \
     --arg featured_on_community "$PUBLICATION_FEATURED_ON_COMMUNITY" \
+    --arg expires_in_days "$PUBLICATION_EXPIRES_IN_DAYS" \
     '{}
     + (if $access_mode != "" then {access_mode: $access_mode} else {} end)
     + (if $password != "" then {password: $password} else {} end)
@@ -1952,7 +1966,8 @@ publication_access_json() {
     + (if $analytics_enabled != "" then {publication_analytics_enabled: ($analytics_enabled == "true")} else {} end)
     + (if $client_events_enabled != "" then {publication_client_events_enabled: ($client_events_enabled == "true")} else {} end)
     + (if $tracking_enabled != "" then {tracking_enabled: ($tracking_enabled == "true")} else {} end)
-    + (if $featured_on_community == "true" then {featured_on_community: true} else {} end)'
+    + (if $featured_on_community == "true" then {featured_on_community: true} else {} end)
+    + (if $expires_in_days != "" then {expires_in_days: ($expires_in_days | tonumber)} else {} end)'
 }
 
 has_index_file() {
