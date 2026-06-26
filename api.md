@@ -358,11 +358,17 @@ curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../publication" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "entrypoint": "index.html",
     "site_mode": "spa",
     "access_mode": "public"
   }'
 ```
+
+**Home page.** The site root is always the served folder's `index.html` (or
+`index.htm`) — there is no custom entry-filename parameter. With no
+`index.html`/`index.htm`, Revdoku generates a navigation index page (a file
+listing with previews), rendering a `README.md`/`README.txt`/`index.md` on it
+below the listing, GitHub-style. Choose which folder is served with
+`publication_root_directory` (below).
 
 For a protected website, use `"access_mode": "password"`; it requires available
 protected-site capacity on the account. Use `"access_mode": "password_ask_info"`
@@ -464,8 +470,8 @@ Use `site_type: "website"` for ordinary published websites (the default). Use
 bucket app database operations at `/_revdoku/app/<operation>` and usage-policy
 metadata.
 
-If the bucket does not contain `index.html`, Revdoku publishes an Auto-Index Page
-that lists and previews files. Account or bucket-specific Auto-Index templates
+If the bucket does not contain `index.html` (or `index.htm`), Revdoku publishes an
+Auto-Index Page that lists and previews files. Account or bucket-specific Auto-Index templates
 must include the files macro as `{{files}}` or `{{ files }}`. Supported template
 macros are `{{title}}`, `{{description}}`, `{{files}}`, and `{{theme_switch}}`,
 with optional whitespace inside the braces.
@@ -502,7 +508,6 @@ curl -fsS "$REVDOKU_URL/api/v1/publish_sessions" \
   -H "Content-Type: application/json" \
   -d '{
     "bucket_title": "Marketing site",
-    "entrypoint": "index.html",
     "site_mode": "spa",
     "access_mode": "password",
     "delete_missing": true,
@@ -1495,7 +1500,6 @@ publication revoke endpoints remain available for cleanup.
 
 ```json
 {
-  "entrypoint": "index.html",
   "site_mode": "spa",
   "site_type": "app",
   "access_mode": "password",
@@ -1513,7 +1517,7 @@ Publication response fields:
 | `status` | `published`, `unpublished`, or another lifecycle status. |
 | `permanent` | `true` when public access never expires (a paid site published without `expires_in_days`); `false` for free sites and any publish given an expiry. |
 | `expires_at` | ISO-8601 time when public access expires, or `null` when permanent. Controlled by the `expires_in_days` publish parameter (free is capped at 30 days). |
-| `site_mode` | Whether deep links fall back to the entrypoint. |
+| `site_mode` | Whether deep links fall back to the index page (SPA routing). |
 | `site_type` | `website` for ordinary sites, `app` for app database/runtime metadata. |
 | `access_mode` | `public`, `password`, or `password_ask_info`. Protected websites require available protected-site capacity; `password_ask_info` asks visitors for email plus password and requires Builder or Pro. |
 | `featured_on_community` | Whether this public website is opted into the revdoku.com/featured list. |
@@ -1548,7 +1552,6 @@ including `tracking_enabled`, `publication_analytics_enabled`, and
   "bucket_title": "Marketing site",
   "bucket_description": "Generated launch assets",
   "bucket_tag_paths": ["website"],
-  "entrypoint": "index.html",
   "site_mode": "spa",
   "access_mode": "password",
   "delete_missing": true,

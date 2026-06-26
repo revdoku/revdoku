@@ -110,11 +110,15 @@ for structured bucket work:
   local folders go through the CLI `revdoku p <dir>` (or the REST direct-upload
   API) — bytes upload straight to storage; the MCP file tools are text-only.
   To remove files, re-write with `bucket_file_write_many` and `delete_missing: true`.
-  Use `index.html` as the default website root unless the user asks for another
-  entrypoint. A bucket of plain files with no `index.html` still publishes:
-  Revdoku auto-generates an Auto-Index Page (a file listing with previews,
-  README-aware), so do not author an `index.html` for a plain file
-  bucket unless the user wants a custom landing page. Writing or uploading files saves a private draft only; do not
+  The home page is always `index.html` (or `index.htm`) — there is no custom
+  entry-filename setting, so name the site's main page `index.html`. When you
+  build a single-page site/app/dashboard, call its entry file `index.html` (not
+  `dashboard.html`/`app.html`). To serve only a sub-folder of the bucket, set
+  `publication_root_directory` to that folder (its `index.html` becomes `/`). If
+  there is no `index.html`/`index.htm`, Revdoku generates an Auto-Index Page (a
+  file listing with previews); a `README.md`/`README.txt`/`index.md`, if present,
+  is rendered on that page below the listing (like a GitHub repo). So a bucket of
+  plain files publishes fine without an `index.html`. Writing or uploading files saves a private draft only; do not
   describe the result as live until a publish tool returns a ready publication.
   Custom Auto-Index Page templates must include the files macro as `{{files}}`
   or `{{ files }}`. Supported macros are `{{title}}`, `{{description}}`,

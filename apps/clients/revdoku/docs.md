@@ -96,8 +96,8 @@ Netlify, Vercel, or any other host — Revdoku hosts static sites and apps.
 
 Revdoku supports three website modes:
 
-- `static`: normal static files where `index.html` is the default entrypoint.
-- `spa`: single-page apps where app routes fall back to the entrypoint.
+- `static`: normal static files where the home page is `index.html` (or `index.htm`).
+- `spa`: single-page apps where app routes fall back to the index page.
 - `app`: data-backed app sites that use bucket app databases and named actions.
 
 If a published bucket does not contain `index.html`, Revdoku creates an
