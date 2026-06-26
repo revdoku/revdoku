@@ -1945,10 +1945,6 @@ effective_metadata_json() {
   fi
 }
 
-default_entrypoint() {
-  printf "index.html"
-}
-
 publication_access_json() {
   "$JQ_BIN" -nc \
     --arg access_mode "$PUBLICATION_ACCESS_MODE" \
@@ -2494,11 +2490,10 @@ store_bucket_session_upload() {
 
 publish_bucket() {
   local bucket_id="$1"
-  local payload response response_file url entrypoint metadata access
-  entrypoint="$(default_entrypoint)"
+  local payload response response_file url metadata access
   metadata="$(effective_metadata_json)"
   access="$(publication_access_json)"
-  payload="$("$JQ_BIN" -nc --arg entrypoint "$entrypoint" --argjson metadata "$metadata" --argjson access "$access" '{entrypoint:$entrypoint, metadata:$metadata} + $access')"
+  payload="$("$JQ_BIN" -nc --argjson metadata "$metadata" --argjson access "$access" '{metadata:$metadata} + $access')"
   response_file="$(mktemp)"
   if ! http_json POST "/api/v1/buckets/${bucket_id}/publication" "$payload" > "$response_file"; then
     rm -f "$response_file"
@@ -2551,18 +2546,16 @@ publish_session_manifest_json() {
 
 publish_session_payload() {
   local manifest_json="$1"
-  local title tag_paths entrypoint metadata access
+  local title tag_paths metadata access
   title="$TITLE"
   [[ -n "$title" ]] || title="$(default_title)"
   tag_paths="$(tag_paths_json)"
-  entrypoint="$(default_entrypoint)"
   metadata="$(effective_metadata_json)"
   access="$(publication_access_json)"
   "$JQ_BIN" -nc \
     --arg title "$title" \
     --arg description "$DESCRIPTION" \
     --arg bucket_id "$BUCKET_ID" \
-    --arg entrypoint "$entrypoint" \
     --argjson metadata "$metadata" \
     --argjson access "$access" \
     --argjson tag_paths "$tag_paths" \
@@ -2570,7 +2563,6 @@ publish_session_payload() {
     '{
       title: $title,
       bucket_title: $title,
-      entrypoint: $entrypoint,
       metadata: $metadata,
       delete_missing: true,
       files: $files
