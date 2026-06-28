@@ -163,6 +163,19 @@ for structured bucket work:
   deployment yet. If publishing returns `PRIVATE_PUBLICATION_STORAGE_NOT_CONFIGURED`,
   keep using the private bucket and tell the user protected website publishing
   is not configured for this deployment yet.
+- Visibility change lock: a bucket can be visibility-locked so its public/private state
+  can't be changed by accident. While locked, these are blocked: first publish,
+  unpublish, access-mode changes (public ↔ password ↔ password+email), public-slug
+  renames, and removing or changing a custom domain. These still work while locked:
+  re-publishing the SAME access mode (renewing a live site) and adding a FIRST custom
+  domain. Lock with `bucket_lock_visibility_changes` (also available over the API and the
+  web UI); it is idempotent and protects a sensitive bucket in one step. Unlocking is
+  web-UI-only (Settings → Misc, type "confirm") — there is no unlock tool. If any
+  publish/unpublish/access/slug/custom-domain call returns
+  `BUCKET_VISIBILITY_CHANGE_LOCKED`, tell the user to unlock it themselves in the Revdoku
+  app; never work around it. When you publish a PRIVATE or password-protected website that
+  holds sensitive data, offer to lock its visibility so it can't later be published as
+  public by accident.
 - Publishing is asynchronous: publish/finalize starts the background build and
   agents must check publication status separately before telling the user the
   site is live. For MCP/API flows, call `bucket_publication_get` or
@@ -171,13 +184,16 @@ for structured bucket work:
   may poll for convenience, but agent workflows should still treat the status
   check as a separate step. A settings/access-only change does not re-upload
   files.
-- Bucket publishing publishes a live public website. On the **free plan** public
-  access lasts 30 days and can be extended once by re-publishing (relaunching) the
-  same bucket; **paid plans** are ongoing. Omit `expires_in_days` for ongoing
-  access (paid), or pass it to expire after N days (free is capped at 30). There is
-  no `permanent` input flag — permanence is simply a paid publish without
-  `expires_in_days`. When public access ends, the bucket and its files stay saved;
-  re-publish to bring the site back at the same URL.
+- Bucket publishing publishes a **permanent** live public website on every plan; it
+  stays live until the user unpublishes. The **free plan** allows up to **2 public
+  websites** and is for **personal / non-commercial use**; paid plans raise the limit.
+- To let the user preview the current draft before publishing for real, use the
+  **preview** shortcut (`bucket_publish_preview` over MCP, `POST
+  /api/v1/buckets/:id/publication/preview` over REST, or `revdoku preview` on the CLI).
+  It publishes a temporary public `preview-<slug>` copy that auto-expires (optional
+  `expires_in_minutes`, default 15, max 30 days) and is noindex, without touching the
+  main website. Re-running republishes to the same preview slug. Poll publish status,
+  then share the preview URL and note when it expires.
 - Public websites are not listed in `revdoku.com/featured` by default. Ask the
   owner before opting in with `featured_on_community: true` or the CLI
   `--feature` flag. For an already-published website, use

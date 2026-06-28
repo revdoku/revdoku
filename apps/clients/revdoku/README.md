@@ -1,6 +1,6 @@
 # REVDOKU
 
-Publish websites from Claude, ChatGPT, Codex, and other AI agents using Revdoku.
+Publish websites from Claude, ChatGPT, Codex, Gemini, and other AI agents using Revdoku.
 A few seconds from idea to a live website you can share — `revdoku p` and you
 have a URL. Nothing goes live until you publish (use `--draft` to store privately).
 
