@@ -389,12 +389,15 @@ folder) stays stored and version-tracked but is NOT served. This lets a bucket
 hold both a published `website/` and an unserved `scripts/` sibling. Pass an
 empty string to publish the whole bucket again.
 
-**Website lifetime.** Free public sites expire after 30 days; paid sites are
-permanent. Pass `expires_in_days` (a positive integer) to control it: on a free
-site you may set a *shorter* window (a longer value is capped at 30 days); on a
-paid site set it to make public access expire after N days, or omit it to stay
-permanent. When public access ends the bucket and its files stay saved, and the
-site can be relaunched (republished) to extend it.
+**Website lifetime.** Published websites are permanent on every plan. The Free plan
+allows up to 2 public websites and is for personal / non-commercial use.
+
+**Preview (staging).** `POST /api/v1/buckets/:id/publication/preview` publishes the
+bucket's current draft to a temporary public `preview-<slug>` URL that auto-expires
+and is `noindex`, without touching the main publication or counting toward the
+live-site limit. Optional `expires_in_minutes` (default 15, max 43200 = 30 days);
+re-running republishes to the same preview slug. Like publishing, it is async — poll
+the returned publication's `publish_state` until `ready`, then share its `expires_at`.
 
 **Featured listing.** Public websites and apps are not listed in the
 `/featured.json` list by default. Pass `"featured_on_community": true` only when
@@ -430,7 +433,7 @@ response:
     "publish_pending": true,
     "site_mode": "spa",
     "access_mode": "public",
-    "permanent": true
+    "expires_at": null
   }
 }
 ```
@@ -743,9 +746,9 @@ it. The response body includes `fallback_url`, `signup_url`, and a `hint` descri
 this browser-grant recovery. Do not ask for a Revdoku password, TOTP, backup code,
 payment details, or full chat history.
 
-(Self-hosted deployments may opt into account creation through this endpoint with
-`REVDOKU_AGENT_ACCOUNT_CREATION_ENABLED=true`; even then, denied or invalid signup
-attempts keep the same generic response.)
+This endpoint never creates accounts. New users must sign up through the web UI at
+`/users/sign_up`; agents can only sign in to an email that already has a Revdoku
+account.
 
 ```json
 {
@@ -1256,10 +1259,18 @@ for setup, inspection, and repair. Published apps should use named actions.
 | `DELETE` | `/api/v1/buckets/:bucket_id/files/:id` | Delete a file. |
 | `POST` | `/api/v1/buckets/:bucket_id/lock` | Lock the whole bucket. |
 | `DELETE` | `/api/v1/buckets/:bucket_id/lock` | Unlock the bucket. |
+| `POST` | `/api/v1/buckets/:id/visibility_change_lock` | Lock the bucket's *visibility* so its public/private state can't change by accident (idempotent; available to API/MCP/UI). |
+| `POST` | `/api/v1/buckets/:id/visibility_change_unlock` | Unlock visibility. Session/web-UI only and requires `confirmation: "confirm"`; API keys get `403 VISIBILITY_CHANGE_UNLOCK_UI_ONLY`. |
 | `POST` | `/api/v1/buckets/:bucket_id/files/lock` | Lock by path. |
 | `POST` | `/api/v1/buckets/:bucket_id/files/:id/lock` | Lock by file id. |
 | `DELETE` | `/api/v1/buckets/:bucket_id/files/:id/lock` | Unlock a file. |
 | `POST` | `/api/v1/direct_uploads` | Create a direct-upload URL. |
+
+While a bucket's visibility is locked, these return `423 BUCKET_VISIBILITY_CHANGE_LOCKED`:
+first publish, unpublish, access-mode change (public ↔ password ↔ password+email),
+public-slug rename, and removing or changing a custom domain. Re-publishing the **same**
+access mode (renewing a live site) and adding a **first** custom domain are still allowed.
+Unlocking is session/web-UI only (`confirmation: "confirm"`); there is no API/MCP unlock.
 
 #### Read a file's content
 
@@ -1503,7 +1514,7 @@ publication revoke endpoints remain available for cleanup.
   "site_mode": "spa",
   "site_type": "app",
   "access_mode": "password",
-  "permanent": true
+  "expires_at": null
 }
 ```
 
@@ -1515,8 +1526,7 @@ Publication response fields:
 | `asset_base_url` | Direct public object-storage/CDN directory. |
 | `public_slug` | Stable DNS-safe bucket publication slug. |
 | `status` | `published`, `unpublished`, or another lifecycle status. |
-| `permanent` | `true` when public access never expires (a paid site published without `expires_in_days`); `false` for free sites and any publish given an expiry. |
-| `expires_at` | ISO-8601 time when public access expires, or `null` when permanent. Controlled by the `expires_in_days` publish parameter (free is capped at 30 days). |
+| `expires_at` | ISO-8601 time when public access expires, or `null` (the default) for a permanent site. Set only on ephemeral preview/staging publications (created via the preview endpoint). |
 | `site_mode` | Whether deep links fall back to the index page (SPA routing). |
 | `site_type` | `website` for ordinary sites, `app` for app database/runtime metadata. |
 | `access_mode` | `public`, `password`, or `password_ask_info`. Protected websites require available protected-site capacity; `password_ask_info` asks visitors for email plus password and requires Builder or Pro. |
@@ -1555,7 +1565,6 @@ including `tracking_enabled`, `publication_analytics_enabled`, and
   "site_mode": "spa",
   "access_mode": "password",
   "delete_missing": true,
-  "permanent": true,
   "files": [
     {
       "path": "index.html",

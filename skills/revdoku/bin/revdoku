@@ -38,7 +38,7 @@ PUBLICATION_ANALYTICS_ENABLED="${REVDOKU_PUBLICATION_ANALYTICS_ENABLED:-}"
 PUBLICATION_CLIENT_EVENTS_ENABLED="${REVDOKU_PUBLICATION_CLIENT_EVENTS_ENABLED:-}"
 PUBLICATION_TRACKING_ENABLED="${REVDOKU_PUBLICATION_TRACKING_ENABLED:-}"
 PUBLICATION_FEATURED_ON_COMMUNITY="${REVDOKU_FEATURED_ON_COMMUNITY:-false}"
-PUBLICATION_EXPIRES_IN_DAYS="${REVDOKU_PUBLICATION_EXPIRES_IN_DAYS:-}"
+PREVIEW_EXPIRES_IN_MINUTES="${REVDOKU_PREVIEW_EXPIRES_IN_MINUTES:-}"
 RESTORE_VERSION_ID="${REVDOKU_RESTORE_VERSION_ID:-}"
 RESTORE_COMMENT="${REVDOKU_RESTORE_COMMENT:-}"
 GRANT_TOKEN="${REVDOKU_GRANT_TOKEN:-}"
@@ -131,6 +131,8 @@ Most-used commands (short alias, then full name — either works):
   st,   status           Show connection and account status.
         login            Connect in the browser and save an API key.
   down, unpublish        Take this folder's site offline (keeps the URL for later).
+        preview          Publish a temporary preview-<slug> copy of the current draft
+                         (auto-expires; use --expires-in-minutes N, default 15).
 
 Publish options:
   --protected          Publish as a password-protected website (alias: --private).
@@ -140,9 +142,8 @@ Publish options:
   --draft              Save a private draft instead of publishing live.
   --no-wait            Return as soon as the URL is reserved (don't wait for the build).
   --feature            Opt a public site into revdoku.com/featured (ask the owner first).
-  --expires-in-days N  Public access expires after N days. Free sites: max 30 (longer is
-                       capped); omit for the default 30. Paid sites: omit to stay
-                       permanent. Files stay saved; relaunch to extend.
+  --expires-in-minutes N  Preview lifetime in minutes for `revdoku preview` (default 15,
+                       max 43200 = 30 days). Main publishes are always permanent.
   --publish-folder DIR Publish ONLY this top-level folder as the site (its index.html
                        becomes the root); other folders stay stored but unserved.
   --title TEXT         --description TEXT     --tag-path LABEL     --metadata JSON
@@ -305,9 +306,9 @@ while [[ $# -gt 0 ]]; do
       PUBLICATION_FEATURED_ON_COMMUNITY="true"
       shift
       ;;
-    --expires-in-days)
-      [[ $# -ge 2 ]] || die "--expires-in-days requires a number of days"
-      PUBLICATION_EXPIRES_IN_DAYS="$2"
+    --expires-in-minutes)
+      [[ $# -ge 2 ]] || die "--expires-in-minutes requires a number of minutes"
+      PREVIEW_EXPIRES_IN_MINUTES="$2"
       shift 2
       ;;
     --output)
@@ -370,6 +371,7 @@ while [[ $# -gt 0 ]]; do
           st|status)      ACTION="connection_status"; shift ;;
           login)          LOGIN="true"; shift ;;
           down|unpublish) ACTION="unpublish_bucket"; shift ;;
+          preview)        ACTION="preview_bucket"; shift ;;
           files)          ACTION="list_files"; shift ;;
           read)           [[ $# -ge 2 && "$2" != -* ]] || die "read needs a bucket PATH right after it, e.g. revdoku read index.html --bucket-id ID"; ACTION="read_file"; READ_FILE_PATH="$2"; shift 2 ;;
           versions)       ACTION="list_versions"; shift ;;
@@ -540,9 +542,9 @@ PUBLICATION_ANALYTICS_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_AN
 PUBLICATION_CLIENT_EVENTS_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_CLIENT_EVENTS_ENABLED" "$PUBLICATION_CLIENT_EVENTS_ENABLED")"
 PUBLICATION_TRACKING_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_TRACKING_ENABLED" "$PUBLICATION_TRACKING_ENABLED")"
 PUBLICATION_FEATURED_ON_COMMUNITY="$(normalize_optional_bool "REVDOKU_FEATURED_ON_COMMUNITY" "$PUBLICATION_FEATURED_ON_COMMUNITY")"
-if [[ -n "$PUBLICATION_EXPIRES_IN_DAYS" ]]; then
-  [[ "$PUBLICATION_EXPIRES_IN_DAYS" =~ ^[0-9]+$ && "$PUBLICATION_EXPIRES_IN_DAYS" -gt 0 ]] \
-    || die "--expires-in-days must be a positive integer (got: $PUBLICATION_EXPIRES_IN_DAYS)"
+if [[ -n "$PREVIEW_EXPIRES_IN_MINUTES" ]]; then
+  [[ "$PREVIEW_EXPIRES_IN_MINUTES" =~ ^[0-9]+$ && "$PREVIEW_EXPIRES_IN_MINUTES" -gt 0 ]] \
+    || die "--expires-in-minutes must be a positive integer (got: $PREVIEW_EXPIRES_IN_MINUTES)"
 fi
 APPEND_TEXT_NEWLINE_BEFORE="$(normalize_optional_bool "REVDOKU_APPEND_TEXT_NEWLINE_BEFORE" "$APPEND_TEXT_NEWLINE_BEFORE")"
 APPEND_TEXT_NEWLINE_BEFORE="${APPEND_TEXT_NEWLINE_BEFORE:-true}"
@@ -1475,6 +1477,31 @@ unpublish_bucket() {
       }' <<<"$response"
 }
 
+preview_bucket() {
+  [[ -n "$BUCKET_ID" ]] || die "preview requires --bucket-id (or a folder bound via .revdoku)"
+  local payload response publication_id publish_state final_response
+  payload="$("$JQ_BIN" -nc --arg m "$PREVIEW_EXPIRES_IN_MINUTES" \
+    'if $m != "" then {expires_in_minutes: ($m | tonumber)} else {} end')"
+  response="$(http_json POST "/api/v1/buckets/${BUCKET_ID}/publication/preview" "$payload")" || return 1
+  publication_id="$("$JQ_BIN" -r '.data.publication.id // empty' <<<"$response" 2>/dev/null || true)"
+  publish_state="$("$JQ_BIN" -r '.data.publication.publish_state // "ready"' <<<"$response" 2>/dev/null || true)"
+  if [[ -n "$publication_id" && "$publish_state" != "ready" && "$publish_state" != "null" && -n "$publish_state" ]]; then
+    final_response="$(wait_for_publication_ready "$publication_id")" || return 1
+    response="$final_response"
+  fi
+  "$JQ_BIN" -c '
+    .data.publication as $p
+    | {
+        success: (.success // true),
+        data: {
+          publication: $p,
+          public_url: $p.public_url,
+          expires_at: $p.expires_at,
+          guidance: "Temporary preview is live and auto-expires. Publish for real with: revdoku p"
+        }
+      }' <<<"$response"
+}
+
 feature_publication_on_community() {
   [[ -n "$BUCKET_ID" ]] || die "feature requires --bucket-id (or a folder bound via .revdoku)"
   local publications_response publication_id payload response
@@ -1641,7 +1668,7 @@ list_public_buckets() {
           title,
           url: .public_url,
           status,
-          permanent: (.permanent // false),
+          permanent: (.expires_at == null),
           expires_at,
           created_at,
           hits: (.analytics.hits_all_time // 0)
@@ -1855,6 +1882,10 @@ case "$ACTION" in
     unpublish_bucket
     exit 0
     ;;
+  preview_bucket)
+    preview_bucket
+    exit 0
+    ;;
   archive_bucket)
     archive_bucket
     exit 0
@@ -1954,7 +1985,6 @@ publication_access_json() {
     --arg client_events_enabled "$PUBLICATION_CLIENT_EVENTS_ENABLED" \
     --arg tracking_enabled "$PUBLICATION_TRACKING_ENABLED" \
     --arg featured_on_community "$PUBLICATION_FEATURED_ON_COMMUNITY" \
-    --arg expires_in_days "$PUBLICATION_EXPIRES_IN_DAYS" \
     '{}
     + (if $access_mode != "" then {access_mode: $access_mode} else {} end)
     + (if $password != "" then {password: $password} else {} end)
@@ -1962,8 +1992,7 @@ publication_access_json() {
     + (if $analytics_enabled != "" then {publication_analytics_enabled: ($analytics_enabled == "true")} else {} end)
     + (if $client_events_enabled != "" then {publication_client_events_enabled: ($client_events_enabled == "true")} else {} end)
     + (if $tracking_enabled != "" then {tracking_enabled: ($tracking_enabled == "true")} else {} end)
-    + (if $featured_on_community == "true" then {featured_on_community: true} else {} end)
-    + (if $expires_in_days != "" then {expires_in_days: ($expires_in_days | tonumber)} else {} end)'
+    + (if $featured_on_community == "true" then {featured_on_community: true} else {} end)'
 }
 
 has_index_file() {
