@@ -205,7 +205,9 @@ for structured bucket work:
 - Any plan may pass `slug_suggestions` (ordered website names) to the publish
   tools to steer the public URL (first available wins, else a numeric suffix);
   otherwise the slug defaults to the bucket's name. Applies on first publish; the
-  slug can be renamed later.
+  slug can be renamed later. Slugs must be at least 9 characters; some words are
+  reserved (the list is not published) — if a slug is rejected as reserved, just
+  pick a different one.
 - Website analytics (visit/view counts) and browser-side event tracking are **on
   by default for every published website, including app sites** — do not pass
   analytics/tracking flags unless the user explicitly asks to turn tracking off.

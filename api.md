@@ -414,7 +414,9 @@ each name to a slug and uses the first available one; if all are taken it append
 a numeric suffix (`california-weather-1`). When no suggestion is given the slug
 defaults to the **bucket's name**; a random slug is used only if that's unusable.
 Slug selection applies when first creating a publication; the slug can be renamed
-later (`PATCH .../custom_domains/public_slug`).
+later (`PATCH .../custom_domains/public_slug`). Slugs must be at least 9 characters;
+some words are reserved (the list is not published) — a reserved slug is simply
+rejected, so on rejection pick a different one.
 
 Publishing is **asynchronous**. The request returns HTTP `202 Accepted` with the
 publication in a `queued`/`processing` state — the bundle is built in the
