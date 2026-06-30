@@ -2793,24 +2793,31 @@ should_skip_storage_path() {
   lower_rel="$(printf "%s" "$rel" | tr '[:upper:]' '[:lower:]')"
   lower_name="$(printf "%s" "$name" | tr '[:upper:]' '[:lower:]')"
 
+  # The pattern lines below are GENERATED from apps/web/config/upload_safety.json by
+  # scripts/generate-cli-upload-safety.rb so the CLI's local skip-list never drifts
+  # from the server policy (the server is the hard gate; this is a local-UX mirror).
+  # Edit the JSON and re-run the generator — do not hand-edit between the markers.
   IFS='/' read -r -a path_parts <<< "$lower_rel"
   for part in "${path_parts[@]}"; do
     case "$part" in
+      # >>> revdoku:generated local_only_basenames
       .ds_store|.git|.hg|.svn|.revdoku|.terraform|.cache|.parcel-cache|.turbo|.vite|node_modules)
+      # <<< revdoku:generated local_only_basenames
         return 0
         ;;
       agents.md|claude.md)
         # Agent-instruction files (e.g. created by `revdoku init`) are dev meta,
-        # not website content — never publish them.
+        # not website content — never publish them. (Not generated; CLI-specific.)
         return 0
         ;;
+      # >>> revdoku:generated prohibited_basenames
       .env|.npmrc|.pypirc|.netrc|id_rsa|id_rsa.pub|id_dsa|id_dsa.pub|id_ecdsa|id_ecdsa.pub|id_ed25519|id_ed25519.pub)
+      # <<< revdoku:generated prohibited_basenames
         return 0
         ;;
-      .env.*|env.local|env.production|env.staging|env.development|env.test)
-        return 0
-        ;;
-      *.pem|*.key|*.p12|*.pfx|*.crt|*.cer|*.der|*.kdb|*.jks|*.mobileprovision|api-token.*|api_key.*|credentials.*|credential.*|secrets.*|secret.*|private-key.*|private_key.*)
+      # >>> revdoku:generated prohibited_name_globs
+      .env.*|env.local|env.production|env.staging|env.development|env.test|*.pem|*.key|*.p12|*.pfx|*.crt|*.cer|*.der|*.kdb|*.jks|*.mobileprovision|api-token.*|api_key.*|credentials.*|credential.*|secrets.*|secret.*|*.secret|*.secrets|private-key.*|private_key.*)
+      # <<< revdoku:generated prohibited_name_globs
         return 0
         ;;
     esac
@@ -2819,7 +2826,9 @@ should_skip_storage_path() {
   extension="${lower_name##*.}"
   if [[ "$lower_name" == *.* && "$extension" != "$lower_name" ]]; then
     case ".${extension}" in
-      .exe|.com|.scr|.pif|.cpl|.dll|.sys|.drv|.msi|.msp|.app|.dmg|.pkg|.deb|.rpm|.apk|.ipa|.jar|.jnlp|.run|.bin|.lnk)
+      # >>> revdoku:generated prohibited_extensions
+      .exe|.com|.scr|.pif|.cpl|.dll|.sys|.drv|.msi|.msp|.app|.dmg|.pkg|.deb|.rpm|.apk|.ipa|.jar|.jnlp|.run|.bin|.lnk|.pem|.key|.p12|.pfx|.crt|.cer|.der|.kdb|.jks|.mobileprovision|.zip|.zipx|.tar|.rar|.gz|.gzip|.tgz|.bz2|.tbz|.tbz2|.xz|.txz|.7z|.z|.lz|.lzma|.lz4|.zst|.zstd|.cab|.arj|.lzh|.lha|.war|.ear|.iso|.img|.vhd|.vhdx|.vmdk)
+      # <<< revdoku:generated prohibited_extensions
         return 0
         ;;
     esac

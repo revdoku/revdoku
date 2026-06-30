@@ -216,8 +216,8 @@ for structured bucket work:
   It starts async unpublish; call `bucket_publication_get` separately until
   `status` is `unpublished` before archiving/deleting or saying public access is
   removed. Tell the user that republishing the same bucket restores the same URL.
-- Use `bucket_archive` and `bucket_unarchive` for normal bucket
-  lifecycle cleanup. Library buckets cannot be archived or unarchived.
+- Use `bucket_archive` and `bucket_unarchive` for bucket
+  lifecycle cleanup.
   Published buckets must be unpublished before archive; if
   `archive.required_action` is `unpublish_first`, unpublish first only after
   user confirmation.
@@ -238,7 +238,7 @@ for structured bucket work:
 - Use `revdoku_browser_login_link` when the user asks to open the Revdoku
   dashboard, manage agent/API access, or use another Revdoku UI
   page the tool cannot show directly. Use `/buckets` for the dashboard,
-  `/library` for Library settings, `/account/access` for people/API key/agent
+  `/account/access` for people/API key/agent
   access. Tell the user the link is single-use,
   expires quickly, and can usually be opened from a terminal with Cmd-click on
   macOS or Ctrl-click on Windows/Linux. If Revdoku says browser login links are
@@ -298,9 +298,8 @@ also saves the granted bucket id to `~/.revdoku/credentials.bucket` so
 later `~/.revdoku/bin/revdoku p PATH` commands store into that bucket by
 default. Do not print or repeat the API key.
 Follow the returned guidance exactly; it tells you whether this connection is
-account-wide or limited to selected buckets, reminds you that the Library is
-read-only by default, and says to publish only when the user asks for a website
-link.
+account-wide or limited to selected buckets, and says to publish only when the
+user asks for a website link.
 
 ## Publish
 
@@ -505,7 +504,7 @@ The CLI uses verb subcommands (aliases in parentheses):
 - `delete`: with `--bucket-id`, permanently delete an unpublished bucket. The CLI fetches and passes the server-returned `delete.confirmation` token internally; use only after explicit destructive confirmation.
 - `account`: print account, plan, and storage status as JSON with full-account credentials. Bucket-scoped agent credentials are denied this; to confirm a bucket-scoped agent connection works use `status`, or open Revdoku in a browser to review account status when needed.
 - `sites`: print active website publications and URLs as JSON. Each publication includes `hits`, derived from `analytics.hits_all_time` in the HTTP API.
-- `dashboard`: create a one-time browser login link for the Revdoku dashboard. To reach Library settings or Account > Access, open the dashboard and navigate there.
+- `dashboard`: create a one-time browser login link for the Revdoku dashboard. To reach Account > Access, open the dashboard and navigate there.
 - `grant TOKEN`: exchange a one-time grant copied from the Revdoku app and save the returned API key.
 
 ## Modifier flags
@@ -556,10 +555,10 @@ The CLI uses verb subcommands (aliases in parentheses):
   version, then run `~/.revdoku/bin/revdoku --bucket-id bkt_... restore bktrv_...`.
   Explain that Revdoku creates a new latest version and keeps newer versions in
   history.
-- If asked to open Revdoku, the dashboard, Library, all access, agents, API
+- If asked to open Revdoku, the dashboard, all access, agents, API
   keys, or another UI-only page, create a browser login link with
   `~/.revdoku/bin/revdoku dashboard` and tell the user to navigate to the page
-  they want (Library settings, Account > Access, etc.) from there. Tell the user
+  they want (Account > Access, etc.) from there. Tell the user
   the link is single-use and expires quickly. If Revdoku says browser login links
   are disabled because two-factor authentication is enabled or required, tell the
   user to open Revdoku through the normal browser sign-in flow instead.

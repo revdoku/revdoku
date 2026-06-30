@@ -816,7 +816,6 @@ Common `redirect_path` values:
 | Path | Destination |
 | --- | --- |
 | `/buckets` | Bucket dashboard. |
-| `/library` | Library settings. |
 | `/account/access` | Members, agents, and API keys. |
 
 ### Bucket Endpoints
@@ -922,8 +921,8 @@ specific file locks. Conflicts return HTTP `423` with code `BUCKET_LOCKED`.
 
 #### Archive, unarchive, and permanent delete
 
-Library buckets cannot be archived, unarchived, or deleted. Normal buckets
-with active published websites must be unpublished first.
+Buckets with active published websites must be unpublished before they can be
+archived or deleted.
 
 ```sh
 curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../archive" \
@@ -1713,7 +1712,6 @@ session-keyed upload/delete control calls.
 | --- | --- | --- |
 | `404` | `BUCKET_NOT_FOUND` | Bucket does not exist or is not visible to this key. |
 | `404` | `FILE_NOT_FOUND` | File does not exist or is not visible to this key. |
-| `403` | `LIBRARY_BUCKET_IMMUTABLE` | Library bucket cannot be archived, unarchived, or deleted. |
 | `403` | `BUCKET_DELETE_ADMIN_REQUIRED` | Only an account administrator can permanently delete this bucket, except for empty unpublished cleanup buckets created by the same user. |
 | `409` | `BUCKET_PUBLICATION_ACTIVE` | Unpublish this bucket before archiving or deleting it. |
 | `409` | `BUCKET_ALREADY_ARCHIVED` | Bucket is already archived. |
@@ -1731,7 +1729,6 @@ session-keyed upload/delete control calls.
 | HTTP | Code | Meaning |
 | --- | --- | --- |
 | `403` | `PUBLICATION_LIMIT_REACHED` | Account is at the public-site limit. |
-| `403` | `LIBRARY_BUCKET_PUBLISH_FORBIDDEN` | Library bucket cannot be published. |
 | `409` | `PUBLISH_SESSION_STALE` | Publish session is out of date; recreate or refresh. |
 | `410` | `PUBLISH_SESSION_EXPIRED` | Publish session expired; create a new one. |
 | `503` | `PUBLIC_STORAGE_NOT_CONFIGURED` | Public publishing is not configured for this deployment. |
