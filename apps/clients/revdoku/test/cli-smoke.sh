@@ -87,7 +87,7 @@ if [[ -z "$GRANT_TOKEN" ]]; then
       account = Account.create!(name: "CLI Smoke #{timestamp}", owner: user, personal: true, max_storage_mb: 5120, max_account_connections: 10)
       AccountMember.create!(account: account, user: user, role: :owner)
       bucket = ActsAsTenant.with_tenant(account) do
-        account.buckets.create!(title: "CLI Smoke Selected #{timestamp}", bucket_kind: :normal, source: :api)
+        account.buckets.create!(title: "CLI Smoke Selected #{timestamp}", source: :api)
       end
       account.complete_setup!
       account.update!(max_storage_mb: 5120, max_buckets: 10, max_live_publications: 10, max_account_connections: 10)
