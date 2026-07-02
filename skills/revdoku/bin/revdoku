@@ -1687,6 +1687,10 @@ print_acceptable_use_hint() {
   echo "Published content is subject to the Acceptable Use Policy: https://revdoku.com/acceptable-use" >&2
 }
 
+print_publish_next_steps_hint() {
+  echo "Next: revdoku o (open site) | revdoku st (status) | revdoku dashboard" >&2
+}
+
 # Publishing is asynchronous: POST /publication and publish-session finalize
 # return 202 with a publication whose build runs in the background. Poll the
 # publication until its publish_state is terminal so we never print a live URL
@@ -2857,6 +2861,7 @@ if [[ "$PUBLISH" == "true" ]]; then
     write_project_binding "$LAST_PUBLISH_SESSION_BUCKET_ID" "$publish_url"
     print_terminal_link_hint
     print_acceptable_use_hint
+    print_publish_next_steps_hint
     printf "%s\n" "$publish_url"
     exit 0
   fi
@@ -2905,6 +2910,7 @@ if [[ "$PUBLISH" == "true" ]]; then
   write_project_binding "$bucket_id" "$publish_url"
   print_terminal_link_hint
   print_acceptable_use_hint
+  print_publish_next_steps_hint
   printf "%s\n" "$publish_url"
 else
   # Show the owner a clickable dashboard link, not just the bkt_ id. stdout stays

@@ -237,6 +237,7 @@ main() {
   write_client_version
   echo ""
   echo "Store files with the ${SKILL_NAME} skill, or run ${USER_BIN_DIR}/revdoku directly."
+  echo "Next: ${USER_BIN_DIR}/revdoku login    then: ${USER_BIN_DIR}/revdoku p <folder>  (publish it live)"
 }
 
 main "$@"
