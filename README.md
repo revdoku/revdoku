@@ -224,7 +224,7 @@ revdoku p --protected --generate-password   # password-protected site
 Re-running `revdoku p` updates the **same** site (the bucket is remembered in a
 local `.revdoku` file). `revdoku open` opens it in a browser; `revdoku ls` lists
 your sites; `revdoku --help` shows every command. Start a new project with
-`revdoku init` (add `--template <id>` for a database-backed app starter).
+`revdoku init`.
 
 Common commands have a short alias and a full name (either works):
 `p`/`publish`, `ls`/`list`, `o`/`open`, `i`/`init`, `st`/`status`,

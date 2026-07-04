@@ -1,0 +1,64 @@
+<!doctype html>
+<!--
+  Built-in Revdoku form — no database needed.
+
+  Drop a <form method="POST" action="/_revdoku/form/<name>"> into any published
+  site (public or password-protected). Submissions appear in the bucket's Forms
+  tab (with CSV export) and email the owner in real time.
+
+  - <name> is lowercase letters/digits/-/_ (e.g. contact, quote, feedback).
+  - Keep the hidden "_gotcha" honeypot field — bots fill it; humans don't.
+  - Public sites: add the Cloudflare Turnstile widget (uncomment below) when
+    Turnstile keys are configured in the bucket's Variables & Secrets.
+  - Use the app database instead only when visitors must READ shared data back
+    (lists, votes, counts, search) — see app-building-guide.md.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Contact us</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 4rem auto; padding: 0 1rem; }
+      label { display: block; margin: 1rem 0 0.25rem; font-weight: 600; }
+      input, textarea { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 0.375rem; font: inherit; }
+      textarea { min-height: 8rem; }
+      button { margin-top: 1.5rem; padding: 0.6rem 1.2rem; border: 0; border-radius: 0.375rem; background: #4f46e5; color: #fff; font-weight: 600; cursor: pointer; }
+      .thanks { display: none; padding: 1rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 0.5rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Contact us</h1>
+
+    <!-- Shown after a successful submit (the endpoint redirects back with ?submitted=1). -->
+    <p class="thanks" id="thanks">Thanks — we got your message and will be in touch.</p>
+
+    <form method="POST" action="/_revdoku/form/contact">
+      <label for="name">Name</label>
+      <input id="name" type="text" name="name" required />
+
+      <label for="email">Email</label>
+      <input id="email" type="email" name="email" required />
+
+      <label for="message">Message</label>
+      <textarea id="message" name="message" required></textarea>
+
+      <!-- Anti-spam honeypot: keep hidden, leave empty. -->
+      <input type="text" name="_gotcha" tabindex="-1" autocomplete="off"
+             style="position:absolute;left:-9999px" aria-hidden="true" />
+
+      <!-- Public-site spam check — uncomment and set your site key:
+      <div class="cf-turnstile" data-sitekey="YOUR_TURNSTILE_SITE_KEY"></div>
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+      -->
+
+      <button type="submit">Send</button>
+    </form>
+
+    <script>
+      if (new URLSearchParams(location.search).get("submitted") === "1") {
+        document.getElementById("thanks").style.display = "block";
+      }
+    </script>
+  </body>
+</html>

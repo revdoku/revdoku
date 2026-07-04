@@ -37,7 +37,6 @@ PUBLICATION_REGENERATE_PASSWORD="${REVDOKU_PUBLICATION_REGENERATE_PASSWORD:-fals
 PUBLICATION_ANALYTICS_ENABLED="${REVDOKU_PUBLICATION_ANALYTICS_ENABLED:-}"
 PUBLICATION_CLIENT_EVENTS_ENABLED="${REVDOKU_PUBLICATION_CLIENT_EVENTS_ENABLED:-}"
 PUBLICATION_TRACKING_ENABLED="${REVDOKU_PUBLICATION_TRACKING_ENABLED:-}"
-PUBLICATION_FEATURED_ON_COMMUNITY="${REVDOKU_FEATURED_ON_COMMUNITY:-false}"
 PREVIEW_EXPIRES_IN_MINUTES="${REVDOKU_PREVIEW_EXPIRES_IN_MINUTES:-}"
 RESTORE_VERSION_ID="${REVDOKU_RESTORE_VERSION_ID:-}"
 RESTORE_COMMENT="${REVDOKU_RESTORE_COMMENT:-}"
@@ -127,7 +126,7 @@ Most-used commands (short alias, then full name — either works):
                          Re-running updates the same site (remembered in .revdoku).
   ls,   list             List your sites and buckets.
   o,    open             Open this folder's live site in the browser (--dashboard for the dashboard).
-  i,    init [PATH]      Scaffold a starter site + agent instructions here (--template ID, --list-templates).
+  i,    init [PATH]      Scaffold a starter static/SPA site + agent instructions here.
   st,   status           Show connection and account status.
         login            Connect in the browser and save an API key.
   down, unpublish        Take this folder's site offline (keeps the URL for later).
@@ -141,7 +140,6 @@ Publish options:
   --access-mode MODE   public, password, or password_ask_info (email + password).
   --draft              Save a private draft instead of publishing live.
   --no-wait            Return as soon as the URL is reserved (don't wait for the build).
-  --feature            Opt a public site into revdoku.com/featured (ask the owner first).
   --expires-in-minutes N  Preview lifetime in minutes for `revdoku preview` (default 15,
                        max 43200 = 30 days). Main publishes are always permanent.
   --publish-folder DIR Publish ONLY this top-level folder as the site (its index.html
@@ -174,7 +172,7 @@ Examples:
   revdoku p                 # publish the current folder, get a URL
   revdoku p ./dist          # publish another folder
   revdoku p --protected     # password-protected site
-  revdoku init --template voting && revdoku p
+  revdoku init && revdoku p
 USAGE
 }
 
@@ -246,9 +244,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --template)
-      [[ $# -ge 2 ]] || die "--template requires a template id (see: revdoku init --list-templates)"
-      INIT_TEMPLATE="$2"
-      shift 2
+      die "App database templates are disabled. Run 'revdoku init' for a static/SPA starter."
       ;;
     --list-templates)
       INIT_LIST_TEMPLATES="true"
@@ -300,10 +296,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --no-client-events)
       PUBLICATION_CLIENT_EVENTS_ENABLED="false"
-      shift
-      ;;
-    --feature|--feature-on-community)
-      PUBLICATION_FEATURED_ON_COMMUNITY="true"
       shift
       ;;
     --expires-in-minutes)
@@ -403,17 +395,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# No verb and no path token: bare `revdoku` shows status + a hint; `--feature`
-# alone toggles featured without republishing; other options-only invocations
-# default to publishing the current folder.
+# No verb and no path token: bare `revdoku` shows status + a hint; other
+# options-only invocations default to publishing the current folder.
 if [[ "$VERB_SEEN" == "false" && "$ACTION" == "store" && "$PUBLISH" != "true" && "$LOGIN" != "true" ]]; then
   if [[ "$ORIGINAL_ARGC" -eq 0 ]]; then
     ACTION="connection_status"
     SHOW_PUBLISH_HINT="true"
-  elif [[ "$PUBLICATION_FEATURED_ON_COMMUNITY" == "true" && "$PATH_EXPLICIT" == "false" ]]; then
-    # `revdoku --feature [--bucket-id ID]` updates the featured flag on the bound
-    # (or given) bucket without re-uploading files.
-    ACTION="feature_on_community"
   else
     PUBLISH="true"
   fi
@@ -541,17 +528,12 @@ normalize_optional_bool() {
 PUBLICATION_ANALYTICS_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_ANALYTICS_ENABLED" "$PUBLICATION_ANALYTICS_ENABLED")"
 PUBLICATION_CLIENT_EVENTS_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_CLIENT_EVENTS_ENABLED" "$PUBLICATION_CLIENT_EVENTS_ENABLED")"
 PUBLICATION_TRACKING_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_TRACKING_ENABLED" "$PUBLICATION_TRACKING_ENABLED")"
-PUBLICATION_FEATURED_ON_COMMUNITY="$(normalize_optional_bool "REVDOKU_FEATURED_ON_COMMUNITY" "$PUBLICATION_FEATURED_ON_COMMUNITY")"
 if [[ -n "$PREVIEW_EXPIRES_IN_MINUTES" ]]; then
   [[ "$PREVIEW_EXPIRES_IN_MINUTES" =~ ^[0-9]+$ && "$PREVIEW_EXPIRES_IN_MINUTES" -gt 0 ]] \
     || die "--expires-in-minutes must be a positive integer (got: $PREVIEW_EXPIRES_IN_MINUTES)"
 fi
 APPEND_TEXT_NEWLINE_BEFORE="$(normalize_optional_bool "REVDOKU_APPEND_TEXT_NEWLINE_BEFORE" "$APPEND_TEXT_NEWLINE_BEFORE")"
 APPEND_TEXT_NEWLINE_BEFORE="${APPEND_TEXT_NEWLINE_BEFORE:-true}"
-
-if [[ "$PUBLISH" != "true" && "$ACTION" == "store" && "$PUBLICATION_FEATURED_ON_COMMUNITY" == "true" && "$PATH_EXPLICIT" == "false" ]]; then
-  ACTION="feature_on_community"
-fi
 
 if [[ "$ACTION" == "append_text_file" ]]; then
   [[ -n "$BUCKET_ID" ]] || die "append requires --bucket-id"
@@ -579,7 +561,7 @@ if [[ -n "$PUBLICATION_PASSWORD" && "$PUBLICATION_REGENERATE_PASSWORD" == "true"
   die "use either --password or --generate-password, not both"
 fi
 
-if [[ "$PUBLISH" != "true" && "$ACTION" == "store" && ( -n "$PUBLICATION_ACCESS_MODE" || -n "$PUBLICATION_PASSWORD" || "$PUBLICATION_REGENERATE_PASSWORD" == "true" || -n "$PUBLICATION_ANALYTICS_ENABLED" || -n "$PUBLICATION_CLIENT_EVENTS_ENABLED" || -n "$PUBLICATION_TRACKING_ENABLED" || "$PUBLICATION_FEATURED_ON_COMMUNITY" == "true" ) ]]; then
+if [[ "$PUBLISH" != "true" && "$ACTION" == "store" && ( -n "$PUBLICATION_ACCESS_MODE" || -n "$PUBLICATION_PASSWORD" || "$PUBLICATION_REGENERATE_PASSWORD" == "true" || -n "$PUBLICATION_ANALYTICS_ENABLED" || -n "$PUBLICATION_CLIENT_EVENTS_ENABLED" || -n "$PUBLICATION_TRACKING_ENABLED" ) ]]; then
   die "publication options apply when publishing; remove --draft (they don't apply to a draft)"
 fi
 
@@ -939,7 +921,7 @@ open_site() {
 
   local url="$BOUND_URL"
   if [[ -z "$url" && -n "$BUCKET_ID" ]]; then
-    # Resolve the live URL the same way feature/unpublish do: the publications
+    # Resolve the live URL the same way unpublish does: the publications
     # list, matched by bucket id (the bucket GET payload is not relied upon).
     local publications_response
     publications_response="$(http_json GET "/api/v1/publications?include_manifest=false" "{}")" || die "could not look up published sites"
@@ -962,11 +944,7 @@ open_site() {
 }
 
 revdoku_known_templates() {
-  printf '%s\n' \
-    waitlist leaderboard voting link_feed crm_board changelog \
-    research_database internal_dashboard feedback_dashboard support_center \
-    contact_inbox quote_requests booking_requests job_board_applications \
-    customer_project_portal
+  return 0
 }
 
 # Write heredoc (stdin) to a file, but never clobber an existing one.
@@ -1019,145 +997,9 @@ Re-running `revdoku p` updates the SAME site (the bucket is remembered in the
 `.revdoku` file — do not delete it). `index.html` is the entry point; a folder
 with no `index.html` gets an auto-generated index page.
 
-## Want a database (forms, votes, submissions)?
-Run `revdoku init --template <id>` (see `revdoku init --list-templates`) for an
-app starter, or ask your agent to set up an app database via the Revdoku MCP
-tools (`bucket_app_database_setup`) and publish with `site_type: "app"`.
 MD
 }
 
-init_scaffold_app() {
-  local target="$1" template="$2"
-  init_write_file "$target/index.html" <<'HTML'
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My Revdoku app</title>
-  <!-- Turnstile protects public writes. app.js renders ONE visible managed widget. -->
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, -apple-system, sans-serif; max-width: 36rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
-    form { display: grid; gap: .75rem; margin-bottom: 1.5rem; }
-    input { font-size: 16px; padding: .6rem .7rem; border: 1px solid #8884; border-radius: .5rem; }
-    button { font-size: 1rem; padding: .6rem 1rem; border: 0; border-radius: .5rem; background: #4f46e5; color: #fff; cursor: pointer; }
-    button:disabled { opacity: .6; }
-    #msg { min-height: 1.25rem; font-size: .9rem; color: #777; }
-    ul { list-style: none; padding: 0; } li { padding: .6rem 0; border-bottom: 1px solid #8883; }
-  </style>
-</head>
-<body>
-  <h1>Items</h1>
-  <form id="form">
-    <input id="title" placeholder="Add an item…" maxlength="200" autocomplete="off" required>
-    <!-- Visible managed widget (do NOT use a hidden interaction-only widget). -->
-    <div id="cf-turnstile"></div>
-    <button id="submit" type="submit">Add</button>
-    <span id="msg"></span>
-  </form>
-  <ul id="list"><li>Loading…</li></ul>
-  <script src="/app.js"></script>
-</body>
-</html>
-HTML
-  init_write_file "$target/app.js" <<'JS'
-/*
- * Revdoku app frontend. Reads a list and submits a Turnstile-protected write.
- * Backend actions are named SQL operations under /_revdoku/app/<action>.
- * Set SITE_KEY and rename list_items/add_item to match your app database.
- */
-(function () {
-  'use strict';
-  var API = '/_revdoku/app/';
-  // From bucket_app_database_get -> app_database.turnstile_site_key.
-  var SITE_KEY = 'YOUR_TURNSTILE_SITE_KEY';
-
-  function rowsOf(data) {
-    if (!data) return [];
-    if (Array.isArray(data)) return data;
-    var r = data.result;
-    if (Array.isArray(r) && r[0] && Array.isArray(r[0].results)) return r[0].results;
-    if (Array.isArray(r)) return r;
-    return data.results || data.rows || [];
-  }
-
-  // ONE visible managed widget. A hidden interaction-only widget never issues a
-  // token for challenged visitors, so every write would fail.
-  var widgetId = null;
-  function renderTurnstile() {
-    if (window.turnstile && widgetId === null) widgetId = window.turnstile.render('#cf-turnstile', { sitekey: SITE_KEY });
-  }
-  function whenReady() {
-    if (window.turnstile) { renderTurnstile(); return; }
-    var n = 0, iv = setInterval(function () {
-      if (window.turnstile) { clearInterval(iv); renderTurnstile(); } else if (++n > 100) clearInterval(iv);
-    }, 100);
-  }
-  function token() { return (widgetId !== null && window.turnstile && window.turnstile.getResponse(widgetId)) || ''; }
-  function resetToken() { try { if (widgetId !== null) window.turnstile.reset(widgetId); } catch (e) {} }
-
-  function load() {
-    return fetch(API + 'list_items', { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        var ul = document.getElementById('list'); ul.textContent = '';
-        var rows = rowsOf(d);
-        if (!rows.length) { ul.innerHTML = '<li>Nothing yet.</li>'; return; }
-        rows.forEach(function (it) { var li = document.createElement('li'); li.textContent = it.title || '(untitled)'; ul.appendChild(li); });
-      })
-      .catch(function () { document.getElementById('list').innerHTML = '<li>Could not load.</li>'; });
-  }
-
-  function onSubmit(e) {
-    e.preventDefault();
-    var title = document.getElementById('title'), btn = document.getElementById('submit'), msg = document.getElementById('msg');
-    var text = title.value.trim(); if (!text) { title.focus(); return; }
-    var t = token(); if (!t) { msg.textContent = 'Please complete the verification check, then submit.'; return; }
-    btn.disabled = true; msg.textContent = 'Saving…';
-    fetch(API + 'add_item', {
-      method: 'POST', credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ title: text, cf_turnstile_token: t })
-    })
-      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error((j && (j.error || j.message)) || ('Failed (' + r.status + ')')); return j; }); })
-      .then(function () { title.value = ''; msg.textContent = 'Saved.'; return load(); })
-      .catch(function (err) { msg.textContent = err.message || 'Could not save.'; })
-      .then(function () { resetToken(); btn.disabled = false; });
-  }
-
-  document.getElementById('form').addEventListener('submit', onSubmit);
-  whenReady(); load();
-})();
-JS
-  {
-    printf '# Working in this folder with Revdoku (app + database)\n\n'
-    printf 'This is a Revdoku **app** site: static files here PLUS a per-bucket\n'
-    printf 'database exposed through named SQL actions at `/_revdoku/app/<action>`.\n'
-    printf 'Chosen template: `%s`.\n\n' "$template"
-    printf '## Set up the database (agent, via Revdoku MCP tools)\n'
-    printf '1. `bucket_app_database_get` — read `template_source` and `app_database.turnstile_site_key`.\n'
-    printf '2. Apply the `%s` template (schema + named actions) with `bucket_app_database_setup`.\n' "$template"
-    printf '3. In `app.js`: set `SITE_KEY` to the turnstile_site_key and rename\n'
-    printf '   `list_items` / `add_item` to the actual public read/write action names.\n\n'
-    printf '## Turnstile rules (these cause most app bugs)\n'
-    printf -- '- Render ONE **visible managed** widget. Never a hidden `interaction-only`\n'
-    printf '  widget — challenged visitors get no token and every write fails.\n'
-    printf -- '- Send the token as `cf_turnstile_token` on every public write; reset after each write.\n\n'
-    printf '## Publish / update\n'
-    printf -- '- `revdoku p` to publish; protected templates: `revdoku p --protected --generate-password`.\n'
-    printf -- '- Re-running `revdoku p` updates the same site (remembered in `.revdoku`).\n'
-    printf -- '- For a real app backend, publish with `site_type: "app"` via the MCP `bucket_publish` tool.\n'
-  } > "$target/AGENTS.md.tmp"
-  if [[ -e "$target/AGENTS.md" ]]; then
-    rm -f "$target/AGENTS.md.tmp"
-    echo "Kept existing $target/AGENTS.md" >&2
-  else
-    mv "$target/AGENTS.md.tmp" "$target/AGENTS.md"
-    echo "Created $target/AGENTS.md" >&2
-  fi
-}
 
 # `init`: scaffold a starter site + agent instructions in this folder.
 init_project() {
@@ -1165,19 +1007,13 @@ init_project() {
   [[ -n "$target" ]] || target="."
 
   if [[ "${INIT_LIST_TEMPLATES:-false}" == "true" ]]; then
-    echo "App templates (use: revdoku init --template <id>):" >&2
-    revdoku_known_templates | sed 's/^/  /' >&2
-    echo "Omit --template for a plain static-site starter." >&2
+    echo "App database templates are disabled. Run 'revdoku init' for a static/SPA starter." >&2
     return 0
   fi
 
   mkdir -p "$target"
   if [[ -n "$INIT_TEMPLATE" ]]; then
-    if ! revdoku_known_templates | grep -qx -- "$INIT_TEMPLATE"; then
-      echo "warning: '$INIT_TEMPLATE' is not a known template id; scaffolding a generic app starter." >&2
-      echo "Known templates: $(revdoku_known_templates | tr '\n' ' ')" >&2
-    fi
-    init_scaffold_app "$target" "$INIT_TEMPLATE"
+    die "App database templates are disabled. Run 'revdoku init' for a static/SPA starter."
   else
     init_scaffold_static "$target"
   fi
@@ -1498,40 +1334,6 @@ preview_bucket() {
           public_url: $p.public_url,
           expires_at: $p.expires_at,
           guidance: "Temporary preview is live and auto-expires. Publish for real with: revdoku p"
-        }
-      }' <<<"$response"
-}
-
-feature_publication_on_community() {
-  [[ -n "$BUCKET_ID" ]] || die "feature requires --bucket-id (or a folder bound via .revdoku)"
-  local publications_response publication_id payload response
-  publications_response="$(http_json GET "/api/v1/publications?include_manifest=false" "{}")" || return 1
-  publication_id="$("$JQ_BIN" -r --arg bucket_id "$BUCKET_ID" '
-    [ (.data.publications // [])
-      | .[]
-      | select(.bucket_id == $bucket_id)
-      | select((.kind // "bucket_bundle") == "bucket_bundle")
-      | select((.lifecycle_active == true) or (.active == true))
-    ]
-    | sort_by(.updated_at // .created_at // "")
-    | last
-    | .id // empty
-  ' <<<"$publications_response")"
-  [[ -n "$publication_id" ]] || die "bucket has no active published website to feature"
-
-  payload="$("$JQ_BIN" -nc '{featured_on_community:true}')"
-  response="$(http_json PATCH "/api/v1/publications/${publication_id}" "$payload")" || return 1
-  "$JQ_BIN" -c '
-    .data.publication as $publication
-    | {
-        success: (.success // true),
-        data: {
-          publication: $publication,
-          bucket_id: $publication.bucket_id,
-          public_slug: $publication.public_slug,
-          public_url: $publication.public_url,
-          featured_on_community: $publication.featured_on_community,
-          guidance: "Featured listing updated without republishing the website."
         }
       }' <<<"$response"
 }
@@ -1882,10 +1684,6 @@ case "$ACTION" in
     append_text_file
     exit 0
     ;;
-  feature_on_community)
-    feature_publication_on_community
-    exit 0
-    ;;
   unpublish_bucket)
     unpublish_bucket
     exit 0
@@ -1992,15 +1790,13 @@ publication_access_json() {
     --arg analytics_enabled "$PUBLICATION_ANALYTICS_ENABLED" \
     --arg client_events_enabled "$PUBLICATION_CLIENT_EVENTS_ENABLED" \
     --arg tracking_enabled "$PUBLICATION_TRACKING_ENABLED" \
-    --arg featured_on_community "$PUBLICATION_FEATURED_ON_COMMUNITY" \
     '{}
     + (if $access_mode != "" then {access_mode: $access_mode} else {} end)
     + (if $password != "" then {password: $password} else {} end)
     + (if $regenerate_password == "true" then {regenerate_password: true} else {} end)
     + (if $analytics_enabled != "" then {publication_analytics_enabled: ($analytics_enabled == "true")} else {} end)
     + (if $client_events_enabled != "" then {publication_client_events_enabled: ($client_events_enabled == "true")} else {} end)
-    + (if $tracking_enabled != "" then {tracking_enabled: ($tracking_enabled == "true")} else {} end)
-    + (if $featured_on_community == "true" then {featured_on_community: true} else {} end)'
+    + (if $tracking_enabled != "" then {tracking_enabled: ($tracking_enabled == "true")} else {} end)'
 }
 
 has_index_file() {
