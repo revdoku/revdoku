@@ -1,11 +1,8 @@
 ---
 name: revdoku
 description: >
-  Create, update, and publish websites with Revdoku buckets — including
-  interactive app sites backed by a per-bucket server database (visitor
-  submissions, voting/feedback dashboards, searchable support sites, owner
-  notifications), not just static pages. Store files privately until the user
-  asks for a public or protected link.
+  Create, update, and publish static websites and SPAs with Revdoku buckets.
+  Store files privately until the user asks for a public or protected link.
 ---
 
 # Revdoku Website Publishing
@@ -15,13 +12,6 @@ default with `revdoku p`: a folder goes live immediately as a public or
 password-protected website. Use `--draft` to store files privately without going
 live. Re-running `revdoku p` from the same folder updates the same site via a
 local `.revdoku` binding, so you usually do not need `--bucket-id`.
-
-Revdoku is **not static-only**: a bucket can also publish an **interactive app
-site backed by a per-bucket server database** (visitor submissions, voting /
-feedback dashboards, searchable support sites, owner notifications) with safe
-actions at `/_revdoku/app/<name>`. When the user asks for shared/multi-visitor
-data, build that real backend — see "App websites with a database" below — and
-do **not** fall back to browser `localStorage`.
 
 Use this skill when the user chooses Revdoku, asks to use a Revdoku bucket,
 needs to update an existing Revdoku-published site, or wants local output made
@@ -67,27 +57,23 @@ secrets (`.env`, keys) are rejected on upload and never published.
 Revdoku is a small, fixed set of hosting primitives — stay inside it. It does:
 
 - Static and SPA website hosting.
-- Per-bucket app databases with owner-defined named SQL actions at
-  `/_revdoku/app/<name>` (the only way to run server-side logic).
-- Turnstile-protected public writes from published sites.
-- Owner notifications from app-database events.
 - Public and password/email-protected access.
 - Website analytics and browser-side event tracking.
-- An opt-in revdoku.com/featured gallery listing.
+- Direct publishing from local files and folders to a live website URL.
+- Forms and feedback submissions.
 
 It intentionally does **not** offer:
 
-- Custom server backends or arbitrary server code — use app-database named
-  actions instead.
+- Custom server backends, arbitrary server code, or per-bucket databases.
 - Cron jobs or scheduled tasks.
 - A client-side AI/LLM proxy for published sites (public-internet abuse risk).
 - Runtime cross-site or shared-library imports — vendor the assets into the
   bucket instead.
 
 When a request seems to need a missing capability, first check whether an
-existing primitive already covers it (an app-database named action, vendored
-assets, an event-driven notification) before expanding scope or telling the user
-it can't be done.
+existing primitive already covers it (static files, SPA behavior, vendored
+assets, protected access, or analytics) before expanding scope or telling the
+user it can't be done.
 
 When the Revdoku MCP server is connected, prefer MCP tools over shell commands
 for structured bucket work:
@@ -194,14 +180,6 @@ for structured bucket work:
   `expires_in_minutes`, default 15, max 30 days) and is noindex, without touching the
   main website. Re-running republishes to the same preview slug. Poll publish status,
   then share the preview URL and note when it expires.
-- Public websites are not listed in `revdoku.com/featured` by default. Ask the
-  owner before opting in with `featured_on_community: true` or the CLI
-  `--feature` flag. For an already-published website, use
-  `bucket_update_publication_settings` (MCP/API), or with the CLI run
-  `revdoku --feature` (no path) for the bound folder or `revdoku --feature
-  --bucket-id bkt_...` for a specific bucket — this updates the featured setting
-  without re-uploading or changing the URL. (`revdoku p --feature` also works but
-  republishes the files.)
 - Any plan may pass `slug_suggestions` (ordered website names) to the publish
   tools to steer the public URL (first available wins, else a numeric suffix);
   otherwise the slug defaults to the bucket's name. Applies on first publish; the
@@ -209,7 +187,7 @@ for structured bucket work:
   reserved (the list is not published) — if a slug is rejected as reserved, just
   pick a different one.
 - Website analytics (visit/view counts) and browser-side event tracking are **on
-  by default for every published website, including app sites** — do not pass
+  by default for every published website** — do not pass
   analytics/tracking flags unless the user explicitly asks to turn tracking off.
   Disabling it makes the owner's dashboard show `0 views`.
 - Use `bucket_unpublish` when the user asks to unpublish a website.
@@ -365,107 +343,44 @@ MCP equivalent:
 
 To publish with MCP, include `"publish": true`.
 
-## App websites with a database (real backend — do not use local storage)
+## Simple forms (contact / feedback / quote — built in, no backend to build)
 
-A bucket can publish an interactive app website backed by a bucket-owned server
-database (Cloudflare D1) with owner-defined named actions at
-`/_revdoku/app/<name>`. Use this for any shared/multi-visitor data: voting and
-feedback dashboards, suggestion boards, searchable support sites, shared prompt
-libraries, research/link feeds. **When the user wants visitors to submit, vote,
-search, or be counted, build this backend — never substitute browser
-`localStorage`.**
+Every published site has a built-in form endpoint, so a **submission form** —
+contact, feedback, quote request, waitlist — needs no server code and no
+configuration. Put a normal HTML `<form>` in the page:
 
-Two ways to drive it. The `revdoku` CLI **binary itself is static-publish only**
-and cannot create the database or publish an app site, so use one of:
+```html
+<form method="POST" action="/_revdoku/form/contact">
+  <label>Name <input type="text" name="name" required></label>
+  <label>Email <input type="email" name="email" required></label>
+  <label>Message <textarea name="message" required></textarea></label>
+  <!-- Anti-spam honeypot: keep this hidden field, leave it empty -->
+  <input type="text" name="_gotcha" tabindex="-1" autocomplete="off"
+         style="position:absolute;left:-9999px" aria-hidden="true">
+  <button type="submit">Send</button>
+</form>
+```
 
-- **MCP connector (preferred when connected):** `bucket_app_database_get`,
-  `bucket_app_database_setup`, `bucket_app_database_run_operation`,
-  `bucket_app_database_query`, `bucket_app_database_snapshot` /
-  `bucket_app_database_snapshots`, `bucket_app_database_notifications`. Publish
-  with `bucket_publish` and `site_type: "app"`.
-- **REST API (use this for CLI-only sessions where MCP is not connected):** the
-  same operations live at `/api/v1/buckets/:bucket_id/app_database/*`, and you
-  publish with `site_type: "app"`. See the **"Bucket App Database Endpoints"**
-  and `site_type: "app"` sections of `api.md`, authenticating with the API key
-  in `~/.revdoku/credentials`.
+- `action="/_revdoku/form/<name>"` — `<name>` is lowercase letters/digits/`-`/`_`
+  (e.g. `contact`, `quote`, `feedback`). Any field names you like; a field named
+  `email` is used for the owner "reply-to" and the notification.
+- Works on **public** and **password-protected** sites, same-origin POST. A plain
+  HTML submit redirects back with `?submitted=1`; a `fetch()` caller gets JSON.
+- Submissions land in the owner's dashboard (bucket → Forms) with CSV export, and
+  each one sends the owner a real-time notification + email.
+- **Spam protection:** on **public** sites a Cloudflare Turnstile check is required
+  when Turnstile keys are configured; add the widget:
+  `<div class="cf-turnstile" data-sitekey="YOUR_SITE_KEY"></div>` plus
+  `<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>`.
+  Password-gated sites need no check (the gate already stopped bots).
+- **Custom domains:** the built-in platform Turnstile widget only validates on
+  `*.revdoku.site`. On a **custom domain** the owner must supply her own Turnstile
+  keys (a widget created for that hostname) — save `CLOUDFLARE_TURNSTILE_SITE_KEY`
+  (a public variable) and `CLOUDFLARE_TURNSTILE_SECRET_KEY` (a secret) in the
+  bucket's Variables & Secrets. Without them, custom-domain forms fall back to
+  honeypot + rate limit + daily cap (no Turnstile).
 
-Flow (identical for MCP and REST):
-
-1. Get/create the bucket. If it already exists, inspect the live schema + named
-   actions first (`bucket_app_database_get` / `GET .../app_database`) before
-   changing schema, rows, or action definitions.
-2. Optionally write a private `.revdoku.app.json` contract (purpose, data model,
-   actions, rollback notes). Stored in the draft, excluded from the live bundle.
-3. Create the database and apply SQL `schema` statements, optional `seed` rows,
-   and an `operations` manifest of named SQL actions
-   (`bucket_app_database_setup` / `POST .../app_database/{schema,seed,operations}`).
-   `public: true` actions become visitor endpoints at `/_revdoku/app/<name>`;
-   `public: false` actions are owner/agent-only (run via `run_operation`).
-   `params` bind from `body`, `query`, `visitor` (`key` = stable visitor id,
-   `email` on password+email sites), `system` (`uuid`, `now`), or `literal`.
-4. Write the static frontend (HTML/JS calling `/_revdoku/app/<name>` with `fetch`
-   on the same origin) into the bucket.
-5. **Publish with `site_type: "app"`** (ordinary `website` sites stay static-only
-   and reject app routes).
-6. Owner notifications: have a public website action also insert a row into the
-   reserved `_revdoku_events` table (or use an `AFTER INSERT` trigger so
-   the public action stays one statement); Revdoku surfaces new rows as in-app
-   account notifications and via `bucket_app_database_notifications`. Use
-   `bucket_app_database_query` for owner-only ad hoc SQL; visitors never get raw SQL.
-
-Starter schemas + named actions (waitlist, feedback/voting dashboard, searchable
-support center, leaderboards, link feeds, …) are in
-the public client repo at `https://github.com/revdoku/revdoku/tree/main/templates`
-(`templates/app-safe-actions.json`). MCP does not embed hidden templates; call
-`bucket_app_database_get` and read `template_source` for the current location.
-Every template has `recommended_access` and `data_sensitivity`; follow
-`recommended_access` unless the owner explicitly overrides it. A `public: true`
-action means website-callable, not necessarily safe for an open public site; on
-password templates those actions are intended to run behind the protected
-website gate. See `app-building-guide.md` for conventions.
-
-Anti-spam for anonymous-write actions: every public write action must use
-Turnstile, but Revdoku supplies a **built-in platform Turnstile key** for
-`*.revdoku.site` sites, so you provision nothing for normal sites. Call
-`bucket_app_database_get`, render the Turnstile widget with
-`app_database.turnstile_site_key` (the built-in key unless the bucket set its
-own — `app_database.turnstile_source` tells you which: `platform`, `bucket`, or
-`bucket_secret_only`), and send `cf_turnstile_token` in every public write
-request body. On the client, load
-`https://challenges.cloudflare.com/turnstile/v0/api.js` and render **one visible
-managed widget** (`turnstile.render("#cf-turnstile", { sitekey })`); read
-`turnstile.getResponse(id)` on submit and `turnstile.reset(id)` after each write.
-Do **not** use `appearance: "interaction-only"` on a hidden widget — a challenged
-visitor would have nothing to solve, so no token is issued and every write fails.
-The `Blocked a frame with origin https://challenges.cloudflare.com …` console
-message is a harmless Cloudflare warning. A copy-paste reference frontend is at
-`templates/app-frontend-example/` (`index.html` + `app.js`). Advanced owners can
-use their own Cloudflare Turnstile widget by saving `CLOUDFLARE_TURNSTILE_SITE_KEY`
-(a public **variable**) and `CLOUDFLARE_TURNSTILE_SECRET_KEY` (a **secret**) — via
-`bucket_env_set`, the `/variables` endpoint, or the dedicated `/turnstile` endpoint.
-Use a custom widget for custom domains unless Revdoku explicitly manages that custom
-hostname on the shared platform widget. Public operations that write
-`_revdoku_events` are rejected unless they are Turnstile-protected.
-
-### Bucket variables & secrets
-
-Buckets carry an integration env, managed with `bucket_env_get` / `bucket_env_set`
-(or REST `GET`/`PUT /api/v1/buckets/:id/variables`). **Variables** are public —
-embedded into the published site and visible to every visitor (e.g. a Turnstile
-site key, a Stripe publishable key). **Secrets** are server-only, encrypted, and
-never returned (reads show only `name` + `last4`); Revdoku uses them server-side
-(e.g. `RESEND_API_KEY`). Names are UPPER_SNAKE_CASE and the provider is implied by
-the prefix (`CLOUDFLARE_TURNSTILE_*`, `RESEND_*`, …) — never store a secret value
-as a variable. Setting `variables` replaces the full public set; `secrets` is a
-patch (non-empty sets, empty string deletes, omitted unchanged).
-
-Data protection rules: one database per bucket, created once — no reset,
-re-provision, or delete endpoint exists. Destructive SQL (`DROP`, WHERE-less
-`DELETE`/`UPDATE`, `PRAGMA`) is rejected on every owner path; evolve schema
-additively or create a new bucket for a fresh schema. The provider database is
-deleted only when the bucket itself is permanently deleted through the
-confirmed bucket-delete flow — warn the user that visitor-submitted data is
-deleted with it, and offer an export first.
+A copy-paste reference page is at `templates/contact-form-example.html`.
 
 ## Read existing bucket files
 
@@ -487,10 +402,10 @@ cloud MCP clients use `bucket_file_list` + `bucket_file_read` instead.
 
 The CLI uses verb subcommands (aliases in parentheses):
 
-- `publish` (`p`) `[PATH]`: publish a folder (default `.`) **live**. Re-running updates the same site via the local `.revdoku` binding. Add `--draft` to store files privately without going live. With `--protected` it publishes a password-protected website; with `--feature` it opts the public site into the revdoku.com/featured listing.
+- `publish` (`p`) `[PATH]`: publish a folder (default `.`) **live**. Re-running updates the same site via the local `.revdoku` binding. Add `--draft` to store files privately without going live. With `--protected` it publishes a password-protected website.
 - `list` (`ls`): print available buckets and metadata as JSON.
 - `open` (`o`): open this folder's live site in the browser; `open --dashboard` opens the Revdoku dashboard instead.
-- `init` (`i`) `[PATH]`: scaffold a starter project. Use `--template <id>` to pick a template, `--list-templates` to print available templates.
+- `init` (`i`) `[PATH]`: scaffold a starter static/SPA project.
 - `status` (`st`): print connection status as JSON (connected, account, scope, bucket access). Works with bucket-scoped agent credentials, so this is the right way to confirm a connection — not `account`.
 - `login`: open the browser device-code login flow and refresh local credentials, with privacy-preserving email-code fallback on older servers. It saves credentials and exits. To confirm a connection works afterward, run `status`.
 - `unpublish` (`down`): take the bound site offline while keeping its reserved URL for later republish. Targets the folder's `.revdoku` binding, or pass `--bucket-id`.
@@ -515,10 +430,9 @@ The CLI uses verb subcommands (aliases in parentheses):
 - `--bucket-id ID`: target an existing bucket instead of using the folder's `.revdoku` binding or creating a new one.
 - `--metadata JSON`: optional bucket metadata for future agent lookup, e.g. `--metadata '{"project":"marketing-site","task":"landing-page"}'`.
 - `--draft`: with `publish`, store files privately without going live.
-- `--feature`: with `publish`, opt the public website into the revdoku.com/featured listing. To change only the featured flag without re-uploading, run `revdoku --feature` (bound folder) or `revdoku --feature --bucket-id bkt_...`. Ask the owner before using this.
 - `--protected` / `--private`: with `publish`, publish as a password-protected website.
 - `--public`: with `publish`, publish as a public website (the default).
-- `--access-mode password_ask_info`: with `publish`, publish as a protected website that asks visitors for email plus password on Builder and Pro plans.
+- `--access-mode password_ask_info`: with `publish`, publish as a protected website that asks visitors for email plus password on paid plans (Starter and up).
 - `--password PASSWORD`: advanced direct-terminal option for owners who choose their own protected website password. Do not ask users for this in chat, and do not put the password in a URL.
 - `--generate-password`: with `publish --protected`, rotate the protected website password and show it in the owner publish response. Use only when the user explicitly asks to rotate it.
 - `--tracking` / `--no-tracking`, `--analytics` / `--no-analytics`, `--client-events` / `--no-client-events`: control website analytics and browser-side event tracking. Both are on by default; only disable when the user explicitly asks.
@@ -526,7 +440,7 @@ The CLI uses verb subcommands (aliases in parentheses):
 - `--restore-comment TEXT`: with `restore`, optional reason appended to the restore version comment.
 - `--content TEXT` / `--content-file FILE` / `--no-newline-before`: with `append`, supply the text to append (`--no-newline-before` only when exact append bytes are required).
 - `--output FILE`: with `read`, write content to FILE instead of stdout.
-- `--template <id>` / `--list-templates`: with `init`, pick a starter template or list available templates.
+- `--list-templates`: currently reports that app database templates are disabled.
 - `--dashboard`: with `open`, open the Revdoku dashboard instead of the live site.
 - `--url URL`: Revdoku app URL, default `https://app.revdoku.com`.
 - `--agent NAME`: attribute uploads to a specific agent (for example `claude-code` or `codex`). The CLI auto-detects common agents and otherwise records `cli`; set this (or `REVDOKU_AGENT_NAME`) when running inside an agent that is not auto-detected so version history shows the real caller.
