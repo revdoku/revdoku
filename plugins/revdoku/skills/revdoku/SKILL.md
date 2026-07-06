@@ -84,6 +84,13 @@ for structured bucket work:
   publication lifecycle state, and action metadata such as
   `archive.required_action` and `delete.confirmation`; use those fields for
   follow-up tool calls instead of asking users to type bucket ids.
+- Use `bucket_template_list` and `bucket_create_from_template` when the user
+  wants a starter from Revdoku's trusted public template catalog. Template
+  imports save a private draft bucket and may include documents/media because
+  the server downloads allowlisted, hash-verified template URLs into normal
+  bucket files. File-collection templates intentionally do not include
+  `index.html`; when published, they rely on Revdoku's generated Auto-Index
+  Page. Only landing-page/site/app templates should include `index.html`.
 - Use `bucket_tag_list` before creating organized buckets. Prefer
   meaningful titles, concise descriptions, and simple reusable labels such as
   `website`, `draft`, `landing-page`, or `ai-agent`. Tags are user-facing
