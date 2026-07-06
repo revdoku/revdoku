@@ -1,0 +1,220 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "key": "landing-basic",
+      "version": "2026-07-06",
+      "name": "Starter Landing Page",
+      "description": "A small editable website template with a real index.html entrypoint.",
+      "kind": "site",
+      "entrypoint": "index.html",
+      "bucket_metadata": {
+        "publication_forms": {
+          "enabled": true,
+          "turnstile": "auto",
+          "forms": [
+            {
+              "name": "waitlist",
+              "label": "Join waitlist",
+              "hosted": false,
+              "fields": [
+                {
+                  "name": "email",
+                  "label": "Email",
+                  "type": "email",
+                  "required": true
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "files": [
+        {
+          "path": "index.html",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/landing-basic/index.html",
+          "sha256": "b559b5a9470b011abfb31502ac812cfb14e343dbb04e1d98b3d499260124d0a5",
+          "byte_size": 2789,
+          "content_type": "text/html"
+        }
+      ]
+    },
+    {
+      "key": "landing-floating-form",
+      "version": "2026-07-06",
+      "name": "Landing Page with Floating Contact",
+      "description": "A small editable website template that uses Revdoku's hosted floating contact form widget.",
+      "kind": "site",
+      "entrypoint": "index.html",
+      "bucket_metadata": {
+        "publication_forms": {
+          "enabled": true,
+          "turnstile": "auto",
+          "forms": [
+            {
+              "name": "contact",
+              "label": "Request a call",
+              "hosted": true,
+              "fields": [
+                {
+                  "name": "name",
+                  "label": "Name",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "name": "email",
+                  "label": "Email",
+                  "type": "email",
+                  "required": true
+                },
+                {
+                  "name": "message",
+                  "label": "What would you like to discuss?",
+                  "type": "textarea",
+                  "required": true
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "files": [
+        {
+          "path": "index.html",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/landing-floating-form/index.html",
+          "sha256": "9591f9e8f2cef4f655d0b7a412357cf1d2595d91e2db8d2d69f789e9e69e5fe6",
+          "byte_size": 2374,
+          "content_type": "text/html"
+        }
+      ]
+    },
+    {
+      "key": "presentation-files",
+      "version": "2026-07-06",
+      "name": "Presentation File Collection",
+      "description": "A starter bucket with two sample PDF presentation files, generated Auto-Index previews, and a floating feedback form.",
+      "kind": "file_collection",
+      "entrypoint": "auto_index",
+      "bucket_metadata": {
+        "publication_forms": {
+          "enabled": true,
+          "turnstile": "auto",
+          "forms": [
+            {
+              "name": "feedback",
+              "label": "Leave feedback",
+              "hosted": true,
+              "fields": [
+                {
+                  "name": "email",
+                  "label": "Email (optional)",
+                  "type": "email",
+                  "required": false
+                },
+                {
+                  "name": "comment",
+                  "label": "Comment",
+                  "type": "textarea",
+                  "required": true
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "files": [
+        {
+          "path": "README.md",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/presentation-files/README.md",
+          "sha256": "abf7a79da18e7ac3bcb9db9fcb4199d0da4aa339a3a9ed35822fbeea1a04b405",
+          "byte_size": 472,
+          "content_type": "text/markdown"
+        },
+        {
+          "path": "presentations/presentation1.pdf",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/presentation-files/presentations/presentation1.pdf",
+          "sha256": "e7ca5cd572367d1339bed218dc0b29bcac19b8d64b1fc4d26ad84eb2e97f156a",
+          "byte_size": 3080,
+          "content_type": "application/pdf"
+        },
+        {
+          "path": "presentations/presentation2.pdf",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/presentation-files/presentations/presentation2.pdf",
+          "sha256": "e51d2f01243c06aa278332c64b35633e0ec40ac44c92ab6f121ead06b0eb42a5",
+          "byte_size": 2960,
+          "content_type": "application/pdf"
+        }
+      ]
+    },
+    {
+      "key": "press-kit-files",
+      "version": "2026-07-06",
+      "name": "Press Kit File Collection",
+      "description": "A document/media starter bucket that relies on Revdoku's generated Auto-Index Page.",
+      "kind": "file_collection",
+      "entrypoint": "auto_index",
+      "files": [
+        {
+          "path": "README.md",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/press-kit-files/README.md",
+          "sha256": "1ec8ceaa7507571680e5a1f4fdd005c212cd3d21f327beeab8e467406b989a08",
+          "byte_size": 275,
+          "content_type": "text/markdown"
+        },
+        {
+          "path": "docs/company-overview.md",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/press-kit-files/docs/company-overview.md",
+          "sha256": "994d30414646eb1aafc770490ec323a5d7009ae8dc863b70f04a8825984877d9",
+          "byte_size": 360,
+          "content_type": "text/markdown"
+        },
+        {
+          "path": "assets/brand-mark.svg",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/press-kit-files/assets/brand-mark.svg",
+          "sha256": "325970ea610032855f5ea300203a918bc641e667c53c8f66e298de8087f13beb",
+          "byte_size": 384,
+          "content_type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "key": "screenshot-gallery",
+      "version": "2026-07-06",
+      "name": "Screenshot Gallery",
+      "description": "A starter bucket with Revdoku website screenshot images and a README.",
+      "kind": "file_collection",
+      "entrypoint": "auto_index",
+      "files": [
+        {
+          "path": "README.md",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/screenshot-gallery/README.md",
+          "sha256": "b63cccf2282bbd473c1af99d8b16af48bd6cd7e9d1edd7505de8eeeb730d3e78",
+          "byte_size": 331,
+          "content_type": "text/markdown"
+        },
+        {
+          "path": "screenshots/create-account.webp",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/screenshot-gallery/screenshots/create-account.webp",
+          "sha256": "fd33594e3e46ccf6410c9a159436c98518cea56df2b9c8d9eca5a09c6d5a0938",
+          "byte_size": 56720,
+          "content_type": "image/webp"
+        },
+        {
+          "path": "screenshots/created-files.webp",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/screenshot-gallery/screenshots/created-files.webp",
+          "sha256": "2a964e29f81e4d30c8c92c6fc1c104d9517fa58f2a097ee6b5df9029fc7d493e",
+          "byte_size": 44158,
+          "content_type": "image/webp"
+        },
+        {
+          "path": "screenshots/published-site-example.webp",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/screenshot-gallery/screenshots/published-site-example.webp",
+          "sha256": "ce8e5c8bf6eb2b273464d59a4f77e2cadd0e65915488cb77f0e2a3ad43fab492",
+          "byte_size": 343078,
+          "content_type": "image/webp"
+        }
+      ]
+    }
+  ]
+}

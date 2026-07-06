@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MyNewProject Starter Landing</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #17201c;
+      background: #f6f3ee;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 32px;
+    }
+    main {
+      width: min(760px, 100%);
+    }
+    h1 {
+      font-size: clamp(2.4rem, 6vw, 5rem);
+      line-height: 0.96;
+      margin: 0 0 24px;
+      letter-spacing: 0;
+    }
+    p {
+      max-width: 56ch;
+      font-size: 1.15rem;
+      line-height: 1.65;
+      margin: 0 0 28px;
+      color: #425249;
+    }
+    form {
+      display: flex;
+      width: min(460px, 100%);
+      gap: 10px;
+      margin: 0 0 16px;
+    }
+    input[type="email"] {
+      flex: 1;
+      min-width: 0;
+      min-height: 46px;
+      border: 1px solid #d3d9d4;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #17201c;
+      font: inherit;
+      padding: 0 14px;
+    }
+    button {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 8px;
+      background: #17201c;
+      color: #ffffff;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+    }
+    .note {
+      min-height: 20px;
+      margin: 0;
+      font-size: 0.95rem;
+      color: #66746c;
+    }
+    @media (max-width: 560px) {
+      form {
+        flex-direction: column;
+      }
+      button {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Meet MyNewProject, a focused place to launch your next idea.</h1>
+    <p>Use this starter page to introduce the project, explain who it helps, and invite early interest before the full launch.</p>
+    <form method="POST" action="/_revdoku/form/waitlist">
+      <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address">
+      <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+      <button type="submit">Join the list</button>
+    </form>
+    <p class="note" id="note">No spam. Just a short note when MyNewProject is ready.</p>
+  </main>
+  <script>
+    var params = new URLSearchParams(location.search);
+    if (params.get("submitted") === "1") {
+      document.getElementById("note").textContent = "Thanks. You're on the list.";
+    } else if (params.get("form_error")) {
+      document.getElementById("note").textContent = "Something went wrong. Please try again.";
+    }
+  </script>
+</body>
+</html>
