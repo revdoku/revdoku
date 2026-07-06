@@ -146,7 +146,7 @@ password-protected access; website analytics; and form/feedback submissions.
 What it intentionally does not do (and the workaround):
 
 - Custom server backends, arbitrary server code, or per-bucket databases → use
-  an external backend or a static/SPА-compatible workflow.
+  an external backend or a static/SPA-compatible workflow.
 - Cron jobs / scheduled server tasks → trigger work from a client or an external
   scheduler hitting a public action.
 - A client-side AI/LLM proxy for published sites → Revdoku sites are on the
