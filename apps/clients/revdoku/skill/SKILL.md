@@ -440,7 +440,6 @@ The CLI uses verb subcommands (aliases in parentheses):
 - `--restore-comment TEXT`: with `restore`, optional reason appended to the restore version comment.
 - `--content TEXT` / `--content-file FILE` / `--no-newline-before`: with `append`, supply the text to append (`--no-newline-before` only when exact append bytes are required).
 - `--output FILE`: with `read`, write content to FILE instead of stdout.
-- `--list-templates`: currently reports that app database templates are disabled.
 - `--dashboard`: with `open`, open the Revdoku dashboard instead of the live site.
 - `--url URL`: Revdoku app URL, default `https://app.revdoku.com`.
 - `--agent NAME`: attribute uploads to a specific agent (for example `claude-code` or `codex`). The CLI auto-detects common agents and otherwise records `cli`; set this (or `REVDOKU_AGENT_NAME`) when running inside an agent that is not auto-detected so version history shows the real caller.
