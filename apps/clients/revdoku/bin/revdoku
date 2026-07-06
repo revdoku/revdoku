@@ -72,8 +72,6 @@ OUTPUT_PATH=""
 NO_WAIT="${REVDOKU_NO_WAIT:-false}"
 DRAFT="false"
 OPEN_DASHBOARD="false"
-INIT_TEMPLATE=""
-INIT_LIST_TEMPLATES="false"
 SHOW_PUBLISH_HINT="false"
 # Project-local binding (.revdoku): remembers the bucket so `revdoku p` keeps
 # updating the same site. Populated from the target dir, --bucket-id overrides.
@@ -241,13 +239,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dashboard)
       OPEN_DASHBOARD="true"
-      shift
-      ;;
-    --template)
-      die "App database templates are disabled. Run 'revdoku init' for a static/SPA starter."
-      ;;
-    --list-templates)
-      INIT_LIST_TEMPLATES="true"
       shift
       ;;
     --access-mode)
@@ -943,10 +934,6 @@ open_site() {
   printf "%s\n" "$url"
 }
 
-revdoku_known_templates() {
-  return 0
-}
-
 # Write heredoc (stdin) to a file, but never clobber an existing one.
 init_write_file() {
   local dest="$1"
@@ -1006,17 +993,8 @@ init_project() {
   local target="${PATH_TO_STORE:-.}"
   [[ -n "$target" ]] || target="."
 
-  if [[ "${INIT_LIST_TEMPLATES:-false}" == "true" ]]; then
-    echo "App database templates are disabled. Run 'revdoku init' for a static/SPA starter." >&2
-    return 0
-  fi
-
   mkdir -p "$target"
-  if [[ -n "$INIT_TEMPLATE" ]]; then
-    die "App database templates are disabled. Run 'revdoku init' for a static/SPA starter."
-  else
-    init_scaffold_static "$target"
-  fi
+  init_scaffold_static "$target"
 
   echo "" >&2
   echo "Revdoku project ready in: $target" >&2
