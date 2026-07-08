@@ -84,13 +84,13 @@ if [[ -z "$GRANT_TOKEN" ]]; then
     bin/rails runner '
       timestamp = Time.current.utc.strftime("%Y%m%d%H%M%S")
       user = User.create!(email: "cli-smoke-#{timestamp}-#{SecureRandom.hex(4)}@revdoku.invalid", confirmed_at: Time.current)
-      account = Account.create!(name: "CLI Smoke #{timestamp}", owner: user, personal: true, max_storage_mb: 5120, max_account_connections: 10)
+      account = Account.create!(name: "CLI Smoke #{timestamp}", owner: user, personal: true, max_storage_mb: 5120, max_account_connections: 10, max_account_members: 10, max_api_keys: 10, max_agent_connections: 10)
       AccountMember.create!(account: account, user: user, role: :owner)
       bucket = ActsAsTenant.with_tenant(account) do
         account.buckets.create!(title: "CLI Smoke Selected #{timestamp}", source: :api)
       end
       account.complete_setup!
-      account.update!(max_storage_mb: 5120, max_buckets: 10, max_live_publications: 10, max_account_connections: 10)
+      account.update!(max_storage_mb: 5120, max_buckets: 10, max_live_publications: 10, max_account_connections: 10, max_account_members: 10, max_api_keys: 10, max_agent_connections: 10)
       account_raw, = AgentConnectionGrant.issue!(user: user, account: account, bucket: nil, bucket_permissions: {}, metadata: { source: "cli_smoke" })
       selected_raw, = AgentConnectionGrant.issue!(user: user, account: account, bucket: bucket, bucket_permissions: { bucket.prefix_id => "write" }, metadata: { source: "cli_smoke_selected" })
       puts JSON.generate(account_grant: account_raw, selected_grant: selected_raw, selected_bucket_id: bucket.prefix_id)
