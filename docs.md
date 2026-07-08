@@ -56,7 +56,7 @@ form works):
 | `i`    | `init`    | Scaffold a starter site + agent files |
 | `st`   | `status`  | Connection and account status |
 | `down` | `unpublish` | Take this folder's site offline (keeps the URL) |
-| —      | `login`   | Sign in and save an API key |
+| —      | `login`   | Sign in and save local agent credentials |
 
 Other (full name only): `files`, `read PATH`, `versions`, `restore ID`,
 `append PATH`, `archive`, `unarchive`, `delete`, `account`, `sites`, `dashboard`,

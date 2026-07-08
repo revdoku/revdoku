@@ -177,9 +177,10 @@ for structured bucket work:
   may poll for convenience, but agent workflows should still treat the status
   check as a separate step. A settings/access-only change does not re-upload
   files.
-- Bucket publishing publishes a **permanent** live public website on every plan; it
-  stays live until the user unpublishes. The **free plan** allows up to **2 public
-  websites** and is for **personal / non-commercial use**; paid plans raise the limit.
+- Bucket publishing publishes a live public website on every plan; it stays live
+  until the user unpublishes, subject to Free-plan keepalive limits. The **free
+  plan** allows **1 public website** and **1 AI agent connection**; normal reusable
+  API keys are on paid plans.
 - To let the user preview the current draft before publishing for real, use the
   **preview** shortcut (`bucket_publish_preview` over MCP, `POST
   /api/v1/buckets/:id/publication/preview` over REST, or `revdoku preview` on the CLI).
@@ -278,7 +279,7 @@ connected, run the local client with the one-time grant from the prompt:
 ```
 
 The grant can be used once and expires after 15 minutes. The client saves the
-returned API key to `~/.revdoku/credentials`. For selected-bucket grants, it
+returned agent credential to `~/.revdoku/credentials`. For selected-bucket grants, it
 also saves the granted bucket id to `~/.revdoku/credentials.bucket` so
 later `~/.revdoku/bin/revdoku p PATH` commands store into that bucket by
 default. Do not print or repeat the API key.

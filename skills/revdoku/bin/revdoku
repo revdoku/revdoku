@@ -1395,7 +1395,11 @@ account_status() {
           },
           connections: {
             max: $limits.max_account_connections,
+            max_account_members: $limits.max_account_members,
+            max_api_keys: $limits.max_api_keys,
+            max_agent_connections: $limits.max_agent_connections,
             active_api_keys_count: $limits.active_api_keys_count,
+            active_agent_connections_count: $limits.active_agent_connections_count,
             api_rate_limit_requests_per_minute: $limits.api_rate_limit_requests_per_minute
           },
           credits: {

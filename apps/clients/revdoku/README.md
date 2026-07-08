@@ -4,7 +4,8 @@ Publish websites from Claude, ChatGPT, Codex, Gemini, and other AI agents using 
 A few seconds from idea to a live website you can share — `revdoku p` and you
 have a URL. Nothing goes live until you publish (use `--draft` to store privately).
 
-Create a free account: <https://revdoku.com>
+Create a free account: <https://revdoku.com>. Free includes one AI agent
+connection; normal reusable API keys are on paid plans.
 
 ## Connect your AI agent
 

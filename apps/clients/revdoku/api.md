@@ -7,6 +7,10 @@ Most AI-agent users should start with the Revdoku app's copied prompt or the
 Revdoku MCP tool. Use this HTTP API for custom clients, CI jobs, backend workers,
 or direct integrations.
 
+Free accounts can connect one AI agent through hosted MCP, local MCP, or the
+CLI grant/login flow. Normal reusable API keys for custom clients and automation
+are available on paid plans.
+
 ## Quick Start
 
 ### Base URL
@@ -147,7 +151,7 @@ authorization; one-time grants are the best browser-signed fallback for local
 agent chats.
 
 The app's **Copy prompt** button gives the agent a one-time grant token. Exchange
-it for a normal API key:
+it for an agent credential:
 
 ```sh
 curl -fsS "$REVDOKU_URL/api/v1/agent_auth/exchange_grant" \
@@ -390,8 +394,7 @@ hold both a published `website/` and an unserved `scripts/` sibling. Pass an
 empty string to publish the whole bucket again.
 
 **Website lifetime.** Published websites are permanent on every plan. New accounts
-start with a 14-day free trial of the Starter plan (no credit card required); after
-the trial, accounts revert to a limited free tier for personal / non-commercial use.
+can publish on a limited free tier for personal / non-commercial use.
 
 **Preview (staging).** `POST /api/v1/buckets/:id/publication/preview` publishes the
 bucket's current draft to a temporary public `preview-<slug>` URL that auto-expires
