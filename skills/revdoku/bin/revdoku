@@ -135,7 +135,7 @@ Publish options:
   --protected          Publish as a password-protected website (alias: --private).
   --password PASSWORD  Set the protected-site password (never sent in a URL).
   --generate-password  Generate/rotate the protected-site password.
-  --access-mode MODE   public, password, or password_ask_info (email + password).
+  --access-mode MODE   public, password, or require_email (verified email, no password).
   --draft              Save a private draft instead of publishing live.
   --no-wait            Return as soon as the URL is reserved (don't wait for the build).
   --expires-in-minutes N  Preview lifetime in minutes for `revdoku preview` (default 15,
@@ -242,7 +242,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --access-mode)
-      [[ $# -ge 2 ]] || die "--access-mode requires public, password, or password_ask_info"
+      [[ $# -ge 2 ]] || die "--access-mode requires public, password, or require_email"
       PUBLICATION_ACCESS_MODE="$2"
       shift 2
       ;;
@@ -481,13 +481,13 @@ else
 fi
 
 case "$PUBLICATION_ACCESS_MODE" in
-  password-ask-info)
-    PUBLICATION_ACCESS_MODE="password_ask_info"
+  require-email)
+    PUBLICATION_ACCESS_MODE="require_email"
     ;;
-  ""|public|password|password_ask_info)
+  ""|public|password|require_email)
     ;;
   *)
-    die "--access-mode must be public, password, or password_ask_info"
+    die "--access-mode must be public, password, or require_email"
     ;;
 esac
 
@@ -539,10 +539,10 @@ fi
 
 if [[ -n "$PUBLICATION_PASSWORD" || "$PUBLICATION_REGENERATE_PASSWORD" == "true" ]]; then
   case "${PUBLICATION_ACCESS_MODE:-password}" in
-    password|password_ask_info)
+    password)
       ;;
     *)
-      die "--password or --generate-password requires --access-mode password or password_ask_info"
+      die "--password or --generate-password requires --access-mode password"
       ;;
   esac
   PUBLICATION_ACCESS_MODE="${PUBLICATION_ACCESS_MODE:-password}"
@@ -1573,19 +1573,21 @@ print_publication_access_hint_from_response() {
   local response="$1"
   local access_mode password url share_text
   access_mode="$("$JQ_BIN" -r '.data.publication.access_mode // empty' <<<"$response" 2>/dev/null || true)"
-  [[ "$access_mode" == "password" || "$access_mode" == "password_ask_info" ]] || return 0
+  [[ "$access_mode" == "password" || "$access_mode" == "require_email" ]] || return 0
 
   url="$("$JQ_BIN" -r '.data.publication.public_url // .data.publication.site_url // empty' <<<"$response" 2>/dev/null || true)"
   password="$("$JQ_BIN" -r '.data.publication.access_password // .data.publication.generated_password // empty' <<<"$response" 2>/dev/null || true)"
   share_text="$("$JQ_BIN" -r '.data.publication.share_text // empty' <<<"$response" 2>/dev/null || true)"
+  if [[ "$access_mode" == "require_email" ]]; then
+    [[ -n "$url" ]] && echo "Require Email website URL: $url" >&2
+    echo "Visitors verify their email with a one-time code. No site password is used." >&2
+    [[ -n "$share_text" ]] && echo "Share text: $share_text" >&2
+    return 0
+  fi
   if [[ -n "$password" ]]; then
     [[ -n "$url" ]] && echo "Protected website URL: $url" >&2
     echo "Protected website password: $password" >&2
-    if [[ "$access_mode" == "password_ask_info" ]]; then
-      echo "Visitors will enter their email and then this password. The password is not included in the URL." >&2
-    else
-      echo "Visitors will enter this password. The password is not included in the URL." >&2
-    fi
+    echo "Visitors will enter this password. The password is not included in the URL." >&2
     [[ -n "$share_text" ]] && echo "Share text: $share_text" >&2
   else
     echo "Protected website password is stored, but this API key cannot view it. Use an owner publish key to retrieve or regenerate it." >&2

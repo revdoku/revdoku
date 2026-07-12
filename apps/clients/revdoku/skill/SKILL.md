@@ -141,7 +141,7 @@ for structured bucket work:
   the user explicitly asks to rotate it. Never ask the user to type a
   protected-site password in chat, and never put the password in the URL. If the user asks to
   set or change the bucket description while publishing, pass `description` on
-  the publish tool or update the bucket first; password and password+email gates
+  the publish tool or update the bucket first; Password and Require Email access screens
   show the bucket description under the title. When updating an existing website, republish that
   same `bucket_id`; Revdoku keeps the same URL and this does not use another
   live-site slot. If publishing
@@ -158,7 +158,7 @@ for structured bucket work:
   is not configured for this deployment yet.
 - Visibility change lock: a bucket can be visibility-locked so its public/private state
   can't be changed by accident. While locked, these are blocked: first publish,
-  unpublish, access-mode changes (public ↔ password ↔ password+email), public-slug
+  unpublish, access-mode changes (public ↔ password ↔ require_email), public-slug
   renames, and removing or changing a custom domain. These still work while locked:
   re-publishing the SAME access mode (renewing a live site) and adding a FIRST custom
   domain. Lock with `bucket_lock_visibility_changes` (also available over the API and the
@@ -440,7 +440,7 @@ The CLI uses verb subcommands (aliases in parentheses):
 - `--draft`: with `publish`, store files privately without going live.
 - `--protected` / `--private`: with `publish`, publish as a password-protected website.
 - `--public`: with `publish`, publish as a public website (the default).
-- `--access-mode password_ask_info`: with `publish`, publish as a protected website that asks visitors for email plus password on paid plans (Starter and up).
+- `--access-mode require_email`: with `publish`, require visitors to verify their email with a one-time code; no site password is used.
 - `--password PASSWORD`: advanced direct-terminal option for owners who choose their own protected website password. Do not ask users for this in chat, and do not put the password in a URL.
 - `--generate-password`: with `publish --protected`, rotate the protected website password and show it in the owner publish response. Use only when the user explicitly asks to rotate it.
 - `--tracking` / `--no-tracking`, `--analytics` / `--no-analytics`, `--client-events` / `--no-client-events`: control website analytics and browser-side event tracking. Both are on by default; only disable when the user explicitly asks.
@@ -465,8 +465,8 @@ The CLI uses verb subcommands (aliases in parentheses):
   response is still queued/processing, say publishing started and check status
   separately before sharing it as live. For protected websites, give the owner
   the website URL and password to share only once ready; do not append the
-  password as a URL parameter. For `password_ask_info`, also mention that
-  visitors will enter email before the password.
+  password as a URL parameter. For `require_email`, explain that visitors verify
+  their email with a one-time code and no site password is used.
 - If publishing fails with `PUBLIC_STORAGE_NOT_CONFIGURED`, share the
   `View in Revdoku:` dashboard link as private storage and say public publishing
   is not configured yet.
