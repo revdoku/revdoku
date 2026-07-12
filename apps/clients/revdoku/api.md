@@ -375,8 +375,8 @@ below the listing, GitHub-style. Choose which folder is served with
 `publication_root_directory` (below).
 
 For a protected website, use `"access_mode": "password"`; it requires available
-protected-site capacity on the account. Use `"access_mode": "password_ask_info"`
-when visitors should enter email before the password; that email-collection gate
+protected-site capacity on the account. Use `"access_mode": "require_email"`
+when visitors should verify their email with an OTP and no site password; that mode
 is available on Builder and Pro plans. Omit
 `password`; Revdoku generates a copyable password the first time protected
 access is enabled. Set `"regenerate_password": true` only when the owner
@@ -985,7 +985,7 @@ Publication response fields:
 | `expires_at` | ISO-8601 time when public access expires, or `null` (the default) for a permanent site. Set only on ephemeral preview/staging publications (created via the preview endpoint). |
 | `site_mode` | Whether deep links fall back to the index page (SPA routing). |
 | `site_type` | `website` for published sites. |
-| `access_mode` | `public`, `password`, or `password_ask_info`. Protected websites require available protected-site capacity; `password_ask_info` asks visitors for email plus password and requires a paid plan (Starter and up). |
+| `access_mode` | `public`, `password`, or `require_email`. Protected websites require available protected-site capacity; `require_email` verifies visitors by email OTP and uses no site password. |
 | `password_configured` | Whether a protected website password is configured. |
 | `access_password` | Copyable stored password, returned only to account-owner publish keys. |
 | `generated_password` | Newly generated password, returned only to account-owner publish keys. |

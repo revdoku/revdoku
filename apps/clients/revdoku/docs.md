@@ -120,7 +120,7 @@ publish tools as **Publish** or **Republish**.
 Protected websites use a separate password gate. When enabled, Revdoku can:
 
 - Generate or keep a website password.
-- Ask visitors for an email before access when `password_ask_info` is selected
+- Require visitors to verify their email before access when `require_email` is selected
   on paid plans (Starter and up).
 - Notify the owner on every successful protected access when access
   notifications are enabled.
