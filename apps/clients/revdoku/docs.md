@@ -101,8 +101,8 @@ Revdoku supports two website modes:
 If a published bucket does not contain `index.html`, Revdoku creates an
 Auto-Index Page that lists and previews files. Custom Auto-Index templates must
 include `{{files}}` or `{{ files }}`; supported macros are `{{title}}`,
-`{{description}}`, `{{files}}`, and `{{theme_switch}}`, with optional whitespace
-inside the braces.
+`{{description}}`, `{{files}}`, `{{theme_switch}}`, `{{account_name}}`, and
+`{{account_logo}}`, with optional whitespace inside the braces.
 
 Republishing the same bucket updates the existing website and keeps the same
 public URL. Unpublishing removes public access while keeping the bucket and
@@ -114,6 +114,16 @@ user that the website is live, public access is removed, or deletion is finished
 
 Saving files does not publish them. Treat bucket writes as **Save draft** and
 publish tools as **Publish** or **Republish**.
+
+Use `--site-mode spa` for compiled client-side apps that need route fallback;
+omit it or use `--site-mode static` for normal static sites. A project-local
+`.revdoku` binding remembers the chosen site mode for later republishes.
+
+New users receive one 30-day Starter trial. When an unconverted trial expires,
+the account becomes read-only and its sites go offline; files remain available
+to view/download, and upgrading restores editing and republishes sites suspended
+by trial expiry. Additional accounts start on Free. Free sites use a rolling
+30-day keepalive refreshed when the owner opens the dashboard.
 
 ## Protected Websites
 

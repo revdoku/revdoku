@@ -5,7 +5,8 @@ A few seconds from idea to a live website you can share — `revdoku p` and you
 have a URL. Nothing goes live until you publish (use `--draft` to store privately).
 
 Create a free account: <https://revdoku.com>. Free includes one AI agent
-connection; normal reusable API keys are on paid plans.
+connection. Reusable API keys start on Builder; Starter uses agent connections
+and OAuth instead.
 
 ## Connect your AI agent
 
@@ -219,6 +220,7 @@ directly (below).
 ```sh
 revdoku p                 # publish the current folder -> live URL
 revdoku p ./dist          # publish a specific folder
+revdoku p ./dist --site-mode spa            # client-side route fallback
 revdoku p --protected --generate-password   # password-protected site
 ```
 
@@ -237,6 +239,12 @@ the returned URL and enter the password — never put passwords in URL parameter
 In a connected agent you can also just ask in plain language, e.g. *"publish the
 `dist` folder to Revdoku"* or *"publish it as a password‑protected site."*
 Publishing only happens when you ask for a website link.
+
+New users receive one 30-day Starter trial. If it ends without an upgrade, the
+account becomes read-only and its sites go offline; files remain available to
+view or download, and upgrading restores editing and republishes trial-suspended
+sites. Additional accounts created by the same user start on Free. Free sites
+use a rolling 30-day keepalive refreshed by opening the dashboard.
 
 Revdoku hosts full static sites and apps: HTML, CSS, **JavaScript**, images,
 fonts, and PDFs are all served as-is — nothing is stripped, and interactivity is

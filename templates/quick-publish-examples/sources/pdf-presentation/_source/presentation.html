@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Operations Review Hub MVP Readout</title>
+<style>
+@page{size:11in 8.5in;margin:0}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:#182230;font-family:Inter,Arial,sans-serif}
+.slide{width:11in;height:8.5in;padding:.58in;page-break-after:always;position:relative;overflow:hidden}
+.slide:last-child{page-break-after:auto}
+.kicker{font-size:10px;font-weight:800;letter-spacing:0;text-transform:uppercase;color:#2759bd;margin:0 0 12px}
+h1{font-size:54px;line-height:.95;margin:0 0 18px;letter-spacing:0;max-width:7.6in}
+h2{font-size:38px;line-height:1.04;margin:0 0 18px;letter-spacing:0}
+h3{font-size:18px;margin:0 0 8px}
+p{font-size:15px;line-height:1.5;margin:0;color:#475467}
+.lead{font-size:19px;line-height:1.48;max-width:7.2in}
+.cover{display:grid;grid-template-columns:1.05fr .95fr;gap:.45in;align-items:center;background:#f7f9fb}
+.cover-img{height:6.3in;border:1px solid #d9e0e9;border-radius:8px;overflow:hidden}
+.cover-img img{width:100%;height:100%;object-fit:cover}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
+.card{border:1px solid #d9e0e9;border-radius:8px;background:#fff;padding:18px;min-height:1.45in}
+.card strong{display:block;color:#182230;font-size:24px;margin-bottom:8px}
+.metric{border:1px solid #d9e0e9;background:#f7f9fb;border-radius:8px;padding:18px}
+.metric strong{display:block;font-size:32px;color:#2759bd;margin-bottom:6px}
+.bar{height:12px;background:#e5ebf5;border-radius:20px;overflow:hidden;margin-top:12px}
+.bar span{display:block;height:100%;background:#2759bd;border-radius:20px}
+.footer{position:absolute;left:.58in;right:.58in;bottom:.28in;display:flex;justify-content:space-between;color:#98a2b3;font-size:10px}
+</style>
+</head>
+<body>
+<section class="slide cover">
+  <div>
+    <p class="kicker">Product review / July 2026</p>
+    <h1>Operations Review Hub</h1>
+    <p class="lead">MVP readout for a single operating flow that brings incoming requests, review decisions, and stakeholder updates together.</p>
+  </div>
+  <div class="cover-img"><img src="../assets/presentation-cover.jpg" alt=""></div>
+  <div class="footer"><span>MVP readout / July 2026</span><span>1</span></div>
+</section>
+<section class="slide">
+  <p class="kicker">Context</p>
+  <h2>Review work is fragmented across inboxes, documents, and chat.</h2>
+  <div class="grid3">
+    <div class="card"><h3>Incoming work</h3><p>Requests arrive through multiple channels without one reliable priority order.</p></div>
+    <div class="card"><h3>Review decisions</h3><p>Context and approvals are difficult to find once the conversation moves on.</p></div>
+    <div class="card"><h3>Stakeholder updates</h3><p>Status reporting takes a separate manual pass and quickly falls out of date.</p></div>
+  </div>
+  <div class="footer"><span>Opportunity and operating context</span><span>2</span></div>
+</section>
+<section class="slide">
+  <p class="kicker">Prototype</p>
+  <h2>The first version covers one complete review path.</h2>
+  <div class="grid2">
+    <div class="metric"><strong>4 views</strong><p>Intake, queue, detail, and stakeholder status.</p><div class="bar"><span style="width:78%"></span></div></div>
+    <div class="metric"><strong>2 roles</strong><p>Internal operator and external stakeholder.</p><div class="bar"><span style="width:64%"></span></div></div>
+    <div class="metric"><strong>1 queue</strong><p>A single ordered source of work and review status.</p><div class="bar"><span style="width:88%"></span></div></div>
+    <div class="metric"><strong>10 days</strong><p>Build, review, polish, and publish cycle.</p><div class="bar"><span style="width:70%"></span></div></div>
+  </div>
+  <div class="footer"><span>Product flow and key screens</span><span>3</span></div>
+</section>
+<section class="slide">
+  <p class="kicker">Next sprint</p>
+  <h2>Run a focused beta before broadening the product.</h2>
+  <div class="grid3">
+    <div class="card"><strong>01</strong><h3>Two operating teams</h3><p>Test the same review path with different volumes, roles, and priorities.</p></div>
+    <div class="card"><strong>02</strong><h3>Weekly review</h3><p>Track friction, missing context, and the decisions users still make elsewhere.</p></div>
+    <div class="card"><strong>03</strong><h3>Clear success gate</h3><p>Expand only after teams can run the core queue without a parallel spreadsheet.</p></div>
+  </div>
+  <p class="lead" style="margin-top:28px">Next decision: confirm the two beta teams, prepare representative requests, and begin a three-week workflow test.</p>
+  <div class="footer"><span>Beta scope and next decisions</span><span>4</span></div>
+</section>
+</body>
+</html>
