@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Operations Review Hub | MVP Readout</title>
+<style>
+:root{color-scheme:light;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#17263f;background:#f7f9fb;--accent:#2759bd;--secondary:#0c766c;--warm:#c65f46;--ink:#17263f;--muted:#5e6c81;--line:#d9e0e9;--soft:#eef3f8}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:#f7f9fb;color:var(--ink)}
+img{max-width:100%;display:block}
+a{color:inherit}
+.wrap{width:min(1120px,calc(100% - 40px));margin:0 auto}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:22px 0;border-bottom:1px solid var(--line)}
+.brand{font-size:15px;font-weight:850}
+.navlinks{display:flex;gap:22px;color:#526177;font-size:14px}
+.navlinks a{text-decoration:none}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,520px);gap:52px;align-items:center;padding:58px 0 76px}
+.eyebrow{margin:0 0 14px;color:var(--accent);font-size:13px;font-weight:850;text-transform:uppercase}
+.h1{margin:0;font-size:66px;line-height:.98;font-weight:860}
+.lead{margin:22px 0 0;max-width:640px;color:#526177;font-size:18px;line-height:1.62}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:#fff;padding:0 20px;text-decoration:none;font-weight:780}
+.btn.secondary{background:#fff;color:var(--accent)}
+.media{border:1px solid #cbd4e0;border-radius:8px;overflow:hidden;background:#e8edf4;box-shadow:0 24px 56px rgba(23,38,63,.16)}
+.media img{width:100%;aspect-ratio:4/3;object-fit:cover}
+.band{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff;padding:50px 0}
+.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.summary-item{border-top:4px solid var(--accent);padding:18px 2px 0}
+.summary-item:nth-child(2){border-color:var(--secondary)}
+.summary-item:nth-child(3){border-color:var(--warm)}
+.summary-item span{display:block;margin-bottom:8px;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase}
+.summary-item h2{margin:0 0 9px;font-size:20px}
+.summary-item p{margin:0;color:var(--muted);line-height:1.58}
+.outline-section{padding:64px 0 76px}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:26px}
+.section-head h2{margin:0;font-size:38px;line-height:1.08}
+.section-head p{margin:0;color:var(--muted)}
+.outline{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.slide{min-height:150px;border-right:1px solid var(--line);padding:20px}
+.slide:last-child{border-right:0}
+.slide strong{display:block;margin-bottom:30px;color:var(--accent);font-size:13px}
+.slide span{font-size:17px;font-weight:760;line-height:1.4}
+@media(max-width:760px){
+  .wrap{width:min(100% - 28px,1120px)}
+  .navlinks{display:none}
+  .hero{grid-template-columns:1fr;gap:32px;padding:36px 0 50px}
+  .h1{font-size:45px}
+  .lead{font-size:16px}
+  .summary,.outline{grid-template-columns:1fr}
+  .section-head{align-items:start;flex-direction:column;gap:8px}
+  .slide{min-height:0;border-right:0;border-bottom:1px solid var(--line)}
+  .slide:last-child{border-bottom:0}
+  .slide strong{margin-bottom:8px}
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="wrap">
+    <nav class="nav">
+      <div class="brand">MVP Readout</div>
+      <div class="navlinks"><a href="presentation.pdf">Presentation PDF</a><a href="#summary">Summary</a><a href="#outline">Deck</a></div>
+    </nav>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Product review - July 2026</p>
+        <h1 class="h1">Operations Review Hub</h1>
+        <p class="lead">A working MVP that turns incoming requests, review decisions, and stakeholder updates into one visible operating flow.</p>
+        <div class="actions"><a class="btn" href="presentation.pdf">Open presentation</a><a class="btn secondary" href="#summary">Read summary</a></div>
+      </div>
+      <div class="media"><img src="assets/presentation-cover.jpg" alt="Operations Review Hub presentation cover"></div>
+    </section>
+  </div>
+  <section class="band" id="summary">
+    <div class="wrap summary">
+      <article class="summary-item"><span>Opportunity</span><h2>One review queue</h2><p>Replace requests spread across inboxes, documents, and chat with one ordered workspace.</p></article>
+      <article class="summary-item"><span>MVP</span><h2>Four working views</h2><p>Intake, queue, detail, and stakeholder status views now cover the core review path.</p></article>
+      <article class="summary-item"><span>Decision</span><h2>Run a focused beta</h2><p>Test the workflow with two operating teams before adding integrations or broader reporting.</p></article>
+    </div>
+  </section>
+  <section class="wrap outline-section" id="outline">
+    <div class="section-head"><h2>Presentation</h2><p>Four sections / 8 minutes</p></div>
+    <div class="outline">
+      <div class="slide"><strong>01</strong><span>Opportunity and operating context</span></div>
+      <div class="slide"><strong>02</strong><span>Product flow and key screens</span></div>
+      <div class="slide"><strong>03</strong><span>What the MVP proves</span></div>
+      <div class="slide"><strong>04</strong><span>Beta scope and next decisions</span></div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

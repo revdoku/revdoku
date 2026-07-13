@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Northwind Client Operations Portal Proposal</title>
+<style>
+@page{size:Letter;margin:0}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:#182230;font-family:Inter,Arial,sans-serif}
+.page{width:8.5in;height:11in;padding:.72in;page-break-after:always;position:relative;overflow:hidden}
+.page:last-child{page-break-after:auto}
+.kicker{font-size:10px;font-weight:800;letter-spacing:0;text-transform:uppercase;color:#2457b8;margin:0 0 12px}
+h1{font-size:48px;line-height:.98;margin:0 0 18px;letter-spacing:0}
+h2{font-size:30px;line-height:1.08;margin:0 0 14px;letter-spacing:0}
+h3{font-size:15px;margin:0 0 8px}
+p{font-size:13px;line-height:1.55;margin:0;color:#475467}
+.lead{font-size:16px;line-height:1.55;max-width:5.8in}
+.cover{display:grid;grid-template-rows:auto 1fr auto;gap:28px;background:#f7f8fa}
+.hero-img{height:3.2in;border-radius:14px;overflow:hidden;border:1px solid #d8dee8}
+.hero-img img{width:100%;height:100%;object-fit:cover}
+.meta{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.box{border:1px solid #d8dee8;border-radius:8px;padding:14px;background:#fff}
+.box strong{display:block;font-size:17px;margin-bottom:4px;color:#182230}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+.card{border:1px solid #d8dee8;border-radius:8px;padding:14px;background:#fff;min-height:1.25in}
+.table{width:100%;border-collapse:collapse;margin-top:16px;font-size:12px}
+.table th{background:#eef2f7;text-align:left;color:#344054}
+.table th,.table td{border:1px solid #d8dee8;padding:10px;vertical-align:top}
+.timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}
+.step{border:1px solid #d8dee8;background:#f8fafc;border-radius:8px;padding:12px}
+.step strong{display:block;font-size:13px;margin-bottom:6px}
+.footer{position:absolute;left:.72in;right:.72in;bottom:.36in;display:flex;justify-content:space-between;color:#98a2b3;font-size:10px}
+.accent{color:#2457b8}
+</style>
+</head>
+<body>
+<section class="page cover">
+  <div>
+    <p class="kicker">Project proposal / 10 July 2026</p>
+    <h1>Northwind Client Operations Portal</h1>
+    <p class="lead">A two-week delivery sprint to replace scattered intake, status updates, and handoffs with one dependable client workspace.</p>
+  </div>
+  <div class="hero-img"><img src="../assets/proposal-cover.jpg" alt=""></div>
+  <div class="meta">
+    <div class="box"><strong>10 days</strong><p>Build, review, QA, and handoff.</p></div>
+    <div class="box"><strong>1 workflow</strong><p>Client operations, built end to end.</p></div>
+    <div class="box"><strong>3 reviews</strong><p>Decisions made against working software.</p></div>
+  </div>
+  <div class="footer"><span>Ari Vale / Northwind Advisory</span><span>Page 1</span></div>
+</section>
+<section class="page">
+  <p class="kicker">Sprint plan</p>
+  <h2>What gets built</h2>
+  <p class="lead">The sprint delivers the first complete client operations flow, a working review link, and practical handoff documentation.</p>
+  <div class="cards">
+    <div class="card"><h3>Client intake</h3><p>Project setup, source files, owners, and agreed milestones in one structured flow.</p></div>
+    <div class="card"><h3>Status workspace</h3><p>Progress, open decisions, deliverables, and upcoming dates in a clear client view.</p></div>
+    <div class="card"><h3>Team handoff</h3><p>Internal ownership, launch checks, setup notes, and the next prioritized backlog.</p></div>
+  </div>
+  <div class="grid">
+    <div class="box"><h3>Primary users</h3><p>Northwind project leads, operations staff, and client stakeholders reviewing active engagements.</p></div>
+    <div class="box"><h3>Outside this sprint</h3><p>Historical data migration, custom billing, external system integrations, and native mobile apps.</p></div>
+  </div>
+  <table class="table">
+    <thead><tr><th>Phase</th><th>Output</th><th>Review point</th></tr></thead>
+    <tbody>
+      <tr><td>Discovery</td><td>Workflow map, success criteria, sample client data</td><td>Approve build scope</td></tr>
+      <tr><td>Core build</td><td>Working client operations path with realistic data</td><td>Review first usable link</td></tr>
+      <tr><td>Polish</td><td>Responsive UI, empty states, copy pass</td><td>Final QA pass</td></tr>
+      <tr><td>Handoff</td><td>Published site, notes, next backlog</td><td>Approve launch</td></tr>
+    </tbody>
+  </table>
+  <div class="footer"><span>Northwind Client Operations Portal</span><span>Page 2</span></div>
+</section>
+<section class="page">
+  <p class="kicker">Timeline and approval</p>
+  <h2>Two-week delivery plan</h2>
+  <div class="timeline">
+    <div class="step"><strong>Day 1</strong><p>Kickoff, data review, and acceptance criteria.</p></div>
+    <div class="step"><strong>Days 2-5</strong><p>Core flow implementation and content pass.</p></div>
+    <div class="step"><strong>Days 6-8</strong><p>Stakeholder review, polish, and QA.</p></div>
+    <div class="step"><strong>Days 9-10</strong><p>Publish, document, and hand off.</p></div>
+  </div>
+  <div class="grid" style="margin-top:28px">
+    <div class="box"><h3>Northwind provides</h3><p>Sample project data, brand assets, access to required tools, and one reviewer empowered to make decisions.</p></div>
+    <div class="box"><h3>Ari provides</h3><p>Implementation, interface polish, review links, launch support, and a concise next-step backlog.</p></div>
+  </div>
+  <table class="table">
+    <thead><tr><th>Decision</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Approve sprint scope</td><td>Ready for review</td></tr>
+      <tr><td>Confirm primary user workflow</td><td>Ready for review</td></tr>
+      <tr><td>Pick launch access mode</td><td>Public, password, or private review</td></tr>
+      <tr><td>Schedule kickoff</td><td>Upon approval</td></tr>
+    </tbody>
+  </table>
+  <p class="lead" style="margin-top:24px"><strong class="accent">Next step:</strong> approve the scope, share the sample client material, and schedule kickoff.</p>
+  <div class="footer"><span>Northwind Client Operations Portal</span><span>Page 3</span></div>
+</section>
+</body>
+</html>

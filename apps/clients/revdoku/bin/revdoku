@@ -37,6 +37,7 @@ PUBLICATION_REGENERATE_PASSWORD="${REVDOKU_PUBLICATION_REGENERATE_PASSWORD:-fals
 PUBLICATION_ANALYTICS_ENABLED="${REVDOKU_PUBLICATION_ANALYTICS_ENABLED:-}"
 PUBLICATION_CLIENT_EVENTS_ENABLED="${REVDOKU_PUBLICATION_CLIENT_EVENTS_ENABLED:-}"
 PUBLICATION_TRACKING_ENABLED="${REVDOKU_PUBLICATION_TRACKING_ENABLED:-}"
+PUBLICATION_SITE_MODE="${REVDOKU_PUBLICATION_SITE_MODE:-}"
 PREVIEW_EXPIRES_IN_MINUTES="${REVDOKU_PREVIEW_EXPIRES_IN_MINUTES:-}"
 RESTORE_VERSION_ID="${REVDOKU_RESTORE_VERSION_ID:-}"
 RESTORE_COMMENT="${REVDOKU_RESTORE_COMMENT:-}"
@@ -78,6 +79,7 @@ SHOW_PUBLISH_HINT="false"
 REVDOKU_PROJECT_FILE=""
 BOUND_BUCKET_ID=""
 BOUND_URL=""
+BOUND_SITE_MODE=""
 BINDING_EXISTED="false"
 LAST_PUBLISH_SESSION_BUCKET_ID=""
 LAST_HTTP_STATUS=""
@@ -136,10 +138,12 @@ Publish options:
   --password PASSWORD  Set the protected-site password (never sent in a URL).
   --generate-password  Generate/rotate the protected-site password.
   --access-mode MODE   public, password, or require_email (verified email, no password).
+  --site-mode MODE     static or spa (SPA serves index.html for client-side routes).
   --draft              Save a private draft instead of publishing live.
   --no-wait            Return as soon as the URL is reserved (don't wait for the build).
   --expires-in-minutes N  Preview lifetime in minutes for `revdoku preview` (default 15,
-                       max 43200 = 30 days). Main publishes are always permanent.
+                       max 43200 = 30 days). Free sites use a 30-day dashboard keepalive;
+                       paid sites are permanent.
   --publish-folder DIR Publish ONLY this top-level folder as the site (its index.html
                        becomes the root); other folders stay stored but unserved.
   --title TEXT         --description TEXT     --tag-path LABEL     --metadata JSON
@@ -244,6 +248,11 @@ while [[ $# -gt 0 ]]; do
     --access-mode)
       [[ $# -ge 2 ]] || die "--access-mode requires public, password, or require_email"
       PUBLICATION_ACCESS_MODE="$2"
+      shift 2
+      ;;
+    --site-mode)
+      [[ $# -ge 2 ]] || die "--site-mode requires static or spa"
+      PUBLICATION_SITE_MODE="$2"
       shift 2
       ;;
     --protected|--private)
@@ -451,9 +460,13 @@ if [[ -f "$REVDOKU_PROJECT_FILE" ]]; then
   BINDING_EXISTED="true"
   BOUND_BUCKET_ID="$(sed -n 's/^bucket_id=//p' "$REVDOKU_PROJECT_FILE" 2>/dev/null | head -n1 | tr -d '\r')"
   BOUND_URL="$(sed -n 's/^url=//p' "$REVDOKU_PROJECT_FILE" 2>/dev/null | head -n1 | tr -d '\r')"
+  BOUND_SITE_MODE="$(sed -n 's/^site_mode=//p' "$REVDOKU_PROJECT_FILE" 2>/dev/null | head -n1 | tr -d '\r')"
 fi
 if [[ -z "$BUCKET_ID" && -n "$BOUND_BUCKET_ID" ]]; then
   BUCKET_ID="$BOUND_BUCKET_ID"
+fi
+if [[ -z "$PUBLICATION_SITE_MODE" && -n "$BOUND_SITE_MODE" ]]; then
+  PUBLICATION_SITE_MODE="$BOUND_SITE_MODE"
 fi
 
 # Persist (or refresh) the .revdoku binding for a directory project after a
@@ -467,6 +480,7 @@ write_project_binding() {
     printf '# Revdoku project binding — created by `revdoku publish`. Safe to commit or gitignore.\n'
     printf 'bucket_id=%s\n' "$bucket"
     [[ -n "$url" ]] && printf 'url=%s\n' "$url"
+    [[ -n "$PUBLICATION_SITE_MODE" ]] && printf 'site_mode=%s\n' "$PUBLICATION_SITE_MODE"
   } > "$REVDOKU_PROJECT_FILE" 2>/dev/null || return 0
   if [[ "$BINDING_EXISTED" != "true" ]]; then
     echo "Bound this folder to $bucket (.revdoku). Next time just run: revdoku p" >&2
@@ -488,6 +502,14 @@ case "$PUBLICATION_ACCESS_MODE" in
     ;;
   *)
     die "--access-mode must be public, password, or require_email"
+    ;;
+esac
+
+case "$PUBLICATION_SITE_MODE" in
+  ""|static|spa)
+    ;;
+  *)
+    die "--site-mode must be static or spa"
     ;;
 esac
 
@@ -552,7 +574,7 @@ if [[ -n "$PUBLICATION_PASSWORD" && "$PUBLICATION_REGENERATE_PASSWORD" == "true"
   die "use either --password or --generate-password, not both"
 fi
 
-if [[ "$PUBLISH" != "true" && "$ACTION" == "store" && ( -n "$PUBLICATION_ACCESS_MODE" || -n "$PUBLICATION_PASSWORD" || "$PUBLICATION_REGENERATE_PASSWORD" == "true" || -n "$PUBLICATION_ANALYTICS_ENABLED" || -n "$PUBLICATION_CLIENT_EVENTS_ENABLED" || -n "$PUBLICATION_TRACKING_ENABLED" ) ]]; then
+if [[ "$PUBLISH" != "true" && "$ACTION" == "store" && ( -n "$PUBLICATION_ACCESS_MODE" || -n "$PUBLICATION_PASSWORD" || "$PUBLICATION_REGENERATE_PASSWORD" == "true" || -n "$PUBLICATION_ANALYTICS_ENABLED" || -n "$PUBLICATION_CLIENT_EVENTS_ENABLED" || -n "$PUBLICATION_TRACKING_ENABLED" || -n "$PUBLICATION_SITE_MODE" ) ]]; then
   die "publication options apply when publishing; remove --draft (they don't apply to a draft)"
 fi
 
@@ -804,7 +826,13 @@ http_json() {
       echo "Lock details: $(lock_detail_summary "$details_json")" >&2
     fi
     if [[ "$auth" == "true" ]]; then
-      if [[ "$code" == "ACCOUNT_ACCESS_UNAVAILABLE" ]]; then
+      if [[ "$code" == "TRIAL_EXPIRED" ]]; then
+        local upgrade_url
+        upgrade_url="$("$JQ_BIN" -r '.upgrade_url // empty' <<<"$details_json" 2>/dev/null || true)"
+        [[ -n "$upgrade_url" ]] || upgrade_url="${BASE_URL%/}/pricing"
+        [[ "$upgrade_url" == /* ]] && upgrade_url="${BASE_URL%/}${upgrade_url}"
+        echo "The account is read-only. Files can still be viewed or downloaded; upgrade to resume editing and restore trial-suspended sites: $upgrade_url" >&2
+      elif [[ "$code" == "ACCOUNT_ACCESS_UNAVAILABLE" ]]; then
         echo "This connection uses bucket-scoped agent credentials, which cannot read account-level status. Verify the connection with 'revdoku status', or open Revdoku in a browser for account details." >&2
       elif [[ "$status" == "401" || "$status" == "403" ]]; then
         echo "Run 'revdoku login' to reconnect and save a fresh Revdoku API key." >&2
@@ -1774,13 +1802,15 @@ publication_access_json() {
     --arg analytics_enabled "$PUBLICATION_ANALYTICS_ENABLED" \
     --arg client_events_enabled "$PUBLICATION_CLIENT_EVENTS_ENABLED" \
     --arg tracking_enabled "$PUBLICATION_TRACKING_ENABLED" \
+    --arg site_mode "$PUBLICATION_SITE_MODE" \
     '{}
     + (if $access_mode != "" then {access_mode: $access_mode} else {} end)
     + (if $password != "" then {password: $password} else {} end)
     + (if $regenerate_password == "true" then {regenerate_password: true} else {} end)
     + (if $analytics_enabled != "" then {publication_analytics_enabled: ($analytics_enabled == "true")} else {} end)
     + (if $client_events_enabled != "" then {publication_client_events_enabled: ($client_events_enabled == "true")} else {} end)
-    + (if $tracking_enabled != "" then {tracking_enabled: ($tracking_enabled == "true")} else {} end)'
+    + (if $tracking_enabled != "" then {tracking_enabled: ($tracking_enabled == "true")} else {} end)
+    + (if $site_mode != "" then {site_mode: $site_mode} else {} end)'
 }
 
 has_index_file() {
@@ -2066,7 +2096,7 @@ publish_session_fallback_allowed() {
   esac
 
   case "${LAST_ERROR_CODE:-}" in
-    PUBLICATION_LIMIT_REACHED|PRIVATE_PUBLICATION_LIMIT_REACHED|PUBLIC_STORAGE_NOT_CONFIGURED|PRIVATE_PUBLICATION_STORAGE_NOT_CONFIGURED|UNAUTHORIZED|FORBIDDEN|BUCKET_ACCESS_DENIED|BUCKET_PERMISSION_DENIED|BUCKET_LIMIT_REACHED|STORAGE_QUOTA_EXCEEDED)
+    TRIAL_EXPIRED|PUBLICATION_LIMIT_REACHED|PRIVATE_PUBLICATION_LIMIT_REACHED|PUBLIC_STORAGE_NOT_CONFIGURED|PRIVATE_PUBLICATION_STORAGE_NOT_CONFIGURED|UNAUTHORIZED|FORBIDDEN|BUCKET_ACCESS_DENIED|BUCKET_PERMISSION_DENIED|BUCKET_LIMIT_REACHED|STORAGE_QUOTA_EXCEEDED)
       return 1
       ;;
     *)

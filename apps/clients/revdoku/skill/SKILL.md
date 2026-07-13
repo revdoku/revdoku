@@ -91,7 +91,9 @@ for structured bucket work:
   bucket files. File-collection templates intentionally do not include
   `index.html`; when published, they rely on Revdoku's generated Auto-Index
   Page. Only landing-page/site/app templates should include `index.html`.
-- Use `bucket_tag_list` before creating organized buckets. Prefer
+- When `bucket_tag_list` is available (currently local stdio MCP), use it before
+  creating organized buckets. Hosted MCP clients may not list this helper; tags
+  remain optional. Prefer
   meaningful titles, concise descriptions, and simple reusable labels such as
   `website`, `draft`, `landing-page`, or `ai-agent`. Tags are user-facing
   labels, not filesystem breadcrumbs: do not derive tags from local parent
@@ -102,7 +104,9 @@ for structured bucket work:
   (HTML/CSS/JS/JSON/SVG/Markdown…). Binary assets (images, fonts, PDFs) and whole
   local folders go through the CLI `revdoku p <dir>` (or the REST direct-upload
   API) — bytes upload straight to storage; the MCP file tools are text-only.
-  To remove files, re-write with `bucket_file_write_many` and `delete_missing: true`.
+  To remove or reorganize existing files, use `bucket_file_reorganize` with
+  explicit path operations; do not use `bucket_file_write_many` as a deletion or
+  move primitive.
   The home page is always `index.html` (or `index.htm`) — there is no custom
   entry-filename setting, so name the site's main page `index.html`. When you
   build a single-page site/app/dashboard, call its entry file `index.html` (not
@@ -115,7 +119,8 @@ for structured bucket work:
   describe the result as live until a publish tool returns a ready publication.
   Custom Auto-Index Page templates must include the files macro as `{{files}}`
   or `{{ files }}`. Supported macros are `{{title}}`, `{{description}}`,
-  `{{files}}`, and `{{theme_switch}}`, with optional whitespace inside braces.
+  `{{files}}`, `{{theme_switch}}`, `{{account_name}}`, and `{{account_logo}}`,
+  with optional whitespace inside braces.
   Use `bucket_file_append_text` only for appending UTF-8 text to existing text
   files such as `.txt`, `.md`, `.csv`, `.jsonl`, `.js`/code files, and similar
   formats. It does not parse CSV or JSON; ordinary `.json` raw append can make
@@ -123,15 +128,16 @@ for structured bucket work:
   newline only when the existing file lacks one.
   Use `bucket_file_list` with `limit` and `offset` for large buckets when a
   partial file listing is enough; omit them only when the full list is needed.
-- Use `bucket_version_list`, `bucket_version_get`, and
+- When available (currently local stdio MCP), use `bucket_version_list`,
+  `bucket_version_get`, and
   `bucket_version_restore` when the user asks to inspect history or roll back
   a bucket. Restore creates a new latest version from the selected historical
   version; it does not delete newer versions from history.
 - In shared buckets, use locks before editing. For broad folder uploads, site
   rewrites, or multi-file updates, call `bucket_lock` with a clear message and
   unlock with `bucket_unlock` after the work. For narrow edits, call
-  `bucket_lock_files` with `path`, `file_id`, or `mask`, then unlock with
-  `bucket_unlock_file`. Revdoku checks the bucket lock before file locks. If an
+  `bucket_lock_files` with a `paths` array and a clear message, then unlock each
+  path with `bucket_unlock_file`. Revdoku checks the bucket lock before file locks. If an
   append returns `BUCKET_LOCKED` or `FILE_LOCKED`, retry briefly when the lock
   looks temporary. If it remains locked, do not overwrite; report who owns the
   lock, the lock message, and the expiry, then coordinate or wait.
@@ -177,10 +183,15 @@ for structured bucket work:
   may poll for convenience, but agent workflows should still treat the status
   check as a separate step. A settings/access-only change does not re-upload
   files.
-- Bucket publishing publishes a live public website on every plan; it stays live
-  until the user unpublishes, subject to Free-plan keepalive limits. The **free
-  plan** allows **1 public website** and **1 AI agent connection**; normal reusable
-  API keys are on paid plans.
+- Bucket publishing publishes a live public website on every plan, subject to
+  lifecycle and plan limits. The **Free plan** allows **1 public website** and
+  **1 AI agent connection**; its sites use a rolling 30-day keepalive refreshed
+  by opening the dashboard. New users receive one 30-day Starter trial. If it
+  expires without conversion, the account stays Starter-shaped but becomes
+  read-only and its sites are suspended; files remain readable/downloadable and
+  upgrading restores editing and republishes trial-suspended sites. Additional
+  accounts start on Free. Reusable API keys start on Builder; Starter uses agent
+  connections and OAuth.
 - To let the user preview the current draft before publishing for real, use the
   **preview** shortcut (`bucket_publish_preview` over MCP, `POST
   /api/v1/buckets/:id/publication/preview` over REST, or `revdoku preview` on the CLI).
@@ -221,7 +232,7 @@ for structured bucket work:
   published or asks for existing website links. Publication list rows include a
   `hits` value derived from the API's `analytics.hits_all_time`; treat `0` as
   either no recorded hits or analytics hidden for the current plan.
-- Use `revdoku_browser_login_link` when the user asks to open the Revdoku
+- Use `revdoku_dashboard_link` when the user asks to open the Revdoku
   dashboard, manage agent/API access, or use another Revdoku UI
   page the tool cannot show directly. Use `/buckets` for the dashboard,
   `/account/access` for people/API key/agent
@@ -230,6 +241,8 @@ for structured bucket work:
   macOS or Ctrl-click on Windows/Linux. If Revdoku says browser login links are
   disabled because two-factor authentication is enabled or required, tell the
   user to open Revdoku through the normal browser sign-in flow instead.
+  Local stdio MCP also advertises `revdoku_browser_login_link` as a compatibility
+  alias; prefer the canonical dashboard tool.
 - Use `revdoku_store_path` for local path storage. Pass `"publish": true` only
   when the user asks to publish or wants a website URL.
 
@@ -300,10 +313,10 @@ website URL (or, with `--draft`, a `View in Revdoku:` dashboard link) on stderr.
 **When you report the result to the user, show the link — the published website
 URL if you published, otherwise the `View in Revdoku:` dashboard link — not the
 raw `bkt_` id.** Treat the id as an internal handle for follow-up `--bucket-id`
-calls. If no API key is available, run it interactively; it asks for the user's
-email, sends a verification code, saves the returned key to
-`~/.revdoku/credentials`, then reuses it on future runs. If Revdoku rejects a
-disposable or blocked email address, ask for a permanent email address and retry.
+calls. If no credential is available, use `revdoku login` for browser device
+authorization. Email-code login is a privacy-preserving fallback for an existing
+account only; it never creates an account. New users must sign up in the browser,
+then reconnect or use Copy Instructions for AI.
 
 When publishing a directory, the CLI skips only Revdoku's fixed upload safety
 list: local-only folders such as `.git`, `.revdoku`, `.terraform`, build caches,
@@ -353,9 +366,10 @@ To publish with MCP, include `"publish": true`.
 
 ## Simple forms (contact / feedback / quote — built in, no backend to build)
 
-Every published site has a built-in form endpoint, so a **submission form** —
-contact, feedback, quote request, waitlist — needs no server code and no
-configuration. Put a normal HTML `<form>` in the page:
+Revdoku provides built-in contact, feedback, quote, and waitlist definitions.
+The owner must first enable/configure the form in Website Settings; new buckets
+do not expose a form endpoint by default. Then an embedded HTML form can post to
+the configured endpoint without a custom backend:
 
 ```html
 <form method="POST" action="/_revdoku/form/contact">
@@ -369,13 +383,16 @@ configuration. Put a normal HTML `<form>` in the page:
 </form>
 ```
 
-- `action="/_revdoku/form/<name>"` — `<name>` is lowercase letters/digits/`-`/`_`
-  (e.g. `contact`, `quote`, `feedback`). Any field names you like; a field named
-  `email` is used for the owner "reply-to" and the notification.
-- Works on **public** and **password-protected** sites, same-origin POST. A plain
+- `action="/_revdoku/form/<name>"` must use an enabled built-in name:
+  `contact`, `feedback`, `quote`, or `waitlist`. Use only that definition's
+  fixed allowed fields; unknown visitor fields are discarded.
+- Works on **public**, **password**, and **Require Email** sites, same-origin POST. A plain
   HTML submit redirects back with `?submitted=1`; a `fetch()` caller gets JSON.
-- Submissions land in the owner's dashboard (bucket → Forms) with CSV export, and
-  each one sends the owner a real-time notification + email.
+- Submissions are encrypted, land in the owner's dashboard (bucket → Forms) with
+  CSV export, and can notify the owner according to form settings. Only the
+  account owner with bucket write access can read visitor submissions through
+  the API.
+- Plan caps are Free 5/month, Starter 50/day, Builder 200/day, and Pro 1,000/day.
 - **Spam protection:** on **public** sites a Cloudflare Turnstile check is required
   when Turnstile keys are configured; add the widget:
   `<div class="cf-turnstile" data-sitekey="YOUR_SITE_KEY"></div>` plus
@@ -441,6 +458,7 @@ The CLI uses verb subcommands (aliases in parentheses):
 - `--protected` / `--private`: with `publish`, publish as a password-protected website.
 - `--public`: with `publish`, publish as a public website (the default).
 - `--access-mode require_email`: with `publish`, require visitors to verify their email with a one-time code; no site password is used.
+- `--site-mode static|spa`: choose normal static routing or index fallback for client-side SPA routes. The `.revdoku` project binding remembers it.
 - `--password PASSWORD`: advanced direct-terminal option for owners who choose their own protected website password. Do not ask users for this in chat, and do not put the password in a URL.
 - `--generate-password`: with `publish --protected`, rotate the protected website password and show it in the owner publish response. Use only when the user explicitly asks to rotate it.
 - `--tracking` / `--no-tracking`, `--analytics` / `--no-analytics`, `--client-events` / `--no-client-events`: control website analytics and browser-side event tracking. Both are on by default; only disable when the user explicitly asks.

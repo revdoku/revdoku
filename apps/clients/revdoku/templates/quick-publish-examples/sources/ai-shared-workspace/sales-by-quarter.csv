@@ -1,0 +1,13 @@
+year,quarter,region,revenue_usd,new_customers,renewals
+2025,Q1,North America,184000,22,31
+2025,Q1,Europe,132000,17,24
+2025,Q1,Asia Pacific,96000,13,18
+2025,Q2,North America,211000,26,35
+2025,Q2,Europe,149000,19,27
+2025,Q2,Asia Pacific,108000,15,20
+2025,Q3,North America,238000,29,39
+2025,Q3,Europe,163000,21,30
+2025,Q3,Asia Pacific,121000,17,23
+2025,Q4,North America,267000,34,44
+2025,Q4,Europe,186000,25,34
+2025,Q4,Asia Pacific,139000,20,26

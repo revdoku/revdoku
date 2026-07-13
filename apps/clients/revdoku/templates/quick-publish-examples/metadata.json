@@ -1,0 +1,104 @@
+{
+  "examples": {
+    "ai-shared-workspace": {
+      "archive_bytes": 1827,
+      "file_count": 5,
+      "total_bytes": 2148
+    },
+    "client-portal": {
+      "archive_bytes": 3282,
+      "file_count": 3,
+      "total_bytes": 6946
+    },
+    "client-proposal": {
+      "archive_bytes": 574781,
+      "file_count": 3,
+      "total_bytes": 605147
+    },
+    "course-resource-hub": {
+      "archive_bytes": 1701,
+      "file_count": 2,
+      "total_bytes": 2943
+    },
+    "digital-library": {
+      "archive_bytes": 2441,
+      "file_count": 4,
+      "total_bytes": 3640
+    },
+    "event-page": {
+      "archive_bytes": 196389,
+      "file_count": 2,
+      "total_bytes": 197580
+    },
+    "investor-deal-room": {
+      "archive_bytes": 425686,
+      "file_count": 4,
+      "total_bytes": 444831
+    },
+    "job-opening": {
+      "archive_bytes": 1426,
+      "file_count": 1,
+      "total_bytes": 2622
+    },
+    "launch-page": {
+      "archive_bytes": 122776,
+      "file_count": 2,
+      "total_bytes": 131158
+    },
+    "marketing-performance-report": {
+      "archive_bytes": 3042,
+      "file_count": 3,
+      "total_bytes": 6261
+    },
+    "pitch-deck": {
+      "archive_bytes": 424327,
+      "file_count": 2,
+      "total_bytes": 442265
+    },
+    "portfolio": {
+      "archive_bytes": 687084,
+      "file_count": 5,
+      "total_bytes": 691360
+    },
+    "press-kit": {
+      "archive_bytes": 2132,
+      "file_count": 4,
+      "total_bytes": 3051
+    },
+    "product-catalogue": {
+      "archive_bytes": 164359,
+      "file_count": 2,
+      "total_bytes": 165535
+    },
+    "product-documentation": {
+      "archive_bytes": 1662,
+      "file_count": 1,
+      "total_bytes": 3326
+    },
+    "property-listing": {
+      "archive_bytes": 258269,
+      "file_count": 2,
+      "total_bytes": 259677
+    },
+    "prototype-review": {
+      "archive_bytes": 178679,
+      "file_count": 7,
+      "total_bytes": 190790
+    },
+    "report-dashboard": {
+      "archive_bytes": 3360,
+      "file_count": 4,
+      "total_bytes": 6574
+    },
+    "restaurant-menu": {
+      "archive_bytes": 231573,
+      "file_count": 2,
+      "total_bytes": 232830
+    },
+    "resume-profile": {
+      "archive_bytes": 1372,
+      "file_count": 1,
+      "total_bytes": 2576
+    }
+  }
+}

@@ -9,7 +9,7 @@ or direct integrations.
 
 Free accounts can connect one AI agent through hosted MCP, local MCP, or the
 CLI grant/login flow. Normal reusable API keys for custom clients and automation
-are available on paid plans.
+start on Builder; Starter uses agent connections and OAuth instead.
 
 ## Quick Start
 
@@ -81,6 +81,12 @@ Errors are wrapped in `error`:
 Use `error.code` for recovery logic. Use `request_id` when debugging with
 support.
 
+When an unconverted Starter trial expires, read requests remain available but
+mutating API calls return HTTP `402` with code `TRIAL_EXPIRED`. The error details
+include `read_only: true`, `expired_at`, and `upgrade_url`. Do not retry writes;
+show the upgrade action. `GET /api/v1/status` exposes the same state as
+`account.trial_expired` and `account.read_only`.
+
 ### Versioning
 
 Every API response carries an `X-Revdoku-Client-Version` header (the current
@@ -108,8 +114,9 @@ instead. The connector uses Revdoku OAuth discovery, authorization-code PKCE,
 and Bearer tokens. Users approve the connection in Revdoku and can revoke it
 later from `/account/access`.
 
-Hosted MCP supports JSON-response Streamable HTTP and stateful Streamable
-HTTP/SSE sessions. OAuth metadata uses `REVDOKU_MCP_PUBLIC_BASE_URL` when set,
+Hosted MCP is stateless Streamable HTTP. Clients discover tools with `tools/list`
+when they connect, so reconnect after an update to discover newly added tools.
+OAuth metadata uses `REVDOKU_MCP_PUBLIC_BASE_URL` when set,
 so local HTTPS tunnels and reverse-proxy deployments can publish a stable public
 resource URL.
 
@@ -377,7 +384,7 @@ below the listing, GitHub-style. Choose which folder is served with
 For a protected website, use `"access_mode": "password"`; it requires available
 protected-site capacity on the account. Use `"access_mode": "require_email"`
 when visitors should verify their email with an OTP and no site password; that mode
-is available on Builder and Pro plans. Omit
+is available on Starter, Builder, and Pro. Omit
 `password`; Revdoku generates a copyable password the first time protected
 access is enabled. Set `"regenerate_password": true` only when the owner
 explicitly wants to rotate the protected-site password. Agents should not ask
@@ -393,8 +400,13 @@ folder) stays stored and version-tracked but is NOT served. This lets a bucket
 hold both a published `website/` and an unserved `scripts/` sibling. Pass an
 empty string to publish the whole bucket again.
 
-**Website lifetime.** Published websites are permanent on every plan. New accounts
-can publish on a limited free tier for personal / non-commercial use.
+**Website lifetime.** Paid sites are permanent unless an explicit expiry is set.
+Free main sites receive a rolling 30-day `expires_at`; opening the signed-in
+dashboard refreshes active sites for another 30 days. New users receive one
+30-day Starter trial. If it ends without an upgrade, the account becomes
+read-only and its publications are suspended; files remain readable/downloadable,
+and upgrading restores editing and republishes sites suspended by trial expiry.
+Additional accounts created by the same user start on Free.
 
 **Preview (staging).** `POST /api/v1/buckets/:id/publication/preview` publishes the
 bucket's current draft to a temporary public `preview-<slug>` URL that auto-expires
@@ -465,13 +477,16 @@ existing bundle and does not re-upload files.
 
 Use `site_mode: "static"` for ordinary static sites. Use `site_mode: "spa"` for
 React/Vite-style apps where deep links should fall back to `index.html`.
-Use `site_type: "website"` for published websites (the default).
+`site_mode` is the canonical routing field. `site_type: "website"` remains an
+accepted compatibility field; app/database publication modes are retired and
+must not be used.
 
 If the bucket does not contain `index.html` (or `index.htm`), Revdoku publishes an
-Auto-Index Page that lists and previews files. Account or bucket-specific Auto-Index templates
+Auto-Index Page that lists and previews files. Account-specific Auto-Index templates
 must include the files macro as `{{files}}` or `{{ files }}`. Supported template
-macros are `{{title}}`, `{{description}}`, `{{files}}`, and `{{theme_switch}}`,
-with optional whitespace inside the braces.
+macros are `{{title}}`, `{{description}}`, `{{files}}`, `{{theme_switch}}`,
+`{{account_name}}`, and `{{account_logo}}`, with optional whitespace inside the
+braces.
 
 Publishing never includes private runtime/development files in the static
 bundle. Paths such as `.workers/**`, `.env*`, `node_modules/**`, local lockfiles,
@@ -548,7 +563,7 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/publish_sessions/pus_.../uploads/refresh"
 
 ### Add a Custom Domain
 
-Custom domains are available on Builder and Pro plans. Publish the bucket first.
+Custom domains are available on Starter, Builder, and Pro. Publish the bucket first.
 
 ```sh
 curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../custom_domains" \
@@ -614,8 +629,9 @@ provider.
 
 ### Read Analytics
 
-Publication analytics are visible on paid plans. Free plans receive the same
-shape with numbers hidden.
+Detailed publication analytics are visible while a paid plan or active Starter
+trial entitles them. Free responses still expose the numeric all-time hit count,
+but hide detailed ranges and breakdowns with `details_visible: false`.
 
 ```sh
 curl -fsS "$REVDOKU_URL/api/v1/analytics?range=30d" \
@@ -818,8 +834,14 @@ Common `redirect_path` values:
 | `POST` | `/api/v1/buckets` | Create a bucket. |
 | `GET` | `/api/v1/buckets/:id` | Read a bucket. |
 | `PATCH` | `/api/v1/buckets/:id` | Update bucket metadata. |
+| `GET` | `/api/v1/buckets/templates` | List trusted starter templates. |
+| `POST` | `/api/v1/buckets/from_template` | Create a private bucket from a trusted template. |
 | `POST` | `/api/v1/buckets/:id/archive` | Archive a normal unpublished bucket. |
 | `POST` | `/api/v1/buckets/:id/unarchive` | Restore an archived normal bucket. |
+| `POST` | `/api/v1/buckets/:id/visibility_change_lock` | Prevent publish/unpublish/access/slug visibility changes; unlock is UI-only. |
+| `GET` | `/api/v1/buckets/:id/variables` | Read public variables and secret names (never secret values). |
+| `PATCH` | `/api/v1/buckets/:id/variables` | Replace variables and patch encrypted secrets. |
+| `GET` | `/api/v1/buckets/:id/form_submissions` | Read encrypted built-in form submissions as an owner with bucket write access. |
 | `DELETE` | `/api/v1/buckets/:id` | Permanently delete a normal unpublished bucket with confirmation. |
 | `GET` | `/api/v1/tags` | List reusable bucket labels. |
 
@@ -911,6 +933,55 @@ Active bucket locks block writes, deletes, publishing changes, direct uploads,
 and file locks by other API keys. Revdoku checks the bucket lock before checking
 specific file locks. Conflicts return HTTP `423` with code `BUCKET_LOCKED`.
 
+Use `POST /api/v1/buckets/:id/files/lock` with `paths`, `message`, and optional
+`duration_seconds` to lock specific paths. Unlock a path by resolving its file id
+and calling `DELETE /api/v1/buckets/:id/files/:file_id/lock`.
+
+#### File path operations
+
+Move and organize existing files server-side; do not download and re-upload bytes.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/v1/buckets/:id/files` | List files; supports `limit` and `offset`. |
+| `GET` | `/api/v1/buckets/:id/files/:file_id` | Read file metadata. |
+| `GET` | `/api/v1/buckets/:id/files/by_path?path=...` | Read/download a file by bucket-relative path. |
+| `POST` | `/api/v1/buckets/:id/files/:file_id/rename` | Rename or move within the same bucket without reuploading. |
+| `POST` | `/api/v1/buckets/:id/files/:file_id/copy` | Copy by blob reference, optionally across buckets. |
+| `POST` | `/api/v1/buckets/:id/files/:file_id/move` | Move by blob reference, optionally across buckets. |
+| `POST` | `/api/v1/buckets/:id/files/reorganize` | Apply multiple rename/copy/move/delete path operations atomically. |
+| `POST` | `/api/v1/buckets/:id/files/append_text` | Append bounded UTF-8 text to an existing text file. |
+
+#### Built-in publication forms
+
+New buckets expose no public form endpoint until the owner configures one in
+Website Settings or updates `bucket.metadata.publication_forms`. Revdoku supports
+the fixed definitions `contact`, `feedback`, `quote`, and `waitlist`; labels and
+visitor fields are server-controlled so forms cannot be repurposed for arbitrary
+sensitive-data collection.
+
+```json
+{
+  "bucket": {
+    "metadata": {
+      "publication_forms": {
+        "enabled": true,
+        "forms": [
+          { "name": "contact", "hosted": false, "require_email": true }
+        ],
+        "turnstile": "auto"
+      }
+    }
+  }
+}
+```
+
+An embedded form posts same-origin to `/_revdoku/form/contact`. Built-in forms
+work with public, password, and Require Email publications on every plan. Current
+caps are Free 5/month, Starter 50/day, Builder 200/day, and Pro 1,000/day.
+Submissions are encrypted. The account owner can read them with bucket write
+access via `GET /api/v1/buckets/:id/form_submissions?form_name=contact&limit=50&offset=0`.
+
 #### Archive, unarchive, and permanent delete
 
 Buckets with active published websites must be unpublished before they can be
@@ -968,7 +1039,6 @@ publication revoke endpoints remain available for cleanup.
 ```json
 {
   "site_mode": "spa",
-  "site_type": "website",
   "access_mode": "password",
   "expires_at": null
 }
@@ -982,9 +1052,9 @@ Publication response fields:
 | `asset_base_url` | Direct public object-storage/CDN directory. |
 | `public_slug` | Stable DNS-safe bucket publication slug. |
 | `status` | `published`, `unpublished`, or another lifecycle status. |
-| `expires_at` | ISO-8601 time when public access expires, or `null` (the default) for a permanent site. Set only on ephemeral preview/staging publications (created via the preview endpoint). |
+| `expires_at` | ISO-8601 expiry. Free main sites use the rolling 30-day dashboard keepalive; paid main sites default to `null`; previews always expire. |
 | `site_mode` | Whether deep links fall back to the index page (SPA routing). |
-| `site_type` | `website` for published sites. |
+| `site_type` | Compatibility field; published sites are `website`. Prefer `site_mode`. |
 | `access_mode` | `public`, `password`, or `require_email`. Protected websites require available protected-site capacity; `require_email` verifies visitors by email OTP and uses no site password. |
 | `password_configured` | Whether a protected website password is configured. |
 | `access_password` | Copyable stored password, returned only to account-owner publish keys. |
@@ -994,6 +1064,20 @@ Publication response fields:
 | `publication_client_events_enabled` | Whether browser-side Revdoku event tracking is enabled for this publication. |
 | `analytics.hits_all_time` | Cached all-time website hits; `null` when analytics numbers are hidden. |
 | `analytics.last_event_at` | Latest recorded analytics event timestamp; `null` when hidden or not recorded yet. |
+
+Publication lifecycle endpoints:
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/v1/buckets/:id/publication/preview` | Publish a temporary noindex preview. |
+| `GET` | `/api/v1/publications` | List publications. |
+| `GET` | `/api/v1/publications/:id` | Read state; use `include_manifest=false` while polling. |
+| `GET` | `/api/v1/publications/:id/manifest` | Read the complete published file manifest. |
+| `PATCH` | `/api/v1/publications/:id` | Update title, routing, and listing settings. |
+| `GET` | `/api/v1/publications/:id/access` | Read Require Email leads/access details when authorized. |
+| `PATCH` | `/api/v1/publications/:id/access` | Change public/password/Require Email access. |
+| `POST` | `/api/v1/publications/:id/recipient_links` | Generate Require Email recipient links. |
+| `PATCH` | `/api/v1/buckets/:id/custom_domains/public_slug` | Rename the managed Revdoku slug. |
 
 #### DELETE /api/v1/buckets/:id/publication
 
@@ -1066,8 +1150,9 @@ Plan rules:
 | Plan | Custom-domain behavior |
 | --- | --- |
 | Free | `max_custom_domains` is `0`; custom domains are disabled. |
-| Starter | `max_custom_domains` is `0`; custom domains are disabled. |
-| Builder / Pro | `max_custom_domains` is set per plan (Builder: 1, Pro: 10). |
+| Starter | 1 custom domain. |
+| Builder | 3 custom domains. |
+| Pro | 10 custom domains. |
 | Downgrade | Domains above the new limit are disabled. On Free, all custom domains are disabled. |
 
 Replacing a custom domain keeps the previous active domain serving until the new
@@ -1082,7 +1167,8 @@ domain becomes active.
 
 #### GET /api/v1/analytics
 
-Supported ranges are `7d`, `30d`, and `90d`.
+Supported ranges are `24h`, `7d`, `30d`, and `90d`. The `24h` response uses
+hourly buckets; the other ranges use daily buckets.
 
 Paid responses include:
 
@@ -1103,16 +1189,18 @@ Paid responses include:
 | `bots` | Bot hits grouped by bot name. |
 | `paths_not_found` | Highest-traffic missing paths. |
 
-Free responses hide numbers:
+Free responses preserve `totals.hits_all_time` but hide detailed numbers:
 
 ```json
 {
   "data": {
     "range": "30d",
+    "details_visible": false,
+    "granularity": "day",
     "first_event_at": null,
     "last_event_at": null,
     "totals": {
-      "hits_all_time": null,
+      "hits_all_time": 42,
       "hits": null,
       "visitors": null,
       "hits_not_found": null,
@@ -1151,6 +1239,7 @@ session-keyed upload/delete control calls.
 | `429` | `RATE_LIMIT_EXCEEDED` | General account API rate limit exceeded. |
 | `429` | `PUBLISH_RATE_LIMIT_EXCEEDED` | Publishing API rate limit exceeded. |
 | `429` | `UPLOAD_RATE_LIMIT_EXCEEDED` | Upload-control API rate limit exceeded. |
+| `402` | `TRIAL_EXPIRED` | Starter trial ended; the account is read-only until upgrade. Reads and downloads remain available. |
 
 ### Authentication Errors
 

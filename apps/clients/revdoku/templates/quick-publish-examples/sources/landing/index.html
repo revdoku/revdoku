@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Beacon | Client Approval Workspace</title>
+<style>
+:root{color-scheme:light;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#162033;background:#f7f9fc;--accent:#155eef;--secondary:#0b766e;--ink:#162033;--muted:#5f6c80;--line:#dce2ea;--soft:#edf4ff}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:#f7f9fc;color:var(--ink)}
+img{max-width:100%;display:block}
+a{color:inherit}
+.wrap{width:min(1120px,calc(100% - 40px));margin:0 auto}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:22px 0}
+.brand{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:850}
+.brand-mark{width:12px;height:12px;border-radius:3px;background:var(--accent);box-shadow:8px 8px 0 var(--secondary)}
+.navlinks{display:flex;gap:22px;color:#475467;font-size:14px}
+.navlinks a{text-decoration:none}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,520px);gap:52px;align-items:center;padding:58px 0 76px}
+.eyebrow{margin:0 0 14px;color:var(--accent);font-size:13px;font-weight:850;text-transform:uppercase}
+.h1{margin:0;max-width:690px;font-size:72px;line-height:.98;font-weight:860}
+.lead{margin:22px 0 0;max-width:650px;color:#475467;font-size:18px;line-height:1.6}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:#fff;padding:0 20px;text-decoration:none;font-weight:780}
+.proof{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:30px;max-width:650px}
+.proof-item{border-left:3px solid var(--secondary);padding:2px 10px}
+.proof-item strong{display:block;font-size:14px}
+.proof-item span{display:block;margin-top:4px;color:var(--muted);font-size:12px}
+.media{border:1px solid #cbd5e1;border-radius:8px;overflow:hidden;background:#e8eef6;box-shadow:0 24px 56px rgba(20,32,51,.16)}
+.media img{width:100%;aspect-ratio:4/3;object-fit:cover}
+.band{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff;padding:48px 0}
+.feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.feature{border-top:3px solid var(--accent);padding:20px 2px 0}
+.feature:nth-child(2){border-color:var(--secondary)}
+.feature:nth-child(3){border-color:#d28b28}
+.feature h2{margin:0 0 9px;font-size:19px}
+.feature p{margin:0;color:var(--muted);line-height:1.6}
+.workflow{padding:64px 0 74px}
+.section-head{display:grid;grid-template-columns:.8fr 1.2fr;gap:40px;align-items:end;margin-bottom:26px}
+.section-head h2{margin:0;font-size:38px;line-height:1.08}
+.section-head p{margin:0;color:var(--muted);line-height:1.6}
+.steps{border-top:1px solid var(--line)}
+.step{display:grid;grid-template-columns:64px minmax(180px,.7fr) 1.3fr;gap:24px;align-items:center;border-bottom:1px solid var(--line);padding:22px 0}
+.step-number{color:var(--accent);font-size:13px;font-weight:850}
+.step strong{font-size:17px}
+.step p{margin:0;color:var(--muted);line-height:1.55}
+@media(max-width:760px){
+  .wrap{width:min(100% - 28px,1120px)}
+  .navlinks{display:none}
+  .hero{grid-template-columns:1fr;gap:32px;padding:34px 0 50px}
+  .h1{font-size:46px}
+  .lead{font-size:16px}
+  .proof,.feature-grid{grid-template-columns:1fr}
+  .section-head{grid-template-columns:1fr;gap:12px}
+  .step{grid-template-columns:42px 1fr;gap:10px 14px}
+  .step p{grid-column:2}
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="wrap">
+    <nav class="nav">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"></span>Beacon</div>
+      <div class="navlinks"><a href="#platform">Platform</a><a href="#workflow">Workflow</a></div>
+    </nav>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Client approval workspace</p>
+        <h1 class="h1">Keep every review moving.</h1>
+        <p class="lead">Beacon brings files, comments, and sign-off into one clear workspace, so teams always know what changed and what needs a decision.</p>
+        <div class="actions"><a class="btn" href="#workflow">See the workflow</a></div>
+        <div class="proof">
+          <div class="proof-item"><strong>One review link</strong><span>For every stakeholder</span></div>
+          <div class="proof-item"><strong>Version history</strong><span>Changes stay visible</span></div>
+          <div class="proof-item"><strong>Decision log</strong><span>Approvals stay recorded</span></div>
+        </div>
+      </div>
+      <div class="media"><img src="assets/landing-app-hero.jpg" alt="Beacon client workspace dashboard"></div>
+    </section>
+  </div>
+  <section class="band" id="platform">
+    <div class="wrap feature-grid">
+      <article class="feature"><h2>Central review</h2><p>Files, comments, and status live together instead of across email threads.</p></article>
+      <article class="feature"><h2>Clear ownership</h2><p>Every open question has a reviewer, a due date, and a visible next action.</p></article>
+      <article class="feature"><h2>Clean handoff</h2><p>Final versions and decisions remain easy to find after the project ships.</p></article>
+    </div>
+  </section>
+  <section class="wrap workflow" id="workflow">
+    <div class="section-head"><h2>From upload to approval</h2><p>A focused path keeps reviews short, decisions explicit, and delivery predictable.</p></div>
+    <div class="steps">
+      <div class="step"><span class="step-number">01</span><strong>Share the current version</strong><p>Invite reviewers to one workspace with the latest files already in place.</p></div>
+      <div class="step"><span class="step-number">02</span><strong>Resolve feedback in context</strong><p>Keep comments attached to the work and assign the decisions that remain.</p></div>
+      <div class="step"><span class="step-number">03</span><strong>Record sign-off</strong><p>Close the review with an approval history the whole team can reference.</p></div>
+    </div>
+  </section>
+</main>
+</body>
+</html>
