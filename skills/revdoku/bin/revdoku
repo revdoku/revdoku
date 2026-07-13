@@ -2615,8 +2615,13 @@ should_skip_storage_path() {
   for part in "${path_parts[@]}"; do
     case "$part" in
       # >>> revdoku:generated local_only_basenames
-      .ds_store|.git|.hg|.svn|.revdoku|.terraform|.cache|.parcel-cache|.turbo|.vite|node_modules)
+      .ds_store|__macosx|.localized|.appledouble|.lsoverride|.documentrevisions-v100|.fseventsd|.spotlight-v100|.temporaryitems|.trashes|.volumeicon.icns|.appledb|.appledesktop|.apdisk|network\ trash\ folder|temporary\ items|thumbs.db|thumbs.db:encryptable|ehthumbs.db|ehthumbs_vista.db|desktop.ini|\$recycle.bin|system\ volume\ information|.directory|.trash|lost+found|.git|.hg|.svn|.revdoku|.terraform|.cache|.parcel-cache|.turbo|.vite|node_modules)
       # <<< revdoku:generated local_only_basenames
+        return 0
+        ;;
+      # >>> revdoku:generated local_only_name_globs
+      ._*|.trash-*|.fuse_hidden*|.nfs*)
+      # <<< revdoku:generated local_only_name_globs
         return 0
         ;;
       agents.md|claude.md)

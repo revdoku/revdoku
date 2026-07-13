@@ -169,7 +169,7 @@ for structured bucket work:
   re-publishing the SAME access mode (renewing a live site) and adding a FIRST custom
   domain. Lock with `bucket_lock_visibility_changes` (also available over the API and the
   web UI); it is idempotent and protects a sensitive bucket in one step. Unlocking is
-  web-UI-only (Settings → Misc, type "confirm") — there is no unlock tool. If any
+  web-UI-only (Bucket Settings → Safety, type "confirm") — there is no unlock tool. If any
   publish/unpublish/access/slug/custom-domain call returns
   `BUCKET_VISIBILITY_CHANGE_LOCKED`, tell the user to unlock it themselves in the Revdoku
   app; never work around it. When you publish a PRIVATE or password-protected website that
