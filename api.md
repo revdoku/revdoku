@@ -977,7 +977,7 @@ sensitive-data collection.
 ```
 
 An embedded form posts same-origin to `/_revdoku/form/contact`. Built-in forms
-work with public, password, and Verified Email publications on every plan. Current
+work with public, password, and Require Email publications on every plan. Current
 caps are Free 5/month, Starter 50/day, Builder 200/day, and Pro 1,000/day.
 Submissions are encrypted. The account owner can read them with bucket write
 access via `GET /api/v1/buckets/:id/form_submissions?form_name=contact&limit=50&offset=0`.
@@ -1074,9 +1074,9 @@ Publication lifecycle endpoints:
 | `GET` | `/api/v1/publications/:id` | Read state; use `include_manifest=false` while polling. |
 | `GET` | `/api/v1/publications/:id/manifest` | Read the complete published file manifest. |
 | `PATCH` | `/api/v1/publications/:id` | Update title, routing, and listing settings. |
-| `GET` | `/api/v1/publications/:id/access` | Read Verified Email leads/access details when authorized. |
-| `PATCH` | `/api/v1/publications/:id/access` | Change public/password/Verified Email access. |
-| `POST` | `/api/v1/publications/:id/recipient_links` | Generate Verified Email recipient links. |
+| `GET` | `/api/v1/publications/:id/access` | Read Require Email leads/access details when authorized. |
+| `PATCH` | `/api/v1/publications/:id/access` | Change public/password/Require Email access. |
+| `POST` | `/api/v1/publications/:id/recipient_links` | Generate Require Email recipient links. |
 | `PATCH` | `/api/v1/buckets/:id/custom_domains/public_slug` | Rename the managed Revdoku slug. |
 
 #### DELETE /api/v1/buckets/:id/publication
