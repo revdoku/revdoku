@@ -1607,7 +1607,7 @@ print_publication_access_hint_from_response() {
   password="$("$JQ_BIN" -r '.data.publication.access_password // .data.publication.generated_password // empty' <<<"$response" 2>/dev/null || true)"
   share_text="$("$JQ_BIN" -r '.data.publication.share_text // empty' <<<"$response" 2>/dev/null || true)"
   if [[ "$access_mode" == "require_email" ]]; then
-    [[ -n "$url" ]] && echo "Verified Email website URL: $url" >&2
+    [[ -n "$url" ]] && echo "Require Email website URL: $url" >&2
     echo "Visitors verify their email with a one-time code. No site password is used." >&2
     [[ -n "$share_text" ]] && echo "Share text: $share_text" >&2
     return 0

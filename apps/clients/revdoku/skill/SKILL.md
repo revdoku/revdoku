@@ -147,7 +147,7 @@ for structured bucket work:
   the user explicitly asks to rotate it. Never ask the user to type a
   protected-site password in chat, and never put the password in the URL. If the user asks to
   set or change the bucket description while publishing, pass `description` on
-  the publish tool or update the bucket first; Password and Verified Email access screens
+  the publish tool or update the bucket first; Password and Require Email access screens
   show the bucket description under the title. When updating an existing website, republish that
   same `bucket_id`; Revdoku keeps the same URL and this does not use another
   live-site slot. If publishing
@@ -386,7 +386,7 @@ the configured endpoint without a custom backend:
 - `action="/_revdoku/form/<name>"` must use an enabled built-in name:
   `contact`, `feedback`, `quote`, or `waitlist`. Use only that definition's
   fixed allowed fields; unknown visitor fields are discarded.
-- Works on **public**, **password**, and **Verified Email** sites, same-origin POST. A plain
+- Works on **public**, **password**, and **Require Email** sites, same-origin POST. A plain
   HTML submit redirects back with `?submitted=1`; a `fetch()` caller gets JSON.
 - Submissions are encrypted, land in the owner's dashboard (bucket → Forms) with
   CSV export, and can notify the owner according to form settings. Only the
