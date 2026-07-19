@@ -872,12 +872,12 @@ http_json_quiet() {
     return 0
   fi
 
-  message="$("$JQ_BIN" -r '.error.message // .error_description // .message // empty' "$body_file" 2>/dev/null || true)"
-  code="$("$JQ_BIN" -r '.error.code // .error // empty' "$body_file" 2>/dev/null || true)"
+  message="$("$JQ_BIN" -r 'if (.error | type) == "object" then (.error.message // empty) else (.error_description // .message // empty) end' "$body_file" 2>/dev/null || true)"
+  code="$("$JQ_BIN" -r 'if (.error | type) == "object" then (.error.code // empty) else (.error // empty) end' "$body_file" 2>/dev/null || true)"
   LAST_HTTP_STATUS="$status"
   LAST_ERROR_CODE="$code"
   LAST_ERROR_MESSAGE="$message"
-  LAST_ERROR_DETAILS_JSON="$("$JQ_BIN" -c '.error.details // {}' "$body_file" 2>/dev/null || printf '{}')"
+  LAST_ERROR_DETAILS_JSON="$("$JQ_BIN" -c 'if (.error | type) == "object" then (.error.details // {}) else {} end' "$body_file" 2>/dev/null || printf '{}')"
   rm -f "$body_file"
   return 1
 }
@@ -1030,7 +1030,7 @@ init_project() {
 }
 
 request_device_agent_key() {
-  local payload response client_id device_code user_code verification_uri_complete expires_in interval deadline now token_payload key
+  local payload response response_file client_id device_code user_code verification_uri_complete expires_in interval deadline now token_payload key
 
   payload="$("$JQ_BIN" -nc --arg grant "$DEVICE_CODE_GRANT_TYPE" '{client_name:"Revdoku CLI", redirect_uris:[], grant_types:[$grant,"refresh_token"], response_types:[], token_endpoint_auth_method:"none"}')"
   response="$(http_json_quiet POST "/oauth/register" "$payload")" || return 1
@@ -1059,18 +1059,26 @@ request_device_agent_key() {
   echo "Waiting for browser approval..." >&2
 
   deadline=$(( $(date +%s) + expires_in ))
+  response_file="$(mktemp)"
   while true; do
     now="$(date +%s)"
     if [[ "$now" =~ ^[0-9]+$ && "$now" -ge "$deadline" ]]; then
+      rm -f "$response_file"
       die "device login expired; run 'revdoku login' again"
     fi
 
     sleep "$interval"
     token_payload="$("$JQ_BIN" -nc --arg grant "$DEVICE_CODE_GRANT_TYPE" --arg client_id "$client_id" --arg device_code "$device_code" --arg resource "${BASE_URL%/}/mcp" '{grant_type:$grant, client_id:$client_id, device_code:$device_code, resource:$resource}')"
-    if response="$(http_json_quiet POST "/oauth/token" "$token_payload")"; then
+    : > "$response_file"
+    # Keep http_json_quiet in this shell. Command substitution would run it in a
+    # subshell and discard LAST_ERROR_CODE, turning the expected
+    # authorization_pending response into a false legacy-login fallback.
+    if http_json_quiet POST "/oauth/token" "$token_payload" > "$response_file"; then
+      response="$(cat "$response_file")"
       key="$("$JQ_BIN" -r '.revdoku_api_key // empty' <<<"$response")"
       [[ -n "$key" ]] || die "device login did not return a Revdoku API key"
       save_api_key "$key"
+      rm -f "$response_file"
       return 0
     fi
 
@@ -1081,12 +1089,15 @@ request_device_agent_key() {
         interval=$((interval + 5))
         ;;
       access_denied)
+        rm -f "$response_file"
         die "Revdoku connection was denied in the browser"
         ;;
       expired_token)
+        rm -f "$response_file"
         die "device login expired; run 'revdoku login' again"
         ;;
       *)
+        rm -f "$response_file"
         return 1
         ;;
     esac
