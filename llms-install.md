@@ -34,8 +34,8 @@ connect to Revdoku and publish generated websites or app files.
 2. In Revdoku, the user clicks **New** (or **+** on mobile).
 3. The user chooses **Copy Instructions for AI**.
 4. The user pastes the copied prompt into the AI tool.
-5. Follow the copied prompt exactly. If it includes a one-time grant, exchange it
-   before using other Revdoku actions.
+5. Follow the copied prompt exactly and complete Revdoku OAuth or browser device
+   sign-in before using Revdoku actions.
 
 This path works for Cline, Claude Desktop, terminal agents, Gemini, Hermes,
 OpenClaw, Cursor, and generic AI tools that can follow pasted instructions.

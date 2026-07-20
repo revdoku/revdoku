@@ -8,7 +8,7 @@ Revdoku MCP tool. Use this HTTP API for custom clients, CI jobs, backend workers
 or direct integrations.
 
 Free accounts can connect one AI agent through hosted MCP, local MCP, or the
-CLI grant/login flow. Normal reusable API keys for custom clients and automation
+CLI device-login flow. Normal reusable API keys for custom clients and automation
 start on Builder; Starter uses agent connections and OAuth instead.
 
 ## Quick Start
@@ -146,28 +146,15 @@ internally instead of asking users to type them.
 
 ### Connect an Agent
 
-Start with the unified browser wizard:
+For ChatGPT, Claude, or another remote MCP client, connect:
 
 ```text
-https://app.revdoku.com/connect/agent
+https://app.revdoku.com/mcp
 ```
 
 Agents and clients can discover supported auth methods at
 `GET /api/v1/agent_auth/capabilities`. The preferred local flow is OAuth device
-authorization; one-time grants are the best browser-signed fallback for local
-agent chats.
-
-The app's **Copy prompt** button gives the agent a one-time grant token. Exchange
-it for an agent credential:
-
-```sh
-curl -fsS "$REVDOKU_URL/api/v1/agent_auth/exchange_grant" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "grant_token": "GRANT_TOKEN_FROM_REVDOKU",
-    "label": "Codex on laptop"
-  }'
-```
+authorization. Remote MCP clients use Revdoku OAuth authorization code flow.
 
 Local CLI/device-code flow:
 
@@ -694,15 +681,11 @@ visitor count across the whole range.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/connect/agent` | Unified browser wizard for local CLI, hosted MCP, and one-time prompt setup. |
 | `GET` | `/api/v1/agent_auth/capabilities` | Machine-readable agent auth manifest. |
 | `GET` | `/api/v1/agent_auth/status` | API-key status alias for agents; same connection payload as `/api/v1/status`. |
 | `POST` | `/api/v1/agent_auth/request_code` | Request an email verification code without revealing whether the email has a Revdoku account. New hosted accounts are created in the web UI at app.revdoku.com/users/sign_up, not here. |
 | `POST` | `/api/v1/agent_auth/verify_code` | Verify the email code and create an API key when the code is valid. |
-| `POST` | `/api/v1/agent_auth/exchange_grant` | Exchange an app-created grant for an API key. |
 | `POST` | `/api/v1/agent_auth/browser_login_link` | Create a one-time dashboard login link. |
-| `GET` | `/api/v1/account/agent_connection_grants` | List unused one-time grants for the signed-in browser user. |
-| `DELETE` | `/api/v1/account/agent_connection_grants/:id` | Revoke an unused one-time grant. |
 | `POST` | `/oauth/device_authorization` | Start OAuth device authorization for local CLI/agent clients. |
 | `GET` / `POST` | `/oauth/device` | Browser page where the user enters/approves a device code. |
 | `POST` | `/oauth/token` | Exchange OAuth authorization codes, device codes, or refresh tokens. |
@@ -728,7 +711,7 @@ Successful device-code token responses include normal OAuth fields plus
 `revdoku_api_key`, a durable `revdoku_...` key for local REST API clients.
 The browser approval screen defaults to `bucket_admin` so agents can build and
 publish when the user asks. Users can reduce a connection later in
-Account → Access. Advanced one-time grant and API-key creation flows can still
+Account → Access. OAuth approval and API-key creation flows can still
 request a narrower scope up front.
 
 #### Permission scopes
@@ -739,8 +722,8 @@ request a narrower scope up front.
 | `bucket_write` | Create and update allowed private bucket files; no publishing. |
 | `bucket_admin` | Create, update, publish, unpublish, and manage allowed buckets. |
 
-One-time grants and API-key creation accept `permission_scope` / `scope` with
-these values. If omitted, agent grants and named API-key setup use
+OAuth approval and API-key creation accept `permission_scope` / `scope` with
+these values. If omitted, agent connections and named API-key setup use
 `bucket_admin` by default.
 
 #### POST /api/v1/agent_auth/request_code
@@ -749,11 +732,10 @@ This endpoint returns the same success shape for every syntactically valid email
 It does not reveal whether the email has a Revdoku account, whether the account is
 locked, or whether two-factor authentication is enabled. If the email can receive
 Revdoku sign-in codes, a code is sent; otherwise the response still directs the
-user to browser sign-in/signup and the authenticated one-time connection prompt.
-If no code arrives or verification fails, ask the user to sign in to Revdoku in
-the browser and copy a one-time connection prompt/grant from the app, then exchange
-it. The response body includes `fallback_url`, `signup_url`, and a `hint` describing
-this browser-grant recovery. Do not ask for a Revdoku password, TOTP, backup code,
+user to browser sign-in/signup. If no code arrives or verification fails, use
+browser device sign-in or ask the user to sign in to Revdoku in the browser. The
+response body includes `fallback_url`, `signup_url`, and a `hint` describing this
+recovery. Do not ask for a Revdoku password, TOTP, backup code,
 payment details, or full chat history.
 
 This endpoint never creates accounts. New users must sign up through the web UI at
@@ -774,7 +756,7 @@ account is set up on the first successful verification if needed. `INVALID_CODE`
 privacy-preserving and can also mean the account is locked or uses two-factor
 authentication (which email-code sign-in cannot complete). Its `error.details`
 carries `fallback_url`, `signup_url`, and a `hint`, so on `INVALID_CODE` fall back
-to browser sign-in plus a one-time connection grant rather than retrying codes.
+to browser device sign-in rather than repeatedly retrying codes.
 
 ```json
 {
@@ -794,15 +776,6 @@ For selected-bucket access, use:
   "bucket_permissions": {
     "bkt_...": "write"
   }
-}
-```
-
-#### POST /api/v1/agent_auth/exchange_grant
-
-```json
-{
-  "grant_token": "GRANT_TOKEN_FROM_REVDOKU",
-  "label": "Codex on laptop"
 }
 ```
 
@@ -1306,5 +1279,5 @@ domain, or visit Revdoku in the browser to review plan capacity.
 
 ### Do Not Leak Secrets
 
-Never print, paste, commit, or log `revdoku_...` API keys, one-time grant
-tokens, direct-upload URLs, or browser login links.
+Never print, paste, commit, or log `revdoku_...` API keys, direct-upload URLs,
+or browser login links.

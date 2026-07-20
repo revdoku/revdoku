@@ -20,9 +20,6 @@ if you do not have one yet:
 revdoku login
 ```
 
-For a browser-first setup page that also covers hosted MCP connectors and
-one-time local agent prompts, open `/connect/agent` in the Revdoku app.
-
 Publish the current folder as a public website (the headline command):
 
 ```sh
@@ -59,8 +56,8 @@ form works):
 | —      | `login`   | Sign in and save local agent credentials |
 
 Other (full name only): `files`, `read PATH`, `versions`, `restore ID`,
-`append PATH`, `archive`, `unarchive`, `delete`, `account`, `sites`, `dashboard`,
-`grant TOKEN`. Run `revdoku --help` for the full reference.
+`append PATH`, `archive`, `unarchive`, `delete`, `account`, `sites`, and
+`dashboard`. Run `revdoku --help` for the full reference.
 
 ## Buckets
 
