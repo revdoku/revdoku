@@ -41,7 +41,6 @@ PUBLICATION_SITE_MODE="${REVDOKU_PUBLICATION_SITE_MODE:-}"
 PREVIEW_EXPIRES_IN_MINUTES="${REVDOKU_PREVIEW_EXPIRES_IN_MINUTES:-}"
 RESTORE_VERSION_ID="${REVDOKU_RESTORE_VERSION_ID:-}"
 RESTORE_COMMENT="${REVDOKU_RESTORE_COMMENT:-}"
-GRANT_TOKEN="${REVDOKU_GRANT_TOKEN:-}"
 BROWSER_LOGIN_PATH="${REVDOKU_BROWSER_LOGIN_PATH:-/buckets}"
 APPEND_TEXT_PATH="${REVDOKU_APPEND_TEXT_PATH:-}"
 APPEND_TEXT_CONTENT="${REVDOKU_APPEND_TEXT_CONTENT:-}"
@@ -159,7 +158,6 @@ More commands (no short alias):
   account              Account, plan, and storage status.
   sites                List your public website URLs.
   dashboard            Print a one-time browser login link to the Revdoku dashboard.
-  grant TOKEN          Exchange a one-time app grant and save the API key.
 
 Global options:
   --bucket-id ID       Act on a specific bucket (overrides the .revdoku binding).
@@ -375,7 +373,6 @@ while [[ $# -gt 0 ]]; do
           account)        ACTION="account_status"; shift ;;
           sites)          ACTION="list_public_buckets"; shift ;;
           dashboard)      ACTION="open_site"; OPEN_DASHBOARD="true"; shift ;;
-          grant)          [[ $# -ge 2 && "$2" != -* ]] || die "grant needs a one-time grant token right after it, e.g. revdoku grant TOKEN"; ACTION="exchange_grant"; GRANT_TOKEN="$2"; shift 2 ;;
           help)           usage; exit 0 ;;
           version)        printf '%s\n' "$(installed_client_version)"; exit 0 ;;
           *)
@@ -1120,17 +1117,17 @@ request_email_agent_key() {
   done
 
   echo "If $email can receive Revdoku sign-in codes, a verification code was sent." >&2
-  echo "If no code arrives, sign in or create an account at ${BASE_URL%/}/users/sign_in, then use Copy Instructions for AI or an app connection grant and run 'revdoku grant TOKEN'." >&2
+  echo "If no code arrives, sign in at ${BASE_URL%/}/users/sign_in or retry browser device sign-in with 'revdoku --login'." >&2
 
   code="$(prompt_read "Code: ")"
   [[ -n "$code" ]] || die "code is required"
 
   payload="$("$JQ_BIN" -nc --arg email "$email" --arg code "$code" '{email:$email, code:$code, label:"Revdoku bucket client"}')"
   if ! response="$(http_json POST "/api/v1/agent_auth/verify_code" "$payload" false)"; then
-    die "Could not verify the code. If no code arrived or the code is rejected, use browser sign-in and a one-time Revdoku connection grant."
+    die "Could not verify the code. If no code arrived or the code is rejected, use 'revdoku --login' and complete browser device sign-in."
   fi
   key="$("$JQ_BIN" -r '.data.api_key // empty' <<<"$response")"
-  [[ -n "$key" ]] || die "verification did not return an API key. If no code arrived or the code is rejected, use browser sign-in and a one-time Revdoku connection grant."
+  [[ -n "$key" ]] || die "verification did not return an API key. Use 'revdoku --login' and complete browser device sign-in."
 
   save_api_key "$key"
 }
@@ -1165,7 +1162,7 @@ if [[ "$ACTION" == "connection_status" && "$SHOW_PUBLISH_HINT" == "true" && -z "
   exit 0
 fi
 
-if [[ "$ACTION" != "exchange_grant" && ( "$LOGIN" == "true" || -z "$API_KEY" ) ]]; then
+if [[ "$LOGIN" == "true" || -z "$API_KEY" ]]; then
   request_agent_key
 fi
 
@@ -1175,7 +1172,7 @@ if [[ "$LOGIN" == "true" && "$ACTION" == "store" && "$PATH_EXPLICIT" == "false" 
   exit 0
 fi
 
-[[ "$ACTION" == "exchange_grant" || -n "$API_KEY" ]] || die "REVDOKU_API_KEY is required"
+[[ -n "$API_KEY" ]] || die "REVDOKU_API_KEY is required"
 case "$UPLOAD_MODE" in
   auto|direct) ;;
   *) die "--upload-mode must be auto or direct" ;;
@@ -1454,30 +1451,6 @@ account_status() {
       }'
 }
 
-exchange_grant() {
-  local payload response key bucket_access default_bucket_id
-  [[ -n "$GRANT_TOKEN" ]] || die "grant token is required"
-  payload="$("$JQ_BIN" -nc --arg grant_token "$GRANT_TOKEN" '{grant_token:$grant_token, label:"Revdoku bucket client"}')"
-  response="$(http_json POST "/api/v1/agent_auth/exchange_grant" "$payload" false)"
-  key="$("$JQ_BIN" -r '.data.api_key // empty' <<<"$response")"
-  [[ -n "$key" ]] || die "grant exchange did not return an API key"
-  bucket_access="$("$JQ_BIN" -r '.data.bucket_access // "all"' <<<"$response")"
-  default_bucket_id="$("$JQ_BIN" -r 'if (.data.bucket_access == "selected") then ((.data.bucket_ids // []) | map(select(startswith("bkt_"))) | .[0] // empty) else empty end' <<<"$response")"
-
-  mkdir -p "$(dirname "$CREDENTIALS_PATH")"
-  umask 077
-  printf "%s\n" "$key" > "$CREDENTIALS_PATH"
-  echo "Saved Revdoku API key to $CREDENTIALS_PATH" >&2
-  if [[ "$bucket_access" == "selected" && -n "$default_bucket_id" ]]; then
-    printf "%s\n" "$default_bucket_id" > "$DEFAULT_BUCKET_PATH"
-    echo "Saved default Revdoku bucket to $DEFAULT_BUCKET_PATH" >&2
-  else
-    rm -f "$DEFAULT_BUCKET_PATH"
-  fi
-  echo "This is a one-time setup. Future runs will reuse the saved key automatically." >&2
-  printf "%s\n" "$("$JQ_BIN" -c '{success:(.success // true), data:{account_id:.data.account_id, account_name:.data.account_name, bucket_access:.data.bucket_access, bucket_ids:(.data.bucket_ids // []), bucket_permissions:(.data.bucket_permissions // {}), account_connection_limits:.data.account_connection_limits, manage_access:.data.manage_access, guidance:.data.guidance, link_hint:(if ((.data.manage_access.url // "") != "") then "If opening links from a terminal, Cmd-click on macOS or Ctrl-click on Windows/Linux when supported." else null end), access_hint:(if ((.data.manage_access.url // "") == "") then "No browser login link was issued. Open Revdoku through the normal browser sign-in flow to manage this agent." else null end)}}' <<<"$response")"
-}
-
 list_public_buckets() {
   http_json GET "/api/v1/publications?include_manifest=false" "{}" | "$JQ_BIN" -c '
     .data.publications
@@ -1744,10 +1717,6 @@ case "$ACTION" in
     ;;
   open_site)
     open_site
-    exit 0
-    ;;
-  exchange_grant)
-    exchange_grant
     exit 0
     ;;
 esac

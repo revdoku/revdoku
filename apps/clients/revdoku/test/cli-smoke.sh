@@ -7,8 +7,8 @@ REPO_ROOT="$(cd "${CLIENT_DIR}/../../.." && pwd)"
 WEB_DIR="${REPO_ROOT}/apps/web"
 
 REVDOKU_URL="${REVDOKU_URL:-http://127.0.0.1:3001}"
-GRANT_TOKEN="${REVDOKU_GRANT_TOKEN:-}"
-CREATE_LOCAL_GRANT="${REVDOKU_CREATE_LOCAL_GRANT:-false}"
+SMOKE_API_KEY="${REVDOKU_API_KEY:-}"
+CREATE_LOCAL_FIXTURE="${REVDOKU_CREATE_LOCAL_FIXTURE:-false}"
 KEEP_BUCKET="${REVDOKU_KEEP_SMOKE_BUCKET:-false}"
 
 SMOKE_TITLE="CLI smoke virtual storage $(date -u +%Y%m%d%H%M%S)"
@@ -29,19 +29,15 @@ need_cmd() {
 need_cmd jq
 need_cmd mktemp
 
-if [[ -z "$GRANT_TOKEN" && "$CREATE_LOCAL_GRANT" != "true" ]]; then
-  die "set REVDOKU_GRANT_TOKEN, or set REVDOKU_CREATE_LOCAL_GRANT=true when running against a local Rails app"
+if [[ -z "$SMOKE_API_KEY" && "$CREATE_LOCAL_FIXTURE" != "true" ]]; then
+  die "set REVDOKU_API_KEY, or set REVDOKU_CREATE_LOCAL_FIXTURE=true when running against a local Rails app"
 fi
 
 tmp_home="$(mktemp -d)"
-tmp_home_selected="$(mktemp -d)"
 tmp_data="$(mktemp -d)"
-tmp_selected_data="$(mktemp -d)"
 tmp_sensitive="$(mktemp -d)"
 tmp_data_root="$(basename "$tmp_data")"
-tmp_selected_data_root="$(basename "$tmp_selected_data")"
 cleanup_bucket_id=""
-cleanup_selected_bucket_id=""
 
 cleanup_delete_bucket() {
   local token="$1"
@@ -67,58 +63,41 @@ cleanup() {
     cleanup_token="$(tr -d '\r\n' < "${tmp_home}/.revdoku/credentials")"
     cleanup_delete_bucket "$cleanup_token" "$cleanup_bucket_id"
   fi
-  if [[ "$KEEP_BUCKET" != "true" && -n "$cleanup_selected_bucket_id" && -s "${tmp_home_selected}/.revdoku/credentials" ]]; then
-    cleanup_selected_token="$(tr -d '\r\n' < "${tmp_home_selected}/.revdoku/credentials")"
-    cleanup_delete_bucket "$cleanup_selected_token" "$cleanup_selected_bucket_id"
-  fi
-  rm -rf "$tmp_home" "$tmp_home_selected" "$tmp_data" "$tmp_selected_data" "$tmp_sensitive"
+  rm -rf "$tmp_home" "$tmp_data" "$tmp_sensitive"
 }
 trap cleanup EXIT
 
-selected_grant_token=""
-selected_bucket_id=""
-if [[ -z "$GRANT_TOKEN" ]]; then
-  [[ -d "$WEB_DIR" ]] || die "could not locate apps/web for local grant creation"
-  grant_output="$(
+if [[ -z "$SMOKE_API_KEY" ]]; then
+  [[ -d "$WEB_DIR" ]] || die "could not locate apps/web for local fixture creation"
+  fixture_output="$(
     cd "$WEB_DIR"
     bin/rails runner '
       timestamp = Time.current.utc.strftime("%Y%m%d%H%M%S")
       user = User.create!(email: "cli-smoke-#{timestamp}-#{SecureRandom.hex(4)}@revdoku.invalid", confirmed_at: Time.current)
       account = Account.create!(name: "CLI Smoke #{timestamp}", owner: user, personal: true, max_storage_mb: 5120, max_account_connections: 10, max_account_members: 10, max_api_keys: 10, max_agent_connections: 10)
       AccountMember.create!(account: account, user: user, role: :owner)
-      bucket = ActsAsTenant.with_tenant(account) do
-        account.buckets.create!(title: "CLI Smoke Selected #{timestamp}", source: :api)
-      end
       account.complete_setup!
       account.update!(max_storage_mb: 5120, max_buckets: 10, max_live_publications: 10, max_account_connections: 10, max_account_members: 10, max_api_keys: 10, max_agent_connections: 10)
-      account_raw, = AgentConnectionGrant.issue!(user: user, account: account, bucket: nil, bucket_permissions: {}, metadata: { source: "cli_smoke" })
-      selected_raw, = AgentConnectionGrant.issue!(user: user, account: account, bucket: bucket, bucket_permissions: { bucket.prefix_id => "write" }, metadata: { source: "cli_smoke_selected" })
-      puts JSON.generate(account_grant: account_raw, selected_grant: selected_raw, selected_bucket_id: bucket.prefix_id)
+      api_key = ApiKey.create!(user: user, label: "CLI smoke", token_type: :api, scope: :bucket_admin, expires_at: 1.day.from_now, metadata: { account_id: account.prefix_id, agent: { name: "CLI smoke", client: "cli_smoke" } })
+      puts JSON.generate(api_key: api_key.token)
     '
   )"
-  grant_json="$(printf "%s\n" "$grant_output" | tail -n 1)"
-  GRANT_TOKEN="$(printf "%s" "$grant_json" | jq -r '.account_grant')"
-  selected_grant_token="$(printf "%s" "$grant_json" | jq -r '.selected_grant')"
-  selected_bucket_id="$(printf "%s" "$grant_json" | jq -r '.selected_bucket_id')"
+  fixture_json="$(printf "%s\n" "$fixture_output" | tail -n 1)"
+  SMOKE_API_KEY="$(printf "%s" "$fixture_json" | jq -r '.api_key')"
 fi
 
 printf '<!doctype html><title>Revdoku CLI smoke</title>\n' > "${tmp_data}/index.html"
 printf 'revdoku CLI smoke\n' > "${tmp_data}/notes.txt"
-printf 'selected bucket default\n' > "${tmp_selected_data}/selected.txt"
 printf 'REVDOKU_SECRET=do-not-upload\n' > "${tmp_data}/.env"
 printf 'private key placeholder\n' > "${tmp_data}/id_rsa"
 mkdir -p "${tmp_data}/config"
 printf 'token placeholder\n' > "${tmp_data}/config/api-token.txt"
 
-exchange_json="$(
-  HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
-    --url "$REVDOKU_URL" \
-    grant "$GRANT_TOKEN"
-)"
-
-account_id="$(printf "%s" "$exchange_json" | jq -r '.data.account_id // empty')"
-[[ "$account_id" == acct_* ]] || die "grant exchange did not return account id"
-[[ -s "${tmp_home}/.revdoku/credentials" ]] || die "grant exchange did not save credentials"
+mkdir -p "${tmp_home}/.revdoku"
+printf '%s\n' "$SMOKE_API_KEY" > "${tmp_home}/.revdoku/credentials"
+account_json="$(HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" --url "$REVDOKU_URL" account)"
+account_id="$(printf "%s" "$account_json" | jq -r '.data.account.id // empty')"
+[[ "$account_id" == acct_* ]] || die "account status did not return account id"
 
 dashboard_link="$(
   HOME="$tmp_home" "${CLIENT_DIR}/bin/revdoku" \
@@ -126,33 +105,6 @@ dashboard_link="$(
     dashboard
 )"
 [[ "$dashboard_link" == *"/agent_login/"* ]] || die "dashboard link did not return an agent browser login URL"
-
-if [[ -n "$selected_grant_token" && "$selected_grant_token" != "null" ]]; then
-  selected_exchange_json="$(
-    HOME="$tmp_home_selected" "${CLIENT_DIR}/bin/revdoku" \
-      --url "$REVDOKU_URL" \
-      grant "$selected_grant_token"
-  )"
-  selected_access="$(printf "%s" "$selected_exchange_json" | jq -r '.data.bucket_access // empty')"
-  remembered_bucket="$(tr -d '\r\n' < "${tmp_home_selected}/.revdoku/credentials.bucket")"
-  [[ "$selected_access" == "selected" ]] || die "selected grant exchange did not return selected access"
-  [[ "$remembered_bucket" == "$selected_bucket_id" ]] || die "selected grant did not save the default bucket"
-
-  selected_store_id="$(
-    HOME="$tmp_home_selected" "${CLIENT_DIR}/bin/revdoku" \
-      --url "$REVDOKU_URL" \
-      p --draft "$tmp_selected_data"
-  )"
-  cleanup_selected_bucket_id="$selected_store_id"
-  [[ "$selected_store_id" == "$selected_bucket_id" ]] || die "selected grant store did not use remembered bucket"
-  selected_files_json="$(
-    curl -fsS "${REVDOKU_URL%/}/api/v1/buckets/${selected_bucket_id}/files" \
-      -H "Authorization: Bearer $(tr -d '\r\n' < "${tmp_home_selected}/.revdoku/credentials")"
-  )"
-  selected_expected_path="${tmp_selected_data_root}/selected.txt"
-  selected_found="$(printf "%s" "$selected_files_json" | jq -r --arg path "$selected_expected_path" '.data.files[]?.path | select(. == $path)' | head -n 1)"
-  [[ "$selected_found" == "$selected_expected_path" ]] || die "selected grant did not store into the remembered bucket"
-fi
 
 printf 'REVDOKU_SECRET=do-not-upload\n' > "${tmp_sensitive}/.env"
 mkdir -p "${tmp_sensitive}/config"

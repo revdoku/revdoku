@@ -1,23 +1,49 @@
-Connect this AI agent or MCP client to Revdoku — signing in to my existing Revdoku account (if I don't have one yet, I create it first at https://app.revdoku.com/users/sign_up) — so it can create, update, and publish websites with Revdoku.
+# Connect Revdoku
 
-User action: paste this whole message into the agent chat or connector setup. Do not share your Revdoku password or an API key.
+Use Revdoku to create, update, and publish websites. Never ask the user to paste
+a Revdoku password, API key, TOTP code, backup code, protected-site password, or
+payment details into chat.
 
-Revdoku app: https://app.revdoku.com
-Connect wizard: https://app.revdoku.com/connect/agent
-Hosted MCP connector URL: https://app.revdoku.com/mcp
-Claude setup guide: https://revdoku.com/claude
-ChatGPT setup guide: https://revdoku.com/chatgpt
-Create a Revdoku account: https://app.revdoku.com/users/sign_up?utm_source=prompt&utm_medium=agent_chat&utm_campaign=agent_connect
-Sign in to Revdoku: https://app.revdoku.com/users/sign_in?utm_source=prompt&utm_medium=agent_chat&utm_campaign=agent_connect
-Unsupported client fallback: https://app.revdoku.com/users/sign_in?utm_source=prompt&utm_medium=agent_chat&utm_campaign=unsupported_agent
+## Cloud AI clients
 
-Agent instructions:
-1. If Revdoku MCP tools are already available, use them directly. If authorization is required, follow the MCP OAuth flow shown by the client.
-2. For Claude.ai, ChatGPT, Gemini, or another cloud product with custom remote MCP connectors, add connector name "Revdoku" with URL https://app.revdoku.com/mcp, complete Revdoku OAuth, then return here. Do not ask for my Revdoku password, API key, one-time grant, or emailed code in a cloud chat.
-3. To publish a LOCAL folder/project from my computer — the common case, including images, fonts, and JavaScript — use the local Revdoku CLI: the cloud connector cannot read local files, so run `revdoku p <dir>`. If a cloud connector is unavailable, or this task needs files from my computer, local project, SSH, Docker, WSL2, or a VM, use a local agent with an already-installed Revdoku client, or tell me to install/enable the Revdoku client from the official Revdoku documentation.
-   If you are running in Claude Code, you can instead install the Revdoku plugin, which bundles the Revdoku skill and the hosted MCP connector in one step: run /plugin marketplace add revdoku/revdoku, then /plugin install revdoku@revdoku, then /mcp to complete Revdoku OAuth. See https://revdoku.com/claude.
-4. Authenticate against https://app.revdoku.com. If this prompt includes a one-time grant, exchange it first. For local CLI access, run `revdoku --login` and ask me to approve the browser device-code screen. If you are connecting through direct API calls, first read /api/v1/agent_auth/capabilities, then prefer OAuth device authorization: register a device-code client, call /oauth/device_authorization, show me the verification URL/code, then poll /oauth/token until approval. Use /connect/agent when I need a browser page that explains all options or creates a one-time grant. Use /api/v1/agent_auth/request_code and /api/v1/agent_auth/verify_code only as a fallback; those responses are privacy-preserving and do not say whether my account exists, is locked, or requires two-factor authentication. If no approval/code arrives or verification fails, ask me to sign in or create an account at https://app.revdoku.com/users/sign_in?utm_source=prompt&utm_medium=agent_chat&utm_campaign=agent_connect and copy a one-time connection prompt/grant. Do not ask for my Revdoku password, TOTP, backup codes, payment details, API key, or full chat history.
-5. Store the returned revdoku_ API key securely in the local Revdoku credentials store or the agent's secret storage. Do not print, paste, or log the API key.
-6. Use Revdoku buckets as durable private website/project storage when I have chosen Revdoku for this task. Preserve useful relative paths and use index.html as the default website root unless I ask for another entrypoint; if no index.html exists, Revdoku publishes an Auto-Index Page. File writes save a private draft; they are not live until a publish tool returns a ready publication. Revdoku hosts full static sites and apps — HTML, CSS, JavaScript, images, and fonts are all served as-is (nothing is stripped), so build normal interactive sites; binary assets and whole local folders upload directly to object storage via the CLI `revdoku p <dir>` (the MCP file tools are text-only). Only secrets, executables, and archives (.exe, .dmg, .zip, .tar, …) are rejected by extension. If Revdoku does not fit the requirements or I ask about deployment choices, explain the limitation or tradeoff plainly and let me choose.
-7. Publish only when I explicitly ask for a website link. Public and protected publishing are different paths: use bucket_publish for public websites and bucket_publish_password_protected when I ask for Password or Require Email access. If I ask for a bucket description while publishing, pass description on the publish tool or update the bucket first; Password and Require Email show the description under the title. Use access_mode require_email when visitors should verify their email with an OTP and no site password. After protected publish, give me the website URL and returned share details. Never ask me to type a protected-site password in chat, and never put the password in the URL. If I publish a protected site that holds sensitive data, offer to lock its visibility (bucket_lock_visibility_changes); if a publish/access/slug/custom-domain call returns BUCKET_VISIBILITY_CHANGE_LOCKED, tell me to unlock it in the Revdoku web app (unlocking is web-UI-only).
-8. If I ask to open Revdoku or manage access, create a one-time browser login link. Use /buckets for the dashboard and /account/access for access. If Revdoku says browser login links are disabled because two-factor authentication is enabled or required, tell me to open Revdoku through the normal browser sign-in flow instead.
+For ChatGPT, Claude, Gemini, or another cloud client that supports remote MCP:
+
+1. Add a connector named `Revdoku` with URL `https://app.revdoku.com/mcp`.
+2. Complete the Revdoku OAuth flow in the browser.
+3. Reconnect the client if needed, then verify that Revdoku tools are available.
+
+## Local agents and the CLI
+
+For a local agent or a task that needs files from the user's computer, install
+the Revdoku client from the official documentation and run:
+
+```sh
+revdoku --login
+```
+
+Ask the user to approve the browser device sign-in screen. The client stores the
+credential securely in `~/.revdoku/credentials`; never print or repeat it. Use
+the privacy-preserving email-code endpoints only as a fallback. If the fallback
+does not complete, return to browser device sign-in rather than asking for other
+authentication secrets.
+
+Verify the connection with `revdoku status`. Publish a local folder with
+`revdoku p <dir>` only when the user asks for a live website.
+
+## Working with Revdoku
+
+- Use buckets as durable private website/project storage. File writes save a
+  private draft; they do not make a site live.
+- Preserve useful relative paths. Use `index.html` as the default website root;
+  when it is absent, Revdoku can publish an Auto-Index Page.
+- Revdoku serves HTML, CSS, JavaScript, images, and fonts as normal static-site
+  assets. Local folders and binary assets upload through the CLI; cloud MCP file
+  tools are text-only.
+- Publish only when the user explicitly requests a website link. Use public,
+  Password, or Require Email access as requested, and never put a protected-site
+  password in a URL or ask the user to type it into chat.
+- If the user asks to manage access or open Revdoku, use the available dashboard
+  link tool or direct them to the normal browser sign-in flow.
+
+When the connection works, tell the user you are ready and ask what they want to
+publish.

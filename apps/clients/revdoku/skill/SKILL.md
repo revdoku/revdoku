@@ -283,22 +283,17 @@ reconnect the MCP connector, and compare against the public repo above.
 
 ## Connect From A Revdoku Prompt
 
-When the user copies an agent prompt from the Revdoku app, prefer
-the MCP `revdoku_auth_exchange_grant` tool if it is available. If MCP is not
-connected, run the local client with the one-time grant from the prompt:
+When the user copies the Revdoku connection prompt, use the hosted MCP URL with
+OAuth when the client supports remote MCP. For a local agent, run the browser
+device sign-in flow:
 
 ```bash
-~/.revdoku/bin/revdoku --url https://app.revdoku.com grant GRANT_TOKEN
+~/.revdoku/bin/revdoku --url https://app.revdoku.com --login
 ```
 
-The grant can be used once and expires after 15 minutes. The client saves the
-returned agent credential to `~/.revdoku/credentials`. For selected-bucket grants, it
-also saves the granted bucket id to `~/.revdoku/credentials.bucket` so
-later `~/.revdoku/bin/revdoku p PATH` commands store into that bucket by
-default. Do not print or repeat the API key.
-Follow the returned guidance exactly; it tells you whether this connection is
-account-wide or limited to selected buckets, and says to publish only when the
-user asks for a website link.
+Ask the user to approve the browser screen. The client saves the resulting
+credential to `~/.revdoku/credentials`; do not print or repeat it. Verify the
+connection with `revdoku status`, then ask what the user wants to publish.
 
 ## Publish
 
@@ -420,7 +415,7 @@ content (or save it with `--output`):
 ```
 
 `PATH` is bucket-relative (as shown by `files`). Reads need only read
-access, so a bucket-scoped agent grant works. Prefer this over hand-rolling HTTP;
+access, so a bucket-scoped agent credential works. Prefer this over hand-rolling HTTP;
 cloud MCP clients use `bucket_file_list` + `bucket_file_read` instead.
 
 ## Commands
@@ -445,7 +440,6 @@ The CLI uses verb subcommands (aliases in parentheses):
 - `account`: print account, plan, and storage status as JSON with full-account credentials. Bucket-scoped agent credentials are denied this; to confirm a bucket-scoped agent connection works use `status`, or open Revdoku in a browser to review account status when needed.
 - `sites`: print active website publications and URLs as JSON. Each publication includes `hits`, derived from `analytics.hits_all_time` in the HTTP API.
 - `dashboard`: create a one-time browser login link for the Revdoku dashboard. To reach Account > Access, open the dashboard and navigate there.
-- `grant TOKEN`: exchange a one-time grant copied from the Revdoku app and save the returned API key.
 
 ## Modifier flags
 
