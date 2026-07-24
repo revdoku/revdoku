@@ -295,6 +295,11 @@ Ask the user to approve the browser screen. The client saves the resulting
 credential to `~/.revdoku/credentials`; do not print or repeat it. Verify the
 connection with `revdoku status`, then ask what the user wants to publish.
 
+The device sign-in command prints `Connection ID is <ID>`. Tell the user that
+exactly once, then explain: it is only a safety check; they should make sure the
+same ID appears in the top-right of Revdoku and select **Confirm Connection**.
+Never ask the user to type, paste, or repeat the Connection ID in chat.
+
 ## Publish
 
 ```bash
@@ -427,7 +432,7 @@ The CLI uses verb subcommands (aliases in parentheses):
 - `open` (`o`): open this folder's live site in the browser; `open --dashboard` opens the Revdoku dashboard instead.
 - `init` (`i`) `[PATH]`: scaffold a starter static/SPA project.
 - `status` (`st`): print connection status as JSON (connected, account, scope, bucket access). Works with bucket-scoped agent credentials, so this is the right way to confirm a connection — not `account`.
-- `login`: open the browser device-code login flow and refresh local credentials, with privacy-preserving email-code fallback on older servers. It saves credentials and exits. To confirm a connection works afterward, run `status`.
+- `login`: open the browser device-code login flow and refresh local credentials, with privacy-preserving email-code fallback on older servers. It displays a Connection ID that the user only compares with the muted ID in the top-right of Revdoku before selecting **Confirm Connection**; never ask them to type or paste it. The command saves credentials and exits. To confirm a connection works afterward, run `status`.
 - `unpublish` (`down`): take the bound site offline while keeping its reserved URL for later republish. Targets the folder's `.revdoku` binding, or pass `--bucket-id`.
 - `files`: with `--bucket-id`, print the files in a bucket as JSON (path, size, content type, id). Use this to discover what to read.
 - `read PATH`: with `--bucket-id`, print the content of the bucket file at PATH (bucket-relative) to stdout. This is how you READ existing bucket files. Add `--output FILE` to save it instead. Reads need only read access.

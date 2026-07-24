@@ -1047,7 +1047,8 @@ request_device_agent_key() {
 
   echo "Open this Revdoku link to connect:" >&2
   echo "$verification_uri_complete" >&2
-  echo "Code: $user_code" >&2
+  echo "Connection ID is $user_code" >&2
+  echo "This is a safety check. Make sure the same ID appears in the top-right of Revdoku, then select Confirm Connection." >&2
   if open_browser_url "$verification_uri_complete"; then
     echo "Opened the approval page in your browser." >&2
   else

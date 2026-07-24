@@ -178,9 +178,13 @@ curl -fsS "$REVDOKU_URL/oauth/device_authorization" \
   }'
 ```
 
-Open the returned `verification_uri_complete` in the browser. Revdoku approves
-the connection with build/publish permissions by default; users can reduce
-access later in Account → Access. Poll `/oauth/token` with grant type
+Open the returned `verification_uri_complete` in the browser. Present the
+returned `user_code` to the person as `Connection ID is <user_code>` and explain
+that it is only a safety check: they should make sure the same ID appears in the
+top-right of Revdoku, then select **Confirm Connection**. Never ask them to type,
+paste, or repeat the Connection ID in chat. Revdoku approves the connection with
+build/publish permissions by default; users can reduce access later in Account
+→ Access. Poll `/oauth/token` with grant type
 `urn:ietf:params:oauth:grant-type:device_code` until the user approves. Local
 tooling may store the returned `revdoku_api_key` extension for REST API calls.
 
@@ -696,7 +700,10 @@ Local agents should prefer OAuth device authorization over email-code login. The
 client registers with grant type
 `urn:ietf:params:oauth:grant-type:device_code`, calls
 `POST /oauth/device_authorization`, shows the returned `verification_uri_complete`
-and `user_code`, then polls `POST /oauth/token`.
+and presents `user_code` as a **Connection ID**, then polls `POST /oauth/token`.
+Tell the user `Connection ID is <ID>` and ask only that they make sure the same
+ID appears in the top-right of Revdoku before selecting **Confirm Connection**.
+Do not ask them to type, paste, or repeat it.
 
 Pending poll responses use standard device-flow errors:
 
