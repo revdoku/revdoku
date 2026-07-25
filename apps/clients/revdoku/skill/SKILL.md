@@ -402,7 +402,7 @@ the configured endpoint without a custom backend:
   `*.revdoku.site`. On a **custom domain** the owner must supply her own Turnstile
   keys (a widget created for that hostname) — save `CLOUDFLARE_TURNSTILE_SITE_KEY`
   (a public variable) and `CLOUDFLARE_TURNSTILE_SECRET_KEY` (a secret) in the
-  bucket's Variables & Secrets. Without them, custom-domain forms fall back to
+  bucket's Variables tab. Without them, custom-domain forms fall back to
   honeypot + rate limit + daily cap (no Turnstile).
 
 A copy-paste reference page is at `templates/contact-form-example.html`.

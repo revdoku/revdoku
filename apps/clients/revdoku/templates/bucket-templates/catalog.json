@@ -64,16 +64,26 @@
                 },
                 {
                   "name": "email",
-                  "label": "Email",
+                  "label": "Email (optional)",
                   "type": "email",
+                  "required": false
+                },
+                {
+                  "name": "phone",
+                  "label": "Phone",
+                  "type": "tel",
                   "required": true
                 },
                 {
                   "name": "message",
                   "label": "What would you like to discuss?",
                   "type": "textarea",
-                  "required": true
+                  "required": false
                 }
+              ],
+              "required_fields": [
+                "name",
+                "phone"
               ]
             }
           ]

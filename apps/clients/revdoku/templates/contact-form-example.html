@@ -9,7 +9,7 @@
   - <name> is lowercase letters/digits/-/_ (e.g. contact, quote, feedback).
   - Keep the hidden "_gotcha" honeypot field — bots fill it; humans don't.
   - Public sites: add the Cloudflare Turnstile widget (uncomment below) when
-    Turnstile keys are configured in the bucket's Variables & Secrets.
+    Turnstile keys are configured in the bucket's Variables tab.
 -->
 <html lang="en">
   <head>
@@ -36,10 +36,13 @@
       <input id="name" type="text" name="name" required />
 
       <label for="email">Email</label>
-      <input id="email" type="email" name="email" required />
+      <input id="email" type="email" name="email" />
 
-      <label for="message">Message</label>
-      <textarea id="message" name="message" required></textarea>
+      <label for="phone">Phone</label>
+      <input id="phone" type="tel" name="phone" required />
+
+      <label for="message">What would you like to discuss?</label>
+      <textarea id="message" name="message"></textarea>
 
       <!-- Anti-spam honeypot: keep hidden, leave empty. -->
       <input type="text" name="_gotcha" tabindex="-1" autocomplete="off"
