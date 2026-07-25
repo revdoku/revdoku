@@ -947,7 +947,11 @@ sensitive-data collection.
       "publication_forms": {
         "enabled": true,
         "forms": [
-          { "name": "contact", "hosted": false, "require_email": true }
+          {
+            "name": "contact",
+            "hosted": false,
+            "required_fields": ["name", "phone"]
+          }
         ],
         "turnstile": "auto"
       }
@@ -961,6 +965,8 @@ work with public, password, and Require Email publications on every plan. Curren
 caps are Free 5/month, Starter 50/day, Builder 200/day, and Pro 1,000/day.
 Submissions are encrypted. The account owner can read them with bucket write
 access via `GET /api/v1/buckets/:id/form_submissions?form_name=contact&limit=50&offset=0`.
+Use `required_fields` to choose which fixed fields are required. The legacy
+`require_email` flag remains accepted.
 
 #### Archive, unarchive, and permanent delete
 
