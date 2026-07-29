@@ -53,7 +53,8 @@ deployment/scripts/setup/39-upload-quick-publish-examples.sh \
   --source-dir apps/clients/revdoku/templates/quick-publish-examples
 ```
 
-The anonymous embed reads `QuickPublishExamples.anonymous_cards`; the dashboard
-reads `SITE_TEMPLATES`. Keep their keys, access modes, forms, category assignments,
-and asset-version fallbacks aligned. Selecting a dashboard template creates a
-private draft; it never publishes without a separate explicit action.
+The public and authenticated quick-publish embeds read
+`QuickPublishExamples.embed_cards`; the dashboard reads `SITE_TEMPLATES`. Keep
+their keys, access modes, forms, category assignments, and asset-version fallbacks
+aligned. Selecting a dashboard template creates a private draft; it never publishes
+without a separate explicit action.

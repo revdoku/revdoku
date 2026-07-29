@@ -936,9 +936,9 @@ Move and organize existing files server-side; do not download and re-upload byte
 
 New buckets expose no public form endpoint until the owner configures one in
 Website Settings or updates `bucket.metadata.publication_forms`. Revdoku supports
-the fixed definitions `contact`, `feedback`, `quote`, and `waitlist`; labels and
-visitor fields are server-controlled so forms cannot be repurposed for arbitrary
-sensitive-data collection.
+the fixed definitions `contact`, `feedback`, `comments`, `quote`, `waitlist`,
+`question`, and `intake`; labels and visitor fields are server-controlled so
+forms cannot be repurposed for arbitrary sensitive-data collection.
 
 ```json
 {
@@ -949,8 +949,12 @@ sensitive-data collection.
         "forms": [
           {
             "name": "contact",
-            "hosted": false,
-            "required_fields": ["name", "phone"]
+            "hosted": true,
+            "required_fields": ["name", "phone"],
+            "widget_position": {
+              "desktop": "top-right",
+              "mobile": "bottom-right"
+            }
           }
         ],
         "turnstile": "auto"
@@ -960,13 +964,32 @@ sensitive-data collection.
 }
 ```
 
-An embedded form posts same-origin to `/_revdoku/form/contact`. Built-in forms
-work with public, password, and Require Email publications on every plan. Current
-caps are Free 5/month, Starter 50/day, Builder 200/day, and Pro 1,000/day.
+An embedded form posts same-origin to `/_revdoku/form/contact`. Private-response
+forms work with public, password, and Require Email publications on every plan;
+shared `comments` requires Password or Require Email access. Current caps are
+Free 5/month, Starter 50/day, Builder 200/day, and Pro 1,000/day.
 Submissions are encrypted. The account owner can read them with bucket write
 access via `GET /api/v1/buckets/:id/form_submissions?form_name=contact&limit=50&offset=0`.
 Use `required_fields` to choose which fixed fields are required. The legacy
-`require_email` flag remains accepted.
+`require_email` flag remains accepted. Hosted forms can set independent desktop
+and mobile `widget_position` values: `top-left`, `top-center`, `top-right`,
+`center-left`, `center`, `center-right`, `bottom-left`, `bottom-center`, or
+`bottom-right` (the default).
+
+To render one configured hosted form inline, put its macro in an HTML page:
+
+```html
+{{REVDOKU_FORM:waitlist}}
+```
+
+The named form is rendered inline on that page and its floating copy is
+suppressed there; other hosted forms remain floating. `{{REVDOKU_FORM}}`
+renders every configured hosted form inline. For example, configure both
+`waitlist` and `feedback` with `"hosted": true`, place
+`{{REVDOKU_FORM:waitlist}}` in `index.html`, and the signup stays inline while
+Feedback remains a floating widget. To hand-author the `<form>` instead, set
+that definition to `"hosted": false` and post same-origin to
+`/_revdoku/form/<name>`.
 
 #### Archive, unarchive, and permanent delete
 

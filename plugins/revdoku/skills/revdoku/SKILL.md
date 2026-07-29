@@ -364,18 +364,90 @@ MCP equivalent:
 
 To publish with MCP, include `"publish": true`.
 
-## Simple forms (contact / feedback / quote — built in, no backend to build)
+## Built-in forms (signup / contact / feedback / intake)
 
-Revdoku provides built-in contact, feedback, quote, and waitlist definitions.
-The owner must first enable/configure the form in Website Settings; new buckets
-do not expose a form endpoint by default. Then an embedded HTML form can post to
-the configured endpoint without a custom backend:
+Revdoku provides fixed `waitlist`, `contact`, `feedback`, `comments`, `quote`,
+`question`, and `intake` definitions. `question` collects a private inquiry;
+`intake` collects name, email, company, budget, and project details. New buckets
+expose no form endpoint until the form is configured. When MCP is available,
+configure it yourself through
+`metadata.publication_forms` on `bucket_create` or `bucket_update`; do not send
+the user to Website Settings unless the connector lacks bucket-admin access.
+Writing the HTML and form metadata creates a private draft. Publish or republish
+only when the user asks, and check publication status before saying the form is
+live.
+
+### Preferred: Revdoku-rendered form macro
+
+Set `hosted: true`, then put a named macro in the HTML body:
+
+```html
+<section id="signup">
+  <h2>Join the waitlist</h2>
+  {{REVDOKU_FORM:waitlist}}
+</section>
+```
+
+At the edge, Revdoku replaces the macro with the built-in form. The named form
+is inline on that page and its floating copy is suppressed there. Other hosted
+forms stay floating. `{{REVDOKU_FORM}}` without a name renders every configured
+hosted form inline and suppresses all of their floating copies on that page.
+The macro supplies the correct fixed fields, honeypot, Turnstile integration,
+submission restoration, and success/error handling.
+
+For a landing page with an inline signup and a floating feedback widget, update
+the bucket with the existing `bucket_update` tool:
+
+```json
+{
+  "tool": "bucket_update",
+  "arguments": {
+    "bucket_id": "bkt_...",
+    "metadata": {
+      "publication_forms": {
+        "enabled": true,
+        "notify": true,
+        "turnstile": "auto",
+        "forms": [
+          {
+            "name": "waitlist",
+            "hosted": true,
+            "required_fields": ["email"]
+          },
+          {
+            "name": "feedback",
+            "hosted": true,
+            "required_fields": ["message"],
+            "widget_position": {
+              "desktop": "top-right",
+              "mobile": "bottom-right"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+Then write `index.html` with `{{REVDOKU_FORM:waitlist}}`. On that page the
+waitlist is inline and Feedback remains floating. Form positions support
+`top-left`, `top-center`, `top-right`, `center-left`, `center`,
+`center-right`, `bottom-left`, `bottom-center`, and `bottom-right` (default),
+with independent `desktop` and `mobile` values.
+
+### Hand-authored form fallback
+
+Use a literal form when the site needs custom surrounding markup. Configure
+that form with `hosted: false` so Revdoku enables its endpoint without also
+rendering a floating copy:
 
 ```html
 <form method="POST" action="/_revdoku/form/contact">
   <label>Name <input type="text" name="name" required></label>
-  <label>Email <input type="email" name="email" required></label>
-  <label>Message <textarea name="message" required></textarea></label>
+  <label>Email <input type="email" name="email"></label>
+  <label>Phone <input type="tel" name="phone" required></label>
+  <label>Message <textarea name="message"></textarea></label>
   <!-- Anti-spam honeypot: keep this hidden field, leave it empty -->
   <input type="text" name="_gotcha" tabindex="-1" autocomplete="off"
          style="position:absolute;left:-9999px" aria-hidden="true">
@@ -383,9 +455,11 @@ the configured endpoint without a custom backend:
 </form>
 ```
 
-- `action="/_revdoku/form/<name>"` must use an enabled built-in name:
-  `contact`, `feedback`, `quote`, or `waitlist`. Use only that definition's
-  fixed allowed fields; unknown visitor fields are discarded.
+- `action="/_revdoku/form/<name>"` must use a configured built-in name. Use only
+  that definition's fixed fields and keep the HTML `required` attributes aligned
+  with `required_fields`; unknown visitor fields are discarded.
+- `comments` is shared/public feedback and requires Password or Require Email
+  site access. The other definitions can be used on public sites.
 - Works on **public**, **password**, and **Require Email** sites, same-origin POST. A plain
   HTML submit redirects back with `?submitted=1`; a `fetch()` caller gets JSON.
 - Submissions are encrypted, land in the owner's dashboard (bucket → Forms) with
@@ -393,8 +467,9 @@ the configured endpoint without a custom backend:
   account owner with bucket write access can read visitor submissions through
   the API.
 - Plan caps are Free 5/month, Starter 50/day, Builder 200/day, and Pro 1,000/day.
-- **Spam protection:** on **public** sites a Cloudflare Turnstile check is required
-  when Turnstile keys are configured; add the widget:
+- **Spam protection:** macros and hosted widgets add the configured Turnstile
+  integration automatically. For a hand-authored form on a **public** site, add
+  the widget when Turnstile keys are configured:
   `<div class="cf-turnstile" data-sitekey="YOUR_SITE_KEY"></div>` plus
   `<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>`.
   Password-gated sites need no check (the gate already stopped bots).
