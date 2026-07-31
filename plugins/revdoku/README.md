@@ -1,8 +1,8 @@
 # Revdoku — Claude Code plugin
 
-Publish websites from AI agents with Revdoku. Store files privately, then publish
-a folder as a public or password-protected website when you ask — Claude keeps the
-same URL on every republish.
+Publish static websites and SPAs from AI agents with Revdoku. Store files
+privately, then publish with Public, Password, or Require Email access when you
+ask — Claude keeps the same URL on every republish.
 
 The plugin bundles:
 
@@ -34,8 +34,8 @@ Just ask in natural language, for example:
 - "Which of my Revdoku buckets are public?"
 
 Publishing only happens when you explicitly ask for a website link. Public and
-password-protected sites are separate paths; Revdoku generates a password for
-protected sites and never puts it in the URL.
+protected sites are separate paths. Password access uses a shared password;
+Require Email sends visitors a one-time code and uses no site password.
 
 ## Local files (optional CLI)
 

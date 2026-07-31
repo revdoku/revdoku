@@ -233,8 +233,9 @@ Common commands have a short alias and a full name (either works):
 `p`/`publish`, `ls`/`list`, `o`/`open`, `i`/`init`, `st`/`status`,
 `down`/`unpublish`, plus `login`.
 
-Protected websites require available protected-site capacity on the account. Open
-the returned URL and enter the password — never put passwords in URL parameters.
+Protected websites require available protected-site capacity on the account.
+Password access uses a shared password; Require Email sends visitors a one-time
+code and uses no site password. Never put passwords in URL parameters.
 
 In a connected agent you can also just ask in plain language, e.g. *"publish the
 `dist` folder to Revdoku"* or *"publish it as a password‑protected site."*
@@ -246,7 +247,7 @@ view or download, and upgrading restores editing and republishes trial-suspended
 sites. Additional accounts created by the same user start on Free. Free sites
 use a rolling 30-day keepalive refreshed by opening the dashboard.
 
-Revdoku hosts full static sites and apps: HTML, CSS, **JavaScript**, images,
+Revdoku hosts static websites and SPAs: HTML, CSS, **JavaScript**, images,
 fonts, and PDFs are all served as-is — nothing is stripped, and interactivity is
 fully supported. To publish a **local** folder use `revdoku p <dir>`, since the
 cloud connector can't read local files; the CLI uploads everything, including
@@ -257,6 +258,7 @@ keys) and executables (`.exe`, `.dmg`, …) are rejected on upload.
 
 ---
 
-This repository hosts the public Revdoku local client, the Claude Code plugin
-(`plugins/revdoku/` + the `revdoku` marketplace in `.claude-plugin/`), and the
-agent skill used by Revdoku setup prompts.
+This repository hosts the public Revdoku local client, API documentation, agent
+skill, and Claude/Codex/Cursor plugin manifests. The hosted MCP implementation
+runs at `https://app.revdoku.com/mcp`; this repository contains its public
+connector configuration and usage contract, not private server code.

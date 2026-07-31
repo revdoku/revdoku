@@ -1,7 +1,7 @@
 # Revdoku LLM Install
 
 Use these instructions when an AI tool, coding agent, or MCP client needs to
-connect to Revdoku and publish generated websites or app files.
+connect to Revdoku and publish generated website or SPA files.
 
 - Revdoku app: <https://app.revdoku.com>
 - Remote MCP server: `https://app.revdoku.com/mcp`
@@ -80,6 +80,12 @@ Publish with a generated protected-site password:
 
 ```sh
 revdoku p --protected --generate-password
+```
+
+Publish with visitor email verification and no shared password:
+
+```sh
+revdoku p --access-mode require_email
 ```
 
 ## Client-specific notes
