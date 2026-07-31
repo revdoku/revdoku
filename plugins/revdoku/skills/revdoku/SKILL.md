@@ -366,10 +366,11 @@ To publish with MCP, include `"publish": true`.
 
 ## Built-in forms (signup / contact / feedback / intake)
 
-Revdoku provides fixed `waitlist`, `contact`, `feedback`, `comments`, `quote`,
-`question`, and `intake` definitions. `question` collects a private inquiry;
-`intake` collects name, email, company, budget, and project details. New buckets
-expose no form endpoint until the form is configured. When MCP is available,
+Revdoku provides fixed `waitlist`, `contact`, `feedback`, `comments` (**Feedback
+Visible To Others**), `quote`, `question`, and `intake` definitions. `question`
+collects a private inquiry; `intake` collects name, email, company, budget, and
+project details. New buckets expose no form endpoint until the form is
+configured. When MCP is available,
 configure it yourself through
 `metadata.publication_forms` on `bucket_create` or `bucket_update`; do not send
 the user to Website Settings unless the connector lacks bucket-admin access.
@@ -458,8 +459,8 @@ rendering a floating copy:
 - `action="/_revdoku/form/<name>"` must use a configured built-in name. Use only
   that definition's fixed fields and keep the HTML `required` attributes aligned
   with `required_fields`; unknown visitor fields are discarded.
-- `comments` is shared/public feedback and requires Password or Require Email
-  site access. The other definitions can be used on public sites.
+- `comments` is **Feedback Visible To Others** and requires Password or Require
+  Email site access. The other definitions can be used on public sites.
 - Works on **public**, **password**, and **Require Email** sites, same-origin POST. A plain
   HTML submit redirects back with `?submitted=1`; a `fetch()` caller gets JSON.
 - Submissions are encrypted, land in the owner's dashboard (bucket → Forms) with
