@@ -1,21 +1,26 @@
 {
   "name": "revdoku",
-  "version": "0.1.0",
-  "description": "Publish websites from AI agents with Revdoku.",
+  "displayName": "Revdoku",
+  "version": "1.0.270",
+  "description": "Publish static websites and SPAs with Revdoku using the hosted MCP server and agent skill.",
   "author": {
-    "name": "Revdoku",
-    "url": "https://revdoku.com"
+    "name": "Revdoku"
   },
   "homepage": "https://revdoku.com",
   "repository": "https://github.com/revdoku/revdoku",
   "license": "MIT",
-  "keywords": ["revdoku", "website-publishing", "hosting", "agents", "bucket", "files"],
-  "interface": {
-    "displayName": "Revdoku",
-    "shortDescription": "Publish websites from AI agents.",
-    "longDescription": "Publish websites from AI agents with Revdoku. Store files privately, then publish folders as public or password-protected websites using Revdoku buckets.",
-    "developerName": "Revdoku",
-    "category": "Coding",
-    "websiteURL": "https://revdoku.com"
-  }
+  "keywords": [
+    "revdoku",
+    "website-publishing",
+    "hosting",
+    "agents",
+    "mcp"
+  ],
+  "category": "developer-tools",
+  "tags": [
+    "website-publishing",
+    "static-sites",
+    "mcp"
+  ],
+  "mcpServers": "./mcp.json"
 }

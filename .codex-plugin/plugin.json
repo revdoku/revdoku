@@ -1,6 +1,6 @@
 {
   "name": "revdoku",
-  "version": "0.1.0",
+  "version": "1.0.270",
   "description": "Publish websites from AI agents with Revdoku.",
   "author": {
     "name": "Revdoku",
@@ -9,13 +9,20 @@
   "homepage": "https://revdoku.com",
   "repository": "https://github.com/revdoku/revdoku",
   "license": "MIT",
+  "mcpServers": "./.mcp.json",
   "keywords": ["revdoku", "website-publishing", "hosting", "agents", "bucket", "files"],
   "interface": {
     "displayName": "Revdoku",
     "shortDescription": "Publish websites from AI agents.",
-    "longDescription": "Publish websites from AI agents with Revdoku. Store files privately, then publish folders as public or password-protected websites using Revdoku buckets.",
+    "longDescription": "Publish static websites and SPAs from AI agents with Revdoku. Store files privately, then publish with Public, Password, or Require Email access.",
     "developerName": "Revdoku",
     "category": "Coding",
+    "capabilities": ["Interactive", "Write"],
+    "defaultPrompt": [
+      "Publish this website with Revdoku",
+      "Create a private Revdoku draft for these files",
+      "Update my Revdoku website and publish the changes"
+    ],
     "websiteURL": "https://revdoku.com"
   }
 }
