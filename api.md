@@ -936,9 +936,10 @@ Move and organize existing files server-side; do not download and re-upload byte
 
 New buckets expose no public form endpoint until the owner configures one in
 Website Settings or updates `bucket.metadata.publication_forms`. Revdoku supports
-the fixed definitions `contact`, `feedback`, `comments`, `quote`, `waitlist`,
-`question`, and `intake`; labels and visitor fields are server-controlled so
-forms cannot be repurposed for arbitrary sensitive-data collection.
+the fixed definitions `contact`, `feedback`, `comments` (**Feedback Visible To
+Others**), `quote`, `waitlist`, `question`, and `intake`; labels and visitor
+fields are server-controlled so forms cannot be repurposed for arbitrary
+sensitive-data collection.
 
 ```json
 {
@@ -966,7 +967,8 @@ forms cannot be repurposed for arbitrary sensitive-data collection.
 
 An embedded form posts same-origin to `/_revdoku/form/contact`. Private-response
 forms work with public, password, and Require Email publications on every plan;
-shared `comments` requires Password or Require Email access. Current caps are
+the shared `comments` form, **Feedback Visible To Others**, requires Password or
+Require Email access. Current caps are
 Free 5/month, Starter 50/day, Builder 200/day, and Pro 1,000/day.
 Submissions are encrypted. The account owner can read them with bucket write
 access via `GET /api/v1/buckets/:id/form_submissions?form_name=contact&limit=50&offset=0`.
