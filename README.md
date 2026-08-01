@@ -262,3 +262,7 @@ This repository hosts the public Revdoku local client, API documentation, agent
 skill, and Claude/Codex/Cursor plugin manifests. The hosted MCP implementation
 runs at `https://app.revdoku.com/mcp`; this repository contains its public
 connector configuration and usage contract, not private server code.
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for notable customer-facing changes.

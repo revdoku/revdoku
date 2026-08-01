@@ -1,22 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "revdoku",
-  "version": "1.0.271",
+  "version": "1.0.276",
   "description": "Publish static websites and SPAs from AI agents. Store files privately or publish with Public, Password, or Require Email access.",
-  "author": {
-    "name": "Revdoku",
-    "url": "https://revdoku.com"
-  },
+  "author": { "name": "Revdoku", "url": "https://revdoku.com" },
   "homepage": "https://revdoku.com",
   "repository": "https://github.com/revdoku/revdoku",
   "license": "MIT",
-  "keywords": [
-    "revdoku",
-    "storage",
-    "agents",
-    "bucket",
-    "files",
-    "publish",
-    "website"
-  ]
+  "keywords": ["revdoku", "storage", "agents", "bucket", "files", "publish", "website"]
 }

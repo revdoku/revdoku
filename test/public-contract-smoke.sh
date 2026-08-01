@@ -13,10 +13,11 @@ if [[ -f "$TEST_DIR/../skills/revdoku/SKILL.md" ]]; then
   README_FILE="$DIST_ROOT/README.md"
   LICENSE_FILE="$DIST_ROOT/LICENSE"
   VERSION_FILE="$DIST_ROOT/VERSION"
+  CHANGELOG_FILE="$DIST_ROOT/CHANGELOG.md"
   MANIFEST_ROOT="$DIST_ROOT"
   PUBLIC_DISTRIBUTION=true
 else
-  # Canonical revdoku-ee source layout.
+  # Canonical source-package layout.
   DIST_ROOT="$SOURCE_CLIENT_DIR"
   CLI_FILE="$SOURCE_CLIENT_DIR/bin/revdoku"
   SKILL_FILE="$SOURCE_CLIENT_DIR/skill/SKILL.md"
@@ -24,6 +25,9 @@ else
   README_FILE="$SOURCE_CLIENT_DIR/README.md"
   LICENSE_FILE="$SOURCE_CLIENT_DIR/LICENSE"
   VERSION_FILE="$(cd "$SOURCE_CLIENT_DIR/../../.." && pwd)/VERSION"
+  SOURCE_ROOT="$(cd "$SOURCE_CLIENT_DIR/../../.." && pwd)"
+  CHANGELOG_FILE="$SOURCE_ROOT/CHANGELOG.md"
+  CHANGELOG_HELPER="$SOURCE_ROOT/scripts/changelog.rb"
   MANIFEST_ROOT="$SOURCE_CLIENT_DIR"
   PUBLIC_DISTRIBUTION=false
 fi
@@ -46,10 +50,12 @@ reject_text() {
 }
 
 [[ -f "$LICENSE_FILE" ]] || die "root/source LICENSE is missing"
+[[ -f "$CHANGELOG_FILE" ]] || die "root/source CHANGELOG.md is missing"
 bash -n "$CLI_FILE"
 
 require_text "$CLI_FILE" "--site-mode MODE"
 require_text "$README_FILE" "hosted MCP implementation"
+require_text "$README_FILE" "[CHANGELOG.md](./CHANGELOG.md)"
 require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
 require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/versions`'
 require_text "$API_FILE" 'Selection coordinates are `[x1, y1, x2, y2]`.'
@@ -123,9 +129,13 @@ ruby -rjson -e '
 ' "$marketplace_file"
 
 if [[ "$PUBLIC_DISTRIBUTION" == true ]]; then
+  reject_text "$CHANGELOG_FILE" "## Unreleased"
+  grep -Eq '^## [0-9]+\.[0-9]+\.[0-9]+ — [0-9]{4}-[0-9]{2}-[0-9]{2}$' "$CHANGELOG_FILE" || die "public CHANGELOG.md has no valid release heading"
   [[ ! -e "$DIST_ROOT/apps" ]] || die "public distribution must not contain the private source tree"
   [[ ! -e "$DIST_ROOT/templates/quick-publish-examples" ]] || die "public distribution must not contain quick-publish build inputs"
   cmp -s "$DIST_ROOT/skills/revdoku/SKILL.md" "$DIST_ROOT/plugins/revdoku/skills/revdoku/SKILL.md" || die "standalone and plugin skills differ"
+else
+  ruby "$CHANGELOG_HELPER" check "$CHANGELOG_FILE"
 fi
 
 echo "Public CLI, skill, MCP setup, plugin, and API contract checks passed."
