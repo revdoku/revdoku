@@ -1,7 +1,7 @@
 {
   "name": "revdoku",
   "displayName": "Revdoku",
-  "version": "1.0.278",
+  "version": "1.0.279",
   "description": "Publish static websites and SPAs with Revdoku using the hosted MCP server and agent skill.",
   "author": {
     "name": "Revdoku"
