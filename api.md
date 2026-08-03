@@ -624,6 +624,14 @@ Detailed publication analytics are visible while a paid plan or active Starter
 trial entitles them. Free responses still expose the numeric all-time hit count,
 but hide detailed ranges and breakdowns with `details_visible: false`.
 
+Each selected window is compared with the immediately preceding equal-length
+window. `previous_period_totals` contains the earlier values and
+`diff_vs_previous_period` contains signed current-minus-previous values. For
+example, `"views": 6` means six more human views than the previous period and
+`"views": -6` means six fewer. `views` excludes bots; `hits` includes them. For
+the live `24h` range, comparison values are `null` when either hourly query is
+unavailable; never interpret those nulls as zero traffic.
+
 ```sh
 curl -fsS "$REVDOKU_URL/api/v1/analytics?range=30d" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
@@ -635,14 +643,39 @@ Example paid response:
 {
   "data": {
     "range": "30d",
+    "previous_period": { "from": "2026-04-22", "to": "2026-05-21" },
     "first_event_at": "2026-05-22T09:12:33.000Z",
     "last_event_at": "2026-05-26T18:32:14.000Z",
     "totals": {
       "hits_all_time": 8420,
+      "views": 1113,
       "hits": 1204,
       "visitors": 822,
+      "clicks": 58,
+      "downloads": 12,
+      "hits_assets": 31,
       "hits_not_found": 18,
       "hits_bots": 91
+    },
+    "previous_period_totals": {
+      "views": 1040,
+      "hits": 1122,
+      "visitors": 790,
+      "clicks": 52,
+      "downloads": 14,
+      "hits_assets": 28,
+      "hits_not_found": 12,
+      "hits_bots": 82
+    },
+    "diff_vs_previous_period": {
+      "views": 73,
+      "hits": 82,
+      "visitors": 32,
+      "clicks": 6,
+      "downloads": -2,
+      "hits_assets": 3,
+      "hits_not_found": 6,
+      "hits_bots": 9
     },
     "daily": [
       { "date": "2026-05-26", "hits": 120, "visitors": 84, "hits_not_found": 2, "hits_bots": 9 }
@@ -1234,7 +1267,9 @@ domain becomes active.
 #### GET /api/v1/analytics
 
 Supported ranges are `24h`, `7d`, `30d`, and `90d`. The `24h` response uses
-hourly buckets; the other ranges use daily buckets.
+hourly buckets; the other ranges use daily buckets. Pass both `from` and `to` as
+`YYYY-MM-DD` for an exact inclusive daily window of at most 90 days; exact dates
+override `range`.
 
 Paid responses include:
 
@@ -1243,10 +1278,14 @@ Paid responses include:
 | `first_event_at` | First recorded event timestamp in the selected range. |
 | `last_event_at` | Last recorded event timestamp in the selected range. |
 | `totals.hits_all_time` | Total recorded website hits. |
+| `totals.views` | Human page views in the selected range (`hits - hits_bots`, floored at zero). |
 | `totals.hits` | Website hits in the selected range. |
 | `totals.visitors` | Sum of daily unique visitors in the selected range. |
 | `totals.hits_not_found` | Missing-path hits. |
 | `totals.hits_bots` | Likely or known bot hits. |
+| `previous_period` | Immediately preceding equal-length window. Daily dates are inclusive; the hourly timestamps describe the preceding 24 hours. |
+| `previous_period_totals` | Detailed totals for the previous period, using the same metric keys as the selected range. Live `24h` values are null if either hourly window is unavailable. |
+| `diff_vs_previous_period` | Signed current-minus-previous differences. Positive means growth; negative means decline; null means unavailable, not zero. |
 | `daily` | Daily website hits and visitors. |
 | `buckets` | Highest-traffic published buckets. |
 | `paths` | Highest-traffic paths. |
@@ -1261,14 +1300,39 @@ Free responses preserve `totals.hits_all_time` but hide detailed numbers:
 {
   "data": {
     "range": "30d",
+    "previous_period": { "from": "2026-04-22", "to": "2026-05-21" },
     "details_visible": false,
     "granularity": "day",
     "first_event_at": null,
     "last_event_at": null,
     "totals": {
       "hits_all_time": 42,
+      "views": null,
       "hits": null,
       "visitors": null,
+      "clicks": null,
+      "downloads": null,
+      "hits_assets": null,
+      "hits_not_found": null,
+      "hits_bots": null
+    },
+    "previous_period_totals": {
+      "views": null,
+      "hits": null,
+      "visitors": null,
+      "clicks": null,
+      "downloads": null,
+      "hits_assets": null,
+      "hits_not_found": null,
+      "hits_bots": null
+    },
+    "diff_vs_previous_period": {
+      "views": null,
+      "hits": null,
+      "visitors": null,
+      "clicks": null,
+      "downloads": null,
+      "hits_assets": null,
       "hits_not_found": null,
       "hits_bots": null
     },

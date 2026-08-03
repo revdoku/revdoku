@@ -109,6 +109,16 @@ when the user requests recipient links. Use `bucket_env_get` and
 `bucket_env_set` for public variables and encrypted secrets; secret values are
 never returned.
 
+Analytics accepts `24h`, `7d`, `30d`, or `90d`. For an exact inclusive daily
+window, pass both `from` and `to` as `YYYY-MM-DD`. Every response identifies the
+immediately preceding equal-length `previous_period`, includes its totals, and
+returns signed current-minus-previous values in `diff_vs_previous_period`.
+Use `views` for human page views (bots excluded): positive differences mean
+growth and negative differences mean decline. Detailed current and comparison
+values remain `null` when the account plan hides detailed analytics. For live
+`24h` analytics, null comparison values also mean an hourly window was
+unavailable; never describe them as zero traffic or zero growth.
+
 ### Visibility and deletion safety
 
 `bucket_lock_visibility_changes` prevents accidental first publish, unpublish,
