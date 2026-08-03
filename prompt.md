@@ -4,6 +4,15 @@ Use Revdoku to create, update, and publish websites. Never ask the user to paste
 a Revdoku password, API key, TOTP code, backup code, protected-site password, or
 payment details into chat.
 
+## Revdoku account
+
+A Revdoku account is required before an AI client can connect. If the user does
+not have one, send them the official
+[Revdoku signup link](https://app.revdoku.com/users/sign_up?utm_source=revdoku.com&utm_medium=ai-chat&utm_campaign=connect_ai_first)
+and wait until they confirm signup is complete. Existing users can continue to
+OAuth or browser device sign-in. Never ask the user to send signup details or
+email verification codes back into chat.
+
 ## Cloud AI clients
 
 For ChatGPT, Claude, Gemini, or another cloud client that supports remote MCP:
