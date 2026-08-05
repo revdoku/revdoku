@@ -63,7 +63,9 @@ require_text "$SKILL_FILE" '`bucket_publication_analytics`'
 require_text "$SKILL_FILE" '`bucket_env_get`'
 require_text "$SKILL_FILE" '`bucket_lock_files`'
 require_text "$SKILL_FILE" '`bucket_delete_permanently`'
+require_text "$SKILL_FILE" '`github_sync_setup`'
 require_text "$SKILL_FILE" 'Public, Password, and Require Email'
+require_text "$API_FILE" '`github_sync_setup`'
 
 for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
   reject_text "$file" "local stdio MCP"

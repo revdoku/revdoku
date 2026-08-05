@@ -2,6 +2,16 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.290 — 2026-08-05
+
+### Added
+
+- GitHub Sync is now available in production: import an existing repository into an empty bucket or export a bucket to a new private repository, then keep changes synchronized automatically in both directions.
+
+### Improved
+
+- Added clearer GitHub App permission guidance, repository links, and explicit import/export setup.
+
 ## 1.0.271 — 2026-08-01
 
 ### Improved
@@ -45,12 +55,6 @@ Notable customer-facing changes to Revdoku. Internal maintenance and operator-on
 ### Added
 
 - Added built-in contact, feedback, and intake forms for published sites.
-
-## 1.0.166 — 2026-07-02
-
-### Added
-
-- Added GitHub synchronization for keeping bucket files current from a repository.
 
 ## 1.0.146 — 2026-06-25
 

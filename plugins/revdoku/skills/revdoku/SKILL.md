@@ -49,9 +49,10 @@ for a live public or protected website link.
 
 ## Hosted MCP workflow
 
-Call `revdoku_status` when connection or version state is unclear. Remote MCP is
-stateless Streamable HTTP; reconnect or restart the connector after a tool-list
-change so the client runs `tools/list` again.
+Call `revdoku_status` when connection, version, or account-level GitHub Sync
+eligibility is unclear (`features.github_sync`). Remote MCP is stateless
+Streamable HTTP; reconnect or restart the connector after a tool-list change so
+the client runs `tools/list` again.
 
 Use `revdoku_dashboard_link` when the user asks to open Revdoku or manage a
 UI-only setting. Share its short-lived, single-use URL. If two-factor security
@@ -75,6 +76,26 @@ disables dashboard links, direct the user to the normal Revdoku sign-in instead.
 - For broad shared-bucket changes, acquire `bucket_lock` and release it with
   `bucket_unlock`. For narrow edits, use `bucket_lock_files` and
   `bucket_unlock_file`. Do not overwrite another agent's active lock.
+
+### GitHub sync
+
+`bucket_list` and `bucket_get` return `github_sync` when a bucket has an active
+two-way connection. Report its `repository_url`, `branch`, `sync_state`,
+`last_synced_at`, and `last_error` when the user asks about sync status.
+
+Every bucket also returns `github_sync_setup`. Share its `settings_url` when the
+user wants to connect, repair, or manage GitHub sync. This is a stable,
+login-required deep link to Bucket Settings → GitHub Sync; do not replace it
+with a one-time dashboard link. GitHub App installation, repository selection,
+and the initial sync direction are browser-only choices. Never ask the user for
+a GitHub access token, private key, client secret, or webhook secret.
+An account administrator with bucket-administration permission must complete
+the setup.
+
+Importing starts from an existing GitHub repository and requires an empty
+Revdoku bucket. Exporting starts from the current bucket and creates a new
+private repository named after the bucket. Both paths automatically sync future
+changes in both directions.
 
 ### Publish and verify
 

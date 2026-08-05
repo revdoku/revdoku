@@ -99,6 +99,10 @@ same via the `initialize` handshake (`serverInfo.version`) and the
 added tools by reconnecting or restarting so they run `tools/list` again. Update
 the local CLI by rerunning the official installer.
 
+Both `GET /api/v1/status` and `revdoku_status` expose account-level GitHub Sync
+eligibility at `features.github_sync`. Bucket-specific connection state and the
+setup deep link remain on bucket list/detail responses.
+
 ## Hosted MCP for Claude/ChatGPT Cloud
 
 Cloud agents that support custom remote MCP connectors connect to Revdoku through
@@ -140,9 +144,40 @@ by extension at upload, and uploaded content is scanned and removed if forbidden
 `bucket_file_list` + `bucket_file_read`. `bucket_list` and `bucket_get` include bucket ids,
 website metadata, publication lifecycle state, and action metadata such as
 `archive.required_action` and `delete.confirmation` so agents can handle ids
-internally instead of asking users to type them.
+internally instead of asking users to type them. They also include active
+`github_sync` status and a `github_sync_setup.settings_url` browser handoff for
+connecting or managing GitHub sync.
 
 ## Common Workflows
+
+### Connect or inspect GitHub Sync
+
+Bucket list and detail responses include:
+
+- `github_sync`: `null` when disconnected; otherwise the repository URL,
+  branch, sync state, last sync/check times, automatic-publish setting, and any
+  current sync error.
+- `github_sync_setup`: eligibility plus a stable, login-required
+  `settings_url` for Bucket Settings → GitHub Sync. `blocked_reason` is one of
+  `feature_disabled`, `encrypted_account`, `plan_required`, or
+  `bucket_archived` when setup cannot proceed.
+
+Initial GitHub App authorization is browser-only. Send the user to
+`github_sync_setup.settings_url`; do not ask for GitHub tokens, app private
+keys, client secrets, or webhook secrets.
+
+From that page the user chooses one explicit direction:
+
+- **Import from GitHub** selects an existing repository and requires an empty
+  Revdoku bucket.
+- **Export to GitHub** creates a new private repository named after the bucket
+  and seeds it from Revdoku.
+
+After the initial transfer, both modes automatically sync changes in both
+directions. Read full connection state with
+`GET /api/v1/buckets/:bucket_id/github_sync`; enqueue a manual retry with
+`POST /api/v1/buckets/:bucket_id/github_sync/sync`. Connecting, changing, or
+disconnecting a repository requires bucket-administration permission.
 
 ### Connect an Agent
 
@@ -859,6 +894,13 @@ Common `redirect_path` values:
 | `GET` | `/api/v1/buckets/:id/versions` | List bucket version history. |
 | `GET` | `/api/v1/buckets/:id/versions/:version_id` | Read one historical bucket version. |
 | `POST` | `/api/v1/buckets/:id/versions/restore` | Restore a historical version as a new latest version. |
+| `GET` | `/api/v1/buckets/:id/github_sync` | Read full GitHub connection and sync state. |
+| `GET` | `/api/v1/buckets/:id/github_sync/setup` | Read browser setup URL, eligibility, installations, and accessible repositories. |
+| `POST` | `/api/v1/buckets/:id/github_sync` | Connect an existing repository for the explicit initial import/export direction. |
+| `POST` | `/api/v1/buckets/:id/github_sync/export` | Create a new private bucket-named repository and export the bucket. |
+| `PATCH` | `/api/v1/buckets/:id/github_sync` | Enable or disable automatic republishing after sync. |
+| `POST` | `/api/v1/buckets/:id/github_sync/sync` | Enqueue a manual sync or conflict resolution. |
+| `DELETE` | `/api/v1/buckets/:id/github_sync` | Disconnect the repository without deleting either side. |
 | `DELETE` | `/api/v1/buckets/:id` | Permanently delete a normal unpublished bucket with confirmation. |
 | `GET` | `/api/v1/tags` | List reusable bucket labels. |
 
