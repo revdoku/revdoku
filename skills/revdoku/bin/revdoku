@@ -73,6 +73,7 @@ NO_WAIT="${REVDOKU_NO_WAIT:-false}"
 DRAFT="false"
 OPEN_DASHBOARD="false"
 SHOW_PUBLISH_HINT="false"
+PREVIEW_AFTER_STORE="false"
 # Project-local binding (.revdoku): remembers the bucket so `revdoku p` keeps
 # updating the same site. Populated from the target dir, --bucket-id overrides.
 REVDOKU_PROJECT_FILE=""
@@ -118,6 +119,8 @@ usage() {
   cat <<USAGE
 revdoku — publish a folder to the web in one command.
 
+Free plan available: publish 1 public website. Preview first, then publish when ready.
+
 Usage: revdoku <command> [PATH] [options]
 
 Most-used commands (short alias, then full name — either works):
@@ -140,9 +143,10 @@ Publish options:
   --site-mode MODE     static or spa (SPA serves index.html for client-side routes).
   --draft              Save a private draft instead of publishing live.
   --no-wait            Return as soon as the URL is reserved (don't wait for the build).
-  --expires-in-minutes N  Preview lifetime in minutes for `revdoku preview` (default 15,
-                       max 43200 = 30 days). Free sites use a 30-day dashboard keepalive;
-                       paid sites are permanent.
+  --expires-in-minutes N  Preview lifetime in minutes for 'revdoku preview' (default 15,
+                       max 43200 = 30 days). Free sites use a 30-day signed-in browser
+                       dashboard keepalive; a remembered browser session counts, but
+                       CLI/API/MCP activity does not. Paid sites are permanent.
   --publish-folder DIR Publish ONLY this top-level folder as the site (its index.html
                        becomes the root); other folders stay stored but unserved.
   --title TEXT         --description TEXT     --tag-path LABEL     --metadata JSON
@@ -169,7 +173,8 @@ Global options:
   -h, --help           Show this help.
 
 Examples:
-  revdoku p                 # publish the current folder, get a URL
+  revdoku preview .         # recommended: review a temporary URL first
+  revdoku p                 # publish the current folder when ready
   revdoku p ./dist          # publish another folder
   revdoku p --protected     # password-protected site
   revdoku init && revdoku p
@@ -823,13 +828,7 @@ http_json() {
       echo "Lock details: $(lock_detail_summary "$details_json")" >&2
     fi
     if [[ "$auth" == "true" ]]; then
-      if [[ "$code" == "TRIAL_EXPIRED" ]]; then
-        local upgrade_url
-        upgrade_url="$("$JQ_BIN" -r '.upgrade_url // empty' <<<"$details_json" 2>/dev/null || true)"
-        [[ -n "$upgrade_url" ]] || upgrade_url="${BASE_URL%/}/pricing"
-        [[ "$upgrade_url" == /* ]] && upgrade_url="${BASE_URL%/}${upgrade_url}"
-        echo "The account is read-only. Files can still be viewed or downloaded; upgrade to resume editing and restore trial-suspended sites: $upgrade_url" >&2
-      elif [[ "$code" == "ACCOUNT_ACCESS_UNAVAILABLE" ]]; then
+      if [[ "$code" == "ACCOUNT_ACCESS_UNAVAILABLE" ]]; then
         echo "This connection uses bucket-scoped agent credentials, which cannot read account-level status. Verify the connection with 'revdoku status', or open Revdoku in a browser for account details." >&2
       elif [[ "$status" == "401" || "$status" == "403" ]]; then
         echo "Run 'revdoku login' to reconnect and save a fresh Revdoku API key." >&2
@@ -990,7 +989,7 @@ init_scaffold_static() {
 </head>
 <body>
   <h1>Hello from Revdoku 👋</h1>
-  <p>Edit <code>index.html</code>, then run <code>revdoku p</code> to publish updates.</p>
+  <p>Edit <code>index.html</code>, run <code>revdoku preview</code>, then publish when ready.</p>
 </body>
 </html>
 HTML
@@ -1001,7 +1000,8 @@ This folder publishes to the web with Revdoku. The whole site is just static
 files (HTML/CSS/JS/assets) in this directory.
 
 ## Publish / update
-- `revdoku p`            — publish this folder, print the live URL.
+- `revdoku preview`      — recommended first: review a temporary noindex URL.
+- `revdoku p`            — publish this folder when ready, print the live URL.
 - `revdoku p --protected --generate-password`  — password-protected site.
 - `revdoku open`         — open the live site. `revdoku status` — check the connection.
 
@@ -1023,7 +1023,7 @@ init_project() {
 
   echo "" >&2
   echo "Revdoku project ready in: $target" >&2
-  echo "Next: edit your files, then run:  revdoku p" >&2
+  echo "Next: edit your files, then preview:  revdoku preview" >&2
 }
 
 request_device_agent_key() {
@@ -1158,7 +1158,8 @@ fi
 if [[ "$ACTION" == "connection_status" && "$SHOW_PUBLISH_HINT" == "true" && -z "$API_KEY" ]]; then
   echo "Revdoku CLI — not signed in yet." >&2
   echo "  Sign in:   revdoku login" >&2
-  echo "  Publish:   revdoku p          (publishes the current folder)" >&2
+  echo "  Preview:   revdoku preview .  (recommended before publishing)" >&2
+  echo "  Publish:   revdoku p          (Free includes 1 public website)" >&2
   echo "  Commands:  revdoku --help" >&2
   exit 0
 fi
@@ -1169,7 +1170,7 @@ fi
 
 if [[ "$LOGIN" == "true" && "$ACTION" == "store" && "$PATH_EXPLICIT" == "false" ]]; then
   echo "Login complete. Credentials saved to $CREDENTIALS_PATH." >&2
-  echo "To publish a folder, run: revdoku p (or revdoku p ./dist). Verify the connection with: revdoku status." >&2
+  echo "Free includes 1 public website. Preview first with: revdoku preview . Then publish with: revdoku p" >&2
   exit 0
 fi
 
@@ -1330,9 +1331,10 @@ unpublish_bucket() {
 
 preview_bucket() {
   [[ -n "$BUCKET_ID" ]] || die "preview requires --bucket-id (or a folder bound via .revdoku)"
-  local payload response publication_id publish_state final_response
-  payload="$("$JQ_BIN" -nc --arg m "$PREVIEW_EXPIRES_IN_MINUTES" \
-    'if $m != "" then {expires_in_minutes: ($m | tonumber)} else {} end')"
+  local payload access_payload response publication_id publish_state final_response
+  access_payload="$(publication_access_json)"
+  payload="$("$JQ_BIN" -nc --arg m "$PREVIEW_EXPIRES_IN_MINUTES" --argjson access "$access_payload" \
+    '$access + (if $m != "" then {expires_in_minutes: ($m | tonumber)} else {} end)')"
   response="$(http_json POST "/api/v1/buckets/${BUCKET_ID}/publication/preview" "$payload")" || return 1
   publication_id="$("$JQ_BIN" -r '.data.publication.id // empty' <<<"$response" 2>/dev/null || true)"
   publish_state="$("$JQ_BIN" -r '.data.publication.publish_state // "ready"' <<<"$response" 2>/dev/null || true)"
@@ -1348,7 +1350,7 @@ preview_bucket() {
           publication: $p,
           public_url: $p.public_url,
           expires_at: $p.expires_at,
-          guidance: "Temporary preview is live and auto-expires. Publish for real with: revdoku p"
+          guidance: "Temporary preview is live and auto-expires. The Free plan supports one public website, and paid settings work here for evaluation. Publish for real with: revdoku p"
         }
       }' <<<"$response"
 }
@@ -1403,7 +1405,8 @@ connection_status() {
     data: {
       connected: (.data.connected // true),
       account: .data.account,
-      connection: .data.connection
+      connection: .data.connection,
+      publishing: .data.publishing
     }
   }'
 }
@@ -1686,8 +1689,17 @@ case "$ACTION" in
     exit 0
     ;;
   preview_bucket)
-    preview_bucket
-    exit 0
+    # An explicit path means "upload these files, then preview them". A first
+    # preview with no existing project/default bucket does the same for the
+    # current folder. With only --bucket-id (or a bound folder), preview the
+    # already-saved server draft without re-uploading local files.
+    if [[ "$PATH_EXPLICIT" == "true" || -z "$BUCKET_ID" ]]; then
+      PREVIEW_AFTER_STORE="true"
+      ACTION="store"
+    else
+      preview_bucket
+      exit 0
+    fi
     ;;
   archive_bucket)
     archive_bucket
@@ -2069,6 +2081,10 @@ private_publication_limit_error() {
   [[ "${LAST_ERROR_CODE:-}" == "PRIVATE_PUBLICATION_LIMIT_REACHED" ]]
 }
 
+publication_upgrade_required_error() {
+  [[ "${LAST_ERROR_CODE:-}" == "PUBLICATION_UPGRADE_REQUIRED" ]]
+}
+
 publish_session_fallback_allowed() {
   case "${LAST_HTTP_STATUS:-}" in
     401|403)
@@ -2077,7 +2093,7 @@ publish_session_fallback_allowed() {
   esac
 
   case "${LAST_ERROR_CODE:-}" in
-    TRIAL_EXPIRED|PUBLICATION_LIMIT_REACHED|PRIVATE_PUBLICATION_LIMIT_REACHED|PUBLIC_STORAGE_NOT_CONFIGURED|PRIVATE_PUBLICATION_STORAGE_NOT_CONFIGURED|UNAUTHORIZED|FORBIDDEN|BUCKET_ACCESS_DENIED|BUCKET_PERMISSION_DENIED|BUCKET_LIMIT_REACHED|STORAGE_QUOTA_EXCEEDED)
+    PUBLICATION_LIMIT_REACHED|PRIVATE_PUBLICATION_LIMIT_REACHED|PUBLICATION_UPGRADE_REQUIRED|PUBLIC_STORAGE_NOT_CONFIGURED|PRIVATE_PUBLICATION_STORAGE_NOT_CONFIGURED|UNAUTHORIZED|FORBIDDEN|BUCKET_ACCESS_DENIED|BUCKET_PERMISSION_DENIED|BUCKET_LIMIT_REACHED|STORAGE_QUOTA_EXCEEDED)
       return 1
       ;;
     *)
@@ -2101,6 +2117,26 @@ print_private_publication_limit_guidance() {
     echo "Private bucket storage is still available: $LAST_PUBLISH_SESSION_BUCKET_ID" >&2
   fi
   echo "Protected websites require available protected-site capacity on the account. Publish publicly, unpublish another protected website, or update the plan." >&2
+}
+
+print_publication_upgrade_guidance() {
+  local bucket_id="${LAST_PUBLISH_SESSION_BUCKET_ID:-${BUCKET_ID:-}}"
+  local access_flag=""
+  case "${PUBLICATION_ACCESS_MODE:-}" in
+    password)
+      access_flag=" --protected"
+      ;;
+    require_email)
+      access_flag=" --access-mode require_email"
+      ;;
+  esac
+  echo "This permanent website uses paid publishing settings. No trial was started." >&2
+  if [[ -n "$bucket_id" ]]; then
+    echo "Preview it with the same access settings: revdoku preview --bucket-id $bucket_id$access_flag" >&2
+  else
+    echo "Use 'revdoku preview' to review the requested settings, or open Revdoku to upgrade." >&2
+  fi
+  echo "Do not switch protected content to Public unless you explicitly intend to make it public." >&2
 }
 
 upload_file_direct() {
@@ -2337,6 +2373,9 @@ publish_bucket() {
     elif private_publication_limit_error; then
       LAST_PUBLISH_SESSION_BUCKET_ID="$bucket_id"
       print_private_publication_limit_guidance
+    elif publication_upgrade_required_error; then
+      LAST_PUBLISH_SESSION_BUCKET_ID="$bucket_id"
+      print_publication_upgrade_guidance
     fi
     die "bucket publish failed"
   fi
@@ -2668,11 +2707,13 @@ if [[ "$PUBLISH" == "true" ]]; then
   if [[ "$UPLOAD_MODE" == "direct" ]]; then
     publication_limit_error && print_publication_limit_guidance
     private_publication_limit_error && print_private_publication_limit_guidance
+    publication_upgrade_required_error && print_publication_upgrade_guidance
     die "direct publish session failed"
   fi
   if ! publish_session_fallback_allowed; then
     publication_limit_error && print_publication_limit_guidance
     private_publication_limit_error && print_private_publication_limit_guidance
+    publication_upgrade_required_error && print_publication_upgrade_guidance
     [[ "${LAST_ERROR_CODE:-}" == "PRIVATE_PUBLICATION_STORAGE_NOT_CONFIGURED" ]] && echo "Protected website publishing is not configured for this Revdoku deployment." >&2
     die "direct publish session failed"
   fi
@@ -2688,7 +2729,20 @@ bucket_id="$(cat "$bucket_id_file")"
 rm -f "$bucket_id_file"
 echo "Saved draft bucket: $bucket_id" >&2
 
-if [[ "$PUBLISH" == "true" ]]; then
+if [[ "$PREVIEW_AFTER_STORE" == "true" ]]; then
+  BUCKET_ID="$bucket_id"
+  preview_response_file="$(mktemp)"
+  if ! preview_bucket > "$preview_response_file"; then
+    rm -f "$preview_response_file"
+    die "bucket preview failed"
+  fi
+  preview_response="$(cat "$preview_response_file")"
+  rm -f "$preview_response_file"
+  write_project_binding "$bucket_id" ""
+  print_terminal_link_hint
+  print_acceptable_use_hint
+  printf "%s\n" "$preview_response"
+elif [[ "$PUBLISH" == "true" ]]; then
   publish_url_file="$(mktemp)"
   if ! publish_bucket "$bucket_id" > "$publish_url_file"; then
     rm -f "$publish_url_file"

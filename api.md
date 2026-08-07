@@ -7,9 +7,35 @@ Most AI-agent users should start with the Revdoku app's copied prompt or the
 Revdoku MCP tool. Use this HTTP API for custom clients, CI jobs, backend workers,
 or direct integrations.
 
-Free accounts can connect one AI agent through hosted MCP, local MCP, or the
-CLI device-login flow. Normal reusable API keys for custom clients and automation
-start on Builder; Starter uses agent connections and OAuth instead.
+Hosted MCP and CLI device login use revocable agent connections. Reusable API
+keys are for custom clients and automation when that capability is available to
+the account.
+
+## Free plan and preview-first publishing
+
+A permanent Free plan is available with one public website. Free sites use a
+Revdoku URL and branding; Password and Require Email are paid features for the
+main website, but can be evaluated in a temporary preview.
+
+For a new or materially changed website, use the preview endpoint first unless
+the user has already reviewed it or explicitly asks to publish immediately:
+
+1. `POST /api/v1/buckets/:id/publication/preview`.
+2. Poll the returned publication until `publish_state` is `ready`.
+3. Share the temporary URL for review.
+4. Publish the main website only after the user asks to make it live.
+
+`GET /api/v1/status` exposes `publishing.free_plan_available` and the same
+preview recommendation without revealing the connected account's billing plan.
+Keeping a Free site active requires opening the Revdoku dashboard in a signed-in
+browser at least once every 30 days. A remembered session in that browser
+counts; CLI, API, and MCP traffic does not renew the site.
+
+New accounts start directly on Free; requesting a paid publishing feature does
+not start a trial. If a permanent Password or Require Email publish returns
+`PUBLICATION_UPGRADE_REQUIRED`, keep the requested access private, use the
+preview endpoint with that access mode, and retry the permanent publish only
+after the user upgrades. Never silently fall back to Public.
 
 ## Quick Start
 
@@ -81,11 +107,10 @@ Errors are wrapped in `error`:
 Use `error.code` for recovery logic. Use `request_id` when debugging with
 support.
 
-When an unconverted Starter trial expires, read requests remain available but
-mutating API calls return HTTP `402` with code `TRIAL_EXPIRED`. The error details
-include `read_only: true`, `expired_at`, and `upgrade_url`. Do not retry writes;
-show the upgrade action. `GET /api/v1/status` exposes the same state as
-`account.trial_expired` and `account.read_only`.
+When an account becomes read-only, read requests remain available but mutating
+API calls fail with the account-state error code and `read_only: true`. Do not
+retry writes indefinitely. `GET /api/v1/status` exposes the current account
+state without exposing billing details.
 
 ### Versioning
 
@@ -159,7 +184,7 @@ Bucket list and detail responses include:
   current sync error.
 - `github_sync_setup`: eligibility plus a stable, login-required
   `settings_url` for Bucket Settings → GitHub Sync. `blocked_reason` is one of
-  `feature_disabled`, `encrypted_account`, `plan_required`, or
+  `feature_disabled`, `encrypted_account`, `account_capability_unavailable`, or
   `bucket_archived` when setup cannot proceed.
 
 Initial GitHub App authorization is browser-only. Send the user to
@@ -388,7 +413,8 @@ until the response no longer includes `finalize_pending:true`.
 
 ### Publish a Bucket
 
-Publish explicitly when the bucket should have a website URL:
+Publish explicitly when the bucket should have a website URL. Prefer the
+preview workflow below before a first live publish:
 
 ```sh
 curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../publication" \
@@ -409,10 +435,10 @@ below the listing, GitHub-style. Choose which folder is served with
 
 For a protected website, use `"access_mode": "password"`; it requires available
 protected-site capacity on the account. Use `"access_mode": "require_email"`
-when visitors should verify their email with an OTP and no site password; that mode
-is available on Starter, Builder, and Pro. Omit
-`password`; Revdoku generates a copyable password the first time protected
-access is enabled. Set `"regenerate_password": true` only when the owner
+when visitors should verify their email with an OTP and no site password. Omit
+`password` for Require Email. In Password mode, Revdoku generates a copyable
+password the first time protected access is enabled. Set
+`"regenerate_password": true` only when the owner
 explicitly wants to rotate the protected-site password. Agents should not ask
 users to type protected-site passwords in chat. Never put the password in the
 URL. Owner publish responses include the website URL and copyable password/share
@@ -426,13 +452,9 @@ folder) stays stored and version-tracked but is NOT served. This lets a bucket
 hold both a published `website/` and an unserved `scripts/` sibling. Pass an
 empty string to publish the whole bucket again.
 
-**Website lifetime.** Paid sites are permanent unless an explicit expiry is set.
-Free main sites receive a rolling 30-day `expires_at`; opening the signed-in
-dashboard refreshes active sites for another 30 days. New users receive one
-30-day Starter trial. If it ends without an upgrade, the account becomes
-read-only and its publications are suspended; files remain readable/downloadable,
-and upgrading restores editing and republishes sites suspended by trial expiry.
-Additional accounts created by the same user start on Free.
+**Website lifetime.** Treat the returned `expires_at` as authoritative. A null
+value means the main publication has no scheduled expiry; previews always have
+an expiry. Do not infer a lifetime from account labels in client code.
 
 **Preview (staging).** `POST /api/v1/buckets/:id/publication/preview` publishes the
 bucket's current draft to a temporary public `preview-<slug>` URL that auto-expires
@@ -440,9 +462,13 @@ and is `noindex`, without touching the main publication or counting toward the
 live-site limit. Optional `expires_in_minutes` (default 15, max 43200 = 30 days);
 re-running republishes to the same preview slug. Like publishing, it is async — poll
 the returned publication's `publish_state` until `ready`, then share its `expires_at`.
+Preview requests may include the normal access and presentation settings. Paid
+settings such as `password` or `require_email` are available in the temporary preview
+on Free; publishing those settings on the main website returns
+`PUBLICATION_UPGRADE_REQUIRED` with preview, upgrade, and Public-on-Free choices.
 
 **Website slug.** Pass `"slug_suggestions": ["California Weather", "cali weather",
-"weather-california"]` on any plan to steer the public URL slug. Revdoku sanitizes
+"weather-california"]` to steer the public URL slug. Revdoku sanitizes
 each name to a slug and uses the first available one; if all are taken it appends
 a numeric suffix (`california-weather-1`). When no suggestion is given the slug
 defaults to the **bucket's name**; a random slug is used only if that's unusable.
@@ -589,7 +615,7 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/publish_sessions/pus_.../uploads/refresh"
 
 ### Add a Custom Domain
 
-Custom domains are available on Starter, Builder, and Pro. Publish the bucket first.
+When custom domains are available for the account, publish the bucket first.
 
 ```sh
 curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../custom_domains" \
@@ -655,9 +681,9 @@ provider.
 
 ### Read Analytics
 
-Detailed publication analytics are visible while a paid plan or active Starter
-trial entitles them. Free responses still expose the numeric all-time hit count,
-but hide detailed ranges and breakdowns with `details_visible: false`.
+Use `details_visible` to determine whether detailed publication analytics are
+available. When false, the response still exposes the numeric all-time hit
+count but hides detailed ranges and breakdowns.
 
 Each selected window is compared with the immediately preceding equal-length
 window. `previous_period_totals` contains the earlier values and
@@ -672,7 +698,7 @@ curl -fsS "$REVDOKU_URL/api/v1/analytics?range=30d" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
-Example paid response:
+Example response with details:
 
 ```json
 {
@@ -1060,10 +1086,10 @@ sensitive-data collection.
 ```
 
 An embedded form posts same-origin to `/_revdoku/form/contact`. Private-response
-forms work on every plan and with Public, Password, or Require Email
-publications when that access mode is available. The shared `comments` form,
-**Feedback Visible To Others**, requires Password or Require Email access. Current caps are
-Free 5/month, Starter 50/day, Builder 200/day, and Pro 1,000/day.
+forms work with Public, Password, or Require Email publications when that access
+mode is available. The shared `comments` form, **Feedback Visible To Others**,
+requires Password or Require Email access. Read the current submission limit
+from the API response instead of hard-coding account-specific quotas.
 Submissions are encrypted. The account owner can read them with bucket write
 access via `GET /api/v1/buckets/:id/form_submissions?form_name=contact&limit=50&offset=0`.
 Read one submission with
@@ -1098,10 +1124,31 @@ context captured at submit time:
 }
 ```
 
+With the same bucket write access, integrations can manage the stored review
+thread:
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `PATCH` | `/api/v1/buckets/:id/form_submissions/:submission_id` | Update existing stored field values; new arbitrary field names are rejected. |
+| `POST` | `/api/v1/buckets/:id/form_submissions/:submission_id/reply` | Add a `team` reply, or a `public` reply when the shared-comments submission supports it. |
+| `DELETE` | `/api/v1/buckets/:id/form_submissions/:submission_id` | Delete one reply, or delete a root submission together with its replies. |
+
+Reply body:
+
+```json
+{
+  "message": "Updated copy is ready for review.",
+  "audience": "team"
+}
+```
+
+The `review_session` endpoint is browser-session-only. It can open either the
+normal submission workspace or preview review mode and is not an API-key
+integration surface.
+
 Selection coordinates are `[x1, y1, x2, y2]`. Units are `pdf_point`,
 `image_pixel`, `element_ratio`, or `document_ratio`; PDF selections also carry
-`document_page`. The review-session endpoint is browser-session-only and is not
-an API-key integration surface.
+`document_page`.
 Use `required_fields` to choose which fixed fields are required. The legacy
 `require_email` flag remains accepted. Hosted forms can set independent desktop
 and mobile `widget_position` values: `top-left`, `top-center`, `top-right`,
@@ -1193,7 +1240,7 @@ Publication response fields:
 | `asset_base_url` | Direct public object-storage/CDN directory. |
 | `public_slug` | Stable DNS-safe bucket publication slug. |
 | `status` | `published`, `unpublished`, or another lifecycle status. |
-| `expires_at` | ISO-8601 expiry. Free main sites use the rolling 30-day dashboard keepalive; paid main sites default to `null`; previews always expire. |
+| `expires_at` | ISO-8601 expiry. `null` means no scheduled expiry; previews always expire. |
 | `site_mode` | Whether deep links fall back to the index page (SPA routing). |
 | `site_type` | Compatibility field; published sites are `website`. Prefer `site_mode`. |
 | `access_mode` | `public`, `password`, or `require_email`. Protected websites require available protected-site capacity; `require_email` verifies visitors by email OTP and uses no site password. |
@@ -1286,15 +1333,9 @@ publish session from the same manifest and retry once.
 }
 ```
 
-Plan rules:
-
-| Plan | Custom-domain behavior |
-| --- | --- |
-| Free | `max_custom_domains` is `0`; custom domains are disabled. |
-| Starter | 1 custom domain. |
-| Builder | 3 custom domains. |
-| Pro | 10 custom domains. |
-| Downgrade | Domains above the new limit are disabled. On Free, all custom domains are disabled. |
+Custom-domain capacity is account-specific. Handle
+`CUSTOM_DOMAIN_LIMIT_REACHED` or an unavailable-capability response and direct
+the user to Revdoku rather than hard-coding account policy in an integration.
 
 Replacing a custom domain keeps the previous active domain serving until the new
 domain becomes active.
@@ -1313,7 +1354,7 @@ hourly buckets; the other ranges use daily buckets. Pass both `from` and `to` as
 `YYYY-MM-DD` for an exact inclusive daily window of at most 90 days; exact dates
 override `range`.
 
-Paid responses include:
+Responses with `details_visible: true` include:
 
 | Field | Meaning |
 | --- | --- |
@@ -1336,7 +1377,8 @@ Paid responses include:
 | `bots` | Bot hits grouped by bot name. |
 | `paths_not_found` | Highest-traffic missing paths. |
 
-Free responses preserve `totals.hits_all_time` but hide detailed numbers:
+Responses with `details_visible: false` preserve `totals.hits_all_time` but hide
+detailed numbers:
 
 ```json
 {
@@ -1411,7 +1453,6 @@ session-keyed upload/delete control calls.
 | `429` | `RATE_LIMIT_EXCEEDED` | General account API rate limit exceeded. |
 | `429` | `PUBLISH_RATE_LIMIT_EXCEEDED` | Publishing API rate limit exceeded. |
 | `429` | `UPLOAD_RATE_LIMIT_EXCEEDED` | Upload-control API rate limit exceeded. |
-| `402` | `TRIAL_EXPIRED` | Starter trial ended; the account is read-only until upgrade. Reads and downloads remain available. |
 
 ### Authentication Errors
 
@@ -1451,7 +1492,7 @@ session-keyed upload/delete control calls.
 
 | HTTP | Code | Meaning |
 | --- | --- | --- |
-| `403` | `CUSTOM_DOMAIN_PLAN_REQUIRED` | Current plan has no custom domains. |
+| `403` | `CUSTOM_DOMAIN_UNAVAILABLE` | Custom domains are not available for the account. |
 | `403` | `CUSTOM_DOMAIN_LIMIT_REACHED` | Account has reached its custom-domain limit. |
 | `422` | `CUSTOM_DOMAIN_INVALID` | Hostname is invalid or already assigned. |
 | `422` | `CUSTOM_DOMAIN_REQUIRES_PUBLICATION` | Publish the bucket before assigning a domain. |
@@ -1470,11 +1511,15 @@ Agents publishing generated sites should use `POST /api/v1/publish_sessions` ins
 uploading every file manually. Publish sessions reuse unchanged files and return
 a short `deploy_summary` that is easy to show to users.
 
-### Surface Plan Limits Clearly
+Use the preview endpoint before finalizing a new live website when the user has
+not reviewed it yet. Previewing is temporary and does not consume the Free
+plan's one live-site slot.
+
+### Surface Account Limits Clearly
 
 When the API returns a limit error, tell the user what happened and suggest the
 least disruptive next action: unpublish an older site, remove an unused custom
-domain, or visit Revdoku in the browser to review plan capacity.
+domain, or visit Revdoku in the browser to review account capacity.
 
 ### Do Not Leak Secrets
 

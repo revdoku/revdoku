@@ -115,19 +115,16 @@ Use `--site-mode spa` for compiled client-side apps that need route fallback;
 omit it or use `--site-mode static` for normal static sites. A project-local
 `.revdoku` binding remembers the chosen site mode for later republishes.
 
-New users receive one 30-day Starter trial. When an unconverted trial expires,
-the account becomes read-only and its sites go offline; files remain available
-to view/download, and upgrading restores editing and republishes sites suspended
-by trial expiry. Additional accounts start on Free. Free sites use a rolling
-30-day keepalive refreshed when the owner opens the dashboard.
+If the account becomes read-only, existing files remain available to inspect or
+download. Open Revdoku in the browser to review the available account actions;
+do not retry blocked mutations indefinitely.
 
 ## Protected Websites
 
-Protected websites use a separate password gate. When enabled, Revdoku can:
+Protected websites use Password or Require Email access:
 
-- Generate or keep a website password.
-- Require visitors to verify their email before access when `require_email` is selected
-  on paid plans (Starter and up).
+- Password access generates or keeps a shared website password.
+- Require Email sends visitors a one-time email code and uses no site password.
 - Notify the owner on every successful protected access when access
   notifications are enabled.
 
