@@ -31,6 +31,27 @@ Writing files or running `revdoku p --draft` saves a private draft. Publishing
 is a separate, outward-facing action. Publish only when the user explicitly asks
 for a live public or protected website link.
 
+## Free plan and previews
+
+A permanent Free plan is available with one public website on a Revdoku URL.
+Free live sites show Revdoku branding and require the owner to open the Revdoku
+dashboard in a signed-in browser at least once every 30 days. A remembered
+session in the same browser counts; CLI, API, and MCP activity does not renew the
+site. Password and Require Email are paid features for permanent sites.
+
+For a new or materially changed website, prefer a temporary preview before the
+main publish unless the user has already reviewed it or explicitly asks to
+publish immediately. Previews are noindex, auto-expire, do not consume the live
+site slot, and can demonstrate paid access and presentation settings on Free.
+
+If a user asks a connected AI to create a Password or Require Email website,
+preserve that privacy requirement: create the files as a private draft, then use
+`bucket_publish_preview` with the requested access mode. Tell the user that the
+protected URL is temporary and that a paid plan is required to make it the main
+website. No trial is started. After the user upgrades, retry with
+`bucket_publish_password_protected`. Never silently publish protected content as
+Public.
+
 ## Website structure
 
 - Preserve relative paths. Static files are served as written, including
@@ -99,6 +120,7 @@ changes in both directions.
 
 ### Publish and verify
 
+- Recommended review step: `bucket_publish_preview`.
 - Public website: `bucket_publish`.
 - Password or Require Email website: `bucket_publish_password_protected`.
 - Temporary noindex preview: `bucket_publish_preview`.
@@ -136,8 +158,8 @@ immediately preceding equal-length `previous_period`, includes its totals, and
 returns signed current-minus-previous values in `diff_vs_previous_period`.
 Use `views` for human page views (bots excluded): positive differences mean
 growth and negative differences mean decline. Detailed current and comparison
-values remain `null` when the account plan hides detailed analytics. For live
-`24h` analytics, null comparison values also mean an hourly window was
+values can be `null` when they are unavailable for the account. For live `24h`
+analytics, null comparison values can also mean an hourly window was
 unavailable; never describe them as zero traffic or zero growth.
 
 ### Visibility and deletion safety
@@ -195,10 +217,14 @@ Use `{{REVDOKU_FORM:feedback}}` to render one configured hosted form inline, or
 `hosted: false` and post same-origin to `/_revdoku/form/<name>` using only that
 definition's fixed fields. Keep the hidden `_gotcha` honeypot.
 
-Submissions are encrypted and appear in Bucket → Forms. Feedback submissions
-can include document path, PDF page, and selection coordinates. Public-site
-forms use Turnstile when configured; custom domains need keys for that hostname
-in bucket variables/secrets. The copy-paste form example is at
+Submissions are encrypted and appear in Bucket → Forms. `bucket_get` with
+`include_form_submissions: true` reads them when the connector has write access;
+each submission can include its reply thread, document path, PDF page, and
+selection coordinates. Use the stable `bucket.website.submissions_review.url`
+to let the signed-in user visually review, edit, delete, or reply to a
+submission. MCP does not mutate submissions directly. Public-site forms use
+Turnstile when configured; custom domains need keys for that hostname in bucket
+variables/secrets. The copy-paste form example is at
 `https://github.com/revdoku/revdoku/blob/main/templates/contact-form-example.html`.
 
 ## Local CLI
@@ -239,6 +265,10 @@ Common commands:
 The project-local `.revdoku` binding remembers the bucket, site mode, and URL so
 rerunning `revdoku p` updates the same website. Use `--bucket-id` when targeting
 an existing bucket without that binding.
+
+Recommend `revdoku preview [PATH]` before `revdoku p [PATH]` when the user has
+not reviewed a new or substantial update yet. Do not make preview mandatory when
+the user explicitly requests immediate publishing.
 
 After a successful live publish, report the website URL; keep the bucket id as
 an internal follow-up handle. After `--draft`, report the CLI's `View in

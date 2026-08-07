@@ -54,9 +54,14 @@ reject_text() {
 bash -n "$CLI_FILE"
 
 require_text "$CLI_FILE" "--site-mode MODE"
+require_text "$CLI_FILE" "PUBLICATION_UPGRADE_REQUIRED"
+require_text "$CLI_FILE" "No trial was started."
 require_text "$README_FILE" "hosted MCP implementation"
 require_text "$README_FILE" "[CHANGELOG.md](./CHANGELOG.md)"
 require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
+require_text "$API_FILE" '`PATCH` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
+require_text "$API_FILE" '`POST` | `/api/v1/buckets/:id/form_submissions/:submission_id/reply`'
+require_text "$API_FILE" '`DELETE` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
 require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/versions`'
 require_text "$API_FILE" 'Selection coordinates are `[x1, y1, x2, y2]`.'
 require_text "$SKILL_FILE" '`bucket_publication_analytics`'
@@ -66,6 +71,10 @@ require_text "$SKILL_FILE" '`bucket_delete_permanently`'
 require_text "$SKILL_FILE" '`github_sync_setup`'
 require_text "$SKILL_FILE" 'Public, Password, and Require Email'
 require_text "$API_FILE" '`github_sync_setup`'
+require_text "$API_FILE" 'A permanent Free plan is available with one public website.'
+require_text "$SKILL_FILE" 'A permanent Free plan is available with one public website'
+require_text "$SKILL_FILE" 'No trial is started.'
+require_text "$SKILL_FILE" 'Never silently publish protected content as'
 
 for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
   reject_text "$file" "local stdio MCP"
@@ -73,6 +82,10 @@ for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
   reject_text "$file" "reference file uploads"
   reject_text "$file" 'site_type: "app"'
   reject_text "$file" "Any field names you like"
+  reject_text "$file" "Starter trial"
+  reject_text "$file" "available on Starter"
+  reject_text "$file" "available on Builder"
+  reject_text "$file" "paid plans"
 done
 
 skill_words="$(wc -w < "$SKILL_FILE" | tr -d '[:space:]')"
