@@ -183,7 +183,9 @@ disappears or report returned progress.
 ## Built-in forms
 
 Revdoku has fixed `waitlist`, `contact`, `feedback`, `comments`, `quote`,
-`question`, and `intake` definitions. `comments` is **Feedback Visible To
+`question`, `intake`, and `resource` definitions. `resource` is **Get a
+resource** (email required, name optional, submit label **Get access**).
+`comments` is **Feedback Visible To
 Others** and is available only on Password or Require Email sites; the others
 store private responses and can be used on public sites.
 
@@ -212,10 +214,25 @@ configuration looks like:
 }
 ```
 
+Each configured form can choose what happens after a confirmed submission.
+Omit `success_response` (or use `{"mode":"system"}`) for Revdoku's saved
+message. Use `{"mode":"file","path":"downloads/guide.pdf"}` to open a file,
+or a trailing-slash path such as `resources/` to open an Auto-Index folder.
+Paths are relative to the published website root and must exist by
+publish/republish; updates to an existing bucket reject a missing target. HTML
+opens directly; previewable files such as PDFs open in Revdoku's same-origin
+viewer. Public targets are shareable; Password and Require Email targets keep
+the website's access gate. This option does not email the visitor.
+
 Use `{{REVDOKU_FORM:feedback}}` to render one configured hosted form inline, or
 `{{REVDOKU_FORM}}` for all configured hosted forms. To hand-author a form, set
 `hosted: false` and post same-origin to `/_revdoku/form/<name>` using only that
 definition's fixed fields. Keep the hidden `_gotcha` honeypot.
+
+When the user asks to insert a configured form inline, keep that form
+`hosted: true`, add its named macro to the requested HTML file, and preview the
+website. Publish or republish only when the user explicitly asks; form settings
+and HTML edits remain a private draft until then.
 
 Submissions are encrypted and appear in Bucket → Forms. `bucket_get` with
 `include_form_submissions: true` reads them when the connector has write access;

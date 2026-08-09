@@ -257,7 +257,11 @@ keys) and executables (`.exe`, `.dmg`, …) are rejected on upload.
 
 Buckets can also connect to GitHub for explicit import/export setup followed by
 two-way sync. Published sites can use built-in contact, waitlist, feedback,
-comments, quote, question, and intake forms as inline forms or floating widgets.
+comments, quote, question, intake, and resource forms. A confirmed form can
+show the standard saved message or open a configured file/folder inside the
+website. Connected agents can place
+`{{REVDOKU_FORM:waitlist}}` in HTML for one inline hosted form, or
+`{{REVDOKU_FORM}}` for all hosted forms; other hosted forms remain floating.
 GitHub connection choices and visual submission review happen in the signed-in
 Revdoku app; agents use the returned stable settings/review links.
 
