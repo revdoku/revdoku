@@ -1028,7 +1028,7 @@ Move and organize existing files server-side; do not download and re-upload byte
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/v1/buckets/:id/files` | List files; supports `limit` and `offset`. |
+| `GET` | `/api/v1/buckets/:id/files` | List files; supports `limit`, `offset`, and `q`. `publication_targets=true` returns lean paths relative to the website root for a form success-target picker. |
 | `GET` | `/api/v1/buckets/:id/files/:file_id` | Read file metadata. |
 | `GET` | `/api/v1/buckets/:id/files/by_path?path=...` | Read/download a file by bucket-relative path. |
 | `POST` | `/api/v1/buckets/:id/files/:file_id/rename` | Rename or move within the same bucket without reuploading. |
@@ -1057,7 +1057,8 @@ Send that body to `POST /api/v1/buckets/:id/versions/restore`.
 New buckets expose no public form endpoint until the owner configures one in
 Website Settings or updates `bucket.metadata.publication_forms`. Revdoku supports
 the fixed definitions `contact`, `feedback`, `comments` (**Feedback Visible To
-Others**), `quote`, `waitlist`, `question`, and `intake`; labels and visitor
+Others**), `quote`, `waitlist`, `question`, `intake`, and `resource` (**Get a
+resource**); labels and visitor
 fields are server-controlled so forms cannot be repurposed for arbitrary
 sensitive-data collection.
 
@@ -1154,6 +1155,29 @@ Use `required_fields` to choose which fixed fields are required. The legacy
 and mobile `widget_position` values: `top-left`, `top-center`, `top-right`,
 `center-left`, `center`, `center-right`, `bottom-left`, `bottom-center`, or
 `bottom-right` (the default).
+
+Every configured form also accepts a `success_response`:
+
+```json
+{
+  "name": "resource",
+  "hosted": true,
+  "success_response": {
+    "mode": "file",
+    "path": "downloads/guide.pdf"
+  }
+}
+```
+
+`mode` is `system` (the default saved message) or `file`. A file target is
+relative to the published website root and must exist by publish/republish;
+updates to an existing bucket reject a missing target. A trailing slash, such
+as `resources/`, targets an
+Auto-Index folder. HTML opens directly; previewable formats such as PDF use the
+same-origin Revdoku viewer. The target is shareable on Public sites and inherits
+the access gate on Password or Require Email sites. Form changes remain draft
+settings until publish/republish. Revdoku does not email the visitor for this
+response mode.
 
 To render one configured hosted form inline, put its macro in an HTML page:
 
