@@ -4,8 +4,9 @@ Publish websites from Claude, ChatGPT, Codex, Gemini, and other AI agents using 
 A few seconds from idea to a live website you can share — `revdoku p` and you
 have a URL. Nothing goes live until you publish (use `--draft` to store privately).
 
-Create an account at <https://revdoku.com>. Hosted agent connections use OAuth,
-so there is no API key to copy into chat.
+Create an account at
+<https://app.revdoku.com/users/sign_up?utm_source=github.com&utm_medium=public-docs&utm_campaign=connect_ai_first>.
+Hosted agent connections use OAuth, so there is no API key to copy into chat.
 
 ## Connect your AI agent
 
@@ -25,9 +26,9 @@ and edit files in Revdoku, but they cannot read your local filesystem.
 | [Claude.ai web](#claude-ai-web) | Hosted MCP connector with Revdoku OAuth |
 | [Claude Desktop](#claude-desktop) | Copy Instructions for AI |
 | [Claude CLI / Claude Code](#claude-cli-claude-code) | Claude Code plugin or Copy Instructions for AI |
-| [ChatGPT web](#chatgpt-web) | Custom app/connector with Revdoku OAuth |
-| [Codex web](#codex-web) | Hosted MCP server in Codex settings |
-| [Codex Desktop](#codex-desktop) | Copy Instructions for AI |
+| [ChatGPT web](#chatgpt-web) | Developer-mode plugin connection with Revdoku OAuth |
+| [Codex in ChatGPT desktop](#codex-desktop) | Streamable HTTP MCP server or Copy Instructions for AI |
+| [Codex web / cloud](#codex-web) | Revdoku plugin, when available to the workspace |
 | [Codex CLI](#codex-cli) | `codex mcp add` + `codex mcp login` |
 | [Google Gemini](#google-gemini) | Copy Instructions for AI or Gemini CLI MCP settings |
 | [Hermes Agent](#hermes-agent) | Local CLI in the Hermes environment, or hosted MCP if supported |
@@ -60,6 +61,7 @@ local client:
 
 ```sh
 curl -fsSL https://revdoku.com/install.sh | bash
+~/.revdoku/bin/revdoku login
 ```
 
 Step-by-step tutorial: <https://revdoku.com/claude-desktop-terminal/>.
@@ -84,38 +86,39 @@ prompt into a terminal Claude session. Step-by-step tutorial:
 
 ### ChatGPT Web
 
-Create a custom app/connector named `Revdoku` with server URL:
+In ChatGPT, enable **Developer mode** under **Settings → Security and login**.
+Open <https://chatgpt.com/plugins>, select the plus button, and create a
+connection named `Revdoku` with server URL:
 
 ```text
 https://app.revdoku.com/mcp
 ```
 
-Use OAuth, sign in with Revdoku, then pick Revdoku in a new chat or ask
-ChatGPT to `publish with Revdoku`. Step-by-step tutorial:
+Use OAuth, sign in with Revdoku, then add Revdoku from the tools menu in a new
+chat. Developer mode and custom plugin connections can depend on account and
+workspace policy. If the connection surface is unavailable, use the local CLI.
+Step-by-step tutorial:
 <https://revdoku.com/chatgpt/>.
 
 <a id="codex-web"></a>
 
-### Codex Web
+### Codex Web / Cloud
 
-Add a Revdoku MCP server in Codex settings:
-
-```text
-Name: Revdoku
-Transport: Streamable HTTP
-URL: https://app.revdoku.com/mcp
-```
-
-Authenticate with Revdoku when prompted. Step-by-step tutorial:
-<https://revdoku.com/codex/>.
+Codex web and cloud chats do not read the MCP configuration from a local Codex
+host. Use Revdoku there only when the Revdoku plugin is available and enabled
+for the ChatGPT workspace. Otherwise use Codex in the ChatGPT desktop app, the
+CLI, or the IDE extension.
 
 <a id="codex-desktop"></a>
 
-### Codex Desktop
+### Codex in ChatGPT Desktop
 
-Sign in to Revdoku at <https://app.revdoku.com>, click **New** (or **+** on
-mobile), choose **Copy Instructions for AI**, and paste the copied prompt into
-Codex Desktop. Step-by-step tutorial: <https://revdoku.com/codex/>.
+In the ChatGPT desktop app, open Codex, then **Settings → MCP servers**. Add a
+**Streamable HTTP** server named `Revdoku` at `https://app.revdoku.com/mcp`,
+restart when prompted, then select **Authenticate** to complete Revdoku OAuth.
+You can also sign in to Revdoku, choose **New → Copy Instructions for AI**, and
+paste the copied prompt into a local Codex chat. Step-by-step tutorial:
+<https://revdoku.com/codex/>.
 
 <a id="codex-cli"></a>
 
@@ -137,6 +140,13 @@ Fast path: sign in to Revdoku, click **New** (or **+** on mobile), choose
 
 For Gemini CLI manual setup, add Revdoku to `~/.gemini/settings.json` or your
 project `.gemini/settings.json`:
+
+```sh
+gemini mcp add --transport http --scope user revdoku https://app.revdoku.com/mcp
+```
+
+Run `/mcp auth revdoku` in Gemini CLI if OAuth does not start automatically.
+The equivalent settings entry is:
 
 ```json
 {
@@ -160,14 +170,14 @@ same environment and paste **Copy Instructions for AI** into Hermes:
 
 ```sh
 curl -fsSL https://revdoku.com/install.sh | bash
+~/.revdoku/bin/revdoku login
 ```
 
-If your Hermes runtime supports remote Streamable HTTP MCP with OAuth, add:
+To use Hermes's remote Streamable HTTP MCP client with OAuth, run:
 
-```text
-Name: Revdoku
-URL: https://app.revdoku.com/mcp
-Transport: streamable-http
+```sh
+hermes mcp add revdoku --url https://app.revdoku.com/mcp --auth oauth
+hermes mcp login revdoku
 ```
 
 Step-by-step tutorial: <https://revdoku.com/hermes/>.
@@ -184,6 +194,7 @@ install the local client:
 
 ```sh
 curl -fsSL https://revdoku.com/install.sh | bash
+~/.revdoku/bin/revdoku login
 ```
 
 Machine-oriented setup notes: [`llms-install.md`](./llms-install.md).
@@ -193,7 +204,8 @@ Machine-oriented setup notes: [`llms-install.md`](./llms-install.md).
 ### OpenClaw
 
 ```sh
-openclaw mcp set revdoku '{"url":"https://app.revdoku.com/mcp","transport":"streamable-http"}'
+openclaw mcp set revdoku '{"url":"https://app.revdoku.com/mcp","transport":"streamable-http","auth":"oauth"}'
+openclaw mcp login revdoku
 ```
 
 Or use **Copy Instructions for AI** from the Revdoku app. Step-by-step
@@ -209,10 +221,14 @@ WSL2, or a VM. It also drops the Revdoku skill into any agent it finds
 
 ```sh
 curl -fsSL https://revdoku.com/install.sh | bash
+~/.revdoku/bin/revdoku login
 ```
 
 Then paste **Copy Instructions for AI** from the Revdoku app, or publish
 directly (below).
+
+The examples below use `revdoku` as shorthand. If `~/.revdoku/bin` is not on
+your shell `PATH`, use `~/.revdoku/bin/revdoku` instead.
 
 ## Publish a website
 

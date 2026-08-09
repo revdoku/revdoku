@@ -7,6 +7,10 @@ Most AI-agent users should start with the Revdoku app's copied prompt or the
 Revdoku MCP tool. Use this HTTP API for custom clients, CI jobs, backend workers,
 or direct integrations.
 
+Create a Revdoku account in the web app before connecting:
+<https://app.revdoku.com/users/sign_up?utm_source=revdoku.com&utm_medium=public-api&utm_campaign=connect_ai_first>.
+Agent and API account creation is not supported.
+
 Hosted MCP and CLI device login use revocable agent connections. Reusable API
 keys are for custom clients and automation when that capability is available to
 the account.
@@ -128,7 +132,7 @@ Both `GET /api/v1/status` and `revdoku_status` expose account-level GitHub Sync
 eligibility at `features.github_sync`. Bucket-specific connection state and the
 setup deep link remain on bucket list/detail responses.
 
-## Hosted MCP for Claude/ChatGPT Cloud
+## Hosted MCP for cloud AI clients
 
 Cloud agents that support custom remote MCP connectors connect to Revdoku through
 the production remote MCP endpoint:
@@ -137,10 +141,11 @@ the production remote MCP endpoint:
 https://app.revdoku.com/mcp
 ```
 
-Add that URL as a Claude custom connector, or in ChatGPT use the custom
-connector/custom MCP app/developer-mode MCP surface available to the account. If
-that ChatGPT surface is not available, use the local CLI instead. The connector
-uses Revdoku OAuth discovery, authorization-code PKCE, and Bearer tokens. Users
+Add that URL as a Claude custom connector. In ChatGPT, enable Developer mode
+under **Settings → Security and login**, then add the endpoint from
+<https://chatgpt.com/plugins> when that surface is available to the account and
+workspace. If it is unavailable, use the local CLI instead. The connector uses
+Revdoku OAuth discovery, authorization-code PKCE, and Bearer tokens. Users
 approve the connection in Revdoku and can revoke it later from
 `/account/access`.
 
@@ -266,7 +271,9 @@ curl -fsS "$REVDOKU_URL/api/v1/agent_auth/verify_code" \
 ```
 
 Store the returned `data.api_key` securely. Follow `data.guidance` when the
-server includes it. Do not print or log the key.
+server includes it. This fallback belongs in a private interactive client UI,
+not an AI chat: never ask the user to paste or repeat the verification code in
+chat. Do not print or log the key.
 
 ### Create a Bucket
 
@@ -842,6 +849,9 @@ payment details, or full chat history.
 This endpoint never creates accounts. New users must sign up through the web UI at
 `/users/sign_up`; agents can only sign in to an email that already has a Revdoku
 account.
+
+Collect and submit the code only inside a private interactive client. An AI
+agent must not ask the user to paste or repeat the code in chat.
 
 ```json
 {

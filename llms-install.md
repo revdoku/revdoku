@@ -4,6 +4,7 @@ Use these instructions when an AI tool, coding agent, or MCP client needs to
 connect to Revdoku and publish generated website or SPA files.
 
 - Revdoku app: <https://app.revdoku.com>
+- Revdoku signup: <https://app.revdoku.com/users/sign_up?utm_source=github.com&utm_medium=public-docs&utm_campaign=connect_ai_first>
 - Remote MCP server: `https://app.revdoku.com/mcp`
 - Public setup hub: <https://revdoku.com/connect/>
 
@@ -30,7 +31,8 @@ connect to Revdoku and publish generated website or SPA files.
 
 ## Best setup path
 
-1. Ask the user to sign in at <https://app.revdoku.com>.
+1. Ask the user to sign in at <https://app.revdoku.com>. If they do not have an
+   account, send the official signup link above and wait for them to finish.
 2. In Revdoku, the user clicks **New** (or **+** on mobile).
 3. The user chooses **Copy Instructions for AI**.
 4. The user pastes the copied prompt into the AI tool.
@@ -61,8 +63,11 @@ available.
 
 ```sh
 curl -fsSL https://revdoku.com/install.sh | bash
-revdoku --login
+~/.revdoku/bin/revdoku --login
 ```
+
+Use `~/.revdoku/bin/revdoku` directly unless that directory is already on
+`PATH`.
 
 Publish the current folder:
 
@@ -125,17 +130,23 @@ The copied Revdoku prompt also works in a Claude Code session.
 
 ### ChatGPT web
 
-Create a custom app/connector named `Revdoku` with server URL
-`https://app.revdoku.com/mcp`, choose OAuth, then sign in with Revdoku.
+Enable **Developer mode** under **Settings → Security and login**, open
+<https://chatgpt.com/plugins>, and create a connection named `Revdoku` with
+server URL `https://app.revdoku.com/mcp`. Choose OAuth, then sign in with
+Revdoku. Availability can depend on account and workspace policy.
 
 Step-by-step tutorial: <https://revdoku.com/chatgpt/>
 
-### Codex web and Codex Desktop
+### Codex in ChatGPT desktop, web, and cloud
 
-For Codex web, add a Revdoku MCP server with Streamable HTTP transport and URL
-`https://app.revdoku.com/mcp`.
+For Codex in the ChatGPT desktop app, add a Revdoku server under **Settings →
+MCP servers** with Streamable HTTP transport and URL
+`https://app.revdoku.com/mcp`, then authenticate with Revdoku. The Codex CLI
+and IDE extension share that local MCP configuration.
 
-For Codex Desktop, use **Copy Instructions for AI** from the Revdoku app.
+Codex web and cloud chats do not read a local Codex MCP configuration. Use
+Revdoku there only when its plugin is available and enabled for the ChatGPT
+workspace.
 
 Step-by-step tutorial: <https://revdoku.com/codex/>
 
@@ -149,6 +160,13 @@ codex mcp login revdoku
 ### Google Gemini
 
 Use **Copy Instructions for AI** from the Revdoku app, or configure Gemini CLI:
+
+```sh
+gemini mcp add --transport http --scope user revdoku https://app.revdoku.com/mcp
+```
+
+In Gemini CLI, run `/mcp auth revdoku` if OAuth does not start automatically.
+The equivalent settings file entry is:
 
 ```json
 {
@@ -167,15 +185,20 @@ Step-by-step tutorial: <https://revdoku.com/gemini/>
 ### Hermes Agent
 
 For local or VM workflows, install the local CLI in the same environment where
-Hermes runs. If Hermes supports remote Streamable HTTP MCP with OAuth, add the
-hosted MCP server.
+Hermes runs. To add the hosted Streamable HTTP MCP server with OAuth:
+
+```sh
+hermes mcp add revdoku --url https://app.revdoku.com/mcp --auth oauth
+hermes mcp login revdoku
+```
 
 Step-by-step tutorial: <https://revdoku.com/hermes/>
 
 ### OpenClaw
 
 ```sh
-openclaw mcp set revdoku '{"url":"https://app.revdoku.com/mcp","transport":"streamable-http"}'
+openclaw mcp set revdoku '{"url":"https://app.revdoku.com/mcp","transport":"streamable-http","auth":"oauth"}'
+openclaw mcp login revdoku
 ```
 
 You can also use **Copy Instructions for AI** from the Revdoku app.

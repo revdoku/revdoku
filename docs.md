@@ -7,18 +7,30 @@ update, share, or publish project output.
 
 ## Quick Start
 
-Install the local client:
+Create a Revdoku account first:
+
+<https://app.revdoku.com/users/sign_up?utm_source=revdoku.com&utm_medium=public-docs&utm_campaign=local-install>
+
+Install the local client and Revdoku skill:
 
 ```sh
 curl -fsSL https://revdoku.com/install.sh | bash
 ```
 
+The installer adds the `revdoku` command and installs the Revdoku skill for
+Codex. It also installs the skill for Claude Code, Hermes, and OpenClaw when
+their local configuration directories already exist. Set `REVDOKU_AGENT` to
+`codex`, `claude`, `hermes`, `openclaw`, `both`, or `all` to choose explicitly.
+
 Sign in through the browser device-code flow, or create a Revdoku account first
 if you do not have one yet:
 
 ```sh
-revdoku login
+~/.revdoku/bin/revdoku login
 ```
+
+The examples below use `revdoku` as shorthand. If `~/.revdoku/bin` is not on
+your shell `PATH`, keep using the full `~/.revdoku/bin/revdoku` path.
 
 Publish the current folder as a public website (the headline command):
 
@@ -167,6 +179,9 @@ Hosted MCP clients can connect to:
 ```text
 https://app.revdoku.com/mcp
 ```
+
+Use Streamable HTTP transport and Revdoku OAuth. Do not paste a Revdoku
+password, API key, TOTP/backup code, or email verification code into AI chat.
 
 Local agents can use the installed `revdoku` command. Prefer MCP tools when
 available; use the CLI when the agent needs local filesystem access — the cloud
