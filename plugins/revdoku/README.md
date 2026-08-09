@@ -14,6 +14,10 @@ The plugin bundles:
 
 ## Install
 
+Create a Revdoku account first at
+<https://app.revdoku.com/users/sign_up?utm_source=github.com&utm_medium=claude-plugin&utm_campaign=connect_ai_first>.
+The plugin connects to that account through Revdoku OAuth.
+
 ```text
 /plugin marketplace add revdoku/revdoku
 /plugin install revdoku@revdoku
@@ -45,6 +49,7 @@ VM) without a cloud connector, install the Revdoku CLI:
 
 ```text
 curl -fsSL https://revdoku.com/install.sh | bash
+~/.revdoku/bin/revdoku login
 ```
 
 The skill automatically uses the CLI (`~/.revdoku/bin/revdoku`) for local-file work

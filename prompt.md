@@ -23,11 +23,18 @@ For ChatGPT, Claude, Gemini, or another cloud client that supports remote MCP:
 
 ## Local agents and the CLI
 
-For a local agent or a task that needs files from the user's computer, install
-the Revdoku client from the official documentation and run:
+For a local agent or a task that needs files from the user's computer, use the
+official setup guide at `https://revdoku.com/local-install/` and install the
+Revdoku CLI and skill:
 
 ```sh
-revdoku --login
+curl -fsSL https://revdoku.com/install.sh | bash
+```
+
+Then run:
+
+```sh
+~/.revdoku/bin/revdoku --login
 ```
 
 Ask the user to approve the browser device sign-in screen. The client stores the
@@ -36,8 +43,10 @@ the privacy-preserving email-code endpoints only as a fallback. If the fallback
 does not complete, return to browser device sign-in rather than asking for other
 authentication secrets.
 
-Verify the connection with `revdoku status`. Publish a local folder with
-`revdoku p <dir>` only when the user asks for a live website.
+Verify the connection with `~/.revdoku/bin/revdoku status`. Publish a local
+folder with `~/.revdoku/bin/revdoku p <dir>` only when the user asks for a live
+website. If `~/.revdoku/bin` is already on `PATH`, the shorter `revdoku` command
+is equivalent.
 
 ## Working with Revdoku
 

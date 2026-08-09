@@ -10,6 +10,7 @@ if [[ -f "$TEST_DIR/../skills/revdoku/SKILL.md" ]]; then
   CLI_FILE="$DIST_ROOT/skills/revdoku/bin/revdoku"
   SKILL_FILE="$DIST_ROOT/skills/revdoku/SKILL.md"
   API_FILE="$DIST_ROOT/api.md"
+  LLMS_INSTALL_FILE="$DIST_ROOT/llms-install.md"
   README_FILE="$DIST_ROOT/README.md"
   LICENSE_FILE="$DIST_ROOT/LICENSE"
   VERSION_FILE="$DIST_ROOT/VERSION"
@@ -22,6 +23,7 @@ else
   CLI_FILE="$SOURCE_CLIENT_DIR/bin/revdoku"
   SKILL_FILE="$SOURCE_CLIENT_DIR/skill/SKILL.md"
   API_FILE="$SOURCE_CLIENT_DIR/api.md"
+  LLMS_INSTALL_FILE="$SOURCE_CLIENT_DIR/llms-install.md"
   README_FILE="$SOURCE_CLIENT_DIR/README.md"
   LICENSE_FILE="$SOURCE_CLIENT_DIR/LICENSE"
   VERSION_FILE="$(cd "$SOURCE_CLIENT_DIR/../../.." && pwd)/VERSION"
@@ -58,6 +60,14 @@ require_text "$CLI_FILE" "PUBLICATION_UPGRADE_REQUIRED"
 require_text "$CLI_FILE" "No trial was started."
 require_text "$README_FILE" "hosted MCP implementation"
 require_text "$README_FILE" "[CHANGELOG.md](./CHANGELOG.md)"
+require_text "$README_FILE" "app.revdoku.com/users/sign_up"
+require_text "$README_FILE" "Codex web and cloud chats do not read"
+require_text "$README_FILE" '"auth":"oauth"'
+require_text "$LLMS_INSTALL_FILE" "app.revdoku.com/users/sign_up"
+require_text "$LLMS_INSTALL_FILE" "chatgpt.com/plugins"
+require_text "$LLMS_INSTALL_FILE" "Codex web and cloud chats do not read"
+require_text "$LLMS_INSTALL_FILE" "~/.revdoku/bin/revdoku --login"
+require_text "$API_FILE" "never ask the user to paste or repeat the verification code in"
 require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
 require_text "$API_FILE" '`PATCH` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
 require_text "$API_FILE" '`POST` | `/api/v1/buckets/:id/form_submissions/:submission_id/reply`'

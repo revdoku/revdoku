@@ -6,13 +6,14 @@ This singular filename is kept as an alias for tools that look for
 Essential setup:
 
 - Revdoku app: <https://app.revdoku.com>
+- Revdoku signup: <https://app.revdoku.com/users/sign_up?utm_source=github.com&utm_medium=public-docs&utm_campaign=connect_ai_first>
 - Remote MCP server: `https://app.revdoku.com/mcp`
 - Public setup hub: <https://revdoku.com/connect/>
 - For local files, install the CLI:
 
 ```sh
 curl -fsSL https://revdoku.com/install.sh | bash
-revdoku --login
+~/.revdoku/bin/revdoku --login
 ```
 
 For Cline and other generic AI tools, ask the user to sign in to Revdoku, click
