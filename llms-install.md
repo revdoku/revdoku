@@ -4,7 +4,7 @@ Use these instructions when an AI tool, coding agent, or MCP client needs to
 connect to Revdoku and publish generated website or SPA files.
 
 - Revdoku app: <https://app.revdoku.com>
-- Revdoku signup: <https://app.revdoku.com/users/sign_up?utm_source=github.com&utm_medium=public-docs&utm_campaign=connect_ai_first>
+- Direct signup fallback: <https://app.revdoku.com/users/sign_up?utm_source=github.com&utm_medium=public-docs&utm_campaign=connect_ai_first>
 - Remote MCP server: `https://app.revdoku.com/mcp`
 - Public setup hub: <https://revdoku.com/connect/>
 
@@ -31,13 +31,18 @@ connect to Revdoku and publish generated website or SPA files.
 
 ## Best setup path
 
-1. Ask the user to sign in at <https://app.revdoku.com>. If they do not have an
-   account, send the official signup link above and wait for them to finish.
-2. In Revdoku, the user clicks **New** (or **+** on mobile).
+1. First check whether Revdoku tools already exist. If not, and the tool supports
+   write-capable hosted MCP, ask the user to add `https://app.revdoku.com/mcp`
+   from that client's app/connector settings and complete Revdoku OAuth. The
+   browser flow lets the user sign in or create an account.
+2. If the tool cannot add a hosted connector, ask the user to open
+   <https://app.revdoku.com>, sign in or create an account, and click **New**
+   (or **+** on mobile).
 3. The user chooses **Copy Instructions for AI**.
 4. The user pastes the copied prompt into the AI tool.
-5. Follow the copied prompt exactly and complete Revdoku OAuth or browser device
-   sign-in before using Revdoku actions.
+5. Follow the copied prompt exactly. Never claim a pasted prompt installed a
+   connector. After OAuth, the user may need to enable Revdoku for the chat or
+   start a new conversation before its tools appear.
 
 This path works for Cline, Claude Desktop, terminal agents, Gemini, Hermes,
 OpenClaw, Cursor, and generic AI tools that can follow pasted instructions.
@@ -53,8 +58,9 @@ Transport: streamable-http
 Authentication: OAuth
 ```
 
-The user signs in with Revdoku and approves the connection. No API key needs to
-be copied into chat.
+The Revdoku browser window lets the user sign in or create an account and then
+approve the connection. No API key or verification code needs to be copied into
+chat.
 
 ## Local CLI setup
 
@@ -63,7 +69,7 @@ available.
 
 ```sh
 curl -fsSL https://revdoku.com/install.sh | bash
-~/.revdoku/bin/revdoku --login
+~/.revdoku/bin/revdoku login
 ```
 
 Use `~/.revdoku/bin/revdoku` directly unless that directory is already on
@@ -123,17 +129,23 @@ Use the plugin path:
 ```sh
 /plugin marketplace add revdoku/revdoku
 /plugin install revdoku@revdoku
+/reload-plugins
 /mcp
 ```
+
+Reload plugins (or start a new Claude Code session) before opening `/mcp`, so
+the newly installed Revdoku server is available for authentication.
 
 The copied Revdoku prompt also works in a Claude Code session.
 
 ### ChatGPT web
 
-Enable **Developer mode** under **Settings → Security and login**, open
-<https://chatgpt.com/plugins>, and create a connection named `Revdoku` with
-server URL `https://app.revdoku.com/mcp`. Choose OAuth, then sign in with
-Revdoku. Availability can depend on account and workspace policy.
+Connect Revdoku from ChatGPT's Apps directory when it is listed. Otherwise,
+eligible workspace admins/developers can create a custom app from **Settings /
+Workspace settings → Apps → Create** with server URL
+`https://app.revdoku.com/mcp`, choose OAuth, and sign in with Revdoku. Full MCP
+write actions depend on plan, role, workspace policy, and web-surface support.
+If unavailable, use Revdoku's dashboard or a supported local/Claude client.
 
 Step-by-step tutorial: <https://revdoku.com/chatgpt/>
 

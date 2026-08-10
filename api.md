@@ -7,13 +7,18 @@ Most AI-agent users should start with the Revdoku app's copied prompt or the
 Revdoku MCP tool. Use this HTTP API for custom clients, CI jobs, backend workers,
 or direct integrations.
 
-Create a Revdoku account in the web app before connecting:
+For hosted MCP, start the connector first: Revdoku OAuth lets an existing user
+sign in and a new user create an account in the same browser flow. Starting
+without an AI connector? Use the dashboard signup:
 <https://app.revdoku.com/users/sign_up?utm_source=revdoku.com&utm_medium=public-api&utm_campaign=connect_ai_first>.
-Agent and API account creation is not supported.
+Raw agent and REST endpoints do not create accounts.
 
 Hosted MCP and CLI device login use revocable agent connections. Reusable API
 keys are for custom clients and automation when that capability is available to
 the account.
+Only a Revdoku account owner or administrator can authorize an AI connection.
+Removing that membership or reducing it to collaborator access invalidates the
+connection and its refresh credentials.
 
 ## Free plan and preview-first publishing
 
@@ -31,6 +36,14 @@ the user has already reviewed it or explicitly asks to publish immediately:
 
 `GET /api/v1/status` exposes `publishing.free_plan_available` and the same
 preview recommendation without revealing the connected account's billing plan.
+For an empty account it also returns `onboarding.state: "empty_account"`, a
+short `onboarding.suggested_projects` list led by an app idea landing page, and
+the private-draft/preview-first next step. Once a bucket exists, the state is
+`active` and the starter list is empty. Publishing still requires a separate,
+explicit request.
+For a selected-bucket credential with no visible bucket, the state is
+`no_visible_buckets`: ask the owner to grant a bucket or reconnect with
+whole-account access instead of suggesting bucket creation.
 Keeping a Free site active requires opening the Revdoku dashboard in a signed-in
 browser at least once every 30 days. A remembered session in that browser
 counts; CLI, API, and MCP traffic does not renew the site.
@@ -141,13 +154,14 @@ the production remote MCP endpoint:
 https://app.revdoku.com/mcp
 ```
 
-Add that URL as a Claude custom connector. In ChatGPT, enable Developer mode
-under **Settings → Security and login**, then add the endpoint from
-<https://chatgpt.com/plugins> when that surface is available to the account and
-workspace. If it is unavailable, use the local CLI instead. The connector uses
-Revdoku OAuth discovery, authorization-code PKCE, and Bearer tokens. Users
-approve the connection in Revdoku and can revoke it later from
-`/account/access`.
+Add that URL as a Claude custom connector from **Customize → Connectors**. In
+ChatGPT, connect Revdoku from the Apps directory when listed, or create a
+custom app from **Settings / Workspace settings → Apps → Create** when the
+account, role, and workspace support write-capable MCP apps. If write tools are
+unavailable, use the dashboard or local CLI. The connector uses Revdoku OAuth
+discovery, authorization-code PKCE, `offline_access` refresh support, and Bearer
+tokens. Users approve the exact Revdoku account shown on the consent screen and
+can revoke the connection later from `/account/access`.
 
 Hosted MCP is stateless Streamable HTTP. Clients discover tools with `tools/list`
 when they connect, so reconnect after an update to discover newly added tools.
@@ -692,8 +706,9 @@ Use `details_visible` to determine whether detailed publication analytics are
 available. When false, the response still exposes the numeric all-time hit
 count but hides detailed ranges and breakdowns.
 
-Each selected window is compared with the immediately preceding equal-length
-window. `previous_period_totals` contains the earlier values and
+Except for `all`, each selected window is compared with the immediately preceding
+equal-length window. The `all` range covers complete stored history and returns
+`previous_period: null` plus null comparison values. `previous_period_totals` contains the earlier values and
 `diff_vs_previous_period` contains signed current-minus-previous values. For
 example, `"views": 6` means six more human views than the previous period and
 `"views": -6` means six fewer. `views` excludes bots; `hits` includes them. For
@@ -761,6 +776,9 @@ Example response with details:
     "paths": [
       { "path": "/", "hits": 650 }
     ],
+    "downloads": [
+      { "path": "/guide.pdf", "hits": 12 }
+    ],
     "referrers": [
       { "referrer": "direct", "hits": 420 }
     ],
@@ -790,7 +808,7 @@ visitor count across the whole range.
 | `GET` | `/api/v1/agent_auth/status` | API-key status alias for agents; same connection payload as `/api/v1/status`. |
 | `POST` | `/api/v1/agent_auth/request_code` | Request an email verification code without revealing whether the email has a Revdoku account. New hosted accounts are created in the web UI at app.revdoku.com/users/sign_up, not here. |
 | `POST` | `/api/v1/agent_auth/verify_code` | Verify the email code and create an API key when the code is valid. |
-| `POST` | `/api/v1/agent_auth/browser_login_link` | Create a one-time dashboard login link. |
+| `POST` | `/api/v1/agent_auth/browser_login_link` | Return a stable dashboard URL (legacy endpoint name; normal sign-in is required). |
 | `POST` | `/oauth/device_authorization` | Start OAuth device authorization for local CLI/agent clients. |
 | `GET` / `POST` | `/oauth/device` | Browser page where the user enters/approves a device code. |
 | `POST` | `/oauth/token` | Exchange OAuth authorization codes, device codes, or refresh tokens. |
@@ -830,9 +848,12 @@ request a narrower scope up front.
 | `bucket_write` | Create and update allowed private bucket files; no publishing. |
 | `bucket_admin` | Create, update, publish, unpublish, and manage allowed buckets. |
 
-OAuth approval and API-key creation accept `permission_scope` / `scope` with
-these values. If omitted, agent connections and named API-key setup use
-`bucket_admin` by default.
+OAuth authorization and device authorization accept `permission_scope` with
+these values; their standard OAuth `scope` remains `revdoku:mcp` with optional
+`offline_access`. Email-code API-key creation accepts `permission_scope` or the
+legacy `scope` alias. The requested permission is shown and bound to OAuth
+consent. If omitted, agent connections and named API-key setup use
+`bucket_admin` by default; an invalid value is rejected rather than broadened.
 
 #### POST /api/v1/agent_auth/request_code
 
@@ -874,6 +895,7 @@ to browser device sign-in rather than repeatedly retrying codes.
   "email": "person@example.com",
   "code": "123456",
   "label": "Codex on laptop",
+  "permission_scope": "bucket_admin",
   "bucket_access": "all"
 }
 ```
@@ -892,10 +914,9 @@ For selected-bucket access, use:
 
 #### POST /api/v1/agent_auth/browser_login_link
 
-Requires `Authorization`.
-Disabled when the authenticated user has two-factor authentication enabled or
-the account requires two-factor authentication. In that case, open the Revdoku
-dashboard through the normal browser sign-in flow.
+Requires `Authorization`. This compatibility endpoint returns a stable internal
+dashboard URL and never exchanges an API key for a browser session. The user
+signs in normally if the browser has no active Revdoku session.
 
 ```json
 {
@@ -1383,8 +1404,9 @@ domain becomes active.
 
 #### GET /api/v1/analytics
 
-Supported ranges are `24h`, `7d`, `30d`, and `90d`. The `24h` response uses
-hourly buckets; the other ranges use daily buckets. Pass both `from` and `to` as
+Supported ranges are `all`, `24h`, `7d`, `30d`, and `90d`. `all` covers complete
+stored history, returns `previous_period: null`, and leaves comparison values
+null. The `24h` response uses hourly buckets; the other ranges use daily buckets. Pass both `from` and `to` as
 `YYYY-MM-DD` for an exact inclusive daily window of at most 90 days; exact dates
 override `range`.
 
@@ -1400,12 +1422,14 @@ Responses with `details_visible: true` include:
 | `totals.visitors` | Sum of daily unique visitors in the selected range. |
 | `totals.hits_not_found` | Missing-path hits. |
 | `totals.hits_bots` | Likely or known bot hits. |
-| `previous_period` | Immediately preceding equal-length window. Daily dates are inclusive; the hourly timestamps describe the preceding 24 hours. |
+| `previous_period` | Immediately preceding equal-length window, or null for `all`. Daily dates are inclusive; the hourly timestamps describe the preceding 24 hours. |
 | `previous_period_totals` | Detailed totals for the previous period, using the same metric keys as the selected range. Live `24h` values are null if either hourly window is unavailable. |
 | `diff_vs_previous_period` | Signed current-minus-previous differences. Positive means growth; negative means decline; null means unavailable, not zero. |
 | `daily` | Daily website hits and visitors. |
 | `buckets` | Highest-traffic published buckets. |
-| `paths` | Highest-traffic paths. |
+| `paths` | Highest-traffic page paths. Static assets and downloads are excluded. |
+| `downloads` | Explicit file downloads grouped by path. |
+| `document_pages` | Document-page engagement grouped by file path and page number. |
 | `referrers` | Referrer hosts, with `direct` for no referrer. |
 | `countries` | Country codes. |
 | `bots` | Bot hits grouped by bot name. |
@@ -1457,6 +1481,8 @@ detailed numbers:
     "daily": [],
     "buckets": [],
     "paths": [],
+    "downloads": [],
+    "document_pages": [],
     "referrers": [],
     "countries": [],
     "bots": [],
@@ -1557,5 +1583,4 @@ domain, or visit Revdoku in the browser to review account capacity.
 
 ### Do Not Leak Secrets
 
-Never print, paste, commit, or log `revdoku_...` API keys, direct-upload URLs,
-or browser login links.
+Never print, paste, commit, or log `revdoku_...` API keys or direct-upload URLs.

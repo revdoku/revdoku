@@ -75,9 +75,34 @@ eligibility is unclear (`features.github_sync`). Remote MCP is stateless
 Streamable HTTP; reconnect or restart the connector after a tool-list change so
 the client runs `tools/list` again.
 
+### First project onboarding
+
+After a new connection, call `revdoku_status` and `bucket_list`. Offer the
+returned `onboarding.suggested_projects` only when `onboarding.state` is
+`empty_account`. The starter choices are an app idea landing page with a
+waitlist, a portfolio/profile, an event page, a product/service page, or the
+user's own idea. If the user already selected one, follow that choice instead
+of asking again. Treat these as starter briefs and personalize the result; do
+not present a generic example as the finished site. If the state is
+`no_visible_buckets`, this selected-bucket or
+reduced-permission connection cannot create a bucket; follow
+`onboarding.recommended_next_step` and ask the owner to grant a bucket or
+reconnect with whole-account `bucket_admin` access.
+
+Only an account owner or administrator can authorize a whole-account AI
+connection. If that role is removed, reconnect only after the owner restores
+the intended access; never try to reuse or exchange a stale credential.
+
+For an app idea, ask for its working name, problem, intended users, up to three
+main benefits or features, call to action, and visual direction. Use only facts
+the user provides; never invent testimonials, usage numbers, investors, launch
+dates, or other validation. Create the site as a private draft, use
+`bucket_publish_preview` for review, and make it live only after explicit
+publishing approval.
+
 Use `revdoku_dashboard_link` when the user asks to open Revdoku or manage a
-UI-only setting. Share its short-lived, single-use URL. If two-factor security
-disables dashboard links, direct the user to the normal Revdoku sign-in instead.
+UI-only setting. Share its stable URL; it never signs a browser in, so the user
+authenticates normally when needed.
 
 ### Buckets and files
 
@@ -107,7 +132,7 @@ two-way connection. Report its `repository_url`, `branch`, `sync_state`,
 Every bucket also returns `github_sync_setup`. Share its `settings_url` when the
 user wants to connect, repair, or manage GitHub sync. This is a stable,
 login-required deep link to Bucket Settings → GitHub Sync; do not replace it
-with a one-time dashboard link. GitHub App installation, repository selection,
+with another URL. GitHub App installation, repository selection,
 and the initial sync direction are browser-only choices. Never ask the user for
 a GitHub access token, private key, client secret, or webhook secret.
 An account administrator with bucket-administration permission must complete
@@ -152,7 +177,8 @@ when the user requests recipient links. Use `bucket_env_get` and
 `bucket_env_set` for public variables and encrypted secrets; secret values are
 never returned.
 
-Analytics accepts `24h`, `7d`, `30d`, or `90d`. For an exact inclusive daily
+Analytics accepts `all`, `24h`, `7d`, `30d`, or `90d`. `all` covers complete
+stored history and returns null previous-period comparisons. For an exact inclusive daily
 window, pass both `from` and `to` as `YYYY-MM-DD`. Every response identifies the
 immediately preceding equal-length `previous_period`, includes its totals, and
 returns signed current-minus-previous values in `diff_vs_previous_period`.
@@ -161,6 +187,10 @@ growth and negative differences mean decline. Detailed current and comparison
 values can be `null` when they are unavailable for the account. For live `24h`
 analytics, null comparison values can also mean an hourly window was
 unavailable; never describe them as zero traffic or zero growth.
+In detailed analytics, `paths` contains page views only, `downloads` contains
+explicit file downloads by path, and `document_pages` contains document-page
+engagement. Scripts, styles, images, and other support assets are intentionally
+excluded from those engagement breakdowns.
 
 ### Visibility and deletion safety
 
@@ -255,7 +285,7 @@ curl -fsSL https://revdoku.com/install.sh | bash
 Authenticate with browser device authorization:
 
 ```sh
-revdoku --login
+revdoku login
 revdoku status
 ```
 

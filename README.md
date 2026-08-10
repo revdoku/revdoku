@@ -4,9 +4,11 @@ Publish websites from Claude, ChatGPT, Codex, Gemini, and other AI agents using 
 A few seconds from idea to a live website you can share — `revdoku p` and you
 have a URL. Nothing goes live until you publish (use `--draft` to store privately).
 
-Create an account at
+Hosted agent connections use Revdoku OAuth. Start the connector first; the
+Revdoku browser window lets you sign in or create an account, so there is no API
+key or verification code to copy into chat.
+Starting without an AI connector? Create an account at
 <https://app.revdoku.com/users/sign_up?utm_source=github.com&utm_medium=public-docs&utm_campaign=connect_ai_first>.
-Hosted agent connections use OAuth, so there is no API key to copy into chat.
 
 ## Connect your AI agent
 
@@ -26,7 +28,7 @@ and edit files in Revdoku, but they cannot read your local filesystem.
 | [Claude.ai web](#claude-ai-web) | Hosted MCP connector with Revdoku OAuth |
 | [Claude Desktop](#claude-desktop) | Copy Instructions for AI |
 | [Claude CLI / Claude Code](#claude-cli-claude-code) | Claude Code plugin or Copy Instructions for AI |
-| [ChatGPT web](#chatgpt-web) | Developer-mode plugin connection with Revdoku OAuth |
+| [ChatGPT web](#chatgpt-web) | Apps-directory or developer-mode app connection with Revdoku OAuth |
 | [Codex in ChatGPT desktop](#codex-desktop) | Streamable HTTP MCP server or Copy Instructions for AI |
 | [Codex web / cloud](#codex-web) | Revdoku plugin, when available to the workspace |
 | [Codex CLI](#codex-cli) | `codex mcp add` + `codex mcp login` |
@@ -75,8 +77,11 @@ Install the Claude Code plugin:
 ```sh
 /plugin marketplace add revdoku/revdoku
 /plugin install revdoku@revdoku
+/reload-plugins
 /mcp
 ```
+
+Reload plugins (or start a new Claude Code session) before opening `/mcp`.
 
 You can also use **Copy Instructions for AI** from the Revdoku app and paste the
 prompt into a terminal Claude session. Step-by-step tutorial:
@@ -86,17 +91,22 @@ prompt into a terminal Claude session. Step-by-step tutorial:
 
 ### ChatGPT Web
 
-In ChatGPT, enable **Developer mode** under **Settings → Security and login**.
-Open <https://chatgpt.com/plugins>, select the plus button, and create a
-connection named `Revdoku` with server URL:
+First look for Revdoku in ChatGPT's Apps directory and connect the included
+app when available. Otherwise, eligible workspace admins or developers can
+create a custom app from **Settings / Workspace settings → Apps → Create** with
+server URL:
 
 ```text
 https://app.revdoku.com/mcp
 ```
 
-Use OAuth, sign in with Revdoku, then add Revdoku from the tools menu in a new
-chat. Developer mode and custom plugin connections can depend on account and
-workspace policy. If the connection surface is unavailable, use the local CLI.
+Use OAuth and sign in or create an account in the same browser flow. After
+approval, return to the original chat, enable Revdoku there, and ask it to
+continue. Start a new chat only if that conversation does not refresh the app's
+tools; do not sign up again. Full MCP write actions depend on ChatGPT plan, role,
+workspace policy, and web-surface support. A pasted prompt cannot enable
+unavailable write tools; use the Revdoku dashboard, Claude connector, or local
+CLI in that case.
 Step-by-step tutorial:
 <https://revdoku.com/chatgpt/>.
 

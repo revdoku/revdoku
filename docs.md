@@ -7,10 +7,6 @@ update, share, or publish project output.
 
 ## Quick Start
 
-Create a Revdoku account first:
-
-<https://app.revdoku.com/users/sign_up?utm_source=revdoku.com&utm_medium=public-docs&utm_campaign=local-install>
-
 Install the local client and Revdoku skill:
 
 ```sh
@@ -22,8 +18,8 @@ Codex. It also installs the skill for Claude Code, Hermes, and OpenClaw when
 their local configuration directories already exist. Set `REVDOKU_AGENT` to
 `codex`, `claude`, `hermes`, `openclaw`, `both`, or `all` to choose explicitly.
 
-Sign in through the browser device-code flow, or create a Revdoku account first
-if you do not have one yet:
+Start the browser device-code flow. The Revdoku browser window lets you sign in
+or create an account before approving the connection:
 
 ```sh
 ~/.revdoku/bin/revdoku login
@@ -149,6 +145,9 @@ Published websites record Revdoku analytics and browser-side client events by
 default. Use `--no-tracking` to disable both for a publish or republish. Scripts
 that need separate control can use `--no-analytics` for server-side website
 analytics and `--no-client-events` for browser-side Revdoku event tracking.
+Analytics page-path breakdowns exclude scripts, styles, images, and other support
+assets. Explicit file downloads and document-page engagement are reported in
+their own breakdowns.
 
 ## What Revdoku Is (And Isn't)
 

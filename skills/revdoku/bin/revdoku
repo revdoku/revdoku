@@ -161,7 +161,7 @@ More commands (no short alias):
   archive | unarchive | delete    Manage a bucket (--bucket-id).
   account              Account, plan, and storage status.
   sites                List your public website URLs.
-  dashboard            Print a one-time browser login link to the Revdoku dashboard.
+  dashboard            Print the Revdoku dashboard URL (normal sign-in may be required).
 
 Global options:
   --bucket-id ID       Act on a specific bucket (overrides the .revdoku binding).
@@ -339,6 +339,12 @@ while [[ $# -gt 0 ]]; do
       printf '%s\n' "$(installed_client_version)"
       printf 'Latest is always at https://github.com/revdoku/revdoku (reinstall: curl -fsSL https://revdoku.com/install.sh | bash)\n' >&2
       exit 0
+      ;;
+    --login)
+      # Compatibility with older public prompts. `revdoku login` is the
+      # canonical spelling, but existing copied instructions must keep working.
+      LOGIN="true"
+      shift
       ;;
     -h|--help)
       usage
@@ -881,14 +887,15 @@ http_json_quiet() {
 prompt_read() {
   local prompt="$1"
   local value
-  if [[ -r /dev/tty && -w /dev/tty ]]; then
-    printf "%s" "$prompt" > /dev/tty
-    IFS= read -r value < /dev/tty
-  elif [[ -t 0 ]]; then
+  if [[ -t 0 ]]; then
     printf "%s" "$prompt" >&2
     IFS= read -r value
+  elif { exec 3<>/dev/tty; } 2>/dev/null; then
+    printf "%s" "$prompt" >&3
+    IFS= read -r value <&3
+    exec 3>&-
   else
-    die "REVDOKU_API_KEY is required. Run 'revdoku login' to sign in (sign up first at ${BASE_URL%/}/users/sign_up if you don't have an account)."
+    die "Browser login could not start, and the email-code fallback needs an interactive terminal. Retry 'revdoku login' in a terminal."
   fi
   printf "%s" "$value"
 }
@@ -1118,17 +1125,17 @@ request_email_agent_key() {
   done
 
   echo "If $email can receive Revdoku sign-in codes, a verification code was sent." >&2
-  echo "If no code arrives, sign in at ${BASE_URL%/}/users/sign_in or retry browser device sign-in with 'revdoku --login'." >&2
+  echo "If no code arrives, sign in at ${BASE_URL%/}/users/sign_in or retry browser device sign-in with 'revdoku login'." >&2
 
   code="$(prompt_read "Code: ")"
   [[ -n "$code" ]] || die "code is required"
 
   payload="$("$JQ_BIN" -nc --arg email "$email" --arg code "$code" '{email:$email, code:$code, label:"Revdoku bucket client"}')"
   if ! response="$(http_json POST "/api/v1/agent_auth/verify_code" "$payload" false)"; then
-    die "Could not verify the code. If no code arrived or the code is rejected, use 'revdoku --login' and complete browser device sign-in."
+    die "Could not verify the code. If no code arrived or the code is rejected, use 'revdoku login' and complete browser device sign-in."
   fi
   key="$("$JQ_BIN" -r '.data.api_key // empty' <<<"$response")"
-  [[ -n "$key" ]] || die "verification did not return an API key. Use 'revdoku --login' and complete browser device sign-in."
+  [[ -n "$key" ]] || die "verification did not return an API key. Use 'revdoku login' and complete browser device sign-in."
 
   save_api_key "$key"
 }
@@ -1170,7 +1177,8 @@ fi
 
 if [[ "$LOGIN" == "true" && "$ACTION" == "store" && "$PATH_EXPLICIT" == "false" ]]; then
   echo "Login complete. Credentials saved to $CREDENTIALS_PATH." >&2
-  echo "Free includes 1 public website. Preview first with: revdoku preview . Then publish with: revdoku p" >&2
+  echo "Next: preview an existing site with 'revdoku preview .', start one with 'revdoku init my-site', or choose a dashboard sample with 'revdoku dashboard'." >&2
+  echo "Publish live only when ready: revdoku p" >&2
   exit 0
 fi
 
@@ -1611,16 +1619,15 @@ print_publication_access_hint_from_response() {
 }
 
 browser_login_link() {
-  local payload response url expires redirect_path
+  local payload response url redirect_path
   payload="$("$JQ_BIN" -nc --arg redirect_path "$BROWSER_LOGIN_PATH" '{redirect_path:$redirect_path}')"
   response="$(http_json POST "/api/v1/agent_auth/browser_login_link" "$payload")"
   url="$("$JQ_BIN" -r '.data.url // empty' <<<"$response")"
-  expires="$("$JQ_BIN" -r '.data.expires_in_seconds // empty' <<<"$response")"
   redirect_path="$("$JQ_BIN" -r '.data.redirect_path // empty' <<<"$response")"
   [[ -n "$url" ]] || die "browser login response did not include url"
   echo "Open Revdoku: $url" >&2
   [[ -n "$redirect_path" ]] && echo "Destination: $redirect_path" >&2
-  [[ -n "$expires" ]] && echo "This link is single-use and expires in ${expires} seconds." >&2
+  echo "Sign in normally if your browser does not already have a Revdoku session." >&2
   print_terminal_link_hint
   printf "%s\n" "$url"
 }

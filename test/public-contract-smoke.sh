@@ -64,9 +64,10 @@ require_text "$README_FILE" "app.revdoku.com/users/sign_up"
 require_text "$README_FILE" "Codex web and cloud chats do not read"
 require_text "$README_FILE" '"auth":"oauth"'
 require_text "$LLMS_INSTALL_FILE" "app.revdoku.com/users/sign_up"
-require_text "$LLMS_INSTALL_FILE" "chatgpt.com/plugins"
+require_text "$LLMS_INSTALL_FILE" "Workspace settings → Apps → Create"
 require_text "$LLMS_INSTALL_FILE" "Codex web and cloud chats do not read"
-require_text "$LLMS_INSTALL_FILE" "~/.revdoku/bin/revdoku --login"
+require_text "$LLMS_INSTALL_FILE" "~/.revdoku/bin/revdoku login"
+require_text "$CLI_FILE" "--login)"
 require_text "$API_FILE" "never ask the user to paste or repeat the verification code in"
 require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
 require_text "$API_FILE" '`PATCH` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
@@ -75,6 +76,8 @@ require_text "$API_FILE" '`DELETE` | `/api/v1/buckets/:id/form_submissions/:subm
 require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/versions`'
 require_text "$API_FILE" 'Selection coordinates are `[x1, y1, x2, y2]`.'
 require_text "$SKILL_FILE" '`bucket_publication_analytics`'
+require_text "$SKILL_FILE" 'Analytics accepts `all`'
+require_text "$SKILL_FILE" '`downloads` contains'
 require_text "$SKILL_FILE" '`bucket_env_get`'
 require_text "$SKILL_FILE" '`bucket_lock_files`'
 require_text "$SKILL_FILE" '`bucket_delete_permanently`'
@@ -91,12 +94,15 @@ for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
   reject_text "$file" "docs/connector-updates.md"
   reject_text "$file" "reference file uploads"
   reject_text "$file" 'site_type: "app"'
+  reject_text "$file" "Settings → Security and login"
   reject_text "$file" "Any field names you like"
   reject_text "$file" "Starter trial"
   reject_text "$file" "available on Starter"
   reject_text "$file" "available on Builder"
   reject_text "$file" "paid plans"
 done
+
+require_text "$API_FILE" 'Supported ranges are `all`'
 
 skill_words="$(wc -w < "$SKILL_FILE" | tr -d '[:space:]')"
 [[ "$skill_words" -le 3000 ]] || die "SKILL.md is too large (${skill_words} words; maximum 3000)"

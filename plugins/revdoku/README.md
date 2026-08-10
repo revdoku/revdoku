@@ -14,19 +14,19 @@ The plugin bundles:
 
 ## Install
 
-Create a Revdoku account first at
-<https://app.revdoku.com/users/sign_up?utm_source=github.com&utm_medium=claude-plugin&utm_campaign=connect_ai_first>.
-The plugin connects to that account through Revdoku OAuth.
-
 ```text
 /plugin marketplace add revdoku/revdoku
 /plugin install revdoku@revdoku
+/reload-plugins
 /mcp                 # authenticate with Revdoku (OAuth, in browser)
 ```
 
-Run `/mcp` after installing and complete the Revdoku OAuth prompt. Once connected,
-Revdoku's bucket tools are available to Claude, and the skill activates whenever you
-ask to store, publish, host, deploy, or share something on the web.
+Reload plugins (or start a new Claude Code session), then run `/mcp` and start
+Revdoku OAuth. The browser flow lets you
+sign in or create an account. Return to Claude after approval and confirm the
+Revdoku server is connected. Revdoku's bucket tools are then available, and the skill
+activates whenever you ask to store, publish, host, deploy, or share something
+on the web.
 
 ## Usage
 
