@@ -12,7 +12,8 @@ connect to Revdoku and publish generated website or SPA files.
 
 | Situation | Use this path |
 | --- | --- |
-| User is in Cline, Cursor, Claude Desktop, Gemini, Hermes, OpenClaw, or another generic AI tool | [Best setup path](#best-setup-path): Copy Instructions for AI |
+| Local coding agent has shell access | [Local CLI setup](#local-cli-setup) — the agent installs and signs in itself |
+| User is in a hosted chat such as ChatGPT or Claude web | [Hosted MCP setup](#hosted-mcp-setup) |
 | Tool supports remote MCP over Streamable HTTP with OAuth | [Hosted MCP setup](#hosted-mcp-setup) |
 | Tool must publish files from a local folder, SSH session, Docker container, WSL2, or VM | [Local CLI setup](#local-cli-setup) |
 | User asks for a specific tool | [Client-specific notes](#client-specific-notes) |
@@ -25,24 +26,26 @@ connect to Revdoku and publish generated website or SPA files.
 - Prefer Revdoku OAuth when the tool supports hosted remote MCP.
 - Use the local Revdoku CLI when the task needs files from the user's computer,
   local project, SSH session, Docker container, WSL2 environment, or VM.
+- When shell access is available, run the installer and login from the current
+  agent session. Do not tell the user to open a second terminal or type commands
+  the agent can run.
+- Keep normal setup replies to two short sentences and one tutorial link at
+  most. Put commands and troubleshooting in this guide, not in chat.
 - Only publish when the user explicitly asks for a public or protected website
   link. Writing files to a Revdoku bucket is a private draft until published.
 - Never put protected-site passwords in URL parameters.
 
 ## Best setup path
 
-1. First check whether Revdoku tools already exist. If not, and the tool supports
-   write-capable hosted MCP, ask the user to add `https://app.revdoku.com/mcp`
-   from that client's app/connector settings and complete Revdoku OAuth. The
-   browser flow lets the user sign in or create an account.
-2. If the tool cannot add a hosted connector, ask the user to open
-   <https://app.revdoku.com>, sign in or create an account, and click **New**
-   (or **+** on mobile).
-3. The user chooses **Copy Instructions for AI**.
-4. The user pastes the copied prompt into the AI tool.
-5. Follow the copied prompt exactly. Never claim a pasted prompt installed a
-   connector. After OAuth, the user may need to enable Revdoku for the chat or
-   start a new conversation before its tools appear.
+1. Check whether Revdoku already works. If it does, continue without discussing
+   setup.
+2. In a local agent with shell access, use the CLI flow below and keep the
+   original session running while the user approves the browser page.
+3. In a hosted chat, give one action and the matching tutorial link. Do not paste
+   settings paths, server URLs, or a numbered tutorial into the response unless
+   the user asks for manual instructions.
+4. Never claim that a pasted prompt installed a hosted connector. The user still
+   controls app connections in the hosted AI client's interface.
 
 This path works for Cline, Claude Desktop, terminal agents, Gemini, Hermes,
 OpenClaw, Cursor, and generic AI tools that can follow pasted instructions.
@@ -64,8 +67,8 @@ chat.
 
 ## Local CLI setup
 
-Use this when the AI tool needs local files or when hosted remote MCP is not
-available.
+Use this when the AI tool has shell access, needs local files, or cannot use a
+hosted connector. The agent should run these commands itself:
 
 ```sh
 curl -fsSL https://revdoku.com/install.sh | bash
@@ -74,6 +77,14 @@ curl -fsSL https://revdoku.com/install.sh | bash
 
 Use `~/.revdoku/bin/revdoku` directly unless that directory is already on
 `PATH`.
+
+While `revdoku login` waits, tell the user only: "I opened Revdoku in your
+browser. Approve the connection there and I'll continue here." After approval,
+run `~/.revdoku/bin/revdoku status` and resume the original task automatically.
+Do not ask the user to send `continue` or open another terminal.
+
+If the agent is not allowed to run shell commands, link to
+<https://revdoku.com/local-install/> instead of reproducing the commands in chat.
 
 Publish the current folder:
 
@@ -103,10 +114,9 @@ revdoku p --access-mode require_email
 
 ### Cline and generic VS Code agents
 
-Use **Copy Instructions for AI** first. If Cline is allowed to run shell
-commands, install the local CLI and use `revdoku p <dir>` for local project
-files. If the Cline environment supports remote MCP with OAuth, configure the
-hosted MCP server at `https://app.revdoku.com/mcp`.
+Use **Copy Instructions for AI** first. If the agent can run shell commands, it
+should install the local CLI, complete browser sign-in, and use
+`revdoku p <dir>` without asking the user to type those commands.
 
 ### Claude.ai web
 
@@ -124,7 +134,12 @@ Step-by-step tutorial: <https://revdoku.com/claude-desktop-terminal/>
 
 ### Claude Code
 
-Use the plugin path:
+Paste the Revdoku connection prompt into Claude Code. Claude should install or
+use the local CLI itself, open browser sign-in, wait for approval, and continue
+in the same session.
+
+The hosted plugin is an optional persistent connection for users who explicitly
+prefer it:
 
 ```sh
 /plugin marketplace add revdoku/revdoku
@@ -136,7 +151,8 @@ Use the plugin path:
 Reload plugins (or start a new Claude Code session) before opening `/mcp`, so
 the newly installed Revdoku server is available for authentication.
 
-The copied Revdoku prompt also works in a Claude Code session.
+The plugin may require a reload before its tools appear; the local CLI does not
+require restarting the current Claude Code session.
 
 ### ChatGPT web
 
@@ -164,10 +180,11 @@ Step-by-step tutorial: <https://revdoku.com/codex/>
 
 ### Codex CLI
 
-```sh
-codex mcp add revdoku --url https://app.revdoku.com/mcp
-codex mcp login revdoku
-```
+Paste the Revdoku connection prompt into Codex. Codex should install or use the
+local Revdoku CLI itself and keep the login command running while the user
+approves the browser page. Do not require `codex mcp add` for the current task:
+a newly added MCP server may need a restart, while the Revdoku CLI works in the
+existing session.
 
 ### Google Gemini
 
