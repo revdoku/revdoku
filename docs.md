@@ -1,29 +1,27 @@
 # Revdoku Docs
 
-Revdoku stores generated files in private buckets as saved drafts and can
-publish those files live with Public, Password, or Require Email access. Use it
-when an AI agent, local script, or API workflow needs a durable place to save,
-update, share, or publish project output.
+Revdoku publishes static websites and SPAs from AI agents. A first public
+24-hour preview needs no account; claiming it creates the user's durable Free
+account and bucket.
 
 ## Quick Start
 
-Install the local client and Revdoku skill:
+If npm is available, install the Revdoku skill:
+
+```sh
+npx skills add revdoku/revdoku --skill revdoku -g
+```
+
+Otherwise install the local client and skill:
 
 ```sh
 curl -fsSL https://revdoku.com/install.sh | bash
 ```
 
-The installer adds the `revdoku` command and installs the Revdoku skill for
+The shell installer adds the `revdoku` command and installs the Revdoku skill for
 Codex. It also installs the skill for Claude Code, Hermes, and OpenClaw when
 their local configuration directories already exist. Set `REVDOKU_AGENT` to
 `codex`, `claude`, `hermes`, `openclaw`, `both`, or `all` to choose explicitly.
-
-Start the browser device-code flow. The Revdoku browser window lets you sign in
-or create an account before approving the connection:
-
-```sh
-~/.revdoku/bin/revdoku login
-```
 
 The examples below use `revdoku` as shorthand. If `~/.revdoku/bin` is not on
 your shell `PATH`, keep using the full `~/.revdoku/bin/revdoku` path.
@@ -33,6 +31,11 @@ Publish the current folder as a public website (the headline command):
 ```sh
 revdoku p
 ```
+
+Without credentials, this creates a randomized public preview that expires in
+24 hours and prints one web signup/claim link. Re-running updates the same URL.
+After claim, the next run exchanges the one-time connection grant itself. Use
+`revdoku login` only to sign in to a different existing account.
 
 Publish a specific folder, or save a private draft instead of going live:
 
@@ -61,7 +64,7 @@ form works):
 | `i`    | `init`    | Scaffold a starter site + agent files |
 | `st`   | `status`  | Connection and account status |
 | `down` | `unpublish` | Take this folder's site offline (keeps the URL) |
-| —      | `login`   | Sign in and save local agent credentials |
+| —      | `login`   | Sign in to a different existing account |
 
 Other (full name only): `files`, `read PATH`, `versions`, `restore ID`,
 `append PATH`, `archive`, `unarchive`, `delete`, `account`, `sites`, and

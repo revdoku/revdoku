@@ -12,6 +12,7 @@ DEVICE_CODE_GRANT_TYPE="urn:ietf:params:oauth:grant-type:device_code"
 REVDOKU_CONFIG_DIR="$(dirname "$CREDENTIALS_PATH")"
 CLIENT_VERSION_FILE="${REVDOKU_CLIENT_VERSION_FILE:-${REVDOKU_CONFIG_DIR}/client_version}"
 UPDATE_CHECK_STAMP="${REVDOKU_CONFIG_DIR}/.update_check"
+ANONYMOUS_STATE_DIR="${REVDOKU_ANONYMOUS_STATE_DIR:-${REVDOKU_CONFIG_DIR}/anonymous-previews}"
 
 installed_client_version() {
   local v="unknown"
@@ -46,6 +47,7 @@ APPEND_TEXT_PATH="${REVDOKU_APPEND_TEXT_PATH:-}"
 APPEND_TEXT_CONTENT="${REVDOKU_APPEND_TEXT_CONTENT:-}"
 APPEND_TEXT_CONTENT_FILE="${REVDOKU_APPEND_TEXT_CONTENT_FILE:-}"
 APPEND_TEXT_NEWLINE_BEFORE="${REVDOKU_APPEND_TEXT_NEWLINE_BEFORE:-true}"
+GRANT_TOKEN=""
 TAG_PATHS=()
 AGENT_NAME="${REVDOKU_AGENT_NAME:-}"
 AGENT_CLIENT="${REVDOKU_AGENT_CLIENT:-revdoku}"
@@ -74,6 +76,7 @@ DRAFT="false"
 OPEN_DASHBOARD="false"
 SHOW_PUBLISH_HINT="false"
 PREVIEW_AFTER_STORE="false"
+ANONYMOUS_MODE="false"
 # Project-local binding (.revdoku): remembers the bucket so `revdoku p` keeps
 # updating the same site. Populated from the target dir, --bucket-id overrides.
 REVDOKU_PROJECT_FILE=""
@@ -119,21 +122,23 @@ usage() {
   cat <<USAGE
 revdoku — publish a folder to the web in one command.
 
-Free plan available: publish 1 public website. Preview first, then publish when ready.
+Free plan available: publish up to 500 public websites. Preview first, then publish when ready.
 
 Usage: revdoku <command> [PATH] [options]
 
 Most-used commands (short alias, then full name — either works):
   p,    publish [PATH]   Publish a folder (default: current dir) -> live URL.
-                         Re-running updates the same site (remembered in .revdoku).
+                         Without sign-in: public 24-hour preview + claim link.
+                         Re-running updates the same site.
   ls,   list             List your sites and buckets.
   o,    open             Open this folder's live site in the browser (--dashboard for the dashboard).
   i,    init [PATH]      Scaffold a starter static/SPA site + agent instructions here.
   st,   status           Show connection and account status.
-        login            Connect in the browser and save an API key.
+        login            Sign in to an existing account in the browser.
+        grant TOKEN      Use a one-time connection token shown after web signup.
   down, unpublish        Take this folder's site offline (keeps the URL for later).
-        preview          Publish a temporary preview-<slug> copy of the current draft
-                         (auto-expires; use --expires-in-minutes N, default 15).
+        preview          Without sign-in, publish a public 24-hour preview. When
+                         signed in, preview the current private draft (default 15 min).
 
 Publish options:
   --protected          Publish as a password-protected website (alias: --private).
@@ -144,9 +149,8 @@ Publish options:
   --draft              Save a private draft instead of publishing live.
   --no-wait            Return as soon as the URL is reserved (don't wait for the build).
   --expires-in-minutes N  Preview lifetime in minutes for 'revdoku preview' (default 15,
-                       max 43200 = 30 days). Free sites use a 30-day signed-in browser
-                       dashboard keepalive; a remembered browser session counts, but
-                       CLI/API/MCP activity does not. Paid sites are permanent.
+                       max 43200 = 30 days). Signed-in Free and paid websites are
+                       permanent unless you explicitly choose a preview lifetime.
   --publish-folder DIR Publish ONLY this top-level folder as the site (its index.html
                        becomes the root); other folders stay stored but unserved.
   --title TEXT         --description TEXT     --tag-path LABEL     --metadata JSON
@@ -371,6 +375,7 @@ while [[ $# -gt 0 ]]; do
           i|init)         ACTION="init_project"; shift ;;
           st|status)      ACTION="connection_status"; shift ;;
           login)          LOGIN="true"; shift ;;
+          grant)          [[ $# -ge 2 && "$2" != -* ]] || die "grant needs the one-time token right after it"; ACTION="exchange_grant"; GRANT_TOKEN="$2"; shift 2 ;;
           down|unpublish) ACTION="unpublish_bucket"; shift ;;
           preview)        ACTION="preview_bucket"; shift ;;
           files)          ACTION="list_files"; shift ;;
@@ -1149,6 +1154,21 @@ request_agent_key() {
   request_email_agent_key
 }
 
+exchange_agent_grant() {
+  local token="$1" payload response key account_id account_name
+  [[ -n "$token" ]] || die "one-time connection token is required"
+  payload="$("$JQ_BIN" -nc --arg grant_token "$token" --arg label "${AGENT_NAME} connection" '{grant_token:$grant_token,label:$label}')"
+  response="$(http_json POST "/api/v1/agent_auth/exchange_grant" "$payload" false)" \
+    || die "connection token is invalid, expired, or already used"
+  key="$("$JQ_BIN" -r '.data.api_key // empty' <<<"$response")"
+  account_id="$("$JQ_BIN" -r '.data.account_id // empty' <<<"$response")"
+  account_name="$("$JQ_BIN" -r '.data.account_name // empty' <<<"$response")"
+  [[ -n "$key" ]] || die "connection response did not include an API key"
+  save_api_key "$key"
+  echo "Connected to Revdoku${account_name:+: $account_name}." >&2
+  [[ -n "$account_id" ]] && echo "Account: $account_id" >&2
+}
+
 # `init` scaffolds locally and `open` via a saved binding both work offline —
 # run them before the auth gate so they never force a login.
 if [[ "$ACTION" == "init_project" ]]; then
@@ -1160,18 +1180,26 @@ if [[ "$ACTION" == "open_site" && "$OPEN_DASHBOARD" != "true" && -n "$BOUND_URL"
   exit 0
 fi
 
+if [[ "$ACTION" == "exchange_grant" ]]; then
+  exchange_agent_grant "$GRANT_TOKEN"
+  echo "Connection complete. You can return to your AI agent." >&2
+  exit 0
+fi
+
 # Bare `revdoku` with no saved credentials: show a friendly hint instead of
 # forcing the interactive login flow.
 if [[ "$ACTION" == "connection_status" && "$SHOW_PUBLISH_HINT" == "true" && -z "$API_KEY" ]]; then
   echo "Revdoku CLI — not signed in yet." >&2
   echo "  Sign in:   revdoku login" >&2
   echo "  Preview:   revdoku preview .  (recommended before publishing)" >&2
-  echo "  Publish:   revdoku p          (Free includes 1 public website)" >&2
+  echo "  Publish:   revdoku p          (Free includes up to 500 public websites)" >&2
   echo "  Commands:  revdoku --help" >&2
   exit 0
 fi
 
-if [[ "$LOGIN" == "true" || -z "$API_KEY" ]]; then
+if [[ -z "$API_KEY" && "$LOGIN" != "true" && -z "$BUCKET_ID" && "$DRAFT" != "true" && ( "$ACTION" == "preview_bucket" || ( "$ACTION" == "store" && "$PUBLISH" == "true" ) ) && ( -z "$PUBLICATION_ACCESS_MODE" || "$PUBLICATION_ACCESS_MODE" == "public" ) ]]; then
+  ANONYMOUS_MODE="true"
+elif [[ "$LOGIN" == "true" || -z "$API_KEY" ]]; then
   request_agent_key
 fi
 
@@ -1182,7 +1210,9 @@ if [[ "$LOGIN" == "true" && "$ACTION" == "store" && "$PATH_EXPLICIT" == "false" 
   exit 0
 fi
 
-[[ -n "$API_KEY" ]] || die "REVDOKU_API_KEY is required"
+if [[ "$ANONYMOUS_MODE" != "true" ]]; then
+  [[ -n "$API_KEY" ]] || die "REVDOKU_API_KEY is required"
+fi
 case "$UPLOAD_MODE" in
   auto|direct) ;;
   *) die "--upload-mode must be auto or direct" ;;
@@ -1358,7 +1388,7 @@ preview_bucket() {
           publication: $p,
           public_url: $p.public_url,
           expires_at: $p.expires_at,
-          guidance: "Temporary preview is live and auto-expires. The Free plan supports one public website, and paid settings work here for evaluation. Publish for real with: revdoku p"
+          guidance: "Temporary preview is live and auto-expires. The Free plan supports up to 500 public websites, and paid settings work here for evaluation. Publish for real with: revdoku p"
         }
       }' <<<"$response"
 }
@@ -2137,7 +2167,7 @@ print_publication_upgrade_guidance() {
       access_flag=" --access-mode require_email"
       ;;
   esac
-  echo "This permanent website uses paid publishing settings. No trial was started." >&2
+  echo "This permanent website uses paid publishing settings. Upgrade the account, then try again." >&2
   if [[ -n "$bucket_id" ]]; then
     echo "Preview it with the same access settings: revdoku preview --bucket-id $bucket_id$access_flag" >&2
   else
@@ -2683,8 +2713,246 @@ should_skip_storage_path() {
   return 1
 }
 
+anonymous_state_file() {
+  local key
+  key="$(printf '%s' "${BASE_URL}|${ROOT_PATH}" | openssl dgst -sha256 -hex | awk '{print $2}')"
+  [[ -n "$key" ]] || die "could not identify this project for anonymous preview state"
+  printf '%s/%s.json' "$ANONYMOUS_STATE_DIR" "$key"
+}
+
+anonymous_relative_path_for() {
+  local file="$1"
+  if [[ -f "$ROOT_PATH" ]]; then
+    basename "$file"
+  else
+    printf '%s' "${file#"$ROOT_PATH"/}"
+  fi
+}
+
+save_anonymous_state() {
+  local response="$1" state_file state_tmp idempotency_key
+  state_file="$(anonymous_state_file)"
+  idempotency_key=""
+  if [[ -f "$state_file" ]]; then
+    idempotency_key="$("$JQ_BIN" -r '.idempotency_key // empty' "$state_file" 2>/dev/null || true)"
+  fi
+  mkdir -p "$ANONYMOUS_STATE_DIR"
+  chmod 700 "$ANONYMOUS_STATE_DIR" 2>/dev/null || true
+  state_tmp="${state_file}.tmp.$$"
+  "$JQ_BIN" -c --arg base_url "$BASE_URL" --arg root_path "$ROOT_PATH" --arg idempotency_key "$idempotency_key" '
+    .data
+    | {
+        base_url: $base_url,
+        root_path: $root_path,
+        idempotency_key: $idempotency_key,
+        preview_id,
+        update_token,
+        public_url,
+        expires_at
+      }
+  ' <<<"$response" > "$state_tmp"
+  chmod 600 "$state_tmp" 2>/dev/null || true
+  mv "$state_tmp" "$state_file"
+}
+
+anonymous_idempotency_key() {
+  local state_file state_tmp key
+  state_file="$(anonymous_state_file)"
+  if [[ -f "$state_file" ]]; then
+    key="$("$JQ_BIN" -r '.idempotency_key // empty' "$state_file" 2>/dev/null || true)"
+    if [[ ${#key} -ge 20 ]]; then
+      printf '%s' "$key"
+      return 0
+    fi
+  fi
+
+  key="anon-$(openssl rand -hex 24)"
+  mkdir -p "$ANONYMOUS_STATE_DIR"
+  chmod 700 "$ANONYMOUS_STATE_DIR" 2>/dev/null || true
+  state_tmp="${state_file}.tmp.$$"
+  "$JQ_BIN" -cn --arg base_url "$BASE_URL" --arg root_path "$ROOT_PATH" --arg idempotency_key "$key" \
+    '{base_url: $base_url, root_path: $root_path, idempotency_key: $idempotency_key}' > "$state_tmp"
+  chmod 600 "$state_tmp" 2>/dev/null || true
+  mv "$state_tmp" "$state_file"
+  printf '%s' "$key"
+}
+
+clear_anonymous_state() {
+  local state_file
+  state_file="$(anonymous_state_file)"
+  [[ ! -f "$state_file" ]] || rm -f "$state_file"
+}
+
+anonymous_status_request() {
+  local preview_id="$1" update_token="$2" body_file status agent_args=()
+  body_file="$(mktemp)"
+  while IFS= read -r -d '' value; do
+    agent_args+=("$value")
+  done < <(agent_header_args)
+
+  status="$(curl -sS --max-time 30 -o "$body_file" -w '%{http_code}' \
+    "$(api_url "/api/v1/quick_publish/${preview_id}")" \
+    "${agent_args[@]}" \
+    -H "Accept: application/json" \
+    -H "X-Revdoku-Preview-Token: ${update_token}" || true)"
+  if http_status_success "$status" && "$JQ_BIN" -e . "$body_file" >/dev/null 2>&1; then
+    cat "$body_file"
+    rm -f "$body_file"
+    return 0
+  fi
+  rm -f "$body_file"
+  return 1
+}
+
+anonymous_multipart_request() {
+  local method="$1" endpoint="$2" update_token="$3" file_list="$4"
+  local body_file status title idempotency_key file rel count=0 total=0 size agent_args=() form_args=()
+  body_file="$(mktemp)"
+  title="$TITLE"
+  [[ -n "$title" ]] || title="$(default_title)"
+  idempotency_key="$(anonymous_idempotency_key)"
+
+  while IFS= read -r -d '' file; do
+    count=$((count + 1))
+    size="$(file_size "$file")"
+    total=$((total + size))
+    (( count <= 200 )) || die "anonymous previews support up to 200 files"
+    (( size <= 26214400 )) || die "$(anonymous_relative_path_for "$file") is larger than the 25 MB anonymous file limit"
+    (( total <= 26214400 )) || die "anonymous previews are limited to 25 MB total"
+    rel="$(anonymous_relative_path_for "$file")"
+    form_args+=(--form "files[]=@${file}" --form-string "paths[]=${rel}")
+  done < "$file_list"
+  (( count > 0 )) || die "no files found to publish after safety exclusions"
+
+  while IFS= read -r -d '' value; do
+    agent_args+=("$value")
+  done < <(agent_header_args)
+
+  local curl_args=(-sS --max-time 300 -o "$body_file" -w "%{http_code}" -X "$method" "$(api_url "$endpoint")" "${agent_args[@]}" -H "Accept: application/json")
+  [[ -z "$update_token" ]] || curl_args+=(-H "X-Revdoku-Preview-Token: ${update_token}")
+  curl_args+=(--form-string "title=${title}" --form-string "source=cli" "${form_args[@]}")
+  if [[ "$method" == "POST" ]]; then
+    curl_args+=(-H "Idempotency-Key: ${idempotency_key}")
+  fi
+
+  if ! status="$(curl "${curl_args[@]}")"; then
+    rm -f "$body_file"
+    die "network error while publishing the anonymous preview"
+  fi
+  if ! http_status_success "$status"; then
+    local message code
+    message="$("$JQ_BIN" -r '.error.message // .message // empty' "$body_file" 2>/dev/null || true)"
+    code="$("$JQ_BIN" -r '.error.code // empty' "$body_file" 2>/dev/null || true)"
+    rm -f "$body_file"
+    [[ -n "$message" ]] || message="HTTP $status"
+    [[ -n "$code" ]] && message="${message} (${code})"
+    die "$message"
+  fi
+  "$JQ_BIN" -e . "$body_file" >/dev/null 2>&1 || {
+    rm -f "$body_file"
+    die "Revdoku returned an invalid preview response"
+  }
+  cat "$body_file"
+  rm -f "$body_file"
+}
+
+wait_for_anonymous_preview() {
+  local response="$1" preview_id update_token status attempt
+  preview_id="$("$JQ_BIN" -r '.data.preview_id // empty' <<<"$response")"
+  update_token="$("$JQ_BIN" -r '.data.update_token // empty' <<<"$response")"
+  status="$("$JQ_BIN" -r '.data.status // empty' <<<"$response")"
+  attempt=0
+  while [[ "$status" == "pending" || "$status" == "processing" ]] && (( attempt < 30 )); do
+    attempt=$((attempt + 1))
+    sleep 2
+    response="$(anonymous_status_request "$preview_id" "$update_token")" || break
+    status="$("$JQ_BIN" -r '.data.status // empty' <<<"$response")"
+  done
+  printf '%s' "$response"
+}
+
+print_anonymous_preview_result() {
+  local response="$1" url claim_url expires_at status
+  url="$("$JQ_BIN" -r '.data.public_url // empty' <<<"$response")"
+  claim_url="$("$JQ_BIN" -r '.data.claim_url // empty' <<<"$response")"
+  expires_at="$("$JQ_BIN" -r '.data.expires_at // empty' <<<"$response")"
+  status="$("$JQ_BIN" -r '.data.status // empty' <<<"$response")"
+  [[ "$status" != "failed" ]] || die "anonymous preview publishing failed"
+  [[ -n "$url" ]] || die "preview response did not include a public URL"
+
+  echo "Published 24-hour preview: $url" >&2
+  [[ -z "$expires_at" ]] || echo "Expires: $expires_at" >&2
+  if [[ -n "$claim_url" ]]; then
+    echo "Keep this website: $claim_url" >&2
+    echo "Open that link to create your Revdoku account. After signup, rerun this command; the agent reconnects automatically." >&2
+  fi
+  print_terminal_link_hint
+  printf '%s\n' "$url"
+}
+
+# Returns 2 after a claimed preview is exchanged for account credentials so the
+# caller can continue through the normal signed-in publish path.
+anonymous_publish_or_resume() {
+  local state_file preview_id update_token pending_key status_response claimed grant bucket_id url file_list response
+  state_file="$(anonymous_state_file)"
+  if [[ -f "$state_file" ]]; then
+    preview_id="$("$JQ_BIN" -r '.preview_id // empty' "$state_file" 2>/dev/null || true)"
+    update_token="$("$JQ_BIN" -r '.update_token // empty' "$state_file" 2>/dev/null || true)"
+    pending_key="$("$JQ_BIN" -r '.idempotency_key // empty' "$state_file" 2>/dev/null || true)"
+    if [[ -n "$preview_id" && -n "$update_token" ]]; then
+      if ! status_response="$(anonymous_status_request "$preview_id" "$update_token")"; then
+        die "could not check the existing anonymous preview; retry when the connection is available"
+      fi
+      claimed="$("$JQ_BIN" -r '.data.claimed // false' <<<"$status_response")"
+      if [[ "$claimed" == "true" ]]; then
+        grant="$("$JQ_BIN" -r '.data.agent_connection.one_time_token // empty' <<<"$status_response")"
+        bucket_id="$("$JQ_BIN" -r '.data.bucket_id // empty' <<<"$status_response")"
+        url="$("$JQ_BIN" -r '.data.public_url // empty' <<<"$status_response")"
+        [[ -n "$grant" ]] || die "website was claimed, but its one-time agent connection is unavailable; run 'revdoku login'"
+        exchange_agent_grant "$grant"
+        BUCKET_ID="$bucket_id"
+        [[ -n "$BUCKET_ID" ]] || die "claimed preview response did not include its bucket"
+        write_project_binding "$BUCKET_ID" "$url"
+        clear_anonymous_state
+        ANONYMOUS_MODE="false"
+        return 2
+      fi
+      if [[ "$("$JQ_BIN" -r '.data.status // empty' <<<"$status_response")" != "expired" ]]; then
+        file_list="$(mktemp)"
+        collect_files > "$file_list"
+        response="$(anonymous_multipart_request PATCH "/api/v1/quick_publish/${preview_id}" "$update_token" "$file_list")"
+        rm -f "$file_list"
+        response="$(wait_for_anonymous_preview "$response")"
+        save_anonymous_state "$response"
+        print_anonymous_preview_result "$response"
+        return 0
+      fi
+      clear_anonymous_state
+    elif [[ -z "$pending_key" ]]; then
+      clear_anonymous_state
+    fi
+  fi
+
+  file_list="$(mktemp)"
+  collect_files > "$file_list"
+  response="$(anonymous_multipart_request POST "/api/v1/quick_publish" "" "$file_list")"
+  rm -f "$file_list"
+  response="$(wait_for_anonymous_preview "$response")"
+  save_anonymous_state "$response"
+  print_anonymous_preview_result "$response"
+}
+
 publish_url_file=""
 bucket_id_file=""
+
+if [[ "$ANONYMOUS_MODE" == "true" ]]; then
+  if anonymous_publish_or_resume; then
+    exit 0
+  else
+    anonymous_result=$?
+  fi
+  [[ "$anonymous_result" == "2" ]] || exit "$anonymous_result"
+fi
 
 if [[ "$PUBLISH" == "true" ]]; then
   if ! has_index_file; then

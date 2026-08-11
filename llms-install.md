@@ -1,257 +1,109 @@
-# Revdoku LLM Install
+# Revdoku agent setup
 
-Use these instructions when an AI tool, coding agent, or MCP client needs to
-connect to Revdoku and publish generated website or SPA files.
+Use the shortest working path. Do not make the user configure a connector,
+create an account, or open a second terminal before seeing a website.
 
-- Revdoku app: <https://app.revdoku.com>
-- Direct signup fallback: <https://app.revdoku.com/users/sign_up?utm_source=github.com&utm_medium=public-docs&utm_campaign=connect_ai_first>
-- Remote MCP server: `https://app.revdoku.com/mcp`
-- Public setup hub: <https://revdoku.com/connect/>
-
-## Choose a setup path
-
-| Situation | Use this path |
-| --- | --- |
-| Local coding agent has shell access | [Local CLI setup](#local-cli-setup) — the agent installs and signs in itself |
-| User is in a hosted chat such as ChatGPT or Claude web | [Hosted MCP setup](#hosted-mcp-setup) |
-| Tool supports remote MCP over Streamable HTTP with OAuth | [Hosted MCP setup](#hosted-mcp-setup) |
-| Tool must publish files from a local folder, SSH session, Docker container, WSL2, or VM | [Local CLI setup](#local-cli-setup) |
-| User asks for a specific tool | [Client-specific notes](#client-specific-notes) |
-| Connection is done and user wants to verify publishing | [Test prompt](#test-prompt) |
-
-## Rules for agents
-
-- Do not ask the user for a Revdoku password, TOTP code, backup code, API key,
-  protected-site password, payment details, or full chat history.
-- Prefer Revdoku OAuth when the tool supports hosted remote MCP.
-- Use the local Revdoku CLI when the task needs files from the user's computer,
-  local project, SSH session, Docker container, WSL2 environment, or VM.
-- When shell access is available, run the installer and login from the current
-  agent session. Do not tell the user to open a second terminal or type commands
-  the agent can run.
-- Keep normal setup replies to two short sentences and one tutorial link at
-  most. Put commands and troubleshooting in this guide, not in chat.
-- Only publish when the user explicitly asks for a public or protected website
-  link. Writing files to a Revdoku bucket is a private draft until published.
-- Never put protected-site passwords in URL parameters.
-
-## Best setup path
-
-1. Check whether Revdoku already works. If it does, continue without discussing
-   setup.
-2. In a local agent with shell access, use the CLI flow below and keep the
-   original session running while the user approves the browser page.
-3. In a hosted chat, give one action and the matching tutorial link. Do not paste
-   settings paths, server URLs, or a numbered tutorial into the response unless
-   the user asks for manual instructions.
-4. Never claim that a pasted prompt installed a hosted connector. The user still
-   controls app connections in the hosted AI client's interface.
-
-This path works for Cline, Claude Desktop, terminal agents, Gemini, Hermes,
-OpenClaw, Cursor, and generic AI tools that can follow pasted instructions.
-
-## Hosted MCP setup
-
-Use this when the AI tool supports remote MCP over Streamable HTTP with OAuth.
+## Public prompt
 
 ```text
-Name: Revdoku
-URL: https://app.revdoku.com/mcp
-Transport: streamable-http
-Authentication: OAuth
+I'd like you to set up Revdoku: the website publishing service for AI agents.
+
+Install as a skill if I have npm: npx skills add revdoku/revdoku --skill revdoku -g
+
+If not, do this instead: curl -fsSL https://revdoku.com/install.sh | bash
+
+After installing, review the docs at https://revdoku.com/docs and ask me what I'd like to publish
 ```
 
-The Revdoku browser window lets the user sign in or create an account and then
-approve the connection. No API key or verification code needs to be copied into
-chat.
+## Agent rules
 
-## Local CLI setup
+- If you have shell access, run the install and publish commands yourself.
+- Never tell the user to open a separate terminal for commands you can run.
+- Never ask for a Revdoku password, email OTP, TOTP/backup code, API key,
+  connection token, protected-site password, or payment details in chat.
+- Do not ask the user to send `continue` after a browser step. Resume by
+  checking status yourself.
+- Account creation is web-only at `https://app.revdoku.com/users/sign_up`.
+- Revdoku OAuth and agent email-code flows are sign-in-only. They never create
+  an account.
+- Publish only when the user asks for a public or protected link. A signed-in
+  `--draft` upload remains private.
 
-Use this when the AI tool has shell access, needs local files, or cannot use a
-hosted connector. The agent should run these commands itself:
+## Local agent with shell access
+
+Prefer npm when it is available:
+
+```sh
+npx skills add revdoku/revdoku --skill revdoku -g
+```
+
+Otherwise:
 
 ```sh
 curl -fsSL https://revdoku.com/install.sh | bash
-~/.revdoku/bin/revdoku login
 ```
 
-Use `~/.revdoku/bin/revdoku` directly unless that directory is already on
-`PATH`.
-
-While `revdoku login` waits, tell the user only: "I opened Revdoku in your
-browser. Approve the connection there and I'll continue here." After approval,
-run `~/.revdoku/bin/revdoku status` and resume the original task automatically.
-Do not ask the user to send `continue` or open another terminal.
-
-If the agent is not allowed to run shell commands, link to
-<https://revdoku.com/local-install/> instead of reproducing the commands in chat.
-
-Publish the current folder:
+Then ask what the user wants to publish and run:
 
 ```sh
-revdoku p
+revdoku p <folder>
 ```
 
-Publish a specific build folder:
+Without credentials, this creates a randomized public 24-hour preview and
+prints a browser claim link. It does not create an account or private bucket.
+Re-running updates the same preview without extending expiry.
 
-```sh
-revdoku p ./dist
-```
+After the user claims the website, run the same publish command again. The CLI
+checks claim status, exchanges the one-time grant itself, saves the resulting
+agent credential, and updates the claimed website. Do not ask the user to copy
+the grant into chat.
 
-Publish with a generated protected-site password:
+Use `revdoku login` only when connecting a different existing account. The
+browser OAuth flow is sign-in-only.
 
-```sh
-revdoku p --protected --generate-password
-```
+## Hosted MCP agent
 
-Publish with visitor email verification and no shared password:
+Endpoint: `https://app.revdoku.com/mcp`
 
-```sh
-revdoku p --access-mode require_email
-```
+Before authentication, use:
 
-## Client-specific notes
+- `website_preview_create`
+- `website_preview_update`
+- `website_preview_status`
 
-### Cline and generic VS Code agents
+These tools create only a public 24-hour preview. Share the returned
+`public_url` and `claim_url`. After claim, call status again. The MCP response
+then asks the host to start OAuth when an account tool is called. Revdoku's
+OAuth screen signs an existing account in; it does not offer signup.
 
-Use **Copy Instructions for AI** first. If the agent can run shell commands, it
-should install the local CLI, complete browser sign-in, and use
-`revdoku p <dir>` without asking the user to type those commands.
+If the host does not support MCP or the agent needs local/binary files, use the
+local CLI. A hosted agent cannot read the user's computer.
 
-### Claude.ai web
+## Limits that affect agent choices
 
-Add a custom connector named `Revdoku` with URL
-`https://app.revdoku.com/mcp`, then sign in with Revdoku.
+- Anonymous: 25 MB total, 25 MB per file, 200 files, public only, 24 hours.
+- Free: 10 GB total, 100 MB normal files, 0.5 MB PDFs, 10 versions per file,
+  3 form submissions/day, randomized URL, noindex by default.
+- Anonymous and Free users cannot choose or rename the Revdoku URL.
+- Password, Require Email, and custom Revdoku URLs require an eligible paid
+  plan for the permanent main website.
+- No tier injects a Revdoku footer or badge into the published site.
 
-Step-by-step tutorial: <https://revdoku.com/claude/>
+## Troubleshooting tutorials
 
-### Claude Desktop and terminal Claude
+Link one tutorial only when the simple flow is unavailable or the user asks:
 
-Use **Copy Instructions for AI** from the Revdoku app. For local files, install
-the local CLI.
+- Setup hub: <https://revdoku.com/connect/>
+- ChatGPT: <https://revdoku.com/chatgpt/>
+- Codex: <https://revdoku.com/codex/>
+- Claude: <https://revdoku.com/claude/>
+- Claude Desktop/terminal: <https://revdoku.com/claude-desktop-terminal/>
+- Gemini: <https://revdoku.com/gemini/>
+- Hermes: <https://revdoku.com/hermes/>
 
-Step-by-step tutorial: <https://revdoku.com/claude-desktop-terminal/>
-
-### Claude Code
-
-Paste the Revdoku connection prompt into Claude Code. Claude should install or
-use the local CLI itself, open browser sign-in, wait for approval, and continue
-in the same session.
-
-The hosted plugin is an optional persistent connection for users who explicitly
-prefer it:
-
-```sh
-/plugin marketplace add revdoku/revdoku
-/plugin install revdoku@revdoku
-/reload-plugins
-/mcp
-```
-
-Reload plugins (or start a new Claude Code session) before opening `/mcp`, so
-the newly installed Revdoku server is available for authentication.
-
-The plugin may require a reload before its tools appear; the local CLI does not
-require restarting the current Claude Code session.
-
-### ChatGPT web
-
-Connect Revdoku from ChatGPT's Apps directory when it is listed. Otherwise,
-eligible workspace admins/developers can create a custom app from **Settings /
-Workspace settings → Apps → Create** with server URL
-`https://app.revdoku.com/mcp`, choose OAuth, and sign in with Revdoku. Full MCP
-write actions depend on plan, role, workspace policy, and web-surface support.
-If unavailable, use Revdoku's dashboard or a supported local/Claude client.
-
-Step-by-step tutorial: <https://revdoku.com/chatgpt/>
-
-### Codex in ChatGPT desktop, web, and cloud
-
-For Codex in the ChatGPT desktop app, add a Revdoku server under **Settings →
-MCP servers** with Streamable HTTP transport and URL
-`https://app.revdoku.com/mcp`, then authenticate with Revdoku. The Codex CLI
-and IDE extension share that local MCP configuration.
-
-Codex web and cloud chats do not read a local Codex MCP configuration. Use
-Revdoku there only when its plugin is available and enabled for the ChatGPT
-workspace.
-
-Step-by-step tutorial: <https://revdoku.com/codex/>
-
-### Codex CLI
-
-Paste the Revdoku connection prompt into Codex. Codex should install or use the
-local Revdoku CLI itself and keep the login command running while the user
-approves the browser page. Do not require `codex mcp add` for the current task:
-a newly added MCP server may need a restart, while the Revdoku CLI works in the
-existing session.
-
-### Google Gemini
-
-Use **Copy Instructions for AI** from the Revdoku app, or configure Gemini CLI:
-
-```sh
-gemini mcp add --transport http --scope user revdoku https://app.revdoku.com/mcp
-```
-
-In Gemini CLI, run `/mcp auth revdoku` if OAuth does not start automatically.
-The equivalent settings file entry is:
-
-```json
-{
-  "mcpServers": {
-    "revdoku": {
-      "httpUrl": "https://app.revdoku.com/mcp"
-    }
-  }
-}
-```
-
-Restart Gemini CLI after editing the settings file.
-
-Step-by-step tutorial: <https://revdoku.com/gemini/>
-
-### Hermes Agent
-
-For local or VM workflows, install the local CLI in the same environment where
-Hermes runs. To add the hosted Streamable HTTP MCP server with OAuth:
-
-```sh
-hermes mcp add revdoku --url https://app.revdoku.com/mcp --auth oauth
-hermes mcp login revdoku
-```
-
-Step-by-step tutorial: <https://revdoku.com/hermes/>
-
-### OpenClaw
-
-```sh
-openclaw mcp set revdoku '{"url":"https://app.revdoku.com/mcp","transport":"streamable-http","auth":"oauth"}'
-openclaw mcp login revdoku
-```
-
-You can also use **Copy Instructions for AI** from the Revdoku app.
-
-Step-by-step tutorial: <https://revdoku.com/openclaw/>
-
-## Publishing notes
-
-- A Revdoku bucket is the file container.
-- A publication makes the bucket live as a website.
-- `index.html` is the default website root.
-- If a bucket has no `index.html`, Revdoku can publish an auto-index page.
-- Re-running `revdoku p` updates the same site when the local `.revdoku` file is
-  present.
-- Hosted cloud MCP connectors cannot read local files. Use the CLI for local
-  folders, images, fonts, PDFs, JavaScript bundles, or other binary assets.
-- MCP text-file tools are for generated text files, not bulk binary upload.
-
-## Test prompt
-
-After Revdoku is connected, ask:
+## Verification prompt
 
 ```text
-Create a one-page project status website, save the files in Revdoku, publish it,
-and give me the public URL. If I ask for changes later, update the same Revdoku
-bucket and republish the same URL.
+Create a one-page project status website, publish it with Revdoku, and give me
+the URL. If I ask for changes, update the same URL.
 ```

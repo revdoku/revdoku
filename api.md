@@ -7,11 +7,10 @@ Most AI-agent users should start with the Revdoku app's copied prompt or the
 Revdoku MCP tool. Use this HTTP API for custom clients, CI jobs, backend workers,
 or direct integrations.
 
-For hosted MCP, start the connector first: Revdoku OAuth lets an existing user
-sign in and a new user create an account in the same browser flow. Starting
-without an AI connector? Use the dashboard signup:
-<https://app.revdoku.com/users/sign_up?utm_source=revdoku.com&utm_medium=public-api&utm_campaign=connect_ai_first>.
-Raw agent and REST endpoints do not create accounts.
+Hosted MCP can create an anonymous public preview before OAuth. Revdoku OAuth
+signs in an existing user only; it never creates an account. New users claim a
+preview or sign up at <https://app.revdoku.com/users/sign_up>. Raw agent, MCP,
+and REST endpoints never create users.
 
 Hosted MCP and CLI device login use revocable agent connections. Reusable API
 keys are for custom clients and automation when that capability is available to
@@ -22,9 +21,12 @@ connection and its refresh credentials.
 
 ## Free plan and preview-first publishing
 
-A permanent Free plan is available with one public website. Free sites use a
-Revdoku URL and branding; Password and Require Email are paid features for the
-main website, but can be evaluated in a temporary preview.
+A permanent Free plan includes 10 GB storage and up to 500 public websites.
+Free websites use randomized Revdoku URLs and are noindex by default. Normal
+files can be up to 100 MB; PDFs are limited to 0.5 MB. No plan injects a
+Revdoku footer or badge. Password, Require Email, and custom Revdoku URLs are
+paid features for the main website, but can be evaluated in a temporary
+signed-in preview.
 
 For a new or materially changed website, use the preview endpoint first unless
 the user has already reviewed it or explicitly asks to publish immediately:
@@ -44,15 +46,38 @@ explicit request.
 For a selected-bucket credential with no visible bucket, the state is
 `no_visible_buckets`: ask the owner to grant a bucket or reconnect with
 whole-account access instead of suggesting bucket creation.
-Keeping a Free site active requires opening the Revdoku dashboard in a signed-in
-browser at least once every 30 days. A remembered session in that browser
-counts; CLI, API, and MCP traffic does not renew the site.
+Free websites are permanent unless the owner explicitly gives them an expiry.
 
 New accounts start directly on Free; requesting a paid publishing feature does
 not start a trial. If a permanent Password or Require Email publish returns
 `PUBLICATION_UPGRADE_REQUIRED`, keep the requested access private, use the
 preview endpoint with that access mode, and retry the permanent publish only
 after the user upgrades. Never silently fall back to Public.
+
+## Anonymous 24-hour website preview
+
+`POST /api/v1/quick_publish` accepts multipart `files[]` and matching
+site-relative `paths[]`. It creates a public randomized website without a User,
+login, or private bucket. Anonymous previews are limited to 25 MB total,
+25 MB/file, and 200 files. Forms, analytics, private storage, custom domains,
+and chosen slugs are unavailable.
+
+The response includes `preview_id`, `update_token`, `public_url`, `expires_at`,
+and `claim_url`. Keep `update_token` secret. Read status with
+`GET /api/v1/quick_publish/:preview_id` and update all files with
+`PATCH /api/v1/quick_publish/:preview_id`, sending the capability only in:
+
+```http
+X-Revdoku-Preview-Token: qpu_...
+```
+
+An update replaces the preview's file set and never extends the original
+24-hour expiry. Account creation happens only at the returned
+`/users/sign_up?claimcode=...` browser URL. After a successful claim, status
+returns a short-lived, single-use agent connection grant to the same capable
+agent. Local clients exchange it through
+`POST /api/v1/agent_auth/exchange_grant`; do not ask the user to copy it into
+chat.
 
 ## Quick Start
 
@@ -488,15 +513,12 @@ settings such as `password` or `require_email` are available in the temporary pr
 on Free; publishing those settings on the main website returns
 `PUBLICATION_UPGRADE_REQUIRED` with preview, upgrade, and Public-on-Free choices.
 
-**Website slug.** Pass `"slug_suggestions": ["California Weather", "cali weather",
-"weather-california"]` to steer the public URL slug. Revdoku sanitizes
-each name to a slug and uses the first available one; if all are taken it appends
-a numeric suffix (`california-weather-1`). When no suggestion is given the slug
-defaults to the **bucket's name**; a random slug is used only if that's unusable.
-Slug selection applies when first creating a publication; the slug can be renamed
-later (`PATCH .../custom_domains/public_slug`). Slugs must be at least 9 characters;
-some words are reserved (the list is not published) — a reserved slug is simply
-rejected, so on rejection pick a different one.
+**Website slug.** Anonymous and Free publications always receive a randomized
+`<word>-<word>-<4 digits>.revdoku.site` URL. Do not ask those users for a link
+name and do not send `slug_suggestions`. On an eligible paid plan,
+`slug_suggestions` can steer the first URL and
+`PATCH .../custom_domains/public_slug` can rename it. Slugs must be at least 9
+characters and cannot use reserved words.
 
 Publishing is **asynchronous**. The request returns HTTP `202 Accepted` with the
 publication in a `queued`/`processing` state — the bundle is built in the
@@ -861,10 +883,10 @@ This endpoint returns the same success shape for every syntactically valid email
 It does not reveal whether the email has a Revdoku account, whether the account is
 locked, or whether two-factor authentication is enabled. If the email can receive
 Revdoku sign-in codes, a code is sent; otherwise the response still directs the
-user to browser sign-in/signup. If no code arrives or verification fails, use
+user to browser sign-in. If no code arrives or verification fails, use
 browser device sign-in or ask the user to sign in to Revdoku in the browser. The
-response body includes `fallback_url`, `signup_url`, and a `hint` describing this
-recovery. Do not ask for a Revdoku password, TOTP, backup code,
+response body includes `fallback_url` and a `hint` describing this recovery. Do
+not ask for a Revdoku password, TOTP, backup code,
 payment details, or full chat history.
 
 This endpoint never creates accounts. New users must sign up through the web UI at
@@ -887,7 +909,7 @@ valid for an account that can use email-code agent sign-in. The account's defaul
 account is set up on the first successful verification if needed. `INVALID_CODE` is
 privacy-preserving and can also mean the account is locked or uses two-factor
 authentication (which email-code sign-in cannot complete). Its `error.details`
-carries `fallback_url`, `signup_url`, and a `hint`, so on `INVALID_CODE` fall back
+carries `fallback_url` and a `hint`, so on `INVALID_CODE` fall back
 to browser device sign-in rather than repeatedly retrying codes.
 
 ```json

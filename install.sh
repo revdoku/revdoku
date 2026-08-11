@@ -236,8 +236,9 @@ main() {
   install_user_command
   write_client_version
   echo ""
-  echo "Store files with the ${SKILL_NAME} skill, or run ${USER_BIN_DIR}/revdoku directly."
-  echo "Next: ${USER_BIN_DIR}/revdoku login    then: ${USER_BIN_DIR}/revdoku p <folder>  (publish it live)"
+  echo "Revdoku is ready. Ask your agent what to publish, or run:"
+  echo "  ${USER_BIN_DIR}/revdoku p <folder>"
+  echo "The first public preview needs no account or login."
 }
 
 main "$@"

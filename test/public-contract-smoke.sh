@@ -57,17 +57,19 @@ bash -n "$CLI_FILE"
 
 require_text "$CLI_FILE" "--site-mode MODE"
 require_text "$CLI_FILE" "PUBLICATION_UPGRADE_REQUIRED"
-require_text "$CLI_FILE" "No trial was started."
+require_text "$CLI_FILE" "Upgrade the account, then try again."
 require_text "$README_FILE" "hosted MCP implementation"
 require_text "$README_FILE" "[CHANGELOG.md](./CHANGELOG.md)"
+require_text "$README_FILE" "npx skills add revdoku/revdoku --skill revdoku -g"
 require_text "$README_FILE" "app.revdoku.com/users/sign_up"
-require_text "$README_FILE" "Codex web and cloud chats do not read"
 require_text "$README_FILE" '"auth":"oauth"'
+require_text "$LLMS_INSTALL_FILE" "npx skills add revdoku/revdoku --skill revdoku -g"
 require_text "$LLMS_INSTALL_FILE" "app.revdoku.com/users/sign_up"
-require_text "$LLMS_INSTALL_FILE" "Workspace settings → Apps → Create"
-require_text "$LLMS_INSTALL_FILE" "Codex web and cloud chats do not read"
-require_text "$LLMS_INSTALL_FILE" "~/.revdoku/bin/revdoku login"
+require_text "$LLMS_INSTALL_FILE" "website_preview_create"
+require_text "$LLMS_INSTALL_FILE" "OAuth and agent email-code flows are sign-in-only"
 require_text "$CLI_FILE" "--login)"
+require_text "$CLI_FILE" "grant TOKEN"
+require_text "$CLI_FILE" "Without sign-in: public 24-hour preview + claim link."
 require_text "$API_FILE" "never ask the user to paste or repeat the verification code in"
 require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
 require_text "$API_FILE" '`PATCH` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
@@ -82,11 +84,11 @@ require_text "$SKILL_FILE" '`bucket_env_get`'
 require_text "$SKILL_FILE" '`bucket_lock_files`'
 require_text "$SKILL_FILE" '`bucket_delete_permanently`'
 require_text "$SKILL_FILE" '`github_sync_setup`'
-require_text "$SKILL_FILE" 'Public, Password, and Require Email'
+require_text "$SKILL_FILE" 'Password, and Require Email'
 require_text "$API_FILE" '`github_sync_setup`'
-require_text "$API_FILE" 'A permanent Free plan is available with one public website.'
-require_text "$SKILL_FILE" 'A permanent Free plan is available with one public website'
-require_text "$SKILL_FILE" 'No trial is started.'
+require_text "$API_FILE" 'A permanent Free plan includes 10 GB storage and up to 500 public websites.'
+require_text "$SKILL_FILE" 'PDFs up to 0.5 MB'
+reject_text "$SKILL_FILE" 'No trial is started.'
 require_text "$SKILL_FILE" 'Never silently publish protected content as'
 
 for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
@@ -100,6 +102,7 @@ for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
   reject_text "$file" "available on Starter"
   reject_text "$file" "available on Builder"
   reject_text "$file" "paid plans"
+  reject_text "$file" "sign in or create an account"
 done
 
 require_text "$API_FILE" 'Supported ranges are `all`'
