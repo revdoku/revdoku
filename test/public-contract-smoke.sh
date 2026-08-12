@@ -67,6 +67,7 @@ require_text "$LLMS_INSTALL_FILE" "npx skills add revdoku/revdoku --skill revdok
 require_text "$LLMS_INSTALL_FILE" "app.revdoku.com/users/sign_up"
 require_text "$LLMS_INSTALL_FILE" "website_preview_create"
 require_text "$LLMS_INSTALL_FILE" "OAuth and agent email-code flows are sign-in-only"
+require_text "$LLMS_INSTALL_FILE" "one primary website custom domain"
 require_text "$CLI_FILE" "--login)"
 require_text "$CLI_FILE" "grant TOKEN"
 require_text "$CLI_FILE" "Without sign-in: public 24-hour preview + claim link."
@@ -90,6 +91,10 @@ require_text "$API_FILE" 'A permanent Free plan includes 10 GB storage and up to
 require_text "$SKILL_FILE" 'PDFs up to 0.5 MB'
 reject_text "$SKILL_FILE" 'No trial is started.'
 require_text "$SKILL_FILE" 'Never silently publish protected content as'
+require_text "$SKILL_FILE" 'one primary website custom domain'
+require_text "$SKILL_FILE" '`<project>.<brand-domain>`'
+require_text "$API_FILE" '`/api/v1/account/brand_domain`'
+require_text "$API_FILE" '"status": "pending_ownership"'
 
 for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
   reject_text "$file" "local stdio MCP"

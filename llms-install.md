@@ -83,7 +83,10 @@ local CLI. A hosted agent cannot read the user's computer.
 
 - Anonymous: 25 MB total, 25 MB per file, 200 files, public only, 24 hours.
 - Free: 10 GB total, 100 MB normal files, 0.5 MB PDFs, 10 versions per file,
-  3 form submissions/day, randomized URL, noindex by default.
+  3 form submissions/day, one primary website custom domain, randomized
+  Revdoku URL, noindex by default.
+- Hobby includes 5 website custom domains; Developer includes 20 website custom
+  domains and 1 Brand domain for URLs like `<project>.<brand-domain>`.
 - Anonymous and Free users cannot choose or rename the Revdoku URL.
 - Password, Require Email, and custom Revdoku URLs require an eligible paid
   plan for the permanent main website.

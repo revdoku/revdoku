@@ -658,7 +658,10 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/publish_sessions/pus_.../uploads/refresh"
 
 ### Add a Custom Domain
 
-When custom domains are available for the account, publish the bucket first.
+Every signed-in Free account includes one primary website custom domain. Hobby
+includes 5 and Developer includes 20. Publish the bucket first. A `www`
+companion is available on Hobby and Developer and does not consume another
+website-domain slot.
 
 ```sh
 curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../custom_domains" \
@@ -667,7 +670,8 @@ curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../custom_domains" \
   -d '{ "hostname": "example.com" }'
 ```
 
-Example response while DNS is still pending:
+The first response is an ownership challenge. Revdoku does not send the
+hostname to Cloudflare until this TXT record is visible:
 
 ```json
 {
@@ -675,39 +679,34 @@ Example response while DNS is still pending:
     "custom_domain": {
       "id": "pcd_...",
       "hostname": "example.com",
-      "status": "pending_validation",
-      "ssl_status": "pending_validation",
+      "status": "pending_ownership",
+      "setup_stage": "verify_ownership",
       "public_url": null,
       "required_dns_records": [
         {
-          "type": "CNAME",
-          "name": "example.com",
-          "value": "custom.revdoku.site",
-          "purpose": "traffic",
-          "apex": true,
-          "supported_types": ["ALIAS", "ANAME", "CNAME flattening"]
-        },
-        {
           "type": "TXT",
-          "name": "_cf-custom-hostname.example.com",
-          "value": "...",
-          "purpose": "ownership"
+          "name": "_revdoku-verification.example.com",
+          "value": "revdoku-domain-verification=...",
+          "purpose": "revdoku_ownership"
         }
-      ]
+      ],
+      "verification_expires_at": "2026-08-15T12:00:00Z"
     },
     "publication": {
       "public_url": "https://bright-canvas-meadow.revdoku.site/"
     },
     "limits": {
       "active_count": 1,
-      "max_custom_domains": 25
+      "max_custom_domains": 1
     }
   }
 }
 ```
 
-Add every returned DNS record. Then refresh until `custom_domain.status` is
-`active`:
+Add the TXT record, then refresh. Once ownership is confirmed, the response
+changes to `setup_stage: "configure_dns"` and returns the traffic and
+certificate records. Add every returned record and refresh until
+`custom_domain.status` is `active`:
 
 ```sh
 curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../custom_domains/pcd_.../refresh" \
@@ -716,6 +715,8 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../custom_domains/pcd_.../re
 
 When active, the publication `public_url` switches to the custom domain.
 The managed `https://<bucket-slug>.revdoku.site/` URL keeps working.
+Incomplete setup expires after 72 hours. Website-domain changes are limited to
+3 per account per day, with a separate short-window DNS verification limit.
 
 For apex domains such as `example.com`, the DNS provider must support ALIAS,
 ANAME, or CNAME flattening. If it does not, use `www.example.com` as the custom
@@ -1415,7 +1416,31 @@ Custom-domain capacity is account-specific. Handle
 the user to Revdoku rather than hard-coding account policy in an integration.
 
 Replacing a custom domain keeps the previous active domain serving until the new
-domain becomes active.
+domain becomes active on Hobby and Developer. Free has one strict primary-domain slot:
+after ownership of the replacement is verified, Revdoku retires the old domain
+before provisioning the new one.
+
+Pass `"www": true` on create, or use
+`POST /api/v1/buckets/:bucket_id/custom_domains/www` with
+`{ "enabled": true }`, to add the quota-free paid `www` companion.
+
+### Brand Domain Endpoints
+
+A Brand domain is separate from website custom-domain slots. Developer includes
+one Brand domain. It produces exact hostnames such as
+`<project-slug>.<brand-domain>` for every active main website.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/v1/account/brand_domain` | Read Brand-domain setup and generated project hosts. |
+| `POST` | `/api/v1/account/brand_domain` | Create or replace the Brand domain. |
+| `POST` | `/api/v1/account/brand_domain/refresh` | Verify ownership or refresh setup. |
+| `DELETE` | `/api/v1/account/brand_domain` | Remove the Brand domain and generated hosts. |
+
+Create first returns a `_revdoku-verification.<brand-domain>` TXT challenge.
+After verification, add the returned wildcard CNAME for
+`*.<brand-domain>`. Revdoku still provisions one exact Cloudflare hostname and
+certificate per active website; the wildcard is DNS routing, not wildcard TLS.
 
 ### Analytics Endpoints
 
@@ -1576,9 +1601,17 @@ session-keyed upload/delete control calls.
 | --- | --- | --- |
 | `403` | `CUSTOM_DOMAIN_UNAVAILABLE` | Custom domains are not available for the account. |
 | `403` | `CUSTOM_DOMAIN_LIMIT_REACHED` | Account has reached its custom-domain limit. |
+| `402` | `CUSTOM_DOMAIN_WWW_UPGRADE_REQUIRED` | A Free account requested the paid `www` companion. |
+| `409` | `CUSTOM_DOMAIN_REPLACEMENT_IN_PROGRESS` | Finish or remove the current replacement first. |
+| `410` | `CUSTOM_DOMAIN_SETUP_EXPIRED` | The 72-hour setup window expired; start again. |
+| `429` | `CUSTOM_DOMAIN_RATE_LIMITED` | Domain-change or verification rate limit reached; honor `Retry-After`. |
 | `422` | `CUSTOM_DOMAIN_INVALID` | Hostname is invalid or already assigned. |
 | `422` | `CUSTOM_DOMAIN_REQUIRES_PUBLICATION` | Publish the bucket before assigning a domain. |
 | `503` | `CUSTOM_DOMAINS_NOT_CONFIGURED` | Deployment custom-domain support is not configured. |
+| `403` | `ACCOUNT_CUSTOM_DOMAIN_UNAVAILABLE` | A Brand domain is not included in the account plan. |
+| `403` | `ACCOUNT_CUSTOM_DOMAIN_LIMIT_REACHED` | Account has reached its Brand-domain limit. |
+| `409` | `ACCOUNT_CUSTOM_DOMAIN_REPLACEMENT_IN_PROGRESS` | Finish or remove the current Brand-domain replacement first. |
+| `410` | `ACCOUNT_CUSTOM_DOMAIN_SETUP_EXPIRED` | The Brand-domain setup window expired; start again. |
 
 ## Integration Guidelines
 

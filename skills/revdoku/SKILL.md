@@ -60,9 +60,11 @@ custom URL. It expires after 24 hours; updates retain the original expiry.
 
 After claim, Free includes permanent public websites, 10 GB total storage,
 100 MB normal files, PDFs up to 0.5 MB, 10 versions per file, 3 form submissions
-per day, and a randomized Revdoku URL. Free sites are noindex by default. They
-do not display a Revdoku footer or badge. Custom Revdoku URLs, URL renaming,
-Password, and Require Email are paid features for permanent sites.
+per day, one primary website custom domain, and a randomized Revdoku URL. Free
+sites are noindex by default. They do not display a Revdoku footer or badge.
+Custom Revdoku URLs, URL renaming, Password, and Require Email are paid features
+for permanent sites. The optional `www` companion is also paid. Brand domains for URLs
+like `<project>.<brand-domain>` are a separate Developer entitlement.
 
 For a new or materially changed website, prefer a temporary preview before the
 main publish unless the user has already reviewed it or explicitly asks to
