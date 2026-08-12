@@ -1,0 +1,18 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Revdoku",
+  "name_for_model": "revdoku",
+  "description_for_human": "Create a free 24-hour public website preview with an AI agent.",
+  "description_for_model": "Use Revdoku to create or update one anonymous public website preview. Anonymous previews require no account, use a randomized URL, are noindex, and expire after 24 hours. Return the public URL and claim URL. Never create an account in chat. Account signup is browser-only; authenticated account tools use sign-in for an existing account.",
+  "auth": {
+    "type": "none"
+  },
+  "api": {
+    "type": "openapi",
+    "url": "https://revdoku.com/openapi.json",
+    "has_user_authentication": false
+  },
+  "logo_url": "https://revdoku.com/favicon.svg",
+  "contact_email": "support@revdoku.com",
+  "legal_info_url": "https://revdoku.com/terms/"
+}

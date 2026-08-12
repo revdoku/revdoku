@@ -1,0 +1,295 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Revdoku public agent API",
+    "version": "1.0.0",
+    "description": "Public account-free website preview endpoints. Account creation is browser-only at https://app.revdoku.com/users/sign_up. Existing accounts use OAuth sign-in through the Revdoku MCP server."
+  },
+  "servers": [
+    {
+      "url": "https://app.revdoku.com",
+      "description": "Revdoku application API"
+    }
+  ],
+  "paths": {
+    "/api/v1/status": {
+      "get": {
+        "operationId": "getRevdokuStatus",
+        "summary": "Read service and client version status",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service status"
+          }
+        }
+      }
+    },
+    "/api/v1/agent_auth/capabilities": {
+      "get": {
+        "operationId": "getAgentAuthCapabilities",
+        "summary": "Discover Revdoku agent authentication flows",
+        "description": "Account authentication is sign-in-only. This endpoint never creates an account.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Authentication capabilities"
+          }
+        }
+      }
+    },
+    "/api/v1/quick_publish": {
+      "post": {
+        "operationId": "createAnonymousWebsitePreview",
+        "summary": "Create a public 24-hour website preview",
+        "description": "Creates one randomized public website preview without an account or private bucket. The preview is noindex and cannot use forms, analytics, custom domains, or a chosen URL.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 100
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "files"
+                ],
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 200,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  },
+                  "paths": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "source": {
+                    "type": "string"
+                  },
+                  "idempotency_key": {
+                    "type": "string",
+                    "minLength": 20,
+                    "maxLength": 100
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Preview accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Site exceeds the 25 MB anonymous limit"
+          },
+          "429": {
+            "description": "Anonymous publish rate limit reached"
+          }
+        }
+      }
+    },
+    "/api/v1/quick_publish/{id}": {
+      "get": {
+        "operationId": "getAnonymousWebsitePreview",
+        "summary": "Check preview publish or claim status",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PreviewId"
+          },
+          {
+            "$ref": "#/components/parameters/PreviewToken"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Preview status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Preview not found"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateAnonymousWebsitePreview",
+        "summary": "Replace preview files without extending its expiry",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PreviewId"
+          },
+          {
+            "$ref": "#/components/parameters/PreviewToken"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "files"
+                ],
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 200,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  },
+                  "paths": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 120
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Update accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Preview is publishing or has been claimed"
+          },
+          "410": {
+            "description": "Preview expired"
+          },
+          "429": {
+            "description": "Update rate limit reached"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "PreviewId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Opaque preview id"
+      },
+      "PreviewToken": {
+        "name": "X-Revdoku-Preview-Token",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Opaque update capability returned at creation"
+      }
+    },
+    "schemas": {
+      "PreviewResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "preview_id": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "public_url": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uri"
+              },
+              "publish_state": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "expires_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "claim_url": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uri"
+              },
+              "update_token": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "claimed": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
