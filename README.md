@@ -6,7 +6,7 @@ agents. A first public preview needs no account.
 ## Prompt for an AI agent
 
 ```text
-I'd like you to set up Revdoku: the website publishing service for AI agents.
+I'd like you to set up Revdoku: the web hosting service for AI agents.
 
 Install as a skill if I have npm: npx skills add revdoku/revdoku --skill revdoku -g
 
