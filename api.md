@@ -61,6 +61,9 @@ site-relative `paths[]`. It creates a public randomized website without a User,
 login, or private bucket. Anonymous previews are limited to 25 MB total,
 25 MB/file, and 200 files. Forms, analytics, private storage, custom domains,
 chosen slugs, notifications, and access gates are unavailable.
+Clients may send `ai_source=chatgpt|claude|codex|gemini`; Revdoku carries the
+safe product name through the claim flow so the dashboard can tell the user
+where to continue. Arbitrary chat names and return URLs are not accepted.
 
 Creates and updates share a limit of 60 publish operations per hour per source
 IP; status checks do not consume that budget. REST returns HTTP `429` with

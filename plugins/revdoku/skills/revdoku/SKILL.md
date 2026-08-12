@@ -29,6 +29,8 @@ unconnected user asks for a public website, create the website first:
   `scripts/revdoku.sh p <path>` from this skill directory yourself.
 - With the hosted MCP surface, call `website_preview_create`. Use
   `website_preview_update` for edits and `website_preview_status` to check it.
+  Pass `ai_source` as `chatgpt`, `claude`, `codex`, or `gemini` when known so
+  the claim page can tell the user which AI chat to return to.
 
 The result is a randomized, public, noindex 24-hour preview. Share its URL and
 one `claim_url`. Account creation happens only at that browser link. Never try

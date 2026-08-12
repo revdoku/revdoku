@@ -6,13 +6,11 @@ create an account, or open a second terminal before seeing a website.
 ## Public prompt
 
 ```text
-I'd like you to set up Revdoku: the web hosting service for AI agents.
+I'd like you to set up Revdoku, the website publishing service for AI agents.
 
-Install as a skill if I have npm: npx skills add revdoku/revdoku --skill revdoku -g
+Read and follow https://revdoku.com/prompt.md
 
-If not, do this instead: curl -fsSL https://revdoku.com/install.sh | bash
-
-After installing, review the docs at https://revdoku.com/docs and ask me what I'd like to publish
+Then ask me what I'd like to publish.
 ```
 
 ## Agent rules
@@ -72,7 +70,8 @@ Before authentication, use:
 - `website_preview_status`
 
 These tools create only a public 24-hour preview. Share the returned
-`public_url` and `claim_url`. After claim, call status again. The MCP response
+`public_url` and `claim_url`. When creating one, pass `ai_source` as `chatgpt`,
+`claude`, `codex`, or `gemini` when known. After claim, call status again. The MCP response
 then asks the host to start OAuth when an account tool is called. Revdoku's
 OAuth screen signs an existing account in; it does not offer signup.
 
