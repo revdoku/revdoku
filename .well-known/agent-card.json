@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "name": "Revdoku",
+  "description": "Publish websites and files to live URLs from an AI agent.",
+  "url": "https://revdoku.com/",
+  "documentation_url": "https://revdoku.com/docs",
+  "mcp_url": "https://app.revdoku.com/mcp",
+  "supports_a2a_rpc": false,
+  "authentication": {
+    "anonymous_preview": "No authentication",
+    "account_tools": "OAuth 2.0 sign-in for existing accounts",
+    "signup": "Browser only at https://app.revdoku.com/users/sign_up"
+  },
+  "skills": [
+    {
+      "id": "anonymous-website-preview",
+      "name": "Create a website preview",
+      "description": "Create one randomized, public, noindex website preview that expires in 24 hours.",
+      "account_required": false,
+      "input_modes": [
+        "text/html",
+        "text/css",
+        "application/javascript",
+        "image/*",
+        "application/pdf"
+      ],
+      "output": [
+        "public_url",
+        "claim_url",
+        "update_token",
+        "expires_at"
+      ]
+    },
+    {
+      "id": "claim-preview",
+      "name": "Claim a preview",
+      "description": "Send the browser signup claim link returned with the preview. Signup automatically moves the site into the new account.",
+      "account_required": true,
+      "signup_in_chat": false
+    },
+    {
+      "id": "managed-publishing",
+      "name": "Manage account websites",
+      "description": "Create buckets, manage files, publish or update sites, and inspect publication state through authenticated MCP tools.",
+      "account_required": true
+    }
+  ]
+}

@@ -177,6 +177,26 @@ if [[ "$PUBLIC_DISTRIBUTION" == true ]]; then
   [[ ! -e "$DIST_ROOT/apps" ]] || die "public distribution must not contain the private source tree"
   [[ ! -e "$DIST_ROOT/templates/quick-publish-examples" ]] || die "public distribution must not contain quick-publish build inputs"
   cmp -s "$DIST_ROOT/skills/revdoku/SKILL.md" "$DIST_ROOT/plugins/revdoku/skills/revdoku/SKILL.md" || die "standalone and plugin skills differ"
+  discovery_files=(
+    ".well-known/agent.json"
+    ".well-known/agent-card.json"
+    ".well-known/ai-plugin.json"
+    ".well-known/api-catalog"
+    "openapi.json"
+    "pricing.md"
+    "robots.txt"
+    "schema-map.xml"
+    "schema-feeds/agent-resources.jsonl"
+  )
+  for relative in "${discovery_files[@]}"; do
+    [[ -f "$DIST_ROOT/$relative" ]] || die "public discovery file is missing: $relative"
+  done
+  ruby -rjson -e 'ARGV.each { |path| JSON.parse(File.read(path)) }' \
+    "$DIST_ROOT/.well-known/agent.json" \
+    "$DIST_ROOT/.well-known/agent-card.json" \
+    "$DIST_ROOT/.well-known/ai-plugin.json" \
+    "$DIST_ROOT/.well-known/api-catalog" \
+    "$DIST_ROOT/openapi.json"
 else
   ruby "$CHANGELOG_HELPER" check "$CHANGELOG_FILE"
 fi

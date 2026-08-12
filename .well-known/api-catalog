@@ -1,0 +1,40 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://revdoku.com/",
+      "service-desc": [
+        {
+          "href": "https://revdoku.com/openapi.json",
+          "type": "application/vnd.oai.openapi+json",
+          "title": "Revdoku public agent API"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://revdoku.com/docs",
+          "type": "text/html",
+          "title": "Revdoku documentation"
+        },
+        {
+          "href": "https://revdoku.com/api.md",
+          "type": "text/markdown",
+          "title": "Revdoku API guide"
+        }
+      ],
+      "https://revdoku.com/rels/mcp": [
+        {
+          "href": "https://app.revdoku.com/mcp",
+          "type": "application/json",
+          "title": "Revdoku Streamable HTTP MCP server"
+        }
+      ],
+      "https://revdoku.com/rels/pricing": [
+        {
+          "href": "https://revdoku.com/pricing.md",
+          "type": "text/markdown",
+          "title": "Revdoku pricing and limits"
+        }
+      ]
+    }
+  ]
+}

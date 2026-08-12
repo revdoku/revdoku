@@ -1,0 +1,7 @@
+{"type":"product","name":"Revdoku","url":"https://revdoku.com/","description":"Website publishing for AI agents"}
+{"type":"mcp","url":"https://app.revdoku.com/mcp","transport":"streamable-http","anonymous_preview":true,"account_auth":"oauth2_sign_in_only"}
+{"type":"skill","url":"https://github.com/revdoku/revdoku/tree/main/skills/revdoku","install_npm":"npx skills add revdoku/revdoku --skill revdoku -g","install_shell":"curl -fsSL https://revdoku.com/install.sh | bash"}
+{"type":"documentation","url":"https://revdoku.com/docs"}
+{"type":"openapi","url":"https://revdoku.com/openapi.json"}
+{"type":"pricing","url":"https://revdoku.com/pricing.md"}
+{"type":"signup","url":"https://app.revdoku.com/users/sign_up","browser_only":true,"available_in_agent_chat":false}
