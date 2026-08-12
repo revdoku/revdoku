@@ -2872,12 +2872,17 @@ wait_for_anonymous_preview() {
 }
 
 print_anonymous_preview_result() {
-  local response="$1" url claim_url expires_at status
+  local response="$1" url claim_url expires_at status publish_error guidance
   url="$("$JQ_BIN" -r '.data.public_url // empty' <<<"$response")"
   claim_url="$("$JQ_BIN" -r '.data.claim_url // empty' <<<"$response")"
   expires_at="$("$JQ_BIN" -r '.data.expires_at // empty' <<<"$response")"
   status="$("$JQ_BIN" -r '.data.status // empty' <<<"$response")"
-  [[ "$status" != "failed" ]] || die "anonymous preview publishing failed"
+  if [[ "$status" == "failed" ]]; then
+    publish_error="$("$JQ_BIN" -r '.data.publish_error // empty' <<<"$response")"
+    guidance="$("$JQ_BIN" -r '.data.guidance // empty' <<<"$response")"
+    [[ -z "$guidance" ]] || echo "$guidance" >&2
+    die "${publish_error:-anonymous preview publishing failed}"
+  fi
   [[ -n "$url" ]] || die "preview response did not include a public URL"
 
   echo "Published 24-hour preview: $url" >&2

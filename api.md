@@ -60,7 +60,13 @@ after the user upgrades. Never silently fall back to Public.
 site-relative `paths[]`. It creates a public randomized website without a User,
 login, or private bucket. Anonymous previews are limited to 25 MB total,
 25 MB/file, and 200 files. Forms, analytics, private storage, custom domains,
-and chosen slugs are unavailable.
+chosen slugs, notifications, and access gates are unavailable.
+
+Creates and updates share a limit of 60 publish operations per hour per source
+IP; status checks do not consume that budget. REST returns HTTP `429` with
+`RATE_LIMITED` and `retry_after`; MCP returns the same code and retry detail in
+the tool error. Clients must wait for that interval instead of creating new
+preview state to evade the limit.
 
 The response includes `preview_id`, `update_token`, `public_url`, `expires_at`,
 and `claim_url`. Keep `update_token` secret. Read status with

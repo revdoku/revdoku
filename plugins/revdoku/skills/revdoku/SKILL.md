@@ -25,6 +25,8 @@ unconnected user asks for a public website, create the website first:
 
 - With shell access, install the skill/CLI if needed and run
   `revdoku p <path>` yourself.
+- If a skill install does not put `revdoku` on `PATH`, run the bundled
+  `scripts/revdoku.sh p <path>` from this skill directory yourself.
 - With the hosted MCP surface, call `website_preview_create`. Use
   `website_preview_update` for edits and `website_preview_status` to check it.
 
@@ -55,8 +57,11 @@ for a live public or protected website link.
 ## Anonymous preview and Free plan
 
 Anonymous preview: no account, one public website, randomized Revdoku URL,
-25 MB total, 200 files, no private bucket, forms, analytics, custom domain, or
-custom URL. It expires after 24 hours; updates retain the original expiry.
+25 MB total, 200 files, no private bucket, forms, notifications, analytics,
+access gate, custom domain, or custom URL. It expires after 24 hours; updates
+retain the original expiry. Creates and updates share a limit of 60 publish
+operations per hour per source IP. If Revdoku returns `RATE_LIMITED`, respect
+its `retry_after` value; do not create new state or change networks to evade it.
 
 After claim, Free includes permanent public websites, 10 GB total storage,
 100 MB normal files, PDFs up to 0.5 MB, 10 versions per file, 3 form submissions
@@ -316,6 +321,9 @@ No account or login is needed for a first public preview:
 ```sh
 revdoku p [PATH]
 ```
+
+When the skill is installed but the command is not on `PATH`, run the bundled
+`scripts/revdoku.sh p [PATH]` instead.
 
 The CLI prints a public 24-hour URL and a browser claim link. It retains the
 anonymous update capability under `~/.revdoku` and updates the same URL on

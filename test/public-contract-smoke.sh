@@ -71,6 +71,10 @@ require_text "$LLMS_INSTALL_FILE" "one primary website custom domain"
 require_text "$CLI_FILE" "--login)"
 require_text "$CLI_FILE" "grant TOKEN"
 require_text "$CLI_FILE" "Without sign-in: public 24-hour preview + claim link."
+require_text "$CLI_FILE" '.data.publish_error // empty'
+require_text "$CLI_FILE" '.data.guidance // empty'
+require_text "$SKILL_FILE" 'scripts/revdoku.sh p <path>'
+require_text "$SKILL_FILE" '60 publish'
 require_text "$API_FILE" "never ask the user to paste or repeat the verification code in"
 require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
 require_text "$API_FILE" '`PATCH` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
