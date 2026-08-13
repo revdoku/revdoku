@@ -6,15 +6,17 @@ agents. A first public preview needs no account.
 ## Prompt for an AI agent
 
 ```text
-I'd like you to set up Revdoku, the website publishing service for AI agents.
+I'd like you to set up Revdoku so you can publish a website for me for free.
 
-Read and follow https://revdoku.com/prompt.md
+Browser chat only: follow `https://revdoku.com/<client>/`, using your lowercase, hyphenated product name.
 
-Then ask me what I'd like to publish.
+Otherwise, run `npx skills add revdoku/revdoku --skill revdoku -g`; without npm, run `curl -fsSL https://revdoku.com/install.sh | bash`.
+
+Then review https://revdoku.com/docs and ask what I'd like to publish.
 ```
 
-The agent should follow `prompt.md`, including running setup commands itself
-when possible instead of sending the user to a separate terminal.
+The agent should run setup commands itself when it has shell access. It must not
+send the user to a separate terminal.
 
 ## How the first publish works
 
@@ -81,6 +83,9 @@ local folders, JavaScript bundles, images, fonts, PDFs, and other binary assets.
 MCP can directly write generated text files.
 
 ## Tutorials
+
+Client guides use the lowercase product name, with spaces replaced by hyphens:
+`https://revdoku.com/<client>/` (for example, `/cursor/` and `/antigravity/`).
 
 - Setup hub: <https://revdoku.com/connect/>
 - ChatGPT: <https://revdoku.com/chatgpt/>

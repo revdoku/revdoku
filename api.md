@@ -21,10 +21,10 @@ connection and its refresh credentials.
 
 ## Free plan and preview-first publishing
 
-A permanent Free plan includes 10 GB storage and up to 500 public websites.
-Free websites use randomized Revdoku URLs and are noindex by default. Normal
+A permanent Free plan includes 5 GB storage and up to 100 public websites.
+Free websites use randomized Website Names and are noindex by default. Normal
 files can be up to 100 MB; PDFs are limited to 0.5 MB. No plan injects a
-Revdoku footer or badge. Password, Require Email, and custom Revdoku URLs are
+Revdoku footer or badge. Password, Require Email, and custom Website Names are
 paid features for the main website, but can be evaluated in a temporary
 signed-in preview.
 
@@ -52,7 +52,9 @@ New accounts start directly on Free; requesting a paid publishing feature does
 not start a trial. If a permanent Password or Require Email publish returns
 `PUBLICATION_UPGRADE_REQUIRED`, keep the requested access private, use the
 preview endpoint with that access mode, and retry the permanent publish only
-after the user upgrades. Never silently fall back to Public.
+after the user upgrades. Share the returned `upgrade_url` as the upgrade link;
+do not use this API document as the upgrade destination. Never silently fall
+back to Public.
 
 ## Anonymous 24-hour website preview
 
@@ -512,10 +514,10 @@ value means the main publication has no scheduled expiry; previews always have
 an expiry. Do not infer a lifetime from account labels in client code.
 
 **Preview (staging).** `POST /api/v1/buckets/:id/publication/preview` publishes the
-bucket's current draft to a temporary public `preview-<slug>` URL that auto-expires
-and is `noindex`, without touching the main publication or counting toward the
-live-site limit. Optional `expires_in_minutes` (default 15, max 43200 = 30 days);
-re-running republishes to the same preview slug. Like publishing, it is async — poll
+bucket's current draft to a temporary public `preview-<slug>` URL that expires
+after 15 minutes and is `noindex`, without touching the main publication or counting
+toward the live-site limit. The lifetime cannot be customized; re-running republishes
+to the same preview slug with a new 15-minute window. Like publishing, it is async — poll
 the returned publication's `publish_state` until `ready`, then share its `expires_at`.
 Preview requests may include the normal access and presentation settings. Paid
 settings such as `password` or `require_email` are available in the temporary preview
@@ -667,9 +669,9 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/publish_sessions/pus_.../uploads/refresh"
 
 ### Add a Custom Domain
 
-Every signed-in Free account includes one primary website custom domain. Hobby
+Every signed-in Free account includes one primary website custom domain. Personal
 includes 5 and Developer includes 20. Publish the bucket first. A `www`
-companion is available on Hobby and Developer and does not consume another
+companion is available on Personal and Developer and does not consume another
 website-domain slot.
 
 ```sh
@@ -1425,7 +1427,7 @@ Custom-domain capacity is account-specific. Handle
 the user to Revdoku rather than hard-coding account policy in an integration.
 
 Replacing a custom domain keeps the previous active domain serving until the new
-domain becomes active on Hobby and Developer. Free has one strict primary-domain slot:
+domain becomes active on Personal and Developer. Free has one strict primary-domain slot:
 after ownership of the replacement is verified, Revdoku retires the old domain
 before provisioning the new one.
 

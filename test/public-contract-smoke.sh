@@ -71,8 +71,10 @@ require_text "$LLMS_INSTALL_FILE" "one primary website custom domain"
 require_text "$CLI_FILE" "--login)"
 require_text "$CLI_FILE" "grant TOKEN"
 require_text "$CLI_FILE" "Without sign-in: public 24-hour preview + claim link."
+require_text "$CLI_FILE" "signed in, preview the current private draft for 15 minutes"
 require_text "$CLI_FILE" '.data.publish_error // empty'
 require_text "$CLI_FILE" '.data.guidance // empty'
+require_text "$CLI_FILE" '--form-string "ai_source=${ai_source}"'
 require_text "$SKILL_FILE" 'scripts/revdoku.sh p <path>'
 require_text "$SKILL_FILE" '60 publish'
 require_text "$API_FILE" "never ask the user to paste or repeat the verification code in"
@@ -91,14 +93,17 @@ require_text "$SKILL_FILE" '`bucket_delete_permanently`'
 require_text "$SKILL_FILE" '`github_sync_setup`'
 require_text "$SKILL_FILE" 'Password, and Require Email'
 require_text "$API_FILE" '`github_sync_setup`'
-require_text "$API_FILE" 'A permanent Free plan includes 10 GB storage and up to 500 public websites.'
+require_text "$API_FILE" 'A permanent Free plan includes 5 GB storage and up to 100 public websites.'
 require_text "$SKILL_FILE" 'PDFs up to 0.5 MB'
 reject_text "$SKILL_FILE" 'No trial is started.'
 require_text "$SKILL_FILE" 'Never silently publish protected content as'
 require_text "$SKILL_FILE" 'one primary website custom domain'
+require_text "$SKILL_FILE" 'Every authenticated bucket preview lasts 15 minutes'
 require_text "$SKILL_FILE" '`<project>.<brand-domain>`'
 require_text "$API_FILE" '`/api/v1/account/brand_domain`'
 require_text "$API_FILE" '"status": "pending_ownership"'
+require_text "$API_FILE" 'The lifetime cannot be customized'
+require_text "$SOURCE_CLIENT_DIR/docs.md" 'Every bucket preview expires 15'
 
 for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
   reject_text "$file" "local stdio MCP"

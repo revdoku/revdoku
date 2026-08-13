@@ -58,18 +58,18 @@ for a live public or protected website link.
 
 ## Anonymous preview and Free plan
 
-Anonymous preview: no account, one public website, randomized Revdoku URL,
+Anonymous preview: no account, one public website, randomized Website Name,
 25 MB total, 200 files, no private bucket, forms, notifications, analytics,
 access gate, custom domain, or custom URL. It expires after 24 hours; updates
 retain the original expiry. Creates and updates share a limit of 60 publish
 operations per hour per source IP. If Revdoku returns `RATE_LIMITED`, respect
 its `retry_after` value; do not create new state or change networks to evade it.
 
-After claim, Free includes permanent public websites, 10 GB total storage,
+After claim, Free includes up to 100 permanent public websites, 5 GB total storage,
 100 MB normal files, PDFs up to 0.5 MB, 10 versions per file, 3 form submissions
-per day, one primary website custom domain, and a randomized Revdoku URL. Free
+per day, one primary website custom domain, and a randomized Website Name. Free
 sites are noindex by default. They do not display a Revdoku footer or badge.
-Custom Revdoku URLs, URL renaming, Password, and Require Email are paid features
+Custom Website Names, name changes, Password, and Require Email are paid features
 for permanent sites. The optional `www` companion is also paid. Brand domains for URLs
 like `<project>.<brand-domain>` are a separate Developer entitlement.
 
@@ -77,12 +77,15 @@ For a new or materially changed website, prefer a temporary preview before the
 main publish unless the user has already reviewed it or explicitly asks to
 publish immediately. Previews are noindex, auto-expire, do not consume the live
 site slot, and can demonstrate paid access and presentation settings on Free.
+Every authenticated bucket preview lasts 15 minutes; its lifetime cannot be
+customized. Re-running the preview starts a new 15-minute window.
 
 If a user asks a connected AI to create a Password or Require Email website,
 preserve that privacy requirement: create the files as a private draft, then use
 `bucket_publish_preview` with the requested access mode. Tell the user that the
 protected URL is temporary and that a paid plan is required to make it the main
-website. After the user upgrades, retry with
+website. Share the returned `upgrade_url` as the upgrade link; never use API
+documentation as the upgrade destination. After the user upgrades, retry with
 `bucket_publish_password_protected`. Never silently publish protected content as
 Public.
 

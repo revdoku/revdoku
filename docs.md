@@ -122,6 +122,19 @@ user that the website is live, public access is removed, or deletion is finished
 Saving files does not publish them. Treat bucket writes as **Save draft** and
 publish tools as **Publish** or **Republish**.
 
+### Bucket previews
+
+An authenticated bucket preview is a temporary, `noindex` copy of the saved
+draft at a `preview-...` URL. It never changes the main website and does not
+count against live or protected-site limits. Every bucket preview expires 15
+minutes after creation; its lifetime cannot be customized. Re-running the
+preview republishes the same preview URL with a new 15-minute window.
+
+Free accounts may evaluate Password, Require Email, and other paid settings in
+this preview. Applying those settings permanently to the main website still
+requires an eligible paid plan. This is separate from the first anonymous
+pre-signup preview, which has its own fixed 24-hour claim window.
+
 Use `--site-mode spa` for compiled client-side apps that need route fallback;
 omit it or use `--site-mode static` for normal static sites. A project-local
 `.revdoku` binding remembers the chosen site mode for later republishes.
