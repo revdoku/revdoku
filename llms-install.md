@@ -6,11 +6,13 @@ create an account, or open a second terminal before seeing a website.
 ## Public prompt
 
 ```text
-I'd like you to set up Revdoku, the website publishing service for AI agents.
+I'd like you to set up Revdoku so you can publish a website for me for free.
 
-Read and follow https://revdoku.com/prompt.md
+Browser chat only: follow `https://revdoku.com/<client>/`, using your lowercase, hyphenated product name.
 
-Then ask me what I'd like to publish.
+Otherwise, run `npx skills add revdoku/revdoku --skill revdoku -g`; without npm, run `curl -fsSL https://revdoku.com/install.sh | bash`.
+
+Then review https://revdoku.com/docs and ask what I'd like to publish.
 ```
 
 ## Agent rules
@@ -83,17 +85,20 @@ local CLI. A hosted agent cannot read the user's computer.
 - Anonymous: 25 MB total, 25 MB per file, 200 files, public only, 24 hours.
 - Free: 10 GB total, 100 MB normal files, 0.5 MB PDFs, 10 versions per file,
   3 form submissions/day, one primary website custom domain, randomized
-  Revdoku URL, noindex by default.
-- Hobby includes 5 website custom domains; Developer includes 20 website custom
+  Website Name, noindex by default.
+- Personal includes 5 website custom domains; Developer includes 20 website custom
   domains and 1 Brand domain for URLs like `<project>.<brand-domain>`.
-- Anonymous and Free users cannot choose or rename the Revdoku URL.
-- Password, Require Email, and custom Revdoku URLs require an eligible paid
+- Anonymous and Free users cannot choose or rename the Website Name.
+- Password, Require Email, and custom Website Names require an eligible paid
   plan for the permanent main website.
 - No tier injects a Revdoku footer or badge into the published site.
 
 ## Troubleshooting tutorials
 
 Link one tutorial only when the simple flow is unavailable or the user asks:
+
+Client guides use the lowercase product name, with spaces replaced by hyphens:
+`https://revdoku.com/<client>/` (for example, `/cursor/` and `/antigravity/`).
 
 - Setup hub: <https://revdoku.com/connect/>
 - ChatGPT: <https://revdoku.com/chatgpt/>

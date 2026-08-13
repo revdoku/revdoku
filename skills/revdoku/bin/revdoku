@@ -39,7 +39,6 @@ PUBLICATION_ANALYTICS_ENABLED="${REVDOKU_PUBLICATION_ANALYTICS_ENABLED:-}"
 PUBLICATION_CLIENT_EVENTS_ENABLED="${REVDOKU_PUBLICATION_CLIENT_EVENTS_ENABLED:-}"
 PUBLICATION_TRACKING_ENABLED="${REVDOKU_PUBLICATION_TRACKING_ENABLED:-}"
 PUBLICATION_SITE_MODE="${REVDOKU_PUBLICATION_SITE_MODE:-}"
-PREVIEW_EXPIRES_IN_MINUTES="${REVDOKU_PREVIEW_EXPIRES_IN_MINUTES:-}"
 RESTORE_VERSION_ID="${REVDOKU_RESTORE_VERSION_ID:-}"
 RESTORE_COMMENT="${REVDOKU_RESTORE_COMMENT:-}"
 BROWSER_LOGIN_PATH="${REVDOKU_BROWSER_LOGIN_PATH:-/buckets}"
@@ -118,11 +117,27 @@ detect_agent_name() {
   fi
 }
 
+# The claim page accepts only a small, display-safe set of AI product names.
+# Prefer the detected agent name; fall back to the client identifier when a
+# wrapper supplied only that header.
+agent_ai_source() {
+  local value normalized
+  for value in "$AGENT_NAME" "$AGENT_CLIENT"; do
+    normalized="$(printf '%s' "$value" | tr '[:upper:]_' '[:lower:]-')"
+    case "$normalized" in
+      *chatgpt*|*chat-gpt*|*openai*) printf 'chatgpt'; return 0 ;;
+      *claude*) printf 'claude'; return 0 ;;
+      *codex*) printf 'codex'; return 0 ;;
+      *gemini*) printf 'gemini'; return 0 ;;
+    esac
+  done
+}
+
 usage() {
   cat <<USAGE
 revdoku — publish a folder to the web in one command.
 
-Free plan available: publish up to 500 public websites. Preview first, then publish when ready.
+Free plan available: publish up to 100 public websites. Preview first, then publish when ready.
 
 Usage: revdoku <command> [PATH] [options]
 
@@ -138,7 +153,7 @@ Most-used commands (short alias, then full name — either works):
         grant TOKEN      Use a one-time connection token shown after web signup.
   down, unpublish        Take this folder's site offline (keeps the URL for later).
         preview          Without sign-in, publish a public 24-hour preview. When
-                         signed in, preview the current private draft (default 15 min).
+                         signed in, preview the current private draft for 15 minutes.
 
 Publish options:
   --protected          Publish as a password-protected website (alias: --private).
@@ -148,9 +163,6 @@ Publish options:
   --site-mode MODE     static or spa (SPA serves index.html for client-side routes).
   --draft              Save a private draft instead of publishing live.
   --no-wait            Return as soon as the URL is reserved (don't wait for the build).
-  --expires-in-minutes N  Preview lifetime in minutes for 'revdoku preview' (default 15,
-                       max 43200 = 30 days). Signed-in Free and paid websites are
-                       permanent unless you explicitly choose a preview lifetime.
   --publish-folder DIR Publish ONLY this top-level folder as the site (its index.html
                        becomes the root); other folders stay stored but unserved.
   --title TEXT         --description TEXT     --tag-path LABEL     --metadata JSON
@@ -304,11 +316,6 @@ while [[ $# -gt 0 ]]; do
     --no-client-events)
       PUBLICATION_CLIENT_EVENTS_ENABLED="false"
       shift
-      ;;
-    --expires-in-minutes)
-      [[ $# -ge 2 ]] || die "--expires-in-minutes requires a number of minutes"
-      PREVIEW_EXPIRES_IN_MINUTES="$2"
-      shift 2
       ;;
     --output)
       [[ $# -ge 2 ]] || die "--output requires a value"
@@ -554,10 +561,6 @@ normalize_optional_bool() {
 PUBLICATION_ANALYTICS_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_ANALYTICS_ENABLED" "$PUBLICATION_ANALYTICS_ENABLED")"
 PUBLICATION_CLIENT_EVENTS_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_CLIENT_EVENTS_ENABLED" "$PUBLICATION_CLIENT_EVENTS_ENABLED")"
 PUBLICATION_TRACKING_ENABLED="$(normalize_optional_bool "REVDOKU_PUBLICATION_TRACKING_ENABLED" "$PUBLICATION_TRACKING_ENABLED")"
-if [[ -n "$PREVIEW_EXPIRES_IN_MINUTES" ]]; then
-  [[ "$PREVIEW_EXPIRES_IN_MINUTES" =~ ^[0-9]+$ && "$PREVIEW_EXPIRES_IN_MINUTES" -gt 0 ]] \
-    || die "--expires-in-minutes must be a positive integer (got: $PREVIEW_EXPIRES_IN_MINUTES)"
-fi
 APPEND_TEXT_NEWLINE_BEFORE="$(normalize_optional_bool "REVDOKU_APPEND_TEXT_NEWLINE_BEFORE" "$APPEND_TEXT_NEWLINE_BEFORE")"
 APPEND_TEXT_NEWLINE_BEFORE="${APPEND_TEXT_NEWLINE_BEFORE:-true}"
 
@@ -1192,7 +1195,7 @@ if [[ "$ACTION" == "connection_status" && "$SHOW_PUBLISH_HINT" == "true" && -z "
   echo "Revdoku CLI — not signed in yet." >&2
   echo "  Sign in:   revdoku login" >&2
   echo "  Preview:   revdoku preview .  (recommended before publishing)" >&2
-  echo "  Publish:   revdoku p          (Free includes up to 500 public websites)" >&2
+  echo "  Publish:   revdoku p          (Free includes up to 100 public websites)" >&2
   echo "  Commands:  revdoku --help" >&2
   exit 0
 fi
@@ -1371,8 +1374,7 @@ preview_bucket() {
   [[ -n "$BUCKET_ID" ]] || die "preview requires --bucket-id (or a folder bound via .revdoku)"
   local payload access_payload response publication_id publish_state final_response
   access_payload="$(publication_access_json)"
-  payload="$("$JQ_BIN" -nc --arg m "$PREVIEW_EXPIRES_IN_MINUTES" --argjson access "$access_payload" \
-    '$access + (if $m != "" then {expires_in_minutes: ($m | tonumber)} else {} end)')"
+  payload="$("$JQ_BIN" -nc --argjson access "$access_payload" '$access')"
   response="$(http_json POST "/api/v1/buckets/${BUCKET_ID}/publication/preview" "$payload")" || return 1
   publication_id="$("$JQ_BIN" -r '.data.publication.id // empty' <<<"$response" 2>/dev/null || true)"
   publish_state="$("$JQ_BIN" -r '.data.publication.publish_state // "ready"' <<<"$response" 2>/dev/null || true)"
@@ -1388,7 +1390,7 @@ preview_bucket() {
           publication: $p,
           public_url: $p.public_url,
           expires_at: $p.expires_at,
-          guidance: "Temporary preview is live and auto-expires. The Free plan supports up to 500 public websites, and paid settings work here for evaluation. Publish for real with: revdoku p"
+          guidance: "Temporary preview is live for 15 minutes. The Free plan supports up to 100 public websites, and paid settings work here for evaluation. Publish for real with: revdoku p"
         }
       }' <<<"$response"
 }
@@ -2173,6 +2175,7 @@ print_publication_upgrade_guidance() {
   else
     echo "Use 'revdoku preview' to review the requested settings, or open Revdoku to upgrade." >&2
   fi
+  echo "Upgrade: https://app.revdoku.com/pricing" >&2
   echo "Do not switch protected content to Public unless you explicitly intend to make it public." >&2
 }
 
@@ -2806,7 +2809,7 @@ anonymous_status_request() {
 
 anonymous_multipart_request() {
   local method="$1" endpoint="$2" update_token="$3" file_list="$4"
-  local body_file status title idempotency_key file rel count=0 total=0 size agent_args=() form_args=()
+  local body_file status title idempotency_key ai_source file rel count=0 total=0 size agent_args=() form_args=()
   body_file="$(mktemp)"
   title="$TITLE"
   [[ -n "$title" ]] || title="$(default_title)"
@@ -2832,6 +2835,8 @@ anonymous_multipart_request() {
   [[ -z "$update_token" ]] || curl_args+=(-H "X-Revdoku-Preview-Token: ${update_token}")
   curl_args+=(--form-string "title=${title}" --form-string "source=cli" "${form_args[@]}")
   if [[ "$method" == "POST" ]]; then
+    ai_source="$(agent_ai_source)"
+    [[ -z "$ai_source" ]] || curl_args+=(--form-string "ai_source=${ai_source}")
     curl_args+=(-H "Idempotency-Key: ${idempotency_key}")
   fi
 
