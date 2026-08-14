@@ -1,7 +1,16 @@
 # Revdoku
 
-Publish websites from Claude, ChatGPT, Codex, Cursor, Gemini, and other AI
-agents. A first public preview needs no account.
+> **Create websites from your AI for FREE**
+>
+> Ask ChatGPT, Claude or other AI to publish to Revdoku.
+>
+> Get a live `*.revdoku.site` website in seconds.
+>
+> **No account needed.**
+
+Revdoku publishes static websites and SPAs from AI-generated files and folders.
+The first public preview is live for 24 hours and can be claimed if the user
+wants to keep updating the same website.
 
 ## Prompt for an AI agent
 

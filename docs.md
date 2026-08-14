@@ -1,8 +1,16 @@
 # Revdoku Docs
 
-Revdoku publishes static websites and SPAs from AI agents. A first public
-24-hour preview needs no account; claiming it creates the user's durable Free
-account and bucket.
+> **Create websites from your AI for FREE**
+>
+> Ask ChatGPT, Claude or other AI to publish to Revdoku.
+>
+> Get a live `*.revdoku.site` website in seconds.
+>
+> **No account needed.**
+
+Revdoku publishes static websites and SPAs from AI-generated files and folders.
+The first public preview is live for 24 hours; claiming it creates the user's
+durable Free account and bucket while keeping the same website.
 
 ## Quick Start
 
