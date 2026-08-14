@@ -1,5 +1,13 @@
 # Revdoku API
 
+> **Create websites from your AI for FREE**
+>
+> Ask ChatGPT, Claude or other AI to publish to Revdoku.
+>
+> Get a live `*.revdoku.site` website in seconds.
+>
+> **No account needed.**
+
 Use the Revdoku API to create buckets, store files, publish static websites,
 attach custom domains, and read publication analytics.
 

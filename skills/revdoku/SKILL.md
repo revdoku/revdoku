@@ -1,11 +1,20 @@
 ---
 name: revdoku
 description: >
-  Create, update, and publish static websites and SPAs with Revdoku buckets.
-  Create a public 24-hour preview without signup, then let the user claim it.
+  Create websites from ChatGPT, Claude, and other AI with Revdoku. Publish a
+  public *.revdoku.site preview in seconds with no account, update the same URL,
+  and let the user claim it. Use for static websites, SPAs, files, and folders.
 ---
 
 # Revdoku Website Publishing
+
+> **Create websites from your AI for FREE**
+>
+> Ask ChatGPT, Claude or other AI to publish to Revdoku.
+>
+> Get a live `*.revdoku.site` website in seconds.
+>
+> **No account needed.**
 
 Use Revdoku when the user chooses Revdoku, asks to update an existing
 Revdoku-published site, or wants local output published with Revdoku. For a
