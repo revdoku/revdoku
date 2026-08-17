@@ -29,9 +29,9 @@ connection and its refresh credentials.
 
 ## Free plan and preview-first publishing
 
-A permanent Free plan includes 5 GB storage and up to 100 public websites.
-Free websites use randomized Website Names and are noindex by default. Normal
-files can be up to 100 MB; PDFs are limited to 0.5 MB. No plan injects a
+A permanent Free plan includes 1 GB storage and up to 5 public websites.
+Free websites use randomized Website Names and are indexable by default. Normal
+files can be up to 50 MB; PDFs are limited to 0.5 MB. No plan injects a
 Revdoku footer or badge. Password, Require Email, and custom Website Names are
 paid features for the main website, but can be evaluated in a temporary
 signed-in preview.
@@ -69,8 +69,8 @@ back to Public.
 `POST /api/v1/quick_publish` accepts multipart `files[]` and matching
 site-relative `paths[]`. It creates a public randomized website without a User,
 login, or private bucket. Anonymous previews are limited to 25 MB total,
-25 MB/file, and 200 files. Forms, analytics, private storage, custom domains,
-chosen slugs, notifications, and access gates are unavailable.
+25 MB/file, and 200 files. ZIP uploads, forms, analytics, private storage,
+custom domains, chosen slugs, notifications, and access gates are unavailable.
 Clients may send `ai_source=chatgpt|claude|codex|gemini`; Revdoku carries the
 safe product name through the claim flow so the dashboard can tell the user
 where to continue. Arbitrary chat names and return URLs are not accepted.
@@ -1000,7 +1000,7 @@ Common `redirect_path` values:
 | `PATCH` | `/api/v1/buckets/:id/github_sync` | Enable or disable automatic republishing after sync. |
 | `POST` | `/api/v1/buckets/:id/github_sync/sync` | Enqueue a manual sync or conflict resolution. |
 | `DELETE` | `/api/v1/buckets/:id/github_sync` | Disconnect the repository without deleting either side. |
-| `DELETE` | `/api/v1/buckets/:id` | Permanently delete a normal unpublished bucket with confirmation. |
+| `DELETE` | `/api/v1/buckets/:id` | Permanently delete an archived, unpublished normal bucket with confirmation. |
 | `GET` | `/api/v1/tags` | List reusable bucket labels. |
 
 #### GET /api/v1/buckets
@@ -1027,7 +1027,7 @@ Bucket list/detail responses include effective lifecycle action metadata:
 | `archive.required_action` | `unpublish_first` when the bucket must be unpublished before archive. |
 | `unarchive.allowed` | Whether the current principal can restore an archived bucket now. |
 | `delete.allowed` | Whether the current principal can permanently delete now. |
-| `delete.required_action` | `unpublish_first` when the bucket must be unpublished before permanent delete. |
+| `delete.required_action` | `unpublish_first` when a website must be unpublished first; `archive_first` when an active bucket must be archived first. |
 | `delete.confirmation` | Confirmation phrase returned by the API; clients should pass it exactly to DELETE after human confirmation, not ask users to type bucket ids. |
 
 Archived buckets are read-only until unarchived. Metadata edits, label changes,
@@ -1270,7 +1270,7 @@ that definition to `"hosted": false` and post same-origin to
 #### Archive, unarchive, and permanent delete
 
 Buckets with active published websites must be unpublished before they can be
-archived or deleted.
+archived. Permanent delete requires the bucket to be unpublished and archived.
 
 ```sh
 curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../archive" \
@@ -1282,7 +1282,8 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../unarchive" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
-Permanent delete requires the confirmation phrase returned by `GET /api/v1/buckets` or `GET /api/v1/buckets/:id` in
+Permanent delete requires an archived bucket plus the confirmation phrase
+returned by `GET /api/v1/buckets` or `GET /api/v1/buckets/:id` in
 `delete.confirmation`.
 
 ```sh
@@ -1596,7 +1597,7 @@ session-keyed upload/delete control calls.
 | `403` | `BUCKET_DELETE_ADMIN_REQUIRED` | Only an account administrator can permanently delete this bucket, except for empty unpublished cleanup buckets created by the same user. |
 | `409` | `BUCKET_PUBLICATION_ACTIVE` | Unpublish this bucket before archiving or deleting it. |
 | `409` | `BUCKET_ALREADY_ARCHIVED` | Bucket is already archived. |
-| `409` | `BUCKET_NOT_ARCHIVED` | Bucket is not archived; only unarchive archived buckets. |
+| `409` | `BUCKET_NOT_ARCHIVED` | The operation requires an archived bucket; archive before permanent delete, or only unarchive an archived bucket. |
 | `422` | `BUCKET_DELETE_CONFIRMATION_REQUIRED` | Pass the `delete.confirmation` value returned by bucket list/detail with the delete request. |
 | `403` | `BUCKET_ARCHIVED` | Bucket is archived and cannot be edited until it is unarchived. |
 | `404` | `BUCKET_FILE_NOT_FOUND` | Bucket file path does not exist. |

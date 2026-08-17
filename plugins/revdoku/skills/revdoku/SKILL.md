@@ -74,10 +74,10 @@ retain the original expiry. Creates and updates share a limit of 60 publish
 operations per hour per source IP. If Revdoku returns `RATE_LIMITED`, respect
 its `retry_after` value; do not create new state or change networks to evade it.
 
-After claim, Free includes up to 100 permanent public websites, 5 GB total storage,
-100 MB normal files, PDFs up to 0.5 MB, 10 versions per file, 3 form submissions
+After claim, Free includes up to 5 permanent public websites, 1 GB total storage,
+50 MB normal files, PDFs up to 0.5 MB, 5 versions per file, 3 form submissions
 per day, one primary website custom domain, and a randomized Website Name. Free
-sites are noindex by default. They do not display a Revdoku footer or badge.
+sites are indexable by default. They do not display a Revdoku footer or badge.
 Custom Website Names, name changes, Password, and Require Email are paid features
 for permanent sites. The optional `www` companion is also paid. Brand domains for URLs
 like `<project>.<brand-domain>` are a separate Developer entitlement.
@@ -249,8 +249,8 @@ republish remains allowed. Unlocking is web-UI-only; if an operation returns
 
 Use `bucket_archive` and `bucket_unarchive` for normal lifecycle cleanup. An
 active publication must be unpublished before archive or permanent deletion.
-Only unpublish after user confirmation. A normal unpublished bucket can be
-deleted directly; archiving it first is not required.
+Only unpublish after user confirmation. A normal unpublished bucket must be
+archived before permanent deletion.
 
 Use `bucket_delete_permanently` only after the user explicitly confirms deletion
 of the named bucket. Pass the opaque `delete.confirmation` value returned by
