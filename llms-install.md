@@ -83,11 +83,11 @@ local CLI. A hosted agent cannot read the user's computer.
 ## Limits that affect agent choices
 
 - Anonymous: 25 MB total, 25 MB per file, 200 files, public only, 24 hours.
-- Free: 10 GB total, 100 MB normal files, 0.5 MB PDFs, 10 versions per file,
+- Free: 1 GB total, 50 MB normal files, 0.5 MB PDFs, 5 versions per file,
   3 form submissions/day, one primary website custom domain, randomized
-  Website Name, noindex by default.
-- Personal includes 5 website custom domains; Developer includes 20 website custom
-  domains and 1 Brand domain for URLs like `<project>.<brand-domain>`.
+  Website Name, indexable by default.
+- Personal includes 5 Custom Domains; Developer includes 20 Custom Domains and
+  1 brand domain for all websites, with URLs like `<project>.<brand-domain>`.
 - Anonymous and Free users cannot choose or rename the Website Name.
 - Password, Require Email, and custom Website Names require an eligible paid
   plan for the permanent main website.
