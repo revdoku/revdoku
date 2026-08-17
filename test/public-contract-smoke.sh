@@ -104,6 +104,10 @@ require_text "$API_FILE" '`/api/v1/account/brand_domain`'
 require_text "$API_FILE" '"status": "pending_ownership"'
 require_text "$API_FILE" 'The lifetime cannot be customized'
 require_text "$SOURCE_CLIENT_DIR/docs.md" 'Every bucket preview expires 15'
+require_text "$SKILL_FILE" '`ACCOUNT_SUSPENDED`'
+require_text "$SKILL_FILE" 'support@revdoku.com'
+require_text "$API_FILE" '`account.restriction`'
+require_text "$SOURCE_CLIENT_DIR/docs.md" 'website moderation restriction'
 
 for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
   reject_text "$file" "local stdio MCP"

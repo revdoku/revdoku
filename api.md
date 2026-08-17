@@ -171,7 +171,13 @@ support.
 When an account becomes read-only, read requests remain available but mutating
 API calls fail with the account-state error code and `read_only: true`. Do not
 retry writes indefinitely. `GET /api/v1/status` exposes the current account
-state without exposing billing details.
+state without exposing billing details. For an automated Free-website moderation
+hold, `account.restriction` and blocked-mutation error details include
+`code: "AUTOMATED_WEBSITE_MODERATION"`, the source website, the user-facing
+message, and `support_email`. Tell the user that the account was made read-only
+because of that published website and ask them to contact
+`support@revdoku.com` if they believe the decision was incorrect. Do not create
+replacement state or retry mutations to evade the hold.
 
 ### Versioning
 

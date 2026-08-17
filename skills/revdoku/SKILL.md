@@ -82,6 +82,15 @@ Custom Website Names, name changes, Password, and Require Email are paid feature
 for permanent sites. The optional `www` companion is also paid. Brand domains for URLs
 like `<project>.<brand-domain>` are a separate Developer entitlement.
 
+Free and anonymous websites are subject to automatic abuse review. If a website
+triggers a high-confidence automated moderation hold, Revdoku takes the website
+offline and makes the account read-only. When `revdoku_status` returns
+`account.restriction`, or a tool returns `ACCOUNT_SUSPENDED`, tell the user that
+the account was made read-only because of the named published website, relay the
+returned restriction message, and ask them to contact `support@revdoku.com` if
+they believe the decision was incorrect. Existing files remain readable; do not
+retry writes, republish, create replacement buckets, or attempt to evade the hold.
+
 For a new or materially changed website, prefer a temporary preview before the
 main publish unless the user has already reviewed it or explicitly asks to
 publish immediately. Previews are noindex, auto-expire, do not consume the live
