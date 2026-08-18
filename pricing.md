@@ -14,6 +14,9 @@ Prices are USD. New accounts start on Free. No credit card is required.
 | Maximum file | 25 MB | 50 MB | 250 MB | 500 MB |
 | Max PDF size limit | 25 MB | 0.5 MB | 250 MB | 500 MB |
 | Website lifetime | 24 hours | Permanent | Permanent | Permanent |
+| Search indexing for public production sites | No | Yes | Yes | Yes |
+| Owner can disable indexing | No | Yes | Yes | Yes |
+| Protected websites indexed | — | — | Never | Never |
 | Forms submissions | None | 3/day | 100/day | 500/day |
 | Analytics | None | Basic, 30 days | Detailed, 1 year | Advanced, 2 years |
 | Tracking Links | No | No | 5 | 25 |

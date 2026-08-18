@@ -986,7 +986,7 @@ Common `redirect_path` values:
 | `GET` | `/api/v1/buckets` | List active buckets by default. Use `?archived=true` to list archived buckets. |
 | `POST` | `/api/v1/buckets` | Create a bucket. |
 | `GET` | `/api/v1/buckets/:id` | Read a bucket. |
-| `PATCH` | `/api/v1/buckets/:id` | Update bucket metadata. |
+| `PATCH` | `/api/v1/buckets/:id` | Update bucket metadata or public-website search visibility. |
 | `GET` | `/api/v1/buckets/templates` | List trusted starter templates. |
 | `POST` | `/api/v1/buckets/from_template` | Create a private bucket from a trusted template. |
 | `POST` | `/api/v1/buckets/:id/archive` | Archive a normal unpublished bucket. |
@@ -1028,6 +1028,7 @@ Bucket list/detail responses include effective lifecycle action metadata:
 | Field | Meaning |
 | --- | --- |
 | `website` | Current or latest website publication metadata, including `public_url`, `status`, `published`, and `lifecycle_active`. |
+| `search_engine_visibility` | Effective affirmative search setting: `allow_search_indexing`, the stored `owner_preference`, and any enforced `locked_reason`. |
 | `publication_lifecycle_active` | `true` when a publication is active enough to block archive/delete, even if the public artifacts are unavailable. |
 | `archive.allowed` | Whether the current principal can archive now. |
 | `archive.required_action` | `unpublish_first` when the bucket must be unpublished before archive. |
@@ -1055,6 +1056,7 @@ source, task, or local-folder context in `metadata`.
   "bucket": {
     "title": "Marketing site",
     "description": "Generated launch assets",
+    "allow_search_indexing": true,
     "tag_paths": ["website"],
     "metadata": {
       "project": "marketing-site"
@@ -1069,12 +1071,20 @@ source, task, or local-folder context in `metadata`.
 {
   "bucket": {
     "description": "Updated purpose",
+    "allow_search_indexing": false,
     "metadata": {
       "run": "revision-2"
     }
   }
 }
 ```
+
+`allow_search_indexing` means **Allow search engines to index this public
+website**. It defaults to `true` for permanent public account websites. Set it
+to `false` to add Revdoku's platform `noindex` controls. Password, Require Email,
+anonymous previews, and temporary previews are always locked off and report the
+reason in `search_engine_visibility.locked_reason`. Enabling it does not remove a
+`noindex` tag supplied by the website itself and does not guarantee indexing.
 
 #### Bucket locks
 

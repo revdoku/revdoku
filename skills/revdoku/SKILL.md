@@ -221,6 +221,15 @@ the link and do not send `slug_suggestions`. Paid users may choose or rename a
 managed Revdoku URL. Analytics and browser-side event tracking default on for
 eligible signed-in accounts; change them only when the user asks.
 
+Search visibility is affirmative: `allow_search_indexing` on `bucket_create` or
+`bucket_update` means **Allow search engines to index this public website**.
+Permanent public websites default to `true`; set it to `false` only when the
+owner asks to hide the site from search. Password, Require Email, anonymous, and
+temporary preview websites always return `search_engine_visibility.locked=true`
+and cannot be indexed. Enabling the setting removes only Revdoku's platform
+`noindex` controls; it does not override a website owner's own `noindex` tag or
+guarantee that a search engine will index the site.
+
 Password mode generates or retains a shared password. Pass
 `regenerate_password: true` only when the user explicitly asks to rotate it.
 Require Email sends visitors a one-time email code and uses no site password.
