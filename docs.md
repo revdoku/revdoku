@@ -123,6 +123,14 @@ Republishing the same bucket updates the existing website and keeps the same
 public URL. Unpublishing removes public access while keeping the bucket and
 reserved URL for later republish.
 
+Permanent public account websites allow search indexing by default. Owners can
+turn off **Allow search engines to index this public website** through the
+dashboard or the API/MCP `allow_search_indexing` bucket setting. Password,
+Require Email, anonymous preview, and temporary preview websites are always
+`noindex`. Turning the setting on removes only Revdoku's platform `noindex`
+controls; a website's own `noindex` tag still applies, and indexing is never
+guaranteed.
+
 Publish, unpublish, and large delete requests are asynchronous. After starting
 one, check the returned publication or bucket status separately before telling a
 user that the website is live, public access is removed, or deletion is finished.
