@@ -278,16 +278,19 @@ disappears or report returned progress.
 
 ## Built-in forms
 
-Revdoku has fixed `waitlist`, `contact`, `feedback`, `comments`, `quote`,
-`question`, `intake`, and `resource` definitions. `resource` is **Get a
-resource** (email required, name optional, submit label **Get access**).
+Revdoku forms are instances created from `waitlist`, `contact`, `feedback`,
+`comments`, `quote`, `question`, `intake`, `resource`, or paid-only `blank`
+templates. `resource` is **Get a resource** (email required, name optional,
+submit label **Get access**).
 `comments` is **Feedback Visible To
 Others** and is available only on Password or Require Email sites; the others
 store private responses and can be used on public sites.
 
 Configure forms through `metadata.publication_forms` on `bucket_create` or
-`bucket_update`. Labels and permitted fields are server-controlled. A compact
-configuration looks like:
+`bucket_update`. Free plans use exact presets. Plans with form customization may customize copy and
+the bounded field catalog or reuse a template with a unique endpoint name. Free
+accounts may save and preview those paid settings; permanent publish requires an
+upgrade. A compact preset configuration looks like:
 
 ```json
 {
@@ -298,8 +301,8 @@ configuration looks like:
     "forms": [
       {
         "name": "feedback",
+        "template": "feedback",
         "hosted": true,
-        "required_fields": ["message"],
         "widget_position": {
           "desktop": "top-right",
           "mobile": "bottom-right"
@@ -310,10 +313,13 @@ configuration looks like:
 }
 ```
 
-Each configured form can choose what happens after a confirmed submission.
+When form customization is included, set `label`, `description`, `submit_label`, and ordered `fields`
+using the supported names `name`, `email`, `phone`, `company`, `budget`, and
+`message`. Each configured form can choose what happens after a confirmed submission.
 Omit `success_response` (or use `{"mode":"system"}`) for Revdoku's saved
 message. Use `{"mode":"file","path":"downloads/guide.pdf"}` to open a file,
-or a trailing-slash path such as `resources/` to open an Auto-Index folder.
+or a trailing-slash path such as `resources/` to open an Auto-Index folder. This
+file/folder response requires the form response feature.
 Paths are relative to the published website root and must exist by
 publish/republish; updates to an existing bucket reject a missing target. HTML
 opens directly; previewable files such as PDFs open in Revdoku's same-origin
