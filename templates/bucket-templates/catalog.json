@@ -15,16 +15,8 @@
           "forms": [
             {
               "name": "waitlist",
-              "label": "Join waitlist",
-              "hosted": false,
-              "fields": [
-                {
-                  "name": "email",
-                  "label": "Email",
-                  "type": "email",
-                  "required": true
-                }
-              ]
+              "template": "waitlist",
+              "hosted": false
             }
           ]
         }
@@ -53,38 +45,8 @@
           "forms": [
             {
               "name": "contact",
-              "label": "Request a call",
-              "hosted": true,
-              "fields": [
-                {
-                  "name": "name",
-                  "label": "Name",
-                  "type": "text",
-                  "required": true
-                },
-                {
-                  "name": "email",
-                  "label": "Email (optional)",
-                  "type": "email",
-                  "required": false
-                },
-                {
-                  "name": "phone",
-                  "label": "Phone",
-                  "type": "tel",
-                  "required": true
-                },
-                {
-                  "name": "message",
-                  "label": "What would you like to discuss?",
-                  "type": "textarea",
-                  "required": false
-                }
-              ],
-              "required_fields": [
-                "name",
-                "phone"
-              ]
+              "template": "contact",
+              "hosted": true
             }
           ]
         }
@@ -113,22 +75,8 @@
           "forms": [
             {
               "name": "feedback",
-              "label": "Leave feedback",
-              "hosted": true,
-              "fields": [
-                {
-                  "name": "email",
-                  "label": "Email (optional)",
-                  "type": "email",
-                  "required": false
-                },
-                {
-                  "name": "comment",
-                  "label": "Comment",
-                  "type": "textarea",
-                  "required": true
-                }
-              ]
+              "template": "feedback",
+              "hosted": true
             }
           ]
         }

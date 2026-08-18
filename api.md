@@ -1144,12 +1144,14 @@ Send that body to `POST /api/v1/buckets/:id/versions/restore`.
 #### Built-in publication forms
 
 New buckets expose no public form endpoint until the owner configures one in
-Website Settings or updates `bucket.metadata.publication_forms`. Revdoku supports
-the fixed definitions `contact`, `feedback`, `comments` (**Feedback Visible To
-Others**), `quote`, `waitlist`, `question`, `intake`, and `resource` (**Get a
-resource**); labels and visitor
-fields are server-controlled so forms cannot be repurposed for arbitrary
-sensitive-data collection.
+Website Settings or updates `bucket.metadata.publication_forms`. Each form is an
+instance with a unique endpoint `name` and a behavior `template`: `contact`,
+`feedback`, `comments` (**Feedback Visible To Others**), `quote`, `waitlist`,
+`question`, `intake`, `resource` (**Get a resource**), or paid-only `blank`.
+Free plans use the templates unchanged. Plans with form customization may customize copy and the
+bounded field catalog, and may reuse a template under another endpoint name.
+Free accounts can save and preview paid settings, but a permanent publish returns
+an upgrade requirement until those settings are reset or the account upgrades.
 
 ```json
 {
@@ -1160,8 +1162,8 @@ sensitive-data collection.
         "forms": [
           {
             "name": "contact",
+            "template": "contact",
             "hosted": true,
-            "required_fields": ["name", "phone"],
             "widget_position": {
               "desktop": "top-right",
               "mobile": "bottom-right"
@@ -1239,8 +1241,10 @@ integration surface.
 Selection coordinates are `[x1, y1, x2, y2]`. Units are `pdf_point`,
 `image_pixel`, `element_ratio`, or `document_ratio`; PDF selections also carry
 `document_page`.
-Use `required_fields` to choose which fixed fields are required. The legacy
-`require_email` flag remains accepted. Hosted forms can set independent desktop
+When form customization is included, set `label`, `description`, `submit_label`, and ordered `fields`
+entries such as `{"name":"email","label":"Work email","required":true}`.
+Field names are limited to `name`, `email`, `phone`, `company`, `budget`, and
+`message`; field types are server-owned. Hosted forms can set independent desktop
 and mobile `widget_position` values: `top-left`, `top-center`, `top-right`,
 `center-left`, `center`, `center-right`, `bottom-left`, `bottom-center`, or
 `bottom-right` (the default).
@@ -1250,6 +1254,7 @@ Every configured form also accepts a `success_response`:
 ```json
 {
   "name": "resource",
+  "template": "resource",
   "hosted": true,
   "success_response": {
     "mode": "file",
@@ -1257,6 +1262,8 @@ Every configured form also accepts a `success_response`:
   }
 }
 ```
+
+Opening a file or folder after submission requires the form response feature.
 
 `mode` is `system` (the default saved message) or `file`. A file target is
 relative to the published website root and must exist by publish/republish;
