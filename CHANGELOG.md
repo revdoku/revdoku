@@ -2,6 +2,19 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.350 — 2026-08-22
+
+### Added
+
+- Added a Booking request form template and calendar-date fields for published-site forms.
+- Free forms can now open a same-site file or folder after a confirmed submission.
+
+### Improved
+
+- Added a 30-submission monthly Free allowance alongside the existing 3-per-day limit.
+- Added Auto, Light, and Dark themes for inline forms, and kept floating widgets visible by default when the same form is embedded inline.
+- Simplified the pricing comparison so plan limits are easier to scan.
+
 ## 1.0.290 — 2026-08-05
 
 ### Added
