@@ -25,8 +25,8 @@
         {
           "path": "index.html",
           "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/landing-basic/index.html",
-          "sha256": "b559b5a9470b011abfb31502ac812cfb14e343dbb04e1d98b3d499260124d0a5",
-          "byte_size": 2789,
+          "sha256": "59e53be987038c449fe19ffb91f034101133d9ae1ebdc40065a0788e7b34bc8f",
+          "byte_size": 2780,
           "content_type": "text/html"
         }
       ]
