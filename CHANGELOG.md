@@ -2,6 +2,13 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.352 — 2026-08-22
+
+### Improved
+
+- Standardized every published-site form submit button to “Send”.
+- Protected form-delivered resources with six-hour signed viewer links, blocking direct unsigned access and invalidating old links on republish.
+
 ## 1.0.350 — 2026-08-22
 
 ### Added

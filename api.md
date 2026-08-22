@@ -1242,13 +1242,13 @@ integration surface.
 Selection coordinates are `[x1, y1, x2, y2]`. Units are `pdf_point`,
 `image_pixel`, `element_ratio`, or `document_ratio`; PDF selections also carry
 `document_page`.
-When form customization is included, set `label`, `description`, `submit_label`, and ordered `fields`
+When form customization is included, set `label`, `description`, and ordered `fields`
 entries such as `{"name":"email","label":"Work email","required":true}`.
 Field names are limited to `name`, `email`, `phone`, `company`, `budget`, `date`,
 and `message`; field types are server-owned. Hosted forms can set independent desktop
 and mobile `widget_position` values: `top-left`, `top-center`, `top-right`,
 `center-left`, `center`, `center-right`, `bottom-left`, `bottom-center`, or
-`bottom-right` (the default).
+`bottom-right` (the default). Every form uses `Send` as its submit-button caption.
 
 Every configured form also accepts a `success_response`:
 
@@ -1264,17 +1264,20 @@ Every configured form also accepts a `success_response`:
 }
 ```
 
-Opening a file or folder after submission is available on every plan.
+Opening a supported resource after submission is available on every plan.
 
 `mode` is `system` (the default saved message) or `file`. A file target is
 relative to the published website root and must exist by publish/republish;
-updates to an existing bucket reject a missing target. A trailing slash, such
-as `resources/`, targets an
-Auto-Index folder. HTML opens directly; previewable formats such as PDF use the
-same-origin Revdoku viewer. The target is shareable on Public sites and inherits
-the access gate on Password or Require Email sites. Form changes remain draft
-settings until publish/republish. Revdoku does not email the visitor for this
-response mode.
+updates to an existing bucket reject a missing target. Supported PDFs, raster
+images, video/audio, Markdown/text, CSV/TSV, DOCX, and spreadsheets open in the
+same-origin Revdoku viewer. After a confirmed submission, Revdoku creates a
+six-hour signed link; the original resource path cannot be opened directly.
+Republishing rotates the signing key and invalidates older links. Password and
+Require Email resources also retain the website access gate. The dashboard does
+not offer HTML, SVG, folders, archives, executables, or unknown formats as new
+resource targets; existing legacy HTML/folder responses keep their direct redirect
+until changed. Form changes remain draft settings until publish/republish. Revdoku
+does not email the visitor for this response mode.
 
 To render one configured hosted form inline, put its macro in an HTML page:
 

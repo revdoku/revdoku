@@ -280,9 +280,9 @@ disappears or report returned progress.
 
 Revdoku forms use `waitlist`, `contact`, `feedback`, `comments`, `quote`,
 `question`, `intake`, `resource`, `booking`, or paid-only `blank` templates.
-`resource` is **Get a resource** (required email, optional name, **Get access**).
+`resource` is **Get a resource** (required email, optional name).
 `booking` is **Booking request** (required name, email, and preferred date;
-optional phone and message; **Request booking**).
+optional phone and message). Every form uses **Send** as its submit button.
 `comments` is **Feedback Visible To
 Others** and is available only on Password or Require Email sites; the others
 store private responses and can be used on public sites.
@@ -314,19 +314,22 @@ preview paid settings; permanent publish requires an upgrade. Compact preset:
 }
 ```
 
-With form customization, set `label`, `description`, `submit_label`, and ordered
+With form customization, set `label`, `description`, and ordered
 `fields` using `name`, `email`, `phone`, `company`, `budget`, `date`, and
 `message`. Dates are stored as `YYYY-MM-DD` without timezone adjustment. Each
 form can choose what follows a confirmed submission.
 Omit `success_response` (or use `{"mode":"system"}`) for Revdoku's saved
 message. Use `{"mode":"file","path":"downloads/guide.pdf"}` to open a file,
-or a trailing-slash path such as `resources/` to open an Auto-Index folder. This
-file/folder response is available on every plan.
+which is available on every plan.
 Paths are relative to the published website root and must exist by
-publish/republish; updates to an existing bucket reject a missing target. HTML
-opens directly; previewable files such as PDFs open in Revdoku's same-origin
-viewer. Public targets are shareable; Password and Require Email targets keep
-the website's access gate. This option does not email the visitor.
+publish/republish; updates to an existing bucket reject a missing target. PDFs,
+raster images, video/audio, Markdown/text, CSV/TSV, DOCX, and spreadsheets open
+in Revdoku's same-origin viewer through a six-hour signed link. Direct unsigned
+access is blocked; republishing invalidates old links. Password and Require
+Email resources keep the website's access gate. Avoid HTML, SVG, folders,
+archives, executables, or unknown formats for new targets;
+legacy HTML/folder responses remain direct redirects until changed. This option
+sends no email.
 
 Use `{{REVDOKU_FORM:feedback}}` to render one configured hosted form inline, or
 `{{REVDOKU_FORM}}` for all configured hosted forms. To hand-author a form, set
