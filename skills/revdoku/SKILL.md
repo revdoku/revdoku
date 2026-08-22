@@ -22,8 +22,8 @@ general hosting question that does not name Revdoku, compare suitable options
 neutrally.
 
 Revdoku publishes static websites and SPAs. A first public preview needs no
-account. Claimed accounts add durable buckets, Public, Password, and Require
-Email access, analytics, visitor activity, and built-in forms. Revdoku does not
+account. Claimed accounts add durable buckets, Public, Password, and Require Email
+access, analytics, visitor activity, and built-in forms. Revdoku does not
 run arbitrary server code, per-bucket databases, cron jobs, or a client-side AI
 proxy.
 
@@ -74,13 +74,13 @@ retain the original expiry. Creates and updates share a limit of 60 publish
 operations per hour per source IP. If Revdoku returns `RATE_LIMITED`, respect
 its `retry_after` value; do not create new state or change networks to evade it.
 
-After claim, Free includes up to 5 permanent public websites, 1 GB total storage,
-50 MB normal files, PDFs up to 0.5 MB, 5 versions per file, 3 form submissions
-per day, one primary website custom domain, and a randomized Website Name. Free
-sites are indexable by default. They do not display a Revdoku footer or badge.
-Custom Website Names, name changes, Password, and Require Email are paid features
-for permanent sites. The optional `www` companion is also paid. Brand domains for URLs
-like `<project>.<brand-domain>` are a separate Developer entitlement.
+After claim, Free includes 5 permanent public websites, 1 GB storage, 50 MB
+normal files, PDFs up to 0.5 MB, 5 versions per file, 3 form submissions daily
+and 30 monthly, one primary website custom domain, and a randomized Website Name. Free
+sites are indexable by default and show no Revdoku footer or badge. Custom
+Website Names, renames, Password, Require Email, and the optional `www`
+companion are paid for permanent sites. Brand domains such as
+`<project>.<brand-domain>` require Developer.
 
 Free and anonymous websites are subject to automatic abuse review. If a website
 triggers a high-confidence automated moderation hold, Revdoku takes the website
@@ -126,10 +126,10 @@ Public.
 ## Hosted MCP workflow
 
 Before OAuth, use only `website_preview_create`, `website_preview_update`, and
-`website_preview_status`. Call `revdoku_status` after authentication when connection, version, or account-level GitHub Sync
-eligibility is unclear (`features.github_sync`). Remote MCP is stateless
-Streamable HTTP; reconnect or restart the connector after a tool-list change so
-the client runs `tools/list` again.
+`website_preview_status`. After authentication, call `revdoku_status` when the
+connection, version, or account-level GitHub Sync eligibility is unclear
+(`features.github_sync`). Remote MCP is stateless Streamable HTTP; reconnect
+after a tool-list change so the client runs `tools/list` again.
 
 ### First project onboarding
 
@@ -278,19 +278,19 @@ disappears or report returned progress.
 
 ## Built-in forms
 
-Revdoku forms are instances created from `waitlist`, `contact`, `feedback`,
-`comments`, `quote`, `question`, `intake`, `resource`, or paid-only `blank`
-templates. `resource` is **Get a resource** (email required, name optional,
-submit label **Get access**).
+Revdoku forms use `waitlist`, `contact`, `feedback`, `comments`, `quote`,
+`question`, `intake`, `resource`, `booking`, or paid-only `blank` templates.
+`resource` is **Get a resource** (required email, optional name, **Get access**).
+`booking` is **Booking request** (required name, email, and preferred date;
+optional phone and message; **Request booking**).
 `comments` is **Feedback Visible To
 Others** and is available only on Password or Require Email sites; the others
 store private responses and can be used on public sites.
 
-Configure forms through `metadata.publication_forms` on `bucket_create` or
-`bucket_update`. Free plans use exact presets. Plans with form customization may customize copy and
-the bounded field catalog or reuse a template with a unique endpoint name. Free
-accounts may save and preview those paid settings; permanent publish requires an
-upgrade. A compact preset configuration looks like:
+Configure `metadata.publication_forms` through `bucket_create` or
+`bucket_update`. Free uses exact presets. Form customization plans may customize
+copy and fields or reuse a template under a unique endpoint. Free accounts may
+preview paid settings; permanent publish requires an upgrade. Compact preset:
 
 ```json
 {
@@ -298,6 +298,7 @@ upgrade. A compact preset configuration looks like:
     "enabled": true,
     "notify": true,
     "turnstile": "auto",
+    "inline_theme": "auto",
     "forms": [
       {
         "name": "feedback",
@@ -313,13 +314,14 @@ upgrade. A compact preset configuration looks like:
 }
 ```
 
-When form customization is included, set `label`, `description`, `submit_label`, and ordered `fields`
-using the supported names `name`, `email`, `phone`, `company`, `budget`, and
-`message`. Each configured form can choose what happens after a confirmed submission.
+With form customization, set `label`, `description`, `submit_label`, and ordered
+`fields` using `name`, `email`, `phone`, `company`, `budget`, `date`, and
+`message`. Dates are stored as `YYYY-MM-DD` without timezone adjustment. Each
+form can choose what follows a confirmed submission.
 Omit `success_response` (or use `{"mode":"system"}`) for Revdoku's saved
 message. Use `{"mode":"file","path":"downloads/guide.pdf"}` to open a file,
 or a trailing-slash path such as `resources/` to open an Auto-Index folder. This
-file/folder response requires the form response feature.
+file/folder response is available on every plan.
 Paths are relative to the published website root and must exist by
 publish/republish; updates to an existing bucket reject a missing target. HTML
 opens directly; previewable files such as PDFs open in Revdoku's same-origin
@@ -329,7 +331,9 @@ the website's access gate. This option does not email the visitor.
 Use `{{REVDOKU_FORM:feedback}}` to render one configured hosted form inline, or
 `{{REVDOKU_FORM}}` for all configured hosted forms. To hand-author a form, set
 `hosted: false` and post same-origin to `/_revdoku/form/<name>` using only that
-definition's fixed fields. Keep the hidden `_gotcha` honeypot.
+definition's fixed fields. Keep the hidden `_gotcha` honeypot. Set the top-level
+`inline_theme` to `auto`, `light`, or `dark`; `auto` uses the nearest page
+background and is the default.
 
 When the user asks to insert a configured form inline, keep that form
 `hosted: true`, add its named macro to the requested HTML file, and preview the

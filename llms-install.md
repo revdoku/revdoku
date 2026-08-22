@@ -84,7 +84,7 @@ local CLI. A hosted agent cannot read the user's computer.
 
 - Anonymous: 25 MB total, 25 MB per file, 200 files, public only, 24 hours.
 - Free: 1 GB total, 50 MB normal files, 0.5 MB PDFs, 5 versions per file,
-  3 form submissions/day, one primary website custom domain, randomized
+  3 form submissions/day and 30/month, one primary website custom domain, randomized
   Website Name, indexable by default.
 - Personal includes 5 Custom Domains; Developer includes 20 Custom Domains and
   1 brand domain for all websites, with URLs like `<project>.<brand-domain>`.

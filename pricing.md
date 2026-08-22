@@ -17,7 +17,7 @@ Prices are USD. New accounts start on Free. No credit card is required.
 | Search indexing for public production sites | No | Yes | Yes | Yes |
 | Owner can disable indexing | No | Yes | Yes | Yes |
 | Protected websites indexed | — | — | Never | Never |
-| Forms submissions | None | 3/day | 100/day | 500/day |
+| Forms submissions | None | 3/day, 30/month | 100/day | 500/day |
 | Analytics | None | Basic, 30 days | Detailed, 1 year | Advanced, 2 years |
 | Tracking Links | No | No | 5 | 25 |
 | Custom Domains | None | 1 | 5 | 20 |
