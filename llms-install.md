@@ -80,18 +80,16 @@ OAuth screen signs an existing account in; it does not offer signup.
 If the host does not support MCP or the agent needs local/binary files, use the
 local CLI. A hosted agent cannot read the user's computer.
 
-## Limits that affect agent choices
+## Pricing and limits
 
-- Anonymous: 25 MB total, 25 MB per file, 200 files, public only, 24 hours.
-- Free: 1 GB total, 50 MB normal files, 0.5 MB PDFs, 5 versions per file,
-  3 form submissions/day and 30/month, one primary website custom domain, randomized
-  Website Name, indexable by default.
-- Personal includes 5 Custom Domains; Developer includes 20 Custom Domains and
-  1 brand domain for all websites, with URLs like `<project>.<brand-domain>`.
-- Anonymous and Free users cannot choose or rename the Website Name.
-- Password, Require Email, and custom Website Names require an eligible paid
-  plan for the permanent main website.
-- No tier injects a Revdoku footer or badge into the published site.
+Use <https://app.revdoku.com/pricing> for current prices and human-readable
+comparisons. Read the versioned plan limits and indexing contract from
+<https://app.revdoku.com/pricing.json>. `revdoku_status` embeds the public Free
+contract; full-account profile responses include effective account overrides.
+
+Anonymous previews are temporary and `noindex`. After claim, a permanent public
+Free website is indexable by default. Password, Require Email, and temporary
+preview websites remain `noindex`. No tier injects a Revdoku footer or badge.
 
 ## Troubleshooting tutorials
 

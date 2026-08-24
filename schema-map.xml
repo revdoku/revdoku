@@ -5,7 +5,8 @@
   <resource type="plugin-manifest" href="https://revdoku.com/.well-known/ai-plugin.json" media-type="application/json"/>
   <resource type="api-catalog" href="https://revdoku.com/.well-known/api-catalog" media-type="application/linkset+json"/>
   <resource type="openapi" href="https://revdoku.com/openapi.json" media-type="application/vnd.oai.openapi+json"/>
-  <resource type="pricing" href="https://revdoku.com/pricing.md" media-type="text/markdown"/>
+  <resource type="pricing" href="https://app.revdoku.com/pricing.md" media-type="text/markdown"/>
+  <resource type="plan-limits-and-indexing" href="https://app.revdoku.com/pricing.json" media-type="application/json"/>
   <resource type="documentation" href="https://revdoku.com/docs" media-type="text/html"/>
   <resource type="skill" href="https://github.com/revdoku/revdoku/tree/main/skills/revdoku" media-type="text/html"/>
   <feed type="agent-resources" href="https://revdoku.com/schema-feeds/agent-resources.jsonl" media-type="application/x-ndjson"/>

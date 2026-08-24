@@ -16,6 +16,9 @@ if [[ -f "$TEST_DIR/../skills/revdoku/SKILL.md" ]]; then
   VERSION_FILE="$DIST_ROOT/VERSION"
   CHANGELOG_FILE="$DIST_ROOT/CHANGELOG.md"
   MANIFEST_ROOT="$DIST_ROOT"
+  PRICING_FILE="$DIST_ROOT/pricing.md"
+  SCHEMA_MAP_FILE="$DIST_ROOT/schema-map.xml"
+  RESOURCE_FEED_FILE="$DIST_ROOT/schema-feeds/agent-resources.jsonl"
   PUBLIC_DISTRIBUTION=true
 else
   # Canonical source-package layout.
@@ -31,6 +34,9 @@ else
   CHANGELOG_FILE="$SOURCE_ROOT/CHANGELOG.md"
   CHANGELOG_HELPER="$SOURCE_ROOT/scripts/changelog.rb"
   MANIFEST_ROOT="$SOURCE_CLIENT_DIR"
+  PRICING_FILE="$SOURCE_CLIENT_DIR/discovery/pricing.md"
+  SCHEMA_MAP_FILE="$SOURCE_CLIENT_DIR/discovery/schema-map.xml"
+  RESOURCE_FEED_FILE="$SOURCE_CLIENT_DIR/discovery/schema-feeds/agent-resources.jsonl"
   PUBLIC_DISTRIBUTION=false
 fi
 
@@ -67,10 +73,14 @@ require_text "$LLMS_INSTALL_FILE" "npx skills add revdoku/revdoku --skill revdok
 require_text "$LLMS_INSTALL_FILE" "app.revdoku.com/users/sign_up"
 require_text "$LLMS_INSTALL_FILE" "website_preview_create"
 require_text "$LLMS_INSTALL_FILE" "OAuth and agent email-code flows are sign-in-only"
-require_text "$LLMS_INSTALL_FILE" "one primary website custom domain"
+require_text "$LLMS_INSTALL_FILE" "https://app.revdoku.com/pricing"
+require_text "$LLMS_INSTALL_FILE" "https://app.revdoku.com/pricing.json"
+require_text "$LLMS_INSTALL_FILE" "Free website is indexable by default"
 require_text "$CLI_FILE" "--login)"
 require_text "$CLI_FILE" "grant TOKEN"
 require_text "$CLI_FILE" "Without sign-in: public 24-hour preview + claim link."
+require_text "$CLI_FILE" "https://app.revdoku.com/pricing.json"
+reject_text "$CLI_FILE" "up to 5 public websites"
 require_text "$CLI_FILE" "signed in, preview the current private draft for 15 minutes"
 require_text "$CLI_FILE" '.data.publish_error // empty'
 require_text "$CLI_FILE" '.data.guidance // empty'
@@ -84,6 +94,7 @@ require_text "$API_FILE" '`POST` | `/api/v1/buckets/:id/form_submissions/:submis
 require_text "$API_FILE" '`DELETE` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
 require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/versions`'
 require_text "$API_FILE" 'Selection coordinates are `[x1, y1, x2, y2]`.'
+require_text "$API_FILE" '`"area_selection_enabled": false`'
 require_text "$SKILL_FILE" '`bucket_publication_analytics`'
 require_text "$SKILL_FILE" 'Analytics accepts `all`'
 require_text "$SKILL_FILE" '`downloads` contains'
@@ -91,15 +102,19 @@ require_text "$SKILL_FILE" '`bucket_env_get`'
 require_text "$SKILL_FILE" '`bucket_lock_files`'
 require_text "$SKILL_FILE" '`bucket_delete_permanently`'
 require_text "$SKILL_FILE" '`github_sync_setup`'
+require_text "$SKILL_FILE" '`area_selection_enabled: false`'
 require_text "$SKILL_FILE" 'Password, and Require Email'
 require_text "$API_FILE" '`github_sync_setup`'
-require_text "$API_FILE" 'A permanent Free plan includes 1 GB storage and up to 5 public websites.'
-require_text "$SKILL_FILE" 'PDFs up to 0.5 MB'
-reject_text "$SKILL_FILE" 'No trial is started.'
+require_text "$API_FILE" 'https://app.revdoku.com/pricing'
+require_text "$API_FILE" 'https://app.revdoku.com/pricing.json'
+require_text "$API_FILE" 'including Free websites, are indexable by'
+require_text "$SKILL_FILE" 'https://app.revdoku.com/pricing'
+require_text "$SKILL_FILE" 'It is indexable by default'
 require_text "$SKILL_FILE" 'Never silently publish protected content as'
-require_text "$SKILL_FILE" 'one primary website custom domain'
 require_text "$SKILL_FILE" 'Every authenticated bucket preview lasts 15 minutes'
-require_text "$SKILL_FILE" '`<project>.<brand-domain>`'
+reject_text "$SKILL_FILE" 'up to 100 permanent public websites'
+reject_text "$SKILL_FILE" 'up to 5 public websites'
+reject_text "$SKILL_FILE" 'sites are noindex by default'
 require_text "$API_FILE" '`/api/v1/account/brand_domain`'
 require_text "$API_FILE" '"status": "pending_ownership"'
 require_text "$API_FILE" 'The lifetime cannot be customized'
@@ -108,6 +123,14 @@ require_text "$SKILL_FILE" '`ACCOUNT_SUSPENDED`'
 require_text "$SKILL_FILE" 'support@revdoku.com'
 require_text "$API_FILE" '`account.restriction`'
 require_text "$SOURCE_CLIENT_DIR/docs.md" 'website moderation restriction'
+require_text "$SOURCE_CLIENT_DIR/docs.md" 'Search visibility changes at claim'
+require_text "$PRICING_FILE" 'https://app.revdoku.com/pricing.md'
+require_text "$PRICING_FILE" 'https://app.revdoku.com/pricing.json'
+reject_text "$PRICING_FILE" '| Limit |'
+require_text "$SCHEMA_MAP_FILE" 'href="https://app.revdoku.com/pricing.md"'
+require_text "$SCHEMA_MAP_FILE" 'href="https://app.revdoku.com/pricing.json"'
+require_text "$RESOURCE_FEED_FILE" '"url":"https://app.revdoku.com/pricing.md"'
+require_text "$RESOURCE_FEED_FILE" '"url":"https://app.revdoku.com/pricing.json"'
 
 for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
   reject_text "$file" "local stdio MCP"
@@ -117,11 +140,18 @@ for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
   reject_text "$file" "Settings → Security and login"
   reject_text "$file" "Any field names you like"
   reject_text "$file" "Starter trial"
+  reject_text "$file" "trial"
+  reject_text "$file" "Trial"
   reject_text "$file" "available on Starter"
   reject_text "$file" "available on Builder"
   reject_text "$file" "paid plans"
   reject_text "$file" "sign in or create an account"
 done
+
+require_text "$README_FILE" 'can be downloaded from Revdoku at'
+require_text "$README_FILE" 'export them to CSV at any time'
+require_text "$API_FILE" 'export authorized submission data to CSV at'
+require_text "$SKILL_FILE" 'export submission data to CSV at any time'
 
 require_text "$API_FILE" 'Supported ranges are `all`'
 

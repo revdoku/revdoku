@@ -45,6 +45,14 @@ Without credentials, this creates a randomized public preview that expires in
 After claim, the next run exchanges the one-time connection grant itself. Use
 `revdoku login` only to sign in to a different existing account.
 
+Search visibility changes at claim: the anonymous preview is `noindex`; its
+permanent public Free website is indexable by default after claim. Password,
+Require Email, and temporary preview websites remain `noindex`.
+
+Use <https://app.revdoku.com/pricing> for current plan prices and human-readable
+comparisons. Use <https://app.revdoku.com/pricing.json> for the versioned plan
+limits and indexing contract; both are rendered from the same plan rows.
+
 Publish a specific folder, or save a private draft instead of going live:
 
 ```sh
@@ -161,6 +169,16 @@ do not retry blocked mutations indefinitely. If status reports an automated
 website moderation restriction, the named published website caused the account
 to be made read-only. Contact support@revdoku.com if you believe the decision
 was incorrect; do not create replacement state to evade the hold.
+
+## Data access and exports
+
+All files that make up a bucket or website can be downloaded from Revdoku at
+any time. Built-in form submissions are encrypted and protected by Turnstile
+and honeypot controls. Owners can export submission data to CSV at any time in
+Bucket → Forms, or read it through the REST API.
+
+Generic outbound form webhooks and self-service submission-retention policies
+are not currently available.
 
 ## Protected Websites
 

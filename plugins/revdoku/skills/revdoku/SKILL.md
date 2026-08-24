@@ -67,34 +67,30 @@ for a live public or protected website link.
 
 ## Anonymous preview and Free plan
 
-Anonymous preview: no account, one public website, randomized Website Name,
-25 MB total, 200 files, no private bucket, forms, notifications, analytics,
-access gate, custom domain, or custom URL. It expires after 24 hours; updates
-retain the original expiry. Creates and updates share a limit of 60 publish
-operations per hour per source IP. If Revdoku returns `RATE_LIMITED`, respect
-its `retry_after` value; do not create new state or change networks to evade it.
+Anonymous preview: no account, one randomized public website, 25 MB total, 200
+files, and no private bucket, forms, notifications, analytics, access gate,
+custom domain, or custom URL. It expires after 24 hours; updates do not extend
+expiry. Creates and updates share 60 publishes/hour/source IP. On
+`RATE_LIMITED`, honor `retry_after`; never create state or change networks to
+evade it.
 
-After claim, Free includes 5 permanent public websites, 1 GB storage, 50 MB
-normal files, PDFs up to 0.5 MB, 5 versions per file, 3 form submissions daily
-and 30 monthly, one primary website custom domain, and a randomized Website Name. Free
-sites are indexable by default and show no Revdoku footer or badge. Custom
-Website Names, renames, Password, Require Email, and the optional `www`
-companion are paid for permanent sites. Brand domains such as
-`<project>.<brand-domain>` require Developer.
+After claim, the website becomes a permanent public Free website with a
+randomized Website Name. It is indexable by default and shows no Revdoku footer
+or badge. Anonymous and temporary previews, Password, and Require Email websites
+remain noindex. Read plan entitlements from `https://app.revdoku.com/pricing.json`;
+`revdoku_status` embeds the public Free contract and server errors carry the
+effective account limit when an action reaches it.
 
-Free and anonymous websites are subject to automatic abuse review. If a website
-triggers a high-confidence automated moderation hold, Revdoku takes the website
-offline and makes the account read-only. When `revdoku_status` returns
-`account.restriction`, or a tool returns `ACCOUNT_SUSPENDED`, tell the user that
-the account was made read-only because of the named published website, relay the
-returned restriction message, and ask them to contact `support@revdoku.com` if
-they believe the decision was incorrect. Existing files remain readable; do not
-retry writes, republish, create replacement buckets, or attempt to evade the hold.
+Free and anonymous websites receive automatic abuse review. A high-confidence
+hold takes the website offline and makes the account read-only. On
+`account.restriction` or `ACCOUNT_SUSPENDED`, identify the named website, relay
+the message, and direct appeals to `support@revdoku.com`. Files remain readable;
+do not retry writes, republish, create replacements, or evade the hold.
 
 For a new or materially changed website, prefer a temporary preview before the
-main publish unless the user has already reviewed it or explicitly asks to
-publish immediately. Previews are noindex, auto-expire, do not consume the live
-site slot, and can demonstrate paid access and presentation settings on Free.
+main publish unless already reviewed or explicitly requested live. Previews are
+noindex, auto-expire, do not consume a live slot, and can demonstrate paid
+settings on Free.
 Every authenticated bucket preview lasts 15 minutes; its lifetime cannot be
 customized. Re-running the preview starts a new 15-minute window.
 
@@ -162,6 +158,9 @@ authenticates normally when needed.
 
 ### Buckets and files
 
+All files that make up a bucket or website remain downloadable from Revdoku at
+any time.
+
 - Find the target with `bucket_list` or `bucket_get`; reuse its returned
   `bucket_id` instead of asking the user to type one.
 - Create or update buckets with `bucket_create`, `bucket_update`,
@@ -221,14 +220,11 @@ the link and do not send `slug_suggestions`. Paid users may choose or rename a
 managed Revdoku URL. Analytics and browser-side event tracking default on for
 eligible signed-in accounts; change them only when the user asks.
 
-Search visibility is affirmative: `allow_search_indexing` on `bucket_create` or
-`bucket_update` means **Allow search engines to index this public website**.
-Permanent public websites default to `true`; set it to `false` only when the
-owner asks to hide the site from search. Password, Require Email, anonymous, and
-temporary preview websites always return `search_engine_visibility.locked=true`
-and cannot be indexed. Enabling the setting removes only Revdoku's platform
-`noindex` controls; it does not override a website owner's own `noindex` tag or
-guarantee that a search engine will index the site.
+`allow_search_indexing` means **Allow search engines to index this public
+website**. Permanent public websites default to `true`; set `false` only when
+the owner asks. Password, Require Email, anonymous, and temporary previews
+return `search_engine_visibility.locked=true`. Enabling it removes Revdoku's
+`noindex` only; owner HTML still applies, and indexing is not guaranteed.
 
 Password mode generates or retains a shared password. Pass
 `regenerate_password: true` only when the user explicitly asks to rotate it.
@@ -289,8 +285,8 @@ store private responses and can be used on public sites.
 
 Configure `metadata.publication_forms` through `bucket_create` or
 `bucket_update`. Free uses exact presets. Form customization plans may customize
-copy and fields or reuse a template under a unique endpoint. Free accounts may
-preview paid settings; permanent publish requires an upgrade. Compact preset:
+copy and fields or reuse a template under a unique endpoint. Free accounts cannot
+save or preview customized forms. Compact preset:
 
 ```json
 {
@@ -304,6 +300,7 @@ preview paid settings; permanent publish requires an upgrade. Compact preset:
         "name": "feedback",
         "template": "feedback",
         "hosted": true,
+        "area_selection_enabled": true,
         "widget_position": {
           "desktop": "top-right",
           "mobile": "bottom-right"
@@ -314,29 +311,33 @@ preview paid settings; permanent publish requires an upgrade. Compact preset:
 }
 ```
 
-With form customization, set `label`, `description`, and ordered
-`fields` using `name`, `email`, `phone`, `company`, `budget`, `date`, and
-`message`. Dates are stored as `YYYY-MM-DD` without timezone adjustment. Each
-form can choose what follows a confirmed submission.
+Customization supports `label`, `description`, and ordered `fields`: `name`,
+`email`, `phone`, `company`, `budget`, `date`, and `message`. Dates use
+`YYYY-MM-DD`. Each form can choose what follows a confirmed submission.
 Omit `success_response` (or use `{"mode":"system"}`) for Revdoku's saved
 message. Use `{"mode":"file","path":"downloads/guide.pdf"}` to open a file,
 which is available on every plan.
-Paths are relative to the published website root and must exist by
-publish/republish; updates to an existing bucket reject a missing target. PDFs,
+Paths are root-relative and must exist at publish; updates reject missing targets. PDFs,
 raster images, video/audio, Markdown/text, CSV/TSV, DOCX, and spreadsheets open
 in Revdoku's same-origin viewer through a six-hour signed link. Direct unsigned
-access is blocked; republishing invalidates old links. Password and Require
-Email resources keep the website's access gate. Avoid HTML, SVG, folders,
-archives, executables, or unknown formats for new targets;
-legacy HTML/folder responses remain direct redirects until changed. This option
-sends no email.
+access is blocked; republishing invalidates old links. Protected resources keep
+their gate. Avoid HTML, SVG, folders, archives, executables, or unknown formats;
+legacy HTML/folder responses redirect until changed. This sends no email.
 
-Use `{{REVDOKU_FORM:feedback}}` to render one configured hosted form inline, or
-`{{REVDOKU_FORM}}` for all configured hosted forms. To hand-author a form, set
+Use `{{REVDOKU_FORM:feedback}}` to select and render one configured hosted form
+inline, or `{{REVDOKU_FORM}}` to select the first configured hosted form. A page
+loads only the form type selected by its first valid macro; without a valid macro
+it loads the first configured hosted form as a floating widget. The selected type
+may appear inline, floating, or both. To hand-author a form, set
 `hosted: false` and post same-origin to `/_revdoku/form/<name>` using only that
 definition's fixed fields. Keep the hidden `_gotcha` honeypot. Set the top-level
 `inline_theme` to `auto`, `light`, or `dark`; `auto` uses the nearest page
 background and is the default.
+
+`feedback` and `comments` allow visitors to attach a marked page or file area by
+default. Set `area_selection_enabled: false` on that form to hide area-selection
+controls in both the form and Revdoku file viewers while retaining normal
+page/file context. Other templates do not support area selection.
 
 When the user asks to insert a configured form inline, keep that form
 `hosted: true`, add its named macro to the requested HTML file, and preview the
@@ -350,7 +351,8 @@ selection coordinates. Use the stable `bucket.website.submissions_review.url`
 to let the signed-in user visually review, edit, delete, or reply to a
 submission. MCP does not mutate submissions directly. Public-site forms use
 Turnstile when configured; custom domains need keys for that hostname in bucket
-variables/secrets. The copy-paste form example is at
+variables/secrets. Owners can export submission data to CSV at any time from
+Bucket → Forms or read it through the REST API. The copy-paste form example is at
 `https://github.com/revdoku/revdoku/blob/main/templates/contact-form-example.html`.
 
 ## Local CLI

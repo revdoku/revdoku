@@ -137,7 +137,8 @@ usage() {
   cat <<USAGE
 revdoku — publish a folder to the web in one command.
 
-Free plan available: publish up to 5 public websites. Preview first, then publish when ready.
+Free plan available. Current limits: https://app.revdoku.com/pricing.json
+Preview first, then publish when ready.
 
 Usage: revdoku <command> [PATH] [options]
 
@@ -1195,7 +1196,7 @@ if [[ "$ACTION" == "connection_status" && "$SHOW_PUBLISH_HINT" == "true" && -z "
   echo "Revdoku CLI — not signed in yet." >&2
   echo "  Sign in:   revdoku login" >&2
   echo "  Preview:   revdoku preview .  (recommended before publishing)" >&2
-  echo "  Publish:   revdoku p          (Free includes up to 5 public websites)" >&2
+  echo "  Publish:   revdoku p          (Free available; current plan limits apply)" >&2
   echo "  Commands:  revdoku --help" >&2
   exit 0
 fi
@@ -1390,7 +1391,7 @@ preview_bucket() {
           publication: $p,
           public_url: $p.public_url,
           expires_at: $p.expires_at,
-          guidance: "Temporary preview is live for 15 minutes. The Free plan supports up to 5 public websites, and paid settings work here for evaluation. Publish for real with: revdoku p"
+          guidance: "Temporary preview is live for 15 minutes. Paid settings work here for evaluation. Current Free limits: https://app.revdoku.com/pricing.json. Publish for real with: revdoku p"
         }
       }' <<<"$response"
 }
