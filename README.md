@@ -40,7 +40,18 @@ send the user to a separate terminal.
 
 Anonymous previews never create private buckets and do not include forms,
 analytics, custom domains, or custom URLs. They are noindex and use a
-`no-referrer` policy.
+`no-referrer` policy. After claim, the permanent public Free website is
+indexable by default. Password, Require Email, and temporary preview websites
+remain noindex.
+
+Current plan prices and human-readable comparisons:
+<https://app.revdoku.com/pricing>. The same plan rows drive the versioned
+limits and indexing contract at <https://app.revdoku.com/pricing.json>.
+
+All files that make up a bucket or website can be downloaded from Revdoku at
+any time. Built-in form submissions are encrypted and protected with spam
+controls; owners can export them to CSV at any time or read them through the
+REST API.
 
 ## Local agents
 

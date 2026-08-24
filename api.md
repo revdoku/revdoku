@@ -29,12 +29,17 @@ connection and its refresh credentials.
 
 ## Free plan and preview-first publishing
 
-A permanent Free plan includes 1 GB storage and up to 5 public websites.
-Free websites use randomized Website Names and are indexable by default. Normal
-files can be up to 50 MB; PDFs are limited to 0.5 MB. No plan injects a
-Revdoku footer or badge. Password, Require Email, and custom Website Names are
-paid features for the main website, but can be evaluated in a temporary
-signed-in preview.
+Use <https://app.revdoku.com/pricing> for current prices and human-readable
+comparisons. Use <https://app.revdoku.com/pricing.json> for the versioned plan
+limits and indexing contract. `GET /api/v1/status` embeds the public Free
+contract; the full-account profile response includes effective account limits
+and overrides. Do not copy numeric limits into integrations.
+
+Permanent public account websites, including Free websites, are indexable by
+default. Anonymous and temporary previews, Password, and Require Email websites
+are always `noindex`. No plan injects a Revdoku footer or badge. Custom Website
+Names and paid access features can be evaluated in a temporary signed-in
+preview.
 
 For a new or materially changed website, use the preview endpoint first unless
 the user has already reviewed it or explicitly asks to publish immediately:
@@ -56,9 +61,8 @@ For a selected-bucket credential with no visible bucket, the state is
 whole-account access instead of suggesting bucket creation.
 Free websites are permanent unless the owner explicitly gives them an expiry.
 
-New accounts start directly on Free; requesting a paid publishing feature does
-not start a trial. If a permanent Password or Require Email publish returns
-`PUBLICATION_UPGRADE_REQUIRED`, keep the requested access private, use the
+New accounts start directly on Free. If a permanent Password or Require Email
+publish returns `PUBLICATION_UPGRADE_REQUIRED`, keep the requested access private, use the
 preview endpoint with that access mode, and retry the permanent publish only
 after the user upgrades. Share the returned `upgrade_url` as the upgrade link;
 do not use this API document as the upgrade destination. Never silently fall
@@ -683,10 +687,10 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/publish_sessions/pus_.../uploads/refresh"
 
 ### Add a Custom Domain
 
-Every signed-in Free account includes one primary website custom domain. Personal
-includes 5 and Developer includes 20. Publish the bucket first. A `www`
-companion is available on Personal and Developer and does not consume another
-website-domain slot.
+Custom-domain capacity and optional `www` support are plan entitlements. Read
+their current availability from <https://app.revdoku.com/pricing.json> and the
+full-account profile response instead of copying plan counts into an
+integration. Publish the bucket first.
 
 ```sh
 curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../custom_domains" \
@@ -981,6 +985,9 @@ Common `redirect_path` values:
 
 ### Bucket Endpoints
 
+All files that make up any bucket or published website remain downloadable from
+Revdoku at any time.
+
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/v1/buckets` | List active buckets by default. Use `?archived=true` to list archived buckets. |
@@ -1151,8 +1158,7 @@ instance with a unique endpoint `name` and a behavior `template`: `contact`,
 or paid-only `blank`.
 Free plans use the templates unchanged. Plans with form customization may customize copy and the
 bounded field catalog, and may reuse a template under another endpoint name.
-Free accounts can save and preview paid settings, but a permanent publish returns
-an upgrade requirement until those settings are reset or the account upgrades.
+Free accounts cannot save or preview customized forms.
 
 ```json
 {
@@ -1185,6 +1191,10 @@ requires Password or Require Email access. Read the current submission limit
 from the API response instead of hard-coding account-specific quotas.
 Submissions are encrypted. The account owner can read them with bucket write
 access via `GET /api/v1/buckets/:id/form_submissions?form_name=contact&limit=50&offset=0`.
+The Bucket → Forms dashboard can export authorized submission data to CSV at
+any time; integrations can read the same data through these REST endpoints.
+Generic outbound form webhooks and self-service submission-retention policies
+are not currently available.
 Read one submission with
 `GET /api/v1/buckets/:id/form_submissions/:submission_id`. The response includes
 the encrypted form values after authorized decryption plus immutable document
@@ -1250,6 +1260,12 @@ and mobile `widget_position` values: `top-left`, `top-center`, `top-right`,
 `center-left`, `center`, `center-right`, `bottom-left`, `bottom-center`, or
 `bottom-right` (the default). Every form uses `Send` as its submit-button caption.
 
+The `feedback` and `comments` templates enable area selection by default. Set
+`"area_selection_enabled": false` on that form to remove both the form's
+area-selection button and the matching viewer-toolbar controls. Page, file,
+PDF-page, and media-time context are still captured. Other templates do not
+support area selection.
+
 Every configured form also accepts a `success_response`:
 
 ```json
@@ -1285,14 +1301,12 @@ To render one configured hosted form inline, put its macro in an HTML page:
 {{REVDOKU_FORM:waitlist}}
 ```
 
-The named form is rendered inline on that page and its floating copy is
-suppressed there; other hosted forms remain floating. `{{REVDOKU_FORM}}`
-renders every configured hosted form inline. For example, configure both
-`waitlist` and `feedback` with `"hosted": true`, place
-`{{REVDOKU_FORM:waitlist}}` in `index.html`, and the signup stays inline while
-Feedback remains a floating widget. To hand-author the `<form>` instead, set
-that definition to `"hosted": false` and post same-origin to
-`/_revdoku/form/<name>`.
+Use `{{REVDOKU_FORM}}` to select the first configured hosted form. The first valid
+macro selects the page's one form type. That type may appear inline, floating, or
+both according to its settings; macros for other configured types on the same page
+render nothing. Without a valid macro, the first configured hosted form renders as
+the floating widget. To hand-author the `<form>` instead, set that definition to
+`"hosted": false` and post same-origin to `/_revdoku/form/<name>`.
 
 #### Archive, unarchive, and permanent delete
 
@@ -1462,20 +1476,21 @@ Custom-domain capacity is account-specific. Handle
 `CUSTOM_DOMAIN_LIMIT_REACHED` or an unavailable-capability response and direct
 the user to Revdoku rather than hard-coding account policy in an integration.
 
-Replacing a custom domain keeps the previous active domain serving until the new
-domain becomes active on Personal and Developer. Free has one strict primary-domain slot:
-after ownership of the replacement is verified, Revdoku retires the old domain
-before provisioning the new one.
+When the account supports zero-downtime replacement, the previous active domain
+keeps serving until the new domain becomes active. For an account with a strict
+single-domain slot, Revdoku retires the old domain after ownership of the
+replacement is verified and before provisioning the new one.
 
-Pass `"www": true` on create, or use
-`POST /api/v1/buckets/:bucket_id/custom_domains/www` with
-`{ "enabled": true }`, to add the quota-free paid `www` companion.
+When the account response exposes `www` support, pass `"www": true` on create,
+or use `POST /api/v1/buckets/:bucket_id/custom_domains/www` with
+`{ "enabled": true }`, to add the quota-free companion.
 
 ### Brand Domain Endpoints
 
-A Brand domain is separate from website custom-domain slots. Developer includes
-one Brand domain. It produces exact hostnames such as
-`<project-slug>.<brand-domain>` for every active main website.
+A Brand domain is separate from website custom-domain slots and produces exact
+hostnames such as `<project-slug>.<brand-domain>` for every active main website.
+Availability is plan-driven; use <https://app.revdoku.com/pricing.json> and the
+full-account profile response as the source.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
