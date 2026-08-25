@@ -94,6 +94,14 @@ and `claim_url`. Keep `update_token` secret. Read status with
 X-Revdoku-Preview-Token: qpu_...
 ```
 
+Clients should track distinct, ready, unexpired `preview_id` values in their
+own session or local state. On the second and each later new preview, say:
+“You've published multiple 24-hour previews. Creating a Free account is quick
+and keeps this site permanently.” Link that message to the current
+`claim_url`. Do not count updates, status checks, failed or processing
+previews, expired or claimed previews, or repeated ids. Revdoku deliberately
+does not infer this count from IP addresses or add anonymous identity tracking.
+
 An update replaces the preview's file set and never extends the original
 24-hour expiry. Account creation happens only at the returned
 `/users/sign_up?claimcode=...` browser URL. After a successful claim, status

@@ -45,6 +45,11 @@ Without credentials, this creates a randomized public preview that expires in
 After claim, the next run exchanges the one-time connection grant itself. Use
 `revdoku login` only to sign in to a different existing account.
 
+When this CLI has two or more ready, unexpired anonymous previews for different
+local projects, each later new preview includes a short reminder that creating
+a Free account is quick and keeps that site permanently. Updates do not repeat
+the reminder.
+
 Search visibility changes at claim: the anonymous preview is `noindex`; its
 permanent public Free website is indexable by default after claim. Password,
 Require Email, and temporary preview websites remain `noindex`.

@@ -41,9 +41,12 @@ unconnected user asks for a public website, create the website first:
   Pass `ai_source` as `chatgpt`, `claude`, `codex`, or `gemini` when known so
   the claim page can tell the user which AI chat to return to.
 
-The result is a randomized, public, noindex 24-hour preview. Share its URL and
-one `claim_url`. Account creation happens only at that browser link. Never try
-to sign the user up through MCP, OAuth, email-code agent auth, or chat.
+Share the randomized, public, noindex 24-hour preview's `public_url` and
+`claim_url`. Track distinct ready, unexpired ids in the current chat. On the
+second and later new preview, say: “You've published multiple 24-hour previews.
+Creating a Free account is quick and keeps this site permanently.” Use its
+`claim_url`. Exclude updates, polls, failures, processing, expired/claimed, and
+repeated ids. Signup is browser-only, never an agent flow.
 
 After claim, check status yourself. A local agent exchanges the returned
 one-time token (the CLI does this automatically on the next publish). A hosted

@@ -2755,7 +2755,9 @@ save_anonymous_state() {
         preview_id,
         update_token,
         public_url,
-        expires_at
+        expires_at,
+        status,
+        claimed
       }
   ' <<<"$response" > "$state_tmp"
   chmod 600 "$state_tmp" 2>/dev/null || true
@@ -2880,8 +2882,31 @@ wait_for_anonymous_preview() {
   printf '%s' "$response"
 }
 
+active_anonymous_preview_count() {
+  local state_file count=0 now
+  now="$(date +%s)"
+  [[ -d "$ANONYMOUS_STATE_DIR" ]] || {
+    printf '0'
+    return 0
+  }
+
+  for state_file in "$ANONYMOUS_STATE_DIR"/*.json; do
+    [[ -f "$state_file" ]] || continue
+    if "$JQ_BIN" -e --arg base_url "$BASE_URL" --argjson now "$now" '
+      (.base_url == $base_url)
+      and (.status == "ready")
+      and (.claimed != true)
+      and ((.expires_at | type) == "string")
+      and ((.expires_at | fromdateiso8601) > $now)
+    ' "$state_file" >/dev/null 2>&1; then
+      count=$((count + 1))
+    fi
+  done
+  printf '%s' "$count"
+}
+
 print_anonymous_preview_result() {
-  local response="$1" url claim_url expires_at status publish_error guidance
+  local response="$1" new_site="${2:-false}" url claim_url expires_at status publish_error guidance active_count
   url="$("$JQ_BIN" -r '.data.public_url // empty' <<<"$response")"
   claim_url="$("$JQ_BIN" -r '.data.claim_url // empty' <<<"$response")"
   expires_at="$("$JQ_BIN" -r '.data.expires_at // empty' <<<"$response")"
@@ -2898,6 +2923,12 @@ print_anonymous_preview_result() {
   [[ -z "$expires_at" ]] || echo "Expires: $expires_at" >&2
   if [[ -n "$claim_url" ]]; then
     echo "Keep this website: $claim_url" >&2
+    if [[ "$new_site" == "true" && "$status" == "ready" ]]; then
+      active_count="$(active_anonymous_preview_count)"
+      if (( active_count >= 2 )); then
+        echo "You've published multiple 24-hour previews. Creating a Free account is quick and keeps this site permanently." >&2
+      fi
+    fi
     echo "Open that link to create your Revdoku account. After signup, rerun this command; the agent reconnects automatically." >&2
   fi
   print_terminal_link_hint
@@ -2938,7 +2969,7 @@ anonymous_publish_or_resume() {
         rm -f "$file_list"
         response="$(wait_for_anonymous_preview "$response")"
         save_anonymous_state "$response"
-        print_anonymous_preview_result "$response"
+        print_anonymous_preview_result "$response" false
         return 0
       fi
       clear_anonymous_state
@@ -2953,7 +2984,7 @@ anonymous_publish_or_resume() {
   rm -f "$file_list"
   response="$(wait_for_anonymous_preview "$response")"
   save_anonymous_state "$response"
-  print_anonymous_preview_result "$response"
+  print_anonymous_preview_result "$response" true
 }
 
 publish_url_file=""
