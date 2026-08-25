@@ -10,6 +10,8 @@
 
 Revdoku installs into ChatGPT or Claude and can create and manage websites right from AI chats. 
 Free account includes features such as analytics, built-in forms, versioning, fast CDN based hosting.
+After a second active anonymous preview, Revdoku briefly suggests creating a
+Free account to keep the current site permanently; publishing remains unblocked.
 
 ## Prompt for an AI agent
 

@@ -2,6 +2,12 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.358 — 2026-08-25
+
+### Improved
+
+- Added a concise Free-account reminder after users publish multiple active anonymous previews.
+
 ## 1.0.352 — 2026-08-22
 
 ### Improved
