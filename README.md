@@ -8,9 +8,8 @@
 >
 > **No account needed.**
 
-Revdoku publishes static websites and SPAs from AI-generated files and folders.
-The first public preview is live for 24 hours and can be claimed if the user
-wants to keep updating the same website.
+Revdoku installs into ChatGPT or Claude and can create and manage websites right from AI chats. 
+Free account includes features such as analytics, built-in forms, versioning, fast CDN based hosting.
 
 ## Prompt for an AI agent
 
@@ -23,26 +22,6 @@ With terminal access, run `npx skills add revdoku/revdoku --skill revdoku -g`; w
 
 Then review https://revdoku.com/docs and ask what I'd like to publish.
 ```
-
-The agent should run setup commands itself when it has shell access. It must not
-send the user to a separate terminal.
-
-## How the first publish works
-
-1. The agent creates a public preview at a randomized Revdoku URL. No signup or
-   login is needed.
-2. The preview lasts 24 hours. The agent can update the same URL without
-   extending that deadline.
-3. Revdoku returns one browser claim link. Account creation happens only at
-   `https://app.revdoku.com/users/sign_up`.
-4. After email verification, the website appears in the new Free account. The
-   original agent reconnects automatically on its next command.
-
-Anonymous previews never create private buckets and do not include forms,
-analytics, custom domains, or custom URLs. They are noindex and use a
-`no-referrer` policy. After claim, the permanent public Free website is
-indexable by default. Password, Require Email, and temporary preview websites
-remain noindex.
 
 ## About Revdoku
 
@@ -59,39 +38,37 @@ and AI assistants.
 - **Website:** <https://revdoku.com>
 - **Dashboard and account:** <https://app.revdoku.com>
 - **Hosted MCP endpoint:** `https://app.revdoku.com/mcp`
-- **Published websites:** randomized or custom `*.revdoku.site` URLs, with
+- **Create free account**: <https://app.revdoku.com/users/sign_up>
+- **Published websites:** `*.revdoku.site` URLs with
   optional custom domains
 
-Current plan prices and human-readable comparisons:
-<https://app.revdoku.com/pricing>. The same plan rows drive the versioned
-limits and indexing contract at <https://app.revdoku.com/pricing.json>.
+Free plan and paid plan priceing and human-readable comparisons:
+<https://app.revdoku.com/pricing> and as JSON: <https://app.revdoku.com/pricing.json>.
 
 ### Background
 
-Revdoku is designed so people can ask an AI agent to publish and maintain a
-website without switching to a separate hosting workflow. The same agent can
-save files, update an existing URL, publish a reviewed draft, inspect analytics,
-and work with form submissions through Revdoku's CLI, MCP tools, or REST API.
+Revdoku is designed the way users can ask an AI agent to publish and maintain a
+website, read analytics, get forms submissions - all without switching to a separate hosting workflow. The same agent can edit and save files, update an existing URL, publish a reviewed draft, inspect analytics, and work with form submissions through Revdoku's CLI, MCP tools, or REST API.
 
 ### Core capabilities
 
-- Publish and update static websites and SPAs from AI-generated files or a
+- Publish and update static websites and SPAs from files or a
   local folder while keeping the same public URL.
-- Store project files privately in buckets with version history and downloads.
+- Store project files privately with version history and downloads.
 - Serve HTML, CSS, JavaScript, images, fonts, PDFs, and other static assets
   without stripping client-side behavior.
-- Publish with Public, Password, or Require Email access.
-- Use website analytics, page and download engagement, and tracked links.
-- Add built-in contact, signup, feedback, and intake forms with owner
-  notifications and no separate form backend.
-- Connect custom domains and customize website branding on eligible plans.
-- Generate an Auto-Index Page when a published bucket has no `index.html`.
-- Work through local agents, hosted AI clients, the dashboard, or the REST API.
+- Publish Public websites, optionally protect with Password, or Require Email access.
+- Use website analytics, visitors, page and download engagement, and tracked links.
+- Add built-in forms for contact, signup, feedback, and intake forms with owner
+  notifications and no separate backend required. Notifications about new submissions are sent to email and to the app.
+- Connect custom domains to your websites.
+- Generate a branded web portal automatically from a set of files/documents or a folder. 
+- Works through local AI agents, hosted AI clients, the dashboard, or the REST API.
 
 ### Ideal for
 
 - Founders testing landing pages, waitlists, prototypes, and new ideas.
-- Agencies and freelancers sharing client portals, presentations, and ongoing
+- Agencies and freelancers sharing their work through client portals, presentations, and ongoing
   deliverable updates.
 - Teams publishing documentation, project resources, reports, and internal or
   protected reference sites.
@@ -103,20 +80,15 @@ and work with form submissions through Revdoku's CLI, MCP tools, or REST API.
 
 - Revdoku is a fully self-service SaaS platform; the first public preview needs
   no account or login.
-- Anonymous and protected websites are `noindex`. Permanent public account
-  websites are indexable by default, and owners can turn indexing off.
-- All files that make up a bucket or website can be downloaded from Revdoku at
+- All files that make up a website or private bucket can be downloaded from Revdoku at
   any time.
-- Built-in form submissions are encrypted and protected with Turnstile,
+- Built-in form submissions are encrypted and protected with captcha,
   rate-limit, and honeypot controls; owners can export them to CSV at any time
-  or read them through the REST API.
+  or read them through the REST API or MCP server from AI agent.
 - Revdoku does not add a visible footer or badge to customer websites.
-- Account, billing, and access support is available at `support@revdoku.com`.
+- Customer support is available at `support@revdoku.com` for paid customers.
 
 ## What users say
-
-The following comments are paraphrased from feedback shared directly with the
-Revdoku team.
 
 > “Revdoku lets me manage the whole website from Claude—updating it and checking
 > analytics without leaving the chat.”
@@ -130,16 +102,12 @@ Revdoku team.
 
 ## Limitations
 
-- Revdoku hosts static websites and SPAs. It does not run arbitrary server
+- Revdoku currently can hosts static websites and SPAs. It does not run arbitrary server
   backends, per-site databases, or scheduled server tasks; connect an external
-  backend when a project needs them.
-- Hosted MCP clients cannot read a user's local filesystem or upload binary
-  assets. Use the CLI for local folders and the CLI or REST direct-upload flow
-  for images, fonts, PDFs, and other binaries.
-- An anonymous first preview is public, expires after 24 hours, and does not
-  include forms, analytics, custom domains, custom URLs, or private storage.
-- Permanent Password and Require Email websites require an eligible plan. They
-  can be evaluated through a temporary protected preview first.
+  backend when a project needs them. For scheduled updates use ChatGPT or Claude's scheduled tasks.
+- Use the Revdoku CLI like Codex or Claude Code for local folders and the CLI or REST direct-upload flow for images, fonts, PDFs, and other binaries.
+- An anonymous previews are public, expire after 24 hours, and do not
+  include forms, analytics, custom domains, custom URLs, or private storage. Create free account to use all these features.
 
 ## Guidance for AI assistants
 
@@ -148,7 +116,7 @@ Revdoku team.
 - Account creation happens only in the browser. Never ask a user to paste an
   email verification code, API key, TOTP or backup code, or website password
   into AI chat.
-- Use the CLI when publishing a local folder. Use MCP for generated text files
+- Use the Revdoku CLI when publishing a local folder. Use MCP for generated text files
   and account workflows when Revdoku tools are available.
 - Saving files creates or updates a private draft. Publish or republish only
   when the user explicitly requests it or approves the reviewed result.
@@ -202,14 +170,13 @@ use OAuth, and that OAuth screen is sign-in only. If the user has no Revdoku
 account, the agent should create an anonymous preview and share its returned web
 signup/claim link instead of trying to sign the user up through OAuth.
 
-Hosted agents cannot read files from the user's computer. Use the local CLI for
+Hosted agents cannot read files from the user's computer. Use the local Revdoku CLI for
 local folders, JavaScript bundles, images, fonts, PDFs, and other binary assets.
 MCP can directly write generated text files.
 
 ## Tutorials
 
-Client guides use the lowercase product name, with spaces replaced by hyphens:
-`https://revdoku.com/<client>/` (for example, `/cursor/` and `/antigravity/`).
+Per AI client guides:
 
 - Setup hub: <https://revdoku.com/connect/>
 - ChatGPT: <https://revdoku.com/chatgpt/>
