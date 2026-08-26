@@ -2,6 +2,13 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.359 — 2026-08-26
+
+### Improved
+
+- A lone top-level HTML file now opens as the website homepage automatically.
+- Missing-index file collections keep their navigable Auto-Index Page, with HTML files opening directly and a visible fallback if a rich preview cannot load.
+
 ## 1.0.358 — 2026-08-25
 
 ### Improved
