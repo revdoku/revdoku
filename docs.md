@@ -124,10 +124,11 @@ Netlify, Vercel, or another host — Revdoku hosts static websites and SPAs.
 
 Revdoku supports two website modes:
 
-- `static`: normal static files where the home page is `index.html` (or `index.htm`).
+- `static`: normal static files using `index.html`, `index.htm`, or a lone top-level HTML file as the home page.
 - `spa`: single-page apps where app routes fall back to the index page.
-If a published bucket does not contain `index.html`, Revdoku creates an
-Auto-Index Page that lists and previews files. Custom Auto-Index templates must
+With no index, a lone top-level HTML file becomes the home page automatically.
+Every other missing-index site gets an Auto-Index Page that lists and previews
+files; HTML rows open directly. Custom Auto-Index templates must
 include `{{files}}` or `{{ files }}`; supported macros are `{{title}}`,
 `{{description}}`, `{{files}}`, `{{theme_switch}}`, `{{account_name}}`, and
 `{{account_logo}}`, with optional whitespace inside the braces.

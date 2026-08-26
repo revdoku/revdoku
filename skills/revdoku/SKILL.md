@@ -108,19 +108,17 @@ Public.
 
 ## Website structure
 
-- Preserve relative paths. Static files are served as written, including
-  JavaScript and client-side interactivity.
-- The home page is `index.html` or `index.htm`. For a client-side router, use
-  `site_mode: "spa"` or `--site-mode spa`.
-- To publish one top-level folder as the site root, use
-  `publication_root_directory`.
-- Without an index file, Revdoku generates an Auto-Index Page with file
-  previews. A `README.md`, `README.txt`, or `index.md` appears below the list.
+- Preserve relative paths; static files, including JavaScript, are served as written.
+- `index.html`/`index.htm` wins. Otherwise, one top-level HTML file becomes home.
+  For client-side routing, use `site_mode: "spa"` or `--site-mode spa`.
+- Use `publication_root_directory` to publish one top-level folder as the root.
+- Other missing-index sets generate Auto-Index with previews and direct HTML
+  links. A README or `index.md` appears below the list.
 - Custom Auto-Index templates must contain `{{files}}` or `{{ files }}`. Other
   supported macros are `{{title}}`, `{{description}}`, `{{theme_switch}}`,
   `{{account_name}}`, and `{{account_logo}}`.
-- Secret files and executable installers are rejected. Never work around upload
-  safety checks or put credentials into website files.
+- Secret files and installers are rejected. Never bypass safety checks or put
+  credentials in website files.
 
 ## Hosted MCP workflow
 

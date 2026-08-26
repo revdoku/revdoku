@@ -509,12 +509,13 @@ curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../publication" \
   }'
 ```
 
-**Home page.** The site root is always the served folder's `index.html` (or
-`index.htm`) — there is no custom entry-filename parameter. With no
-`index.html`/`index.htm`, Revdoku generates a navigation index page (a file
-listing with previews), rendering a `README.md`/`README.txt`/`index.md` on it
-below the listing, GitHub-style. Choose which folder is served with
-`publication_root_directory` (below).
+**Home page.** The site root uses the served folder's `index.html` or `index.htm`
+when present. If the served source set is exactly one top-level HTML file, that
+file becomes the home page automatically. Every other missing-index site gets a
+navigation Auto-Index Page with a file listing and previews; HTML rows open
+directly. A `README.md`/`README.txt`/`index.md` is rendered below the listing,
+GitHub-style. There is no custom entry-filename parameter. Choose which folder is
+served with `publication_root_directory` (below).
 
 For a protected website, use `"access_mode": "password"`; it requires available
 protected-site capacity on the account. Use `"access_mode": "require_email"`
@@ -529,8 +530,8 @@ text when the authenticated key is allowed to see it.
 
 **Publish only one folder.** Set `"publication_root_directory": "website"` (in
 the publish request body, or as bucket `metadata`) to publish ONLY that top-level
-folder as the site — its `index.html` becomes the root (`/styles.css`, not
-`/website/styles.css`). Every other file/folder in the bucket (e.g. a `scripts/`
+folder as the site. Its resolved homepage and assets move to the root
+(`/styles.css`, not `/website/styles.css`). Every other file/folder in the bucket (e.g. a `scripts/`
 folder) stays stored and version-tracked but is NOT served. This lets a bucket
 hold both a published `website/` and an unserved `scripts/` sibling. Pass an
 empty string to publish the whole bucket again.
@@ -608,17 +609,17 @@ for progress/age. Changing only settings/access (no file changes) reuses the
 existing bundle and does not re-upload files.
 
 Use `site_mode: "static"` for ordinary static sites. Use `site_mode: "spa"` for
-React/Vite-style apps where deep links should fall back to `index.html`.
+React/Vite-style apps where deep links should fall back to the resolved entrypoint.
 `site_mode` is the canonical routing field. `site_type: "website"` remains an
 accepted compatibility field; app/database publication modes are retired and
 must not be used.
 
-If the bucket does not contain `index.html` (or `index.htm`), Revdoku publishes an
-Auto-Index Page that lists and previews files. Account-specific Auto-Index templates
-must include the files macro as `{{files}}` or `{{ files }}`. Supported template
-macros are `{{title}}`, `{{description}}`, `{{files}}`, `{{theme_switch}}`,
-`{{account_name}}`, and `{{account_logo}}`, with optional whitespace inside the
-braces.
+If the served source set has no `index.html`/`index.htm` and is not exactly one
+top-level HTML file, Revdoku publishes an Auto-Index Page that lists and previews
+files. Account-specific Auto-Index templates must include the files macro as
+`{{files}}` or `{{ files }}`. Supported template macros are `{{title}}`,
+`{{description}}`, `{{files}}`, `{{theme_switch}}`, `{{account_name}}`, and
+`{{account_logo}}`, with optional whitespace inside the braces.
 
 Publishing never includes private runtime/development files in the static
 bundle. Paths such as `.workers/**`, `.env*`, `node_modules/**`, local lockfiles,
