@@ -275,11 +275,12 @@ disappears or report returned progress.
 
 ## Built-in forms
 
-Revdoku forms use `waitlist`, `contact`, `feedback`, `comments`, `quote`,
-`question`, `intake`, `resource`, `booking`, or paid-only `blank` templates.
-`resource` is **Get a resource** (required email, optional name).
-`booking` is **Booking request** (required name, email, and preferred date;
-optional phone and message). Every form uses **Send** as its submit button.
+Templates: `waitlist`, `contact`, `feedback`, `comments`, `quote`, `question`,
+`intake`, `resource`, `information`, `issue`, `booking`, and paid-only `blank`.
+`resource` requires email; `information` requires email; `issue` requires a
+description; `booking` requires name and email. Their remaining preset fields are
+optional. Booking dates start blank and paid customization may require them. All
+forms submit with **Send**.
 `comments` is **Feedback Visible To
 Others** and is available only on Password or Require Email sites; the others
 store private responses and can be used on public sites.
@@ -312,9 +313,9 @@ save or preview customized forms. Compact preset:
 }
 ```
 
-Customization supports `label`, `description`, and ordered `fields`: `name`,
-`email`, `phone`, `company`, `budget`, `date`, and `message`. Dates use
-`YYYY-MM-DD`. Each form can choose what follows a confirmed submission.
+Customize `label`, `description`, and ordered `fields`: `name`, `email`, `phone`,
+`company`, `budget`, `date`, and `message`. Dates use `YYYY-MM-DD`. Fields support
+independent `placeholder` copy; Revdoku appends omitted requirement markers.
 Omit `success_response` (or use `{"mode":"system"}`) for Revdoku's saved
 message. Use `{"mode":"file","path":"downloads/guide.pdf"}` to open a file,
 which is available on every plan.
