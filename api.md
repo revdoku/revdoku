@@ -1163,11 +1163,17 @@ New buckets expose no public form endpoint until the owner configures one in
 Website Settings or updates `bucket.metadata.publication_forms`. Each form is an
 instance with a unique endpoint `name` and a behavior `template`: `contact`,
 `feedback`, `comments` (**Feedback Visible To Others**), `quote`, `waitlist`,
-`question`, `intake`, `resource` (**Get a resource**), `booking` (**Booking request**),
+`question`, `intake`, `resource` (**Get a resource**), `information`
+(**Request information**), `issue` (**Report an issue**), `booking`
+(**Booking request**),
 or paid-only `blank`.
 Free plans use the templates unchanged. Plans with form customization may customize copy and the
 bounded field catalog, and may reuse a template under another endpoint name.
 Free accounts cannot save or preview customized forms.
+
+The Booking request preset asks for name and email, with optional phone, message,
+and preferred date. The date starts blank, uses its field copy as an in-control
+placeholder, and can be made required when form customization is available.
 
 ```json
 {
@@ -1262,7 +1268,9 @@ Selection coordinates are `[x1, y1, x2, y2]`. Units are `pdf_point`,
 `image_pixel`, `element_ratio`, or `document_ratio`; PDF selections also carry
 `document_page`.
 When form customization is included, set `label`, `description`, and ordered `fields`
-entries such as `{"name":"email","label":"Work email","required":true}`.
+entries such as `{"name":"email","label":"Email","placeholder":"Work email","required":true}`.
+`placeholder` is optional and independent from the field label; Revdoku appends
+`(required)` or `(optional)` when the placeholder omits either marker.
 Field names are limited to `name`, `email`, `phone`, `company`, `budget`, `date`,
 and `message`; field types are server-owned. Hosted forms can set independent desktop
 and mobile `widget_position` values: `top-left`, `top-center`, `top-right`,

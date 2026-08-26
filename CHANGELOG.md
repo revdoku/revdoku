@@ -2,6 +2,17 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.361 — 2026-08-26
+
+### Added
+
+- Form fields can use custom placeholder copy independently from their labels.
+
+### Improved
+
+- Optional and required date fields stay visibly blank until a visitor opens the date picker.
+- PDF previews no longer repeat a header above the PDF toolbar, and the toolbar uses the file's real filename instead of a page or document title.
+
 ## 1.0.359 — 2026-08-26
 
 ### Improved
