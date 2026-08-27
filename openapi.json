@@ -40,8 +40,8 @@
     "/api/v1/quick_publish": {
       "post": {
         "operationId": "createAnonymousWebsitePreview",
-        "summary": "Create a public 24-hour website preview",
-        "description": "Creates one randomized public website preview without an account or private bucket. The preview is noindex and cannot use forms, analytics, custom domains, or a chosen URL.",
+        "summary": "Create a 24-hour website preview",
+        "description": "Creates one randomized Public or Password website preview without an account or private bucket. A selected built-in form remains a mock until the website is claimed and successfully republished; no submissions, access activity, notifications, or analytics are stored in preview mode.",
         "security": [],
         "parameters": [
           {
@@ -83,6 +83,32 @@
                   "title": {
                     "type": "string",
                     "maxLength": 120
+                  },
+                  "access_mode": {
+                    "type": "string",
+                    "enum": [
+                      "public",
+                      "password"
+                    ],
+                    "default": "public"
+                  },
+                  "form_preset": {
+                    "type": "string",
+                    "enum": [
+                      "off",
+                      "contact",
+                      "feedback",
+                      "information",
+                      "comments",
+                      "quote",
+                      "waitlist",
+                      "question",
+                      "issue",
+                      "intake",
+                      "resource",
+                      "booking"
+                    ],
+                    "default": "off"
                   },
                   "source": {
                     "type": "string"
@@ -186,6 +212,30 @@
                   "title": {
                     "type": "string",
                     "maxLength": 120
+                  },
+                  "access_mode": {
+                    "type": "string",
+                    "enum": [
+                      "public",
+                      "password"
+                    ]
+                  },
+                  "form_preset": {
+                    "type": "string",
+                    "enum": [
+                      "off",
+                      "contact",
+                      "feedback",
+                      "information",
+                      "comments",
+                      "quote",
+                      "waitlist",
+                      "question",
+                      "issue",
+                      "intake",
+                      "resource",
+                      "booking"
+                    ]
                   }
                 }
               }
@@ -285,6 +335,32 @@
               },
               "claimed": {
                 "type": "boolean"
+              },
+              "republish_required": {
+                "type": "boolean",
+                "description": "True after claim until the claimed bucket is successfully republished"
+              },
+              "access_mode": {
+                "type": "string",
+                "enum": [
+                  "public",
+                  "password"
+                ]
+              },
+              "form_preset": {
+                "type": "string"
+              },
+              "access_password": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "access_share_text": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
           }

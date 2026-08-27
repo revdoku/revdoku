@@ -105,6 +105,10 @@ remove_credentials_if_requested() {
 main() {
   local codex_root="${CODEX_HOME:-${HOME}/.codex}"
   local claude_root="${CLAUDE_HOME:-${HOME}/.claude}"
+  local cursor_root="${CURSOR_HOME:-${HOME}/.cursor}"
+  local antigravity_root="${ANTIGRAVITY_HOME:-${HOME}/.gemini/antigravity-cli}"
+  local opencode_root="${OPENCODE_HOME:-${XDG_CONFIG_HOME:-${HOME}/.config}/opencode}"
+  local grok_root="${GROK_HOME:-${HOME}/.grok}"
   local hermes_root="${HERMES_HOME:-${HOME}/.hermes}"
   local openclaw_root="${OPENCLAW_HOME:-${HOME}/.openclaw}"
 
@@ -114,6 +118,18 @@ main() {
       remove_codex_mcp_registration "$codex_root"
       if [[ -d "$claude_root" ]]; then
         remove_skill_from "$claude_root"
+      fi
+      if [[ -d "$cursor_root" ]]; then
+        remove_skill_from "$cursor_root"
+      fi
+      if [[ -d "$antigravity_root" ]]; then
+        remove_skill_from "$antigravity_root"
+      fi
+      if [[ -d "$opencode_root" ]]; then
+        remove_skill_from "$opencode_root"
+      fi
+      if [[ -d "$grok_root" ]]; then
+        remove_skill_from "$grok_root"
       fi
       if [[ -d "$hermes_root" ]]; then
         remove_skill_from "$hermes_root"
@@ -126,8 +142,20 @@ main() {
       remove_skill_from "$codex_root"
       remove_codex_mcp_registration "$codex_root"
       ;;
-    claude)
+    claude|claude-code)
       remove_skill_from "$claude_root"
+      ;;
+    cursor)
+      remove_skill_from "$cursor_root"
+      ;;
+    antigravity)
+      remove_skill_from "$antigravity_root"
+      ;;
+    opencode)
+      remove_skill_from "$opencode_root"
+      ;;
+    grok|grok-build)
+      remove_skill_from "$grok_root"
       ;;
     hermes)
       remove_skill_from "$hermes_root"
@@ -144,11 +172,15 @@ main() {
       remove_skill_from "$codex_root"
       remove_codex_mcp_registration "$codex_root"
       remove_skill_from "$claude_root"
+      remove_skill_from "$cursor_root"
+      remove_skill_from "$antigravity_root"
+      remove_skill_from "$opencode_root"
+      remove_skill_from "$grok_root"
       remove_skill_from "$hermes_root"
       remove_skill_from "$openclaw_root"
       ;;
     *)
-      die "invalid REVDOKU_AGENT=${AGENT}; use auto, codex, claude, hermes, openclaw, both, or all"
+      die "invalid REVDOKU_AGENT=${AGENT}; use auto, codex, claude-code, cursor, antigravity, opencode, grok-build, hermes, openclaw, both, or all"
       ;;
   esac
 

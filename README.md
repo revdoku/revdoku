@@ -16,13 +16,13 @@ Free account to keep the current site permanently; publishing remains unblocked.
 ## Prompt for an AI agent
 
 ```text
-I'd like you to set up Revdoku so you can publish a website for me for free.
+Set up Revdoku so you can publish my work as a website.
 
-Browser-only chat: don't install anything. Direct me to your setup guide—Claude: https://revdoku.com/claude/; ChatGPT: https://revdoku.com/chatgpt/; other products: https://revdoku.com/<lowercase-hyphenated-product-name>/.
+Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install Revdoku yourself and use the local CLI.
 
-With terminal access, run `npx skills add revdoku/revdoku --skill revdoku -g`; without npm, run `curl -fsSL https://revdoku.com/install.sh | bash`.
+Only if local access is unavailable, use the hosted MCP connection instead.
 
-Then review https://revdoku.com/docs and ask what I'd like to publish.
+After setup, ask what I want to publish.
 ```
 
 ## About Revdoku
@@ -108,8 +108,10 @@ website, read analytics, get forms submissions - all without switching to a sepa
   backends, per-site databases, or scheduled server tasks; connect an external
   backend when a project needs them. For scheduled updates use ChatGPT or Claude's scheduled tasks.
 - Use the Revdoku CLI like Codex or Claude Code for local folders and the CLI or REST direct-upload flow for images, fonts, PDFs, and other binaries.
-- An anonymous previews are public, expire after 24 hours, and do not
-  include forms, analytics, custom domains, custom URLs, or private storage. Create free account to use all these features.
+- Anonymous previews can evaluate Public or Password access and one built-in
+  form preset. Forms do not submit and access activity is not recorded until
+  the claimed website is republished. They expire after 24 hours and do not
+  include analytics, custom domains, custom URLs, or private bucket storage.
 
 ## Guidance for AI assistants
 
@@ -127,7 +129,12 @@ website, read analytics, get forms submissions - all without switching to a sepa
 - Preserve requested access controls. Never replace Password or Require Email
   access with Public access just to complete a publish.
 
-## Local agents
+## Local AI apps
+
+The installer supports `codex`, `claude-code`, `cursor`, `antigravity`,
+`opencode`, `grok-build`, `hermes`, `openclaw`, and `all` through the
+`REVDOKU_AGENT` environment variable. Automatic setup installs for Codex and
+any other detected clients.
 
 Install the public skill and CLI:
 
@@ -149,7 +156,8 @@ revdoku p
 
 The first unsigned run prints the preview and claim URLs. Re-running updates the
 same preview. After claim, re-running exchanges Revdoku's one-time connection
-grant automatically and updates the claimed website.
+grant automatically and republishes the claimed website. Until that republish,
+the live URL remains an expiring mock preview.
 
 For a different existing account, run `revdoku login`. This is sign-in only;
 new accounts are created on the web signup page.

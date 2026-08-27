@@ -26,10 +26,10 @@ Otherwise install the local client and skill:
 curl -fsSL https://revdoku.com/install.sh | bash
 ```
 
-The shell installer adds the `revdoku` command and installs the Revdoku skill for
-Codex. It also installs the skill for Claude Code, Hermes, and OpenClaw when
-their local configuration directories already exist. Set `REVDOKU_AGENT` to
-`codex`, `claude`, `hermes`, `openclaw`, `both`, or `all` to choose explicitly.
+The shell installer adds the `revdoku` command and installs the Revdoku skill
+for Codex plus any detected local agents. Set `REVDOKU_AGENT` to `codex`,
+`claude-code`, `cursor`, `antigravity`, `opencode`, `grok-build`, `hermes`,
+`openclaw`, or `all` to choose explicitly.
 
 The examples below use `revdoku` as shorthand. If `~/.revdoku/bin` is not on
 your shell `PATH`, keep using the full `~/.revdoku/bin/revdoku` path.
@@ -40,19 +40,20 @@ Publish the current folder as a public website (the headline command):
 revdoku p
 ```
 
-Without credentials, this creates a randomized public preview that expires in
-24 hours and prints one web signup/claim link. Re-running updates the same URL.
+Without credentials, this creates a randomized Public or Password preview that
+expires in 24 hours and prints one web signup/claim link. Re-running updates the same URL.
 After claim, the next run exchanges the one-time connection grant itself. Use
 `revdoku login` only to sign in to a different existing account.
 
 When this CLI has two or more ready, unexpired anonymous previews for different
 local projects, each later new preview includes a short reminder that creating
-a Free account is quick and keeps that site permanently. Updates do not repeat
-the reminder.
+a Free account lets the user claim and permanently republish that site. Updates
+do not repeat the reminder.
 
-Search visibility changes at claim: the anonymous preview is `noindex`; its
-permanent public Free website is indexable by default after claim. Password,
-Require Email, and temporary preview websites remain `noindex`.
+Search visibility changes after the claimed website is republished: the
+anonymous preview remains `noindex` through claim; its permanent public Free
+website is indexable by default after republish. Password, Require Email, and
+temporary preview websites remain `noindex`.
 
 Use <https://app.revdoku.com/pricing> for current plan prices and human-readable
 comparisons. Use <https://app.revdoku.com/pricing.json> for the versioned plan
@@ -160,10 +161,10 @@ count against live or protected-site limits. Every bucket preview expires 15
 minutes after creation; its lifetime cannot be customized. Re-running the
 preview republishes the same preview URL with a new 15-minute window.
 
-Free accounts may evaluate Password, Require Email, and other paid settings in
-this preview. Applying those settings permanently to the main website still
-requires an eligible paid plan. This is separate from the first anonymous
-pre-signup preview, which has its own fixed 24-hour claim window.
+Free accounts include one permanent Password website. Require Email and other
+paid settings can still be evaluated in this preview before upgrading. This is
+separate from the first anonymous pre-signup preview, which has its own fixed
+24-hour claim window.
 
 Use `--site-mode spa` for compiled client-side apps that need route fallback;
 omit it or use `--site-mode static` for normal static sites. A project-local
