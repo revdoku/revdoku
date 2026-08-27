@@ -35,6 +35,7 @@ PUBLISH="${REVDOKU_PUBLISH:-false}"
 PUBLICATION_ACCESS_MODE="${REVDOKU_PUBLICATION_ACCESS_MODE:-}"
 PUBLICATION_PASSWORD="${REVDOKU_PUBLICATION_PASSWORD:-}"
 PUBLICATION_REGENERATE_PASSWORD="${REVDOKU_PUBLICATION_REGENERATE_PASSWORD:-false}"
+PUBLICATION_FORM_PRESET="${REVDOKU_PUBLICATION_FORM_PRESET:-}"
 PUBLICATION_ANALYTICS_ENABLED="${REVDOKU_PUBLICATION_ANALYTICS_ENABLED:-}"
 PUBLICATION_CLIENT_EVENTS_ENABLED="${REVDOKU_PUBLICATION_CLIENT_EVENTS_ENABLED:-}"
 PUBLICATION_TRACKING_ENABLED="${REVDOKU_PUBLICATION_TRACKING_ENABLED:-}"
@@ -144,7 +145,7 @@ Usage: revdoku <command> [PATH] [options]
 
 Most-used commands (short alias, then full name — either works):
   p,    publish [PATH]   Publish a folder (default: current dir) -> live URL.
-                         Without sign-in: public 24-hour preview + claim link.
+                         Without sign-in: Public or Password 24-hour preview + claim link.
                          Re-running updates the same site.
   ls,   list             List your sites and buckets.
   o,    open             Open this folder's live site in the browser (--dashboard for the dashboard).
@@ -153,7 +154,7 @@ Most-used commands (short alias, then full name — either works):
         login            Sign in to an existing account in the browser.
         grant TOKEN      Use a one-time connection token shown after web signup.
   down, unpublish        Take this folder's site offline (keeps the URL for later).
-        preview          Without sign-in, publish a public 24-hour preview. When
+        preview          Without sign-in, publish a Public or Password 24-hour preview. When
                          signed in, preview the current private draft for 15 minutes.
 
 Publish options:
@@ -161,6 +162,7 @@ Publish options:
   --password PASSWORD  Set the protected-site password (never sent in a URL).
   --generate-password  Generate/rotate the protected-site password.
   --access-mode MODE   public, password, or require_email (verified email, no password).
+  --form-preset NAME   Show a built-in form preset (or off). Anonymous Send is a mock.
   --site-mode MODE     static or spa (SPA serves index.html for client-side routes).
   --draft              Save a private draft instead of publishing live.
   --no-wait            Return as soon as the URL is reserved (don't wait for the build).
@@ -293,6 +295,11 @@ while [[ $# -gt 0 ]]; do
       PUBLICATION_ACCESS_MODE="${PUBLICATION_ACCESS_MODE:-password}"
       PUBLICATION_REGENERATE_PASSWORD="true"
       shift
+      ;;
+    --form-preset)
+      [[ $# -ge 2 ]] || die "--form-preset requires a predefined form name or off"
+      PUBLICATION_FORM_PRESET="$2"
+      shift 2
       ;;
     --tracking)
       PUBLICATION_TRACKING_ENABLED="true"
@@ -534,6 +541,14 @@ case "$PUBLICATION_SITE_MODE" in
     ;;
 esac
 
+case "$PUBLICATION_FORM_PRESET" in
+  ""|off|contact|feedback|information|comments|quote|waitlist|question|issue|intake|resource|booking)
+    ;;
+  *)
+    die "--form-preset must be off or a predefined form name"
+    ;;
+esac
+
 case "$PUBLICATION_REGENERATE_PASSWORD" in
   true|false)
     ;;
@@ -591,7 +606,7 @@ if [[ -n "$PUBLICATION_PASSWORD" && "$PUBLICATION_REGENERATE_PASSWORD" == "true"
   die "use either --password or --generate-password, not both"
 fi
 
-if [[ "$PUBLISH" != "true" && "$ACTION" == "store" && ( -n "$PUBLICATION_ACCESS_MODE" || -n "$PUBLICATION_PASSWORD" || "$PUBLICATION_REGENERATE_PASSWORD" == "true" || -n "$PUBLICATION_ANALYTICS_ENABLED" || -n "$PUBLICATION_CLIENT_EVENTS_ENABLED" || -n "$PUBLICATION_TRACKING_ENABLED" || -n "$PUBLICATION_SITE_MODE" ) ]]; then
+if [[ "$PUBLISH" != "true" && "$ACTION" == "store" && ( -n "$PUBLICATION_ACCESS_MODE" || -n "$PUBLICATION_PASSWORD" || "$PUBLICATION_REGENERATE_PASSWORD" == "true" || -n "$PUBLICATION_FORM_PRESET" || -n "$PUBLICATION_ANALYTICS_ENABLED" || -n "$PUBLICATION_CLIENT_EVENTS_ENABLED" || -n "$PUBLICATION_TRACKING_ENABLED" || -n "$PUBLICATION_SITE_MODE" ) ]]; then
   die "publication options apply when publishing; remove --draft (they don't apply to a draft)"
 fi
 
@@ -1201,7 +1216,11 @@ if [[ "$ACTION" == "connection_status" && "$SHOW_PUBLISH_HINT" == "true" && -z "
   exit 0
 fi
 
-if [[ -z "$API_KEY" && "$LOGIN" != "true" && -z "$BUCKET_ID" && "$DRAFT" != "true" && ( "$ACTION" == "preview_bucket" || ( "$ACTION" == "store" && "$PUBLISH" == "true" ) ) && ( -z "$PUBLICATION_ACCESS_MODE" || "$PUBLICATION_ACCESS_MODE" == "public" ) ]]; then
+if [[ -z "$API_KEY" && "$LOGIN" != "true" && -z "$BUCKET_ID" && "$DRAFT" != "true" && ( "$ACTION" == "preview_bucket" || ( "$ACTION" == "store" && "$PUBLISH" == "true" ) ) && -n "$PUBLICATION_PASSWORD" ]]; then
+  die "anonymous previews use a generated password; create a free account and claim the website to choose one"
+fi
+
+if [[ -z "$API_KEY" && "$LOGIN" != "true" && -z "$BUCKET_ID" && "$DRAFT" != "true" && ( "$ACTION" == "preview_bucket" || ( "$ACTION" == "store" && "$PUBLISH" == "true" ) ) && ( -z "$PUBLICATION_ACCESS_MODE" || "$PUBLICATION_ACCESS_MODE" == "public" || "$PUBLICATION_ACCESS_MODE" == "password" ) ]]; then
   ANONYMOUS_MODE="true"
 elif [[ "$LOGIN" == "true" || -z "$API_KEY" ]]; then
   request_agent_key
@@ -1839,6 +1858,7 @@ publication_access_json() {
     --arg client_events_enabled "$PUBLICATION_CLIENT_EVENTS_ENABLED" \
     --arg tracking_enabled "$PUBLICATION_TRACKING_ENABLED" \
     --arg site_mode "$PUBLICATION_SITE_MODE" \
+    --arg form_preset "$PUBLICATION_FORM_PRESET" \
     '{}
     + (if $access_mode != "" then {access_mode: $access_mode} else {} end)
     + (if $password != "" then {password: $password} else {} end)
@@ -1846,7 +1866,8 @@ publication_access_json() {
     + (if $analytics_enabled != "" then {publication_analytics_enabled: ($analytics_enabled == "true")} else {} end)
     + (if $client_events_enabled != "" then {publication_client_events_enabled: ($client_events_enabled == "true")} else {} end)
     + (if $tracking_enabled != "" then {tracking_enabled: ($tracking_enabled == "true")} else {} end)
-    + (if $site_mode != "" then {site_mode: $site_mode} else {} end)'
+    + (if $site_mode != "" then {site_mode: $site_mode} else {} end)
+    + (if $form_preset != "" then {floating_form: $form_preset} else {} end)'
 }
 
 has_index_file() {
@@ -2840,6 +2861,8 @@ anonymous_multipart_request() {
   local curl_args=(-sS --max-time 300 -o "$body_file" -w "%{http_code}" -X "$method" "$(api_url "$endpoint")" "${agent_args[@]}" -H "Accept: application/json")
   [[ -z "$update_token" ]] || curl_args+=(-H "X-Revdoku-Preview-Token: ${update_token}")
   curl_args+=(--form-string "title=${title}" --form-string "source=cli" "${form_args[@]}")
+  [[ -z "$PUBLICATION_ACCESS_MODE" ]] || curl_args+=(--form-string "access_mode=${PUBLICATION_ACCESS_MODE}")
+  [[ -z "$PUBLICATION_FORM_PRESET" ]] || curl_args+=(--form-string "form_preset=${PUBLICATION_FORM_PRESET}")
   if [[ "$method" == "POST" ]]; then
     ai_source="$(agent_ai_source)"
     [[ -z "$ai_source" ]] || curl_args+=(--form-string "ai_source=${ai_source}")
@@ -2906,11 +2929,13 @@ active_anonymous_preview_count() {
 }
 
 print_anonymous_preview_result() {
-  local response="$1" new_site="${2:-false}" url claim_url expires_at status publish_error guidance active_count
+  local response="$1" new_site="${2:-false}" url claim_url expires_at status access_mode access_password publish_error guidance active_count
   url="$("$JQ_BIN" -r '.data.public_url // empty' <<<"$response")"
   claim_url="$("$JQ_BIN" -r '.data.claim_url // empty' <<<"$response")"
   expires_at="$("$JQ_BIN" -r '.data.expires_at // empty' <<<"$response")"
   status="$("$JQ_BIN" -r '.data.status // empty' <<<"$response")"
+  access_mode="$("$JQ_BIN" -r '.data.access_mode // empty' <<<"$response")"
+  access_password="$("$JQ_BIN" -r '.data.access_password // empty' <<<"$response")"
   if [[ "$status" == "failed" ]]; then
     publish_error="$("$JQ_BIN" -r '.data.publish_error // empty' <<<"$response")"
     guidance="$("$JQ_BIN" -r '.data.guidance // empty' <<<"$response")"
@@ -2920,13 +2945,16 @@ print_anonymous_preview_result() {
   [[ -n "$url" ]] || die "preview response did not include a public URL"
 
   echo "Published 24-hour preview: $url" >&2
+  if [[ "$access_mode" == "password" && -n "$access_password" ]]; then
+    echo "Password: $access_password" >&2
+  fi
   [[ -z "$expires_at" ]] || echo "Expires: $expires_at" >&2
   if [[ -n "$claim_url" ]]; then
     echo "Keep this website: $claim_url" >&2
     if [[ "$new_site" == "true" && "$status" == "ready" ]]; then
       active_count="$(active_anonymous_preview_count)"
       if (( active_count >= 2 )); then
-        echo "You've published multiple 24-hour previews. Creating a Free account is quick and keeps this site permanently." >&2
+        echo "You've published multiple 24-hour previews. A Free account lets you claim and permanently republish this site." >&2
       fi
     fi
     echo "Open that link to create your Revdoku account. After signup, rerun this command; the agent reconnects automatically." >&2

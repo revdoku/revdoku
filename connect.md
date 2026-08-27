@@ -1,7 +1,7 @@
-I'd like you to set up Revdoku so you can publish a website for me for free.
+Set up Revdoku so you can publish my work as a website.
 
-Browser-only chat: don't install anything. Direct me to your setup guide—Claude: https://revdoku.com/claude/; ChatGPT: https://revdoku.com/chatgpt/; other products: https://revdoku.com/<lowercase-hyphenated-product-name>/.
+Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install Revdoku yourself and use the local CLI.
 
-With terminal access, run `npx skills add revdoku/revdoku --skill revdoku -g`; without npm, run `curl -fsSL https://revdoku.com/install.sh | bash`.
+Only if local access is unavailable, use the hosted MCP connection instead.
 
-Then review https://revdoku.com/docs and ask what I'd like to publish.
+After setup, ask what I want to publish.

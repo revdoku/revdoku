@@ -41,18 +41,16 @@ unconnected user asks for a public website, create the website first:
   Pass `ai_source` as `chatgpt`, `claude`, `codex`, or `gemini` when known so
   the claim page can tell the user which AI chat to return to.
 
-Share the randomized, public, noindex 24-hour preview's `public_url` and
-`claim_url`. Track distinct ready, unexpired ids in the current chat. On the
-second and later new preview, say: “You've published multiple 24-hour previews.
-Creating a Free account is quick and keeps this site permanently.” Use its
-`claim_url`. Exclude updates, polls, failures, processing, expired/claimed, and
-repeated ids. Signup is browser-only, never an agent flow.
+Share the noindex preview's `public_url` and `claim_url`. Track ready
+ids per chat. On the second and later new preview, say: “You've published
+multiple 24-hour previews. A Free account lets you claim and permanently republish
+this site.” Exclude updates, polls, failures, processing,
+expired/claimed, and repeated ids.
 
-After claim, check status yourself. A local agent exchanges the returned
-one-time token (the CLI does this automatically on the next publish). A hosted
-MCP client calls an account tool and follows the normal sign-in UI. Do not ask
-the user to paste a token, type `continue`, repeat signup, or open another
-terminal.
+After claim, check status. CLI exchanges the token on next publish. While
+`republish_required`, the URL remains an expiring mock; republish only after explicit user approval. A hosted MCP client
+follows normal sign-in. Do not ask the user to
+paste a token, type `continue`, repeat signup, or open another terminal.
 
 ## Choose the correct surface
 
@@ -70,17 +68,18 @@ for a live public or protected website link.
 
 ## Anonymous preview and Free plan
 
-Anonymous preview: no account, one randomized public website, 25 MB total, 200
-files, and no private bucket, forms, notifications, analytics, access gate,
-custom domain, or custom URL. It expires after 24 hours; updates do not extend
-expiry. Creates and updates share 60 publishes/hour/source IP. On
-`RATE_LIMITED`, honor `retry_after`; never create state or change networks to
-evade it.
+No-account preview: one randomized Public or Password website (25 MB, 200 files),
+no private bucket, notifications, analytics, custom domain, or chosen URL. One
+unchanged Free form preset is supported; Send is a claim-and-republish mock.
+Password is generated; access is not recorded. Its fixed 24-hour lifetime and
+60 publishes/hour/source IP limit are shared by creates and updates.
+On `RATE_LIMITED`, wait `retry_after`; do not evade it.
 
-After claim, the website becomes a permanent public Free website with a
-randomized Website Name. It is indexable by default and shows no Revdoku footer
-or badge. Anonymous and temporary previews, Password, and Require Email websites
-remain noindex. Read plan entitlements from `https://app.revdoku.com/pricing.json`;
+Claim transfers the website into the Free account but leaves the live URL in
+expiring mock-preview mode. After a successful republish it becomes permanent
+and shows no Revdoku footer or badge. It is indexable by default when Public.
+Anonymous and temporary previews, Password, and Require Email websites remain
+noindex. Read plan entitlements from `https://app.revdoku.com/pricing.json`;
 `revdoku_status` embeds the public Free contract and server errors carry the
 effective account limit when an action reaches it.
 
@@ -99,11 +98,11 @@ customized. Re-running the preview starts a new 15-minute window.
 
 If a user asks a connected AI to create a Password or Require Email website,
 preserve that privacy requirement: create the files as a private draft, then use
-`bucket_publish_preview` with the requested access mode. Tell the user that the
-protected URL is temporary and that a paid plan is required to make it the main
-website. Share the returned `upgrade_url` as the upgrade link; never use API
-documentation as the upgrade destination. After the user upgrades, retry with
-`bucket_publish_password_protected`. Never silently publish protected content as
+`bucket_publish_preview` with the requested access mode. Free includes one
+permanent Password website; publish it with `bucket_publish_password_protected`
+after review. Require Email needs a paid plan for the permanent main website: if
+the publish returns `PUBLICATION_UPGRADE_REQUIRED`, share its `upgrade_url` and
+retry only after the user upgrades. Never silently publish protected content as
 Public.
 
 ## Website structure
@@ -206,7 +205,7 @@ changes in both directions.
 - Password or Require Email website: `bucket_publish_password_protected`.
 - Temporary noindex preview: `bucket_publish_preview`.
 - Unpublish: `bucket_unpublish`.
-- Rename the managed slug on a paid plan: `bucket_set_public_slug`.
+- Rename the managed slug: `bucket_set_public_slug`.
 - Change Public/Password/Require Email access:
   `bucket_update_publication_access`.
 
@@ -216,10 +215,11 @@ unpublish reaches `status: "unpublished"`. Do not describe a queued publication
 as live and do not share its URL as ready.
 
 Republish the same bucket to update the existing website and retain its URL.
-Anonymous and Free URLs are generated by Revdoku; never ask those users to name
-the link and do not send `slug_suggestions`. Paid users may choose or rename a
-managed Revdoku URL. Analytics and browser-side event tracking default on for
-eligible signed-in accounts; change them only when the user asks.
+Anonymous URLs are generated by Revdoku; never ask those users to name the link
+and do not send `slug_suggestions`. Every signed-in plan may choose or rename a
+managed Revdoku URL; reserved and prohibited words remain unavailable. Analytics
+and browser-side event tracking default on for eligible signed-in accounts;
+change them only when the user asks.
 
 `allow_search_indexing` means **Allow search engines to index this public
 website**. Permanent public websites default to `true`; set `false` only when
@@ -286,9 +286,11 @@ Others** and is available only on Password or Require Email sites; the others
 store private responses and can be used on public sites.
 
 Configure `metadata.publication_forms` through `bucket_create` or
-`bucket_update`. Free uses exact presets. Form customization plans may customize
-copy and fields or reuse a template under a unique endpoint. Free accounts cannot
-save or preview customized forms. Compact preset:
+`bucket_update`. Free uses exact presets, cannot save or preview customization,
+and always shows the Revdoku icon and name. Form customization enables copy,
+fields, and unique endpoints; form branding removal enables
+`show_revdoku_branding: false`.
+Compact preset:
 
 ```json
 {
@@ -318,7 +320,7 @@ Customize `label`, `description`, and ordered `fields`: `name`, `email`, `phone`
 independent `placeholder` copy; Revdoku appends omitted requirement markers.
 Omit `success_response` (or use `{"mode":"system"}`) for Revdoku's saved
 message. Use `{"mode":"file","path":"downloads/guide.pdf"}` to open a file,
-which is available on every plan.
+which requires form customization.
 Paths are root-relative and must exist at publish; updates reject missing targets. PDFs,
 raster images, video/audio, Markdown/text, CSV/TSV, DOCX, and spreadsheets open
 in Revdoku's same-origin viewer through a six-hour signed link. Direct unsigned
@@ -339,7 +341,8 @@ background and is the default.
 `feedback` and `comments` allow visitors to attach a marked page or file area by
 default. Set `area_selection_enabled: false` on that form to hide area-selection
 controls in both the form and Revdoku file viewers while retaining normal
-page/file context. Other templates do not support area selection.
+page/file context. Changing this template behavior requires a paid plan. Other
+templates do not support area selection.
 
 When the user asks to insert a configured form inline, keep that form
 `hosted: true`, add its named macro to the requested HTML file, and preview the
@@ -374,7 +377,7 @@ revdoku p [PATH]
 When the skill is installed but the command is not on `PATH`, run the bundled
 `scripts/revdoku.sh p [PATH]` instead.
 
-The CLI prints a public 24-hour URL and a browser claim link. It retains the
+The CLI prints a 24-hour URL and a browser claim link. It retains the
 anonymous update capability under `~/.revdoku` and updates the same URL on
 rerun. After the user claims the site, rerun the command; the CLI exchanges the
 one-time grant itself and continues on the claimed account. For an existing
@@ -382,7 +385,7 @@ account on another machine, use `revdoku login`; OAuth is sign-in-only.
 
 Common commands:
 
-- `revdoku p [PATH]`: publish; before sign-in this is a claimable 24-hour public preview.
+- `revdoku p [PATH]`: publish; before sign-in defaults to a claimable Public preview; `--protected` selects Password.
 - `revdoku p [PATH] --draft`: save privately without publishing.
 - `revdoku p [PATH] --protected`: publish with Password access.
 - `revdoku p [PATH] --access-mode require_email`: publish with Require Email.

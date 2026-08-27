@@ -2,6 +2,18 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.366 — 2026-08-27
+
+### Added
+
+- Paid website forms can hide the Revdoku mark; anonymous and Free forms now show the Revdoku icon and name consistently.
+
+### Improved
+
+- Free website forms now use unchanged predefined templates; custom form copy, fields, behavior, appearance, and widget anchors require a paid plan.
+- Predefined form templates now include short, context-specific descriptions.
+- Publication moderation now reviews effective built-in form titles, descriptions, fields, and behavior together with published files.
+
 ## 1.0.361 — 2026-08-26
 
 ### Added

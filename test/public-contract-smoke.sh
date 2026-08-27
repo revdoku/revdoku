@@ -13,6 +13,8 @@ if [[ -f "$TEST_DIR/../skills/revdoku/SKILL.md" ]]; then
   LLMS_INSTALL_FILE="$DIST_ROOT/llms-install.md"
   README_FILE="$DIST_ROOT/README.md"
   LICENSE_FILE="$DIST_ROOT/LICENSE"
+  INSTALL_FILE="$DIST_ROOT/install.sh"
+  UNINSTALL_FILE="$DIST_ROOT/uninstall.sh"
   VERSION_FILE="$DIST_ROOT/VERSION"
   CHANGELOG_FILE="$DIST_ROOT/CHANGELOG.md"
   MANIFEST_ROOT="$DIST_ROOT"
@@ -29,6 +31,8 @@ else
   LLMS_INSTALL_FILE="$SOURCE_CLIENT_DIR/llms-install.md"
   README_FILE="$SOURCE_CLIENT_DIR/README.md"
   LICENSE_FILE="$SOURCE_CLIENT_DIR/LICENSE"
+  INSTALL_FILE="$SOURCE_CLIENT_DIR/install.sh"
+  UNINSTALL_FILE="$SOURCE_CLIENT_DIR/uninstall.sh"
   VERSION_FILE="$(cd "$SOURCE_CLIENT_DIR/../../.." && pwd)/VERSION"
   SOURCE_ROOT="$(cd "$SOURCE_CLIENT_DIR/../../.." && pwd)"
   CHANGELOG_FILE="$SOURCE_ROOT/CHANGELOG.md"
@@ -60,6 +64,8 @@ reject_text() {
 [[ -f "$LICENSE_FILE" ]] || die "root/source LICENSE is missing"
 [[ -f "$CHANGELOG_FILE" ]] || die "root/source CHANGELOG.md is missing"
 bash -n "$CLI_FILE"
+bash -n "$INSTALL_FILE"
+bash -n "$UNINSTALL_FILE"
 
 if command -v jq >/dev/null 2>&1; then
   contract_state_dir="$(mktemp -d)"
@@ -90,8 +96,12 @@ if command -v jq >/dev/null 2>&1; then
 fi
 
 require_text "$CLI_FILE" "--site-mode MODE"
+require_text "$CLI_FILE" "--form-preset NAME"
+require_text "$CLI_FILE" 'access_mode=${PUBLICATION_ACCESS_MODE}'
+require_text "$CLI_FILE" 'form_preset=${PUBLICATION_FORM_PRESET}'
+require_text "$CLI_FILE" "anonymous previews use a generated password"
 require_text "$CLI_FILE" "active_anonymous_preview_count"
-require_text "$CLI_FILE" "You've published multiple 24-hour previews. Creating a Free account is quick and keeps this site permanently."
+require_text "$CLI_FILE" "You've published multiple 24-hour previews. A Free account lets you claim and permanently republish this site."
 require_text "$CLI_FILE" 'print_anonymous_preview_result "$response" false'
 require_text "$CLI_FILE" 'print_anonymous_preview_result "$response" true'
 require_text "$CLI_FILE" "PUBLICATION_UPGRADE_REQUIRED"
@@ -99,6 +109,11 @@ require_text "$CLI_FILE" "Upgrade the account, then try again."
 require_text "$README_FILE" "hosted MCP implementation"
 require_text "$README_FILE" "[CHANGELOG.md](./CHANGELOG.md)"
 require_text "$README_FILE" "npx skills add revdoku/revdoku --skill revdoku -g"
+require_text "$LLMS_INSTALL_FILE" "Prefer local shell and filesystem access"
+for target in codex claude-code cursor antigravity opencode grok-build hermes openclaw; do
+  require_text "$INSTALL_FILE" "$target"
+  require_text "$UNINSTALL_FILE" "$target"
+done
 require_text "$README_FILE" "app.revdoku.com/users/sign_up"
 require_text "$README_FILE" '"auth":"oauth"'
 require_text "$LLMS_INSTALL_FILE" "npx skills add revdoku/revdoku --skill revdoku -g"
@@ -111,7 +126,7 @@ require_text "$LLMS_INSTALL_FILE" "Free website is indexable by default"
 require_text "$LLMS_INSTALL_FILE" "Starting with the second"
 require_text "$CLI_FILE" "--login)"
 require_text "$CLI_FILE" "grant TOKEN"
-require_text "$CLI_FILE" "Without sign-in: public 24-hour preview + claim link."
+require_text "$CLI_FILE" "Without sign-in: Public or Password 24-hour preview + claim link."
 require_text "$CLI_FILE" "https://app.revdoku.com/pricing.json"
 reject_text "$CLI_FILE" "up to 5 public websites"
 require_text "$CLI_FILE" "signed in, preview the current private draft for 15 minutes"
@@ -121,7 +136,10 @@ require_text "$CLI_FILE" '--form-string "ai_source=${ai_source}"'
 require_text "$SKILL_FILE" 'scripts/revdoku.sh p <path>'
 require_text "$SKILL_FILE" '60 publish'
 require_text "$SKILL_FILE" 'second and later new preview'
-require_text "$SKILL_FILE" 'Creating a Free account is quick and keeps'
+require_text "$SKILL_FILE" 'A Free account lets you claim and permanently republish'
+require_text "$SKILL_FILE" 'Send is a'
+require_text "$API_FILE" '`access_mode=public|password`'
+require_text "$API_FILE" '`form_preset`'
 require_text "$API_FILE" 'Revdoku deliberately'
 require_text "$API_FILE" 'does not infer this count from IP addresses'
 require_text "$API_FILE" "never ask the user to paste or repeat the verification code in"
@@ -160,7 +178,7 @@ require_text "$SKILL_FILE" '`ACCOUNT_SUSPENDED`'
 require_text "$SKILL_FILE" 'support@revdoku.com'
 require_text "$API_FILE" '`account.restriction`'
 require_text "$SOURCE_CLIENT_DIR/docs.md" 'website moderation restriction'
-require_text "$SOURCE_CLIENT_DIR/docs.md" 'Search visibility changes at claim'
+require_text "$SOURCE_CLIENT_DIR/docs.md" 'Search visibility changes after the claimed website is republished'
 require_text "$PRICING_FILE" 'https://app.revdoku.com/pricing.md'
 require_text "$PRICING_FILE" 'https://app.revdoku.com/pricing.json'
 reject_text "$PRICING_FILE" '| Limit |'

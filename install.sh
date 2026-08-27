@@ -181,6 +181,10 @@ write_client_version() {
 main() {
   local codex_root="${CODEX_HOME:-${HOME}/.codex}"
   local claude_root="${CLAUDE_HOME:-${HOME}/.claude}"
+  local cursor_root="${CURSOR_HOME:-${HOME}/.cursor}"
+  local antigravity_root="${ANTIGRAVITY_HOME:-${HOME}/.gemini/antigravity-cli}"
+  local opencode_root="${OPENCODE_HOME:-${XDG_CONFIG_HOME:-${HOME}/.config}/opencode}"
+  local grok_root="${GROK_HOME:-${HOME}/.grok}"
   local hermes_root="${HERMES_HOME:-${HOME}/.hermes}"
   local openclaw_root="${OPENCLAW_HOME:-${HOME}/.openclaw}"
   local installed=0
@@ -189,13 +193,25 @@ main() {
     auto)
       install_skill_to "$codex_root"
       installed=1
-      if [[ -d "$claude_root" ]]; then
+      if [[ -d "$claude_root" ]] || command -v claude >/dev/null 2>&1; then
         install_skill_to "$claude_root"
       fi
-      if [[ -d "$hermes_root" ]]; then
+      if [[ -d "$cursor_root" ]] || command -v cursor-agent >/dev/null 2>&1; then
+        install_skill_to "$cursor_root"
+      fi
+      if [[ -d "$antigravity_root" ]] || command -v antigravity >/dev/null 2>&1; then
+        install_skill_to "$antigravity_root"
+      fi
+      if [[ -d "$opencode_root" ]] || command -v opencode >/dev/null 2>&1; then
+        install_skill_to "$opencode_root"
+      fi
+      if [[ -d "$grok_root" ]] || command -v grok >/dev/null 2>&1; then
+        install_skill_to "$grok_root"
+      fi
+      if [[ -d "$hermes_root" ]] || command -v hermes >/dev/null 2>&1; then
         install_skill_to "$hermes_root"
       fi
-      if [[ -d "$openclaw_root" ]]; then
+      if [[ -d "$openclaw_root" ]] || command -v openclaw >/dev/null 2>&1; then
         install_skill_to "$openclaw_root"
       fi
       ;;
@@ -203,8 +219,24 @@ main() {
       install_skill_to "$codex_root"
       installed=1
       ;;
-    claude)
+    claude|claude-code)
       install_skill_to "$claude_root"
+      installed=1
+      ;;
+    cursor)
+      install_skill_to "$cursor_root"
+      installed=1
+      ;;
+    antigravity)
+      install_skill_to "$antigravity_root"
+      installed=1
+      ;;
+    opencode)
+      install_skill_to "$opencode_root"
+      installed=1
+      ;;
+    grok|grok-build)
+      install_skill_to "$grok_root"
       installed=1
       ;;
     hermes)
@@ -223,12 +255,16 @@ main() {
     all)
       install_skill_to "$codex_root"
       install_skill_to "$claude_root"
+      install_skill_to "$cursor_root"
+      install_skill_to "$antigravity_root"
+      install_skill_to "$opencode_root"
+      install_skill_to "$grok_root"
       install_skill_to "$hermes_root"
       install_skill_to "$openclaw_root"
       installed=1
       ;;
     *)
-      die "invalid REVDOKU_AGENT=${AGENT}; use auto, codex, claude, hermes, openclaw, both, or all"
+      die "invalid REVDOKU_AGENT=${AGENT}; use auto, codex, claude-code, cursor, antigravity, opencode, grok-build, hermes, openclaw, both, or all"
       ;;
   esac
 

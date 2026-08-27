@@ -61,20 +61,23 @@ For a selected-bucket credential with no visible bucket, the state is
 whole-account access instead of suggesting bucket creation.
 Free websites are permanent unless the owner explicitly gives them an expiry.
 
-New accounts start directly on Free. If a permanent Password or Require Email
-publish returns `PUBLICATION_UPGRADE_REQUIRED`, keep the requested access private, use the
-preview endpoint with that access mode, and retry the permanent publish only
-after the user upgrades. Share the returned `upgrade_url` as the upgrade link;
-do not use this API document as the upgrade destination. Never silently fall
-back to Public.
+New accounts start directly on Free, which includes one permanent Password
+website. Require Email remains paid. If a protected publish returns
+`PUBLICATION_UPGRADE_REQUIRED`, keep the requested access private, use the preview
+endpoint with that access mode, and retry only after the user upgrades. Share the
+returned `upgrade_url`; never silently fall back to Public.
 
 ## Anonymous 24-hour website preview
 
 `POST /api/v1/quick_publish` accepts multipart `files[]` and matching
-site-relative `paths[]`. It creates a public randomized website without a User,
-login, or private bucket. Anonymous previews are limited to 25 MB total,
-25 MB/file, and 200 files. ZIP uploads, forms, analytics, private storage,
-custom domains, chosen slugs, notifications, and access gates are unavailable.
+site-relative `paths[]`. It creates a randomized website without a User, login,
+or private bucket. Anonymous previews are limited to 25 MB total, 25 MB/file,
+and 200 files. Set `access_mode=public|password` and optionally select one
+unchanged Free form with `form_preset` (`off` by default). Password mode uses a
+generated password and genuinely protects the files. Form Send is a mock that
+asks the visitor to create a Free account and claim the website; submissions,
+access records, notifications, and analytics are never stored before claim.
+Custom domains, chosen slugs, Require Email, and custom passwords are unavailable.
 Clients may send `ai_source=chatgpt|claude|codex|gemini`; Revdoku carries the
 safe product name through the claim flow so the dashboard can tell the user
 where to continue. Arbitrary chat names and return URLs are not accepted.
@@ -86,7 +89,9 @@ the tool error. Clients must wait for that interval instead of creating new
 preview state to evade the limit.
 
 The response includes `preview_id`, `update_token`, `public_url`, `expires_at`,
-and `claim_url`. Keep `update_token` secret. Read status with
+`claim_url`, `access_mode`, `form_preset`, `republish_required`, and—when ready
+in Password mode—`access_password` plus `access_share_text`. Keep `update_token`
+and the password secret. Read status with
 `GET /api/v1/quick_publish/:preview_id` and update all files with
 `PATCH /api/v1/quick_publish/:preview_id`, sending the capability only in:
 
@@ -96,8 +101,8 @@ X-Revdoku-Preview-Token: qpu_...
 
 Clients should track distinct, ready, unexpired `preview_id` values in their
 own session or local state. On the second and each later new preview, say:
-“You've published multiple 24-hour previews. Creating a Free account is quick
-and keeps this site permanently.” Link that message to the current
+“You've published multiple 24-hour previews. A Free account lets you claim and
+permanently republish this site.” Link that message to the current
 `claim_url`. Do not count updates, status checks, failed or processing
 previews, expired or claimed previews, or repeated ids. Revdoku deliberately
 does not infer this count from IP addresses or add anonymous identity tracking.
@@ -106,7 +111,10 @@ An update replaces the preview's file set and never extends the original
 24-hour expiry. Account creation happens only at the returned
 `/users/sign_up?claimcode=...` browser URL. After a successful claim, status
 returns a short-lived, single-use agent connection grant to the same capable
-agent. Local clients exchange it through
+agent and sets `republish_required: true`. Claim only transfers ownership: the
+live URL keeps its original expiry, mock forms, preview notices, noindex policy,
+and no-record access behavior until the claimed bucket is successfully
+republished. Local clients exchange the grant through
 `POST /api/v1/agent_auth/exchange_grant`; do not ask the user to copy it into
 chat.
 
@@ -546,17 +554,17 @@ after 15 minutes and is `noindex`, without touching the main publication or coun
 toward the live-site limit. The lifetime cannot be customized; re-running republishes
 to the same preview slug with a new 15-minute window. Like publishing, it is async — poll
 the returned publication's `publish_state` until `ready`, then share its `expires_at`.
-Preview requests may include the normal access and presentation settings. Paid
-settings such as `password` or `require_email` are available in the temporary preview
-on Free; publishing those settings on the main website returns
-`PUBLICATION_UPGRADE_REQUIRED` with preview, upgrade, and Public-on-Free choices.
+Preview requests may include the normal access and presentation settings. Free
+includes one permanent Password website; Require Email and other paid settings
+can be evaluated in a temporary preview. Publishing a paid-only setting on the
+main website returns `PUBLICATION_UPGRADE_REQUIRED` with preview, upgrade, and
+Public-on-Free choices.
 
-**Website slug.** Anonymous and Free publications always receive a randomized
-`<word>-<word>-<4 digits>.revdoku.site` URL. Do not ask those users for a link
-name and do not send `slug_suggestions`. On an eligible paid plan,
-`slug_suggestions` can steer the first URL and
-`PATCH .../custom_domains/public_slug` can rename it. Slugs must be at least 9
-characters and cannot use reserved words.
+**Website slug.** Anonymous publications always receive a randomized
+`<word>-<word>-<4 digits>.revdoku.site` URL; do not ask those users for a link
+name or send `slug_suggestions`. Every signed-in plan can use `slug_suggestions`
+to steer the first URL and `PATCH .../custom_domains/public_slug` to rename it.
+Slugs must be at least 9 characters and cannot use reserved or prohibited words.
 
 Publishing is **asynchronous**. The request returns HTTP `202 Accepted` with the
 publication in a `queued`/`processing` state — the bundle is built in the
@@ -787,7 +795,10 @@ Example response with details:
 {
   "data": {
     "range": "30d",
-    "previous_period": { "from": "2026-04-22", "to": "2026-05-21" },
+    "from": "2026-05-22",
+    "to": "2026-06-20",
+    "retention_limited": false,
+    "previous_period": null,
     "first_event_at": "2026-05-22T09:12:33.000Z",
     "last_event_at": "2026-05-26T18:32:14.000Z",
     "totals": {
@@ -1170,9 +1181,12 @@ or paid-only `blank`.
 Free plans use the templates unchanged. Plans with form customization may customize copy and the
 bounded field catalog, and may reuse a template under another endpoint name.
 Free accounts cannot save or preview customized forms.
+Anonymous and Free forms always show the Revdoku icon and name beside the submit
+button. Plans with form branding removal may set `show_revdoku_branding` to
+`false` to hide it.
 
 The Booking request preset asks for name and email, with optional phone, message,
-and preferred date. The date starts blank, uses its field copy as an in-control
+and date. The date starts blank, uses its field copy as an in-control
 placeholder, and can be made required when form customization is available.
 
 ```json
@@ -1297,7 +1311,7 @@ Every configured form also accepts a `success_response`:
 }
 ```
 
-Opening a supported resource after submission is available on every plan.
+Opening a supported resource after submission requires form customization.
 
 `mode` is `system` (the default saved message) or `file`. A file target is
 relative to the published website root and must exist by publish/republish;
@@ -1406,7 +1420,8 @@ Publication response fields:
 | `share_text` | Copyable owner-facing text containing the website link and password when visible. |
 | `publication_analytics_enabled` | Whether Revdoku records website analytics for this publication. |
 | `publication_client_events_enabled` | Whether browser-side Revdoku event tracking is enabled for this publication. |
-| `analytics.hits_all_time` | Cached all-time website hits; `null` when analytics numbers are hidden. |
+| `analytics.views_all_time` | Durable all-time human page views, excluding bots. |
+| `analytics.hits_all_time` | Durable all-time website hits, including bots. |
 | `analytics.last_event_at` | Latest recorded analytics event timestamp; `null` when hidden or not recorded yet. |
 
 Publication lifecycle endpoints:
@@ -1530,9 +1545,11 @@ certificate per active website; the wildcard is DNS routing, not wildcard TLS.
 
 #### GET /api/v1/analytics
 
-Supported ranges are `all`, `24h`, `7d`, `30d`, and `90d`. `all` covers complete
-stored history, returns `previous_period: null`, and leaves comparison values
-null. The `24h` response uses hourly buckets; the other ranges use daily buckets. Pass both `from` and `to` as
+Supported ranges are `all`, `24h`, `7d`, `30d`, and `90d`. `all` covers the
+plan's retained daily history, returns `previous_period: null`, and leaves
+comparison values null. The response's `from` and `to` are the effective dates;
+`retention_limited` is true when a preset was shortened to retention. The `24h`
+response uses hourly buckets; the other ranges use daily buckets. Pass both `from` and `to` as
 `YYYY-MM-DD` for an exact inclusive daily window of at most 90 days; exact dates
 override `range`.
 
@@ -1542,13 +1559,16 @@ Responses with `details_visible: true` include:
 | --- | --- |
 | `first_event_at` | First recorded event timestamp in the selected range. |
 | `last_event_at` | Last recorded event timestamp in the selected range. |
-| `totals.hits_all_time` | Total recorded website hits. |
+| `analytics_tier` | `basic` on Free or `detailed` on Personal and Pro. |
+| `retention_days` | Dated-history retention: 30, 365, or 730 days. |
+| `totals.views_all_time` | Durable lifetime human page views, even after dated rows expire. |
+| `totals.hits_all_time` | Durable lifetime website hits, including bots. |
 | `totals.views` | Human page views in the selected range (`hits - hits_bots`, floored at zero). |
 | `totals.hits` | Website hits in the selected range. |
-| `totals.visitors` | Sum of daily unique visitors in the selected range. |
+| `totals.visitors` | Sum of daily unique visitors in the selected range; a return on another day counts again. |
 | `totals.hits_not_found` | Missing-path hits. |
 | `totals.hits_bots` | Likely or known bot hits. |
-| `previous_period` | Immediately preceding equal-length window, or null for `all`. Daily dates are inclusive; the hourly timestamps describe the preceding 24 hours. |
+| `previous_period` | Immediately preceding equal-length window, or null for `all` or when that complete window is outside retention. Daily dates are inclusive; the hourly timestamps describe the preceding 24 hours. |
 | `previous_period_totals` | Detailed totals for the previous period, using the same metric keys as the selected range. Live `24h` values are null if either hourly window is unavailable. |
 | `diff_vs_previous_period` | Signed current-minus-previous differences. Positive means growth; negative means decline; null means unavailable, not zero. |
 | `daily` | Daily website hits and visitors. |
@@ -1561,8 +1581,11 @@ Responses with `details_visible: true` include:
 | `bots` | Bot hits grouped by bot name. |
 | `paths_not_found` | Highest-traffic missing paths. |
 
-Responses with `details_visible: false` preserve `totals.hits_all_time` but hide
-detailed numbers:
+Free responses use Basic analytics: 30 retained days, range totals, and up to
+three `paths` and three `sources`. `paths_truncated` or `sources_truncated` is
+true only when more ranked results exist. Paid responses include the full
+Detailed breakdowns. Responses with `details_visible: false` represent accounts
+without analytics access and use null totals:
 
 ```json
 {
@@ -1574,7 +1597,8 @@ detailed numbers:
     "first_event_at": null,
     "last_event_at": null,
     "totals": {
-      "hits_all_time": 42,
+      "hits_all_time": null,
+      "views_all_time": null,
       "views": null,
       "hits": null,
       "visitors": null,
