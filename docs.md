@@ -12,6 +12,20 @@ Revdoku publishes static websites and SPAs from AI-generated files and folders.
 The first public preview is live for 24 hours; claiming it creates the user's
 durable Free account and bucket while keeping the same website.
 
+## Live Revdoku demos
+
+Explore real websites published on Revdoku from ChatGPT and Claude AI:
+
+- **Protected client delivery — [Folder to Website](https://presentation-magic-stories-protected.revdoku.site/):** Demo presentation and image folder delivered as a password-protected client website. The owner is notified after every unlock. **Password: `12345`.**
+- **Lead generation — [B2B Lead Magnet](https://b2b-lead-magnet.revdoku.site/):** Demo lead-magnet website where visitors submit a form to open a PDF resource.
+- **AI-updated dashboard — [Temperature Monitoring](https://temperature-monitoring.revdoku.site/):** Demo live dashboard with sensor data updated by connected AI agents.
+- **PDF publishing — [PDF Survey Report](https://survey-results.revdoku.site/):** Demo PDF report where visitors can select an area or page and send feedback.
+- **Portfolio — [Designer Portfolio](https://designer-portfolio.revdoku.site/):** Demo portfolio where visitors can select a page area and send design feedback.
+- **Professional services — [Personal Website](https://consulting.revdoku.site/):** Demo website for an independent consultant where visitors can book a consultation.
+- **Local business — [Restaurant Menu](https://restaurant-menu.revdoku.site/):** Demo restaurant menu where visitors can request a booking date.
+- **Listings — [Property Listing](https://property-listing.revdoku.site/):** Demo property website where interested visitors can request a call.
+- **Forms & leads — [New Product Waitlist](https://waitlist-page.revdoku.site/):** Demo product website where visitors can join the waitlist.
+
 ## Quick Start
 
 If npm is available, install the Revdoku skill:
