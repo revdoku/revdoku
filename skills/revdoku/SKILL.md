@@ -307,9 +307,13 @@ legacy HTML/folder responses redirect until changed. This sends no email.
 
 Use `{{REVDOKU_FORM:feedback}}` to select and render one configured hosted form
 inline, or `{{REVDOKU_FORM}}` to select the first configured hosted form. A page
-loads only the form type selected by its first valid macro; without a valid macro
-it loads the first configured hosted form as a floating widget. The selected type
-may appear inline, floating, or both. To hand-author a form, set
+loads only the inline/floating form type selected by its first valid macro; without
+a valid macro it loads the first configured hosted form as a floating widget. The
+selected type may appear inline, floating, or both. A styled native button may open
+any configured hosted form in a Revdoku-managed popup:
+`<button type="button" data-revdoku-form-popup="contact">Get in touch</button>`.
+Repeated buttons share a popup, while different form names open separate popups.
+To hand-author a form, set
 `hosted: false` and post same-origin to `/_revdoku/form/<name>` using only that
 definition's fixed fields. Keep the hidden `_gotcha` honeypot. Set the top-level
 `inline_theme` to `auto`, `light`, or `dark`; `auto` uses the nearest page
@@ -321,10 +325,10 @@ controls in both the form and Revdoku file viewers while retaining normal
 page/file context. Changing this template behavior requires a paid plan. Other
 templates do not support area selection.
 
-When the user asks to insert a configured form inline, keep that form
-`hosted: true`, add its named macro to the requested HTML file, and preview the
-website. Publish or republish only when the user explicitly asks; form settings
-and HTML edits remain a private draft until then.
+When the user asks to insert a configured form, keep it `hosted: true`. Add its
+named macro for an inline form, or add and style a native popup button when the user
+wants a modal form. Preview the website. Publish or republish only when the user
+explicitly asks; form settings and HTML edits remain a private draft until then.
 
 Submissions are encrypted and appear in Bucket → Forms. `bucket_get` with
 `include_form_submissions: true` reads them when the connector has write access;
