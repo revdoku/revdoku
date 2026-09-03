@@ -1277,11 +1277,23 @@ To render one configured hosted form inline, put its macro in an HTML page:
 ```
 
 Use `{{REVDOKU_FORM}}` to select the first configured hosted form. The first valid
-macro selects the page's one form type. That type may appear inline, floating, or
-both according to its settings; macros for other configured types on the same page
-render nothing. Without a valid macro, the first configured hosted form renders as
-the floating widget. To hand-author the `<form>` instead, set that definition to
-`"hosted": false` and post same-origin to `/_revdoku/form/<name>`.
+macro selects the page's one inline/floating form type. That type may appear inline,
+floating, or both according to its settings; macros for other configured types on
+the same page render nothing. Without a valid macro, the first configured hosted
+form renders as the floating widget.
+
+To open any configured hosted form in a Revdoku-managed popup while retaining the
+website's own button styling, add its name to a native button:
+
+```html
+<button type="button" class="your-cta" data-revdoku-form-popup="contact">
+  Get in touch
+</button>
+```
+
+Multiple buttons may share one popup, and different configured names receive their
+own popups. To hand-author the `<form>` instead, set that definition to `"hosted":
+false` and post same-origin to `/_revdoku/form/<name>`.
 
 #### Archive, unarchive, and permanent delete
 
