@@ -255,14 +255,14 @@ disappears or report returned progress.
 
 ## Built-in forms
 
-Templates: `waitlist`, `contact`, `feedback`, `comments`, `quote`, `question`,
-`intake`, `resource`, `information`, `issue`, `booking`, and paid-only `blank`.
-`resource` requires email; `information` requires email; `issue` requires a
-description; `booking` requires name and email. Their remaining preset fields are
-optional. Booking dates start blank and paid customization may require them. All
-forms submit with **Send**.
-`comments` is **Feedback Visible To
-Others** and is available only on Password or Require Email sites; the others
+Templates: `booking`, `comments`, `contact`, `feedback`, `get_in_touch`,
+`information`, `quote`, `resource`, `support`, `waitlist`, and paid-only `blank`.
+`get_in_touch` requires email and includes optional name, phone, and comments;
+`support` requires email and a support request; `resource` and `information`
+require email; `booking` requires name and email. Their remaining preset fields
+are optional. Booking dates start blank and paid customization may require them.
+All forms submit with **Send**.
+`comments` is **Feedback (visible to all)** and is available only on Password or Require Email sites; the others
 store private responses and can be used on public sites.
 
 Configure `metadata.publication_forms` through `bucket_create` or

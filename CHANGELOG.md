@@ -2,6 +2,13 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.398 — 2026-09-04
+
+### Improved
+
+- The Files and Preview switcher now appears compactly beside the website address only after a preview is requested, leaving the default file view less cluttered.
+- Website-list actions now use quieter borderless styling so rows are easier to scan.
+
 ## 1.0.397 — 2026-09-03
 
 ### Improved

@@ -523,7 +523,7 @@ case "$PUBLICATION_SITE_MODE" in
 esac
 
 case "$PUBLICATION_FORM_PRESET" in
-  ""|off|contact|feedback|information|comments|quote|waitlist|question|issue|intake|resource|booking)
+  ""|off|booking|comments|contact|feedback|get_in_touch|information|quote|resource|support|waitlist)
     ;;
   *)
     die "--form-preset must be off or a predefined form name"
