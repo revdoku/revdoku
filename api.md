@@ -35,8 +35,8 @@ contract; the full-account profile response includes effective account limits
 and overrides. Do not copy numeric limits into integrations.
 
 Permanent public account websites, including Free websites, are indexable by
-default. Anonymous and temporary previews, Password, and Require Email websites
-are always `noindex`. Custom Website Names and paid access features can be
+default. Temporary previews, Password, and Require Email websites are always
+`noindex`. Custom Website Names and paid access features can be
 evaluated in a temporary signed-in preview.
 
 For a new or materially changed website, use the preview endpoint first unless
@@ -467,8 +467,9 @@ curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../publication" \
 **Home page.** The site root uses the served folder's `index.html` or `index.htm`
 when present. If the served source set is exactly one top-level HTML file, that
 file becomes the home page automatically. Every other missing-index site gets a
-navigation Auto-Index Page with a file listing and previews; HTML rows open
-directly. A `README.md`/`README.txt`/`index.md` is rendered below the listing,
+navigation Auto-Index Page with a file listing. Supported document, data, image,
+audio, and video links open in the file viewer even when visited directly; HTML
+rows remain website pages. A `README.md`/`README.txt`/`index.md` is rendered below the listing,
 GitHub-style. There is no custom entry-filename parameter. Choose which folder is
 served with `publication_root_directory` (below).
 
@@ -507,10 +508,8 @@ can be evaluated in a temporary preview. Publishing a paid-only setting on the
 main website returns `PUBLICATION_UPGRADE_REQUIRED` with preview, upgrade, and
 Public-on-Free choices.
 
-**Website slug.** Anonymous publications always receive a randomized
-`<word>-<word>-<4 digits>.revdoku.site` URL; do not ask those users for a link
-name or send `slug_suggestions`. Every signed-in plan can use `slug_suggestions`
-to steer the first URL and `PATCH .../custom_domains/public_slug` to rename it.
+**Website slug.** Every signed-in plan can use `slug_suggestions` to steer the
+first URL and `PATCH .../custom_domains/public_slug` to rename it.
 Slugs must be at least 9 characters and cannot use reserved or prohibited words.
 
 Publishing is **asynchronous**. The request returns HTTP `202 Accepted` with the
@@ -570,8 +569,9 @@ accepted compatibility field; app/database publication modes are retired and
 must not be used.
 
 If the served source set has no `index.html`/`index.htm` and is not exactly one
-top-level HTML file, Revdoku publishes an Auto-Index Page that lists and previews
-files. Account-specific Auto-Index templates must include the files macro as
+top-level HTML file, Revdoku publishes an Auto-Index Page that lists files and
+opens supported non-HTML files in the viewer, including from direct file links.
+Account-specific Auto-Index templates must include the files macro as
 `{{files}}` or `{{ files }}`. Supported template macros are `{{title}}`,
 `{{description}}`, `{{files}}`, `{{theme_switch}}`, `{{account_name}}`, and
 `{{account_logo}}`, with optional whitespace inside the braces.
@@ -1292,7 +1292,10 @@ website's own button styling, add its name to a native button:
 ```
 
 Multiple buttons may share one popup, and different configured names receive their
-own popups. To hand-author the `<form>` instead, set that definition to `"hosted":
+own popups. Set `show_floating_with_embeds` to `false` to hide the same form's
+floating widget on pages where an inline macro or popup button embeds it. The old
+`show_floating_with_inline` request key remains a deprecated compatibility alias.
+To hand-author the `<form>` instead, set that definition to `"hosted":
 false` and post same-origin to `/_revdoku/form/<name>`.
 
 #### Archive, unarchive, and permanent delete

@@ -131,8 +131,9 @@ Revdoku supports two website modes:
 - `static`: normal static files using `index.html`, `index.htm`, or a lone top-level HTML file as the home page.
 - `spa`: single-page apps where app routes fall back to the index page.
 With no index, a lone top-level HTML file becomes the home page automatically.
-Every other missing-index site gets an Auto-Index Page that lists and previews
-files; HTML rows open directly. Custom Auto-Index templates must
+Every other missing-index site gets an Auto-Index Page that lists files. Supported
+document, data, image, audio, and video links open in the file viewer even when
+visited directly; HTML rows remain website pages. Custom Auto-Index templates must
 include `{{files}}` or `{{ files }}`; supported macros are `{{title}}`,
 `{{description}}`, `{{files}}`, `{{theme_switch}}`, `{{account_name}}`, and
 `{{account_logo}}`, with optional whitespace inside the braces.
@@ -184,6 +185,8 @@ All files that make up a bucket or website can be downloaded from Revdoku at
 any time. Built-in form submissions are encrypted and protected by Turnstile
 and honeypot controls. Owners can export submission data to CSV at any time in
 Bucket → Forms, or read it through the REST API.
+Built-in forms can appear inline, as floating widgets, or in Revdoku-managed
+popups opened by buttons styled by the website.
 
 Generic outbound form webhooks and self-service submission-retention policies
 are not currently available.

@@ -92,8 +92,9 @@ Public.
 - `index.html`/`index.htm` wins. Otherwise, one top-level HTML file becomes home.
   For client-side routing, use `site_mode: "spa"` or `--site-mode spa`.
 - Use `publication_root_directory` to publish one top-level folder as the root.
-- Other missing-index sets generate Auto-Index with previews and direct HTML
-  links. A README or `index.md` appears below the list.
+- Other missing-index sets generate Auto-Index. Supported document, data, image,
+  audio, and video links open in the file viewer even when visited directly;
+  HTML links remain website pages. A README or `index.md` appears below the list.
 - Custom Auto-Index templates must contain `{{files}}` or `{{ files }}`. Other
   supported macros are `{{title}}`, `{{description}}`, `{{theme_switch}}`,
   `{{account_name}}`, and `{{account_logo}}`.
@@ -313,6 +314,9 @@ selected type may appear inline, floating, or both. A styled native button may o
 any configured hosted form in a Revdoku-managed popup:
 `<button type="button" data-revdoku-form-popup="contact">Get in touch</button>`.
 Repeated buttons share a popup, while different form names open separate popups.
+Set `show_floating_with_embeds: false` to hide that form's floating widget on a
+page where an inline macro or popup button embeds it. The deprecated
+`show_floating_with_inline` key is accepted only for older clients.
 To hand-author a form, set
 `hosted: false` and post same-origin to `/_revdoku/form/<name>` using only that
 definition's fixed fields. Keep the hidden `_gotcha` honeypot. Set the top-level
