@@ -2,6 +2,13 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.397 — 2026-09-03
+
+### Improved
+
+- Opening Preview now builds the current draft before showing it inline, avoiding stale or partially styled previews.
+- Published websites now have one-click Republish controls with publishing options kept in a compact menu, including matching AI Helper actions.
+
 ## 1.0.395 — 2026-09-03
 
 ### Added
