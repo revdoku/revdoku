@@ -2,6 +2,20 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.395 — 2026-09-03
+
+### Added
+
+- Built-in forms can open in accessible popups from buttons styled by the published website, including buttons rendered by SPAs.
+- The dashboard AI Helper can create and edit website files in a guided, preview-first workflow for signed-in accounts.
+
+### Improved
+
+- Website creation now starts with a private account draft; the retired anonymous publishing and claim flow is no longer offered.
+- Form popup references that become unavailable no longer remove the website's original button or content.
+- The form setting that keeps floating widgets beside inline and popup embeds is now named `show_floating_with_embeds`; the previous key remains compatible for older clients.
+- Generated Auto-Index websites now open supported direct file links in Revdoku's viewer while keeping HTML pages direct and owner-disabled downloads hidden.
+
 ## 1.0.366 — 2026-08-27
 
 ### Added
