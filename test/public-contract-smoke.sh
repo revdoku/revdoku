@@ -67,43 +67,13 @@ bash -n "$CLI_FILE"
 bash -n "$INSTALL_FILE"
 bash -n "$UNINSTALL_FILE"
 
-if command -v jq >/dev/null 2>&1; then
-  contract_state_dir="$(mktemp -d)"
-  contract_future="$(ruby -rtime -e 'puts (Time.now.utc + 3600).iso8601')"
-  contract_past="$(ruby -rtime -e 'puts (Time.now.utc - 3600).iso8601')"
-  printf '{"base_url":"https://app.revdoku.test","status":"ready","claimed":false,"expires_at":"%s"}\n' "$contract_future" > "$contract_state_dir/ready.json"
-  printf '{"base_url":"https://app.revdoku.test","status":"ready","claimed":false,"expires_at":"%s"}\n' "$contract_past" > "$contract_state_dir/expired.json"
-  printf '{"base_url":"https://other.revdoku.test","status":"ready","claimed":false,"expires_at":"%s"}\n' "$contract_future" > "$contract_state_dir/other-base.json"
-  printf '{"base_url":"https://app.revdoku.test","status":"processing","claimed":false,"expires_at":"%s"}\n' "$contract_future" > "$contract_state_dir/processing.json"
-  printf '{"base_url":"https://app.revdoku.test","status":"ready","claimed":true,"expires_at":"%s"}\n' "$contract_future" > "$contract_state_dir/claimed.json"
-  contract_count_function="$(sed -n '/^active_anonymous_preview_count() {$/,/^}$/p' "$CLI_FILE")"
-  contract_count="$(
-    ANONYMOUS_STATE_DIR="$contract_state_dir" \
-      BASE_URL="https://app.revdoku.test" \
-      JQ_BIN="$(command -v jq)" \
-      bash -c "${contract_count_function}"$'\n''active_anonymous_preview_count'
-  )"
-  [[ "$contract_count" == "1" ]] || die "CLI active anonymous preview count included inactive or unrelated state"
-  printf '{"base_url":"https://app.revdoku.test","status":"ready","claimed":false,"expires_at":"%s"}\n' "$contract_future" > "$contract_state_dir/second-ready.json"
-  contract_count="$(
-    ANONYMOUS_STATE_DIR="$contract_state_dir" \
-      BASE_URL="https://app.revdoku.test" \
-      JQ_BIN="$(command -v jq)" \
-      bash -c "${contract_count_function}"$'\n''active_anonymous_preview_count'
-  )"
-  rm -rf "$contract_state_dir"
-  [[ "$contract_count" == "2" ]] || die "CLI active anonymous preview count missed a second ready site"
-fi
 
 require_text "$CLI_FILE" "--site-mode MODE"
 require_text "$CLI_FILE" "--form-preset NAME"
-require_text "$CLI_FILE" 'access_mode=${PUBLICATION_ACCESS_MODE}'
-require_text "$CLI_FILE" 'form_preset=${PUBLICATION_FORM_PRESET}'
-require_text "$CLI_FILE" "anonymous previews use a generated password"
-require_text "$CLI_FILE" "active_anonymous_preview_count"
-require_text "$CLI_FILE" "You've published multiple 24-hour previews. A Free account lets you claim and permanently republish this site."
-require_text "$CLI_FILE" 'print_anonymous_preview_result "$response" false'
-require_text "$CLI_FILE" 'print_anonymous_preview_result "$response" true'
+require_text "$CLI_FILE" '--arg access_mode "$PUBLICATION_ACCESS_MODE"'
+require_text "$CLI_FILE" '--arg form_preset "$PUBLICATION_FORM_PRESET"'
+reject_text "$CLI_FILE" "/api/v1/quick_publish"
+reject_text "$CLI_FILE" "anonymous preview"
 require_text "$CLI_FILE" "PUBLICATION_UPGRADE_REQUIRED"
 require_text "$CLI_FILE" "Upgrade the account, then try again."
 require_text "$README_FILE" "hosted MCP implementation"
@@ -115,33 +85,22 @@ for target in codex claude-code cursor antigravity opencode grok-build hermes op
   require_text "$UNINSTALL_FILE" "$target"
 done
 require_text "$README_FILE" "app.revdoku.com/users/sign_up"
-require_text "$README_FILE" '"auth":"oauth"'
+require_text "$README_FILE" "every tool descriptor requires OAuth"
 require_text "$LLMS_INSTALL_FILE" "npx skills add revdoku/revdoku --skill revdoku -g"
 require_text "$LLMS_INSTALL_FILE" "app.revdoku.com/users/sign_up"
-require_text "$LLMS_INSTALL_FILE" "website_preview_create"
-require_text "$LLMS_INSTALL_FILE" "OAuth and agent email-code flows are sign-in-only"
+require_text "$LLMS_INSTALL_FILE" "Authenticate with OAuth before calling tools"
 require_text "$LLMS_INSTALL_FILE" "https://app.revdoku.com/pricing"
 require_text "$LLMS_INSTALL_FILE" "https://app.revdoku.com/pricing.json"
-require_text "$LLMS_INSTALL_FILE" "Free website is indexable by default"
-require_text "$LLMS_INSTALL_FILE" "Starting with the second"
+require_text "$LLMS_INSTALL_FILE" "Permanent public Free websites are indexable by default"
 require_text "$CLI_FILE" "--login)"
 require_text "$CLI_FILE" "grant TOKEN"
-require_text "$CLI_FILE" "Without sign-in: Public or Password 24-hour preview + claim link."
+require_text "$CLI_FILE" "Opens browser sign-in when credentials are missing."
 require_text "$CLI_FILE" "https://app.revdoku.com/pricing.json"
 reject_text "$CLI_FILE" "up to 5 public websites"
-require_text "$CLI_FILE" "signed in, preview the current private draft for 15 minutes"
-require_text "$CLI_FILE" '.data.publish_error // empty'
-require_text "$CLI_FILE" '.data.guidance // empty'
-require_text "$CLI_FILE" '--form-string "ai_source=${ai_source}"'
+require_text "$CLI_FILE" "Preview the current private draft for 15 minutes."
 require_text "$SKILL_FILE" 'scripts/revdoku.sh p <path>'
-require_text "$SKILL_FILE" '60 publish'
-require_text "$SKILL_FILE" 'second and later new preview'
-require_text "$SKILL_FILE" 'A Free account lets you claim and permanently republish'
-require_text "$SKILL_FILE" 'Send is a'
-require_text "$API_FILE" '`access_mode=public|password`'
-require_text "$API_FILE" '`form_preset`'
-require_text "$API_FILE" 'Revdoku deliberately'
-require_text "$API_FILE" 'does not infer this count from IP addresses'
+reject_text "$SKILL_FILE" 'website_preview_create'
+reject_text "$API_FILE" '/api/v1/quick_publish'
 require_text "$API_FILE" "never ask the user to paste or repeat the verification code in"
 require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
 require_text "$API_FILE" '`PATCH` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
@@ -164,7 +123,7 @@ require_text "$API_FILE" 'https://app.revdoku.com/pricing'
 require_text "$API_FILE" 'https://app.revdoku.com/pricing.json'
 require_text "$API_FILE" 'including Free websites, are indexable by'
 require_text "$SKILL_FILE" 'https://app.revdoku.com/pricing'
-require_text "$SKILL_FILE" 'It is indexable by default'
+require_text "$SKILL_FILE" 'Permanent public Free websites are indexable by default'
 require_text "$SKILL_FILE" 'Never silently publish protected content as'
 require_text "$SKILL_FILE" 'Every authenticated bucket preview lasts 15 minutes'
 reject_text "$SKILL_FILE" 'up to 100 permanent public websites'
@@ -178,7 +137,7 @@ require_text "$SKILL_FILE" '`ACCOUNT_SUSPENDED`'
 require_text "$SKILL_FILE" 'support@revdoku.com'
 require_text "$API_FILE" '`account.restriction`'
 require_text "$SOURCE_CLIENT_DIR/docs.md" 'website moderation restriction'
-require_text "$SOURCE_CLIENT_DIR/docs.md" 'Search visibility changes after the claimed website is republished'
+require_text "$SOURCE_CLIENT_DIR/docs.md" 'Permanent public Free websites are indexable by default'
 require_text "$PRICING_FILE" 'https://app.revdoku.com/pricing.md'
 require_text "$PRICING_FILE" 'https://app.revdoku.com/pricing.json'
 reject_text "$PRICING_FILE" '| Limit |'

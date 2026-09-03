@@ -6,12 +6,11 @@
 >
 > Get a live `*.revdoku.site` website in seconds.
 >
-> **No account needed.**
+> **Free account available.**
 
-Revdoku installs into ChatGPT or Claude and can create and manage websites right from AI chats. 
-Free account includes features such as analytics, built-in forms, versioning, fast CDN based hosting.
-After a second active anonymous preview, Revdoku briefly suggests creating a
-Free account to keep the current site permanently; publishing remains unblocked.
+Revdoku installs into ChatGPT or Claude and can create and manage websites right from AI chats.
+Free accounts include analytics, built-in forms, versioning, custom Revdoku
+subdomains, and fast CDN-based hosting.
 
 ## Prompt for an AI agent
 
@@ -94,14 +93,12 @@ website, read analytics, get forms submissions - all without switching to a sepa
 
 ### Platform and trust
 
-- Revdoku is a fully self-service SaaS platform; the first public preview needs
-  no account or login.
+- Revdoku is a fully self-service SaaS platform with a permanent Free plan.
 - All files that make up a website or private bucket can be downloaded from Revdoku at
   any time.
 - Built-in form submissions are encrypted and protected with captcha,
   rate-limit, and honeypot controls; owners can export them to CSV at any time
   or read them through the REST API or MCP server from AI agent.
-- Revdoku does not add a visible footer or badge to customer websites.
 - Customer support is available at `support@revdoku.com` for paid customers.
 
 ## What users say
@@ -122,15 +119,12 @@ website, read analytics, get forms submissions - all without switching to a sepa
   backends, per-site databases, or scheduled server tasks; connect an external
   backend when a project needs them. For scheduled updates use ChatGPT or Claude's scheduled tasks.
 - Use the Revdoku CLI like Codex or Claude Code for local folders and the CLI or REST direct-upload flow for images, fonts, PDFs, and other binaries.
-- Anonymous previews can evaluate Public or Password access and one built-in
-  form preset. Forms do not submit and access activity is not recorded until
-  the claimed website is republished. They expire after 24 hours and do not
-  include analytics, custom domains, custom URLs, or private bucket storage.
+- Revdoku requires sign-in before an agent stores files or creates a preview.
 
 ## Guidance for AI assistants
 
-- For a user's first website, create the account-free 24-hour preview before
-  requesting signup or OAuth. Share the returned preview and claim links.
+- For a user's first website, help them create a Free account, save a private
+  draft, and review a temporary preview before publishing.
 - Account creation happens only in the browser. Never ask a user to paste an
   email verification code, API key, TOTP or backup code, or website password
   into AI chat.
@@ -168,13 +162,8 @@ Publish or update the current folder:
 revdoku p
 ```
 
-The first unsigned run prints the preview and claim URLs. Re-running updates the
-same preview. After claim, re-running exchanges Revdoku's one-time connection
-grant automatically and republishes the claimed website. Until that republish,
-the live URL remains an expiring mock preview.
-
-For a different existing account, run `revdoku login`. This is sign-in only;
-new accounts are created on the web signup page.
+The first run opens browser sign-in when credentials are missing. Re-running
+updates the same website. New accounts can be created on the web signup page.
 
 Useful commands:
 
@@ -188,11 +177,9 @@ Useful commands:
 
 ## Hosted and web agents
 
-The hosted MCP endpoint is `https://app.revdoku.com/mcp`. Its anonymous website
-preview tools require no authentication. Durable buckets and account features
-use OAuth, and that OAuth screen is sign-in only. If the user has no Revdoku
-account, the agent should create an anonymous preview and share its returned web
-signup/claim link instead of trying to sign the user up through OAuth.
+The hosted MCP endpoint is `https://app.revdoku.com/mcp`. All tools use OAuth.
+If the user has no Revdoku account, direct them to browser signup before using
+account tools.
 
 Hosted agents cannot read files from the user's computer. Use the local Revdoku CLI for
 local folders, JavaScript bundles, images, fonts, PDFs, and other binary assets.
@@ -212,14 +199,13 @@ Per AI client guides:
 - Hermes: <https://revdoku.com/hermes/>
 
 Use those tutorials only when manual setup or troubleshooting is actually
-needed. Normal onboarding should stay to one preview URL and one claim link.
+needed. Normal onboarding should stay focused on a private draft, a temporary
+preview, and explicit publishing approval.
 
 ## Public package
 
 This repository contains the Revdoku CLI, skill, API documentation, and
 Claude/Codex/Cursor plugin manifests. The hosted MCP implementation runs at
-`https://app.revdoku.com/mcp`. MCP manifests use `"auth":"oauth"` for account
-tools; the tool descriptors separately advertise the anonymous preview tools as
-`noauth`.
+`https://app.revdoku.com/mcp`. MCP manifests use OAuth, and every tool descriptor requires OAuth.
 
 See [CHANGELOG.md](./CHANGELOG.md) and [api.md](./api.md).

@@ -274,7 +274,7 @@ main() {
   echo ""
   echo "Revdoku is ready. Ask your agent what to publish, or run:"
   echo "  ${USER_BIN_DIR}/revdoku p <folder>"
-  echo "The first public preview needs no account or login."
+  echo "Browser sign-in opens automatically when needed."
 }
 
 main "$@"

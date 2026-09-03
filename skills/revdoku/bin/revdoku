@@ -12,7 +12,6 @@ DEVICE_CODE_GRANT_TYPE="urn:ietf:params:oauth:grant-type:device_code"
 REVDOKU_CONFIG_DIR="$(dirname "$CREDENTIALS_PATH")"
 CLIENT_VERSION_FILE="${REVDOKU_CLIENT_VERSION_FILE:-${REVDOKU_CONFIG_DIR}/client_version}"
 UPDATE_CHECK_STAMP="${REVDOKU_CONFIG_DIR}/.update_check"
-ANONYMOUS_STATE_DIR="${REVDOKU_ANONYMOUS_STATE_DIR:-${REVDOKU_CONFIG_DIR}/anonymous-previews}"
 
 installed_client_version() {
   local v="unknown"
@@ -76,7 +75,6 @@ DRAFT="false"
 OPEN_DASHBOARD="false"
 SHOW_PUBLISH_HINT="false"
 PREVIEW_AFTER_STORE="false"
-ANONYMOUS_MODE="false"
 # Project-local binding (.revdoku): remembers the bucket so `revdoku p` keeps
 # updating the same site. Populated from the target dir, --bucket-id overrides.
 REVDOKU_PROJECT_FILE=""
@@ -118,22 +116,6 @@ detect_agent_name() {
   fi
 }
 
-# The claim page accepts only a small, display-safe set of AI product names.
-# Prefer the detected agent name; fall back to the client identifier when a
-# wrapper supplied only that header.
-agent_ai_source() {
-  local value normalized
-  for value in "$AGENT_NAME" "$AGENT_CLIENT"; do
-    normalized="$(printf '%s' "$value" | tr '[:upper:]_' '[:lower:]-')"
-    case "$normalized" in
-      *chatgpt*|*chat-gpt*|*openai*) printf 'chatgpt'; return 0 ;;
-      *claude*) printf 'claude'; return 0 ;;
-      *codex*) printf 'codex'; return 0 ;;
-      *gemini*) printf 'gemini'; return 0 ;;
-    esac
-  done
-}
-
 usage() {
   cat <<USAGE
 revdoku — publish a folder to the web in one command.
@@ -145,24 +127,23 @@ Usage: revdoku <command> [PATH] [options]
 
 Most-used commands (short alias, then full name — either works):
   p,    publish [PATH]   Publish a folder (default: current dir) -> live URL.
-                         Without sign-in: Public or Password 24-hour preview + claim link.
+                         Opens browser sign-in when credentials are missing.
                          Re-running updates the same site.
   ls,   list             List your sites and buckets.
   o,    open             Open this folder's live site in the browser (--dashboard for the dashboard).
   i,    init [PATH]      Scaffold a starter static/SPA site + agent instructions here.
   st,   status           Show connection and account status.
         login            Sign in to an existing account in the browser.
-        grant TOKEN      Use a one-time connection token shown after web signup.
+        grant TOKEN      Use a one-time connection token from the web app.
   down, unpublish        Take this folder's site offline (keeps the URL for later).
-        preview          Without sign-in, publish a Public or Password 24-hour preview. When
-                         signed in, preview the current private draft for 15 minutes.
+        preview          Preview the current private draft for 15 minutes.
 
 Publish options:
   --protected          Publish as a password-protected website (alias: --private).
   --password PASSWORD  Set the protected-site password (never sent in a URL).
   --generate-password  Generate/rotate the protected-site password.
   --access-mode MODE   public, password, or require_email (verified email, no password).
-  --form-preset NAME   Show a built-in form preset (or off). Anonymous Send is a mock.
+  --form-preset NAME   Enable a built-in form preset (or off).
   --site-mode MODE     static or spa (SPA serves index.html for client-side routes).
   --draft              Save a private draft instead of publishing live.
   --no-wait            Return as soon as the URL is reserved (don't wait for the build).
@@ -1216,13 +1197,7 @@ if [[ "$ACTION" == "connection_status" && "$SHOW_PUBLISH_HINT" == "true" && -z "
   exit 0
 fi
 
-if [[ -z "$API_KEY" && "$LOGIN" != "true" && -z "$BUCKET_ID" && "$DRAFT" != "true" && ( "$ACTION" == "preview_bucket" || ( "$ACTION" == "store" && "$PUBLISH" == "true" ) ) && -n "$PUBLICATION_PASSWORD" ]]; then
-  die "anonymous previews use a generated password; create a free account and claim the website to choose one"
-fi
-
-if [[ -z "$API_KEY" && "$LOGIN" != "true" && -z "$BUCKET_ID" && "$DRAFT" != "true" && ( "$ACTION" == "preview_bucket" || ( "$ACTION" == "store" && "$PUBLISH" == "true" ) ) && ( -z "$PUBLICATION_ACCESS_MODE" || "$PUBLICATION_ACCESS_MODE" == "public" || "$PUBLICATION_ACCESS_MODE" == "password" ) ]]; then
-  ANONYMOUS_MODE="true"
-elif [[ "$LOGIN" == "true" || -z "$API_KEY" ]]; then
+if [[ "$LOGIN" == "true" || -z "$API_KEY" ]]; then
   request_agent_key
 fi
 
@@ -1233,9 +1208,7 @@ if [[ "$LOGIN" == "true" && "$ACTION" == "store" && "$PATH_EXPLICIT" == "false" 
   exit 0
 fi
 
-if [[ "$ANONYMOUS_MODE" != "true" ]]; then
-  [[ -n "$API_KEY" ]] || die "REVDOKU_API_KEY is required"
-fi
+[[ -n "$API_KEY" ]] || die "REVDOKU_API_KEY is required"
 case "$UPLOAD_MODE" in
   auto|direct) ;;
   *) die "--upload-mode must be auto or direct" ;;
@@ -2741,291 +2714,8 @@ should_skip_storage_path() {
   return 1
 }
 
-anonymous_state_file() {
-  local key
-  key="$(printf '%s' "${BASE_URL}|${ROOT_PATH}" | openssl dgst -sha256 -hex | awk '{print $2}')"
-  [[ -n "$key" ]] || die "could not identify this project for anonymous preview state"
-  printf '%s/%s.json' "$ANONYMOUS_STATE_DIR" "$key"
-}
-
-anonymous_relative_path_for() {
-  local file="$1"
-  if [[ -f "$ROOT_PATH" ]]; then
-    basename "$file"
-  else
-    printf '%s' "${file#"$ROOT_PATH"/}"
-  fi
-}
-
-save_anonymous_state() {
-  local response="$1" state_file state_tmp idempotency_key
-  state_file="$(anonymous_state_file)"
-  idempotency_key=""
-  if [[ -f "$state_file" ]]; then
-    idempotency_key="$("$JQ_BIN" -r '.idempotency_key // empty' "$state_file" 2>/dev/null || true)"
-  fi
-  mkdir -p "$ANONYMOUS_STATE_DIR"
-  chmod 700 "$ANONYMOUS_STATE_DIR" 2>/dev/null || true
-  state_tmp="${state_file}.tmp.$$"
-  "$JQ_BIN" -c --arg base_url "$BASE_URL" --arg root_path "$ROOT_PATH" --arg idempotency_key "$idempotency_key" '
-    .data
-    | {
-        base_url: $base_url,
-        root_path: $root_path,
-        idempotency_key: $idempotency_key,
-        preview_id,
-        update_token,
-        public_url,
-        expires_at,
-        status,
-        claimed
-      }
-  ' <<<"$response" > "$state_tmp"
-  chmod 600 "$state_tmp" 2>/dev/null || true
-  mv "$state_tmp" "$state_file"
-}
-
-anonymous_idempotency_key() {
-  local state_file state_tmp key
-  state_file="$(anonymous_state_file)"
-  if [[ -f "$state_file" ]]; then
-    key="$("$JQ_BIN" -r '.idempotency_key // empty' "$state_file" 2>/dev/null || true)"
-    if [[ ${#key} -ge 20 ]]; then
-      printf '%s' "$key"
-      return 0
-    fi
-  fi
-
-  key="anon-$(openssl rand -hex 24)"
-  mkdir -p "$ANONYMOUS_STATE_DIR"
-  chmod 700 "$ANONYMOUS_STATE_DIR" 2>/dev/null || true
-  state_tmp="${state_file}.tmp.$$"
-  "$JQ_BIN" -cn --arg base_url "$BASE_URL" --arg root_path "$ROOT_PATH" --arg idempotency_key "$key" \
-    '{base_url: $base_url, root_path: $root_path, idempotency_key: $idempotency_key}' > "$state_tmp"
-  chmod 600 "$state_tmp" 2>/dev/null || true
-  mv "$state_tmp" "$state_file"
-  printf '%s' "$key"
-}
-
-clear_anonymous_state() {
-  local state_file
-  state_file="$(anonymous_state_file)"
-  [[ ! -f "$state_file" ]] || rm -f "$state_file"
-}
-
-anonymous_status_request() {
-  local preview_id="$1" update_token="$2" body_file status agent_args=()
-  body_file="$(mktemp)"
-  while IFS= read -r -d '' value; do
-    agent_args+=("$value")
-  done < <(agent_header_args)
-
-  status="$(curl -sS --max-time 30 -o "$body_file" -w '%{http_code}' \
-    "$(api_url "/api/v1/quick_publish/${preview_id}")" \
-    "${agent_args[@]}" \
-    -H "Accept: application/json" \
-    -H "X-Revdoku-Preview-Token: ${update_token}" || true)"
-  if http_status_success "$status" && "$JQ_BIN" -e . "$body_file" >/dev/null 2>&1; then
-    cat "$body_file"
-    rm -f "$body_file"
-    return 0
-  fi
-  rm -f "$body_file"
-  return 1
-}
-
-anonymous_multipart_request() {
-  local method="$1" endpoint="$2" update_token="$3" file_list="$4"
-  local body_file status title idempotency_key ai_source file rel count=0 total=0 size agent_args=() form_args=()
-  body_file="$(mktemp)"
-  title="$TITLE"
-  [[ -n "$title" ]] || title="$(default_title)"
-  idempotency_key="$(anonymous_idempotency_key)"
-
-  while IFS= read -r -d '' file; do
-    count=$((count + 1))
-    size="$(file_size "$file")"
-    total=$((total + size))
-    (( count <= 200 )) || die "anonymous previews support up to 200 files"
-    (( size <= 26214400 )) || die "$(anonymous_relative_path_for "$file") is larger than the 25 MB anonymous file limit"
-    (( total <= 26214400 )) || die "anonymous previews are limited to 25 MB total"
-    rel="$(anonymous_relative_path_for "$file")"
-    form_args+=(--form "files[]=@${file}" --form-string "paths[]=${rel}")
-  done < "$file_list"
-  (( count > 0 )) || die "no files found to publish after safety exclusions"
-
-  while IFS= read -r -d '' value; do
-    agent_args+=("$value")
-  done < <(agent_header_args)
-
-  local curl_args=(-sS --max-time 300 -o "$body_file" -w "%{http_code}" -X "$method" "$(api_url "$endpoint")" "${agent_args[@]}" -H "Accept: application/json")
-  [[ -z "$update_token" ]] || curl_args+=(-H "X-Revdoku-Preview-Token: ${update_token}")
-  curl_args+=(--form-string "title=${title}" --form-string "source=cli" "${form_args[@]}")
-  [[ -z "$PUBLICATION_ACCESS_MODE" ]] || curl_args+=(--form-string "access_mode=${PUBLICATION_ACCESS_MODE}")
-  [[ -z "$PUBLICATION_FORM_PRESET" ]] || curl_args+=(--form-string "form_preset=${PUBLICATION_FORM_PRESET}")
-  if [[ "$method" == "POST" ]]; then
-    ai_source="$(agent_ai_source)"
-    [[ -z "$ai_source" ]] || curl_args+=(--form-string "ai_source=${ai_source}")
-    curl_args+=(-H "Idempotency-Key: ${idempotency_key}")
-  fi
-
-  if ! status="$(curl "${curl_args[@]}")"; then
-    rm -f "$body_file"
-    die "network error while publishing the anonymous preview"
-  fi
-  if ! http_status_success "$status"; then
-    local message code
-    message="$("$JQ_BIN" -r '.error.message // .message // empty' "$body_file" 2>/dev/null || true)"
-    code="$("$JQ_BIN" -r '.error.code // empty' "$body_file" 2>/dev/null || true)"
-    rm -f "$body_file"
-    [[ -n "$message" ]] || message="HTTP $status"
-    [[ -n "$code" ]] && message="${message} (${code})"
-    die "$message"
-  fi
-  "$JQ_BIN" -e . "$body_file" >/dev/null 2>&1 || {
-    rm -f "$body_file"
-    die "Revdoku returned an invalid preview response"
-  }
-  cat "$body_file"
-  rm -f "$body_file"
-}
-
-wait_for_anonymous_preview() {
-  local response="$1" preview_id update_token status attempt
-  preview_id="$("$JQ_BIN" -r '.data.preview_id // empty' <<<"$response")"
-  update_token="$("$JQ_BIN" -r '.data.update_token // empty' <<<"$response")"
-  status="$("$JQ_BIN" -r '.data.status // empty' <<<"$response")"
-  attempt=0
-  while [[ "$status" == "pending" || "$status" == "processing" ]] && (( attempt < 30 )); do
-    attempt=$((attempt + 1))
-    sleep 2
-    response="$(anonymous_status_request "$preview_id" "$update_token")" || break
-    status="$("$JQ_BIN" -r '.data.status // empty' <<<"$response")"
-  done
-  printf '%s' "$response"
-}
-
-active_anonymous_preview_count() {
-  local state_file count=0 now
-  now="$(date +%s)"
-  [[ -d "$ANONYMOUS_STATE_DIR" ]] || {
-    printf '0'
-    return 0
-  }
-
-  for state_file in "$ANONYMOUS_STATE_DIR"/*.json; do
-    [[ -f "$state_file" ]] || continue
-    if "$JQ_BIN" -e --arg base_url "$BASE_URL" --argjson now "$now" '
-      (.base_url == $base_url)
-      and (.status == "ready")
-      and (.claimed != true)
-      and ((.expires_at | type) == "string")
-      and ((.expires_at | fromdateiso8601) > $now)
-    ' "$state_file" >/dev/null 2>&1; then
-      count=$((count + 1))
-    fi
-  done
-  printf '%s' "$count"
-}
-
-print_anonymous_preview_result() {
-  local response="$1" new_site="${2:-false}" url claim_url expires_at status access_mode access_password publish_error guidance active_count
-  url="$("$JQ_BIN" -r '.data.public_url // empty' <<<"$response")"
-  claim_url="$("$JQ_BIN" -r '.data.claim_url // empty' <<<"$response")"
-  expires_at="$("$JQ_BIN" -r '.data.expires_at // empty' <<<"$response")"
-  status="$("$JQ_BIN" -r '.data.status // empty' <<<"$response")"
-  access_mode="$("$JQ_BIN" -r '.data.access_mode // empty' <<<"$response")"
-  access_password="$("$JQ_BIN" -r '.data.access_password // empty' <<<"$response")"
-  if [[ "$status" == "failed" ]]; then
-    publish_error="$("$JQ_BIN" -r '.data.publish_error // empty' <<<"$response")"
-    guidance="$("$JQ_BIN" -r '.data.guidance // empty' <<<"$response")"
-    [[ -z "$guidance" ]] || echo "$guidance" >&2
-    die "${publish_error:-anonymous preview publishing failed}"
-  fi
-  [[ -n "$url" ]] || die "preview response did not include a public URL"
-
-  echo "Published 24-hour preview: $url" >&2
-  if [[ "$access_mode" == "password" && -n "$access_password" ]]; then
-    echo "Password: $access_password" >&2
-  fi
-  [[ -z "$expires_at" ]] || echo "Expires: $expires_at" >&2
-  if [[ -n "$claim_url" ]]; then
-    echo "Keep this website: $claim_url" >&2
-    if [[ "$new_site" == "true" && "$status" == "ready" ]]; then
-      active_count="$(active_anonymous_preview_count)"
-      if (( active_count >= 2 )); then
-        echo "You've published multiple 24-hour previews. A Free account lets you claim and permanently republish this site." >&2
-      fi
-    fi
-    echo "Open that link to create your Revdoku account. After signup, rerun this command; the agent reconnects automatically." >&2
-  fi
-  print_terminal_link_hint
-  printf '%s\n' "$url"
-}
-
-# Returns 2 after a claimed preview is exchanged for account credentials so the
-# caller can continue through the normal signed-in publish path.
-anonymous_publish_or_resume() {
-  local state_file preview_id update_token pending_key status_response claimed grant bucket_id url file_list response
-  state_file="$(anonymous_state_file)"
-  if [[ -f "$state_file" ]]; then
-    preview_id="$("$JQ_BIN" -r '.preview_id // empty' "$state_file" 2>/dev/null || true)"
-    update_token="$("$JQ_BIN" -r '.update_token // empty' "$state_file" 2>/dev/null || true)"
-    pending_key="$("$JQ_BIN" -r '.idempotency_key // empty' "$state_file" 2>/dev/null || true)"
-    if [[ -n "$preview_id" && -n "$update_token" ]]; then
-      if ! status_response="$(anonymous_status_request "$preview_id" "$update_token")"; then
-        die "could not check the existing anonymous preview; retry when the connection is available"
-      fi
-      claimed="$("$JQ_BIN" -r '.data.claimed // false' <<<"$status_response")"
-      if [[ "$claimed" == "true" ]]; then
-        grant="$("$JQ_BIN" -r '.data.agent_connection.one_time_token // empty' <<<"$status_response")"
-        bucket_id="$("$JQ_BIN" -r '.data.bucket_id // empty' <<<"$status_response")"
-        url="$("$JQ_BIN" -r '.data.public_url // empty' <<<"$status_response")"
-        [[ -n "$grant" ]] || die "website was claimed, but its one-time agent connection is unavailable; run 'revdoku login'"
-        exchange_agent_grant "$grant"
-        BUCKET_ID="$bucket_id"
-        [[ -n "$BUCKET_ID" ]] || die "claimed preview response did not include its bucket"
-        write_project_binding "$BUCKET_ID" "$url"
-        clear_anonymous_state
-        ANONYMOUS_MODE="false"
-        return 2
-      fi
-      if [[ "$("$JQ_BIN" -r '.data.status // empty' <<<"$status_response")" != "expired" ]]; then
-        file_list="$(mktemp)"
-        collect_files > "$file_list"
-        response="$(anonymous_multipart_request PATCH "/api/v1/quick_publish/${preview_id}" "$update_token" "$file_list")"
-        rm -f "$file_list"
-        response="$(wait_for_anonymous_preview "$response")"
-        save_anonymous_state "$response"
-        print_anonymous_preview_result "$response" false
-        return 0
-      fi
-      clear_anonymous_state
-    elif [[ -z "$pending_key" ]]; then
-      clear_anonymous_state
-    fi
-  fi
-
-  file_list="$(mktemp)"
-  collect_files > "$file_list"
-  response="$(anonymous_multipart_request POST "/api/v1/quick_publish" "" "$file_list")"
-  rm -f "$file_list"
-  response="$(wait_for_anonymous_preview "$response")"
-  save_anonymous_state "$response"
-  print_anonymous_preview_result "$response" true
-}
-
 publish_url_file=""
 bucket_id_file=""
-
-if [[ "$ANONYMOUS_MODE" == "true" ]]; then
-  if anonymous_publish_or_resume; then
-    exit 0
-  else
-    anonymous_result=$?
-  fi
-  [[ "$anonymous_result" == "2" ]] || exit "$anonymous_result"
-fi
 
 if [[ "$PUBLISH" == "true" ]]; then
   if ! has_index_file; then

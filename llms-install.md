@@ -24,8 +24,7 @@ After setup, ask what I want to publish.
 - Do not ask the user to send `continue` after a browser step. Resume by
   checking status yourself.
 - Account creation is web-only at `https://app.revdoku.com/users/sign_up`.
-- Revdoku OAuth and agent email-code flows are sign-in-only. They never create
-  an account.
+- Revdoku account creation is completed in the browser before agent access.
 - Publish only when the user asks for a public or protected link. A signed-in
   `--draft` upload remains private.
 
@@ -52,43 +51,18 @@ Then ask what the user wants to publish and run:
 revdoku p <folder>
 ```
 
-Without credentials, this creates a randomized Public or Password 24-hour
-preview and prints a browser claim link. `--protected` uses a generated password;
-`--form-preset contact` (or another preset) shows a mock form whose Send action
-activates only after claim and a successful republish. It does not create an
-account or private bucket.
-Re-running updates the same preview without extending expiry.
-
-After the user claims the website, run the same publish command again. The CLI
-checks claim status, exchanges the one-time grant itself, saves the resulting
-agent credential, and updates the claimed website. Do not ask the user to copy
-the grant into chat.
-
-Use `revdoku login` only when connecting a different existing account. The
-browser OAuth flow is sign-in-only.
+Without credentials, the CLI opens browser sign-in. Use `revdoku preview` to
+create a temporary review URL and `revdoku p` only after the user explicitly
+asks to publish the main site. Re-running updates the same bucket and URL.
 
 ## Hosted MCP agent
 
 Endpoint: `https://app.revdoku.com/mcp`
 
-Before authentication, use:
-
-- `website_preview_create`
-- `website_preview_update`
-- `website_preview_status`
-
-These tools create a Public or Password 24-hour preview and can show one mock
-form preset. Share the returned `public_url`, generated `access_password` when
-present, and `claim_url`. When creating one, pass the matching `ai_source`
-when known. Track distinct ready, unexpired
-preview ids in the current chat. Starting with the second, say that creating a
-Free account lets the user claim and permanently republish the site, using its `claim_url`;
-repeat only for later new sites, not updates, polls, failures, or repeated ids.
-After claim, call status again. While `republish_required` is true, the live URL
-is still the expiring mock preview. Republish the claimed bucket through an
-authenticated tool only after the user requests that publish. The MCP response
-asks the host to start OAuth when the account tool is called. Revdoku's OAuth
-screen signs an existing account in; it does not offer signup.
+Authenticate with OAuth before calling tools. Then call `revdoku_status`, create
+or choose a private bucket, write the files, and use `bucket_publish_preview`
+for review. Publish the main website only when the user asks. If the user has no
+account, direct them to `https://app.revdoku.com/users/sign_up` first.
 
 If the host does not support MCP or the agent needs local/binary files, use the
 local CLI. A hosted agent cannot read the user's computer.
@@ -100,10 +74,8 @@ comparisons. Read the versioned plan limits and indexing contract from
 <https://app.revdoku.com/pricing.json>. `revdoku_status` embeds the public Free
 contract; full-account profile responses include effective account overrides.
 
-Anonymous previews are temporary and `noindex`. After claim and republish, a
-permanent public Free website is indexable by default. Password, Require Email,
-and temporary preview websites remain `noindex`. No tier injects a Revdoku
-footer or badge.
+Permanent public Free websites are indexable by default. Password, Require
+Email, and temporary preview websites remain `noindex`.
 
 ## Troubleshooting tutorials
 

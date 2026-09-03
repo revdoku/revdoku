@@ -22,9 +22,8 @@ The plugin bundles:
 ```
 
 Reload plugins (or start a new Claude Code session), then run `/mcp` and start
-Revdoku OAuth. OAuth signs in an existing account; it never creates one. For a
-new user, Claude can first create an anonymous preview and share Revdoku's web
-signup/claim link. Revdoku's bucket tools are then available, and the skill
+Revdoku OAuth. A new user can create a Free account in the browser before
+authorizing Claude. Revdoku's bucket tools are then available, and the skill
 activates whenever you ask to store, publish, host, deploy, or share something
 on the web.
 

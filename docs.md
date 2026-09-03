@@ -6,11 +6,11 @@
 >
 > Get a live `*.revdoku.site` website in seconds.
 >
-> **No account needed.**
+> **Free account available.**
 
 Revdoku publishes static websites and SPAs from AI-generated files and folders.
-The first public preview is live for 24 hours; claiming it creates the user's
-durable Free account and bucket while keeping the same website.
+Sign in to create a private bucket, review a temporary preview, and explicitly
+publish it when ready.
 
 ## Live Revdoku demos
 
@@ -54,20 +54,9 @@ Publish the current folder as a public website (the headline command):
 revdoku p
 ```
 
-Without credentials, this creates a randomized Public or Password preview that
-expires in 24 hours and prints one web signup/claim link. Re-running updates the same URL.
-After claim, the next run exchanges the one-time connection grant itself. Use
-`revdoku login` only to sign in to a different existing account.
-
-When this CLI has two or more ready, unexpired anonymous previews for different
-local projects, each later new preview includes a short reminder that creating
-a Free account lets the user claim and permanently republish that site. Updates
-do not repeat the reminder.
-
-Search visibility changes after the claimed website is republished: the
-anonymous preview remains `noindex` through claim; its permanent public Free
-website is indexable by default after republish. Password, Require Email, and
-temporary preview websites remain `noindex`.
+If credentials are missing, the CLI opens browser sign-in. Re-running updates
+the same URL. Permanent public Free websites are indexable by default; Password,
+Require Email, and temporary preview websites remain `noindex`.
 
 Use <https://app.revdoku.com/pricing> for current plan prices and human-readable
 comparisons. Use <https://app.revdoku.com/pricing.json> for the versioned plan
@@ -155,7 +144,7 @@ reserved URL for later republish.
 Permanent public account websites allow search indexing by default. Owners can
 turn off **Allow search engines to index this public website** through the
 dashboard or the API/MCP `allow_search_indexing` bucket setting. Password,
-Require Email, anonymous preview, and temporary preview websites are always
+Require Email and temporary preview websites are always
 `noindex`. Turning the setting on removes only Revdoku's platform `noindex`
 controls; a website's own `noindex` tag still applies, and indexing is never
 guaranteed.
@@ -176,9 +165,7 @@ minutes after creation; its lifetime cannot be customized. Re-running the
 preview republishes the same preview URL with a new 15-minute window.
 
 Free accounts include one permanent Password website. Require Email and other
-paid settings can still be evaluated in this preview before upgrading. This is
-separate from the first anonymous pre-signup preview, which has its own fixed
-24-hour claim window.
+paid settings can still be evaluated in this preview before upgrading.
 
 Use `--site-mode spa` for compiled client-side apps that need route fallback;
 omit it or use `--site-mode static` for normal static sites. A project-local

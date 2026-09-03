@@ -12,6 +12,5 @@ Only if local access is unavailable, use the hosted MCP connection instead.
 After setup, ask what I want to publish.
 ```
 
-The first public preview needs no account. Account creation happens only at
-`https://app.revdoku.com/users/sign_up`; OAuth and agent email-code flows are
-sign-in-only.
+Account creation happens at `https://app.revdoku.com/users/sign_up`. Revdoku
+requires authentication before an agent stores files or creates a preview.

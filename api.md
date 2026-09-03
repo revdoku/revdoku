@@ -6,7 +6,7 @@
 >
 > Get a live `*.revdoku.site` website in seconds.
 >
-> **No account needed.**
+> **Free account available.**
 
 Use the Revdoku API to create buckets, store files, publish static websites,
 attach custom domains, and read publication analytics.
@@ -15,10 +15,9 @@ Most AI-agent users should start with the Revdoku app's copied prompt or the
 Revdoku MCP tool. Use this HTTP API for custom clients, CI jobs, backend workers,
 or direct integrations.
 
-Hosted MCP can create an anonymous public preview before OAuth. Revdoku OAuth
-signs in an existing user only; it never creates an account. New users claim a
-preview or sign up at <https://app.revdoku.com/users/sign_up>. Raw agent, MCP,
-and REST endpoints never create users.
+Hosted MCP requires OAuth before account tools can run. New users sign up at
+<https://app.revdoku.com/users/sign_up>. Raw agent, MCP, and REST endpoints never
+create users.
 
 Hosted MCP and CLI device login use revocable agent connections. Reusable API
 keys are for custom clients and automation when that capability is available to
@@ -37,9 +36,8 @@ and overrides. Do not copy numeric limits into integrations.
 
 Permanent public account websites, including Free websites, are indexable by
 default. Anonymous and temporary previews, Password, and Require Email websites
-are always `noindex`. No plan injects a Revdoku footer or badge. Custom Website
-Names and paid access features can be evaluated in a temporary signed-in
-preview.
+are always `noindex`. Custom Website Names and paid access features can be
+evaluated in a temporary signed-in preview.
 
 For a new or materially changed website, use the preview endpoint first unless
 the user has already reviewed it or explicitly asks to publish immediately:
@@ -66,57 +64,6 @@ website. Require Email remains paid. If a protected publish returns
 `PUBLICATION_UPGRADE_REQUIRED`, keep the requested access private, use the preview
 endpoint with that access mode, and retry only after the user upgrades. Share the
 returned `upgrade_url`; never silently fall back to Public.
-
-## Anonymous 24-hour website preview
-
-`POST /api/v1/quick_publish` accepts multipart `files[]` and matching
-site-relative `paths[]`. It creates a randomized website without a User, login,
-or private bucket. Anonymous previews are limited to 25 MB total, 25 MB/file,
-and 200 files. Set `access_mode=public|password` and optionally select one
-unchanged Free form with `form_preset` (`off` by default). Password mode uses a
-generated password and genuinely protects the files. Form Send is a mock that
-asks the visitor to create a Free account and claim the website; submissions,
-access records, notifications, and analytics are never stored before claim.
-Custom domains, chosen slugs, Require Email, and custom passwords are unavailable.
-Clients may send `ai_source=chatgpt|claude|codex|gemini`; Revdoku carries the
-safe product name through the claim flow so the dashboard can tell the user
-where to continue. Arbitrary chat names and return URLs are not accepted.
-
-Creates and updates share a limit of 60 publish operations per hour per source
-IP; status checks do not consume that budget. REST returns HTTP `429` with
-`RATE_LIMITED` and `retry_after`; MCP returns the same code and retry detail in
-the tool error. Clients must wait for that interval instead of creating new
-preview state to evade the limit.
-
-The response includes `preview_id`, `update_token`, `public_url`, `expires_at`,
-`claim_url`, `access_mode`, `form_preset`, `republish_required`, and—when ready
-in Password mode—`access_password` plus `access_share_text`. Keep `update_token`
-and the password secret. Read status with
-`GET /api/v1/quick_publish/:preview_id` and update all files with
-`PATCH /api/v1/quick_publish/:preview_id`, sending the capability only in:
-
-```http
-X-Revdoku-Preview-Token: qpu_...
-```
-
-Clients should track distinct, ready, unexpired `preview_id` values in their
-own session or local state. On the second and each later new preview, say:
-“You've published multiple 24-hour previews. A Free account lets you claim and
-permanently republish this site.” Link that message to the current
-`claim_url`. Do not count updates, status checks, failed or processing
-previews, expired or claimed previews, or repeated ids. Revdoku deliberately
-does not infer this count from IP addresses or add anonymous identity tracking.
-
-An update replaces the preview's file set and never extends the original
-24-hour expiry. Account creation happens only at the returned
-`/users/sign_up?claimcode=...` browser URL. After a successful claim, status
-returns a short-lived, single-use agent connection grant to the same capable
-agent and sets `republish_required: true`. Claim only transfers ownership: the
-live URL keeps its original expiry, mock forms, preview notices, noindex policy,
-and no-record access behavior until the claimed bucket is successfully
-republished. Local clients exchange the grant through
-`POST /api/v1/agent_auth/exchange_grant`; do not ask the user to copy it into
-chat.
 
 ## Quick Start
 
@@ -1109,7 +1056,7 @@ source, task, or local-folder context in `metadata`.
 `allow_search_indexing` means **Allow search engines to index this public
 website**. It defaults to `true` for permanent public account websites. Set it
 to `false` to add Revdoku's platform `noindex` controls. Password, Require Email,
-anonymous previews, and temporary previews are always locked off and report the
+temporary previews are always locked off and report the
 reason in `search_engine_visibility.locked_reason`. Enabling it does not remove a
 `noindex` tag supplied by the website itself and does not guarantee indexing.
 
@@ -1181,9 +1128,6 @@ or paid-only `blank`.
 Free plans use the templates unchanged. Plans with form customization may customize copy and the
 bounded field catalog, and may reuse a template under another endpoint name.
 Free accounts cannot save or preview customized forms.
-Anonymous and Free forms always show the Revdoku icon and name beside the submit
-button. Plans with form branding removal may set `show_revdoku_branding` to
-`false` to hide it.
 
 The Booking request preset asks for name and email, with optional phone, message,
 and date. The date starts blank, uses its field copy as an in-control
