@@ -1119,16 +1119,17 @@ Send that body to `POST /api/v1/buckets/:id/versions/restore`.
 
 New buckets expose no public form endpoint until the owner configures one in
 Website Settings or updates `bucket.metadata.publication_forms`. Each form is an
-instance with a unique endpoint `name` and a behavior `template`: `contact`,
-`feedback`, `comments` (**Feedback Visible To Others**), `quote`, `waitlist`,
-`question`, `intake`, `resource` (**Get a resource**), `information`
-(**Request information**), `issue` (**Report an issue**), `booking`
-(**Booking request**),
-or paid-only `blank`.
+instance with a unique endpoint `name` and a behavior `template`: `booking`
+(**Booking request**), `comments` (**Feedback (visible to all)**), `contact`
+(**Request a call**), `feedback`, `get_in_touch` (**Get in touch**), `information`
+(**Request information**), `quote`, `resource` (**Get a resource**), `support`,
+`waitlist`, or paid-only `blank`.
 Free plans use the templates unchanged. Plans with form customization may customize copy and the
 bounded field catalog, and may reuse a template under another endpoint name.
 Free accounts cannot save or preview customized forms.
 
+The Get in touch preset requires email and includes optional name, phone, and
+comments. The Support preset requires email and a support request.
 The Booking request preset asks for name and email, with optional phone, message,
 and date. The date starts blank, uses its field copy as an in-control
 placeholder, and can be made required when form customization is available.
@@ -1159,7 +1160,7 @@ placeholder, and can be made required when form customization is available.
 
 An embedded form posts same-origin to `/_revdoku/form/contact`. Private-response
 forms work with Public, Password, or Require Email publications when that access
-mode is available. The shared `comments` form, **Feedback Visible To Others**,
+mode is available. The shared `comments` form, **Feedback (visible to all)**,
 requires Password or Require Email access. Read the current submission limit
 from the API response instead of hard-coding account-specific quotas.
 Submissions are encrypted. The account owner can read them with bucket write

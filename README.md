@@ -31,7 +31,7 @@ Explore real websites published on Revdoku from ChatGPT and Claude AI:
 - **Protected client delivery — [Folder to Website](https://presentation-magic-stories-protected.revdoku.site/):** Demo presentation and image folder delivered as a password-protected client website. The owner is notified after every unlock. **Password: `12345`.**
 - **Lead generation — [B2B Lead Magnet](https://b2b-lead-magnet.revdoku.site/):** Demo lead-magnet website where visitors submit a form to open a PDF resource.
 - **AI-updated dashboard — [Temperature Monitoring](https://temperature-monitoring.revdoku.site/):** Demo live dashboard with sensor data updated by connected AI agents.
-- **PDF publishing — [PDF Survey Report](https://survey-results.revdoku.site/):** Demo PDF report where visitors can select an area or page and send feedback.
+- **PDF publishing — [NASA’s 1976 Graphics Standards Manual](https://sample-pdf.revdoku.site/):** Browse the 60-page identity manual and send page or area feedback in the PDF viewer.
 - **Portfolio — [Designer Portfolio](https://designer-portfolio.revdoku.site/):** Demo portfolio where visitors can select a page area and send design feedback.
 - **Professional services — [Personal Website](https://consulting.revdoku.site/):** Demo website for an independent consultant where visitors can book a consultation.
 - **Local business — [Restaurant Menu](https://restaurant-menu.revdoku.site/):** Demo restaurant menu where visitors can request a booking date.
@@ -74,7 +74,7 @@ website, read analytics, get forms submissions - all without switching to a sepa
   without stripping client-side behavior.
 - Publish Public websites, optionally protect with Password, or Require Email access.
 - Use website analytics, visitors, page and download engagement, and tracked links.
-- Add built-in forms for contact, signup, feedback, and intake forms with owner
+- Add built-in forms for contact, signup, feedback, and support with owner
   notifications and no separate backend required. Notifications about new submissions are sent to email and to the app.
 - Connect custom domains to your websites.
 - Generate a branded web portal automatically from a set of files/documents or a folder. 
