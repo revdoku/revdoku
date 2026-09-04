@@ -4,7 +4,8 @@
 >
 > Ask ChatGPT, Claude or other AI to publish to Revdoku.
 >
-> Get a live `*.revdoku.site` website in seconds.
+> Get a live `*.localhost3000.love` website in seconds. Existing `*.revdoku.site`
+> links remain supported as aliases.
 >
 > **Free account available.**
 

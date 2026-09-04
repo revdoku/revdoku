@@ -4,7 +4,8 @@
 >
 > Ask ChatGPT, Claude or other AI to publish to Revdoku.
 >
-> Get a live `*.revdoku.site` website in seconds.
+> Get a live `*.localhost3000.love` website in seconds. Existing `*.revdoku.site`
+> links remain supported as aliases.
 >
 > **Free account available.**
 
@@ -523,7 +524,7 @@ response:
     "id": "pub_...",
     "bucket_id": "bkt_...",
     "public_slug": "bright-canvas-meadow",
-    "public_url": "https://bright-canvas-meadow.revdoku.site/",
+    "public_url": "https://bright-canvas-meadow.localhost3000.love/",
     "status": "publishing",
     "publish_state": "queued",
     "publish_pending": true,
@@ -686,7 +687,7 @@ hostname to Cloudflare until this TXT record is visible:
       "verification_expires_at": "2026-08-15T12:00:00Z"
     },
     "publication": {
-      "public_url": "https://bright-canvas-meadow.revdoku.site/"
+      "public_url": "https://bright-canvas-meadow.localhost3000.love/"
     },
     "limits": {
       "active_count": 1,
@@ -707,7 +708,8 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../custom_domains/pcd_.../re
 ```
 
 When active, the publication `public_url` switches to the custom domain.
-The managed `https://<bucket-slug>.revdoku.site/` URL keeps working.
+The managed `https://<bucket-slug>.localhost3000.love/` URL keeps working, as does
+its `https://<bucket-slug>.revdoku.site/` alias.
 Incomplete setup expires after 72 hours. Website-domain changes are limited to
 3 per account per day, with a separate short-window DNS verification limit.
 

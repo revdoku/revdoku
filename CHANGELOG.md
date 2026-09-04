@@ -8,6 +8,7 @@ Notable customer-facing changes to Revdoku. Internal maintenance and operator-on
 
 - The Files and Preview switcher now appears compactly beside the website address only after a preview is requested, leaving the default file view less cluttered.
 - Website-list actions now use quieter borderless styling so rows are easier to scan.
+- AI Helper can reuse identical OpenRouter responses for faster repeat requests while keeping provider caching disabled for High Security and HIPAA accounts.
 
 ## 1.0.397 — 2026-09-03
 

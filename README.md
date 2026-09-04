@@ -4,7 +4,8 @@
 >
 > Ask ChatGPT, Claude or other AI to publish to Revdoku.
 >
-> Get a live `*.revdoku.site` website in seconds.
+> Get a live `*.localhost3000.love` website in seconds. Existing `*.revdoku.site`
+> links remain supported as aliases.
 >
 > **Free account available.**
 
@@ -54,7 +55,7 @@ and AI assistants.
 - **Dashboard and account:** <https://app.revdoku.com>
 - **Hosted MCP endpoint:** `https://app.revdoku.com/mcp`
 - **Create free account**: <https://app.revdoku.com/users/sign_up>
-- **Published websites:** `*.revdoku.site` URLs with
+- **Published websites:** `*.localhost3000.love` URLs (with `*.revdoku.site` aliases) with
   optional custom domains
 
 Free plan and paid plan priceing and human-readable comparisons:

@@ -2,7 +2,7 @@
 name: revdoku
 description: >
   Create and publish static websites, SPAs, files, and folders with Revdoku.
-  Save private drafts, create review previews, and publish *.revdoku.site
+  Save private drafts, create review previews, and publish *.localhost3000.love
   websites after the user signs in.
 ---
 
@@ -12,7 +12,7 @@ description: >
 >
 > Ask ChatGPT, Claude or other AI to publish to Revdoku.
 >
-> Get a live `*.revdoku.site` website in seconds.
+> Get a live `*.localhost3000.love` website in seconds.
 >
 > **Free account available.**
 
