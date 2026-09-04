@@ -2,6 +2,17 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.403 — 2026-09-04
+
+### Improved
+
+- New managed website URLs use `*.localhost3000.love`, while every existing
+  `*.revdoku.site` URL continues to work as an alias.
+- Managed website names can now be as short as three characters on every
+  signed-in plan.
+- Public agent, CLI, MCP, and API guidance now matches the authenticated
+  private-draft and 15-minute preview workflow.
+
 ## 1.0.398 — 2026-09-04
 
 ### Improved

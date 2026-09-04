@@ -17,15 +17,15 @@ publish it when ready.
 
 Explore real websites published on Revdoku from ChatGPT and Claude AI:
 
-- **Protected client delivery — [Folder to Website](https://presentation-magic-stories-protected.revdoku.site/):** Demo presentation and image folder delivered as a password-protected client website. The owner is notified after every unlock. **Password: `12345`.**
-- **Lead generation — [B2B Lead Magnet](https://b2b-lead-magnet.revdoku.site/):** Demo lead-magnet website where visitors submit a form to open a PDF resource.
-- **AI-updated dashboard — [Temperature Monitoring](https://temperature-monitoring.revdoku.site/):** Demo live dashboard with sensor data updated by connected AI agents.
-- **PDF publishing — [NASA’s 1976 Graphics Standards Manual](https://sample-pdf.revdoku.site/):** Browse the 60-page identity manual and send page or area feedback in the PDF viewer.
-- **Portfolio — [Designer Portfolio](https://designer-portfolio.revdoku.site/):** Demo portfolio where visitors can select a page area and send design feedback.
-- **Professional services — [Personal Website](https://consulting.revdoku.site/):** Demo website for an independent consultant where visitors can book a consultation.
-- **Local business — [Restaurant Menu](https://restaurant-menu.revdoku.site/):** Demo restaurant menu where visitors can request a booking date.
-- **Listings — [Property Listing](https://property-listing.revdoku.site/):** Demo property website where interested visitors can request a call.
-- **Forms & leads — [New Product Waitlist](https://waitlist-page.revdoku.site/):** Demo product website where visitors can join the waitlist.
+- **Protected client delivery — [Folder to Website](https://presentation-magic-stories-protected.localhost3000.love/):** Demo presentation and image folder delivered as a password-protected client website. The owner is notified after every unlock. **Password: `12345`.**
+- **Lead generation — [B2B Lead Magnet](https://b2b-lead-magnet.localhost3000.love/):** Demo lead-magnet website where visitors submit a form to open a PDF resource.
+- **AI-updated dashboard — [Temperature Monitoring](https://temperature-monitoring.localhost3000.love/):** Demo live dashboard with sensor data updated by connected AI agents.
+- **PDF publishing — [NASA’s 1976 Graphics Standards Manual](https://sample-pdf.localhost3000.love/):** Browse the 60-page identity manual and send page or area feedback in the PDF viewer.
+- **Portfolio — [Designer Portfolio](https://designer-portfolio.localhost3000.love/):** Demo portfolio where visitors can select a page area and send design feedback.
+- **Professional services — [Personal Website](https://consulting.localhost3000.love/):** Demo website for an independent consultant where visitors can book a consultation.
+- **Local business — [Restaurant Menu](https://restaurant-menu.localhost3000.love/):** Demo restaurant menu where visitors can request a booking date.
+- **Listings — [Property Listing](https://property-listing.localhost3000.love/):** Demo property website where interested visitors can request a call.
+- **Forms & leads — [New Product Waitlist](https://waitlist-page.localhost3000.love/):** Demo product website where visitors can join the waitlist.
 
 ## Quick Start
 
@@ -167,7 +167,8 @@ minutes after creation; its lifetime cannot be customized. Re-running the
 preview republishes the same preview URL with a new 15-minute window.
 
 Free accounts include one permanent Password website. Require Email and other
-paid settings can still be evaluated in this preview before upgrading.
+eligible paid access or presentation settings can still be evaluated in this
+preview before upgrading; form customization continues to follow the plan.
 
 Use `--site-mode spa` for compiled client-side apps that need route fallback;
 omit it or use `--site-mode static` for normal static sites. A project-local
@@ -226,8 +227,8 @@ What it intentionally does not do (and the workaround):
 
 - Custom server backends, arbitrary server code, or per-bucket databases → use
   an external backend or a static/SPA-compatible workflow.
-- Cron jobs / scheduled server tasks → trigger work from a client or an external
-  scheduler hitting a public action.
+- Cron jobs / scheduled server tasks → run the Revdoku CLI or REST API from an
+  external scheduler or backend.
 - A client-side AI/LLM proxy for published sites → Revdoku sites are on the
   public internet, so an open AI key would be abused; call your own backend.
 - Importing code from another site at runtime / shared cross-account libraries →
