@@ -1119,11 +1119,12 @@ Send that body to `POST /api/v1/buckets/:id/versions/restore`.
 
 New buckets expose no public form endpoint until the owner configures one in
 Website Settings or updates `bucket.metadata.publication_forms`. Each form is an
-instance with a unique endpoint `name` and a behavior `template`: `booking`
-(**Booking request**), `comments` (**Feedback (visible to all)**), `contact`
-(**Request a call**), `feedback`, `get_in_touch` (**Get in touch**), `information`
-(**Request information**), `quote`, `resource` (**Get a resource**), `support`,
-`waitlist`, or paid-only `blank`.
+instance with a unique endpoint `name` and a behavior `template` (listed A–Z):
+`booking` (**Booking request**), paid-only `blank` (**Custom form**), `feedback`,
+`comments` (**Feedback (visible to all)**), `resource` (**Get a resource**),
+`get_in_touch` (**Get in touch**), `waitlist` (**Join waitlist**), `contact`
+(**Request a call**), `quote` (**Request a quote**), `information` (**Request
+information**), or `support`.
 Free plans use the templates unchanged. Plans with form customization may customize copy and the
 bounded field catalog, and may reuse a template under another endpoint name.
 Free accounts cannot save or preview customized forms.
