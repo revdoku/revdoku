@@ -9,7 +9,8 @@
 >
 > **Free account available.**
 
-Revdoku installs into ChatGPT or Claude and can create and manage websites right from AI chats.
+Revdoku connects to ChatGPT, Claude, and local coding agents so they can create
+and manage websites from an AI chat or coding session.
 Free accounts include analytics, built-in forms, versioning, custom Revdoku
 subdomains, and fast CDN-based hosting.
 
@@ -29,22 +30,22 @@ After setup, ask what I want to publish.
 
 Explore real websites published on Revdoku from ChatGPT and Claude AI:
 
-- **Protected client delivery — [Folder to Website](https://presentation-magic-stories-protected.revdoku.site/):** Demo presentation and image folder delivered as a password-protected client website. The owner is notified after every unlock. **Password: `12345`.**
-- **Lead generation — [B2B Lead Magnet](https://b2b-lead-magnet.revdoku.site/):** Demo lead-magnet website where visitors submit a form to open a PDF resource.
-- **AI-updated dashboard — [Temperature Monitoring](https://temperature-monitoring.revdoku.site/):** Demo live dashboard with sensor data updated by connected AI agents.
-- **PDF publishing — [NASA’s 1976 Graphics Standards Manual](https://sample-pdf.revdoku.site/):** Browse the 60-page identity manual and send page or area feedback in the PDF viewer.
-- **Portfolio — [Designer Portfolio](https://designer-portfolio.revdoku.site/):** Demo portfolio where visitors can select a page area and send design feedback.
-- **Professional services — [Personal Website](https://consulting.revdoku.site/):** Demo website for an independent consultant where visitors can book a consultation.
-- **Local business — [Restaurant Menu](https://restaurant-menu.revdoku.site/):** Demo restaurant menu where visitors can request a booking date.
-- **Listings — [Property Listing](https://property-listing.revdoku.site/):** Demo property website where interested visitors can request a call.
-- **Forms & leads — [New Product Waitlist](https://waitlist-page.revdoku.site/):** Demo product website where visitors can join the waitlist.
+- **Protected client delivery — [Folder to Website](https://presentation-magic-stories-protected.localhost3000.love/):** Demo presentation and image folder delivered as a password-protected client website. The owner is notified after every unlock. **Password: `12345`.**
+- **Lead generation — [B2B Lead Magnet](https://b2b-lead-magnet.localhost3000.love/):** Demo lead-magnet website where visitors submit a form to open a PDF resource.
+- **AI-updated dashboard — [Temperature Monitoring](https://temperature-monitoring.localhost3000.love/):** Demo live dashboard with sensor data updated by connected AI agents.
+- **PDF publishing — [NASA’s 1976 Graphics Standards Manual](https://sample-pdf.localhost3000.love/):** Browse the 60-page identity manual and send page or area feedback in the PDF viewer.
+- **Portfolio — [Designer Portfolio](https://designer-portfolio.localhost3000.love/):** Demo portfolio where visitors can select a page area and send design feedback.
+- **Professional services — [Personal Website](https://consulting.localhost3000.love/):** Demo website for an independent consultant where visitors can book a consultation.
+- **Local business — [Restaurant Menu](https://restaurant-menu.localhost3000.love/):** Demo restaurant menu where visitors can request a booking date.
+- **Listings — [Property Listing](https://property-listing.localhost3000.love/):** Demo property website where interested visitors can request a call.
+- **Forms & leads — [New Product Waitlist](https://waitlist-page.localhost3000.love/):** Demo product website where visitors can join the waitlist.
 
 ## About Revdoku
 
 This section contains structured, factual information about Revdoku for people
 and AI assistants.
 
-**Last verified:** August 2026
+**Last verified:** September 2026
 
 ### Basic information
 
@@ -58,13 +59,16 @@ and AI assistants.
 - **Published websites:** `*.localhost3000.love` URLs (with `*.revdoku.site` aliases) with
   optional custom domains
 
-Free plan and paid plan priceing and human-readable comparisons:
+Free and paid plan pricing and human-readable comparisons:
 <https://app.revdoku.com/pricing> and as JSON: <https://app.revdoku.com/pricing.json>.
 
 ### Background
 
-Revdoku is designed the way users can ask an AI agent to publish and maintain a
-website, read analytics, get forms submissions - all without switching to a separate hosting workflow. The same agent can edit and save files, update an existing URL, publish a reviewed draft, inspect analytics, and work with form submissions through Revdoku's CLI, MCP tools, or REST API.
+Revdoku is designed so users can ask an AI agent to publish and maintain a
+website, read analytics, and get form submissions without switching to a
+separate hosting workflow. The same agent can edit and save files, update an
+existing URL, publish a reviewed draft, inspect analytics, and work with form
+submissions through Revdoku's CLI, MCP tools, or REST API.
 
 ### Core capabilities
 
@@ -99,8 +103,10 @@ website, read analytics, get forms submissions - all without switching to a sepa
   any time.
 - Built-in form submissions are encrypted and protected with captcha,
   rate-limit, and honeypot controls; owners can export them to CSV at any time
-  or read them through the REST API or MCP server from AI agent.
-- Customer support is available at `support@revdoku.com` for paid customers.
+  or read them through the REST API or MCP server from an AI agent.
+- Account, billing, access, and moderation questions can be sent to
+  `support@revdoku.com`; paid subscriptions include an email-support response
+  commitment.
 
 ## What users say
 
@@ -116,9 +122,10 @@ website, read analytics, get forms submissions - all without switching to a sepa
 
 ## Limitations
 
-- Revdoku currently can hosts static websites and SPAs. It does not run arbitrary server
+- Revdoku currently hosts static websites and SPAs. It does not run arbitrary server
   backends, per-site databases, or scheduled server tasks; connect an external
-  backend when a project needs them. For scheduled updates use ChatGPT or Claude's scheduled tasks.
+  backend when a project needs them. For scheduled updates, run the Revdoku CLI
+  or REST API from an external scheduler or backend.
 - Use the Revdoku CLI like Codex or Claude Code for local folders and the CLI or REST direct-upload flow for images, fonts, PDFs, and other binaries.
 - Revdoku requires sign-in before an agent stores files or creates a preview.
 

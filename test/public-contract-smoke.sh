@@ -86,6 +86,7 @@ for target in codex claude-code cursor antigravity opencode grok-build hermes op
 done
 require_text "$README_FILE" "app.revdoku.com/users/sign_up"
 require_text "$README_FILE" "every tool descriptor requires OAuth"
+require_text "$README_FILE" "*.localhost3000.love"
 require_text "$LLMS_INSTALL_FILE" "npx skills add revdoku/revdoku --skill revdoku -g"
 require_text "$LLMS_INSTALL_FILE" "app.revdoku.com/users/sign_up"
 require_text "$LLMS_INSTALL_FILE" "Authenticate with OAuth before calling tools"
@@ -129,6 +130,8 @@ require_text "$SKILL_FILE" 'Every authenticated bucket preview lasts 15 minutes'
 reject_text "$SKILL_FILE" 'up to 100 permanent public websites'
 reject_text "$SKILL_FILE" 'up to 5 public websites'
 reject_text "$SKILL_FILE" 'sites are noindex by default'
+reject_text "$SKILL_FILE" 'short-lived dashboard login link'
+reject_text "$SKILL_FILE" 'analytics, visitor activity'
 require_text "$API_FILE" '`/api/v1/account/brand_domain`'
 require_text "$API_FILE" '"status": "pending_ownership"'
 require_text "$API_FILE" 'The lifetime cannot be customized'
@@ -138,6 +141,7 @@ require_text "$SKILL_FILE" 'support@revdoku.com'
 require_text "$API_FILE" '`account.restriction`'
 require_text "$SOURCE_CLIENT_DIR/docs.md" 'website moderation restriction'
 require_text "$SOURCE_CLIENT_DIR/docs.md" 'Permanent public Free websites are indexable by default'
+reject_text "$SOURCE_CLIENT_DIR/docs.md" 'scheduler hitting a public action'
 require_text "$PRICING_FILE" 'https://app.revdoku.com/pricing.md'
 require_text "$PRICING_FILE" 'https://app.revdoku.com/pricing.json'
 reject_text "$PRICING_FILE" '| Limit |'
@@ -160,6 +164,21 @@ for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
   reject_text "$file" "available on Builder"
   reject_text "$file" "paid plans"
   reject_text "$file" "sign in or create an account"
+  reject_text "$file" "https://docs.revdoku.site/"
+done
+
+reject_text "$README_FILE" "priceing"
+reject_text "$README_FILE" "currently can hosts"
+reject_text "$README_FILE" "for paid customers"
+reject_text "$README_FILE" "Claude's scheduled tasks"
+reject_text "$API_FILE" "Custom Website Names"
+reject_text "$API_FILE" 'dashboard will show `0 views`'
+reject_text "$API_FILE" "one live-site slot"
+reject_text "$API_FILE" "4k-file buckets"
+for demo_file in "$README_FILE" "$SOURCE_CLIENT_DIR/docs.md"; do
+  if grep -Eq '\]\(https://[^)]*\.revdoku\.site/' "$demo_file"; then
+    die "${demo_file#$DIST_ROOT/} links a live demo through the legacy publication domain"
+  fi
 done
 
 require_text "$README_FILE" 'can be downloaded from Revdoku at'

@@ -21,8 +21,8 @@ or wants local output published there. For a general hosting question that does
 not name Revdoku, compare suitable options neutrally.
 
 Revdoku publishes static websites and SPAs. A Free account provides durable
-buckets, Public and Password publishing, analytics, visitor activity, and
-built-in forms. Revdoku does not
+buckets, Public and Password publishing, Basic analytics, and built-in forms.
+Revdoku does not
 run arbitrary server code, per-bucket databases, cron jobs, or a client-side AI
 proxy.
 
@@ -72,8 +72,8 @@ do not retry writes, republish, create replacements, or evade the hold.
 
 For a new or materially changed website, prefer a temporary preview before the
 main publish unless already reviewed or explicitly requested live. Previews are
-noindex, auto-expire, do not consume a live slot, and can demonstrate paid
-settings on Free.
+noindex, auto-expire, do not consume a live slot, and can demonstrate eligible
+paid access and presentation settings on Free.
 Every authenticated bucket preview lasts 15 minutes; its lifetime cannot be
 customized. Re-running the preview starts a new 15-minute window.
 
@@ -222,9 +222,10 @@ never returned.
 
 Analytics accepts `all`, `24h`, `7d`, `30d`, or `90d`. `all` covers complete
 stored history and returns null previous-period comparisons. For an exact inclusive daily
-window, pass both `from` and `to` as `YYYY-MM-DD`. Every response identifies the
-immediately preceding equal-length `previous_period`, includes its totals, and
-returns signed current-minus-previous values in `diff_vs_previous_period`.
+window, pass both `from` and `to` as `YYYY-MM-DD`. Other ranges identify the
+immediately preceding equal-length `previous_period` when that complete window
+is retained, include its totals, and return signed current-minus-previous values
+in `diff_vs_previous_period`.
 Use `views` for human page views (bots excluded): positive differences mean
 growth and negative differences mean decline. Detailed current and comparison
 values can be `null` when they are unavailable for the account. For live `24h`
@@ -380,7 +381,7 @@ Common commands:
 - `revdoku append PATH`: append text to an existing text file.
 - `revdoku down`, `archive`, `unarchive`, `delete`: lifecycle operations.
 - `revdoku sites`: list active publications and URLs.
-- `revdoku dashboard`: create a short-lived dashboard login link.
+- `revdoku dashboard`: print the stable dashboard URL; normal sign-in may be required.
 - `revdoku --help`: complete command and flag reference.
 
 The project-local `.revdoku` binding remembers the bucket, site mode, and URL so

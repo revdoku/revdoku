@@ -37,8 +37,9 @@ and overrides. Do not copy numeric limits into integrations.
 
 Permanent public account websites, including Free websites, are indexable by
 default. Temporary previews, Password, and Require Email websites are always
-`noindex`. Custom Website Names and paid access features can be
-evaluated in a temporary signed-in preview.
+`noindex`. Eligible paid access and presentation settings can be evaluated in a
+temporary signed-in preview. Every signed-in plan may choose a managed website
+slug.
 
 For a new or materially changed website, use the preview endpoint first unless
 the user has already reviewed it or explicitly asks to publish immediately:
@@ -99,10 +100,10 @@ Agent clients should identify themselves. These headers are used for audit logs
 and user-visible activity history.
 
 ```http
-User-Agent: RevdokuMCP/0.1.0 (codex)
+User-Agent: MyRevdokuClient/1.0 (codex)
 X-Revdoku-Agent: codex
 X-Revdoku-Agent-Client: chatgpt
-X-Revdoku-Agent-Version: 0.1.0
+X-Revdoku-Agent-Version: 1.0.0
 X-Revdoku-Agent-Run-Id: run_20260520_001
 X-Revdoku-Agent-Project: marketing-site
 X-Revdoku-Agent-Task: landing-page-refresh
@@ -172,11 +173,10 @@ the production remote MCP endpoint:
 https://app.revdoku.com/mcp
 ```
 
-Add that URL as a Claude custom connector from **Customize → Connectors**. In
-ChatGPT, connect Revdoku from the Apps directory when listed, or create a
-custom app from **Settings / Workspace settings → Apps → Create** when the
-account, role, and workspace support write-capable MCP apps. If write tools are
-unavailable, use the dashboard or local CLI. The connector uses Revdoku OAuth
+Follow <https://revdoku.com/connect/> for the current client-specific setup.
+Add the URL as a remote MCP/custom connector when the client and account support
+write-capable MCP tools. If write tools are unavailable, use the dashboard or
+local CLI. The connector uses Revdoku OAuth
 discovery, authorization-code PKCE, `offline_access` refresh support, and Bearer
 tokens. Users approve the exact Revdoku account shown on the consent screen and
 can revoke the connection later from `/account/access`.
@@ -337,10 +337,12 @@ Example response:
 ```json
 {
   "data": {
-    "id": "bkt_...",
-    "title": "Marketing site",
-    "published": false,
-    "dashboard_url": "https://app.revdoku.com/buckets/view?id=bkt_..."
+    "bucket": {
+      "id": "bkt_...",
+      "title": "Marketing site",
+      "published": false,
+      "dashboard_url": "https://app.revdoku.com/buckets/view?id=bkt_..."
+    }
   }
 }
 ```
@@ -372,6 +374,20 @@ curl -fsS "$REVDOKU_URL/api/v1/direct_uploads" \
       "sha256": "HEX_SHA256",
       "purpose": "bucket_file"
     }
+  }'
+```
+
+The response returns `data.signed_id` plus `data.direct_upload.url` and the exact
+headers required for the object-storage `PUT`. Upload the bytes to that URL
+without the Revdoku authorization header, then attach the uploaded blob:
+
+```sh
+curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../files" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "path": "index.html",
+    "signed_blob_id": "<data.signed_id from direct_uploads>"
   }'
 ```
 
@@ -482,8 +498,8 @@ password the first time protected access is enabled. Set
 `"regenerate_password": true` only when the owner
 explicitly wants to rotate the protected-site password. Agents should not ask
 users to type protected-site passwords in chat. Never put the password in the
-URL. Owner publish responses include the website URL and copyable password/share
-text when the authenticated key is allowed to see it.
+URL. After the build is ready, an authorized owner fetch includes the website URL
+and copyable password/share text.
 
 **Publish only one folder.** Set `"publication_root_directory": "website"` (in
 the publish request body, or as bucket `metadata`) to publish ONLY that top-level
@@ -504,33 +520,36 @@ toward the live-site limit. The lifetime cannot be customized; re-running republ
 to the same preview slug with a new 15-minute window. Like publishing, it is async — poll
 the returned publication's `publish_state` until `ready`, then share its `expires_at`.
 Preview requests may include the normal access and presentation settings. Free
-includes one permanent Password website; Require Email and other paid settings
-can be evaluated in a temporary preview. Publishing a paid-only setting on the
+includes one permanent Password website; Require Email and other eligible paid
+access or presentation settings can be evaluated in a temporary preview.
+Publishing a paid-only setting on the
 main website returns `PUBLICATION_UPGRADE_REQUIRED` with preview, upgrade, and
 Public-on-Free choices.
 
 **Website slug.** Every signed-in plan can use `slug_suggestions` to steer the
 first URL and `PATCH .../custom_domains/public_slug` to rename it.
-Slugs must be at least 9 characters and cannot use reserved or prohibited words.
+Slugs must be at least 3 characters and cannot use reserved or prohibited words.
 
 Publishing is **asynchronous**. The request returns HTTP `202 Accepted` with the
-publication in a `queued`/`processing` state — the bundle is built in the
-background (this is why large, 4k-file buckets no longer time out). Example
+publication in a `queued`/`processing` state while the bundle is built in the
+background. Example
 response:
 
 ```json
 {
   "data": {
-    "id": "pub_...",
-    "bucket_id": "bkt_...",
-    "public_slug": "bright-canvas-meadow",
-    "public_url": "https://bright-canvas-meadow.localhost3000.love/",
-    "status": "publishing",
-    "publish_state": "queued",
-    "publish_pending": true,
-    "site_mode": "spa",
-    "access_mode": "public",
-    "expires_at": null
+    "publication": {
+      "id": "pub_...",
+      "bucket_id": "bkt_...",
+      "public_slug": "bright-canvas-meadow",
+      "public_url": "https://bright-canvas-meadow.localhost3000.love/",
+      "status": "publishing",
+      "publish_state": "queued",
+      "publish_pending": true,
+      "site_mode": "spa",
+      "access_mode": "public",
+      "expires_at": null
+    }
   }
 }
 ```
@@ -588,8 +607,9 @@ Website analytics and browser-side Revdoku event tracking are enabled by
 default for every published website — leave them on so the owner's dashboard
 shows visits and view counts.
 Only set `"tracking_enabled": false` when the user explicitly asks to disable
-tracking; doing so suppresses **all** analytics for the publication (the
-dashboard will show `0 views`). Use `"publication_analytics_enabled"` and
+tracking; doing so stops new analytics and browser-side events for the
+publication. Existing retained history is not rewritten. Use
+`"publication_analytics_enabled"` and
 `"publication_client_events_enabled"` for separate control. `"analytics_enabled"`
 and `"client_events_enabled"` are accepted aliases.
 
@@ -720,12 +740,12 @@ provider.
 
 ### Read Analytics
 
-Use `details_visible` to determine whether detailed publication analytics are
-available. When false, the response still exposes the numeric all-time hit
-count but hides detailed ranges and breakdowns.
+Use `details_visible` to determine whether publication analytics are available.
+When false, analytics totals and breakdowns are unavailable and numeric fields
+are `null`, not zero.
 
-Except for `all`, each selected window is compared with the immediately preceding
-equal-length window. The `all` range covers complete stored history and returns
+Except for `all`, each selected window is compared with its matching immediately
+preceding window. The `all` range covers complete stored history and returns
 `previous_period: null` plus null comparison values. `previous_period_totals` contains the earlier values and
 `diff_vs_previous_period` contains signed current-minus-previous values. For
 example, `"views": 6` means six more human views than the previous period and
@@ -747,7 +767,7 @@ Example response with details:
     "from": "2026-05-22",
     "to": "2026-06-20",
     "retention_limited": false,
-    "previous_period": null,
+    "previous_period": { "from": "2026-04-22", "to": "2026-05-21" },
     "first_event_at": "2026-05-22T09:12:33.000Z",
     "last_event_at": "2026-05-26T18:32:14.000Z",
     "totals": {
@@ -790,7 +810,7 @@ Example response with details:
         "bucket_title": "Docs",
         "publication_id": "pub_abc123",
         "public_slug": "docs",
-        "url": "https://docs.revdoku.site/",
+        "url": "https://docs.localhost3000.love/",
         "hits": 1204
       }
     ],
@@ -1508,13 +1528,14 @@ certificate per active website; the wildcard is DNS routing, not wildcard TLS.
 
 #### GET /api/v1/analytics
 
-Supported ranges are `all`, `24h`, `7d`, `30d`, and `90d`. `all` covers the
+Supported ranges are `all`, `24h`, `today`, `yesterday`, `7d`, `30d`, `90d`,
+`180d`, `current_week`, `current_month`, and `current_year`. `all` covers the
 plan's retained daily history, returns `previous_period: null`, and leaves
 comparison values null. The response's `from` and `to` are the effective dates;
-`retention_limited` is true when a preset was shortened to retention. The `24h`
-response uses hourly buckets; the other ranges use daily buckets. Pass both `from` and `to` as
-`YYYY-MM-DD` for an exact inclusive daily window of at most 90 days; exact dates
-override `range`.
+`retention_limited` is true when a preset was shortened to retention. `24h` and
+`today` use hourly buckets; the other ranges use daily buckets. Pass both `from`
+and `to` as `YYYY-MM-DD` for an exact inclusive daily window of at most 90 days;
+exact dates override `range`.
 
 Responses with `details_visible: true` include:
 
@@ -1531,10 +1552,10 @@ Responses with `details_visible: true` include:
 | `totals.visitors` | Sum of daily unique visitors in the selected range; a return on another day counts again. |
 | `totals.hits_not_found` | Missing-path hits. |
 | `totals.hits_bots` | Likely or known bot hits. |
-| `previous_period` | Immediately preceding equal-length window, or null for `all` or when that complete window is outside retention. Daily dates are inclusive; the hourly timestamps describe the preceding 24 hours. |
+| `previous_period` | Immediately preceding comparison window, or null for `all` or when that complete window is outside retention. Rolling/custom daily dates are inclusive; live and calendar windows use timestamps. |
 | `previous_period_totals` | Detailed totals for the previous period, using the same metric keys as the selected range. Live `24h` values are null if either hourly window is unavailable. |
 | `diff_vs_previous_period` | Signed current-minus-previous differences. Positive means growth; negative means decline; null means unavailable, not zero. |
-| `daily` | Daily website hits and visitors. |
+| `daily` | Website traffic series; points are hourly or daily according to `granularity`. |
 | `buckets` | Highest-traffic published buckets. |
 | `paths` | Highest-traffic page paths. Static assets and downloads are excluded. |
 | `downloads` | Explicit file downloads grouped by path. |
@@ -1556,6 +1577,11 @@ without analytics access and use null totals:
     "range": "30d",
     "previous_period": { "from": "2026-04-22", "to": "2026-05-21" },
     "details_visible": false,
+    "availability": {
+      "status": "unavailable",
+      "reason": "plan_unavailable",
+      "message": "Analytics results are not available for this account."
+    },
     "granularity": "day",
     "first_event_at": null,
     "last_event_at": null,
@@ -1693,8 +1719,8 @@ uploading every file manually. Publish sessions reuse unchanged files and return
 a short `deploy_summary` that is easy to show to users.
 
 Use the preview endpoint before finalizing a new live website when the user has
-not reviewed it yet. Previewing is temporary and does not consume the Free
-plan's one live-site slot.
+not reviewed it yet. Previewing is temporary and does not consume a live-site
+slot.
 
 ### Surface Account Limits Clearly
 
