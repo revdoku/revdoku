@@ -255,8 +255,11 @@ disappears or report returned progress.
 
 ## Built-in forms
 
-Templates: `booking`, `comments`, `contact`, `feedback`, `get_in_touch`,
-`information`, `quote`, `resource`, `support`, `waitlist`, and paid-only `blank`.
+Templates (A–Z): `booking` (**Booking request**), paid-only `blank` (**Custom
+form**), `feedback`, `comments` (**Feedback (visible to all)**), `resource`
+(**Get a resource**), `get_in_touch` (**Get in touch**), `waitlist` (**Join
+waitlist**), `contact` (**Request a call**), `quote` (**Request a quote**),
+`information` (**Request information**), and `support`.
 `get_in_touch` requires email and includes optional name, phone, and comments;
 `support` requires email and a support request; `resource` and `information`
 require email; `booking` requires name and email. Their remaining preset fields
