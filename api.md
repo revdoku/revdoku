@@ -515,9 +515,9 @@ an expiry. Do not infer a lifetime from account labels in client code.
 
 **Preview (staging).** `POST /api/v1/buckets/:id/publication/preview` publishes the
 bucket's current draft to a temporary public `preview-<slug>` URL that expires
-after 15 minutes and is `noindex`, without touching the main publication or counting
+after 24 hours and is `noindex`, without touching the main publication or counting
 toward the live-site limit. The lifetime cannot be customized; re-running republishes
-to the same preview slug with a new 15-minute window. Like publishing, it is async — poll
+to the same preview slug with a new 24-hour window. Like publishing, it is async — poll
 the returned publication's `publish_state` until `ready`, then share its `expires_at`.
 Preview requests may include the normal access and presentation settings. Free
 includes one permanent Password website; Require Email and other eligible paid

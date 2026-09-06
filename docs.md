@@ -162,9 +162,9 @@ publish tools as **Publish** or **Republish**.
 
 An authenticated bucket preview is a temporary, `noindex` copy of the saved
 draft at a `preview-...` URL. It never changes the main website and does not
-count against live or protected-site limits. Every bucket preview expires 15
-minutes after creation; its lifetime cannot be customized. Re-running the
-preview republishes the same preview URL with a new 15-minute window.
+count against live or protected-site limits. Every bucket preview expires 24
+hours after the build finishes; its lifetime cannot be customized. Re-running the
+preview republishes the same preview URL with a new 24-hour window.
 
 Free accounts include one permanent Password website. Require Email and other
 eligible paid access or presentation settings can still be evaluated in this

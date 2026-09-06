@@ -136,7 +136,7 @@ Most-used commands (short alias, then full name — either works):
         login            Sign in to an existing account in the browser.
         grant TOKEN      Use a one-time connection token from the web app.
   down, unpublish        Take this folder's site offline (keeps the URL for later).
-        preview          Preview the current private draft for 15 minutes.
+        preview          Preview the current private draft for 24 hours.
 
 Publish options:
   --protected          Publish as a password-protected website (alias: --private).
@@ -1383,7 +1383,7 @@ preview_bucket() {
           publication: $p,
           public_url: $p.public_url,
           expires_at: $p.expires_at,
-          guidance: "Temporary preview is live for 15 minutes. Paid settings work here for evaluation. Current Free limits: https://app.revdoku.com/pricing.json. Publish for real with: revdoku p"
+          guidance: "Temporary preview is live for 24 hours. Paid settings work here for evaluation. Current Free limits: https://app.revdoku.com/pricing.json. Publish for real with: revdoku p"
         }
       }' <<<"$response"
 }
