@@ -98,7 +98,7 @@ require_text "$CLI_FILE" "grant TOKEN"
 require_text "$CLI_FILE" "Opens browser sign-in when credentials are missing."
 require_text "$CLI_FILE" "https://app.revdoku.com/pricing.json"
 reject_text "$CLI_FILE" "up to 5 public websites"
-require_text "$CLI_FILE" "Preview the current private draft for 15 minutes."
+require_text "$CLI_FILE" "Preview the current private draft for 24 hours."
 require_text "$SKILL_FILE" 'scripts/revdoku.sh p <path>'
 reject_text "$SKILL_FILE" 'website_preview_create'
 reject_text "$API_FILE" '/api/v1/quick_publish'
@@ -126,7 +126,7 @@ require_text "$API_FILE" 'including Free websites, are indexable by'
 require_text "$SKILL_FILE" 'https://app.revdoku.com/pricing'
 require_text "$SKILL_FILE" 'Permanent public Free websites are indexable by default'
 require_text "$SKILL_FILE" 'Never silently publish protected content as'
-require_text "$SKILL_FILE" 'Every authenticated bucket preview lasts 15 minutes'
+require_text "$SKILL_FILE" 'Every authenticated bucket preview lasts 24 hours'
 reject_text "$SKILL_FILE" 'up to 100 permanent public websites'
 reject_text "$SKILL_FILE" 'up to 5 public websites'
 reject_text "$SKILL_FILE" 'sites are noindex by default'
@@ -135,7 +135,7 @@ reject_text "$SKILL_FILE" 'analytics, visitor activity'
 require_text "$API_FILE" '`/api/v1/account/brand_domain`'
 require_text "$API_FILE" '"status": "pending_ownership"'
 require_text "$API_FILE" 'The lifetime cannot be customized'
-require_text "$SOURCE_CLIENT_DIR/docs.md" 'Every bucket preview expires 15'
+require_text "$SOURCE_CLIENT_DIR/docs.md" 'Every bucket preview expires 24'
 require_text "$SKILL_FILE" '`ACCOUNT_SUSPENDED`'
 require_text "$SKILL_FILE" 'support@revdoku.com'
 require_text "$API_FILE" '`account.restriction`'

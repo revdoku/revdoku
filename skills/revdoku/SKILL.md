@@ -74,8 +74,8 @@ For a new or materially changed website, prefer a temporary preview before the
 main publish unless already reviewed or explicitly requested live. Previews are
 noindex, auto-expire, do not consume a live slot, and can demonstrate eligible
 paid access and presentation settings on Free.
-Every authenticated bucket preview lasts 15 minutes; its lifetime cannot be
-customized. Re-running the preview starts a new 15-minute window.
+Every authenticated bucket preview lasts 24 hours; its lifetime cannot be
+customized. Re-running the preview starts a new 24-hour window.
 
 If a user asks a connected AI to create a Password or Require Email website,
 preserve that privacy requirement: create the files as a private draft, then use
