@@ -12,6 +12,11 @@
 Use the Revdoku API to create buckets, store files, publish static websites,
 attach custom domains, and read publication analytics.
 
+Upload ready-to-serve HTML, CSS, JavaScript, and assets. Revdoku does not install
+dependencies or compile project source. Build an existing framework project
+locally and upload its static output. `site_mode: "spa"` enables route fallback
+to `index.html`; it does not run a build.
+
 Most AI-agent users should start with the Revdoku app's copied prompt or the
 Revdoku MCP tool. Use this HTTP API for custom clients, CI jobs, backend workers,
 or direct integrations.
