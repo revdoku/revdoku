@@ -1139,8 +1139,9 @@ Send that body to `POST /api/v1/buckets/:id/versions/restore`.
 
 #### Built-in publication forms
 
-New buckets expose no public form endpoint until the owner configures one in
-Website Settings or updates `bucket.metadata.publication_forms`. Each form is an
+Known presets embedded with a Revdoku macro or popup button in published HTML
+register automatically, without a Website Settings entry. Forms added in Website
+Settings or `bucket.metadata.publication_forms` create widgets by default. Each form is an
 instance with a unique endpoint `name` and a behavior `template` (listed A–Z):
 `booking` (**Booking request**), paid-only `blank` (**Custom form**), `feedback`,
 `comments` (**Feedback (visible to all)**), `resource` (**Get a resource**),
@@ -1294,20 +1295,18 @@ resource targets; existing legacy HTML/folder responses keep their direct redire
 until changed. Form changes remain draft settings until publish/republish. Revdoku
 does not email the visitor for this response mode.
 
-To render one configured hosted form inline, put its macro in an HTML page:
+Insert a preset inline in an HTML page:
 
 ```html
 {{REVDOKU_FORM:waitlist}}
 ```
 
-Use `{{REVDOKU_FORM}}` to select the first configured hosted form. The first valid
-macro selects the page's one inline/floating form type. That type may appear inline,
-floating, or both according to its settings; macros for other configured types on
-the same page render nothing. Without a valid macro, the first configured hosted
-form renders as the floating widget.
+Revdoku detects the preset when publishing, registers its endpoint, and renders it
+without requiring a settings entry. Different named forms render independently.
+`{{REVDOKU_FORM}}` uses the first configured form, or Feedback if none is configured.
+Custom endpoint names require a definition. Ordinary third-party forms are not adopted.
 
-To open any configured hosted form in a Revdoku-managed popup while retaining the
-website's own button styling, add its name to a native button:
+A native button opens a managed popup while keeping the website's button styling:
 
 ```html
 <button type="button" class="your-cta" data-revdoku-form-popup="contact">
@@ -1315,12 +1314,30 @@ website's own button styling, add its name to a native button:
 </button>
 ```
 
-Multiple buttons may share one popup, and different configured names receive their
-own popups. Set `show_floating_with_embeds` to `false` to hide the same form's
-floating widget on pages where an inline macro or popup button embeds it. The old
-`show_floating_with_inline` request key remains a deprecated compatibility alias.
-To hand-author the `<form>` instead, set that definition to `"hosted":
-false` and post same-origin to `/_revdoku/form/<name>`.
+Repeated buttons share one popup. Per-form `widget_mode` controls floating placement:
+
+| Value | Behavior |
+| --- | --- |
+| `always_show` | Shows even beside an embed. Default for forms added in settings. |
+| `auto` | Hides only when this same form is embedded inline or by a popup button on the current page. |
+| `hidden` | No floating widget. Default for automatically detected embeds. |
+
+For an inline Waitlist and floating Feedback, insert the Waitlist macro and configure
+only `{ "name": "feedback", "template": "feedback", "widget_mode": "always_show" }`.
+Both endpoints accept their own submissions. Placement modes are available on Free;
+custom copy and fields retain their plan requirements. Explicit `enabled: false`
+disables all forms. Path exclusions continue to override widget visibility.
+
+Legacy `hosted: false` maps to `hidden`; `show_floating_with_embeds` (and its older
+`show_floating_with_inline` alias) maps true to `always_show`, false to `auto`.
+An explicit `widget_mode` takes precedence. A hand-authored Revdoku form still needs
+a definition, uses that definition's fields, and posts to `/_revdoku/form/<name>`.
+
+Feedback with `area_selection_enabled` supports website text, element/area, PDF,
+and image selections. Website text selection shows emoji reactions and Comment,
+retains the selected quote, and anchors it to its page and file revision. Copying
+text and editing fields keep their normal behavior. Removed or ambiguous passages
+retain their quote without being highlighted at an unrelated location.
 
 #### Archive, unarchive, and permanent delete
 

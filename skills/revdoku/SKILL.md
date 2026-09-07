@@ -310,17 +310,24 @@ access is blocked; republishing invalidates old links. Protected resources keep
 their gate. Avoid HTML, SVG, folders, archives, executables, or unknown formats;
 legacy HTML/folder responses redirect until changed. This sends no email.
 
-Use `{{REVDOKU_FORM:feedback}}` to select and render one configured hosted form
-inline, or `{{REVDOKU_FORM}}` to select the first configured hosted form. A page
-loads only the inline/floating form type selected by its first valid macro; without
-a valid macro it loads the first configured hosted form as a floating widget. The
-selected type may appear inline, floating, or both. A styled native button may open
-any configured hosted form in a Revdoku-managed popup:
-`<button type="button" data-revdoku-form-popup="contact">Get in touch</button>`.
-Repeated buttons share a popup, while different form names open separate popups.
-Set `show_floating_with_embeds: false` to hide that form's floating widget on a
-page where an inline macro or popup button embeds it. The deprecated
-`show_floating_with_inline` key is accepted only for older clients.
+Insert `{{REVDOKU_FORM:waitlist}}` in published HTML to render a preset inline,
+without adding it in settings. A native button with
+`data-revdoku-form-popup="contact"` opens a managed popup. Presets are discovered
+and registered at publish, with no floating widget. Custom names require an
+explicit definition. Different forms work independently on the same page.
+`{{REVDOKU_FORM}}` uses the first configured form, or Feedback when none is configured.
+
+Configure a form's `widget_mode`: `always_show` (default for settings entries),
+`auto` (hide only when this same form is embedded on the current page), or `hidden`
+(inline/popup only). Modes work on every plan; copy and field customization stay
+paid. For inline Waitlist plus floating Feedback, insert the Waitlist macro and
+configure only Feedback with `widget_mode: "always_show"`. Explicit forms-off
+still disables all forms. Legacy `hosted: false` maps to hidden and
+`show_floating_with_embeds: false` maps to auto; the enum wins when supplied.
+
+Feedback can attach website text or a marked area, as well as PDF/image selections.
+Selecting website text shows the same emoji and Comment actions. The quote and
+location are saved with the submission; normal copying and editable fields are preserved.
 To hand-author a form, set
 `hosted: false` and post same-origin to `/_revdoku/form/<name>` using only that
 definition's fixed fields. Keep the hidden `_gotcha` honeypot. Set the top-level
