@@ -1157,6 +1157,17 @@ Free plans use the templates unchanged. Plans with form customization may custom
 bounded field catalog, and may reuse a template under another endpoint name.
 Free accounts cannot save or preview customized forms.
 
+Bucket detail responses include `forms.inventory`: one row per form endpoint,
+combining saved settings with forms found in the live publication and newer previews.
+Rows include `placements` (`inline`, `popup`, `widget`), `page_paths`, and `state`
+(`live`, `preview`, `draft`). Live page paths come from the published version.
+`forms.forms` remains the saved definitions; customizing a detected form saves an
+override under the same name. Add widget reuses an existing preset's endpoint.
+Removing its widget keeps inline embeds and submissions. Removing an embed updates
+the inventory on the next publish. Ordinary third-party forms are not adopted.
+The submissions list returns the same rows as `form_inventory`; `form_names` also
+includes historical forms so their submissions remain filterable.
+
 The Get in touch preset requires email and includes optional name, phone, and
 comments. The Support preset requires email and a support request.
 The Booking request preset asks for name and email, with optional phone, message,
