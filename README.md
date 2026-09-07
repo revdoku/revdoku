@@ -14,6 +14,10 @@ and manage websites from an AI chat or coding session.
 Free accounts include analytics, built-in forms, versioning, custom Revdoku
 subdomains, and fast CDN-based hosting.
 
+Websites are ready-to-serve HTML, CSS, JavaScript, and assets. Revdoku does not
+install dependencies or compile project source. For an existing framework
+project, build locally and upload the static output folder.
+
 ## Prompt for an AI agent
 
 ```text

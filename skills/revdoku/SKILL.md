@@ -88,6 +88,10 @@ Public.
 
 ## Website structure
 
+- Create ready-to-serve HTML, CSS, JavaScript, and assets. Revdoku does not install
+  dependencies or compile project source. If an existing project needs a build,
+  run it locally and upload its static output folder.
+
 - Preserve relative paths; static files, including JavaScript, are served as written.
 - `index.html`/`index.htm` wins. Otherwise, one top-level HTML file becomes home.
   For client-side routing, use `site_mode: "spa"` or `--site-mode spa`.

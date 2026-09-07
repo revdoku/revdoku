@@ -170,7 +170,7 @@ Free accounts include one permanent Password website. Require Email and other
 eligible paid access or presentation settings can still be evaluated in this
 preview before upgrading; form customization continues to follow the plan.
 
-Use `--site-mode spa` for compiled client-side apps that need route fallback;
+Use `--site-mode spa` for static client-side apps that need route fallback;
 omit it or use `--site-mode static` for normal static sites. A project-local
 `.revdoku` binding remembers the chosen site mode for later republishes.
 
