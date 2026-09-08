@@ -7,7 +7,7 @@ ask — Claude keeps the same URL on every republish.
 The plugin bundles:
 
 - the **Revdoku skill**, which tells Claude how to store, publish, version, lock,
-  and clean up Revdoku **buckets**, and
+  and clean up Revdoku **buckets**, with its bundled local CLI, and
 - the hosted **Revdoku MCP server** (`https://app.revdoku.com/mcp`), which exposes
   the `bucket_*` and `revdoku_*` tools. Claude Code handles sign-in through the
   standard MCP OAuth flow — no API key is stored in the plugin.
@@ -40,19 +40,18 @@ Publishing only happens when you explicitly ask for a website link. Public and
 protected sites are separate paths. Password access uses a shared password;
 Require Email sends visitors a one-time code and uses no site password.
 
-## Local files (optional CLI)
+## Local files
 
 The hosted MCP server covers bucket and website operations from any agent. To store
 files directly from your **local machine** (local project, SSH, Docker, WSL2, or a
-VM) without a cloud connector, install the Revdoku CLI:
+VM), run the bundled CLI from the plugin's `skills/revdoku` directory:
 
 ```text
-curl -fsSL https://revdoku.com/install.sh | bash
-~/.revdoku/bin/revdoku p <folder>
+scripts/revdoku.sh p <folder>
 ```
 
-The skill automatically uses the CLI (`~/.revdoku/bin/revdoku`) for local-file work
-when the MCP server is not the right fit.
+The wrapper uses the bundled CLI and installs a pinned, checksum-verified `jq`
+only if needed. No separate CLI installation is required.
 
 ## Links
 

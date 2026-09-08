@@ -1201,7 +1201,10 @@ placeholder, and can be made required when form customization is available.
 An embedded form posts same-origin to `/_revdoku/form/contact`. Private-response
 forms work with Public, Password, or Require Email publications when that access
 mode is available. The shared `comments` form, **Feedback (visible to all)**,
-requires Password or Require Email access. Read the current submission limit
+also works on Public sites. Anonymous public visitors see current-page selection
+outlines and counts; email OTP in the widget unlocks reading and posting. Shared
+history shows names and verification badges, never contact email addresses.
+Read the current submission limit
 from the API response instead of hard-coding account-specific quotas.
 Submissions are encrypted. The account owner can read them with bucket write
 access via `GET /api/v1/buckets/:id/form_submissions?form_name=contact&limit=50&offset=0`.
@@ -1246,9 +1249,45 @@ thread:
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `PATCH` | `/api/v1/buckets/:id/form_submissions/:submission_id` | Update existing stored field values; new arbitrary field names are rejected. |
+| `PATCH` | `/api/v1/buckets/:id/form_submissions/:submission_id` | Update existing stored field values, or approve/hide shared feedback. New arbitrary field names are rejected. |
 | `POST` | `/api/v1/buckets/:id/form_submissions/:submission_id/reply` | Add a `team` reply, or a `public` reply when the shared-comments submission supports it. |
 | `DELETE` | `/api/v1/buckets/:id/form_submissions/:submission_id` | Delete one reply, or delete a root submission together with its replies. |
+
+Shared forms accept `"approval_required": true`, available on every plan and off
+by default. New visitor comments and replies then start `pending`; authorized
+moderator replies start `approved`. Changing the setting affects future
+submissions only. Publish or republish saved settings to activate them.
+
+Submissions expose `moderation_status` (`pending`, `approved`, `reported`, or
+`hidden`) and `updated_at`. Add `needs_review=true` to the list endpoint for pending
+and reported items; required parent rows are included for reply context. To
+moderate, PATCH the existing submission endpoint with:
+
+```json
+{
+  "moderation_action": "approve",
+  "expected_updated_at": "<updated_at from the submission response>"
+}
+```
+
+Use `"hide"` after confirming the target and consequence with the user. Moderation
+requires existing submission-management permissions; reviewers cannot moderate.
+A changed submission returns `409 FORM_SUBMISSION_STALE`; refresh before retrying.
+Repeated actions in the target state succeed without another transition. Field
+edits do not approve pending or hidden content.
+
+Verified visitors can confirm Report in the widget. The first report changes an
+approved comment to `reported`, hides it, and notifies the owner. Repeated reports
+while hidden do nothing; a later approval allows reporting again. Hiding a root
+suppresses its replies, markers, and counts.
+
+Public shared history uses the approved recent-200 window plus required parents.
+Marker counts match that available feed. Updates normally appear within a few
+minutes. Public history reads stay at the edge, including cache misses, and
+authenticated responses are private and `no-store`. Access-mode changes invalidate
+comment sessions and keep earlier protected history out of the public feed;
+ordinary republishes preserve public history. Private feedback keeps its existing
+history behavior.
 
 Reply body:
 

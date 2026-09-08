@@ -31,10 +31,11 @@ proxy.
 When an unconnected user asks for a website, establish the authenticated
 Revdoku connection first:
 
-- With shell access, install the skill/CLI if needed and run `revdoku login`,
+- With shell access, use the installed CLI and run `revdoku login`,
   then save the site as a private draft.
 - If a skill install does not put `revdoku` on `PATH`, run the bundled
-  `scripts/revdoku.sh p <path>` from this skill directory yourself.
+  `scripts/revdoku.sh login`, then `scripts/revdoku.sh p <path> --draft`
+  from this skill directory yourself.
 - With the hosted MCP surface, start OAuth and call `revdoku_status` after it
   completes. If the user has no account, direct them to browser signup.
 
@@ -269,8 +270,14 @@ waitlist**), `contact` (**Request a call**), `quote` (**Request a quote**),
 require email; `booking` requires name and email. Their remaining preset fields
 are optional. Booking dates start blank and paid customization may require them.
 All forms submit with **Send**.
-`comments` is **Feedback (visible to all)** and is available only on Password or Require Email sites; the others
-store private responses and can be used on public sites.
+`comments` is **Feedback (visible to all)** on any site. Public visitors see
+selection outlines/counts, then verify email in the widget to read/post. Shared
+history never reveals contact emails. Other templates store private responses.
+
+`approval_required: true` holds new shared comments/replies for approval (default
+false, every plan). Changes affect future submissions only. **Needs review** lists
+pending/reported comments; moderators Approve or Hide. Verified Report hides a
+thread until reviewed. Public history refreshes within a few minutes.
 
 Configure `metadata.publication_forms` through `bucket_create` or
 `bucket_update`. Free uses exact presets, cannot save or preview customization,
@@ -361,23 +368,18 @@ Bucket → Forms or read it through the REST API. The copy-paste form example is
 
 ## Local CLI
 
-Install or update the public CLI and skill:
+The skill bundles the CLI. Use `revdoku` on `PATH`, or `scripts/revdoku.sh`
+from this directory with identical arguments. The wrapper installs pinned,
+SHA-256-verified `jq` if needed.
+
+For a missing CLI, reinstall with the original installer and scope.
+With `npx skills` (add `-g` for global):
 
 ```sh
-curl -fsSL https://revdoku.com/install.sh | bash
+npx skills add revdoku/revdoku --skill revdoku
 ```
 
-Sign in, then publish or preview a local folder:
-
-```sh
-revdoku p [PATH]
-```
-
-When the skill is installed but the command is not on `PATH`, run the bundled
-`scripts/revdoku.sh p [PATH]` instead.
-
-When credentials are missing, the CLI opens browser sign-in. It keeps the
-bucket binding under the project directory and updates the same URL on rerun.
+When credentials are missing, the CLI opens browser sign-in.
 
 Common commands:
 

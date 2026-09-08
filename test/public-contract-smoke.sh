@@ -273,4 +273,6 @@ else
   ruby "$CHANGELOG_HELPER" check "$CHANGELOG_FILE"
 fi
 
+ruby "$TEST_DIR/skill-install-test.rb"
+
 echo "Public CLI, skill, MCP setup, plugin, and API contract checks passed."

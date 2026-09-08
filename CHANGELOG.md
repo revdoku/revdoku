@@ -2,6 +2,29 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.429 — 2026-09-08
+
+### Fixed
+
+- Newly posted feedback stays visible when History refreshes before the edge
+  feed catches up.
+
+## 1.0.428 — 2026-09-08
+
+### Fixed
+
+- Reply opens the feedback composer directly from History. Reply labels clear
+  after posting or cancellation.
+
+## 1.0.427 — 2026-09-08
+
+### Added
+
+- Public websites can show shared feedback: visitors see selection counts, then
+  verify email to read comments and reply. Contact emails stay private.
+- Shared forms support optional approval, visitor reporting, and Approve/Hide
+  actions in existing submission review and notifications.
+
 ## 1.0.403 — 2026-09-04
 
 ### Improved
