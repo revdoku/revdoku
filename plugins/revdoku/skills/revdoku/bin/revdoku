@@ -147,7 +147,7 @@ Publish options:
   --site-mode MODE     static or spa (SPA serves index.html for client-side routes).
   --draft              Save a private draft instead of publishing live.
   --no-wait            Return as soon as the URL is reserved (don't wait for the build).
-  --publish-folder DIR Publish ONLY this top-level folder as the site (its index.html
+  --publish-folder DIR Publish ONLY this bucket-relative folder as the site (its index.html
                        becomes the root); other folders stay stored but unserved.
   --title TEXT         --description TEXT     --tag-path LABEL     --metadata JSON
   --no-tracking / --tracking, --no-analytics / --analytics, --no-client-events / --client-events
@@ -176,6 +176,8 @@ Examples:
   revdoku preview .         # recommended: review a temporary URL first
   revdoku p                 # publish the current folder when ready
   revdoku p ./dist          # publish another folder
+  revdoku p ./my-site --publish-folder my-site/dist --site-mode static
+                           # upload source + local static export; serve only the export
   revdoku p --protected     # password-protected site
   revdoku init && revdoku p
 USAGE
@@ -2646,7 +2648,7 @@ collect_files() {
   fi
 
   find "$ROOT_PATH" \
-    \( -type d \( -name ".git" -o -name ".hg" -o -name ".svn" -o -name ".revdoku" -o -name ".terraform" -o -name ".cache" -o -name ".parcel-cache" -o -name ".turbo" -o -name ".vite" -o -name "node_modules" \) -prune \) \
+    \( -type d \( -name ".git" -o -name ".hg" -o -name ".svn" -o -name ".revdoku" -o -name ".terraform" -o -name ".cache" -o -name ".parcel-cache" -o -name ".turbo" -o -name ".vite" -o -name ".next" -o -name ".astro" -o -name "node_modules" \) -prune \) \
     -o -type f -print0 |
     while IFS= read -r -d '' file; do
       if should_skip_storage_path "$file"; then
@@ -2673,7 +2675,7 @@ should_skip_storage_path() {
   for part in "${path_parts[@]}"; do
     case "$part" in
       # >>> revdoku:generated local_only_basenames
-      .ds_store|__macosx|.localized|.appledouble|.lsoverride|.documentrevisions-v100|.fseventsd|.spotlight-v100|.temporaryitems|.trashes|.volumeicon.icns|.appledb|.appledesktop|.apdisk|network\ trash\ folder|temporary\ items|thumbs.db|thumbs.db:encryptable|ehthumbs.db|ehthumbs_vista.db|desktop.ini|\$recycle.bin|system\ volume\ information|.directory|.trash|lost+found|.git|.hg|.svn|.revdoku|.terraform|.cache|.parcel-cache|.turbo|.vite|node_modules)
+      .ds_store|__macosx|.localized|.appledouble|.lsoverride|.documentrevisions-v100|.fseventsd|.spotlight-v100|.temporaryitems|.trashes|.volumeicon.icns|.appledb|.appledesktop|.apdisk|network\ trash\ folder|temporary\ items|thumbs.db|thumbs.db:encryptable|ehthumbs.db|ehthumbs_vista.db|desktop.ini|\$recycle.bin|system\ volume\ information|.directory|.trash|lost+found|.git|.hg|.svn|.revdoku|.terraform|.cache|.parcel-cache|.turbo|.vite|.next|.astro|node_modules)
       # <<< revdoku:generated local_only_basenames
         return 0
         ;;

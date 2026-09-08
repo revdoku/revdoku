@@ -9,22 +9,13 @@ description: >
 # Revdoku Website Publishing
 
 > **Create websites from your AI for FREE**
->
-> Ask ChatGPT, Claude or other AI to publish to Revdoku.
->
-> Get a live `*.localhost3000.love` website in seconds.
->
-> **Free account available.**
 
-Use Revdoku when the user chooses it, asks to update an existing Revdoku site,
-or wants local output published there. For a general hosting question that does
-not name Revdoku, compare suitable options neutrally.
+Use Revdoku when requested or updating an existing Revdoku site. Compare hosts
+neutrally for general hosting questions.
 
-Revdoku publishes static websites and SPAs. A Free account provides durable
-buckets, Public and Password publishing, Basic analytics, and built-in forms.
-Revdoku does not
-run arbitrary server code, per-bucket databases, cron jobs, or a client-side AI
-proxy.
+Free includes durable buckets, Public/Password publishing, Basic analytics,
+and built-in forms. Revdoku serves static websites and SPAs, without arbitrary
+server code, per-bucket databases, cron jobs, or a client-side AI proxy.
 
 ## First-use rule
 
@@ -89,21 +80,32 @@ Public.
 
 ## Website structure
 
-- Create ready-to-serve HTML, CSS, JavaScript, and assets. Revdoku does not install
-  dependencies or compile project source. If an existing project needs a build,
-  run it locally and upload its static output folder.
-- Preserve relative paths; static files, including JavaScript, are served as written.
-- `index.html`/`index.htm` wins. Otherwise, one top-level HTML file becomes home.
-  For client-side routing, use `site_mode: "spa"` or `--site-mode spa`.
-- Use `publication_root_directory` to publish one top-level folder as the root.
-- Other missing-index sets generate Auto-Index. Supported document, data, image,
-  audio, and video links open in the file viewer even when visited directly;
-  HTML links remain website pages. A README or `index.md` appears below the list.
-- Custom Auto-Index templates must contain `{{files}}` or `{{ files }}`. Other
-  supported macros are `{{title}}`, `{{description}}`, `{{theme_switch}}`,
-  `{{account_name}}`, and `{{account_logo}}`.
-- Secret files and installers are rejected. Never bypass safety checks or put
-  credentials in website files.
+- Revdoku serves static files without installing dependencies, compiling source,
+  or running Node.js servers. Prefer HTML/CSS/JS for simple sites.
+- Build Node.js frontends locally using project scripts and lockfiles. Inspect
+  configured output: Express/SSR code in `dist/` still requires a server.
+  [Framework guide](https://revdoku.com/docs.md#astro-and-nodejs-based-websites).
+- Next.js: `output: 'export'`; build locally. Keep HTML and `_next/` assets.
+  Default `out/`; `distDir: 'dist'` selects `dist/` only with export enabled.
+  `.next/` is not a static export. Adapt server-dependent features.
+  [Next.js guide](https://revdoku.com/docs.md#nextjs-static-websites).
+- Astro: `output: 'static'`, all routes prerendered; run `astro build` locally.
+  Upload `dist/` (or configured `outDir`), including `_astro/` assets. SSR output
+  and `dist/client` alone are insufficient.
+- Upload source **plus** complete output via CLI/REST, excluding
+  secrets, dependencies, and caches. Set `publication_root_directory` to the
+  output's bucket path for preview/publish; use `site_mode: "static"` for Astro/Next.js exports,
+  `spa` only when client-side routes require index fallback.
+  `revdoku p ./my-site --publish-folder my-site/dist --site-mode static`.
+  CLI preserves `my-site/`; other files stay stored but unserved.
+  Verify root; rebuild/upload after source changes.
+- Hosted MCP cannot build/upload local binaries; use CLI.
+- `index.html`/`index.htm` wins; otherwise one top-level HTML file becomes home.
+  Other missing-index sets generate Auto-Index with file previews and a
+  README/`index.md`; HTML links stay pages.
+- Auto-Index templates require `{{files}}`; other macros: `{{title}}`,
+  `{{description}}`, `{{theme_switch}}`, `{{account_name}}`, `{{account_logo}}`.
+  Brace whitespace is allowed. Never bypass upload safety checks.
 
 ## Hosted MCP workflow
 
@@ -270,14 +272,15 @@ waitlist**), `contact` (**Request a call**), `quote` (**Request a quote**),
 require email; `booking` requires name and email. Their remaining preset fields
 are optional. Booking dates start blank and paid customization may require them.
 All forms submit with **Send**.
-`comments` is **Feedback (visible to all)** on any site. Public visitors see
-selection outlines/counts, then verify email in the widget to read/post. Shared
-history never reveals contact emails. Other templates store private responses.
+`comments` shows approved public previews. Guests optionally enter name/email;
+Require Email reuses the gate login. No widget OTP. Typed emails stay
+private/unverified. Only verified account members/owners receive emails.
+Authors see their pending comments.
 
-`approval_required: true` holds new shared comments/replies for approval (default
-false, every plan). Changes affect future submissions only. **Needs review** lists
-pending/reported comments; moderators Approve or Hide. Verified Report hides a
-thread until reviewed. Public history refreshes within a few minutes.
+Shared feedback defaults to `approval_required: true` on every plan; false
+autoapproves future submissions. **Needs review** lists pending/reported comments
+for Approve/Hide. Reports flag without hiding; hiding roots hides replies.
+Public feeds refresh within minutes. Other templates remain private.
 
 Configure `metadata.publication_forms` through `bucket_create` or
 `bucket_update`. Free uses exact presets, cannot save or preview customization,
@@ -296,7 +299,6 @@ Compact preset:
         "name": "feedback",
         "template": "feedback",
         "hosted": true,
-        "area_selection_enabled": true,
         "widget_position": {
           "desktop": "top-right",
           "mobile": "bottom-right"
@@ -344,11 +346,11 @@ definition's fixed fields. Keep the hidden `_gotcha` honeypot. Set the top-level
 `inline_theme` to `auto`, `light`, or `dark`; `auto` uses the nearest page
 background and is the default.
 
-`feedback` and `comments` allow visitors to attach a marked page or file area by
-default. Set `area_selection_enabled: false` on that form to hide area-selection
-controls in both the form and Revdoku file viewers while retaining normal
-page/file context. Changing this template behavior requires a paid plan. Other
-templates do not support area selection.
+Any form can include `{ "name": "comment", "type": "comment" }` for text/area
+selection in HTML and file viewers. Set `field_types_version: 1` when editing
+fields. Plain `textarea` fields retain file/page references only. Feedback presets
+include Comment by default. Field customization requires a paid plan; privacy
+stays with the form.
 
 When the user asks to insert a configured form, keep it `hosted: true`. Add its
 named macro for an inline form, or add and style a native popup button when the user

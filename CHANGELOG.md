@@ -2,6 +2,57 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.436 — 2026-09-08
+
+### Fixed
+
+- Public visitor estimates show as unavailable when their collection is disabled,
+  instead of presenting an unsupported historical estimate as zero.
+
+## 1.0.435 — 2026-09-08
+
+### Improved
+
+- Analytics separates external referrers from tracking links and labels public
+  audience counts as visitor-days, with unavailable or sampled estimates identified.
+- CLI guidance explains static exports for Astro and Next.js and includes the
+  publishing CLI with installed agent skills and plugins.
+
+### Fixed
+
+- Analytics excludes detected bots from human breakdowns, removes self-referrals,
+  and counts clicks and downloads when detailed destinations are unavailable.
+
+## 1.0.433 — 2026-09-08
+
+### Improved
+
+- Visitors can read public feedback previews and post with optional name/email.
+  Require Email websites reuse the gate login, and pending feedback stays visible
+  to its author. Comment emails go only to verified account members and owners.
+- Shared feedback defaults to requiring approval. Reports flag review without
+  hiding comments automatically.
+
+### Fixed
+
+- Submission deletion asks for confirmation, and editing supports Pending,
+  Approved, Reported, and Hidden statuses alongside comment content.
+
+## 1.0.431 — 2026-09-08
+
+### Fixed
+
+- Direct Auto-Index file links recognize the same image, media, spreadsheet, and
+  source-file formats as the listing, including TSV and XLSB.
+
+## 1.0.430 — 2026-09-08
+
+### Improved
+
+- Auto-Index files, including HTML, open inline with Back navigation that restores
+  the folder, sorting, view, scroll, and focus. Browser Back and Forward keep the
+  selected file, and folders remain available for single-file collections.
+
 ## 1.0.429 — 2026-09-08
 
 ### Fixed

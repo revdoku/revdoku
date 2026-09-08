@@ -16,7 +16,14 @@ subdomains, and fast CDN-based hosting.
 
 Websites are ready-to-serve HTML, CSS, JavaScript, and assets. Revdoku does not
 install dependencies or compile project source. For an existing framework
-project, build locally and upload the static output folder.
+project, build locally and upload the source together with the static export,
+then select the export folder as the website root. For Next.js, use
+`output: 'export'` and publish the generated `out/` (or configured `dist/`) with
+static routing. Astro uses a fully prerendered `output: 'static'` build, usually
+in `dist/`. Other Node.js-based frontends follow the same workflow using their
+configured static output; Express and SSR server bundles require a backend.
+See the [framework build guide](./docs.md#astro-and-nodejs-based-websites) and
+[Next.js configuration](./docs.md#nextjs-static-websites).
 
 ## Prompt for an AI agent
 

@@ -14,8 +14,12 @@ attach custom domains, and read publication analytics.
 
 Upload ready-to-serve HTML, CSS, JavaScript, and assets. Revdoku does not install
 dependencies or compile project source. Build an existing framework project
-locally and upload its static output. `site_mode: "spa"` enables route fallback
-to `index.html`; it does not run a build.
+locally and upload its source plus static export, selecting the export's bucket
+path with `publication_root_directory`. For Next.js, use `output: 'export'` and
+serve `out/` or configured `dist/` with `site_mode: "static"`; see
+[framework publishing](#framework-static-builds) for Next.js, Astro, and Node.js-based
+frontends. `site_mode: "spa"` enables route fallback to `index.html`; it does not
+run a build or a Node.js server.
 
 Most AI-agent users should start with the Revdoku app's copied prompt or the
 Revdoku MCP tool. Use this HTTP API for custom clients, CI jobs, backend workers,
@@ -507,12 +511,68 @@ URL. After the build is ready, an authorized owner fetch includes the website UR
 and copyable password/share text.
 
 **Publish only one folder.** Set `"publication_root_directory": "website"` (in
-the publish request body, or as bucket `metadata`) to publish ONLY that top-level
+the publish request body, or as bucket `metadata`) to publish ONLY that bucket-relative
 folder as the site. Its resolved homepage and assets move to the root
 (`/styles.css`, not `/website/styles.css`). Every other file/folder in the bucket (e.g. a `scripts/`
 folder) stays stored and version-tracked but is NOT served. This lets a bucket
 hold both a published `website/` and an unserved `scripts/` sibling. Pass an
 empty string to publish the whole bucket again.
+
+### Framework static builds
+
+Build Next.js locally with `output: 'export'` in the existing Next.js config.
+The static export defaults to `out/`; `distDir: 'dist'` selects `dist/` when
+export mode is enabled. `distDir` alone, `.next/`, and standalone server output
+are not deployable static exports. Revdoku runs no dependency install, Next.js
+build, or Node.js server. See the [configuration and compatibility guide](./docs.md#nextjs-static-websites).
+
+For Astro, use `output: 'static'`, prerender every route, and run `astro build`
+locally (usually through `npm run build`). Upload the complete `dist/` or
+configured `outDir`, including `_astro/` assets, and use `site_mode: "static"`.
+Astro SSR output or `dist/client/` alone cannot supply server-rendered pages.
+
+For other Node.js-based frontends, inspect the project's build script and output
+configuration, then build locally. Vite commonly writes to `dist/`; other tools
+may use `build/` or `out/`. Select the actual static output, not a directory based
+only on its name. Use `spa` when client-side routes require index fallback,
+otherwise `static`. Express apps and compiled Node.js/SSR server bundles require
+an external backend. See the [Astro and Node.js guide](./docs.md#astro-and-nodejs-based-websites).
+
+Upload the project source and complete export into the same bucket, preserving
+paths, including generated `_next/`, `_astro/`, or other scripts, styles, fonts,
+and route files.
+Exclude secrets, `node_modules/`, and build caches. Use direct uploads for
+binary assets. Then send these fields to `POST /api/v1/buckets/:id/publication`
+or `POST /api/v1/buckets/:id/publication/preview`:
+
+```json
+{
+  "publication_root_directory": "dist",
+  "site_mode": "static"
+}
+```
+
+This assumes files were uploaded as `dist/index.html`, `dist/_next/...`, etc.
+For `out/index.html`, select `out`. If the upload retains a project prefix such
+as `my-site/dist/index.html` (as the CLI does), select `my-site/dist` instead.
+Before publishing, list files and verify the selected folder contains the
+exported home page and assets; a missing or mistyped root can fall back to
+publishing the whole bucket. Files outside a valid selected root stay private
+and versioned. Paths inside it become website-root paths, so
+`my-site/dist/_next/...` is served at `/_next/...`.
+
+MCP uses the same `publication_root_directory` and `site_mode` fields on
+`bucket_publish`, `bucket_publish_password_protected`, and
+`bucket_publish_preview`. Hosted MCP cannot compile local projects or upload
+binary files; use a local agent with the CLI or REST uploads. Rebuild locally
+after source changes, upload the refreshed export, and republish the same bucket.
+Poll publication status until `ready` or `failed`; verify the home page, a direct
+nested route, and asset loading before reporting success.
+
+`GET /api/v1/status` and MCP `revdoku_status` expose this build policy under
+`publishing.static_site`.
+
+### Publication settings and status
 
 **Website lifetime.** Treat the returned `expires_at` as authoritative. A null
 value means the main publication has no scheduled expiry; previews always have
@@ -1315,11 +1375,15 @@ and mobile `widget_position` values: `top-left`, `top-center`, `top-right`,
 `center-left`, `center`, `center-right`, `bottom-left`, `bottom-center`, or
 `bottom-right` (the default). Every form uses `Send` as its submit-button caption.
 
-The `feedback` and `comments` templates enable area selection by default. Set
-`"area_selection_enabled": false` on that form to remove both the form's
-area-selection button and the matching viewer-toolbar controls. Page, file,
-PDF-page, and media-time context are still captured. Other templates do not
-support area selection.
+Any form can include a Comment field (`"name": "comment", "type": "comment"`)
+to enable text and area selection in websites and file viewers. At most one
+Comment field is allowed per form. Set `"field_types_version": 1` when editing
+fields; use `"type": "textarea"` for plain Text with page, file, PDF-page, and
+media-time context only. The `feedback` and `comments` presets include Comment
+by default and preserve their existing `message` field name. Form privacy and
+reply settings remain independent. The legacy `area_selection_enabled` setting
+is accepted for older field definitions; new definitions derive it from the
+Comment field.
 
 Every configured form also accepts a `success_response`:
 
@@ -1388,8 +1452,8 @@ Legacy `hosted: false` maps to `hidden`; `show_floating_with_embeds` (and its ol
 An explicit `widget_mode` takes precedence. A hand-authored Revdoku form still needs
 a definition, uses that definition's fields, and posts to `/_revdoku/form/<name>`.
 
-Feedback with `area_selection_enabled` supports website text, element/area, PDF,
-and image selections. Website text selection shows emoji reactions and Comment,
+A Comment field supports text and area selections in HTML, PDF, images, and
+other file viewers. Text selection shows emoji reactions and Comment,
 retains the selected quote, and anchors it to its page and file revision. Copying
 text and editing fields keep their normal behavior. Removed or ambiguous passages
 retain their quote without being highlighted at an unrelated location.

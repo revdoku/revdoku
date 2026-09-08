@@ -158,6 +158,131 @@ user that the website is live, public access is removed, or deletion is finished
 Saving files does not publish them. Treat bucket writes as **Save draft** and
 publish tools as **Publish** or **Republish**.
 
+### Astro and Node.js-based websites
+
+Node.js can run a website's build tools locally. Revdoku serves the resulting
+HTML, CSS, JavaScript, and assets; it does not run `npm install`, `npm run build`,
+`npm start`, Express, or an SSR server. A folder named `dist/` is suitable only
+if it contains a complete static website, not compiled server code.
+
+| Project | Local build | Output to upload with the source | Website routing |
+| --- | --- | --- | --- |
+| Astro, fully prerendered | `npm run build` / `astro build` with `output: 'static'` | `dist/`, or configured `outDir`, including `_astro/` assets | `static` |
+| Vite frontend, such as React or Vue | Project build script, usually `npm run build` | `dist/`, or configured `build.outDir`, including all assets | `spa` if client-side routes need index fallback; otherwise `static` |
+| Other Node.js-based build tools | Inspect `package.json`, the lockfile, and framework config; run the static build/export script | The actual browser-ready output folder, which may be `dist/`, `build/`, or `out/` | Match the generated site's routing |
+
+Astro defaults to `output: 'static'` and writes to `dist/`. Every route must be
+prerendered: check for routes that opt out with `prerender = false`, server
+islands, actions, or other request-time features. A fully static site needs no
+server adapter. If an existing project uses SSR, adapt those features first;
+uploading only its `dist/client/` assets does not replace server-rendered pages.
+[Astro deployment guide](https://docs.astro.build/en/guides/deploy/) and
+[output configuration](https://docs.astro.build/en/reference/configuration-reference/#output).
+
+Vite frontend builds also default to `dist/`; inspect `build.outDir` if the
+project overrides it. A Vite SSR bundle still requires a server.
+[Vite static deployment guide](https://vite.dev/guide/static-deploy.html).
+
+Install dependencies and build locally using the project's package manager and
+lockfile. Verify the output contains the home page, generated routes, and their
+scripts, styles, images, and fonts. Upload source **plus the complete output**,
+excluding secrets, dependencies, and caches. The CLI skips `node_modules/`,
+`.astro/`, and `.next/`, while preserving generated `_astro/` and `_next/` assets
+and gitignored output folders.
+
+For a project named `my-site` with static output in `dist/`, run from its parent:
+
+```sh
+revdoku p ./my-site --publish-folder my-site/dist --site-mode static
+```
+
+Use the same path and routing options with `--draft` or `revdoku preview`.
+For a client-side SPA that needs route fallback, use `--site-mode spa` instead.
+The CLI retains the project prefix, so the selected folder is `my-site/dist`,
+not just `dist`. In API/MCP preview and publish calls, set
+`publication_root_directory: "my-site/dist"` and the matching `site_mode`.
+If files were uploaded directly as `dist/index.html`, select `dist` instead.
+Source stays private; only the selected output is served at the website root.
+
+Verify that exact stored root exists before publishing: a nonexistent root can
+fall back to serving the whole bucket. Rebuild locally and upload refreshed
+output after source changes, then republish the same bucket. GitHub sync also
+requires the generated output in the synced repository. Wait for `ready`, then
+check the home page, direct nested URLs, and assets. SPA mode supplies route
+fallback only; it does not build or run a backend.
+
+### Next.js static websites
+
+Use plain HTML/CSS/JavaScript for a simple new website. An existing Next.js
+website works when it can be exported entirely as static files. Revdoku serves
+the files you upload; it does not install dependencies, compile the project,
+or run a Next.js server.
+
+Merge these settings into the project's existing Next.js config (preserve its
+module format and other settings). For `next.config.mjs`:
+
+```js
+const nextConfig = {
+  output: 'export',
+  distDir: 'dist',
+  trailingSlash: true,
+  images: { unoptimized: true },
+};
+
+export default nextConfig;
+```
+
+`output: 'export'` enables the static export. Its default folder is `out/`;
+`distDir: 'dist'` selects `dist/` in export mode. `distDir` alone does not make
+a server build static, and `.next/` or standalone server output is not a static
+website. `trailingSlash: true` emits nested routes as `about/index.html`;
+Revdoku also resolves exported `about.html` files. For `next/image`, use
+`unoptimized: true` or retain a static-compatible custom image loader.
+[Next.js static export reference](https://nextjs.org/docs/app/guides/static-exports).
+
+Run the project's dependency install and build locally using its package manager
+and lockfile (for npm with a lockfile: `npm ci`, then `npm run build` with a build
+script that runs `next build`). Verify `dist/index.html` and the complete
+`dist/_next/` assets exist. Dynamic routes need all paths generated at build
+time (`generateStaticParams` in the App Router, or `getStaticPaths` with
+`fallback: false` in the Pages Router). SSR, Server Actions, request-dependent
+API routes, ISR, middleware/proxy, and the default image optimization server
+need a static-compatible alternative or an external backend. A failed export
+must be fixed before publishing; SPA mode cannot supply a server.
+
+Upload the project source **and** the complete export into one bucket. The CLI
+skips secrets, `node_modules/`, and `.next/` caches, and includes export folders
+even when they are gitignored. For a project folder named `my-site`, run from
+its parent directory:
+
+```sh
+revdoku p ./my-site --publish-folder my-site/dist --site-mode static --draft
+revdoku preview ./my-site --publish-folder my-site/dist --site-mode static
+# When ready to publish the main website:
+revdoku p ./my-site --publish-folder my-site/dist --site-mode static
+```
+
+The CLI preserves the project folder name: files are stored as
+`my-site/app/...`, `my-site/package.json`, and `my-site/dist/...`.
+`--publish-folder` is a **bucket-relative path**, so use `my-site/dist`, or
+`my-site/out` for the default export. Source files stay private and versioned;
+only the export is served, with `my-site/dist/index.html` at `/` and
+`my-site/dist/_next/...` at `/_next/...`. Do not add `/dist` as a Next.js
+`basePath` or asset prefix just because that folder holds the export.
+
+For API/MCP publishing, set `publication_root_directory` to that same stored
+path and `site_mode: "static"`. If files were uploaded directly as
+`dist/index.html`, the root is simply `dist`. Verify the selected folder contains
+the exported home page and assets before preview/publish: a nonexistent root can
+fall back to serving the whole bucket. Hosted MCP cannot run local builds or
+upload binaries; use a local agent with the CLI or REST direct uploads.
+
+After every source change, rebuild locally, upload the refreshed export, and
+republish the same bucket. Wait for `ready`, then verify the home page, a direct
+nested route, scripts, styles, and images. No additional compilation runs on
+Revdoku. GitHub sync likewise needs the exported files included in the synced
+repository; syncing source alone does not build the website.
+
 ### Bucket previews
 
 An authenticated bucket preview is a temporary, `noindex` copy of the saved
