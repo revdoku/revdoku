@@ -13,6 +13,11 @@ Revdoku publishes static websites and SPAs from AI-generated files and folders.
 Sign in to create a private bucket, review a temporary preview, and explicitly
 publish it when ready.
 
+Publishing, previews, protected shares, and public comments follow the
+[Acceptable Use Policy](https://revdoku.com/acceptable-use/). Political or
+election-related content—including neutral and educational versions—is
+prohibited on every plan. Publication stays unavailable until review succeeds.
+
 ## Live Revdoku demos
 
 Explore real websites published on Revdoku from ChatGPT and Claude AI:

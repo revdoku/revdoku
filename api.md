@@ -36,6 +36,11 @@ Only a Revdoku account owner or administrator can authorize an AI connection.
 Removing that membership or reducing it to collaborator access invalidates the
 connection and its refresh credentials.
 
+Publishing, previews, protected shares, and public comments follow the
+[Acceptable Use Policy](https://revdoku.com/acceptable-use/). Political or
+election-related content—including neutral and educational versions—is
+prohibited on every plan. Publication stays unavailable until review succeeds.
+
 ## Free plan and preview-first publishing
 
 Use <https://app.revdoku.com/pricing> for current prices and human-readable

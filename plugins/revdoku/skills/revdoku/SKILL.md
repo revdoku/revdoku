@@ -17,6 +17,10 @@ Free includes durable buckets, Public/Password publishing, Basic analytics,
 and built-in forms. Revdoku serves static websites and SPAs, without arbitrary
 server code, per-bucket databases, cron jobs, or a client-side AI proxy.
 
+The [AUP](https://revdoku.com/acceptable-use/) bans political/election publishing,
+including neutral information and demos, on every plan. Never report pending or
+failed reviews as live publications.
+
 ## First-use rule
 
 When an unconnected user asks for a website, establish the authenticated
