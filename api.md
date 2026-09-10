@@ -4,7 +4,7 @@
 >
 > Ask ChatGPT, Claude or other AI to publish to Revdoku.
 >
-> Get a live `*.localhost3000.love` website in seconds. Existing `*.revdoku.site`
+> Get a live `*.revdoku.site` website in seconds. Existing `*.localhost3000.love`
 > links remain supported as aliases.
 >
 > **Free account available.**
@@ -70,7 +70,7 @@ For a selected-bucket credential with no visible bucket, the state is
 whole-account access instead of suggesting bucket creation.
 Free websites are permanent unless the owner explicitly gives them an expiry.
 
-New accounts start directly on Free, which includes one permanent Password
+New standalone accounts start directly on Free, which includes one permanent Password
 website. Require Email remains paid. If a protected publish returns
 `PUBLICATION_UPGRADE_REQUIRED`, keep the requested access private, use the preview
 endpoint with that access mode, and retry only after the user upgrades. Share the
@@ -92,6 +92,41 @@ Send the API key as a bearer token:
 ```http
 Authorization: Bearer $REVDOKU_API_KEY
 ```
+
+### Agency account selection
+
+`GET /api/v1/status` returns `default_account_id` and a lean `accounts` list
+(`id`, `name`, `kind`) available to the credential. Pro Agency owners may
+explicitly authorize a whole-account connection to include client accounts.
+Existing keys keep their original access; client or selected-bucket keys cannot
+select a parent, sibling, or unrelated account.
+
+`account_id` is optional. Omit it to use the credential's original account.
+For another granted account, send it in the query for GET/HEAD requests and in
+the JSON body for writes. This selects only that request; it never changes the
+default. Every bucket/file/publication id must belong to the selected account.
+Invalid or unauthorized selectors fail instead of falling back.
+
+```http
+GET /api/v1/buckets?account_id=acct_...
+```
+
+An Agency owner's authorized connection can create a client account:
+
+```http
+POST /api/v1/accounts
+Content-Type: application/json
+
+{"name":"Client name","account_id":"acct_..."}
+```
+
+The optional selector identifies the Agency account. The response contains
+`data.account` with `id`, `name`, and `kind: "client"`. Pro Agency includes ten
+accounts total and 15 unique people, including the owner once. Account capacity
+and credits are shared; tenant files, memberships, and branding stay separate.
+Client accounts have no separate subscription or welcome credits. Billing and
+signup require the browser. When Pro Agency entitlement ends, the whole group
+becomes read-only and its existing websites and data remain in place.
 
 ### JSON Headers
 
@@ -607,7 +642,7 @@ response:
       "id": "pub_...",
       "bucket_id": "bkt_...",
       "public_slug": "bright-canvas-meadow",
-      "public_url": "https://bright-canvas-meadow.localhost3000.love/",
+      "public_url": "https://bright-canvas-meadow.revdoku.site/",
       "status": "publishing",
       "publish_state": "queued",
       "publish_pending": true,
@@ -772,7 +807,7 @@ hostname to Cloudflare until this TXT record is visible:
       "verification_expires_at": "2026-08-15T12:00:00Z"
     },
     "publication": {
-      "public_url": "https://bright-canvas-meadow.localhost3000.love/"
+      "public_url": "https://bright-canvas-meadow.revdoku.site/"
     },
     "limits": {
       "active_count": 1,
@@ -793,8 +828,8 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../custom_domains/pcd_.../re
 ```
 
 When active, the publication `public_url` switches to the custom domain.
-The managed `https://<bucket-slug>.localhost3000.love/` URL keeps working, as does
-its `https://<bucket-slug>.revdoku.site/` alias.
+The managed `https://<bucket-slug>.revdoku.site/` URL keeps working, as does
+its `https://<bucket-slug>.localhost3000.love/` alias.
 Incomplete setup expires after 72 hours. Website-domain changes are limited to
 3 per account per day, with a separate short-window DNS verification limit.
 
@@ -872,10 +907,10 @@ Example response with details:
     "buckets": [
       {
         "bucket_id": "bkt_abc123",
-        "bucket_title": "Docs",
+        "bucket_title": "Handbook",
         "publication_id": "pub_abc123",
-        "public_slug": "docs",
-        "url": "https://docs.localhost3000.love/",
+        "public_slug": "handbook",
+        "url": "https://handbook.revdoku.site/",
         "hits": 1204
       }
     ],

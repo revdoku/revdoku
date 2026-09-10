@@ -3,7 +3,7 @@
   "info": {
     "title": "Revdoku public agent API",
     "version": "1.0.0",
-    "description": "Public discovery endpoints. Account creation is browser-only at https://app.revdoku.com/users/sign_up. Account tools use OAuth through the Revdoku MCP server."
+    "description": "Public discovery and client-account creation. Signup is browser-only. Existing Pro Agency owners can explicitly authorize credentials for their client accounts. See https://revdoku.com/api.md for the complete API."
   },
   "servers": [
     {
@@ -16,12 +16,27 @@
       "get": {
         "operationId": "getRevdokuStatus",
         "summary": "Read service and client version status",
-        "security": [],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Service status"
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Select a granted account for this request only; omit for the credential's default account."
+          }
+        ]
       }
     },
     "/api/v1/agent_auth/capabilities": {
@@ -36,7 +51,56 @@
           }
         }
       }
+    },
+    "/api/v1/accounts": {
+      "post": {
+        "operationId": "createClientAccount",
+        "summary": "Create a client account on Pro Agency",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "account_id": {
+                    "type": "string",
+                    "description": "Optional granted Agency account id. Does not change the credential default."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created client account with id, name, and kind in data.account"
+          },
+          "403": {
+            "description": "Agency owner authorization required or account capacity reached"
+          }
+        }
+      }
     }
   },
-  "components": {}
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
 }

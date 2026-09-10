@@ -4,7 +4,7 @@
 >
 > Ask ChatGPT, Claude or other AI to publish to Revdoku.
 >
-> Get a live `*.localhost3000.love` website in seconds. Existing `*.revdoku.site`
+> Get a live `*.revdoku.site` website in seconds. Existing `*.localhost3000.love`
 > links remain supported as aliases.
 >
 > **Free account available.**
@@ -17,15 +17,15 @@ publish it when ready.
 
 Explore real websites published on Revdoku from ChatGPT and Claude AI:
 
-- **Protected client delivery — [Folder to Website](https://presentation-magic-stories-protected.localhost3000.love/):** Demo presentation and image folder delivered as a password-protected client website. The owner is notified after every unlock. **Password: `12345`.**
-- **Lead generation — [B2B Lead Magnet](https://b2b-lead-magnet.localhost3000.love/):** Demo lead-magnet website where visitors submit a form to open a PDF resource.
-- **AI-updated dashboard — [Temperature Monitoring](https://temperature-monitoring.localhost3000.love/):** Demo live dashboard with sensor data updated by connected AI agents.
-- **PDF publishing — [NASA’s 1976 Graphics Standards Manual](https://sample-pdf.localhost3000.love/):** Browse the 60-page identity manual and send page or area feedback in the PDF viewer.
-- **Portfolio — [Designer Portfolio](https://designer-portfolio.localhost3000.love/):** Demo portfolio where visitors can select a page area and send design feedback.
-- **Professional services — [Personal Website](https://consulting.localhost3000.love/):** Demo website for an independent consultant where visitors can book a consultation.
-- **Local business — [Restaurant Menu](https://restaurant-menu.localhost3000.love/):** Demo restaurant menu where visitors can request a booking date.
-- **Listings — [Property Listing](https://property-listing.localhost3000.love/):** Demo property website where interested visitors can request a call.
-- **Forms & leads — [New Product Waitlist](https://waitlist-page.localhost3000.love/):** Demo product website where visitors can join the waitlist.
+- **Protected client delivery — [Folder to Website](https://presentation-magic-stories-protected.revdoku.site/):** Demo presentation and image folder delivered as a password-protected client website. The owner is notified after every unlock. **Password: `12345`.**
+- **Lead generation — [B2B Lead Magnet](https://b2b-lead-magnet.revdoku.site/):** Demo lead-magnet website where visitors submit a form to open a PDF resource.
+- **AI-updated dashboard — [Temperature Monitoring](https://temperature-monitoring.revdoku.site/):** Demo live dashboard with sensor data updated by connected AI agents.
+- **PDF publishing — [NASA’s 1976 Graphics Standards Manual](https://sample-pdf.revdoku.site/):** Browse the 60-page identity manual and send page or area feedback in the PDF viewer.
+- **Portfolio — [Designer Portfolio](https://designer-portfolio.revdoku.site/):** Demo portfolio where visitors can select a page area and send design feedback.
+- **Professional services — [Personal Website](https://consulting.revdoku.site/):** Demo website for an independent consultant where visitors can book a consultation.
+- **Local business — [Restaurant Menu](https://restaurant-menu.revdoku.site/):** Demo restaurant menu where visitors can request a booking date.
+- **Listings — [Property Listing](https://property-listing.revdoku.site/):** Demo property website where interested visitors can request a call.
+- **Forms & leads — [New Product Waitlist](https://waitlist-page.revdoku.site/):** Demo product website where visitors can join the waitlist.
 
 ## Quick Start
 

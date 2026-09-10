@@ -86,7 +86,7 @@ for target in codex claude-code cursor antigravity opencode grok-build hermes op
 done
 require_text "$README_FILE" "app.revdoku.com/users/sign_up"
 require_text "$README_FILE" "every tool descriptor requires OAuth"
-require_text "$README_FILE" "*.localhost3000.love"
+require_text "$README_FILE" "*.revdoku.site"
 require_text "$LLMS_INSTALL_FILE" "npx skills add revdoku/revdoku --skill revdoku -g"
 require_text "$LLMS_INSTALL_FILE" "app.revdoku.com/users/sign_up"
 require_text "$LLMS_INSTALL_FILE" "Authenticate with OAuth before calling tools"
@@ -176,8 +176,8 @@ reject_text "$API_FILE" 'dashboard will show `0 views`'
 reject_text "$API_FILE" "one live-site slot"
 reject_text "$API_FILE" "4k-file buckets"
 for demo_file in "$README_FILE" "$SOURCE_CLIENT_DIR/docs.md"; do
-  if grep -Eq '\]\(https://[^)]*\.revdoku\.site/' "$demo_file"; then
-    die "${demo_file#$DIST_ROOT/} links a live demo through the legacy publication domain"
+  if grep -Eq '\]\(https://[^)]*\.localhost3000\.love/' "$demo_file"; then
+    die "${demo_file#$DIST_ROOT/} links a live demo through the alternate publication domain"
   fi
 done
 
