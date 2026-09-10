@@ -2,6 +2,44 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.444 — 2026-09-09
+
+### Fixed
+
+- Pricing features no longer overlap. Cards show live website and draft allowances,
+  form examples, and supported publishing formats.
+
+## 1.0.441 — 2026-09-09
+
+### Added
+
+- Pro Agency includes one agency and nine client accounts with shared capacity,
+  credits, and 15 unique members. Connected agents can select authorized clients.
+
+### Improved
+
+- Plus is now Pro, and Agency is now Pro Agency. Client subscriptions are managed
+  by the provider; an ended Agency subscription preserves sites and data read-only.
+- Free PDF uploads are limited to 1 MB. Pricing no longer promises an email response time.
+
+## 1.0.439 — 2026-09-09
+
+### Fixed
+
+- Large website dashboards no longer download published pages to list forms.
+- Dashboard settings saves return promptly without loading the full file history.
+- Consecutive GitHub pulls no longer mistake previously imported content for a conflicting local edit.
+
+
+## 1.0.437 — 2026-09-08
+
+### Fixed
+
+- Analytics delay notifications ignore pre-rollout traffic and allow new visitor
+  snapshots time to arrive before alerting administrators.
+- Returning website visitors receive the refreshed analytics runtime.
+- Published HTML preserves encoded characters, including text surrounding built-in form placeholders.
+
 ## 1.0.436 — 2026-09-08
 
 ### Fixed

@@ -2,7 +2,7 @@
 name: revdoku
 description: >
   Create and publish static websites, SPAs, files, and folders with Revdoku.
-  Save private drafts, create review previews, and publish *.localhost3000.love
+  Save private drafts, create review previews, and publish *.revdoku.site
   websites after the user signs in.
 ---
 
@@ -48,9 +48,25 @@ Writing files or running `revdoku p --draft` saves a private draft. Publishing
 is a separate, outward-facing action. Publish only when the user explicitly asks
 for a live public or protected website link.
 
+## Agency and client accounts
+
+Pro Agency shares capacity, credits, and 15 unique people across one agency and
+nine client accounts. Files, roles, and branding remain separate.
+
+Find granted ids in `revdoku_status.accounts` (CLI: `revdoku status`). Optional
+`account_id` / CLI `--account-id` applies per call; omission uses the credential's
+main account. Never infer a tenant from a bucket or change the default.
+
+The owner explicitly selects **Include all client accounts** during connection
+or in Account → Access. Older, selected-bucket, and client-bound credentials
+remain restricted. Create clients with `client_account_create(name: ...)` or
+`revdoku account create-client "Client name"`. Signup/billing stay in-browser.
+Expiry/downgrade freezes the group read-only, preserving sites/data; restoring
+Pro Agency removes only that billing freeze.
+
 ## Free plan and previews
 
-New accounts start on Free. Permanent public Free websites are indexable by default.
+New standalone accounts start on Free. Client accounts inherit their Agency plan. Permanent public Free websites are indexable by default.
 Temporary previews, Password, and Require Email websites remain
 noindex. Read plan entitlements from `https://app.revdoku.com/pricing.json`;
 `revdoku_status` embeds the public Free contract and server errors carry the
@@ -116,17 +132,12 @@ after a tool-list change so the client runs `tools/list` again.
 
 ### First project onboarding
 
-After a new connection, call `revdoku_status` and `bucket_list`. Offer the
-returned `onboarding.suggested_projects` only when `onboarding.state` is
-`empty_account`. The starter choices are an app idea landing page with a
-waitlist, a portfolio/profile, an event page, a product/service page, or the
-user's own idea. If the user already selected one, follow that choice instead
-of asking again. Treat these as starter briefs and personalize the result; do
-not present a generic example as the finished site. If the state is
-`no_visible_buckets`, this selected-bucket or
-reduced-permission connection cannot create a bucket; follow
-`onboarding.recommended_next_step` and ask the owner to grant a bucket or
-reconnect with whole-account `bucket_admin` access.
+After connecting, call `revdoku_status` and `bucket_list`. Offer returned
+`onboarding.suggested_projects` when `onboarding.state` is `empty_account`:
+app landing page/waitlist, portfolio, event, product/service, or the user's idea.
+Follow any existing choice; personalize it rather than delivering a generic demo.
+For `no_visible_buckets`, follow `onboarding.recommended_next_step`: ask the
+owner to grant a bucket or reconnect with whole-account `bucket_admin` access.
 
 Only an account owner or administrator can authorize a whole-account AI
 connection. If that role is removed, reconnect only after the owner restores
@@ -226,21 +237,13 @@ when the user requests recipient links. Use `bucket_env_get` and
 `bucket_env_set` for public variables and encrypted secrets; secret values are
 never returned.
 
-Analytics accepts `all`, `24h`, `7d`, `30d`, or `90d`. `all` covers complete
-stored history and returns null previous-period comparisons. For an exact inclusive daily
-window, pass both `from` and `to` as `YYYY-MM-DD`. Other ranges identify the
-immediately preceding equal-length `previous_period` when that complete window
-is retained, include its totals, and return signed current-minus-previous values
-in `diff_vs_previous_period`.
-Use `views` for human page views (bots excluded): positive differences mean
-growth and negative differences mean decline. Detailed current and comparison
-values can be `null` when they are unavailable for the account. For live `24h`
-analytics, null comparison values can also mean an hourly window was
-unavailable; never describe them as zero traffic or zero growth.
-In detailed analytics, `paths` contains page views only, `downloads` contains
-explicit file downloads by path, and `document_pages` contains document-page
-engagement. Scripts, styles, images, and other support assets are intentionally
-excluded from those engagement breakdowns.
+Analytics accepts `all`, `24h`, `7d`, `30d`, or `90d`, or inclusive `from`/`to`
+dates (`YYYY-MM-DD`). `all` covers stored history without comparisons.
+Other ranges return a retained equal-length `previous_period` and signed
+`diff_vs_previous_period`. `views` excludes bots. Null comparison/detail values
+mean unavailable, never zero traffic or growth. `paths` contains page views;
+`downloads` contains explicit downloads; `document_pages` contains document-page
+engagement. Support assets are excluded. See [API details](https://revdoku.com/api.md).
 
 ### Visibility and deletion safety
 

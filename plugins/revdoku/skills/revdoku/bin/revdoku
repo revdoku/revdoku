@@ -47,6 +47,8 @@ APPEND_TEXT_CONTENT="${REVDOKU_APPEND_TEXT_CONTENT:-}"
 APPEND_TEXT_CONTENT_FILE="${REVDOKU_APPEND_TEXT_CONTENT_FILE:-}"
 APPEND_TEXT_NEWLINE_BEFORE="${REVDOKU_APPEND_TEXT_NEWLINE_BEFORE:-true}"
 GRANT_TOKEN=""
+ACCOUNT_ID=""
+CLIENT_ACCOUNT_NAME=""
 TAG_PATHS=()
 AGENT_NAME="${REVDOKU_AGENT_NAME:-}"
 AGENT_CLIENT="${REVDOKU_AGENT_CLIENT:-revdoku}"
@@ -160,10 +162,12 @@ More commands (no short alias):
   append PATH          Append text to a bucket file (--content TEXT | --content-file FILE).
   archive | unarchive | delete    Manage a bucket (--bucket-id).
   account              Account, plan, and storage status.
+  account create-client NAME     Create a client account on Pro Agency.
   sites                List your public website URLs.
   dashboard            Print the Revdoku dashboard URL (normal sign-in may be required).
 
 Global options:
+  --account-id ID      Select a granted account for this command (default: credential account).
   --bucket-id ID       Act on a specific bucket (overrides the .revdoku binding).
   --url URL            Revdoku app URL (default $DEFAULT_URL).
   --api-key KEY        API key (default REVDOKU_API_KEY or $CREDENTIALS_PATH).
@@ -216,6 +220,11 @@ while [[ $# -gt 0 ]]; do
     --tag-path)
       [[ $# -ge 2 ]] || die "--tag-path requires a value"
       TAG_PATHS+=("$2")
+      shift 2
+      ;;
+    --account-id)
+      [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "--account-id requires an account id"
+      ACCOUNT_ID="$2"
       shift 2
       ;;
     --bucket-id)
@@ -384,7 +393,15 @@ while [[ $# -gt 0 ]]; do
           archive)        ACTION="archive_bucket"; shift ;;
           unarchive)      ACTION="unarchive_bucket"; shift ;;
           delete)         ACTION="delete_bucket"; shift ;;
-          account)        ACTION="account_status"; shift ;;
+          account)
+            shift
+            if [[ "${1:-}" == "create-client" ]]; then
+              [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "account create-client needs a name"
+              ACTION="create_client_account"; CLIENT_ACCOUNT_NAME="$2"; shift 2
+            else
+              ACTION="account_status"
+            fi
+            ;;
           sites)          ACTION="list_public_buckets"; shift ;;
           dashboard)      ACTION="open_site"; OPEN_DASHBOARD="true"; shift ;;
           help)           usage; exit 0 ;;
@@ -593,6 +610,16 @@ if [[ "$PUBLISH" != "true" && "$ACTION" == "store" && ( -n "$PUBLICATION_ACCESS_
   die "publication options apply when publishing; remove --draft (they don't apply to a draft)"
 fi
 
+account_request_path() {
+  local request_path="$1" separator="?"
+  if [[ -n "$ACCOUNT_ID" && "$request_path" == /api/v1/* ]]; then
+    [[ "$request_path" != *\?* ]] || separator="&"
+    printf '%s%saccount_id=%s' "$request_path" "$separator" "$("$JQ_BIN" -rn --arg id "$ACCOUNT_ID" '$id|@uri')"
+  else
+    printf '%s' "$request_path"
+  fi
+}
+
 api_url() {
   printf "%s%s" "$BASE_URL" "$1"
 }
@@ -728,6 +755,13 @@ http_json() {
   local path="$2"
   local payload="$3"
   local auth="${4:-true}"
+  if [[ -n "$ACCOUNT_ID" && "$auth" == "true" && "$path" == /api/v1/* ]]; then
+    if [[ "$method" == "GET" || "$method" == "HEAD" ]]; then
+      path="$(account_request_path "$path")"
+    else
+      payload="$("$JQ_BIN" -c --arg account_id "$ACCOUNT_ID" '. + {account_id: $account_id}' <<<"$payload")"
+    fi
+  fi
   local body_file status message code request_id retry_after details_json attempt curl_status delay agent_args=()
   LAST_HTTP_STATUS=""
   LAST_ERROR_CODE=""
@@ -1261,7 +1295,7 @@ read_file() {
 
   local encoded url body_file status message
   encoded="$("$JQ_BIN" -rn --arg s "$READ_FILE_PATH" '$s|@uri')"
-  url="$(api_url "/api/v1/buckets/${BUCKET_ID}/files/by_path?path=${encoded}&disposition=inline")"
+  url="$(api_url "$(account_request_path "/api/v1/buckets/${BUCKET_ID}/files/by_path?path=${encoded}&disposition=inline")")"
   body_file="$(mktemp 2>/dev/null || mktemp -t revdoku)"
 
   status="$(curl -sSL --max-time 120 -o "$body_file" -w "%{http_code}" \
@@ -1443,10 +1477,18 @@ connection_status() {
     data: {
       connected: (.data.connected // true),
       account: .data.account,
+      default_account_id: .data.default_account_id,
+      accounts: .data.accounts,
       connection: .data.connection,
       publishing: .data.publishing
     }
   }'
+}
+
+create_client_account() {
+  local payload
+  payload="$("$JQ_BIN" -cn --arg name "$CLIENT_ACCOUNT_NAME" '{name: $name}')"
+  http_json POST "/api/v1/accounts" "$payload"
 }
 
 account_status() {
@@ -1752,6 +1794,10 @@ case "$ACTION" in
     ;;
   list_public_buckets)
     list_public_buckets
+    exit 0
+    ;;
+  create_client_account)
+    create_client_account
     exit 0
     ;;
   account_status)
