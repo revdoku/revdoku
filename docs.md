@@ -306,10 +306,11 @@ omit it or use `--site-mode static` for normal static sites. A project-local
 
 If the account becomes read-only, existing files remain available to inspect or
 download. Open Revdoku in the browser to review the available account actions;
-do not retry blocked mutations indefinitely. If status reports an automated
-website moderation restriction, the named published website caused the account
-to be made read-only. Contact support@revdoku.com if you believe the decision
-was incorrect; do not create replacement state to evade the hold.
+do not retry blocked mutations indefinitely. For a suspension, relay the common
+notice, link to the [Acceptable Use Policy](https://revdoku.com/acceptable-use/),
+and remind the user they can download their bucket files and contact
+support@revdoku.com for more details. Do not infer reasons, expose review details,
+or create replacements to evade the hold.
 
 ## Data access and exports
 

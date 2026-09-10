@@ -2,69 +2,67 @@
 
 *Version: 2026-09-10 · Effective: September 10, 2026*
 
-Revdoku is for personal websites, portfolios, prototypes, vibe-coded projects, client work, document sharing, feedback, and mini-apps. This policy is part of our [Terms of Service](https://revdoku.com/terms/). It applies to published websites, apps, files, shared links, previews, custom domains, and content distributed through Revdoku, including embedded content, linked offerings, forms, and public visitor comments.
+Revdoku is for personal websites, portfolios, prototypes, vibe-coded projects, client work, document sharing, feedback, and mini-apps. This policy forms part of our [Terms of Service](https://revdoku.com/terms/) and covers everything distributed through Revdoku: websites, apps, files, shared links, previews, custom domains, embeds, linked offerings, forms, and public visitor comments.
 
 ## What You Cannot Host
 
-### 1. Fraud and Impersonation
+### 1. Scams, Fraud, and Impersonation
 
-**Do not deceive people about who you are, what you provide, or where their money goes.** Prohibited examples include phishing pages, scams, fake giveaways, fake reviews or endorsements, fake official services, impersonated login or payment pages, fabricated government approvals, and misleading or concealed payment collection.
+**Do not deceive people about identity, products, services, or payments.** Examples: phishing, scams, fake giveaways, fake reviews or endorsements, fake official services, impersonated login or payment pages, fabricated government approvals, and misleading or concealed payment collection.
 
-Clearly labeling a site as a demo does not permit collecting real credentials or payments through an impersonated service.
+Demo labels do not permit collecting real credentials or payments through an impersonated service.
 
-### 2. Security Abuse and Spam
+### 2. Malware, Cyberattacks, and Spam
 
-**Do not host tools or networks that steal access, attack systems, or distribute spam.** Prohibited examples include malware, credential stealers, keyloggers, malicious downloads, botnets, command-and-control services, reverse shells, abusive proxies, access-control bypass services, spam networks, link farms, deceptive redirects, and traffic or engagement manipulation.
+**Do not steal access, attack systems, manipulate traffic, or distribute spam.** Examples: malware, credential stealers, keyloggers, malicious downloads, botnets, command-and-control services, reverse shells, abusive proxies, access-control bypass services, spam networks, link farms, deceptive redirects, and fake traffic or engagement.
 
-A general explanation of cybersecurity is different from distributing a working tool for abuse.
+General cybersecurity explanations are allowed; working tools for abuse are not.
 
-### 3. Violence and Exploitation
+### 3. Violence, Hate, and Exploitation
 
-**Do not threaten, exploit, or organize abuse of people or animals.** Prohibited examples include threats, incitement to violence, terrorism recruitment, trafficking, child exploitation or sexualization, graphic child abuse, animal cruelty, targeted harassment, hate-based attacks, and instructions or encouragement for suicide, self-harm, or dangerous acts likely to cause serious injury.
+**Do not threaten, exploit, or promote harm to people or animals.** Examples: threats, incitement to violence, terrorism recruitment, trafficking, child exploitation or sexualization, graphic child abuse, animal cruelty, targeted harassment, hate-based attacks, and instructions or encouragement for suicide, self-harm, or dangerous acts likely to cause serious injury.
 
-Non-graphic prevention, recovery, and support information is allowed when it does not promote these acts or another prohibited offering.
+Non-graphic prevention, recovery, and support information is allowed unless it promotes prohibited acts or offerings.
 
-### 4. Adult Sexual Content
+### 4. Pornography, Sexual Services, and Sexual Abuse
 
-**Do not host pornography, sexual services, or intimate material shared without consent.** This includes sexually explicit images, video, text, or audio; adult sexual services or companions; sexual deepfakes; undressing tools; revenge pornography; and sexual extortion. The rule covers real, fictional, illustrated, and AI-generated material.
+**Do not host sexually explicit content, sexual services, or nonconsensual intimate material.** Examples: pornography in images, video, text, or audio; sexual services or companions; sexual deepfakes; undressing tools; revenge pornography; and sexual extortion. Real, fictional, illustrated, and AI-generated material are covered.
 
-### 5. Privacy and Rights Violations
+### 5. Privacy Violations and Stolen Content
 
-**Do not expose private information or distribute material you have no right to use.** Prohibited examples include doxxing, leaked credentials, private-key dumps, unauthorized private communications, sensitive personal records, leaked-data aggregation, personal-data resale, pirated media, counterfeit goods, cracked software, and license keys distributed without authorization.
+**Do not expose private data or distribute material without permission or rights.** Examples: doxxing, leaked credentials, private-key dumps, unauthorized private communications, sensitive personal records, leaked-data aggregation, personal-data resale, pirated media, counterfeit goods, cracked software, and unauthorized license keys.
 
-Do not use visitor forms to collect passwords, API keys, recovery codes, private keys, payment-card details, government identity documents, health records, biometric data, or children's personal data. Ordinary contact forms and business contact details are allowed when you have permission or another lawful basis to use them.
+Visitor forms must not collect passwords, API keys, recovery codes, private keys, payment-card details, government identity documents, health records, biometric data, or children's personal data. Ordinary contact forms and business contact details are allowed with permission or another lawful basis.
 
 Copyright complaints follow our [DMCA Copyright Policy](https://revdoku.com/dmca/).
 
 ### 6. Politics and Elections
 
-**Do not host political or election-related content.** This includes campaigns, parties, candidates, political advocacy, lobbying, public-policy debates, political fundraising, public officeholders in their political or governmental roles, representative directories, legislative or voting-record trackers, voter registration, voting procedures, election calendars, political polls, predictions, and results.
+**Do not host political or election-related content.** Examples: campaigns, parties, candidates, political advocacy, lobbying, public-policy debates, political fundraising, officeholders in political or governmental roles, representative directories, legislative or voting-record trackers, voter registration, voting procedures, election calendars, political polls, predictions, and results.
 
-This ban includes neutral, factual, educational, journalistic, historical, fictional, artistic, satirical, and demonstration versions. It applies to every viewpoint and country. Accuracy, attribution, disclaimers, consent, or authorization do not create an exception. One prohibited page, image, embed, or application function is enough.
+Neutral, factual, educational, journalistic, historical, fictional, artistic, satirical, and demonstration versions are included, across every viewpoint and country. Accuracy, attribution, disclaimers, consent, or authorization create no exception. One prohibited page, image, embed, or application function is enough.
 
-Ordinary addresses, generic maps, technical uses of words such as “candidate,” nonpolitical product polls, and routine compliance materials are not political content merely because of an incidental word or name.
+Incidental words or names do not make ordinary addresses, generic maps, technical terms such as “candidate,” nonpolitical product polls, or routine compliance materials political content.
 
-Policy identifier: `political_election_content`.
+### 7. Prohibited Businesses and Services
 
-### 7. Specific Restricted Offerings
+**Do not operate, advertise, sell, arrange, or collect payment for these businesses or services:**
 
-**Revdoku does not host businesses or services that operate, advertise, sell, arrange, or collect payment for these offerings:**
-
-- **Gambling:** casinos, sports betting, prediction markets involving money or prizes, lotteries, paid-entry sweepstakes, and loot boxes.
-- **Weapons and controlled products:** weapons, ammunition, explosives, controlled drugs, cannabis or CBD products, tobacco, vaping products, and alcohol sales.
-- **Financial services:** banking, money transfer, payment processing, lending, credit repair, debt collection, insurance sales, securities or derivatives trading, investment schemes, cryptocurrency exchanges or wallets, token offerings, and NFTs.
-- **Medical and professional advice:** diagnosis, treatment, therapy, prescription services, and personalized medical, mental-health, legal, tax, investment, or credit advice.
-- **Official documents and decisions:** government-service intermediaries, immigration or visa processing, identity verification services, unofficial IDs or certificates, and automated decisions about employment, housing, credit, insurance, education admission, or public benefits.
-- **Adult and intimate services:** pornography, escort or sexual services, adult sexual products, sexual AI companions, intimate-image generation, and paid matchmaking or dating services.
+- **Gambling and betting:** casinos, sports betting, prediction markets involving money or prizes, lotteries, paid-entry sweepstakes, and loot boxes.
+- **Weapons, drugs, and alcohol:** weapons, ammunition, explosives, controlled drugs, cannabis or CBD products, tobacco, vaping products, and alcohol sales.
+- **Money, investments, and crypto:** banking, money transfer, payment processing, lending, credit repair, debt collection, insurance sales, securities or derivatives trading, investment schemes, cryptocurrency exchanges or wallets, token offerings, and NFTs.
+- **Healthcare and professional advice:** diagnosis, treatment, therapy, prescription services, and personalized medical, mental-health, legal, tax, investment, or credit advice.
+- **Government services, IDs, and eligibility decisions:** government-service intermediaries, immigration or visa processing, identity verification, unofficial IDs or certificates, and automated decisions about employment, housing, credit, insurance, education admission, or public benefits.
+- **Adult products, sexual services, and paid dating:** pornography, escort or sexual services, adult sexual products, sexual AI companions, intimate-image generation, and paid matchmaking or dating services.
 - **Services for children:** services directed at minors, child-oriented social networks, and collection or brokerage of children's personal information.
-- **Data and access trading:** personal-data brokers, people-search or surveillance services, credential sales, account sales, bulk unsolicited outreach, and sales of scraped leads.
+- **Data sales, surveillance, and account trading:** personal-data brokers, people-search or surveillance services, credential sales, account sales, bulk unsolicited outreach, and sales of scraped leads.
 - **Piracy and cheating:** unauthorized streaming or IPTV, pirated downloads, cracked software, counterfeit goods, paywall or license circumvention, exam cheating, and resale of protected test questions.
-- **Deceptive or speculative sales:** pyramid or multilevel-marketing schemes, get-rich-quick services, paid fortune-telling or clairvoyance, fake engagement, and reputation manipulation.
-- **Infrastructure resale:** public file-dump or mirror services, hotlinking hosts, proxy or VPN services, cryptomining, and resale of Revdoku accounts, hosting, or access.
+- **MLM, get-rich-quick, and psychic services:** pyramid or multilevel-marketing schemes, get-rich-quick services, paid fortune-telling or clairvoyance, fake engagement, and reputation manipulation.
+- **Hosting resale, proxies, and mining:** public file-dump or mirror services, hotlinking hosts, proxy or VPN services, cryptomining, and resale of Revdoku accounts, hosting, or access.
 
 Political businesses and services are also prohibited by category 6. Licenses, third-party payment approval, payment to Revdoku, and disclaimers do not create exceptions.
 
-These exclusions concern what a site offers or does. A portfolio, client proposal, shared contract, design review, or generic interface prototype using fictional sample data is not itself a regulated business. Ordinary freelance and agency services, client portals, and permitted mini-apps remain within scope. Every project must still follow categories 1–6; political prototypes and election demos are prohibited.
+These exclusions concern what a site offers or does. Portfolios, client proposals, shared contracts, design reviews, and generic interfaces using fictional sample data are not themselves regulated services. Ordinary freelance and agency services, client portals, and permitted mini-apps remain allowed. Categories 1–6 still apply, including to prototypes and demos.
 
 ## Publisher Responsibilities
 

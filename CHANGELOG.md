@@ -2,6 +2,17 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.449 — 2026-09-11
+
+### Improved
+
+- Signup requires explicit Terms and Acceptable Use Policy acceptance. New email
+  and social identities complete account creation through signup.
+- The slim, translucent Edit with Revdoku badge stays at the bottom right and
+  moves above open feedback forms. Its flag opens Revdoku's report page.
+- Publication notices link to the Acceptable Use Policy and support while keeping
+  review details private. Bucket files remain available to download.
+
 ## 1.0.444 — 2026-09-09
 
 ### Fixed

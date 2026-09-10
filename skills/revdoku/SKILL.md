@@ -17,9 +17,9 @@ Free includes durable buckets, Public/Password publishing, Basic analytics,
 and built-in forms. Revdoku serves static websites and SPAs, without arbitrary
 server code, per-bucket databases, cron jobs, or a client-side AI proxy.
 
-The [AUP](https://revdoku.com/acceptable-use/) bans political/election publishing,
-including neutral information and demos, on every plan. Never report pending or
-failed reviews as live publications.
+Before creating or publishing, read the current
+[Acceptable Use Policy](https://revdoku.com/acceptable-use.md) and check the project's
+content and purpose against it. Never report pending or failed reviews as live.
 
 ## First-use rule
 
@@ -76,11 +76,10 @@ noindex. Read plan entitlements from `https://app.revdoku.com/pricing.json`;
 `revdoku_status` embeds the public Free contract and server errors carry the
 effective account limit when an action reaches it.
 
-Free websites receive automatic abuse review. A high-confidence
-hold takes the website offline and makes the account read-only. On
-`account.restriction` or `ACCOUNT_SUSPENDED`, identify the named website, relay
-the message, and direct appeals to `support@revdoku.com`. Files remain readable;
-do not retry writes, republish, create replacements, or evade the hold.
+All publications require AUP review. On `account.restriction` or
+`ACCOUNT_SUSPENDED`, relay only the suspension notice, AUP link, bucket download
+reminder, and support@revdoku.com. Do not infer reasons or reveal review details.
+Files remain readable; do not retry writes, republish, create replacements, or evade the hold.
 
 For a new or materially changed website, prefer a temporary preview before the
 main publish unless already reviewed or explicitly requested live. Previews are
