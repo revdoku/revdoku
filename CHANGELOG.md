@@ -2,6 +2,26 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.453 — 2026-09-14
+
+### Added
+
+- The account switcher groups agencies with their clients and shows account names,
+  separate client names, and owner emails. Client names can be set during creation
+  or edited in Account Settings.
+- Agents and the CLI can request a quick analytics summary across accessible
+  websites, defaulting to this week compared with the same elapsed last week.
+
+### Improved
+
+- MCP, API, CLI, and documentation consistently identify account types and granted
+  agency relationships, with account selection applied separately to each call.
+
+### Fixed
+
+- Publishing stops when the configured website root has no publishable files,
+  preserving the previous live build instead of exposing sibling files.
+
 ## 1.0.451 — 2026-09-13
 
 ### Fixed

@@ -49,6 +49,7 @@ APPEND_TEXT_NEWLINE_BEFORE="${REVDOKU_APPEND_TEXT_NEWLINE_BEFORE:-true}"
 GRANT_TOKEN=""
 ACCOUNT_ID=""
 CLIENT_ACCOUNT_NAME=""
+CLIENT_DISPLAY_NAME=""
 TAG_PATHS=()
 AGENT_NAME="${REVDOKU_AGENT_NAME:-}"
 AGENT_CLIENT="${REVDOKU_AGENT_CLIENT:-revdoku}"
@@ -68,6 +69,7 @@ HTTP_LOCK_MAX_ATTEMPTS="${REVDOKU_HTTP_LOCK_MAX_ATTEMPTS:-3}"
 DIRECT_UPLOAD_MAX_ATTEMPTS="${REVDOKU_DIRECT_UPLOAD_MAX_ATTEMPTS:-5}"
 LOGIN="false"
 ACTION="store"
+ANALYTICS_RANGE="current_week"
 PATH_TO_STORE=""
 PATH_EXPLICIT="false"
 READ_FILE_PATH=""
@@ -162,12 +164,15 @@ More commands (no short alias):
   append PATH          Append text to a bucket file (--content TEXT | --content-file FILE).
   archive | unarchive | delete    Manage a bucket (--bucket-id).
   account              Account, plan, and storage status.
+  analytics            Quick account-wide summary (this week vs. the same part of last week).
+                       --range today|yesterday|current_week|previous_week|current_month|previous_month|current_year|7d|30d|90d|all
   account create-client NAME     Create a client account on Pro Agency.
   sites                List your public website URLs.
   dashboard            Print the Revdoku dashboard URL (normal sign-in may be required).
 
 Global options:
   --account-id ID      Select a granted account for this command (default: credential account).
+  --client-name NAME   Client person or business (account create-client only).
   --bucket-id ID       Act on a specific bucket (overrides the .revdoku binding).
   --url URL            Revdoku app URL (default $DEFAULT_URL).
   --api-key KEY        API key (default REVDOKU_API_KEY or $CREDENTIALS_PATH).
@@ -227,9 +232,19 @@ while [[ $# -gt 0 ]]; do
       ACCOUNT_ID="$2"
       shift 2
       ;;
+    --client-name)
+      [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "--client-name requires a client name"
+      CLIENT_DISPLAY_NAME="$2"
+      shift 2
+      ;;
     --bucket-id)
       [[ $# -ge 2 ]] || die "--bucket-id requires a value"
       BUCKET_ID="$2"
+      shift 2
+      ;;
+    --range)
+      [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "--range requires an analytics period"
+      ANALYTICS_RANGE="$2"
       shift 2
       ;;
     --metadata)
@@ -403,6 +418,7 @@ while [[ $# -gt 0 ]]; do
             fi
             ;;
           sites)          ACTION="list_public_buckets"; shift ;;
+          analytics)      ACTION="analytics_summary"; shift ;;
           dashboard)      ACTION="open_site"; OPEN_DASHBOARD="true"; shift ;;
           help)           usage; exit 0 ;;
           version)        printf '%s\n' "$(installed_client_version)"; exit 0 ;;
@@ -1487,21 +1503,26 @@ connection_status() {
 
 create_client_account() {
   local payload
-  payload="$("$JQ_BIN" -cn --arg name "$CLIENT_ACCOUNT_NAME" '{name: $name}')"
+  payload="$("$JQ_BIN" -cn --arg name "$CLIENT_ACCOUNT_NAME" --arg client_name "$CLIENT_DISPLAY_NAME" '{name: $name} + (if $client_name == "" then {} else {client_name: $client_name} end)')"
   http_json POST "/api/v1/accounts" "$payload"
 }
 
 account_status() {
-  http_json GET "/api/v1/account/credits" "{}" | "$JQ_BIN" -c '
+  local identity
+  identity="$(http_json GET "/api/v1/status" "{}")"
+  if [[ "$(printf '%s' "$identity" | "$JQ_BIN" -r '.data.account.account_kind // .data.account.kind')" == "client" ]]; then
+    printf '%s\n' "$identity"
+    return
+  fi
+  http_json GET "/api/v1/account/credits" "{}" | "$JQ_BIN" --argjson identity "$identity" -c '
     .data.credits as $credits
     | ($credits.account_limits // {}) as $limits
     | {
         success: (.success // true),
         data: {
-          account: {
-            id: $credits.account_id,
-            name: $credits.account_name
-          },
+          account: $identity.data.account,
+          default_account_id: $identity.data.default_account_id,
+          accounts: $identity.data.accounts,
           plan: ($credits.plan // {}),
           storage: {
             used_bytes: $limits.used_storage_bytes,
@@ -1739,6 +1760,14 @@ maybe_notify_update() {
 maybe_notify_update || true
 
 case "$ACTION" in
+  analytics_summary)
+    case "$ANALYTICS_RANGE" in
+      today|yesterday|current_week|previous_week|current_month|previous_month|current_year|7d|30d|90d|all) ;;
+      *) die "unsupported analytics range: $ANALYTICS_RANGE" ;;
+    esac
+    http_json GET "/api/v1/analytics/weekly_summary?view=summary&range=${ANALYTICS_RANGE}" "{}"
+    exit 0
+    ;;
   list_buckets)
     list_buckets
     exit 0
