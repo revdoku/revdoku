@@ -6,6 +6,11 @@ SKILL_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 PACKAGE_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
 JQ_VERSION=1.8.1
 JQ_BASE_URL=https://github.com/jqlang/jq/releases/download/jq-${JQ_VERSION}
+JQ_TEMP_DIR=
+trap '[ -z "$JQ_TEMP_DIR" ] || rm -rf "$JQ_TEMP_DIR"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
 
 die() {
   echo "error: $1" >&2
@@ -49,16 +54,19 @@ ensure_jq() {
   esac
 
   mkdir -p "$SKILL_DIR/bin"
-  tmp=$(mktemp)
+  JQ_TEMP_DIR=$(mktemp -d "$SKILL_DIR/bin/.jq.XXXXXX")
+  tmp="$JQ_TEMP_DIR/jq"
   command -v curl >/dev/null 2>&1 || die "requires curl"
-  curl -fsSL "$JQ_BASE_URL/$asset" -o "$tmp"
+  curl --proto '=https' --proto-redir '=https' -fsSL "$JQ_BASE_URL/$asset" -o "$tmp"
   actual=$(sha256_file "$tmp")
   if [ "$actual" != "$expected" ]; then
     rm -f "$tmp"
     die "downloaded jq checksum mismatch"
   fi
+  chmod 0755 "$tmp"
   mv "$tmp" "$SKILL_DIR/bin/jq"
-  chmod 0755 "$SKILL_DIR/bin/jq"
+  rm -rf "$JQ_TEMP_DIR"
+  JQ_TEMP_DIR=
 }
 
 ensure_cli

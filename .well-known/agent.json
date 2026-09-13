@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Website publishing for AI agents with account-free 24-hour public previews and claimable permanent sites.",
+  "description": "Publish static websites and apps from authenticated account buckets, with 24-hour previews.",
   "homepage": "https://revdoku.com/",
   "docs": "https://revdoku.com/docs",
   "pricing": "https://revdoku.com/pricing.md",
@@ -12,33 +12,13 @@
   "mcp": {
     "endpoint": "https://app.revdoku.com/mcp",
     "transport": "streamable-http",
-    "anonymous_tools": [
-      "website_preview_create",
-      "website_preview_update",
-      "website_preview_get"
-    ],
     "account_authentication": {
       "type": "oauth2",
       "mode": "sign-in-only",
       "account_creation_in_chat": false,
       "signup_url": "https://app.revdoku.com/users/sign_up"
-    }
-  },
-  "anonymous_preview": {
-    "account_required": false,
-    "public_only": true,
-    "private_buckets": false,
-    "lifetime_hours": 24,
-    "claimable_within_hours": 24,
-    "randomized_url": true,
-    "max_site_mb": 25,
-    "max_file_mb": 25,
-    "max_files": 200,
-    "forms": false,
-    "analytics": false,
-    "custom_domains": false,
-    "robots": "noindex, nofollow, noarchive, noimageindex",
-    "referrer_policy": "no-referrer"
+    },
+    "authentication_required": true
   },
   "skill": {
     "npm": "npx skills add revdoku/revdoku --skill revdoku -g",
@@ -46,8 +26,8 @@
     "source": "https://github.com/revdoku/revdoku/tree/main/skills/revdoku"
   },
   "capabilities": [
-    "Create and update an anonymous public website preview",
-    "Claim a preview through browser signup",
+    "Preview an authenticated bucket draft for 24 hours",
+    "Sign up in the browser, then connect an existing account",
     "Publish static websites and SPAs from account buckets",
     "Update an existing website at the same URL",
     "Configure protected access, forms, analytics, and domains on eligible plans"
@@ -57,5 +37,15 @@
     "plugin_manifest": "https://revdoku.com/.well-known/ai-plugin.json",
     "schema_map": "https://revdoku.com/schema-map.xml",
     "agent_resources": "https://revdoku.com/schema-feeds/agent-resources.jsonl"
+  },
+  "bucket_preview": {
+    "account_required": true,
+    "lifetime_hours": 24,
+    "access_modes": [
+      "public",
+      "password",
+      "require_email"
+    ],
+    "robots": "noindex, nofollow, noarchive, noimageindex"
   }
 }

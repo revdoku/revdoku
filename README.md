@@ -4,8 +4,7 @@
 >
 > Ask ChatGPT, Claude or other AI to publish to Revdoku.
 >
-> Get a live `*.revdoku.site` website in seconds. Existing `*.localhost3000.love`
-> links remain supported as aliases.
+> Get a live `*.revdoku.site` website in seconds.
 >
 > **Free account available.**
 
@@ -67,7 +66,7 @@ and AI assistants.
 - **Dashboard and account:** <https://app.revdoku.com>
 - **Hosted MCP endpoint:** `https://app.revdoku.com/mcp`
 - **Create free account**: <https://app.revdoku.com/users/sign_up>
-- **Published websites:** `*.revdoku.site` URLs (with `*.localhost3000.love` aliases) with
+- **Published websites:** `*.revdoku.site` URLs with
   optional custom domains
 
 Free and paid plan pricing and human-readable comparisons:
@@ -174,6 +173,10 @@ If npm is unavailable:
 ```sh
 curl -fsSL https://revdoku.com/install.sh | bash
 ```
+
+The skill runs its bundled CLI. The shell installer verifies the CLI and skill
+files against embedded SHA-256 hashes before installation. If verification fails,
+fetch the current installer and retry. Download-source overrides are unsupported.
 
 Publish or update the current folder:
 

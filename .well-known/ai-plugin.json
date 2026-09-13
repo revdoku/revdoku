@@ -2,15 +2,16 @@
   "schema_version": "v1",
   "name_for_human": "Revdoku",
   "name_for_model": "revdoku",
-  "description_for_human": "Create a free 24-hour public website preview with an AI agent.",
-  "description_for_model": "Use Revdoku to create or update one anonymous public website preview. Anonymous previews require no account, use a randomized URL, are noindex, and expire after 24 hours. Return the public URL and claim URL. Never create an account in chat. Account signup is browser-only; authenticated account tools use sign-in for an existing account.",
+  "description_for_human": "Publish websites and preview drafts from your Revdoku account.",
+  "description_for_model": "Use authenticated Revdoku account tools to manage buckets, preview drafts for 24 hours, and publish static websites when requested. Signup is browser-only. Connect an existing account through OAuth for hosted MCP or the CLI browser sign-in flow. Never ask users to paste credentials in chat. Check publication status before reporting success. The OpenAPI document covers selected REST endpoints; see api.md for the complete API.",
   "auth": {
-    "type": "none"
+    "type": "user_http",
+    "authorization_type": "bearer"
   },
   "api": {
     "type": "openapi",
     "url": "https://revdoku.com/openapi.json",
-    "has_user_authentication": false
+    "has_user_authentication": true
   },
   "logo_url": "https://revdoku.com/favicon.svg",
   "contact_email": "support@revdoku.com",

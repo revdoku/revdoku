@@ -1836,7 +1836,7 @@ ROOT_PATH="$(abs_path "$PATH_TO_STORE")"
 default_title() {
   # ROOT_PATH is absolute. Use the folder name, but if it's a generic build
   # output dir (docs/dist/build/...), use the project (parent) dir name instead,
-  # so e.g. ~/projects/localhost3000.love/docs -> "localhost3000.love".
+  # so e.g. ~/projects/my-site/docs -> "my-site".
   local name parent
   name="$(basename "$ROOT_PATH")"
   if [[ -d "$ROOT_PATH" ]]; then

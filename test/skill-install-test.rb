@@ -154,14 +154,17 @@ class RevdokuSkillInstallTest < Minitest::Test
     system_jq
     install_root = File.join(@tmp, "cursor")
     stdout, stderr, status = Open3.capture3(@env.merge(
+      "REVDOKU_INSTALL_BASE" => nil,
       "REVDOKU_AGENT" => "cursor", "CURSOR_HOME" => install_root,
       "REVDOKU_BIN_DIR" => File.join(@tmp, "user-bin"),
       "REVDOKU_CONFIG_DIR" => File.join(@tmp, "config"),
-      "REVDOKU_CLIENT_VERSION" => "1.2.3"
+      "REVDOKU_CLIENT_VERSION" => "0.0.0"
     ), "/bin/bash", File.join(CLIENT_ROOT, "install.sh"))
     assert status.success?, "#{stderr}\n#{stdout}"
     skill = File.join(install_root, "skills/revdoku")
     assert_equal File.binread(CLI), File.binread(File.join(skill, "bin/revdoku"))
+    expected_version = File.read(File.join(CLIENT_ROOT, PUBLIC_PACKAGE ? "VERSION" : "../../../VERSION")).strip
+    assert_equal expected_version, File.read(File.join(@tmp, "config/client_version")).strip
     stdout, stderr, status = run_wrapper(File.join(skill, "scripts/revdoku.sh"), "--help")
     assert status.success?, stderr
     assert_includes stdout, "--site-mode MODE"

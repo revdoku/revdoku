@@ -4,8 +4,7 @@
 >
 > Ask ChatGPT, Claude or other AI to publish to Revdoku.
 >
-> Get a live `*.revdoku.site` website in seconds. Existing `*.localhost3000.love`
-> links remain supported as aliases.
+> Get a live `*.revdoku.site` website in seconds.
 >
 > **Free account available.**
 
@@ -555,7 +554,10 @@ folder as the site. Its resolved homepage and assets move to the root
 (`/styles.css`, not `/website/styles.css`). Every other file/folder in the bucket (e.g. a `scripts/`
 folder) stays stored and version-tracked but is NOT served. This lets a bucket
 hold both a published `website/` and an unserved `scripts/` sibling. Pass an
-empty string to publish the whole bucket again.
+empty string to publish the whole bucket again. Updated servers reject a folder
+with no publishable files (`PUBLICATION_ROOT_DIRECTORY_EMPTY`), preserving the
+previous site on republish. Older servers can fall back to the whole bucket, so
+verify the exact stored output folder before publishing.
 
 ### Framework static builds
 
@@ -595,8 +597,8 @@ This assumes files were uploaded as `dist/index.html`, `dist/_next/...`, etc.
 For `out/index.html`, select `out`. If the upload retains a project prefix such
 as `my-site/dist/index.html` (as the CLI does), select `my-site/dist` instead.
 Before publishing, list files and verify the selected folder contains the
-exported home page and assets; a missing or mistyped root can fall back to
-publishing the whole bucket. Files outside a valid selected root stay private
+exported home page and assets. Updated servers reject a missing folder or one
+containing only excluded files. Files outside a valid selected root stay private
 and versioned. Paths inside it become website-root paths, so
 `my-site/dist/_next/...` is served at `/_next/...`.
 
@@ -832,8 +834,7 @@ curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../custom_domains/pcd_.../re
 ```
 
 When active, the publication `public_url` switches to the custom domain.
-The managed `https://<bucket-slug>.revdoku.site/` URL keeps working, as does
-its `https://<bucket-slug>.localhost3000.love/` alias.
+The managed `https://<bucket-slug>.revdoku.site/` URL keeps working.
 Incomplete setup expires after 72 hours. Website-domain changes are limited to
 3 per account per day, with a separate short-window DNS verification limit.
 
@@ -1300,9 +1301,11 @@ placeholder, and can be made required when form customization is available.
 An embedded form posts same-origin to `/_revdoku/form/contact`. Private-response
 forms work with Public, Password, or Require Email publications when that access
 mode is available. The shared `comments` form, **Feedback (visible to all)**,
-also works on Public sites. Anonymous public visitors see current-page selection
-outlines and counts; email OTP in the widget unlocks reading and posting. Shared
-history shows names and verification badges, never contact email addresses.
+also works on Public sites. Public and Password sites accept guest comments with
+optional name/email; typed emails are private contact details, not verified
+identity. Require Email sites reuse the verified gate identity. The widget never
+asks for OTP. Visitors see approved shared feedback; authors also see their own
+pending comments. Shared history never exposes contact email addresses.
 Read the current submission limit
 from the API response instead of hard-coding account-specific quotas.
 Submissions are encrypted. The account owner can read them with bucket write
@@ -1352,9 +1355,9 @@ thread:
 | `POST` | `/api/v1/buckets/:id/form_submissions/:submission_id/reply` | Add a `team` reply, or a `public` reply when the shared-comments submission supports it. |
 | `DELETE` | `/api/v1/buckets/:id/form_submissions/:submission_id` | Delete one reply, or delete a root submission together with its replies. |
 
-Shared forms accept `"approval_required": true`, available on every plan and off
-by default. New visitor comments and replies then start `pending`; authorized
-moderator replies start `approved`. Changing the setting affects future
+Shared forms default to `"approval_required": true` on every plan. New visitor
+comments and replies start `pending`; explicit false autoapproves future
+submissions. Authorized moderator replies start `approved`. Changing the setting affects future
 submissions only. Publish or republish saved settings to activate them.
 
 Submissions expose `moderation_status` (`pending`, `approved`, `reported`, or
@@ -1375,9 +1378,11 @@ A changed submission returns `409 FORM_SUBMISSION_STALE`; refresh before retryin
 Repeated actions in the target state succeed without another transition. Field
 edits do not approve pending or hidden content.
 
-Verified visitors can confirm Report in the widget. The first report changes an
-approved comment to `reported`, hides it, and notifies the owner. Repeated reports
-while hidden do nothing; a later approval allows reporting again. Hiding a root
+Visitors, including guests, can confirm Report in the widget. The first report
+changes an approved comment to `reported` and notifies the owner; the comment
+stays visible pending review. Repeated reports do nothing; a later approval
+allows reporting again. Historical reports that already hid comments stay hidden
+until reviewed. An authorized Hide action hides the comment; hiding a root also
 suppresses its replies, markers, and counts.
 
 Public shared history uses the approved recent-200 window plus required parents.
@@ -1409,7 +1414,9 @@ entries such as `{"name":"email","label":"Email","placeholder":"Work email","req
 `placeholder` is optional and independent from the field label; Revdoku appends
 `(required)` or `(optional)` when the placeholder omits either marker.
 Field names are limited to `name`, `email`, `phone`, `company`, `budget`, `date`,
-and `message`; field types are server-owned. Hosted forms can set independent desktop
+`message`, and `comment`. The `message` and `comment` fields accept `type: "textarea"`
+or `type: "comment"`; other field types are fixed. Set `"field_types_version": 1`
+when editing fields. Hosted forms can set independent desktop
 and mobile `widget_position` values: `top-left`, `top-center`, `top-right`,
 `center-left`, `center`, `center-right`, `bottom-left`, `bottom-center`, or
 `bottom-right` (the default). Every form uses `Send` as its submit-button caption.

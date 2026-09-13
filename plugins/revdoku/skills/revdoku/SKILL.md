@@ -116,8 +116,9 @@ Public.
   output's bucket path for preview/publish; use `site_mode: "static"` for Astro/Next.js exports,
   `spa` only when client-side routes require index fallback.
   `revdoku p ./my-site --publish-folder my-site/dist --site-mode static`.
-  CLI preserves `my-site/`; other files stay stored but unserved.
-  Verify root; rebuild/upload after source changes.
+  CLI preserves `my-site/`; siblings stay unserved.
+  Verify stored root before publishing; older servers may ignore missing roots.
+  Rebuild/upload changes.
 - Hosted MCP cannot build/upload local binaries; use CLI.
 - `index.html`/`index.htm` wins; otherwise one top-level HTML file becomes home.
   Other missing-index sets generate Auto-Index with file previews and a
@@ -316,7 +317,7 @@ Compact preset:
 ```
 
 Customize `label`, `description`, and ordered `fields`: `name`, `email`, `phone`,
-`company`, `budget`, `date`, and `message`. Dates use `YYYY-MM-DD`. Fields support
+`company`, `budget`, `date`, `message`, and `comment`. Dates use `YYYY-MM-DD`. Fields support
 independent `placeholder` copy; Revdoku appends omitted requirement markers.
 Omit `success_response` (or use `{"mode":"system"}`) for Revdoku's saved
 message. Use `{"mode":"file","path":"downloads/guide.pdf"}` to open a file,
@@ -352,11 +353,11 @@ definition's fixed fields. Keep the hidden `_gotcha` honeypot. Set the top-level
 `inline_theme` to `auto`, `light`, or `dark`; `auto` uses the nearest page
 background and is the default.
 
-Any form can include `{ "name": "comment", "type": "comment" }` for text/area
-selection in HTML and file viewers. Set `field_types_version: 1` when editing
-fields. Plain `textarea` fields retain file/page references only. Feedback presets
-include Comment by default. Field customization requires a paid plan; privacy
-stays with the form.
+Add `{ "name": "comment", "type": "comment" }` for HTML/viewer text/area selection.
+With `field_types_version: 1`, `message`/`comment` accept `textarea` or `comment`;
+other types are fixed. One Comment field maximum. Text keeps file/page
+references. Feedback defaults to Comment. Customization requires a paid
+plan; privacy stays with the form.
 
 When the user asks to insert a configured form, keep it `hosted: true`. Add its
 named macro for an inline form, or add and style a native popup button when the user

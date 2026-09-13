@@ -2,6 +2,24 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.451 — 2026-09-13
+
+### Fixed
+
+- The shell installer verifies CLI and skill payloads before installation and
+  rejects alternate download sources. Skills always run their bundled CLI.
+- Agent discovery describes authenticated previews. API and skill guidance now
+  agree on guest comments, approval defaults, reports, and Comment fields.
+- Framework draft examples use supported CLI options, and current website
+  examples use `revdoku.site`.
+
+## 1.0.450 — 2026-09-11
+
+### Added
+
+- Account owners receive an email and in-app notice when a website or account is
+  suspended, with policy and support links. Takedown retries do not repeat notices.
+
 ## 1.0.449 — 2026-09-11
 
 ### Improved

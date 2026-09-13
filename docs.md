@@ -4,8 +4,7 @@
 >
 > Ask ChatGPT, Claude or other AI to publish to Revdoku.
 >
-> Get a live `*.revdoku.site` website in seconds. Existing `*.localhost3000.love`
-> links remain supported as aliases.
+> Get a live `*.revdoku.site` website in seconds.
 >
 > **Free account available.**
 
@@ -201,7 +200,14 @@ For a project named `my-site` with static output in `dist/`, run from its parent
 revdoku p ./my-site --publish-folder my-site/dist --site-mode static
 ```
 
-Use the same path and routing options with `--draft` or `revdoku preview`.
+Use the same path and routing options with `revdoku preview`.
+To save a private draft, omit publication-only routing options:
+
+```sh
+revdoku p ./my-site --publish-folder my-site/dist --draft
+```
+
+Set `--site-mode` when previewing or publishing.
 For a client-side SPA that needs route fallback, use `--site-mode spa` instead.
 The CLI retains the project prefix, so the selected folder is `my-site/dist`,
 not just `dist`. In API/MCP preview and publish calls, set
@@ -209,9 +215,11 @@ not just `dist`. In API/MCP preview and publish calls, set
 If files were uploaded directly as `dist/index.html`, select `dist` instead.
 Source stays private; only the selected output is served at the website root.
 
-Verify that exact stored root exists before publishing: a nonexistent root can
-fall back to serving the whole bucket. Rebuild locally and upload refreshed
-output after source changes, then republish the same bucket. GitHub sync also
+Verify that exact stored root contains publishable files. Updated servers reject
+a missing or empty selection and preserve the previous site on republish. Older
+servers can fall back to the whole bucket; always verify the stored output first.
+Rebuild locally and upload refreshed output after source changes, then republish
+the same bucket. GitHub sync also
 requires the generated output in the synced repository. Wait for `ready`, then
 check the home page, direct nested URLs, and assets. SPA mode supplies route
 fallback only; it does not build or run a backend.
@@ -261,7 +269,7 @@ even when they are gitignored. For a project folder named `my-site`, run from
 its parent directory:
 
 ```sh
-revdoku p ./my-site --publish-folder my-site/dist --site-mode static --draft
+revdoku p ./my-site --publish-folder my-site/dist --draft
 revdoku preview ./my-site --publish-folder my-site/dist --site-mode static
 # When ready to publish the main website:
 revdoku p ./my-site --publish-folder my-site/dist --site-mode static
@@ -278,8 +286,9 @@ only the export is served, with `my-site/dist/index.html` at `/` and
 For API/MCP publishing, set `publication_root_directory` to that same stored
 path and `site_mode: "static"`. If files were uploaded directly as
 `dist/index.html`, the root is simply `dist`. Verify the selected folder contains
-the exported home page and assets before preview/publish: a nonexistent root can
-fall back to serving the whole bucket. Hosted MCP cannot run local builds or
+the exported home page and assets before preview/publish. Updated servers reject
+empty selections; older servers can fall back to the whole bucket.
+Hosted MCP cannot run local builds or
 upload binaries; use a local agent with the CLI or REST direct uploads.
 
 After every source change, rebuild locally, upload the refreshed export, and

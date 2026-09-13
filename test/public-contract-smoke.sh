@@ -276,5 +276,16 @@ else
 fi
 
 ruby "$TEST_DIR/skill-install-test.rb"
+ruby "$TEST_DIR/installer-integrity-test.rb"
+
+# Current public guidance uses the canonical website domain. Historical release
+# notes and private development/compatibility configuration are not guidance.
+ruby -e '
+  root = ARGV.fetch(0)
+  patterns = %w[*.md *.sh bin/* skill/**/* skills/**/* plugins/**/* claude-plugin/**/* public/**/* discovery/**/* .well-known/**/* .codex-plugin/**/* .cursor-plugin/**/* .claude-plugin/**/* schema-feeds/**/* *.json *.xml *.jsonl]
+  files = patterns.flat_map { |pattern| Dir.glob(File.join(root, pattern), File::FNM_DOTMATCH) }.uniq
+  stale = files.select { |path| File.file?(path) && File.basename(path) != "CHANGELOG.md" && File.binread(path).include?("localhost3000.love") }
+  abort "Retired domain in current public guidance: #{stale.join(", ")}" unless stale.empty?
+' "$DIST_ROOT"
 
 echo "Public CLI, skill, MCP setup, plugin, and API contract checks passed."

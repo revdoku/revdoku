@@ -7,16 +7,15 @@
   "mcp_url": "https://app.revdoku.com/mcp",
   "supports_a2a_rpc": false,
   "authentication": {
-    "anonymous_preview": "No authentication",
     "account_tools": "OAuth 2.0 sign-in for existing accounts",
     "signup": "Browser only at https://app.revdoku.com/users/sign_up"
   },
   "skills": [
     {
-      "id": "anonymous-website-preview",
-      "name": "Create a website preview",
-      "description": "Create one randomized, public, noindex website preview that expires in 24 hours.",
-      "account_required": false,
+      "id": "bucket-website-preview",
+      "name": "Preview a bucket website",
+      "description": "Preview an authenticated bucket draft for 24 hours using its selected access settings. Poll bucket_publication_get until ready or failed.",
+      "account_required": true,
       "input_modes": [
         "text/html",
         "text/css",
@@ -26,17 +25,8 @@
       ],
       "output": [
         "public_url",
-        "claim_url",
-        "update_token",
         "expires_at"
       ]
-    },
-    {
-      "id": "claim-preview",
-      "name": "Claim a preview",
-      "description": "Send the browser signup claim link returned with the preview. Signup automatically moves the site into the new account.",
-      "account_required": true,
-      "signup_in_chat": false
     },
     {
       "id": "managed-publishing",
