@@ -191,6 +191,7 @@ Useful commands:
 
 - `revdoku p [PATH]` — publish or update a website.
 - `revdoku preview [PATH]` — create a review URL.
+- `revdoku analytics` — account summary for this week vs. the same elapsed part of last week; use `--range previous_week` for last week.
 - `revdoku p [PATH] --draft` — save a private draft after sign-in.
 - `revdoku p --protected` — publish with Password access on an eligible plan.
 - `revdoku p --access-mode require_email` — require visitor email OTP.
@@ -235,15 +236,21 @@ See [CHANGELOG.md](./CHANGELOG.md) and [api.md](./api.md).
 ### Pro Agency client accounts
 
 Run `revdoku status` to see the credential's default account and authorized
-accounts. Use `--account-id ID` on each command to target a client; omitting it
+accounts. Each identity includes `account_kind` (`standard`, `agency`, or `client`),
+the separate `client_name`, and `agency_account` when the parent is granted.
+`kind` remains a compatibility alias. Use `--account-id ID` on each command to target a client; omitting it
 always uses the credential's main account. The Agency owner must explicitly
 include client accounts when connecting or in Account → Access.
 
 ```bash
-revdoku account create-client "Client name"
+revdoku account create-client "Website & campaigns" --client-name "Acme Studio" --account-id acct_agency
 revdoku ls --account-id acct_...
 revdoku p ./dist --account-id acct_... --draft
 ```
 
 Pro Agency shares capacity, credits, and 15 unique members across one agency and
 nine client accounts. Each client keeps separate files, members, and branding.
+Account names and client names can differ. Unknown client names stay unset.
+`revdoku account --account-id ID` shows a client’s identity and provider guidance;
+client billing data remains restricted to the agency owner. Browser switching
+does not change the CLI credential’s default account.

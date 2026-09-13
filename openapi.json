@@ -15,7 +15,7 @@
     "/api/v1/status": {
       "get": {
         "operationId": "getRevdokuStatus",
-        "summary": "Read service and client version status",
+        "summary": "Read current account identity and granted accounts",
         "security": [
           {
             "bearerAuth": []
@@ -23,7 +23,36 @@
         ],
         "responses": {
           "200": {
-            "description": "Service status"
+            "description": "Current account, account types, client names, accessible parent agencies, fixed credential default, and granted accounts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "account": {
+                          "$ref": "#/components/schemas/AccountIdentity"
+                        },
+                        "default_account_id": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "accounts": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/AccountIdentity"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "parameters": [
@@ -73,11 +102,17 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "minLength": 1
+                    "minLength": 1,
+                    "description": "Account name."
                   },
                   "account_id": {
                     "type": "string",
                     "description": "Optional granted Agency account id. Does not change the credential default."
+                  },
+                  "client_name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "description": "Optional client person or business, separate from the account name. Omit when unknown."
                   }
                 }
               }
@@ -86,7 +121,24 @@
         },
         "responses": {
           "201": {
-            "description": "Created client account with id, name, and kind in data.account"
+            "description": "Created client identity with its granted parent in data.account. The credential default is unchanged.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "account": {
+                          "$ref": "#/components/schemas/AccountIdentity"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
           "403": {
             "description": "Agency owner authorization required or account capacity reached"
@@ -100,6 +152,67 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "AccountIdentity": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "account_kind",
+          "client_name",
+          "agency_account"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "Account name, separate from the client person or business."
+          },
+          "account_kind": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "agency",
+              "client"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "standard",
+              "agency",
+              "client"
+            ],
+            "description": "Compatibility alias for account_kind."
+          },
+          "client_name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 100,
+            "description": "Client person or business name, or null when unset."
+          },
+          "agency_account": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Parent agency only when granted to this credential. Null does not make a client independent.",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          }
+        }
       }
     }
   }

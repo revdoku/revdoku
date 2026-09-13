@@ -99,21 +99,43 @@ Authorization: Bearer $REVDOKU_API_KEY
 
 ### Agency account selection
 
-`GET /api/v1/status` returns `default_account_id` and a lean `accounts` list
-(`id`, `name`, `kind`) available to the credential. Pro Agency owners may
-explicitly authorize a whole-account connection to include client accounts.
-Existing keys keep their original access; client or selected-bucket keys cannot
-select a parent, sibling, or unrelated account.
+`GET /api/v1/status` returns the selected `account`, `default_account_id`, and
+a lean `accounts` list containing only accounts granted to this credential.
+Each account identity includes:
+
+| Field | Meaning |
+| --- | --- |
+| `id` | Account id to pass as `account_id`. |
+| `name` | Account name. |
+| `account_kind` | `standard` (Independent), `agency`, or `client`. |
+| `kind` | Compatibility alias for `account_kind`. |
+| `client_name` | Client person or business, or `null` when unset. Separate from the account name and owner. |
+| `agency_account` | Accessible parent `{ "id": "acct_...", "name": "Agency name" }`, otherwise `null`. A client remains a client when its parent is not granted. |
+
+Pro Agency owners may explicitly authorize a whole-account connection to include
+client accounts. Existing keys keep their original access; client or
+selected-bucket keys cannot select a parent, sibling, or unrelated account.
+Account names, owner emails, and membership in another account do not grant access.
 
 `account_id` is optional. Omit it to use the credential's original account.
 For another granted account, send it in the query for GET/HEAD requests and in
-the JSON body for writes. This selects only that request; it never changes the
-default. Every bucket/file/publication id must belong to the selected account.
-Invalid or unauthorized selectors fail instead of falling back.
+the JSON body for writes. Repeat it on **every** request for that client;
+selection never changes the default. Every bucket/file/publication id must
+belong to the selected account. Invalid or unauthorized selectors fail instead
+of falling back.
 
 ```http
-GET /api/v1/buckets?account_id=acct_...
+GET /api/v1/status?account_id=acct_client
+GET /api/v1/buckets?account_id=acct_client
 ```
+
+Hosted MCP mirrors this through `revdoku_status` and the optional `account_id`
+on every tool. The CLI uses `--account-id`. The browser's
+`POST /api/v1/account/switch_account` changes its browser session only and is
+unavailable to API/agent keys. Browser switching never switches an agent's account.
+`GET /api/v1/me` lists browser memberships or full-account API grants and also
+includes owner identity, roles, counts, and client-creation availability.
+Bucket-scoped credentials use `/status`; they cannot call `/me` or profile endpoints.
 
 An Agency owner's authorized connection can create a client account:
 
@@ -121,16 +143,28 @@ An Agency owner's authorized connection can create a client account:
 POST /api/v1/accounts
 Content-Type: application/json
 
-{"name":"Client name","account_id":"acct_..."}
+{"name":"Website & campaigns","client_name":"Acme Studio","account_id":"acct_agency"}
 ```
 
-The optional selector identifies the Agency account. The response contains
-`data.account` with `id`, `name`, and `kind: "client"`. Pro Agency includes ten
-accounts total and 15 unique people, including the owner once. Account capacity
-and credits are shared; tenant files, memberships, and branding stay separate.
-Client accounts have no separate subscription or welcome credits. Billing and
-signup require the browser. When Pro Agency entitlement ends, the whole group
-becomes read-only and its existing websites and data remain in place.
+`name` is required. `client_name` is optional, trimmed, and limited to 100
+characters; omit it when unknown. Do not derive it from an email or account name.
+The selector identifies the Agency account. The response contains the identity
+above in `data.account`, with `account_kind: "client"` and its granted parent.
+Creation never changes the credential default. Pass the returned client id on
+subsequent requests. Browser sessions may also target an agency they own with
+`account_id` on this create endpoint, without switching their current session.
+
+Existing client names can be edited in Account Settings or through
+`PATCH /api/v1/account/profile` with `{ "client_name": "Acme Studio" }`, using
+an authorized browser session or full-account API credential. Set it to `null`
+to clear it. `account_name` updates the separate account name. Neither name
+changes ownership, agency membership, billing, or authentication.
+
+Pro Agency includes ten accounts total and 15 unique people, including the
+owner once. Account capacity and credits are shared; tenant files, memberships,
+and branding stay separate. Clients have no separate subscription or welcome
+credits. Billing and signup require the browser. When Pro Agency entitlement
+ends, the group becomes read-only and its existing websites and data stay in place.
 
 ### JSON Headers
 
@@ -1706,7 +1740,33 @@ certificate per active website; the wildcard is DNS routing, not wildcard TLS.
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/v1/analytics?range=30d` | Account-wide publication analytics. |
+| `GET` | `/api/v1/analytics/weekly_summary?view=summary` | Compact account summary; defaults to the current week. |
 | `GET` | `/api/v1/publications/:id/analytics?range=30d` | Analytics for one publication. |
+
+#### Quick summary
+
+Use `bucket_publication_analytics(scope: "account")`, `revdoku analytics`, or
+`GET /api/v1/analytics/weekly_summary?view=summary`. All use the dashboard's
+summary for accessible main websites in one account, excluding previews.
+Pass `account_id` (CLI: `--account-id`) to select another granted account.
+
+The default `current_week` covers Monday through now in the account time zone,
+compared with the same elapsed part of last week. Supported `range` values are
+`today`, `yesterday`, `current_week`, `previous_week`, `current_month`,
+`previous_month`, `current_year`, `7d`, `30d`, `90d`, and `all` (CLI: `--range`).
+Account summaries do not accept website ids, `24h`, or custom dates.
+
+The response includes `scope`, `account_id`, `website_count`, `period_start`,
+`period_end`, `as_of`, `time_zone`, `totals`, `previous_period`,
+`previous_period_totals`, `diff_vs_previous_period`,
+`change_percent_vs_previous_period`, and up to three `top_websites` with bucket
+id, title, current views, and previous views. Totals cover views, public
+visitor-days, identified visitors, clicks, downloads, and form responses;
+legacy `visitors` remains for compatibility. Public visitor-days are not unique
+people across days. `measurement`, `source`, `availability`, and retention fields
+describe the data's limits. Null means unavailable; a zero baseline has no
+percentage change. `all` has no comparison. Chart data is omitted; the endpoint
+without `view=summary` retains the full dashboard response.
 
 #### GET /api/v1/analytics
 
