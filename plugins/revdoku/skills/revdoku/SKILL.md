@@ -26,11 +26,8 @@ content and purpose against it. Never report pending or failed reviews as live.
 When an unconnected user asks for a website, establish the authenticated
 Revdoku connection first:
 
-- With shell access, use the installed CLI and run `revdoku login`,
-  then save the site as a private draft.
-- If a skill install does not put `revdoku` on `PATH`, run the bundled
-  `scripts/revdoku.sh login`, then `scripts/revdoku.sh p <path> --draft`
-  from this skill directory yourself.
+- With shell access, run the bundled `scripts/revdoku.sh login`, then
+  `scripts/revdoku.sh p <path> --draft` from this skill directory.
 - With the hosted MCP surface, start OAuth and call `revdoku_status` after it
   completes. If the user has no account, direct them to browser signup.
 
@@ -389,9 +386,10 @@ Bucket → Forms or read it through the REST API. The copy-paste form example is
 
 ## Local CLI
 
-The skill bundles the CLI. Use `revdoku` on `PATH`, or `scripts/revdoku.sh`
-from this directory with identical arguments. The wrapper installs pinned,
-SHA-256-verified `jq` if needed.
+Run `scripts/revdoku.sh` from this skill directory (or use its absolute path).
+All `revdoku` commands in this skill are shorthand for that bundled wrapper;
+do not substitute another `revdoku` executable from `PATH`. The wrapper runs
+the bundled CLI and installs pinned, SHA-256-verified `jq` if needed.
 
 For a missing CLI, reinstall with the original installer and scope.
 With `npx skills` (add `-g` for global):

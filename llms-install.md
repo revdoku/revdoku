@@ -39,6 +39,9 @@ Prefer npm when it is available:
 npx skills add revdoku/revdoku --skill revdoku -g
 ```
 
+Add `--agent codex` (or the current agent's name) to select one target and
+avoid unsupported global targets such as PromptScript.
+
 Otherwise:
 
 ```sh
@@ -50,6 +53,9 @@ Then ask what the user wants to publish and run:
 ```sh
 revdoku p <folder>
 ```
+
+With `npx skills`, run the bundled `scripts/revdoku.sh` from the installed
+skill directory in place of `revdoku`; this install does not add a CLI to `PATH`.
 
 Without credentials, the CLI opens browser sign-in. Use `revdoku preview` to
 create a temporary review URL and `revdoku p` only after the user explicitly

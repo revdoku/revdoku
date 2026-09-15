@@ -39,6 +39,9 @@ If npm is available, install the Revdoku skill:
 npx skills add revdoku/revdoku --skill revdoku -g
 ```
 
+Add `--agent codex` (or your agent's name) to select one target and avoid
+unsupported global targets such as PromptScript.
+
 Otherwise install the local client and skill:
 
 ```sh
@@ -50,8 +53,9 @@ for Codex plus any detected local agents. Set `REVDOKU_AGENT` to `codex`,
 `claude-code`, `cursor`, `antigravity`, `opencode`, `grok-build`, `hermes`,
 `openclaw`, or `all` to choose explicitly.
 
-The examples below use `revdoku` as shorthand. If `~/.revdoku/bin` is not on
-your shell `PATH`, keep using the full `~/.revdoku/bin/revdoku` path.
+The examples below use `revdoku` as shorthand. With `npx skills`, run
+`scripts/revdoku.sh` from the installed skill directory. With the shell
+installer, use `~/.revdoku/bin/revdoku` if it is not on your shell `PATH`.
 
 Publish the current folder as a public website (the headline command):
 

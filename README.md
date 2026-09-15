@@ -168,6 +168,9 @@ Install the public skill and CLI:
 npx skills add revdoku/revdoku --skill revdoku -g
 ```
 
+To target one agent, add `--agent codex` (or `claude-code`, `cursor`, etc.).
+This also avoids the upstream PromptScript global-install error.
+
 If npm is unavailable:
 
 ```sh
@@ -177,6 +180,16 @@ curl -fsSL https://revdoku.com/install.sh | bash
 The skill runs its bundled CLI. The shell installer verifies the CLI and skill
 files against embedded SHA-256 hashes before installation. If verification fails,
 fetch the current installer and retry. Download-source overrides are unsupported.
+
+`npx skills` installs the CLI inside the skill, without adding `revdoku` to
+your shell `PATH`. Agents use the bundled `scripts/revdoku.sh` with the same
+arguments as the commands below.
+
+The installer's security ratings come from external audits. Check the report's
+analysis date: reinstalling can still display a cached result for older code.
+See the [Socket report](https://skills.sh/revdoku/revdoku/revdoku/security/socket)
+and [Snyk report](https://skills.sh/revdoku/revdoku/revdoku/security/snyk).
+The final “Review skills before use” notice applies to every skill.
 
 Publish or update the current folder:
 
