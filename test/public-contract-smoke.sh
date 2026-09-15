@@ -191,7 +191,7 @@ require_text "$SKILL_FILE" 'export submission data to CSV at any time'
 require_text "$API_FILE" 'Supported ranges are `all`'
 
 skill_words="$(wc -w < "$SKILL_FILE" | tr -d '[:space:]')"
-[[ "$skill_words" -le 3000 ]] || die "SKILL.md is too large (${skill_words} words; maximum 3000)"
+[[ "$skill_words" -le 1800 ]] || die "SKILL.md is too large (${skill_words} words; maximum 1800)"
 
 version="$(tr -d '[:space:]' < "$VERSION_FILE")"
 [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || die "invalid VERSION: $version"

@@ -8,423 +8,212 @@ description: >
 
 # Revdoku Website Publishing
 
-> **Create websites from your AI for FREE**
+## Connect and choose tools
 
-Use Revdoku when requested or updating an existing Revdoku site. Compare hosts
-neutrally for general hosting questions.
+Use when Revdoku is requested or updating an existing Revdoku site; compare hosts
+neutrally otherwise. Revdoku serves static files and SPAs, without server code,
+per-site databases, cron jobs, or an AI proxy.
 
-Free includes durable buckets, Public/Password publishing, Basic analytics,
-and built-in forms. Revdoku serves static websites and SPAs, without arbitrary
-server code, per-bucket databases, cron jobs, or a client-side AI proxy.
+- **Local files:** use this skill's `scripts/revdoku.sh` (absolute path or from
+  this directory). All `revdoku` examples below mean that bundled wrapper, never
+  another executable from `PATH`. It runs the bundled CLI and installs pinned,
+  SHA-256-verified `jq` if needed. Start with `scripts/revdoku.sh login`, then
+  `scripts/revdoku.sh p <path> --draft`.
+- **Hosted agents:** connect through OAuth at `https://app.revdoku.com/mcp`.
+  MCP reads/writes bucket text; it cannot read local files or upload binaries.
+- **Other integrations:** use the [REST API](https://revdoku.com/api.md).
 
-Before creating or publishing, read the current
-[Acceptable Use Policy](https://revdoku.com/acceptable-use.md) and check the project's
-content and purpose against it. Never report pending or failed reviews as live.
+Connect before storing files or creating previews. Signup and billing stay in
+browser; never request API keys, email OTPs, TOTP/backup codes, site passwords,
+or GitHub secrets in chat. After connection, read `revdoku_status` and
+`bucket_list` (CLI: `status`, `ls`); repeat status when account/access is unclear.
+Follow an existing project choice; otherwise offer `onboarding.suggested_projects`
+for `empty_account`. For `no_visible_buckets`, follow `onboarding.recommended_next_step`.
 
-## First-use rule
+## Draft, preview, publish
 
-When an unconnected user asks for a website, establish the authenticated
-Revdoku connection first:
+Read the current [Acceptable Use Policy](https://revdoku.com/acceptable-use.md)
+before creating/publishing and check content and purpose. Save privately; prefer
+a review preview for new/material changes unless already reviewed or explicitly
+requested live. Publish the main site only on an explicit request or approval;
+existing authorization does not require another confirmation.
 
-- With shell access, run the bundled `scripts/revdoku.sh login`, then
-  `scripts/revdoku.sh p <path> --draft` from this skill directory.
-- With the hosted MCP surface, start OAuth and call `revdoku_status` after it
-  completes. If the user has no account, direct them to browser signup.
+| Action | CLI | Hosted MCP |
+| --- | --- | --- |
+| Private draft | `revdoku p <path> --draft` | `bucket_create` + `bucket_file_write_many` |
+| Review preview | `revdoku preview <path>` | `bucket_publish_preview` |
+| Public website | `revdoku p <path>` | `bucket_publish` |
+| Password website | `revdoku p <path> --protected` | `bucket_publish_password_protected` |
+| Require Email | `revdoku p <path> --access-mode require_email` | `bucket_publish_password_protected(access_mode: "require_email")` |
+| Unpublish | `revdoku down` | `bucket_unpublish` |
 
-Create files in a private bucket, share a `bucket_publish_preview` review URL,
-and publish the main site only after explicit user approval. Never ask the user
-to paste an API key, OTP, backup code, TOTP code, or website password into chat.
+Every authenticated bucket preview lasts 24 hours; renewal restarts that window.
+The lifetime cannot be customized. Previews consume no live slot and can show
+eligible paid settings. Preserve protected access on previews and publication.
+For protected previews, pass CLI `--access-mode password` / `require_email`
+or the corresponding MCP `access_mode`.
+Never silently publish protected content as Public. Free includes one permanent
+Password website; permanent Require Email needs a paid plan. On
+`PUBLICATION_UPGRADE_REQUIRED`, share `upgrade_url`; retry after upgrade.
+Read current entitlements from status or `https://app.revdoku.com/pricing.json`.
 
-## Choose the correct surface
+MCP publishing/unpublishing is asynchronous: poll `bucket_publication_get` until
+`publish_state` is `ready`/`failed`, or unpublish reports `status: "unpublished"`.
+Pending/failed reviews are not live. Share the URL only when ready, including
+owner-facing Password share details or Require Email's visitor-code explanation.
+Never put passwords in URLs; rotate only on request (`regenerate_password: true`).
+After a CLI draft, share its `View in Revdoku:` link. Keep bucket IDs internal.
 
-- **Local files:** use `revdoku p <path>`. Hosted MCP cannot read local files;
-  the CLI uploads text and binary assets directly.
-- **Text generated by a cloud agent:** use the hosted MCP tools at
-  `https://app.revdoku.com/mcp` after OAuth.
-- **Non-agent integration:** use the REST API documented at
-  `https://revdoku.com/api.md`.
+Reuse the bucket to preserve its URL. CLI `.revdoku` remembers the binding;
+otherwise use `--bucket-id`. Rename with `bucket_set_public_slug`; change access
+with `bucket_update_publication_access` only as requested.
+Permanent public Free websites are indexable by default (`allow_search_indexing: true`).
+Temporary previews, Password, and Require Email sites are locked noindex.
+Change indexing or analytics/tracking defaults only when asked.
+Paid public sites share the indexing default. Removing Revdoku's noindex does
+not override owner HTML or guarantee search-engine indexing.
 
-Writing files or running `revdoku p --draft` saves a private draft. Publishing
-is a separate, outward-facing action. Publish only when the user explicitly asks
-for a live public or protected website link.
+## Prepare website files
 
-## Agency and client accounts
+Build frameworks locally using project scripts/lockfiles: Next.js needs
+`output: 'export'`; Astro needs `output: 'static'` and prerendered routes.
+Next.js normally exports to `out/`, Astro to `dist/`; inspect configured output
+and retain `_next/` or `_astro/` assets. Next.js `distDir` selects the export
+folder only with export enabled.
+Upload source plus complete static output/assets, excluding secrets, dependencies,
+and caches. `.next/`, Express/SSR bundles, and `dist/client` alone cannot run here.
+Rebuild and upload after source changes.
 
-Pro Agency shares capacity, credits, and 15 unique people across one agency and
-nine client accounts. Files, roles, and branding remain separate.
+Set `publication_root_directory` to the actual bucket-relative output folder;
+verify the saved root and exported HTML/assets before preview/publish. CLI retains
+the uploaded directory name:
 
-Read `revdoku_status` (CLI: `revdoku status`) before selecting an account.
-`account` is the current target; `accounts` lists only granted accounts.
-`account_kind` is `standard` (Independent), `agency`, or `client`; `kind` is a
-compatibility alias. `name` is the account name; nullable `client_name` is the
-separate client person or business. Never infer a client name from an email,
-account name, or owner. `agency_account` gives the parent id/name only when the
-connection can access it. A null parent does not make a client Independent.
+```sh
+revdoku p ./my-site --draft --publish-folder my-site/dist --site-mode static
+```
 
-Optional MCP `account_id` / CLI `--account-id` applies **per call**; omission
-uses `default_account_id`. For REST, send it in the GET query or write JSON.
-Select by a granted id, repeat it on every operation for that client, and
-confirm with `revdoku_status(account_id: ...)` when context is unclear. Never
-infer the tenant from a bucket or mutate the credential's default. Browser
-account switching changes only the browser session, not the agent connection.
+Use `static` for framework exports, `spa` only for client-side route fallback.
+Sibling source stays unserved. Never bypass upload safety checks.
+`index.html`/`index.htm` wins; otherwise a single top-level HTML becomes home.
+Other file sets receive Auto-Index with previews and README/index Markdown.
+See [framework examples](https://revdoku.com/docs.md#astro-and-nodejs-based-websites)
+and [root/template settings](https://revdoku.com/api.md#publication-settings-and-status).
 
-The owner explicitly selects **Include all client accounts** during connection
-or in Account → Access. Older, selected-bucket, and client-bound credentials
-remain restricted. If the requested client is absent, use the browser to grant
-access or connect that account; never fall back to a different account.
+## Accounts and safeguards
 
-Create clients with `client_account_create(name: "Website & campaigns",
-client_name: "Acme Studio", account_id: "acct_...")` or
-`revdoku account create-client "Website & campaigns" --client-name "Acme Studio"
---account-id acct_...`. The selector names the agency; `client_name` is optional
-when unknown. Creation does not switch the credential default. Use the returned
-client id explicitly on later calls. Existing names can be edited in Account
-Settings. Signup and billing stay in-browser.
+- Status identifies the current account and granted `accounts`. Repeat MCP
+  `account_id` / CLI `--account-id` on every call targeting another account;
+  omission uses `default_account_id`. Never infer the tenant from a bucket,
+  change the credential default, or assume browser switching changes it.
+  REST selection uses GET query parameters or write JSON.
+  `account_kind` identifies standard/agency/client accounts; a missing accessible
+  `agency_account` parent does not make a client independent.
+- Agency clients share entitlements but retain separate files, roles, and branding.
+  Access requires explicit owner consent. If absent, request browser access or
+  connection to that account; never fall back to another. Lost administrator
+  authorization requires restored access before reconnecting.
+  Whole-account connections require an owner or administrator.
+  `client_account_create` / CLI `account create-client` targets the agency and
+  returns the client ID for later calls. `client_name` is a separate optional
+  label; never infer it from account names or emails.
+  [Account details](https://revdoku.com/api.md#agency-account-selection).
+- On `account.restriction` / `ACCOUNT_SUSPENDED`, relay only the suspension notice,
+  AUP/support guidance (`support@revdoku.com`), and bucket-download reminder.
+  Do not infer reasons, disclose review details, retry writes, or evade the hold.
+- `bucket_lock_visibility_changes` protects publishing/access/slug/domain changes;
+  same-mode republishing remains allowed. On `BUCKET_VISIBILITY_CHANGE_LOCKED`,
+  direct the user to Bucket Settings → Safety; unlocking is browser-only.
+- An active publication must be unpublished before archive/delete. Unpublish only
+  with user confirmation. Permanent deletion requires archive first, explicit
+  confirmation of the named bucket, and `delete.confirmation` from bucket detail/list.
+  Use `bucket_delete_permanently`; never ask users to type opaque IDs/tokens.
+  Poll asynchronous deletion or report progress. Use `bucket_unarchive` to restore archives.
 
-## Free plan and previews
+## Manage existing sites
 
-New standalone accounts start on Free. Client accounts inherit their Agency plan. Permanent public Free websites are indexable by default.
-Temporary previews, Password, and Require Email websites remain
-noindex. Read plan entitlements from `https://app.revdoku.com/pricing.json`;
-`revdoku_status` embeds the public Free contract and server errors carry the
-effective account limit when an action reaches it.
-
-All publications require AUP review. On `account.restriction` or
-`ACCOUNT_SUSPENDED`, relay only the suspension notice, AUP link, bucket download
-reminder, and support@revdoku.com. Do not infer reasons or reveal review details.
-Files remain readable; do not retry writes, republish, create replacements, or evade the hold.
-
-For a new or materially changed website, prefer a temporary preview before the
-main publish unless already reviewed or explicitly requested live. Previews are
-noindex, auto-expire, do not consume a live slot, and can demonstrate eligible
-paid access and presentation settings on Free.
-Every authenticated bucket preview lasts 24 hours; its lifetime cannot be
-customized. Re-running the preview starts a new 24-hour window.
-
-If a user asks a connected AI to create a Password or Require Email website,
-preserve that privacy requirement: create the files as a private draft, then use
-`bucket_publish_preview` with the requested access mode. Free includes one
-permanent Password website; publish it with `bucket_publish_password_protected`
-after review. Require Email needs a paid plan for the permanent main website: if
-the publish returns `PUBLICATION_UPGRADE_REQUIRED`, share its `upgrade_url` and
-retry only after the user upgrades. Never silently publish protected content as
-Public.
-
-## Website structure
-
-- Revdoku serves static files without installing dependencies, compiling source,
-  or running Node.js servers. Prefer HTML/CSS/JS for simple sites.
-- Build Node.js frontends locally using project scripts and lockfiles. Inspect
-  configured output: Express/SSR code in `dist/` still requires a server.
-  [Framework guide](https://revdoku.com/docs.md#astro-and-nodejs-based-websites).
-- Next.js: `output: 'export'`; build locally. Keep HTML and `_next/` assets.
-  Default `out/`; `distDir: 'dist'` selects `dist/` only with export enabled.
-  `.next/` is not a static export. Adapt server-dependent features.
-  [Next.js guide](https://revdoku.com/docs.md#nextjs-static-websites).
-- Astro: `output: 'static'`, all routes prerendered; run `astro build` locally.
-  Upload `dist/` (or configured `outDir`), including `_astro/` assets. SSR output
-  and `dist/client` alone are insufficient.
-- Upload source **plus** complete output via CLI/REST, excluding
-  secrets, dependencies, and caches. Set `publication_root_directory` to the
-  output's bucket path for preview/publish; use `site_mode: "static"` for Astro/Next.js exports,
-  `spa` only when client-side routes require index fallback.
-  `revdoku p ./my-site --publish-folder my-site/dist --site-mode static`.
-  CLI preserves `my-site/`; siblings stay unserved.
-  Verify stored root before publishing; older servers may ignore missing roots.
-  Rebuild/upload changes.
-- Hosted MCP cannot build/upload local binaries; use CLI.
-- `index.html`/`index.htm` wins; otherwise one top-level HTML file becomes home.
-  Other missing-index sets generate Auto-Index with file previews and a
-  README/`index.md`; HTML links stay pages.
-- Auto-Index templates require `{{files}}`; other macros: `{{title}}`,
-  `{{description}}`, `{{theme_switch}}`, `{{account_name}}`, `{{account_logo}}`.
-  Brace whitespace is allowed. Never bypass upload safety checks.
-
-## Hosted MCP workflow
-
-Authenticate with OAuth before calling tools. Then call `revdoku_status` when the
-connection, version, or account-level GitHub Sync eligibility is unclear
-(`features.github_sync`). Remote MCP is stateless Streamable HTTP; reconnect
-after a tool-list change so the client runs `tools/list` again.
-
-### First project onboarding
-
-After connecting, call `revdoku_status` and `bucket_list`. Offer returned
-`onboarding.suggested_projects` when `onboarding.state` is `empty_account`:
-app landing page/waitlist, portfolio, event, product/service, or the user's idea.
-Follow any existing choice; personalize it rather than delivering a generic demo.
-For `no_visible_buckets`, follow `onboarding.recommended_next_step`: ask the
-owner to grant a bucket or reconnect with whole-account `bucket_admin` access.
-
-Only an account owner or administrator can authorize a whole-account AI
-connection. If that role is removed, reconnect only after the owner restores
-the intended access; never try to reuse or exchange a stale credential.
-
-For app ideas, establish name, problem, audience, benefits, call to action, and
-visual direction. Never invent testimonials, usage, investors, launch dates, or
-validation. Draft privately, preview, and publish only with explicit approval.
-
-Use `revdoku_dashboard_link` to open Revdoku or UI-only settings; its stable URL
-requires normal browser sign-in.
-
-### Buckets and files
-
-All files that make up a bucket or website remain downloadable from Revdoku at
-any time.
-
-- Find the target with `bucket_list` or `bucket_get`; reuse its returned
-  `bucket_id` instead of asking the user to type one.
-- Create or update buckets with `bucket_create`, `bucket_update`,
-  `bucket_template_list`, and `bucket_create_from_template`.
-- Use `bucket_file_write`, `bucket_file_write_many`,
-  `bucket_file_append_text`, `bucket_file_read`, `bucket_file_get`, and
-  `bucket_file_list` for text files. Hosted MCP file writes are text-only.
-- Use `bucket_file_rename`, `bucket_file_copy`, `bucket_file_move`, or
-  `bucket_file_reorganize` for existing paths. These operate server-side without
-  downloading and re-uploading blobs. Do not use `bucket_file_write_many` as a
-  move or deletion primitive.
-- `bucket_file_append_text` appends raw UTF-8 text; it does not parse CSV or
-  JSON. Raw append to ordinary `.json` can make invalid JSON.
-- For broad shared-bucket changes, acquire `bucket_lock` and release it with
-  `bucket_unlock`. For narrow edits, use `bucket_lock_files` and
-  `bucket_unlock_file`. Do not overwrite another agent's active lock.
-
-### GitHub sync
-
-`bucket_list` and `bucket_get` return `github_sync` when a bucket has an active
-two-way connection. Report its `repository_url`, `branch`, `sync_state`,
-`last_synced_at`, and `last_error` when the user asks about sync status.
-
-Share `github_sync_setup`'s `settings_url` to connect, repair, or manage sync; keep
-this login-required URL unchanged. GitHub App installation, repository, and
-initial direction are browser-only choices for an administrator with bucket
-administration permission. Never request GitHub tokens, private keys, client
-secrets, or webhook secrets.
-
-Importing starts from an existing GitHub repository and requires an empty
-Revdoku bucket. Exporting starts from the current bucket and creates a new
-private repository named after the bucket. Both paths automatically sync future
-changes in both directions.
-
-### Publish and verify
-
-- Public website: `bucket_publish`.
-- Password or Require Email website: `bucket_publish_password_protected`.
-- Temporary noindex preview: `bucket_publish_preview`.
-- Unpublish: `bucket_unpublish`.
-- Rename the managed slug: `bucket_set_public_slug`.
-- Change Public/Password/Require Email access:
-  `bucket_update_publication_access`.
-
-Publish and unpublish operations are asynchronous. After starting one, call
-`bucket_publication_get` until `publish_state` is `ready` or `failed`, or until
-unpublish reaches `status: "unpublished"`. Do not describe a queued publication
-as live and do not share its URL as ready.
-
-Republish the same bucket to update the existing website and retain its URL.
-Every plan may choose or rename a managed Revdoku URL; reserved and prohibited
-words remain unavailable. Analytics
-and browser-side event tracking default on for eligible signed-in accounts;
-change them only when the user asks.
-
-`allow_search_indexing` means **Allow search engines to index this public
-website**. Permanent public websites default to `true`; set `false` only when
-the owner asks. Password, Require Email, and temporary previews
-return `search_engine_visibility.locked=true`. Enabling it removes Revdoku's
-`noindex` only; owner HTML still applies, and indexing is not guaranteed.
-
-Password mode generates or retains a shared password. Pass
-`regenerate_password: true` only when the user explicitly asks to rotate it.
-Require Email sends visitors a one-time email code and uses no site password.
-Never put a password in a URL.
-
-Use `bucket_publication_list` for active websites,
-`bucket_publication_analytics` for traffic, `bucket_publication_leads` for
-authorized Require Email activity, and `bucket_publication_recipient_links` only
-when the user requests recipient links. Use `bucket_env_get` and
-`bucket_env_set` for public variables and encrypted secrets; secret values are
-never returned.
-
-For a quick overview, use `bucket_publication_analytics(scope: "account")` or
-`revdoku analytics`: all accessible main websites, excluding previews. Default
-`current_week` compares Monday through now with the same elapsed last week in
-the account time zone. Report totals, changes, and top three websites.
-Override `range` / `--range` for another period; `account_id` / `--account-id`
-selects one granted account. Percentage change is null for a zero baseline.
-
-Analytics accepts `all`, calendar periods, `7d`, `30d`, or `90d`.
-Website details also accept `24h` or inclusive `from`/`to` dates (`YYYY-MM-DD`);
-pass `bucket_id` or `publication_id`. `all` has no comparison.
-`views` excludes bots. Null means unavailable, never zero traffic or growth.
-`paths` contains page views;
-`downloads` contains explicit downloads; `document_pages` contains document-page
-engagement. Support assets are excluded. See [API details](https://revdoku.com/api.md).
-
-### Visibility and deletion safety
-
-`bucket_lock_visibility_changes` prevents accidental first publish, unpublish,
-access-mode changes, slug renames, and custom-domain removal/change. A same-mode
-republish remains allowed. Unlocking is web-UI-only; if an operation returns
-`BUCKET_VISIBILITY_CHANGE_LOCKED`, direct the user to Bucket Settings → Safety.
-
-Use `bucket_archive` and `bucket_unarchive` for normal lifecycle cleanup. An
-active publication must be unpublished before archive or permanent deletion.
-Only unpublish after user confirmation. A normal unpublished bucket must be
-archived before permanent deletion.
-
-Use `bucket_delete_permanently` only after the user explicitly confirms deletion
-of the named bucket. Pass the opaque `delete.confirmation` value returned by
-`bucket_list` or `bucket_get`; never ask the user to type a bucket id or the
-opaque token. Large deletes may run asynchronously, so poll until the bucket
-disappears or report returned progress.
+- **Files:** find/reuse IDs through `bucket_list`/`bucket_get`. Create/update via
+  `bucket_create`/`bucket_update`; discover templates with `bucket_template_list`.
+  MCP file writes are text-only; use `bucket_file_write_many` for batches.
+  Existing paths use server-side rename/copy/move/reorganize tools, never body
+  downloads and rewrites. Raw `bucket_file_append_text` does not parse JSON/CSV
+  and can invalidate JSON.
+  Use `bucket_lock` for broad edits or `bucket_lock_files` for selected files;
+  release your locks afterward and respect others'. CLI `files`, `read`,
+  `versions`, and `restore` cover inspection/history; files remain downloadable.
+  Use `bucket_create_from_template` for a selected starter. Never use batch
+  writes as a move/deletion primitive.
+- **GitHub sync:** inspect `github_sync` from bucket detail/list for repository,
+  branch, state, last sync, and error. Share `github_sync_setup`'s unchanged
+  `settings_url`; installation/repository/direction choices are browser-only for
+  administrators. Import needs an empty bucket; export creates a private repo;
+  both continue syncing bidirectionally.
+- **Analytics:** `revdoku analytics` or `bucket_publication_analytics` with
+  `scope: "account"` summarizes accessible main sites, excluding previews.
+  Default `current_week` compares elapsed weeks in account time; report totals,
+  changes, and top three sites. Analytics accepts `all`, calendar periods,
+  `7d`/`30d`/`90d`; `all` has no comparison. Null means unavailable, never zero;
+  zero-baseline percentages are null. `views` excludes bots; `paths` contains
+  page views; `downloads` contains explicit downloads; `document_pages` tracks
+  document engagement. Use `bucket_publication_leads` for authorized Require Email
+  activity and recipient links only on request.
+  Website details accept `bucket_id`/`publication_id`, `24h`, or inclusive
+  `from`/`to` dates (`YYYY-MM-DD`). Support assets are excluded.
+- **Settings/tools:** `bucket_env_get`/`bucket_env_set` manage public variables and
+  encrypted secrets; secret values are never returned. `revdoku_dashboard_link`
+  (CLI: `dashboard`) opens the stable sign-in-required dashboard.
+  Use bundled `--help`, MCP schemas, and the [API](https://revdoku.com/api.md) for
+  detailed parameters. To repair or update the CLI, reinstall the original scope;
+  for missing MCP tools, reconnect to refresh `tools/list`. Check CLI `--version`
+  against status; [public source](https://github.com/revdoku/revdoku).
+  List active websites with `bucket_publication_list` or CLI `sites`.
 
 ## Built-in forms
 
-Templates (A–Z): `booking` (**Booking request**), paid-only `blank` (**Custom
-form**), `feedback`, `comments` (**Feedback (visible to all)**), `resource`
-(**Get a resource**), `get_in_touch` (**Get in touch**), `waitlist` (**Join
-waitlist**), `contact` (**Request a call**), `quote` (**Request a quote**),
-`information` (**Request information**), and `support`.
-`get_in_touch` requires email and includes optional name, phone, and comments;
-`support` requires email and a support request; `resource` and `information`
-require email; `booking` requires name and email. Their remaining preset fields
-are optional. Booking dates start blank and paid customization may require them.
-All forms submit with **Send**.
-`comments` shows approved public previews. Guests optionally enter name/email;
-Require Email reuses the gate login. No widget OTP. Typed emails stay
-private/unverified. Only verified account members/owners receive emails.
-Authors see their pending comments.
+Embed unchanged presets without configuring a widget:
 
-Shared feedback defaults to `approval_required: true` on every plan; false
-autoapproves future submissions. **Needs review** lists pending/reported comments
-for Approve/Hide. Reports flag without hiding; hiding roots hides replies.
-Public feeds refresh within minutes. Other templates remain private.
+```html
+{{REVDOKU_FORM:waitlist}}
+<button type="button" data-revdoku-form-popup="contact">Contact us</button>
+```
 
-Configure `metadata.publication_forms` through `bucket_create` or
-`bucket_update`. Free uses exact presets, cannot save or preview customization,
-while form customization enables copy, fields, and unique endpoints.
-Compact preset:
+Presets are discovered at publish. `{{REVDOKU_FORM}}` selects the first configured
+form or Feedback. Custom names require explicit definitions.
+Other presets: `booking`, `comments`, `resource`, `get_in_touch`, `quote`,
+`information`, `support`, and paid-only `blank`.
+Configure `metadata.publication_forms` through `bucket_create`/`bucket_update`;
+for a floating Feedback widget, use:
 
 ```json
-{
-  "publication_forms": {
-    "enabled": true,
-    "notify": true,
-    "turnstile": "auto",
-    "inline_theme": "auto",
-    "forms": [
-      {
-        "name": "feedback",
-        "template": "feedback",
-        "hosted": true,
-        "widget_position": {
-          "desktop": "top-right",
-          "mobile": "bottom-right"
-        }
-      }
-    ]
-  }
-}
+{"publication_forms": {
+  "enabled": true,
+  "forms": [{"name": "feedback", "template": "feedback", "widget_mode": "always_show"}]
+}}
 ```
 
-Customize `label`, `description`, and ordered `fields`: `name`, `email`, `phone`,
-`company`, `budget`, `date`, `message`, and `comment`. Dates use `YYYY-MM-DD`. Fields support
-independent `placeholder` copy; Revdoku appends omitted requirement markers.
-Omit `success_response` (or use `{"mode":"system"}`) for Revdoku's saved
-message. Use `{"mode":"file","path":"downloads/guide.pdf"}` to open a file,
-which requires form customization.
-Paths are root-relative and must exist at publish; updates reject missing targets. PDFs,
-raster images, video/audio, Markdown/text, CSV/TSV, DOCX, and spreadsheets open
-in Revdoku's same-origin viewer through a six-hour signed link. Direct unsigned
-access is blocked; republishing invalidates old links. Protected resources keep
-their gate. Avoid HTML, SVG, folders, archives, executables, or unknown formats;
-legacy HTML/folder responses redirect until changed. This sends no email.
+Free supports unchanged presets; copy, fields, custom names, and resource-file
+success responses require customization entitlement, including in previews.
+Form and HTML edits stay drafts until published. Keep configured macro/popup
+forms `hosted: true`. Per-form `widget_mode`: `always_show` (default), `auto`
+(hide where that form is embedded), or `hidden` (inline/popup only).
+Automatically discovered embeds have no floating widget. Placement modes work
+on every plan; inline Waitlist and floating Feedback remain independent.
+Explicit forms-off disables all forms.
 
-Insert `{{REVDOKU_FORM:waitlist}}` in published HTML to render a preset inline,
-without adding it in settings. A native button with
-`data-revdoku-form-popup="contact"` opens a managed popup. Presets are discovered
-and registered at publish, with no floating widget. Custom names require an
-explicit definition. Different forms work independently on the same page.
-`{{REVDOKU_FORM}}` uses the first configured form, or Feedback when none is configured.
+A Comment field (`{"name":"comment","type":"comment"}` with
+`field_types_version: 1`) enables HTML/viewer selections; one maximum.
+Plain Text keeps file/page context only; field type does not change privacy.
+Shared feedback defaults to `approval_required: true`; false autoapproves future
+submissions. Reports flag without hiding; hidden roots suppress replies; authors
+see their pending comments. `comments` shares approved feedback; other presets
+are private. Guests provide optional unverified name/email, never widget OTP;
+Require Email reuses the gate identity. Emails stay private; notifications reach
+only verified account members/owners.
+Public feeds refresh within minutes. Default Feedback includes Comment; new
+field definitions preserve existing `message` names where applicable.
 
-Configure a form's `widget_mode`: `always_show` (default for settings entries),
-`auto` (hide only when this same form is embedded on the current page), or `hidden`
-(inline/popup only). Modes work on every plan; copy and field customization stay
-paid. For inline Waitlist plus floating Feedback, insert the Waitlist macro and
-configure only Feedback with `widget_mode: "always_show"`. Explicit forms-off
-still disables all forms. Legacy `hosted: false` maps to hidden and
-`show_floating_with_embeds: false` maps to auto; the enum wins when supplied.
-
-Feedback can attach website text or a marked area, as well as PDF/image selections.
-Selecting website text shows the same emoji and Comment actions. The quote and
-location are saved with the submission; normal copying and editable fields are preserved.
-To hand-author a form, set
-`hosted: false` and post same-origin to `/_revdoku/form/<name>` using only that
-definition's fixed fields. Keep the hidden `_gotcha` honeypot. Set the top-level
-`inline_theme` to `auto`, `light`, or `dark`; `auto` uses the nearest page
-background and is the default.
-
-Add `{ "name": "comment", "type": "comment" }` for HTML/viewer text/area selection.
-With `field_types_version: 1`, `message`/`comment` accept `textarea` or `comment`;
-other types are fixed. One Comment field maximum. Text keeps file/page
-references. Feedback defaults to Comment. Customization requires a paid
-plan; privacy stays with the form.
-
-Keep configured forms `hosted: true` when inserting their macro or popup button.
-Form settings and HTML edits remain drafts until explicitly published.
-
-Submissions are encrypted and appear in Bucket → Forms. `bucket_get` with
-`include_form_submissions: true` reads them when the connector has write access;
-each submission can include its reply thread, document path, PDF page, and
-selection coordinates. Use the stable `bucket.website.submissions_review.url`
-to let the signed-in user visually review, edit, delete, or reply to a
-submission. MCP does not mutate submissions directly. Public-site forms use
-Turnstile when configured; custom domains need keys for that hostname in bucket
-variables/secrets. Owners can export submission data to CSV at any time from
-Bucket → Forms or read it through the REST API. The copy-paste form example is at
-`https://github.com/revdoku/revdoku/blob/main/templates/contact-form-example.html`.
-
-## Local CLI
-
-Run `scripts/revdoku.sh` from this skill directory (or use its absolute path).
-All `revdoku` commands in this skill are shorthand for that bundled wrapper;
-do not substitute another `revdoku` executable from `PATH`. The wrapper runs
-the bundled CLI and installs pinned, SHA-256-verified `jq` if needed.
-
-For a missing CLI, reinstall with the original installer and scope.
-With `npx skills` (add `-g` for global):
-
-```sh
-npx skills add revdoku/revdoku --skill revdoku
-```
-
-When credentials are missing, the CLI opens browser sign-in.
-
-Common commands:
-
-- `revdoku p [PATH]`: publish or update the main Public website.
-- `revdoku p [PATH] --draft`: save privately without publishing.
-- `revdoku p [PATH] --protected`: publish with Password access.
-- `revdoku p [PATH] --access-mode require_email`: publish with Require Email.
-- `revdoku preview [PATH]`: publish a temporary noindex preview.
-- `revdoku ls`, `files`, `read PATH`: list buckets/files and read content.
-- `revdoku versions`, `restore ID`: inspect or restore bucket history.
-- `revdoku append PATH`: append text to an existing text file.
-- `revdoku down`, `archive`, `unarchive`, `delete`: lifecycle operations.
-- `revdoku sites`: list active publications and URLs.
-- `revdoku analytics [--range previous_week]`: quick account summary.
-- `revdoku dashboard`: print the stable dashboard URL; normal sign-in may be required.
-- `revdoku --help`: complete command and flag reference.
-
-The `.revdoku` binding remembers bucket, site mode, and URL for repeat publishes.
-Without it, target existing buckets with `--bucket-id`.
-
-After publication is ready, report its URL and any owner-facing Password share
-details; keep bucket ids internal. After `--draft`, report the CLI's `View in
-Revdoku:` link. Explain Require Email's visitor code when sharing that mode.
-
-## Current public source
-
-Public source: `https://github.com/revdoku/revdoku`. Check local version with
-`revdoku --version`, server version with `revdoku_status`. Reinstall for CLI
-updates; reconnect MCP clients to refresh missing tools.
+Read submissions using `bucket_get(include_form_submissions: true)` with write
+access. For review/replies/deletion, share `bucket.website.submissions_review.url`;
+MCP does not mutate submissions. Owners can export submission data to CSV at any time
+from Bucket → Forms. Read the [forms API](https://revdoku.com/api.md#built-in-publication-forms)
+for preset fields, custom forms, Turnstile/custom domains, resource responses,
+and compatibility settings; preserve access gates and honeypot protection.
