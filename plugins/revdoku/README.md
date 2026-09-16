@@ -1,6 +1,6 @@
 # Revdoku — Claude Code plugin
 
-Store files in private Revdoku cloud buckets, collaborate across authorized AI agents, and publish selected files as websites when requested.
+Cloud storage for AI, designed for humans and AI apps working together. Keep files and folders private or share selected files as a website, with version history, access control, logs, and website analytics.
 Private workspaces need no preview or website. Website republishing keeps the same URL.
 
 The plugin bundles:
@@ -23,8 +23,8 @@ The plugin bundles:
 Reload plugins (or start a new Claude Code session), then run `/mcp` and start
 Revdoku OAuth. A new user can create a Free account in the browser before
 authorizing Claude. Revdoku's bucket tools are then available, and the skill
-activates whenever you ask to store, publish, host, deploy, or share something
-on the web.
+helps when you ask to store or manage files in Revdoku, collaborate on an existing
+bucket, or publish a website.
 
 ## Usage
 
@@ -46,8 +46,10 @@ files directly from your **local machine** (local project, SSH, Docker, WSL2, or
 VM), run the bundled CLI from the plugin's `skills/revdoku` directory:
 
 ```text
-scripts/revdoku.sh p <folder>
+scripts/revdoku.sh p <folder> --draft
 ```
+
+Keep `--draft` for private storage. Omit it only when the user asks to publish.
 
 The wrapper uses the bundled CLI and installs a pinned, checksum-verified `jq`
 only if needed. No separate CLI installation is required.

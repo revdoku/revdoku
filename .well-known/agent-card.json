@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Store files in private Revdoku cloud buckets, collaborate across authorized AI agents, and publish selected files as websites when requested.",
+  "description": "Cloud storage for AI, designed for humans and AI apps working together. Keep files and folders private or share selected files as a website, with version history, access control, logs, and website analytics.",
   "url": "https://revdoku.com/",
   "documentation_url": "https://revdoku.com/docs",
   "mcp_url": "https://app.revdoku.com/mcp",
@@ -13,8 +13,8 @@
   "skills": [
     {
       "id": "private-cloud-storage",
-      "name": "Private cloud buckets for AI agents",
-      "description": "Store, read, write, append, and restore files through authorized account connections. Collaborate in a private bucket without creating a preview or website.",
+      "name": "Private cloud storage for AI",
+      "description": "Store, read, write, append, and restore files through authorized account connections. Humans and authorized AI apps collaborate on the same files and folders without creating a preview or website.",
       "account_required": true
     },
     {

@@ -1,4 +1,4 @@
-{"type":"product","name":"Revdoku","url":"https://revdoku.com/","description":"Store files in private Revdoku cloud buckets, collaborate across authorized AI agents, and publish selected files as websites when requested."}
+{"type":"product","name":"Revdoku","url":"https://revdoku.com/","description":"Cloud storage for AI, designed for humans and AI apps working together. Keep files and folders private or share selected files as a website, with version history, access control, logs, and website analytics."}
 {"type":"mcp","url":"https://app.revdoku.com/mcp","transport":"streamable-http","account_auth":"oauth2"}
 {"type":"skill","url":"https://github.com/revdoku/revdoku/tree/main/skills/revdoku","install_npm":"npx skills add revdoku/revdoku --skill revdoku -g","install_shell":"curl -fsSL https://revdoku.com/install.sh | bash"}
 {"type":"documentation","url":"https://revdoku.com/docs"}

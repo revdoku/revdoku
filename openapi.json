@@ -3,7 +3,7 @@
   "info": {
     "title": "Revdoku public agent API",
     "version": "1.0.0",
-    "description": "Discovery and client-account creation for Revdoku cloud file storage and optional website publishing. Signup is browser-only. Existing Pro Agency owners can explicitly authorize credentials for their client accounts. This document covers selected endpoints; see https://revdoku.com/api.md for the complete bucket, file, and publishing API."
+    "description": "Discovery and client-account creation for Revdoku: cloud storage for humans and AI apps working together. Keep files and folders private or share selected files as a website. The full API supports version history, access control, logs, and website analytics. Signup is browser-only. Existing Pro Agency owners can explicitly authorize credentials for their client accounts. This document covers selected endpoints; see https://revdoku.com/api.md for the complete bucket, file, and publishing API."
   },
   "servers": [
     {

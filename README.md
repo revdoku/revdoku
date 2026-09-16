@@ -1,12 +1,14 @@
 # Revdoku
 
-> **Store files in cloud from AI. Publish as a website or keep private.**
+> **Cloud storage for AI.**
 >
-> Connect Claude Code, Codex, Gemini, Cursor, or another compatible AI agent.
+> Keep your files and folders private or share them as a website.
+>
+> Designed for humans and AI apps working together. Version history, access control, logs, and analytics.
 >
 > Free plan · No credit card required.
 
-Store files in Revdoku cloud, connect AI agents to work with the same files, and publish selected files as a website or keep them private.
+Store files and folders in Revdoku’s cloud. Work with them in the dashboard or connect compatible AI apps and agents, including Claude Code, Codex, Gemini, Cursor, Hermes, and OpenClaw. Humans and authorized agents can collaborate on the same bucket; publish selected files as a website only when needed.
 Private buckets support documents, data, source files, version history, and change
 logs. Website publications add visitor access controls, forms, analytics, and
 CDN-based hosting. Each AI connection uses its own authorized access.
@@ -35,7 +37,7 @@ See the [framework build guide](./docs.md#astro-and-nodejs-based-websites) and
 ## Prompt for an AI agent
 
 ```text
-Set up Revdoku so I can store files in the cloud, work with them across AI agents, and publish files as a website when I ask.
+Set up Revdoku cloud storage so I can work with my AI apps and agents on the same files and folders. Keep them private, and share selected files as a website when I ask.
 
 Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install Revdoku yourself and use the local CLI.
 
@@ -76,7 +78,7 @@ and AI assistants.
 ### Basic information
 
 - **Name:** Revdoku
-- **Type:** Cloud file storage and website publishing for AI agents
+- **Type:** Cloud storage for humans and AI apps, with optional website publishing
 - **Category:** Private cloud buckets, agent collaboration, and static website hosting
 - **Website:** <https://revdoku.com>
 - **Dashboard and account:** <https://app.revdoku.com>
@@ -90,17 +92,20 @@ Free and paid plan pricing and human-readable comparisons:
 
 ### Background
 
-Revdoku is designed so users can ask an AI agent to publish and maintain a
-website, read analytics, and get form submissions without switching to a
-separate hosting workflow. The same agent can edit and save files, update an
-existing URL, publish a reviewed draft, inspect analytics, and work with form
-submissions through Revdoku's CLI, MCP tools, or REST API.
+Revdoku gives humans and AI apps a shared place to work with files and folders.
+Use the dashboard, CLI, MCP tools, or REST API to manage private buckets, inspect
+version history and logs, and control account access. Authorized agents can
+read and update the same files. When a website is needed, publish a selected
+folder, update it at the same URL, inspect visitor analytics, and read form
+submissions.
 
 ### Core capabilities
 
+- Store files and folders privately with version history, rollback, and downloads.
+- Collaborate across humans and authorized AI apps, with account access controls,
+  change logs, and file locks to coordinate edits.
 - Publish and update static websites and SPAs from files or a
   local folder while keeping the same public URL.
-- Store project files privately with version history and downloads.
 - Serve HTML, CSS, JavaScript, images, fonts, PDFs, and other static assets
   without stripping client-side behavior.
 - Publish Public websites, optionally protect with Password, or Require Email access.
