@@ -1,8 +1,8 @@
 {
   "name": "revdoku",
   "displayName": "Revdoku",
-  "version": "1.0.455",
-  "description": "Publish static websites and SPAs with Revdoku using the hosted MCP server and agent skill.",
+  "version": "1.0.457",
+  "description": "Store files in private Revdoku cloud buckets, collaborate across authorized AI agents, and publish selected files as websites when requested.",
   "author": {
     "name": "Revdoku"
   },
@@ -14,7 +14,11 @@
     "website-publishing",
     "hosting",
     "agents",
-    "mcp"
+    "mcp",
+    "cloud-storage",
+    "private-buckets",
+    "collaboration",
+    "version-history"
   ],
   "category": "developer-tools",
   "tags": [

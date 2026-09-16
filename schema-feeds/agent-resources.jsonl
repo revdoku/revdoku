@@ -1,4 +1,4 @@
-{"type":"product","name":"Revdoku","url":"https://revdoku.com/","description":"Website publishing for AI agents"}
+{"type":"product","name":"Revdoku","url":"https://revdoku.com/","description":"Store files in private Revdoku cloud buckets, collaborate across authorized AI agents, and publish selected files as websites when requested."}
 {"type":"mcp","url":"https://app.revdoku.com/mcp","transport":"streamable-http","account_auth":"oauth2"}
 {"type":"skill","url":"https://github.com/revdoku/revdoku/tree/main/skills/revdoku","install_npm":"npx skills add revdoku/revdoku --skill revdoku -g","install_shell":"curl -fsSL https://revdoku.com/install.sh | bash"}
 {"type":"documentation","url":"https://revdoku.com/docs"}
@@ -6,3 +6,5 @@
 {"type":"pricing","url":"https://app.revdoku.com/pricing.md"}
 {"type":"plan-limits-and-indexing","url":"https://app.revdoku.com/pricing.json","contract":"revdoku.plan-limits-and-indexing","version":1}
 {"type":"signup","url":"https://app.revdoku.com/users/sign_up","browser_only":true,"available_in_agent_chat":false}
+{"type":"terms","url":"https://revdoku.com/terms.md","scope":"All service use, including private storage"}
+{"type":"publishing-policy","url":"https://revdoku.com/acceptable-use.md","scope":"Publications, previews, and visitor-facing shares, including protected sites"}

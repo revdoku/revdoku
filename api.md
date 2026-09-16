@@ -1,17 +1,18 @@
 # Revdoku API
 
-> **Create websites from your AI for FREE**
+> **Store files in cloud from AI. Publish as a website or keep private.**
 >
-> Ask ChatGPT, Claude or other AI to publish to Revdoku.
+> Connect Claude Code, Codex, Gemini, Cursor, or another compatible AI agent.
 >
-> Get a live `*.revdoku.site` website in seconds.
->
-> **Free account available.**
+> Free plan · No credit card required.
 
-Use the Revdoku API to create buckets, store files, publish static websites,
-attach custom domains, and read publication analytics.
+Use the Revdoku API to store documents, data, and source files in private cloud
+buckets; let authorized AI agents work with the same files; and inspect versions,
+history, and change logs. Publishing is optional and separate from file writes.
+Publish selected files as a website, attach domains, and read visitor analytics
+when a website is needed.
 
-Upload ready-to-serve HTML, CSS, JavaScript, and assets. Revdoku does not install
+For website publishing, upload ready-to-serve HTML, CSS, JavaScript, and assets. Revdoku does not install
 dependencies or compile project source. Build an existing framework project
 locally and upload its source plus static export, selecting the export's bucket
 path with `publication_root_directory`. For Next.js, use `output: 'export'` and
@@ -35,10 +36,38 @@ Only a Revdoku account owner or administrator can authorize an AI connection.
 Removing that membership or reducing it to collaborator access invalidates the
 connection and its refresh credentials.
 
-Publishing, previews, protected shares, and public comments follow the
-[Acceptable Use Policy](https://revdoku.com/acceptable-use/). Political or
-election-related content—including neutral and educational versions—is
-prohibited on every plan. Publication stays unavailable until review succeeds.
+Private bucket storage and collaboration follow the
+[Terms of Use](https://revdoku.com/terms/), including its rules against illegal
+and abusive use. The [Website Publishing Policy (Acceptable Use Policy)](https://revdoku.com/acceptable-use/)
+applies when content is served to visitors: public websites, published files,
+share links, previews, password- or email-protected sites, and public comments.
+It does not apply solely to private bucket files or authenticated account downloads.
+Publishing-only restrictions, including the political-content restriction, apply
+on every plan and in previews. Publication stays unavailable until review succeeds.
+
+## Private storage workflow
+
+Authenticate, select the intended account, then create a bucket with
+`POST /api/v1/buckets`. Use the file/direct-upload operations below to save
+documents, data, source files, and binary assets without creating a publication.
+Read files by path, append bounded UTF-8 text with
+`POST /api/v1/buckets/:id/files/append_text`, and inspect history with
+`GET /api/v1/buckets/:id/versions`. Restore a selected snapshot through
+`POST /api/v1/buckets/:id/versions/restore`; this creates a new latest version.
+
+Separate authorized AI connections can operate on the same bucket within their
+permissions. Respect file/bucket locks and supply `expected_bucket_revision_id`
+on writes and appends to detect stale edits. Reread and reconcile on conflict.
+Append does not parse CSV or JSON; callers own formatting and merge logic.
+Storage quotas and version retention still apply. Private files need neither a
+website entry point nor a preview/publication request.
+
+To publish later, choose the folder to serve with `publication_root_directory`
+and call the appropriate publication endpoint with explicit user authorization.
+For example, keep `data/forecast.json` and project notes private while publishing
+`site/` as a weather dashboard. Source siblings outside `site/` are not served.
+File writes alone do not change the live website. See [file operations](#file-path-operations),
+[history](#bucket-version-history), and [publication settings](#publication-settings-and-status).
 
 ## Free plan and preview-first publishing
 

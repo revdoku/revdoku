@@ -1,8 +1,7 @@
 # Revdoku — Claude Code plugin
 
-Publish static websites and SPAs from AI agents with Revdoku. Store files
-privately, then publish with Public, Password, or Require Email access when you
-ask — Claude keeps the same URL on every republish.
+Store files in private Revdoku cloud buckets, collaborate across authorized AI agents, and publish selected files as websites when requested.
+Private workspaces need no preview or website. Website republishing keeps the same URL.
 
 The plugin bundles:
 

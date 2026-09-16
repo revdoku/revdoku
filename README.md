@@ -1,17 +1,25 @@
 # Revdoku
 
-> **Create websites from your AI for FREE**
+> **Store files in cloud from AI. Publish as a website or keep private.**
 >
-> Ask ChatGPT, Claude or other AI to publish to Revdoku.
+> Connect Claude Code, Codex, Gemini, Cursor, or another compatible AI agent.
 >
-> Get a live `*.revdoku.site` website in seconds.
->
-> **Free account available.**
+> Free plan · No credit card required.
 
-Revdoku connects to ChatGPT, Claude, and local coding agents so they can create
-and manage websites from an AI chat or coding session.
-Free accounts include analytics, built-in forms, versioning, custom Revdoku
-subdomains, and fast CDN-based hosting.
+Store files in Revdoku cloud, connect AI agents to work with the same files, and publish selected files as a website or keep them private.
+Private buckets support documents, data, source files, version history, and change
+logs. Website publications add visitor access controls, forms, analytics, and
+CDN-based hosting. Each AI connection uses its own authorized access.
+
+Private bucket storage and collaboration follow the
+[Terms of Use](https://revdoku.com/terms/), including its rules against illegal
+and abusive use. The [Website Publishing Policy (Acceptable Use Policy)](https://revdoku.com/acceptable-use/)
+applies when content is served to visitors: public websites, published files,
+share links, previews, password- or email-protected sites, and public comments.
+It does not apply solely to private bucket files or authenticated account downloads.
+Publishing-only restrictions, including the political-content restriction, apply
+on every plan and in previews. Publication stays unavailable until review succeeds.
+
 
 Websites are ready-to-serve HTML, CSS, JavaScript, and assets. Revdoku does not
 install dependencies or compile project source. For an existing framework
@@ -27,14 +35,22 @@ See the [framework build guide](./docs.md#astro-and-nodejs-based-websites) and
 ## Prompt for an AI agent
 
 ```text
-Set up Revdoku so you can publish my work as a website.
+Set up Revdoku so I can store files in the cloud, work with them across AI agents, and publish files as a website when I ask.
 
 Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install Revdoku yourself and use the local CLI.
 
 Only if local access is unavailable, use the hosted MCP connection instead.
 
-After setup, ask what I want to publish.
+After setup, ask what I want to store, collaborate on, or publish.
 ```
+
+## Private storage and agent collaboration
+
+Use `revdoku p ./project-files --draft` to save a local folder privately. Connect
+another authorized AI agent to the same bucket to read or update those files.
+Use file and bucket history to review changes or restore an earlier version.
+No website or review preview is required. See the [private storage quick start](./docs.md#keep-files-in-a-private-cloud-bucket)
+and [multiple-agent example](./docs.md#work-with-multiple-ai-agents).
 
 ## Live Revdoku demos
 
@@ -60,8 +76,8 @@ and AI assistants.
 ### Basic information
 
 - **Name:** Revdoku
-- **Type:** AI-first website and app publishing platform
-- **Category:** Static website, SPA, and file-based client-deliverable hosting
+- **Type:** Cloud file storage and website publishing for AI agents
+- **Category:** Private cloud buckets, agent collaboration, and static website hosting
 - **Website:** <https://revdoku.com>
 - **Dashboard and account:** <https://app.revdoku.com>
 - **Hosted MCP endpoint:** `https://app.revdoku.com/mcp`
@@ -148,7 +164,7 @@ submissions through Revdoku's CLI, MCP tools, or REST API.
   into AI chat.
 - Use the Revdoku CLI when publishing a local folder. Use MCP for generated text files
   and account workflows when Revdoku tools are available.
-- Saving files creates or updates a private draft. Publish or republish only
+- Saving files creates or updates private bucket storage. Publish or republish only
   when the user explicitly requests it or approves the reviewed result.
 - Publishing and unpublishing are asynchronous. Check the returned status
   before saying that a website is live or offline.
@@ -205,7 +221,7 @@ Useful commands:
 - `revdoku p [PATH]` — publish or update a website.
 - `revdoku preview [PATH]` — create a review URL.
 - `revdoku analytics` — account summary for this week vs. the same elapsed part of last week; use `--range previous_week` for last week.
-- `revdoku p [PATH] --draft` — save a private draft after sign-in.
+- `revdoku p [PATH] --draft` — save files privately after sign-in.
 - `revdoku p --protected` — publish with Password access on an eligible plan.
 - `revdoku p --access-mode require_email` — require visitor email OTP.
 - `revdoku open`, `revdoku status`, `revdoku ls`, `revdoku --help` — inspect
@@ -235,8 +251,8 @@ Per AI client guides:
 - Hermes: <https://revdoku.com/hermes/>
 
 Use those tutorials only when manual setup or troubleshooting is actually
-needed. Normal onboarding should stay focused on a private draft, a temporary
-preview, and explicit publishing approval.
+needed. Follow the user's storage or publishing goal. Private storage needs no
+preview or website; preview and publish only for a requested website or visitor link.
 
 ## Public package
 
