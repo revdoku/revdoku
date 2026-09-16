@@ -1,12 +1,14 @@
 # Revdoku Docs
 
-> **Store files in cloud from AI. Publish as a website or keep private.**
+> **Cloud storage for AI.**
 >
-> Connect Claude Code, Codex, Gemini, Cursor, or another compatible AI agent.
+> Keep your files and folders private or share them as a website.
+>
+> Designed for humans and AI apps working together. Version history, access control, logs, and analytics.
 >
 > Free plan · No credit card required.
 
-Store files in Revdoku cloud, connect AI agents to work with the same files, and publish selected files as a website or keep them private.
+Store files and folders in Revdoku’s cloud. Work with them in the dashboard or connect compatible AI apps and agents, including Claude Code, Codex, Gemini, Cursor, Hermes, and OpenClaw. Humans and authorized agents can collaborate on the same bucket; publish selected files as a website only when needed.
 Private buckets keep documents, data, and source files available across authorized
 connections, with version history and change logs. Website publications add visitor
 access controls, forms, and analytics. Saving files does not publish them.

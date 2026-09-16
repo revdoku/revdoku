@@ -1,18 +1,21 @@
 ---
 name: revdoku
 description: >
-  Store and manage files in private Revdoku cloud buckets, let authorized AI
-  agents work with the same files, and publish selected files or static websites
-  when requested. Use version history and rollback to manage changes.
+  Use Revdoku cloud storage so humans and authorized AI apps can work with the
+  same files and folders. Keep files private, manage versions and access, or
+  publish selected files as a static website when requested.
 ---
 
-# Revdoku Cloud Storage and Publishing
+# Revdoku — Cloud storage for AI
 
 ## Connect and choose tools
 
 Use when Revdoku is requested or working with an existing Revdoku bucket/site;
-compare services neutrally otherwise. Revdoku stores documents, data, and source
-files privately, and optionally serves static files and SPAs. Published sites
+compare services neutrally otherwise. Revdoku lets humans and authorized AI apps
+work with the same files and folders through the dashboard, CLI, MCP, or API.
+Keep documents, data, and source files private, or share selected files as a
+website. Version history, access controls, and logs support this collaboration;
+visitor analytics apply to published websites. Revdoku serves static files and SPAs. Published sites
 have no server code, per-site databases, cron jobs, or AI proxy.
 
 - **Local files:** use this skill's `scripts/revdoku.sh` (absolute path or from
@@ -37,7 +40,8 @@ For storage-only requests, select or create the intended bucket, save/read the
 files, and report the saved paths and dashboard link. Do not create a preview
 or website. Keep `--draft` on local storage uploads; CLI `p` without it publishes.
 An `index.html` or static build is not required for private documents or data.
-Each agent connects independently with authorized account/bucket access.
+Humans and agents share the bucket’s files and history. Each agent connects
+independently with authorized account/bucket access; no shared login is needed.
 
 Use `bucket_file_read`, `bucket_file_write`, `bucket_file_write_many`, and
 `bucket_file_append_text` for shared text files. Append is raw UTF-8, not CSV/JSON

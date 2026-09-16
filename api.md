@@ -1,14 +1,16 @@
 # Revdoku API
 
-> **Store files in cloud from AI. Publish as a website or keep private.**
+> **Cloud storage for AI.**
 >
-> Connect Claude Code, Codex, Gemini, Cursor, or another compatible AI agent.
+> Keep your files and folders private or share them as a website.
+>
+> Designed for humans and AI apps working together. Version history, access control, logs, and analytics.
 >
 > Free plan · No credit card required.
 
 Use the Revdoku API to store documents, data, and source files in private cloud
-buckets; let authorized AI agents work with the same files; and inspect versions,
-history, and change logs. Publishing is optional and separate from file writes.
+buckets. Humans and authorized AI apps can work with the same files and folders,
+with access controls, version history, and change logs. Publishing is optional and separate from file writes.
 Publish selected files as a website, attach domains, and read visitor analytics
 when a website is needed.
 
@@ -22,7 +24,8 @@ frontends. `site_mode: "spa"` enables route fallback to `index.html`; it does no
 run a build or a Node.js server.
 
 Most AI-agent users should start with the Revdoku app's copied prompt or the
-Revdoku MCP tool. Use this HTTP API for custom clients, CI jobs, backend workers,
+Revdoku skill. Use the local CLI when the agent has shell and filesystem access,
+or hosted MCP otherwise. Use this HTTP API for custom clients, CI jobs, backend workers,
 or direct integrations.
 
 Hosted MCP requires OAuth before account tools can run. New users sign up at

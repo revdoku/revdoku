@@ -2,8 +2,8 @@
   "schema_version": "v1",
   "name_for_human": "Revdoku",
   "name_for_model": "revdoku",
-  "description_for_human": "Private cloud storage for AI agents, with optional website publishing.",
-  "description_for_model": "Store files in private Revdoku cloud buckets, collaborate across authorized AI agents, and publish selected files as websites when requested. Private storage follows the Terms of Use; previews and publications follow the Website Publishing Policy. Signup is browser-only. Connect an existing account through OAuth for hosted MCP or the CLI browser sign-in flow. Never ask users to paste credentials in chat. Check publication status before reporting success. The OpenAPI document covers selected REST endpoints; see api.md for the complete API.",
+  "description_for_human": "Cloud storage for AI. Keep files private or share them as a website.",
+  "description_for_model": "Cloud storage for AI, designed for humans and AI apps working together. Keep files and folders private or share selected files as a website, with version history, access control, logs, and website analytics. Private storage follows the Terms of Use; previews and publications follow the Website Publishing Policy. Signup is browser-only. Connect an existing account through OAuth for hosted MCP or the CLI browser sign-in flow. Never ask users to paste credentials in chat. Check publication status before reporting success. The OpenAPI document covers selected REST endpoints; see api.md for the complete API.",
   "auth": {
     "type": "user_http",
     "authorization_type": "bearer"

@@ -1,12 +1,17 @@
 # Revdoku agent setup
 
+Revdoku is cloud storage for AI, designed for humans and AI apps working together.
+Keep files and folders private or share selected files as a website. Version
+history, access control, and logs support collaboration; published websites add
+visitor analytics.
+
 Use the shortest working path. Prefer local shell and filesystem access, and use
 hosted MCP only when local access is unavailable.
 
 ## Public prompt
 
 ```text
-Set up Revdoku so I can store files in the cloud, work with them across AI agents, and publish files as a website when I ask.
+Set up Revdoku cloud storage so I can work with my AI apps and agents on the same files and folders. Keep them private, and share selected files as a website when I ask.
 
 Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install Revdoku yourself and use the local CLI.
 
