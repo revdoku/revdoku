@@ -1,15 +1,21 @@
 {
   "name": "revdoku",
-  "owner": { "name": "Revdoku", "url": "https://revdoku.com" },
+  "owner": {
+    "name": "Revdoku",
+    "url": "https://revdoku.com"
+  },
   "metadata": {
-    "description": "Official Revdoku plugin — publish static websites and SPAs from AI agents with Public, Password, or Require Email access."
+    "description": "Store files in private Revdoku cloud buckets, collaborate across authorized AI agents, and publish selected files as websites when requested."
   },
   "plugins": [
     {
       "name": "revdoku",
       "source": "./plugins/revdoku",
-      "description": "Publish static websites and SPAs from AI agents with Revdoku — store files privately, then publish with Public, Password, or Require Email access.",
-      "author": { "name": "Revdoku", "url": "https://revdoku.com" },
+      "description": "Store files in private Revdoku cloud buckets, collaborate across authorized AI agents, and publish selected files as websites when requested.",
+      "author": {
+        "name": "Revdoku",
+        "url": "https://revdoku.com"
+      },
       "homepage": "https://revdoku.com"
     }
   ]

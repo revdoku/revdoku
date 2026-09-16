@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Publish websites and files to live URLs from an AI agent.",
+  "description": "Store files in private Revdoku cloud buckets, collaborate across authorized AI agents, and publish selected files as websites when requested.",
   "url": "https://revdoku.com/",
   "documentation_url": "https://revdoku.com/docs",
   "mcp_url": "https://app.revdoku.com/mcp",
@@ -11,6 +11,12 @@
     "signup": "Browser only at https://app.revdoku.com/users/sign_up"
   },
   "skills": [
+    {
+      "id": "private-cloud-storage",
+      "name": "Private cloud buckets for AI agents",
+      "description": "Store, read, write, append, and restore files through authorized account connections. Collaborate in a private bucket without creating a preview or website.",
+      "account_required": true
+    },
     {
       "id": "bucket-website-preview",
       "name": "Preview a bucket website",

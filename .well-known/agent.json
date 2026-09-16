@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Publish static websites and apps from authenticated account buckets, with 24-hour previews.",
+  "description": "Store files in private Revdoku cloud buckets, collaborate across authorized AI agents, and publish selected files as websites when requested.",
   "homepage": "https://revdoku.com/",
   "docs": "https://revdoku.com/docs",
   "pricing": "https://revdoku.com/pricing.md",
@@ -26,6 +26,9 @@
     "source": "https://github.com/revdoku/revdoku/tree/main/skills/revdoku"
   },
   "capabilities": [
+    "Store documents, data, and source files in private cloud buckets",
+    "Read, write, and append shared files across authorized AI connections",
+    "Inspect versions and change history; restore earlier files",
     "Preview an authenticated bucket draft for 24 hours",
     "Sign up in the browser, then connect an existing account",
     "Publish static websites and SPAs from account buckets",

@@ -1,7 +1,7 @@
 {
   "name": "revdoku",
-  "version": "1.0.455",
-  "description": "Publish websites from AI agents with Revdoku.",
+  "version": "1.0.457",
+  "description": "Store files in private Revdoku cloud buckets, collaborate across authorized AI agents, and publish selected files as websites when requested.",
   "author": {
     "name": "Revdoku",
     "url": "https://revdoku.com"
@@ -10,18 +10,32 @@
   "repository": "https://github.com/revdoku/revdoku",
   "license": "MIT",
   "mcpServers": "./.mcp.json",
-  "keywords": ["revdoku", "website-publishing", "hosting", "agents", "bucket", "files"],
+  "keywords": [
+    "revdoku",
+    "website-publishing",
+    "hosting",
+    "agents",
+    "bucket",
+    "files",
+    "cloud-storage",
+    "private-buckets",
+    "collaboration",
+    "version-history"
+  ],
   "interface": {
     "displayName": "Revdoku",
-    "shortDescription": "Publish websites from AI agents.",
-    "longDescription": "Publish static websites and SPAs from AI agents with Revdoku. Store files privately, then publish with Public, Password, or Require Email access.",
+    "shortDescription": "Private cloud files and website publishing.",
+    "longDescription": "Store files in private Revdoku cloud buckets, collaborate across authorized AI agents, and publish selected files as websites when requested.",
     "developerName": "Revdoku",
     "category": "Coding",
-    "capabilities": ["Interactive", "Write"],
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
     "defaultPrompt": [
-      "Publish this website with Revdoku",
-      "Create a private Revdoku draft for these files",
-      "Update my Revdoku website and publish the changes"
+      "Store these files privately in Revdoku",
+      "Read and update the shared project files in Revdoku",
+      "Publish this website with Revdoku"
     ],
     "websiteURL": "https://revdoku.com"
   }

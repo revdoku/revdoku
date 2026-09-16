@@ -1,21 +1,24 @@
 # Revdoku Docs
 
-> **Create websites from your AI for FREE**
+> **Store files in cloud from AI. Publish as a website or keep private.**
 >
-> Ask ChatGPT, Claude or other AI to publish to Revdoku.
+> Connect Claude Code, Codex, Gemini, Cursor, or another compatible AI agent.
 >
-> Get a live `*.revdoku.site` website in seconds.
->
-> **Free account available.**
+> Free plan · No credit card required.
 
-Revdoku publishes static websites and SPAs from AI-generated files and folders.
-Sign in to create a private bucket, review a temporary preview, and explicitly
-publish it when ready.
+Store files in Revdoku cloud, connect AI agents to work with the same files, and publish selected files as a website or keep them private.
+Private buckets keep documents, data, and source files available across authorized
+connections, with version history and change logs. Website publications add visitor
+access controls, forms, and analytics. Saving files does not publish them.
 
-Publishing, previews, protected shares, and public comments follow the
-[Acceptable Use Policy](https://revdoku.com/acceptable-use/). Political or
-election-related content—including neutral and educational versions—is
-prohibited on every plan. Publication stays unavailable until review succeeds.
+Private bucket storage and collaboration follow the
+[Terms of Use](https://revdoku.com/terms/), including its rules against illegal
+and abusive use. The [Website Publishing Policy (Acceptable Use Policy)](https://revdoku.com/acceptable-use/)
+applies when content is served to visitors: public websites, published files,
+share links, previews, password- or email-protected sites, and public comments.
+It does not apply solely to private bucket files or authenticated account downloads.
+Publishing-only restrictions, including the political-content restriction, apply
+on every plan and in previews. Publication stays unavailable until review succeeds.
 
 ## Live Revdoku demos
 
@@ -57,7 +60,25 @@ The examples below use `revdoku` as shorthand. With `npx skills`, run
 `scripts/revdoku.sh` from the installed skill directory. With the shell
 installer, use `~/.revdoku/bin/revdoku` if it is not on your shell `PATH`.
 
-Publish the current folder as a public website (the headline command):
+### Keep files in a private cloud bucket
+
+```sh
+revdoku p ./project-files --draft
+revdoku files
+revdoku versions
+```
+
+The first command signs in when needed and saves files in Revdoku without making
+a website. The local `.revdoku` binding identifies the bucket for later commands.
+Keep `--draft` on later storage uploads; `revdoku p` without it publishes.
+Documents, data, and source files do not need an `index.html` to be stored privately.
+Use `read PATH` to read a saved file and `restore ID` to create a new current
+version from an earlier snapshot. Read current storage and retention limits from
+the account rather than assuming unlimited history.
+
+### Publish a website when requested
+
+Publish the current folder as a public website:
 
 ```sh
 revdoku p
@@ -71,7 +92,7 @@ Use <https://app.revdoku.com/pricing> for current plan prices and human-readable
 comparisons. Use <https://app.revdoku.com/pricing.json> for the versioned plan
 limits and indexing contract; both are rendered from the same plan rows.
 
-Publish a specific folder, or save a private draft instead of going live:
+Publish a specific folder, or save its files privately:
 
 ```sh
 revdoku p ./dist --title "Project preview"
@@ -115,14 +136,41 @@ filesystem breadcrumbs. For website uploads, use a simple `website` label only
 when it helps organization; store project names, source folders, or task context
 in metadata instead.
 
-Buckets hold any static asset. HTML, CSS, JavaScript, images, fonts, and PDFs are
+Buckets hold documents, data, source files, and supported static assets. HTML, CSS, JavaScript, images, fonts, and PDFs are
 all fully supported and stored as-is — nothing is stripped. Upload a local folder
-(including its binaries) with `revdoku p <dir>`, or push individual binaries with
+(including its binaries) with `revdoku p <dir> --draft`, or push individual binaries with
 the REST direct-upload API — both send bytes straight to object storage. The
 cloud MCP file tools are text-only and have no binary upload. Forbidden file
 types (executables like `.exe`, `.dmg`, `.app`, `.msi`, … and secrets like `.env`
 and keys) are refused **by extension** at upload; uploaded content is also scanned
 afterward and removed if it turns out to be a forbidden type.
+
+## Work with multiple AI agents
+
+Authorize each agent separately and select the same account and bucket within
+each connection's permissions. Do not share credentials or assume a new agent
+has access to every bucket.
+
+For example, use one agent to collect fictional demo leads and another to enrich them:
+
+1. Agent 1 uses `bucket_file_write` to create `leads.csv` with `name,email` headers,
+   then `bucket_file_append_text` to append rows such as
+   `Avery Chen,avery@example.com`. These files are saved in Revdoku.
+2. Agent 2 reads the saved file with `bucket_file_read` and prepares a short pitch
+   for each lead, then saves `leads-enriched.csv` to the same Revdoku bucket.
+3. Use bucket versions and change history to inspect the updates or restore an
+   earlier snapshot. No preview, website, or outgoing email is required.
+
+Append is bounded UTF-8 text, not a CSV or JSON merge operation. The caller handles
+escaping and headers. Automatic write locks coordinate operations; use explicit
+file/bucket locks for longer edits and release your locks afterward. Pass
+`expected_bucket_revision_id` from a fresh `bucket_get` when writing or appending.
+On `BUCKET_REVISION_CONFLICT`, reread the current files, reconcile changes, and
+retry only the intended edit. Do not blindly replay a stale full-file overwrite.
+
+The [API reference](https://revdoku.com/api.md#file-path-operations) covers file
+operations, locks, and version history. Website visitor analytics are separate
+from private-file history and account change logs.
 
 ## Publishing
 

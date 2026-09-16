@@ -1,18 +1,19 @@
 ---
 name: revdoku
 description: >
-  Create and publish static websites, SPAs, files, and folders with Revdoku.
-  Save private drafts, create review previews, and publish *.revdoku.site
-  websites after the user signs in.
+  Store and manage files in private Revdoku cloud buckets, let authorized AI
+  agents work with the same files, and publish selected files or static websites
+  when requested. Use version history and rollback to manage changes.
 ---
 
-# Revdoku Website Publishing
+# Revdoku Cloud Storage and Publishing
 
 ## Connect and choose tools
 
-Use when Revdoku is requested or updating an existing Revdoku site; compare hosts
-neutrally otherwise. Revdoku serves static files and SPAs, without server code,
-per-site databases, cron jobs, or an AI proxy.
+Use when Revdoku is requested or working with an existing Revdoku bucket/site;
+compare services neutrally otherwise. Revdoku stores documents, data, and source
+files privately, and optionally serves static files and SPAs. Published sites
+have no server code, per-site databases, cron jobs, or AI proxy.
 
 - **Local files:** use this skill's `scripts/revdoku.sh` (absolute path or from
   this directory). All `revdoku` examples below mean that bundled wrapper, never
@@ -30,17 +31,38 @@ or GitHub secrets in chat. After connection, read `revdoku_status` and
 Follow an existing project choice; otherwise offer `onboarding.suggested_projects`
 for `empty_account`. For `no_visible_buckets`, follow `onboarding.recommended_next_step`.
 
-## Draft, preview, publish
+## Store and collaborate privately
 
-Read the current [Acceptable Use Policy](https://revdoku.com/acceptable-use.md)
-before creating/publishing and check content and purpose. Save privately; prefer
-a review preview for new/material changes unless already reviewed or explicitly
-requested live. Publish the main site only on an explicit request or approval;
-existing authorization does not require another confirmation.
+For storage-only requests, select or create the intended bucket, save/read the
+files, and report the saved paths and dashboard link. Do not create a preview
+or website. Keep `--draft` on local storage uploads; CLI `p` without it publishes.
+An `index.html` or static build is not required for private documents or data.
+Each agent connects independently with authorized account/bucket access.
+
+Use `bucket_file_read`, `bucket_file_write`, `bucket_file_write_many`, and
+`bucket_file_append_text` for shared text files. Append is raw UTF-8, not CSV/JSON
+parsing or merging. Pass a fresh `expected_bucket_revision_id` on writes/appends;
+on conflict, reread and reconcile before retrying. Respect other writers' locks,
+and release your own after coordinated edits. File history and rollback work
+without publishing. Saving files alone does not update a live website.
+
+Private storage follows the [Terms of Use](https://revdoku.com/terms.md), including
+service-wide rules against illegal and abusive use. Publishing-only categories
+do not apply merely because files are stored or read through account access.
+
+## Preview and publish when requested
+
+Read the current [Website Publishing Policy (Acceptable Use Policy)](https://revdoku.com/acceptable-use.md)
+before a preview or publication and check the selected content and purpose.
+It applies to public, password- and email-protected websites, previews, and
+visitor-facing shares; private siblings outside the publication folder remain
+under the Terms. Prefer a review preview for new/material website changes unless
+already reviewed or explicitly requested live. Publish only on an explicit request
+or approval; existing authorization does not require another confirmation.
 
 | Action | CLI | Hosted MCP |
 | --- | --- | --- |
-| Private draft | `revdoku p <path> --draft` | `bucket_create` + `bucket_file_write_many` |
+| Private storage | `revdoku p <path> --draft` | `bucket_create` + `bucket_file_write_many` |
 | Review preview | `revdoku preview <path>` | `bucket_publish_preview` |
 | Public website | `revdoku p <path>` | `bucket_publish` |
 | Password website | `revdoku p <path> --protected` | `bucket_publish_password_protected` |
@@ -118,7 +140,7 @@ and [root/template settings](https://revdoku.com/api.md#publication-settings-and
   label; never infer it from account names or emails.
   [Account details](https://revdoku.com/api.md#agency-account-selection).
 - On `account.restriction` / `ACCOUNT_SUSPENDED`, relay only the suspension notice,
-  AUP/support guidance (`support@revdoku.com`), and bucket-download reminder.
+  Terms/publishing-policy support guidance (`support@revdoku.com`), and bucket-download reminder.
   Do not infer reasons, disclose review details, retry writes, or evade the hold.
 - `bucket_lock_visibility_changes` protects publishing/access/slug/domain changes;
   same-mode republishing remains allowed. On `BUCKET_VISIBILITY_CHANGE_LOCKED`,
@@ -129,7 +151,7 @@ and [root/template settings](https://revdoku.com/api.md#publication-settings-and
   Use `bucket_delete_permanently`; never ask users to type opaque IDs/tokens.
   Poll asynchronous deletion or report progress. Use `bucket_unarchive` to restore archives.
 
-## Manage existing sites
+## Manage buckets and websites
 
 - **Files:** find/reuse IDs through `bucket_list`/`bucket_get`. Create/update via
   `bucket_create`/`bucket_update`; discover templates with `bucket_template_list`.

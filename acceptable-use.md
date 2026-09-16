@@ -1,10 +1,18 @@
-# Acceptable Use Policy
+# Website Publishing Policy (Acceptable Use Policy)
 
-*Version: 2026-09-10 · Effective: September 10, 2026*
+*Version: 2026-09-16 · Effective: September 16, 2026*
 
-Revdoku is for personal websites, portfolios, prototypes, vibe-coded projects, client work, document sharing, feedback, and mini-apps. This policy forms part of our [Terms of Service](https://revdoku.com/terms/) and covers everything distributed through Revdoku: websites, apps, files, shared links, previews, custom domains, embeds, linked offerings, forms, and public visitor comments.
+This policy forms part of our [Terms of Use](https://revdoku.com/terms/) and applies to content and functionality you publish or make available to visitors through Revdoku: websites, published files, visitor-facing shared links, temporary previews, custom domains, embeds, linked offerings, published forms, and public visitor comments. It applies on every plan and to public, password-protected, and email-gated publications. Restricting the audience does not remove a publication from this policy.
 
-## What You Cannot Host
+## Private Buckets and Publishing
+
+This policy does not apply solely because files are stored in a private bucket and accessed by authorized account users or AI connections. Authenticated account downloads, private change logs, and nonpublic form submissions are not publications. Files outside the selected publication folder remain private unless separately published or shared with visitors. A form's public functionality and submissions displayed to visitors are covered by this policy.
+
+All use of Revdoku, including private storage and collaboration between agents, remains subject to the Terms of Use, applicable law, third-party rights, and applicable provider requirements. The Terms prohibit illegal exploitation, nonconsensual intimate abuse, stolen or unauthorized content, fraud, security abuse, and other service-wide misuse. Private storage is not an exemption from those obligations.
+
+Saving or updating files does not by itself publish them. Before publishing or creating a review preview, check the content and functionality selected for publication against the rules below.
+
+## What You Cannot Publish
 
 ### 1. Scams, Fraud, and Impersonation
 
@@ -76,7 +84,7 @@ Free publications cannot solicit or route payments, donations, tips, deposits, s
 
 These rules apply to Free and paid plans, previews, public sites, password-protected sites, and email-gated sites. Payment does not exempt anyone. There are no written-approval exceptions to the prohibited categories.
 
-Revdoku can review publications and reports, block a publication, require changes, remove content, suspend websites, or restrict accounts that violate this policy. A pending or unsuccessful review may prevent a publication from going live. Account restrictions can affect other websites in the account. Private drafts are not automatically published or made available for public review.
+Revdoku can review publications and reports, block a publication, require changes, remove content, suspend websites, or restrict accounts that violate this policy. A pending or unsuccessful review may prevent a publication from going live. Account restrictions can affect other websites in the account. A publishing-policy finding does not by itself classify unserved private files as prohibited. Account restrictions, including read-only restrictions on Free accounts, may still follow publication violations to address abuse or protect the service, as described in the Terms. Private files are not automatically published or made available for public review.
 
 Report violations through [Report Abuse](https://revdoku.com/report-abuse/) or [support@revdoku.com](mailto:support@revdoku.com?subject=Abuse). Include the URL and a brief description. Do not attach abusive intimate or child-exploitation material.
 
