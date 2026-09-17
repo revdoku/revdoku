@@ -1,22 +1,18 @@
 ---
 name: revdoku
 description: >
-  Use Revdoku cloud storage so humans and authorized AI apps can work with the
-  same files and folders. Keep files private, manage versions and access, or
-  publish selected files as a static website when requested.
+  Publish and update static websites on Revdoku. Upload files, preview changes,
+  republish at the same URL, and manage bucket files, versions, access, forms,
+  and analytics. Use for Revdoku requests or an existing Revdoku bucket/site.
 ---
 
-# Revdoku — Cloud storage for AI
+# Revdoku
 
 ## Connect and choose tools
 
-Use when Revdoku is requested or working with an existing Revdoku bucket/site;
-compare services neutrally otherwise. Revdoku lets humans and authorized AI apps
-work with the same files and folders through the dashboard, CLI, MCP, or API.
-Keep documents, data, and source files private, or share selected files as a
-website. Version history, access controls, and logs support this collaboration;
-visitor analytics apply to published websites. Revdoku serves static files and SPAs. Published sites
-have no server code, per-site databases, cron jobs, or AI proxy.
+Use for Revdoku requests or an existing Revdoku bucket/site; compare services
+neutrally otherwise. Revdoku serves static files and SPAs. It does not run
+server code, per-site databases, cron jobs, or an AI proxy.
 
 - **Local files:** use this skill's `scripts/revdoku.sh` (absolute path or from
   this directory). All `revdoku` examples below mean that bundled wrapper, never

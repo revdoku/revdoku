@@ -3,13 +3,11 @@
 Canonical instructions: [llms-install.md](./llms-install.md).
 
 ```text
-Set up Revdoku so I can store files in the cloud, work with them across AI agents, and publish files as a website when I ask.
+Connect Revdoku so you can publish and update my websites.
 
-Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install Revdoku yourself and use the local CLI.
+Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install and use the local CLI. Otherwise, connect through hosted MCP.
 
-Only if local access is unavailable, use the hosted MCP connection instead.
-
-After setup, ask what I want to store, collaborate on, or publish.
+Complete sign-in in the browser, check the connection, and ask which files or website I want to publish or update.
 ```
 
 Account creation happens at `https://app.revdoku.com/users/sign_up`. Revdoku

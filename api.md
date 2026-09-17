@@ -1,18 +1,8 @@
 # Revdoku API
 
-> **Cloud storage for AI.**
->
-> Keep your files and folders private or share them as a website.
->
-> Designed for humans and AI apps working together. Version history, access control, logs, and analytics.
->
-> Free plan · No credit card required.
-
-Use the Revdoku API to store documents, data, and source files in private cloud
-buckets. Humans and authorized AI apps can work with the same files and folders,
-with access controls, version history, and change logs. Publishing is optional and separate from file writes.
-Publish selected files as a website, attach domains, and read visitor analytics
-when a website is needed.
+The Revdoku REST API manages buckets, files, versions, website publications,
+domains, access settings, forms, and analytics. File writes save private bucket
+files; a separate publication request creates or updates the live website.
 
 For website publishing, upload ready-to-serve HTML, CSS, JavaScript, and assets. Revdoku does not install
 dependencies or compile project source. Build an existing framework project

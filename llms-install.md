@@ -1,23 +1,18 @@
 # Revdoku agent setup
 
-Revdoku is cloud storage for AI, designed for humans and AI apps working together.
-Keep files and folders private or share selected files as a website. Version
-history, access control, and logs support collaboration; published websites add
-visitor analytics.
+Connect Revdoku, verify access, then publish or update the requested files.
 
-Use the shortest working path. Prefer local shell and filesystem access, and use
+Prefer local shell and filesystem access; use
 hosted MCP only when local access is unavailable.
 
 ## Public prompt
 
 ```text
-Set up Revdoku cloud storage so I can work with my AI apps and agents on the same files and folders. Keep them private, and share selected files as a website when I ask.
+Connect Revdoku so you can publish and update my websites.
 
-Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install Revdoku yourself and use the local CLI.
+Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install and use the local CLI. Otherwise, connect through hosted MCP.
 
-Only if local access is unavailable, use the hosted MCP connection instead.
-
-After setup, ask what I want to store, collaborate on, or publish.
+Complete sign-in in the browser, check the connection, and ask which files or website I want to publish or update.
 ```
 
 ## Agent rules
@@ -28,8 +23,7 @@ After setup, ask what I want to store, collaborate on, or publish.
   connection token, protected-site password, or payment details in chat.
 - Do not ask the user to send `continue` after a browser step. Resume by
   checking status yourself.
-- Account creation is web-only at `https://app.revdoku.com/users/sign_up`.
-- Revdoku account creation is completed in the browser before agent access.
+- Create new accounts in the browser at `https://app.revdoku.com/users/sign_up` before connecting.
 - Publish only when the user asks for a public or protected link. A signed-in
   `--draft` upload remains private.
 

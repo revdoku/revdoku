@@ -1,7 +1,5 @@
-Set up Revdoku cloud storage so I can work with my AI apps and agents on the same files and folders. Keep them private, and share selected files as a website when I ask.
+Connect Revdoku so you can publish and update my websites.
 
-Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install Revdoku yourself and use the local CLI.
+Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install and use the local CLI. Otherwise, connect through hosted MCP.
 
-Only if local access is unavailable, use the hosted MCP connection instead.
-
-After setup, ask what I want to store, collaborate on, or publish.
+Complete sign-in in the browser, check the connection, and ask which files or website I want to publish or update.

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Cloud storage for AI, designed for humans and AI apps working together. Keep files and folders private or share selected files as a website, with version history, access control, logs, and website analytics.",
+  "description": "Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics.",
   "url": "https://revdoku.com/",
   "documentation_url": "https://revdoku.com/docs",
   "mcp_url": "https://app.revdoku.com/mcp",

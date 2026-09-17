@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "revdoku",
   "version": "1.0.460",
-  "description": "Cloud storage for AI, designed for humans and AI apps working together. Keep files and folders private or share selected files as a website, with version history, access control, logs, and website analytics.",
+  "description": "Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics.",
   "author": {
     "name": "Revdoku",
     "url": "https://revdoku.com"
