@@ -1,6 +1,6 @@
 # Revdoku — Claude Code plugin
 
-Cloud storage for AI, designed for humans and AI apps working together. Keep files and folders private or share selected files as a website, with version history, access control, logs, and website analytics.
+Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics.
 Private workspaces need no preview or website. Website republishing keeps the same URL.
 
 The plugin bundles:

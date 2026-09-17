@@ -5,13 +5,13 @@
     "url": "https://revdoku.com"
   },
   "metadata": {
-    "description": "Cloud storage for AI, designed for humans and AI apps working together. Keep files and folders private or share selected files as a website, with version history, access control, logs, and website analytics."
+    "description": "Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics."
   },
   "plugins": [
     {
       "name": "revdoku",
       "source": "./plugins/revdoku",
-      "description": "Cloud storage for AI, designed for humans and AI apps working together. Keep files and folders private or share selected files as a website, with version history, access control, logs, and website analytics.",
+      "description": "Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics.",
       "author": {
         "name": "Revdoku",
         "url": "https://revdoku.com"
