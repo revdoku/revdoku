@@ -164,10 +164,16 @@ for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
   reject_text "$file" "Trial"
   reject_text "$file" "available on Starter"
   reject_text "$file" "available on Builder"
-  reject_text "$file" "paid plans"
+  # Paid feature allowances are valid; reject the retired paid-only API claim.
+  reject_text "$file" "API access is only available on paid plans"
   reject_text "$file" "sign in or create an account"
   reject_text "$file" "https://docs.revdoku.site/"
 done
+
+require_text "$API_FILE" "message.json"
+require_text "$API_FILE" "last_received_path"
+require_text "$API_FILE" "include_inbound_email=true"
+require_text "$SKILL_FILE" "body_status"
 
 reject_text "$README_FILE" "priceing"
 reject_text "$README_FILE" "currently can hosts"

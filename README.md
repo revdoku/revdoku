@@ -141,6 +141,13 @@ Useful commands:
 - `revdoku open`, `revdoku status`, `revdoku ls`, `revdoku --help` — inspect
   the current connection and sites.
 
+Incoming email is available per bucket, including website buckets. Copy the
+random address from **Bucket settings → Email**; anyone who knows it can send.
+Creation also returns the address. Compare `inbound_email.received_count` to detect
+new mail, then read `last_received_path + "message.json"` for decoded content and
+attachment paths. `files` and `read` also expose originals and attachments. See [incoming email](docs.md#receive-email-and-third-party-verification-messages)
+and the [API contract](api.md#incoming-email-into-a-bucket).
+
 ## Hosted and web agents
 
 The hosted MCP endpoint is `https://app.revdoku.com/mcp`. All tools use OAuth.
