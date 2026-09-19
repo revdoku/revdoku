@@ -2,6 +2,25 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.473 — 2026-09-20
+
+### Added
+
+- New incoming email addresses use two random words and a random letter suffix
+  for easier recognition. Previously issued addresses continue receiving mail.
+- Private buckets have a toolbar for activity, analytics, history, connecting AI,
+  and incoming email. Analytics summarizes storage, received emails, and recent
+  activity from the logs available to you.
+- Connect AI is available in the Add menu, with a connection prompt above the
+  workspace when no agent is connected. Buckets appear before Websites in navigation.
+
+### Fixed
+
+- Folders containing media default to tile view with image and video thumbnails.
+  Your manual view choice is remembered for each folder.
+- Visitor analytics can update during file uploads without competing for an
+  exclusive bucket lock. Opening analytics and logs does not inflate usage counts.
+
 ## 1.0.453 — 2026-09-14
 
 ### Added
