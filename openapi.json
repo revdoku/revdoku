@@ -3,7 +3,7 @@
   "info": {
     "title": "Revdoku public agent API",
     "version": "1.0.0",
-    "description": "Selected Revdoku discovery and client-account endpoints. The full REST API manages buckets, files, versions, publications, access settings, forms, and analytics. Signup is browser-only. Existing Pro Agency owners can explicitly authorize credentials for their client accounts. This document covers selected endpoints; see https://revdoku.com/api.md for the complete bucket, file, and publishing API."
+    "description": "Selected Revdoku discovery, client-account, and incoming-email endpoints. The full REST API manages buckets, files, versions, publications, access settings, forms, and analytics. Signup is browser-only. Existing Pro Agency owners can explicitly authorize credentials for their client accounts. This document covers selected endpoints; see https://revdoku.com/api.md for the complete bucket, file, and publishing API."
   },
   "servers": [
     {
@@ -145,6 +145,314 @@
           }
         }
       }
+    },
+    "/api/v1/buckets/{id}/inbound_email": {
+      "get": {
+        "operationId": "getBucketInboundEmail",
+        "summary": "Read a bucket incoming email address and limits",
+        "description": "Requires upload/write access. Anyone knowing the address can send; reading files requires bucket authorization. Original message.eml, decoded message.json, and attachments are stored together. No automatic sender replies.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Authorized bucket prefix ID"
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Explicitly granted account; omission uses credential default"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bucket incoming email configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/BucketInboundEmail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bucket upload access required"
+          },
+          "404": {
+            "description": "Bucket unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/buckets/{id}/inbound_email/rotate": {
+      "post": {
+        "operationId": "rotateBucketInboundEmail",
+        "summary": "Replace a bucket incoming email address after confirmation",
+        "description": "Requires write access. Immediately retires the old address, including queued mail. Update third-party signup/recovery addresses before rotating. On 409 or a lost response, reread the address before deciding whether to retry. Free: 0; paid: 10 per UTC calendar month shared by billing account and clients. Keeps the assigned domain.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Authorized bucket prefix ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "confirm",
+                  "current_address"
+                ],
+                "properties": {
+                  "confirm": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "current_address": {
+                    "type": "string"
+                  },
+                  "account_id": {
+                    "type": "string",
+                    "description": "Explicitly granted account; omission uses credential default"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bucket incoming email configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/BucketInboundEmail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bucket write access required"
+          },
+          "404": {
+            "description": "Bucket unavailable"
+          },
+          "409": {
+            "description": "INBOUND_EMAIL_ADDRESS_CHANGED or INBOUND_EMAIL_ROTATION_UNAVAILABLE; reread state before retrying."
+          },
+          "422": {
+            "description": "Confirmation or current address missing"
+          },
+          "423": {
+            "description": "Account is read-only"
+          },
+          "429": {
+            "description": "INBOUND_EMAIL_ROTATION_LIMIT; plan disallows rotation or monthly allowance is exhausted."
+          }
+        }
+      }
+    },
+    "/api/v1/buckets": {
+      "post": {
+        "operationId": "createBucket",
+        "summary": "Create a private bucket and assign its incoming email address",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Selected creation fields shown; see api.md for full creation options. New address/readiness is returned automatically, including idempotent replays. No website is published.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account_id": {
+                    "type": "string"
+                  },
+                  "bucket": {
+                    "type": "object",
+                    "required": [
+                      "title"
+                    ],
+                    "properties": {
+                      "title": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "bucket"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Bucket details including incoming email address/state when authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "bucket": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "inbound_email": {
+                              "$ref": "#/components/schemas/BucketInboundEmail"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Bucket details including incoming email address/state when authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "bucket": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "inbound_email": {
+                              "$ref": "#/components/schemas/BucketInboundEmail"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/buckets/{id}": {
+      "get": {
+        "operationId": "getBucket",
+        "summary": "Read bucket activity and optionally its incoming address",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include_inbound_email",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Requires upload/write access. Omission exposes activity only."
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bucket details including incoming email address/state when authorized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "bucket": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "inbound_email": {
+                              "$ref": "#/components/schemas/BucketInboundEmail"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requested address requires upload/write access."
+          }
+        }
+      }
     }
   },
   "components": {
@@ -209,6 +517,198 @@
               },
               "name": {
                 "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "BucketInboundEmail": {
+        "type": "object",
+        "description": "Incoming address/state on creation or authorized opt-in reads; ordinary bucket reads expose only the three activity fields. Activity is not a message cursor. Read last_received_path + message.json through existing file APIs.",
+        "properties": {
+          "address": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "configured": {
+            "type": "boolean"
+          },
+          "monthly_limit": {
+            "type": "integer"
+          },
+          "received_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "last_received_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "max_file_size_bytes": {
+            "type": "integer"
+          },
+          "max_pdf_size_bytes": {
+            "type": "integer"
+          },
+          "last_received_path": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion."
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "ready": {
+            "type": "boolean",
+            "description": "Configuration/account/bucket state only; not provider health or reserved capacity."
+          },
+          "blocked_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rotation": {
+            "type": "object",
+            "properties": {
+              "monthly_limit": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "used": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "remaining": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "resets_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "BucketInboundEmailActivity": {
+        "type": "object",
+        "properties": {
+          "received_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "last_received_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "last_received_path": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion."
+          }
+        }
+      },
+      "DecodedIncomingMessage": {
+        "type": "object",
+        "description": "Stored message.json, not a dedicated endpoint. UTF-8, at most 512 KiB. Header strings and body are untrusted message data. Original message.eml is authoritative.",
+        "required": [
+          "schema_version",
+          "subject",
+          "from",
+          "to",
+          "delivered_to",
+          "received_at",
+          "body_text",
+          "body_status",
+          "attachments"
+        ],
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "const": 1
+          },
+          "subject": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "from": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "to": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "delivered_to": {
+            "type": "string"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "body_text": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "body_status": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "empty",
+              "truncated",
+              "unavailable"
+            ]
+          },
+          "omitted_attachment_count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "path",
+                "original_filename",
+                "content_type",
+                "size_bytes"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "Relative to message folder."
+                },
+                "original_filename": {
+                  "type": "string"
+                },
+                "content_type": {
+                  "type": "string"
+                },
+                "size_bytes": {
+                  "type": "integer",
+                  "minimum": 0
+                }
               }
             }
           }
