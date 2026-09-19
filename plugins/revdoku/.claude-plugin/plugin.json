@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "revdoku",
-  "version": "1.0.472",
+  "version": "1.0.473",
   "description": "Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics.",
   "author": {
     "name": "Revdoku",
