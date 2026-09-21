@@ -1,6 +1,6 @@
 {
   "name": "revdoku",
-  "version": "1.0.480",
+  "version": "1.0.481",
   "description": "Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts.",
   "author": {
     "name": "Revdoku",
