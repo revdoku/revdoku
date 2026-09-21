@@ -1,7 +1,7 @@
 {
   "name": "revdoku",
   "displayName": "Revdoku",
-  "version": "1.0.476",
+  "version": "1.0.479",
   "description": "Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics.",
   "author": {
     "name": "Revdoku"

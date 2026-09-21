@@ -2,6 +2,17 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.479 — 2026-09-21
+
+### Added
+
+- Buckets containing incoming email offer a Mailbox view beside List and Tiles,
+  with sender/subject search, attachment filtering, and an inline reading pane.
+- Quick read/unread controls share status across people and agents. Status changes
+  preserve audit history; attachments are marked read separately when opened.
+- Mailbox links to other bucket files, while file views link back to Mailbox.
+  PDFs, other attachments, and original email use the existing inline viewers.
+
 ## 1.0.473 — 2026-09-20
 
 ### Added
