@@ -8,9 +8,9 @@ INSTALL_BASE=https://raw.githubusercontent.com/revdoku/revdoku/main
 CLIENT_VERSION=1.0.481
 expected_sha256() {
   case "$1" in
-    skills/revdoku/SKILL.md) printf '%s\n' '19e5671264f99e9b744ff937fe8cf91afc2259a7bbb905f8131df4f4a3799e62' ;;
+    skills/revdoku/SKILL.md) printf '%s\n' 'b66e75a6d5a0751190cec037add206e2149810e4901b957ccabe3063e991a4bb' ;;
     skills/revdoku/scripts/revdoku.sh) printf '%s\n' '6da11462d9e988978e4214fee90cb8875748bab801143e43b48f7419e1ee6e52' ;;
-    skills/revdoku/bin/revdoku) printf '%s\n' 'c38cca81501774e80c254f743daadc712d18ccc598d0bd0386c2213865fce0ec' ;;
+    skills/revdoku/bin/revdoku) printf '%s\n' '2646fa1d8b1e619323d6893ed5a85af0dcfde971e6dc2fbcc323f9478de68026' ;;
     *) die "unknown installer payload: $1" ;;
   esac
 }

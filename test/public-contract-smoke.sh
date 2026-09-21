@@ -92,7 +92,7 @@ require_text "$LLMS_INSTALL_FILE" "app.revdoku.com/users/sign_up"
 require_text "$LLMS_INSTALL_FILE" "Authenticate with OAuth before calling tools"
 require_text "$LLMS_INSTALL_FILE" "https://app.revdoku.com/pricing"
 require_text "$LLMS_INSTALL_FILE" "https://app.revdoku.com/pricing.json"
-require_text "$LLMS_INSTALL_FILE" "Permanent public Free websites are indexable by default"
+require_text "$LLMS_INSTALL_FILE" "Website publishing is disabled for new accounts on every plan"
 require_text "$CLI_FILE" "--login)"
 require_text "$CLI_FILE" "grant TOKEN"
 require_text "$CLI_FILE" "Opens browser sign-in when credentials are missing."
@@ -122,7 +122,7 @@ require_text "$SKILL_FILE" 'Password, and Require Email'
 require_text "$API_FILE" '`github_sync_setup`'
 require_text "$API_FILE" 'https://app.revdoku.com/pricing'
 require_text "$API_FILE" 'https://app.revdoku.com/pricing.json'
-require_text "$API_FILE" 'including Free websites, are indexable by'
+require_text "$API_FILE" 'Permanent public sites are indexable by default'
 require_text "$SKILL_FILE" 'https://app.revdoku.com/pricing'
 require_text "$SKILL_FILE" 'Permanent public Free websites are indexable by default'
 require_text "$SKILL_FILE" 'Never silently publish protected content as'

@@ -122,18 +122,19 @@ detect_agent_name() {
 
 usage() {
   cat <<USAGE
-revdoku — publish a folder to the web in one command.
+revdoku — cloud storage with an email address for every bucket.
 
 Free plan available. Current limits: https://app.revdoku.com/pricing.json
-Preview first, then publish when ready.
+Store files with --draft. Receive email and attachments in your buckets.
+Website publishing requires an enabled account; new accounts have it disabled.
 
 Usage: revdoku <command> [PATH] [options]
 
 Most-used commands (short alias, then full name — either works):
-  p,    publish [PATH]   Publish a folder (default: current dir) -> live URL.
+  p,    publish [PATH]   Add --draft to store/update private files (default: current dir).
                          Opens browser sign-in when credentials are missing.
-                         Re-running updates the same site.
-  ls,   list             List your sites and buckets.
+                         Without --draft, publishes a website on an enabled account.
+  ls,   list             List your buckets and existing websites.
   o,    open             Open this folder's live site in the browser (--dashboard for the dashboard).
   i,    init [PATH]      Scaffold a starter static/SPA site + agent instructions here.
   st,   status           Show connection and account status.
@@ -182,13 +183,15 @@ Global options:
   -h, --help           Show this help.
 
 Examples:
-  revdoku preview .         # recommended: review a temporary URL first
-  revdoku p                 # publish the current folder when ready
-  revdoku p ./dist          # publish another folder
-  revdoku p ./my-site --publish-folder my-site/dist --site-mode static
-                           # upload source + local static export; serve only the export
-  revdoku p --protected     # password-protected site
-  revdoku init && revdoku p
+  revdoku p ./project-files --draft  # store or update private files
+  revdoku files                     # list bucket files and stored email
+  revdoku read notes.md             # read a stored file
+  revdoku versions                  # inspect version history
+  revdoku dashboard                # open the dashboard link
+
+For requested websites on an enabled account:
+  revdoku preview .                # review a temporary website URL
+  revdoku p .                      # publish the current folder
 USAGE
 }
 

@@ -1,4 +1,4 @@
-Connect Revdoku so you can store and organize my files and read incoming email in private buckets.
+Connect Revdoku so you can store and share my files, and read incoming email and attachments in private buckets.
 
 Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install and use the local CLI. Otherwise, connect through hosted MCP.
 

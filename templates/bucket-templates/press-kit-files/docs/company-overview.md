@@ -5,6 +5,6 @@ who it serves, and what makes the announcement relevant.
 
 ## Boilerplate
 
-Revdoku provides secure cloud storage and incoming email for humans and AI agents. Website publishing is optional for enabled accounts.
-Teams keep files private in buckets, then publish them as public or protected
-sites when they are ready to share.
+Revdoku is cloud storage with an email address for every bucket, built for
+humans and AI agents. Teams store and share files through authorized access,
+receive email and attachments, and work together with version history.

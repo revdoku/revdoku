@@ -5,13 +5,13 @@
     "url": "https://revdoku.com"
   },
   "metadata": {
-    "description": "Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts."
+    "description": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments."
   },
   "plugins": [
     {
       "name": "revdoku",
       "source": "./plugins/revdoku",
-      "description": "Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts.",
+      "description": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments.",
       "author": {
         "name": "Revdoku",
         "url": "https://revdoku.com"

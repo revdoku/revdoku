@@ -1,17 +1,8 @@
 # Revdoku agent setup
 
-New accounts focus on private cloud storage and incoming email. Website publishing
-is disabled by default on every plan; paying does not enable it. Existing enabled
-accounts retain publishing. Check `features.website_publishing` in REST
-`GET /api/v1/status`, MCP `revdoku_status`, or CLI `status` for the target account.
-Publishing/preview/settings mutations return `WEBSITE_PUBLISHING_DISABLED` when
-disabled; private files, inboxes, history, analytics and unpublishing remain available.
-Free includes 1 active bucket, 12 incoming emails/month and 1 address rotation/month.
-Published buckets also count toward the active-bucket limit. Existing excess data
-is retained; archive a bucket or upgrade to add another. Paid allowances are unchanged.
-
-Connect Revdoku for secure cloud storage and incoming email. Verify access, then
-work with the requested private files or messages; publish only when requested.
+Revdoku is cloud storage with an email address for every bucket. Connect to store
+and share files with authorized people and agents, and receive email and attachments.
+Verify access, then complete the requested file or incoming-email task.
 
 Prefer local shell and filesystem access; use
 hosted MCP only when local access is unavailable.
@@ -19,7 +10,7 @@ hosted MCP only when local access is unavailable.
 ## Public prompt
 
 ```text
-Connect Revdoku so you can store and organize my files and read incoming email in private buckets.
+Connect Revdoku so you can store and share my files, and read incoming email and attachments in private buckets.
 
 Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install and use the local CLI. Otherwise, connect through hosted MCP.
 
@@ -28,15 +19,18 @@ Complete sign-in in the browser, check the connection, and ask what I want to do
 
 ## Agent rules
 
-- If you have shell access, run the requested setup, storage, or publishing commands yourself.
+- If you have shell access, run the requested setup and file commands yourself.
 - Never tell the user to open a separate terminal for commands you can run.
 - Never ask for a Revdoku password, email OTP, TOTP/backup code, API key,
   connection token, protected-site password, or payment details in chat.
 - Do not ask the user to send `continue` after a browser step. Resume by
   checking status yourself.
 - Create new accounts in the browser at `https://app.revdoku.com/users/sign_up` before connecting.
-- Publish only when the user asks for a public or protected link. A signed-in
-  `--draft` upload remains private.
+- Keep `--draft` on CLI storage uploads. Share the dashboard link with authorized
+  people; the link itself does not grant access.
+- Website publishing is disabled for new accounts on every plan. Check
+  `features.website_publishing` before offering website features; upgrades do not
+  enable it. For enabled accounts, publish only on an explicit request.
 
 ## Local AI apps with shell access
 
@@ -58,7 +52,7 @@ Otherwise:
 curl -fsSL https://revdoku.com/install.sh | bash
 ```
 
-Then follow the user's storage or publishing goal. To keep files private, run:
+To save the requested files in a private bucket, run:
 
 ```sh
 revdoku p <folder> --draft
@@ -69,31 +63,29 @@ Keep `--draft` for storage-only updates. Omit it only when the user asks to publ
 With `npx skills`, run the bundled `scripts/revdoku.sh` from the installed
 skill directory in place of `revdoku`; this install does not add a CLI to `PATH`.
 
-Without credentials, the CLI opens browser sign-in. Use `revdoku preview` to
-create a temporary review URL and `revdoku p` only after the user explicitly
-asks to publish the main site. Re-running updates the same bucket and URL.
+Without credentials, the CLI opens browser sign-in. Re-running with `--draft`
+updates the same bucket. Use `revdoku files`, `revdoku read PATH`, and
+`revdoku versions` to inspect its files and history.
 
 ## Hosted MCP agent
 
 Endpoint: `https://app.revdoku.com/mcp`
 
 Authenticate with OAuth before calling tools. Then call `revdoku_status`, create
-or choose a private bucket, and read or write the requested files. Finish there
-for private storage. For a requested website, use `bucket_publish_preview`
-for review when appropriate, then publish the main website only when authorized. If the user has no
-account, direct them to `https://app.revdoku.com/users/sign_up` first.
+or choose a private bucket, and read or write the requested files. Bucket creation
+returns its incoming email address and receiving state. For an existing bucket, use `bucket_get(include_inbound_email: true)` with write access.
+Check `ready`, compare `received_count` for new mail, and read
+`last_received_path + "message.json"` with `bucket_file_read`.
+See the [email contract](https://revdoku.com/api.md#incoming-email-into-a-bucket).
+If the user has no account, direct them to `https://app.revdoku.com/users/sign_up` first.
 
 If the host does not support MCP or the agent needs local/binary files, use the
 local CLI. A hosted agent cannot read the user's computer.
 
-Private bucket storage and collaboration follow the
-[Terms of Use](https://revdoku.com/terms/), including its rules against illegal
-and abusive use. The [Website Publishing Policy (Acceptable Use Policy)](https://revdoku.com/acceptable-use/)
-applies when content is served to visitors: public websites, published files,
-share links, previews, password- or email-protected sites, and public comments.
-It does not apply solely to private bucket files or authenticated account downloads.
-Publishing-only restrictions, including the political-content restriction, apply
-on every plan and in previews. Publication stays unavailable until review succeeds.
+Private storage and collaboration follow the [Terms of Use](https://revdoku.com/terms/).
+For a requested website on an enabled account, follow the
+[publishing guide](https://revdoku.com/docs.md#publishing) and
+[Website Publishing Policy](https://revdoku.com/acceptable-use/).
 
 ## Pricing and limits
 
@@ -101,9 +93,6 @@ Use <https://app.revdoku.com/pricing> for current prices and human-readable
 comparisons. Read the versioned plan limits and indexing contract from
 <https://app.revdoku.com/pricing.json>. `revdoku_status` embeds the public Free
 contract; full-account profile responses include effective account overrides.
-
-Permanent public Free websites are indexable by default. Password, Require
-Email, and temporary preview websites remain `noindex`.
 
 ## Troubleshooting tutorials
 
@@ -119,6 +108,7 @@ specific prompt or setup flow.
 ## Verification prompt
 
 ```text
-Create a one-page project status website, publish it with Revdoku, and give me
-the URL. If I ask for changes, update the same URL.
+Create a private bucket for my project notes, save a README.md, and give me its
+dashboard link and incoming email address. Check whether the bucket is ready to
+receive email. If I ask for changes, update the same bucket.
 ```

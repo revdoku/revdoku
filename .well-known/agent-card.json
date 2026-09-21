@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts.",
+  "description": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments.",
   "url": "https://revdoku.com/",
   "documentation_url": "https://revdoku.com/docs",
   "mcp_url": "https://app.revdoku.com/mcp",
@@ -19,14 +19,14 @@
     },
     {
       "id": "incoming-email",
-      "name": "Receive email in a private bucket",
-      "description": "Read decoded messages, original MIME, and selected attachments through existing file tools. Message read/unread status is shared; attachments are read independently. Receive-only; no outgoing email.",
+      "name": "Buckets that receive email",
+      "description": "Each bucket has an incoming address. Check receiving readiness, compare received_count for new mail, then read message.json, message.eml, and attachments through authorized file access.",
       "account_required": true
     },
     {
       "id": "bucket-website-preview",
       "name": "Preview a bucket website",
-      "description": "Requires website publishing to be enabled for the account. Preview an authenticated bucket draft for 24 hours using its selected access settings. Poll bucket_publication_get until ready or failed.",
+      "description": "Only for accounts with features.website_publishing enabled; disabled for new accounts on all plans. Preview an authenticated bucket draft for 24 hours using its selected access settings. Poll bucket_publication_get until ready or failed.",
       "account_required": true,
       "input_modes": [
         "text/html",
@@ -38,13 +38,15 @@
       "output": [
         "public_url",
         "expires_at"
-      ]
+      ],
+      "requires_feature": "website_publishing"
     },
     {
       "id": "managed-publishing",
       "name": "Manage account websites",
-      "description": "Requires website publishing to be enabled for the account. Create buckets, manage files, publish or update sites, and inspect publication state through authenticated MCP tools.",
-      "account_required": true
+      "description": "Only for accounts with features.website_publishing enabled; disabled for new accounts on all plans. Create buckets, manage files, publish or update sites, and inspect publication state through authenticated MCP tools.",
+      "account_required": true,
+      "requires_feature": "website_publishing"
     }
   ]
 }

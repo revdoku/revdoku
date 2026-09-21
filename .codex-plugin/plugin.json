@@ -1,7 +1,7 @@
 {
   "name": "revdoku",
   "version": "1.0.481",
-  "description": "Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts.",
+  "description": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments.",
   "author": {
     "name": "Revdoku",
     "url": "https://revdoku.com"
@@ -12,19 +12,21 @@
   "mcpServers": "./.mcp.json",
   "keywords": [
     "revdoku",
-    "cloud-storage",
-    "incoming-email",
-    "private-buckets",
     "agents",
+    "bucket",
     "files",
-    "version-history",
+    "cloud-storage",
+    "private-buckets",
     "collaboration",
-    "website-publishing"
+    "version-history",
+    "incoming-email",
+    "attachments",
+    "file-sharing"
   ],
   "interface": {
     "displayName": "Revdoku",
-    "shortDescription": "Secure cloud storage and incoming email.",
-    "longDescription": "Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts.",
+    "shortDescription": "Cloud storage with email-receiving buckets.",
+    "longDescription": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments.",
     "developerName": "Revdoku",
     "category": "Coding",
     "capabilities": [
@@ -32,10 +34,9 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Store these files privately in Revdoku",
-      "Read incoming email and attachments in my Revdoku bucket",
-      "Read and update the shared project files in Revdoku",
-      "Publish this website with Revdoku"
+      "Store and share these files in a Revdoku bucket",
+      "Read the incoming email and attachments in my Revdoku bucket",
+      "Update the shared project files in Revdoku"
     ],
     "websiteURL": "https://revdoku.com"
   }

@@ -3,7 +3,7 @@
   "info": {
     "title": "Revdoku public agent API",
     "version": "1.0.0",
-    "description": "Secure cloud storage, versioned private files, and incoming email for humans and AI agents. Email is receive-only; messages and attachments use the existing file APIs. New accounts have website publishing disabled on all plans. Check features.website_publishing on the target account; WEBSITE_PUBLISHING_DISABLED is not an upgrade prompt. Signup is browser-only. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API."
+    "description": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments. New accounts have website publishing disabled on all plans. Check features.website_publishing on the target account; WEBSITE_PUBLISHING_DISABLED is not an upgrade prompt. Signup is browser-only. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API."
   },
   "servers": [
     {
@@ -159,7 +159,7 @@
       "get": {
         "operationId": "getBucketInboundEmail",
         "summary": "Read a bucket incoming email address and limits",
-        "description": "Requires upload/write access. Anyone knowing the address can send; reading files requires bucket authorization. Original message.eml, decoded message.json, and attachments are stored together. No automatic sender replies.",
+        "description": "Requires upload/write access. Anyone knowing the address can send; reading files requires bucket authorization. Original message.eml, decoded message.json, and attachments are stored together.",
         "security": [
           {
             "bearerAuth": []

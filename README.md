@@ -1,111 +1,68 @@
 # Revdoku
 
-Revdoku provides secure cloud storage and incoming email for humans and AI agents.
-Private buckets hold files, versions, messages, and attachments behind authorized
-account access. Saving files does not publish them. Email support is receive-only.
+**Cloud storage with an email address for every bucket.** Store documents, data,
+and project files; receive email and attachments in the same bucket; share files
+with authorized people and AI agents. Files and incoming messages stay private
+within your account access permissions.
 
-Website publishing
-is disabled by default on every plan; paying does not enable it. Existing enabled
-accounts retain publishing. Check `features.website_publishing` in REST
-`GET /api/v1/status`, MCP `revdoku_status`, or CLI `status` for the target account.
-Publishing/preview/settings mutations return `WEBSITE_PUBLISHING_DISABLED` when
-disabled; private files, inboxes, history, analytics and unpublishing remain available.
-Free includes 1 active bucket, 12 incoming emails/month and 1 address rotation/month.
-Published buckets also count toward the active-bucket limit. Existing excess data
-is retained; archive a bucket or upgrade to add another. Paid allowances are unchanged.
-
-Use the CLI, MCP, or REST API to store, organize, read, and restore files and
-receive email in the same bucket. Authorized people and agents collaborate with
-revocable connections, scoped access, locks, and revision checks.
-
-Private bucket storage and collaboration follow the
-[Terms of Use](https://revdoku.com/terms/), including its rules against illegal
-and abusive use. The [Website Publishing Policy (Acceptable Use Policy)](https://revdoku.com/acceptable-use/)
-applies when content is served to visitors: public websites, published files,
-share links, previews, password- or email-protected sites, and public comments.
-It does not apply solely to private bucket files or authenticated account downloads.
-Publishing-only restrictions, including the political-content restriction, apply
-on every plan and in previews. Publication stays unavailable until review succeeds.
-
-
-Websites are ready-to-serve HTML, CSS, JavaScript, and assets. Revdoku does not
-install dependencies or compile project source. For an existing framework
-project, build locally and upload the source together with the static export,
-then select the export folder as the website root. For Next.js, use
-`output: 'export'` and publish the generated `out/` (or configured `dist/`) with
-static routing. Astro uses a fully prerendered `output: 'static'` build, usually
-in `dist/`. Other Node.js-based frontends follow the same workflow using their
-configured static output; Express and SSR server bundles require a backend.
-See the [framework build guide](./docs.md#astro-and-nodejs-based-websites) and
-[Next.js configuration](./docs.md#nextjs-static-websites).
+Use the CLI for local files, hosted MCP for AI agents, or the REST API for your own
+integrations. Buckets keep version history so you can review changes and restore
+earlier files.
 
 ## Prompt for an AI agent
 
 ```text
-Connect Revdoku so you can store and organize my private files and read incoming email.
+Connect Revdoku so you can store and organize my files, read incoming email, and work with shared buckets.
 
 Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install and use the local CLI. Otherwise, connect through hosted MCP.
 
-Complete sign-in in the browser, check the connection, and ask what I want to do with my private files or incoming email.
+Complete sign-in in the browser, check the connection, and ask what I want to do with my files or incoming email.
 ```
 
-## Private storage and agent collaboration
+## Store and share files
 
-Use `revdoku p ./project-files --draft` to save a local folder privately. Connect
-another authorized AI agent to the same bucket to read or update those files.
-Use file and bucket history to review changes or restore an earlier version.
-No website or review preview is required. See the [private storage quick start](./docs.md#keep-files-in-a-private-cloud-bucket)
-and [multiple-agent example](./docs.md#work-with-multiple-ai-agents).
+Use `revdoku p ./project-files --draft` to save a local folder privately. Keep
+`--draft` on later uploads to the same bucket. Read files, inspect history, and
+restore earlier versions through the CLI, MCP, API, or dashboard. All stored files
+can be downloaded from Revdoku at any time.
 
-## Capabilities
+Share the bucket's dashboard link with people who have account access. Authorize
+each AI connection separately for the intended buckets. A dashboard link does not
+grant access by itself. Agents can work on the same files with locks and revision
+checks to coordinate changes.
 
-- Store files privately; inspect versions, restore snapshots, and coordinate edits with locks and revision checks.
-- Receive email and attachments at each bucket’s address; read them through Mailbox, MCP, CLI, or REST.
-- Share message read/unread status and audit history across authorized people and agents.
-- Publish static websites and SPAs to `*.revdoku.site` or a custom domain when enabled and requested.
-- Update an existing website and republish without changing its URL.
-- Set Public, Password, or Require Email visitor access.
-- Read views, visitors, downloads, and tracked-link analytics.
-- Collect contact, booking, waitlist, and feedback submissions with owner notifications.
-- Serve folders without an index through an automatically generated file listing.
+See the [storage quick start](./docs.md#keep-files-in-a-private-cloud-bucket),
+[file sharing](./docs.md#share-files-with-people-and-agents), and
+[multiple-agent example](./docs.md#work-with-multiple-ai-agents).
 
-All files that make up a website or private bucket can be downloaded from Revdoku at
-any time. Form submissions are encrypted and protected by captcha, rate limits,
-and honeypot checks; owners can export them to CSV at any time or read them
-through the API or MCP.
+## Receive email in a bucket
 
-Create an account at <https://app.revdoku.com/users/sign_up>. Read current prices
-and limits at <https://app.revdoku.com/pricing> or
-<https://app.revdoku.com/pricing.json>. Contact `support@revdoku.com` for account,
-billing, access, or moderation questions.
+Each bucket has its own incoming email address. Bucket creation returns the
+address and receiving state; for an existing bucket, use
+`bucket_get(include_inbound_email: true)` with write access or **Bucket settings →
+Email**. Check `inbound_email.ready` before using the address.
 
-See [Samples](https://revdoku.com/examples/) for published examples and
-[docs.md](./docs.md) for private storage, incoming email, access, and optional publishing.
+Receive invoices, documents, project updates, or authorized service verification
+messages. Each accepted email is saved as original `message.eml`, decoded
+`message.json`, and attachment files. Authorized people and agents can read these
+with the same file tools used for other bucket content.
 
-## Limitations
+Compare `inbound_email.received_count` to detect new mail, then read
+`last_received_path + "message.json"` for the body and attachment paths. Anyone
+knowing the address can email the bucket; reading its contents requires access.
+See [incoming email](docs.md#receive-email-and-third-party-verification-messages)
+and the [API contract](api.md#incoming-email-into-a-bucket).
 
-- Revdoku currently hosts static websites and SPAs. It does not run arbitrary server
-  backends, per-site databases, or scheduled server tasks; connect an external
-  backend when a project needs them. For scheduled updates, run the Revdoku CLI
-  or REST API from an external scheduler or backend.
-- Use the CLI for local folders and the CLI or REST direct-upload flow for binary files.
-- Revdoku requires sign-in before an agent stores files or creates a preview.
+## Accounts and limits
 
-## Guidance for AI assistants
+Create an account at <https://app.revdoku.com/users/sign_up> and connect in the
+browser. Never paste account credentials or verification codes into AI chat.
+Free includes 1 active bucket, 12 incoming emails/month, and 1 address rotation/month.
+Read current prices and limits at <https://app.revdoku.com/pricing> or
+<https://app.revdoku.com/pricing.json>.
 
-- For a user's first website, help them create a Free account, save a private
-  draft, and review a temporary preview before publishing.
-- Account creation happens only in the browser. Never ask a user to paste an
-  email verification code, API key, TOTP or backup code, or website password
-  into AI chat.
-- Use the Revdoku CLI when publishing a local folder. Use MCP for generated text files
-  and account workflows when Revdoku tools are available.
-- Saving files creates or updates private bucket storage. Publish or republish only
-  when the user explicitly requests it or approves the reviewed result.
-- Publishing and unpublishing are asynchronous. Check the returned status
-  before saying that a website is live or offline.
-- Preserve requested access controls. Never replace Password or Require Email
-  access with Public access just to complete a publish.
+Private storage and collaboration follow the [Terms of Use](https://revdoku.com/terms/).
+Contact `support@revdoku.com` for account, billing, or access questions.
 
 ## Local AI apps
 
@@ -137,32 +94,22 @@ fetch the current installer and retry. Download-source overrides are unsupported
 your shell `PATH`. Agents use the bundled `scripts/revdoku.sh` with the same
 arguments as the commands below.
 
-Publish or update the current folder:
+Store or update a local folder:
 
 ```sh
-revdoku p
+revdoku p ./project-files --draft
 ```
 
 The first run opens browser sign-in when credentials are missing. Re-running
-updates the same website. New accounts can be created on the web signup page.
+updates the same bucket. New accounts can be created on the web signup page.
 
 Useful commands:
 
-- `revdoku p [PATH]` — publish or update a website.
-- `revdoku preview [PATH]` — create a review URL.
-- `revdoku analytics` — account summary for this week vs. the same elapsed part of last week; use `--range previous_week` for last week.
-- `revdoku p [PATH] --draft` — save files privately after sign-in.
-- `revdoku p --protected` — publish with Password access on an eligible plan.
-- `revdoku p --access-mode require_email` — require visitor email OTP.
-- `revdoku open`, `revdoku status`, `revdoku ls`, `revdoku --help` — inspect
-  the current connection and sites.
-
-Incoming email is available per bucket, including website buckets. Copy the
-random address from **Bucket settings → Email**; anyone who knows it can send.
-Creation also returns the address. Compare `inbound_email.received_count` to detect
-new mail, then read `last_received_path + "message.json"` for decoded content and
-attachment paths. `files` and `read` also expose originals and attachments. See [incoming email](docs.md#receive-email-and-third-party-verification-messages)
-and the [API contract](api.md#incoming-email-into-a-bucket).
+- `revdoku p [PATH] --draft` — store or update private files.
+- `revdoku files`, `revdoku read PATH` — list and read stored files and email.
+- `revdoku versions`, `revdoku restore ID` — inspect and restore history.
+- `revdoku status`, `revdoku ls` — inspect the connection and buckets.
+- `revdoku dashboard`, `revdoku --help` — open the dashboard or command reference.
 
 ## Hosted and web agents
 
@@ -187,9 +134,25 @@ Per AI client guides:
 - Gemini: <https://revdoku.com/gemini/>
 - Hermes: <https://revdoku.com/hermes/>
 
-Use those tutorials only when manual setup or troubleshooting is actually
-needed. Follow the user's storage or publishing goal. Private storage needs no
-preview or website; preview and publish only for a requested website or visitor link.
+Use those tutorials when manual setup or troubleshooting is needed. Follow the
+user's file storage, sharing, or incoming-email goal.
+
+## Website publishing for enabled accounts
+
+New accounts have website publishing disabled on every plan; upgrading does not
+enable it. Existing enabled accounts retain publishing. Check
+`features.website_publishing` in REST `GET /api/v1/status`, MCP `revdoku_status`,
+or CLI `status` before offering previews, public links, or website features.
+`WEBSITE_PUBLISHING_DISABLED` is not an upgrade prompt.
+
+For enabled accounts, publishing can serve selected files as a static website
+at `*.revdoku.site` or a custom domain, with Public, Password, or Require Email
+access, forms, and analytics. Owners can read form submissions through MCP/API or
+export them to CSV at any time. It requires
+an explicit request. File uploads alone do not create or update a live website.
+Read the [publishing guide](./docs.md#publishing) and
+[Website Publishing Policy](https://revdoku.com/acceptable-use/) before publishing.
+Private file sharing through account access needs no publication.
 
 ## Public package
 
@@ -209,12 +172,12 @@ always uses the credential's main account. The Agency owner must explicitly
 include client accounts when connecting or in Account → Access.
 
 ```bash
-revdoku account create-client "Website & campaigns" --client-name "Acme Studio" --account-id acct_agency
+revdoku account create-client "Client files" --client-name "Acme Studio" --account-id acct_agency
 revdoku ls --account-id acct_...
-revdoku p ./dist --account-id acct_... --draft
+revdoku p ./project-files --account-id acct_... --draft
 ```
 
-Pro Agency shares capacity, credits, and 15 unique members across one agency and
+Pro Agency shares capacity, credits, and member seats across one agency and
 nine client accounts. Each client keeps separate files, members, and branding.
 Account names and client names can differ. Unknown client names stay unset.
 `revdoku account --account-id ID` shows a client’s identity and provider guidance;

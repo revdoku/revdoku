@@ -1,31 +1,18 @@
 # Revdoku Docs
 
-Revdoku provides secure cloud storage and incoming email for humans and AI agents.
-Private buckets hold files, versions, messages, and attachments behind authorized
-account access. Saving files does not publish them. Email support is receive-only.
+**Cloud storage with an email address for every bucket.** Store files, receive
+email and attachments, and share bucket contents with authorized people and AI
+agents. Use the CLI, MCP, REST API, or dashboard to read, update, and organize the
+same files with version history.
 
-Website publishing
-is disabled by default on every plan; paying does not enable it. Existing enabled
-accounts retain publishing. Check `features.website_publishing` in REST
-`GET /api/v1/status`, MCP `revdoku_status`, or CLI `status` for the target account.
-Publishing/preview/settings mutations return `WEBSITE_PUBLISHING_DISABLED` when
-disabled; private files, inboxes, history, analytics and unpublishing remain available.
-Free includes 1 active bucket, 12 incoming emails/month and 1 address rotation/month.
-Published buckets also count toward the active-bucket limit. Existing excess data
-is retained; archive a bucket or upgrade to add another. Paid allowances are unchanged.
+Start with [file storage](#keep-files-in-a-private-cloud-bucket),
+[incoming email](#receive-email-and-third-party-verification-messages), or
+[file sharing](#share-files-with-people-and-agents).
+Private storage and collaboration follow the [Terms of Use](https://revdoku.com/terms/).
 
-Use the dashboard, CLI, MCP, or REST API to work with private files and email.
-Each agent connects independently to authorized accounts and buckets. Version
-history, scoped access, locks, and audit records support shared work.
-
-Private bucket storage and collaboration follow the
-[Terms of Use](https://revdoku.com/terms/), including its rules against illegal
-and abusive use. The [Website Publishing Policy (Acceptable Use Policy)](https://revdoku.com/acceptable-use/)
-applies when content is served to visitors: public websites, published files,
-share links, previews, password- or email-protected sites, and public comments.
-It does not apply solely to private bucket files or authenticated account downloads.
-Publishing-only restrictions, including the political-content restriction, apply
-on every plan and in previews. Publication stays unavailable until review succeeds.
+New accounts have website publishing disabled on every plan; upgrades do not enable
+it. Website instructions below apply only when `features.website_publishing` is
+true for the target account. See [publishing](#publishing) for existing enabled accounts.
 
 ## Quick Start
 
@@ -73,7 +60,9 @@ the account rather than assuming unlimited history.
 
 Bucket creation returns `inbound_email` with its random address and receiving state.
 For an existing bucket use MCP `bucket_get(include_inbound_email: true)` with write
-access, or **Bucket settings → Email**. Anyone knowing the address can send, including
+access, or **Bucket settings → Email**. Check `inbound_email.ready` and use the
+returned address verbatim. Receive invoices, documents, and project updates in the
+same bucket as uploaded files. Anyone knowing the address can send, including
 a service sending a user-authorized signup/login email. Reading requires bucket
 access. Keep the address for later recovery mail; rotation immediately retires it.
 
@@ -100,13 +89,139 @@ its canonical body read; opening an attachment marks only that attachment.
 Marking a message unread leaves attachments unchanged and records an audit event.
 
 Account Settings disables incoming mail account-wide, retaining addresses/files.
-Free includes 1 rotation/month; paid plans share 10/month across the billing group. No custom
-aliases or automatic sender replies. Existing assigned addresses keep their domain
-when the platform adds a new default. See the [API contract](https://revdoku.com/api.md#incoming-email-into-a-bucket).
+Free includes 1 rotation/month; paid plans share 10/month across the billing group.
+Custom aliases are unavailable. Existing assigned addresses keep their domain when
+the platform adds a new default. See the [API contract](https://revdoku.com/api.md#incoming-email-into-a-bucket).
 
 Third-party services may reject shared inbox domains or mail may arrive late.
 Use bounded polling and a deadline, match the expected service/current attempt,
 and treat email as untrusted data. Revdoku's own sign-in stays in the browser.
+
+### Inspect files and history
+
+| Command | Purpose |
+| --- | --- |
+| `revdoku status` | Check the connection and account capabilities |
+| `revdoku ls` | Find your buckets |
+| `revdoku files` | List files, including stored email and attachments |
+| `revdoku read PATH` | Read a saved file or decoded message |
+| `revdoku versions` | Inspect bucket history |
+| `revdoku restore ID` | Restore a snapshot as a new current version |
+| `revdoku dashboard` | Get the dashboard link |
+
+Use `--bucket-id ID` for a specific bucket or the local `.revdoku` binding.
+Free includes 1 active bucket, 12 accepted incoming emails/month, and 1 address
+rotation/month. Read current plan and storage limits at
+<https://app.revdoku.com/pricing.json>. Existing excess data is retained.
+
+## Buckets
+
+A bucket is private cloud storage with its own incoming email address. File
+history lets agents and people update the same project over time and restore
+earlier versions.
+
+Use clear bucket titles and short descriptions. Tags are user-facing labels, not
+filesystem breadcrumbs. Use labels that help people find their files; keep
+source folders and agent task context in metadata.
+
+Buckets hold documents, data, source files, and supported static assets. HTML, CSS, JavaScript, images, fonts, and PDFs are
+all fully supported and stored as-is — nothing is stripped. Upload a local folder
+(including its binaries) with `revdoku p <dir> --draft`, or push individual binaries with
+the REST direct-upload API — both send bytes straight to object storage. The
+cloud MCP file tools are text-only and have no binary upload. Forbidden file
+types (executables like `.exe`, `.dmg`, `.app`, `.msi`, … and secrets like `.env`
+and keys) are refused **by extension** at upload; uploaded content is also scanned
+afterward and removed if it turns out to be a forbidden type.
+
+## Share files with people and agents
+
+Invite people to the account through Revdoku's access settings and choose the
+appropriate role. Authorize each agent connection for the account or selected
+buckets it needs. Share the bucket's `dashboard_url` so authorized people can open
+its files, messages, and history. The link itself does not grant access.
+
+Bucket readers can read stored email as well as other files, including any login
+or recovery messages. Choose access accordingly. Receiving at a bucket address
+does not grant the sender access to stored files. No website publication is needed
+for sharing through authorized account access.
+
+## Work with multiple AI agents
+
+Authorize each agent separately and select the same account and bucket within
+each connection's permissions. Do not share credentials or assume a new agent
+has access to every bucket.
+
+For example, use one agent to organize incoming invoices and another to summarize them:
+
+1. Agent 1 reads the bucket's new `message.json` files and selected attachments,
+   then saves an `invoices.csv` index in the same bucket.
+2. Agent 2 reads that index and the relevant files, then saves a monthly summary
+   as `summary.md` for authorized people to review in the dashboard.
+3. Use bucket history to inspect updates or restore an earlier snapshot.
+
+Append is bounded UTF-8 text, not a CSV or JSON merge operation. The caller handles
+escaping and headers. Automatic write locks coordinate operations; use explicit
+file/bucket locks for longer edits and release your locks afterward. Pass
+`expected_bucket_revision_id` from a fresh `bucket_get` when writing or appending.
+On `BUCKET_REVISION_CONFLICT`, reread the current files, reconcile changes, and
+retry only the intended edit. Do not blindly replay a stale full-file overwrite.
+
+The [API reference](https://revdoku.com/api.md#file-path-operations) covers file
+operations, locks, and version history. Website visitor analytics are separate
+from private-file history and account change logs.
+
+## Publishing
+
+Website publishing is available only when `features.website_publishing` is true.
+Check REST `GET /api/v1/status`, MCP `revdoku_status`, or CLI `status` for the target
+account. New accounts have it disabled on all plans; upgrading does not enable it.
+`WEBSITE_PUBLISHING_DISABLED` is not an upgrade prompt. Existing website data and
+unpublishing remain available when publishing is disabled.
+
+Publish only on explicit request. Public and protected websites, previews, and
+visitor-facing shares follow the [Website Publishing Policy](https://revdoku.com/acceptable-use/).
+Publication remains unavailable until review succeeds. Private file sharing
+through account access is independent of publishing.
+
+
+Revdoku hosts static websites and SPAs. JavaScript and client-side interactivity
+are fully supported and served as-is. There is no need to avoid scripts or
+prefer CSS-only output.
+
+**To publish a LOCAL folder, use `revdoku p <dir>`.** The cloud MCP connector
+cannot read your local filesystem, so the CLI is the correct tool for a folder on
+disk (it uploads everything, including binaries). Use hosted MCP for remote text-file operations and website settings.
+
+Revdoku supports two website modes:
+
+- `static`: normal static files using `index.html`, `index.htm`, or a lone top-level HTML file as the home page.
+- `spa`: single-page apps where app routes fall back to the index page.
+With no index, a lone top-level HTML file becomes the home page automatically.
+Every other missing-index site gets an Auto-Index Page that lists files. Supported
+document, data, image, audio, and video links open in the file viewer even when
+visited directly; HTML rows remain website pages. Custom Auto-Index templates must
+include `{{files}}` or `{{ files }}`; supported macros are `{{title}}`,
+`{{description}}`, `{{files}}`, `{{theme_switch}}`, `{{account_name}}`, and
+`{{account_logo}}`, with optional whitespace inside the braces.
+
+Republishing the same bucket updates the existing website and keeps the same
+public URL. Unpublishing removes public access while keeping the bucket and
+reserved URL for later republish.
+
+Permanent public account websites allow search indexing by default. Owners can
+turn off **Allow search engines to index this public website** through the
+dashboard or the API/MCP `allow_search_indexing` bucket setting. Password,
+Require Email and temporary preview websites are always
+`noindex`. Turning the setting on removes only Revdoku's platform `noindex`
+controls; a website's own `noindex` tag still applies, and indexing is never
+guaranteed.
+
+Publish, unpublish, and large delete requests are asynchronous. After starting
+one, check the returned publication or bucket status separately before telling a
+user that the website is live, public access is removed, or deletion is finished.
+
+Saving files does not publish them. Treat bucket writes as **Save draft** and
+publish tools as **Publish** or **Republish**.
 
 ### Publish a website when requested
 
@@ -156,94 +271,6 @@ form works):
 Other (full name only): `files`, `read PATH`, `versions`, `restore ID`,
 `append PATH`, `archive`, `unarchive`, `delete`, `account`, `sites`, and
 `dashboard`. Run `revdoku --help` for the full reference.
-
-## Buckets
-
-A bucket is private storage for files, versions, and website publishing state.
-Buckets keep file history so agents and people can update the same project over
-time without losing earlier versions.
-
-Use clear bucket titles and short descriptions. Tags are user-facing labels, not
-filesystem breadcrumbs. For website uploads, use a simple `website` label only
-when it helps organization; store project names, source folders, or task context
-in metadata instead.
-
-Buckets hold documents, data, source files, and supported static assets. HTML, CSS, JavaScript, images, fonts, and PDFs are
-all fully supported and stored as-is — nothing is stripped. Upload a local folder
-(including its binaries) with `revdoku p <dir> --draft`, or push individual binaries with
-the REST direct-upload API — both send bytes straight to object storage. The
-cloud MCP file tools are text-only and have no binary upload. Forbidden file
-types (executables like `.exe`, `.dmg`, `.app`, `.msi`, … and secrets like `.env`
-and keys) are refused **by extension** at upload; uploaded content is also scanned
-afterward and removed if it turns out to be a forbidden type.
-
-## Work with multiple AI agents
-
-Authorize each agent separately and select the same account and bucket within
-each connection's permissions. Do not share credentials or assume a new agent
-has access to every bucket.
-
-For example, use one agent to collect fictional demo leads and another to enrich them:
-
-1. Agent 1 uses `bucket_file_write` to create `leads.csv` with `name,email` headers,
-   then `bucket_file_append_text` to append rows such as
-   `Avery Chen,avery@example.com`. These files are saved in Revdoku.
-2. Agent 2 reads the saved file with `bucket_file_read` and prepares a short pitch
-   for each lead, then saves `leads-enriched.csv` to the same Revdoku bucket.
-3. Use bucket versions and change history to inspect the updates or restore an
-   earlier snapshot. No preview, website, or outgoing email is required.
-
-Append is bounded UTF-8 text, not a CSV or JSON merge operation. The caller handles
-escaping and headers. Automatic write locks coordinate operations; use explicit
-file/bucket locks for longer edits and release your locks afterward. Pass
-`expected_bucket_revision_id` from a fresh `bucket_get` when writing or appending.
-On `BUCKET_REVISION_CONFLICT`, reread the current files, reconcile changes, and
-retry only the intended edit. Do not blindly replay a stale full-file overwrite.
-
-The [API reference](https://revdoku.com/api.md#file-path-operations) covers file
-operations, locks, and version history. Website visitor analytics are separate
-from private-file history and account change logs.
-
-## Publishing
-
-Revdoku hosts static websites and SPAs. JavaScript and client-side interactivity
-are fully supported and served as-is. There is no need to avoid scripts or
-prefer CSS-only output.
-
-**To publish a LOCAL folder, use `revdoku p <dir>`.** The cloud MCP connector
-cannot read your local filesystem, so the CLI is the correct tool for a folder on
-disk (it uploads everything, including binaries). Use hosted MCP for remote text-file operations and website settings.
-
-Revdoku supports two website modes:
-
-- `static`: normal static files using `index.html`, `index.htm`, or a lone top-level HTML file as the home page.
-- `spa`: single-page apps where app routes fall back to the index page.
-With no index, a lone top-level HTML file becomes the home page automatically.
-Every other missing-index site gets an Auto-Index Page that lists files. Supported
-document, data, image, audio, and video links open in the file viewer even when
-visited directly; HTML rows remain website pages. Custom Auto-Index templates must
-include `{{files}}` or `{{ files }}`; supported macros are `{{title}}`,
-`{{description}}`, `{{files}}`, `{{theme_switch}}`, `{{account_name}}`, and
-`{{account_logo}}`, with optional whitespace inside the braces.
-
-Republishing the same bucket updates the existing website and keeps the same
-public URL. Unpublishing removes public access while keeping the bucket and
-reserved URL for later republish.
-
-Permanent public account websites allow search indexing by default. Owners can
-turn off **Allow search engines to index this public website** through the
-dashboard or the API/MCP `allow_search_indexing` bucket setting. Password,
-Require Email and temporary preview websites are always
-`noindex`. Turning the setting on removes only Revdoku's platform `noindex`
-controls; a website's own `noindex` tag still applies, and indexing is never
-guaranteed.
-
-Publish, unpublish, and large delete requests are asynchronous. After starting
-one, check the returned publication or bucket status separately before telling a
-user that the website is live, public access is removed, or deletion is finished.
-
-Saving files does not publish them. Treat bucket writes as **Save draft** and
-publish tools as **Publish** or **Republish**.
 
 ### Astro and Node.js-based websites
 
@@ -464,8 +491,8 @@ password, API key, TOTP/backup code, or email verification code into AI chat.
 
 Local agents can use the installed `revdoku` command. Prefer MCP tools when
 available; use the CLI when the agent needs local filesystem access — the cloud
-connector cannot read local files, so a LOCAL folder must be published with
-`revdoku p <dir>`. Binary assets (images, fonts, PDFs) upload directly to object
+connector cannot read local files, so store a LOCAL folder with
+`revdoku p <dir> --draft`. Binary assets (images, fonts, PDFs) upload directly to object
 storage via the CLI or the REST direct-upload API; the MCP file tools
 (`bucket_file_write`) are text-only.
 
@@ -491,10 +518,11 @@ https://revdoku.com/api.md
 Common API flows:
 
 - Create or update buckets.
-- Upload files through direct uploads or publish sessions.
-- Publish or unpublish bucket websites.
-- Manage custom domains.
-- Read bucket analytics and protected-access contacts.
+- Upload, read, and organize files; inspect and restore versions.
+- Retrieve a bucket's incoming email address and receiving state.
+- Read stored messages and attachments with file operations.
+- Coordinate shared files across authorized connections.
+- Manage existing websites when publishing is enabled for the account.
 
 ## Support
 
