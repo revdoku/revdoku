@@ -3,7 +3,7 @@
   "info": {
     "title": "Revdoku public agent API",
     "version": "1.0.0",
-    "description": "Selected Revdoku discovery, client-account, and incoming-email endpoints. The full REST API manages buckets, files, versions, publications, access settings, forms, and analytics. Signup is browser-only. Existing Pro Agency owners can explicitly authorize credentials for their client accounts. This document covers selected endpoints; see https://revdoku.com/api.md for the complete bucket, file, and publishing API."
+    "description": "Private cloud storage, versioned files, and incoming email for AI agents. New accounts have website publishing disabled on all plans. Check features.website_publishing on the target account; WEBSITE_PUBLISHING_DISABLED is not an upgrade prompt. Signup is browser-only. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API."
   },
   "servers": [
     {
@@ -45,6 +45,15 @@
                           "type": "array",
                           "items": {
                             "$ref": "#/components/schemas/AccountIdentity"
+                          }
+                        },
+                        "features": {
+                          "type": "object",
+                          "properties": {
+                            "website_publishing": {
+                              "type": "boolean",
+                              "description": "Effective account flag. False for new accounts, independent of plan."
+                            }
                           }
                         }
                       }
@@ -519,6 +528,10 @@
                 "type": "string"
               }
             }
+          },
+          "website_publishing_enabled": {
+            "type": "boolean",
+            "description": "Effective website publishing access; new accounts default to false."
           }
         }
       },

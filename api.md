@@ -1,5 +1,15 @@
 # Revdoku API
 
+New accounts focus on private cloud storage and incoming email. Website publishing
+is disabled by default on every plan; paying does not enable it. Existing enabled
+accounts retain publishing. Check `features.website_publishing` in REST
+`GET /api/v1/status`, MCP `revdoku_status`, or CLI `status` for the target account.
+Publishing/preview/settings mutations return `WEBSITE_PUBLISHING_DISABLED` when
+disabled; private files, inboxes, history, analytics and unpublishing remain available.
+Free includes 1 active bucket, 12 incoming emails/month and 1 address rotation/month.
+Published buckets also count toward the active-bucket limit. Existing excess data
+is retained; archive a bucket or upgrade to add another. Paid allowances are unchanged.
+
 The Revdoku REST API manages buckets, files, versions, website publications,
 domains, access settings, forms, and analytics. File writes save private bucket
 files; a separate publication request creates or updates the live website.
@@ -93,7 +103,7 @@ verbatim; never derive it from IDs or the current default domain. Address reserv
 failure rolls back creation. Reading never creates an address.
 
 Rotation requires `{"confirm":true,"current_address":"<current address>"}`.
-Free allows 0; paid plans allow 10 successful rotations per UTC calendar month,
+Free allows 1; paid plans allow 10 successful rotations per UTC calendar month,
 shared by the billing account and its clients. See `/pricing.json` for
 `max_inbound_email_address_rotations_per_month`. Initial assignment is free of this
 allowance. Stale requests return 409 `INBOUND_EMAIL_ADDRESS_CHANGED`; unavailable

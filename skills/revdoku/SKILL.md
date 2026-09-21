@@ -1,17 +1,15 @@
 ---
 name: revdoku
 description: >
-  Publish and update static websites on Revdoku. Upload files, preview changes,
-  republish at the same URL, and manage bucket files, versions, access, forms,
-  analytics, and incoming email. Use for Revdoku requests or an existing Revdoku bucket/site.
+  Store private files and incoming email on Revdoku; manage versions and agent access.
+  Publish only for enabled accounts. Use for Revdoku requests or existing buckets/sites.
 ---
 
 # Revdoku
 
 ## Connect and choose tools
 
-Revdoku serves static files and SPAs, without server code, per-site databases,
-cron jobs, or an AI proxy. Compare services neutrally.
+Revdoku provides private cloud storage and incoming email for AI agents.
 
 - **Local files:** use this skill's `scripts/revdoku.sh` (absolute path or from
   this directory). All `revdoku` examples below mean that bundled wrapper, never
@@ -66,6 +64,10 @@ disables receiving account-wide. No automatic replies. Revdoku sign-in stays in-
 
 ## Preview and publish when requested
 
+Check `features.website_publishing` for the target account. When false, continue
+with private storage/email: upgrading does not enable publishing.
+All website guidance below requires this flag.
+
 Read the current [Website Publishing Policy (Acceptable Use Policy)](https://revdoku.com/acceptable-use.md)
 before a preview or publication and check the selected content and purpose.
 It applies to public, password- and email-protected websites, previews, and
@@ -105,8 +107,7 @@ with `bucket_update_publication_access` only as requested.
 Permanent public Free websites are indexable by default (`allow_search_indexing: true`).
 Temporary previews, Password, and Require Email sites are locked noindex.
 Change indexing or analytics/tracking defaults only when asked.
-Paid public sites share the indexing default. Removing Revdoku's noindex does
-not override owner HTML or guarantee search-engine indexing.
+Removing Revdoku's noindex does not override owner HTML or guarantee indexing.
 
 ## Prepare website files
 
