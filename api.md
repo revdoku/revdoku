@@ -1386,6 +1386,51 @@ Move and organize existing files server-side; do not download and re-upload byte
 | `POST` | `/api/v1/buckets/:id/files/reorganize` | Apply multiple rename/copy/move/delete path operations atomically. |
 | `POST` | `/api/v1/buckets/:id/files/append_text` | Append bounded UTF-8 text to an existing text file. |
 
+#### Read metadata and file logs
+
+Every file version exposes `read`, `read_at`, `read_by`, and `read_by_api_key`.
+These describe its **first recorded read since the last reset** (or a manual
+Mark read action for email). File detail responses
+mirror the current version's fields; lean MCP listings include `read` and `read_at`.
+Metadata queries do not mark files read. New versions start unmarked, including
+copies and newly created rename/restore versions. Existing revision rows keep
+their receipts when reused or moved.
+
+Content reads and explicit downloads record access. For signed URLs, this means
+access was granted, not that the download completed. JSON content responses and
+MCP `bucket_file_read` include `previously_read` when tracking succeeds; the MCP
+response also identifies the served `version_id`. Redirect downloads provide
+`X-Revdoku-Previously-Read`. Tracking failures do not prevent file access.
+Automatic previews/preloads use `purpose=background`; the dashboard acknowledges
+an intentional open, including cached content, with
+`POST /api/v1/source_file_versions/:version_id/read`. This requires read access.
+
+Incoming email has shared Mailbox status on the current decoded body (`email_part=body`,
+normally `message.json`), with the original EML as fallback when no body exists.
+An intentional read of current EML also marks its body read. Attachments and
+historical revisions remain independent. REST original-read responses include
+`email_read_status` with the canonical `version_id` and its current read metadata.
+
+`PATCH /api/v1/source_file_versions/:canonical_version_id/email_read_status` with
+`{"read":true}` or `{"read":false}` explicitly changes shared message status.
+It requires read access to the bucket; reviewers can use it on read-only/locked
+content. Unread clears all three markers without creating a content version.
+Each actual change and its before/after audit event commit together on all plans;
+audit failure returns an error and rolls back the change. Repeated desired states
+are idempotent. Stale or noncanonical targets return 409: reload the current body.
+
+Use `GET /api/v1/audit_logs?bucket_id=...&file_id=...` and optional `version_id`
+to inspect subsequent accesses. Cursor pagination uses `pagination=cursor`,
+`per_page` (up to 200), and `cursor`. Audit items carry `file_id` and `version_id`.
+MCP `bucket_file_get` accepts `include_audit_logs`, optional `version_id`,
+`audit_limit`, and `audit_cursor`. Owners see all activity; other members see their
+own, within plan retention and granted buckets. File filters cover instrumented
+single-file requests; older and multi-file operations remain in bucket logs.
+
+No recorded read is not proof of no prior access. Receipts do not reserve files,
+prove processing/OTP consumption, or list every reader. Incoming email's EML and
+JSON are independent files: inspect both when checking earlier access.
+
 #### Bucket version history
 
 `GET /api/v1/buckets/:id/versions` lists immutable bucket versions. Read one
