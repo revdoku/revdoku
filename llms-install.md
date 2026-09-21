@@ -1,5 +1,15 @@
 # Revdoku agent setup
 
+New accounts focus on private cloud storage and incoming email. Website publishing
+is disabled by default on every plan; paying does not enable it. Existing enabled
+accounts retain publishing. Check `features.website_publishing` in REST
+`GET /api/v1/status`, MCP `revdoku_status`, or CLI `status` for the target account.
+Publishing/preview/settings mutations return `WEBSITE_PUBLISHING_DISABLED` when
+disabled; private files, inboxes, history, analytics and unpublishing remain available.
+Free includes 1 active bucket, 12 incoming emails/month and 1 address rotation/month.
+Published buckets also count toward the active-bucket limit. Existing excess data
+is retained; archive a bucket or upgrade to add another. Paid allowances are unchanged.
+
 Connect Revdoku, verify access, then publish or update the requested files.
 
 Prefer local shell and filesystem access; use
@@ -8,11 +18,11 @@ hosted MCP only when local access is unavailable.
 ## Public prompt
 
 ```text
-Connect Revdoku so you can store and organize my files, and publish websites when requested.
+Connect Revdoku so you can store and organize my files and read incoming email in private buckets.
 
 Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install and use the local CLI. Otherwise, connect through hosted MCP.
 
-Complete sign-in in the browser, check the connection, and ask what I want to do with my files or websites.
+Complete sign-in in the browser, check the connection, and ask what I want to do with my files or incoming emails. Check account capabilities before offering website publishing; new accounts have it disabled.
 ```
 
 ## Agent rules

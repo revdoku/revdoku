@@ -1,5 +1,15 @@
 # Revdoku
 
+New accounts focus on private cloud storage and incoming email. Website publishing
+is disabled by default on every plan; paying does not enable it. Existing enabled
+accounts retain publishing. Check `features.website_publishing` in REST
+`GET /api/v1/status`, MCP `revdoku_status`, or CLI `status` for the target account.
+Publishing/preview/settings mutations return `WEBSITE_PUBLISHING_DISABLED` when
+disabled; private files, inboxes, history, analytics and unpublishing remain available.
+Free includes 1 active bucket, 12 incoming emails/month and 1 address rotation/month.
+Published buckets also count toward the active-bucket limit. Existing excess data
+is retained; archive a bucket or upgrade to add another. Paid allowances are unchanged.
+
 Revdoku publishes and updates static websites from files or folders. Use the CLI,
 MCP, or REST API to manage files, versions, visitor access, forms, and analytics.
 Files stay in private buckets until a preview or publication is requested.
@@ -28,7 +38,7 @@ See the [framework build guide](./docs.md#astro-and-nodejs-based-websites) and
 ## Prompt for an AI agent
 
 ```text
-Connect Revdoku so you can store and organize my files, and publish websites when requested.
+Connect Revdoku so you can store and organize my private files and read incoming email.
 
 Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install and use the local CLI. Otherwise, connect through hosted MCP.
 

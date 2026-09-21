@@ -1,5 +1,15 @@
 # Revdoku Docs
 
+New accounts focus on private cloud storage and incoming email. Website publishing
+is disabled by default on every plan; paying does not enable it. Existing enabled
+accounts retain publishing. Check `features.website_publishing` in REST
+`GET /api/v1/status`, MCP `revdoku_status`, or CLI `status` for the target account.
+Publishing/preview/settings mutations return `WEBSITE_PUBLISHING_DISABLED` when
+disabled; private files, inboxes, history, analytics and unpublishing remain available.
+Free includes 1 active bucket, 12 incoming emails/month and 1 address rotation/month.
+Published buckets also count toward the active-bucket limit. Existing excess data
+is retained; archive a bucket or upgrade to add another. Paid allowances are unchanged.
+
 Use the Revdoku CLI or MCP to upload files, publish a website, and update it at
 the same URL. Buckets store files and version history; publication is a separate
 operation. Websites support access controls, forms, and analytics.
@@ -77,7 +87,7 @@ For several arrivals, paginate file listings and track message IDs; the latest
 folder pointer is not a feed cursor. Older messages retain their original paths.
 
 Account Settings disables incoming mail account-wide, retaining addresses/files.
-Free has no rotations; paid plans share 10/month across the billing group. No custom
+Free includes 1 rotation/month; paid plans share 10/month across the billing group. No custom
 aliases or automatic sender replies. Existing assigned addresses keep their domain
 when the platform adds a new default. See the [API contract](https://revdoku.com/api.md#incoming-email-into-a-bucket).
 

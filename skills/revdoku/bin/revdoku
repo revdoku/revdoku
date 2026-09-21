@@ -149,7 +149,7 @@ Publish options:
   --access-mode MODE   public, password, or require_email (verified email, no password).
   --form-preset NAME   Enable a built-in form preset (or off).
   --site-mode MODE     static or spa (SPA serves index.html for client-side routes).
-  --draft              Save a private draft instead of publishing live.
+  --draft              Save private files (use for storage and inbox accounts).
   --no-wait            Return as soon as the URL is reserved (don't wait for the build).
   --publish-folder DIR Publish ONLY this bucket-relative folder as the site (its index.html
                        becomes the root); other folders stay stored but unserved.
@@ -1496,6 +1496,8 @@ connection_status() {
       default_account_id: .data.default_account_id,
       accounts: .data.accounts,
       connection: .data.connection,
+      features: .data.features,
+      onboarding: .data.onboarding,
       publishing: .data.publishing
     }
   }'
@@ -1889,7 +1891,7 @@ effective_metadata_json() {
       --arg root "$root_clean" \
       --argjson metadata "$METADATA_JSON" \
       '$metadata + {publication_root_directory: $root}'
-  elif [[ -d "$ROOT_PATH" ]]; then
+  elif [[ -d "$ROOT_PATH" && ( "$PUBLISH" == "true" || "$PREVIEW_AFTER_STORE" == "true" ) ]]; then
     "$JQ_BIN" -nc \
       --arg root "$(basename "$ROOT_PATH")" \
       --argjson metadata "$METADATA_JSON" \
