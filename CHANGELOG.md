@@ -2,6 +2,13 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.481 — 2026-09-21
+
+### Improved
+
+- Empty buckets offer Send by email beside file uploads, opening the bucket's
+  incoming email address and copy control before the first message arrives.
+
 ## 1.0.480 — 2026-09-21
 
 ### Improved
