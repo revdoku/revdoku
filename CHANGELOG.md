@@ -2,6 +2,16 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.480 — 2026-09-21
+
+### Improved
+
+- Buckets with email and ordinary files use Files / Mailbox tabs with icons and
+  a shared unread badge. List / Tiles stays inside Files; redundant switching
+  controls are removed. Changing tabs preserves the selected message and viewer.
+- Skill, connector descriptions, and API documentation now lead with secure cloud
+  storage and incoming email, with website publishing as an optional capability.
+
 ## 1.0.479 — 2026-09-21
 
 ### Added

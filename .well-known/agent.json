@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics.",
+  "description": "Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts.",
   "homepage": "https://revdoku.com/",
   "docs": "https://revdoku.com/docs",
   "pricing": "https://revdoku.com/pricing.md",
@@ -27,11 +27,12 @@
   },
   "capabilities": [
     "Store documents, data, and source files in private cloud buckets",
+    "Receive incoming email and attachments in private buckets; no outgoing email",
     "Read, write, and append shared files across authorized AI connections",
     "Inspect versions and change history; restore earlier files",
-    "Preview an authenticated bucket draft for 24 hours",
+    "Preview an authenticated bucket draft for 24 hours when website publishing is enabled",
     "Sign up in the browser, then connect an existing account",
-    "Publish static websites and SPAs from account buckets",
+    "Publish static websites and SPAs only when enabled and requested",
     "Update an existing website at the same URL",
     "Configure protected access, forms, analytics, and domains on eligible plans"
   ],

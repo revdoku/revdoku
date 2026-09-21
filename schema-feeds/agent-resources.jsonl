@@ -1,4 +1,4 @@
-{"type":"product","name":"Revdoku","url":"https://revdoku.com/","description":"Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics."}
+{"type":"product","name":"Revdoku","url":"https://revdoku.com/","description":"Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts."}
 {"type":"mcp","url":"https://app.revdoku.com/mcp","transport":"streamable-http","account_auth":"oauth2"}
 {"type":"skill","url":"https://github.com/revdoku/revdoku/tree/main/skills/revdoku","install_npm":"npx skills add revdoku/revdoku --skill revdoku -g","install_shell":"curl -fsSL https://revdoku.com/install.sh | bash"}
 {"type":"documentation","url":"https://revdoku.com/docs"}

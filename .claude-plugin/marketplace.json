@@ -5,13 +5,13 @@
     "url": "https://revdoku.com"
   },
   "metadata": {
-    "description": "Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics."
+    "description": "Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts."
   },
   "plugins": [
     {
       "name": "revdoku",
       "source": "./plugins/revdoku",
-      "description": "Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics.",
+      "description": "Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts.",
       "author": {
         "name": "Revdoku",
         "url": "https://revdoku.com"

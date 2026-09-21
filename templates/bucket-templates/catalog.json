@@ -107,7 +107,7 @@
     },
     {
       "key": "press-kit-files",
-      "version": "2026-07-06",
+      "version": "2026-09-21",
       "name": "Press Kit File Collection",
       "description": "A document/media starter bucket that relies on Revdoku's generated Auto-Index Page.",
       "kind": "file_collection",
@@ -123,8 +123,8 @@
         {
           "path": "docs/company-overview.md",
           "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/press-kit-files/docs/company-overview.md",
-          "sha256": "994d30414646eb1aafc770490ec323a5d7009ae8dc863b70f04a8825984877d9",
-          "byte_size": 360,
+          "sha256": "b594d1b5a6fe7499ab066454802f7d6d634c718e69f7bdc390707f009fd68e01",
+          "byte_size": 421,
           "content_type": "text/markdown"
         },
         {

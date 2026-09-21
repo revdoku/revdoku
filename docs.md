@@ -1,6 +1,10 @@
 # Revdoku Docs
 
-New accounts focus on private cloud storage and incoming email. Website publishing
+Revdoku provides secure cloud storage and incoming email for humans and AI agents.
+Private buckets hold files, versions, messages, and attachments behind authorized
+account access. Saving files does not publish them. Email support is receive-only.
+
+Website publishing
 is disabled by default on every plan; paying does not enable it. Existing enabled
 accounts retain publishing. Check `features.website_publishing` in REST
 `GET /api/v1/status`, MCP `revdoku_status`, or CLI `status` for the target account.
@@ -10,9 +14,9 @@ Free includes 1 active bucket, 12 incoming emails/month and 1 address rotation/m
 Published buckets also count toward the active-bucket limit. Existing excess data
 is retained; archive a bucket or upgrade to add another. Paid allowances are unchanged.
 
-Use the Revdoku CLI or MCP to upload files, publish a website, and update it at
-the same URL. Buckets store files and version history; publication is a separate
-operation. Websites support access controls, forms, and analytics.
+Use the dashboard, CLI, MCP, or REST API to work with private files and email.
+Each agent connects independently to authorized accounts and buckets. Version
+history, scoped access, locks, and audit records support shared work.
 
 Private bucket storage and collaboration follow the
 [Terms of Use](https://revdoku.com/terms/), including its rules against illegal
@@ -85,6 +89,15 @@ body text, body status, and attachment paths. Download only needed attachments.
 Use the original with a MIME parser when the body is truncated or unavailable.
 For several arrivals, paginate file listings and track message IDs; the latest
 folder pointer is not a feed cursor. Older messages retain their original paths.
+
+In the dashboard, buckets with email and ordinary files show **Files / Mailbox**
+subtabs. Files includes the full bucket with List / Tiles layouts; Mailbox shows
+messages and opens attachments inline. Email-only buckets default to Mailbox,
+with **View as files** for raw storage. Existing view choices are remembered.
+
+Read/unread status is shared across people and agents. Opening a message marks
+its canonical body read; opening an attachment marks only that attachment.
+Marking a message unread leaves attachments unchanged and records an audit event.
 
 Account Settings disables incoming mail account-wide, retaining addresses/files.
 Free includes 1 rotation/month; paid plans share 10/month across the billing group. No custom
