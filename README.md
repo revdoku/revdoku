@@ -1,6 +1,10 @@
 # Revdoku
 
-New accounts focus on private cloud storage and incoming email. Website publishing
+Revdoku provides secure cloud storage and incoming email for humans and AI agents.
+Private buckets hold files, versions, messages, and attachments behind authorized
+account access. Saving files does not publish them. Email support is receive-only.
+
+Website publishing
 is disabled by default on every plan; paying does not enable it. Existing enabled
 accounts retain publishing. Check `features.website_publishing` in REST
 `GET /api/v1/status`, MCP `revdoku_status`, or CLI `status` for the target account.
@@ -10,9 +14,9 @@ Free includes 1 active bucket, 12 incoming emails/month and 1 address rotation/m
 Published buckets also count toward the active-bucket limit. Existing excess data
 is retained; archive a bucket or upgrade to add another. Paid allowances are unchanged.
 
-Revdoku publishes and updates static websites from files or folders. Use the CLI,
-MCP, or REST API to manage files, versions, visitor access, forms, and analytics.
-Files stay in private buckets until a preview or publication is requested.
+Use the CLI, MCP, or REST API to store, organize, read, and restore files and
+receive email in the same bucket. Authorized people and agents collaborate with
+revocable connections, scoped access, locks, and revision checks.
 
 Private bucket storage and collaboration follow the
 [Terms of Use](https://revdoku.com/terms/), including its rules against illegal
@@ -42,7 +46,7 @@ Connect Revdoku so you can store and organize my private files and read incoming
 
 Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install and use the local CLI. Otherwise, connect through hosted MCP.
 
-Complete sign-in in the browser, check the connection, and ask what I want to do with my files or websites.
+Complete sign-in in the browser, check the connection, and ask what I want to do with my private files or incoming email.
 ```
 
 ## Private storage and agent collaboration
@@ -55,9 +59,11 @@ and [multiple-agent example](./docs.md#work-with-multiple-ai-agents).
 
 ## Capabilities
 
-- Publish static websites and SPAs to `*.revdoku.site` or a custom domain.
-- Update an existing bucket and republish without changing its URL.
 - Store files privately; inspect versions, restore snapshots, and coordinate edits with locks and revision checks.
+- Receive email and attachments at each bucket’s address; read them through Mailbox, MCP, CLI, or REST.
+- Share message read/unread status and audit history across authorized people and agents.
+- Publish static websites and SPAs to `*.revdoku.site` or a custom domain when enabled and requested.
+- Update an existing website and republish without changing its URL.
 - Set Public, Password, or Require Email visitor access.
 - Read views, visitors, downloads, and tracked-link analytics.
 - Collect contact, booking, waitlist, and feedback submissions with owner notifications.
@@ -74,7 +80,7 @@ and limits at <https://app.revdoku.com/pricing> or
 billing, access, or moderation questions.
 
 See [Samples](https://revdoku.com/examples/) for published examples and
-[docs.md](./docs.md) for publishing, access, and form configuration.
+[docs.md](./docs.md) for private storage, incoming email, access, and optional publishing.
 
 ## Limitations
 

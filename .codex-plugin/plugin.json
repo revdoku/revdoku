@@ -1,7 +1,7 @@
 {
   "name": "revdoku",
-  "version": "1.0.479",
-  "description": "Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics.",
+  "version": "1.0.480",
+  "description": "Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts.",
   "author": {
     "name": "Revdoku",
     "url": "https://revdoku.com"
@@ -12,20 +12,19 @@
   "mcpServers": "./.mcp.json",
   "keywords": [
     "revdoku",
-    "website-publishing",
-    "hosting",
-    "agents",
-    "bucket",
-    "files",
     "cloud-storage",
+    "incoming-email",
     "private-buckets",
+    "agents",
+    "files",
+    "version-history",
     "collaboration",
-    "version-history"
+    "website-publishing"
   ],
   "interface": {
     "displayName": "Revdoku",
-    "shortDescription": "Publish and update websites and files.",
-    "longDescription": "Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics.",
+    "shortDescription": "Secure cloud storage and incoming email.",
+    "longDescription": "Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts.",
     "developerName": "Revdoku",
     "category": "Coding",
     "capabilities": [
@@ -34,6 +33,7 @@
     ],
     "defaultPrompt": [
       "Store these files privately in Revdoku",
+      "Read incoming email and attachments in my Revdoku bucket",
       "Read and update the shared project files in Revdoku",
       "Publish this website with Revdoku"
     ],

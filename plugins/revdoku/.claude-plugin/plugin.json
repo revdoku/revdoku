@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "revdoku",
-  "version": "1.0.479",
-  "description": "Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics.",
+  "version": "1.0.480",
+  "description": "Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts.",
   "author": {
     "name": "Revdoku",
     "url": "https://revdoku.com"
@@ -12,15 +12,13 @@
   "license": "MIT",
   "keywords": [
     "revdoku",
-    "storage",
-    "agents",
-    "bucket",
-    "files",
-    "publish",
-    "website",
     "cloud-storage",
+    "incoming-email",
     "private-buckets",
+    "agents",
+    "files",
+    "version-history",
     "collaboration",
-    "version-history"
+    "website-publishing"
   ]
 }

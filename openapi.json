@@ -3,7 +3,7 @@
   "info": {
     "title": "Revdoku public agent API",
     "version": "1.0.0",
-    "description": "Private cloud storage, versioned files, and incoming email for AI agents. New accounts have website publishing disabled on all plans. Check features.website_publishing on the target account; WEBSITE_PUBLISHING_DISABLED is not an upgrade prompt. Signup is browser-only. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API."
+    "description": "Secure cloud storage, versioned private files, and incoming email for humans and AI agents. Email is receive-only; messages and attachments use the existing file APIs. New accounts have website publishing disabled on all plans. Check features.website_publishing on the target account; WEBSITE_PUBLISHING_DISABLED is not an upgrade prompt. Signup is browser-only. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API."
   },
   "servers": [
     {
@@ -213,7 +213,7 @@
       "post": {
         "operationId": "rotateBucketInboundEmail",
         "summary": "Replace a bucket incoming email address after confirmation",
-        "description": "Requires write access. Immediately retires the old address, including queued mail. Update third-party signup/recovery addresses before rotating. On 409 or a lost response, reread the address before deciding whether to retry. Free: 0; paid: 10 per UTC calendar month shared by billing account and clients. Keeps the assigned domain.",
+        "description": "Requires write access. Immediately retires the old address, including queued mail. Update third-party signup/recovery addresses before rotating. On 409 or a lost response, reread the address before deciding whether to retry. Free: 1; paid: 10 per UTC calendar month shared by billing account and clients. Keeps the assigned domain.",
         "security": [
           {
             "bearerAuth": []

@@ -1,6 +1,10 @@
 # Revdoku API
 
-New accounts focus on private cloud storage and incoming email. Website publishing
+Revdoku provides secure cloud storage and incoming email for humans and AI agents.
+Private buckets hold files, versions, messages, and attachments behind authorized
+account access. Saving files does not publish them. Email support is receive-only.
+
+Website publishing
 is disabled by default on every plan; paying does not enable it. Existing enabled
 accounts retain publishing. Check `features.website_publishing` in REST
 `GET /api/v1/status`, MCP `revdoku_status`, or CLI `status` for the target account.
@@ -10,8 +14,9 @@ Free includes 1 active bucket, 12 incoming emails/month and 1 address rotation/m
 Published buckets also count toward the active-bucket limit. Existing excess data
 is retained; archive a bucket or upgrade to add another. Paid allowances are unchanged.
 
-The Revdoku REST API manages buckets, files, versions, website publications,
-domains, access settings, forms, and analytics. File writes save private bucket
+The Revdoku REST API manages private buckets, files, versions, incoming email,
+and access. Enabled accounts can also manage website publications, domains,
+forms, and analytics. File writes save private bucket
 files; a separate publication request creates or updates the live website.
 
 For website publishing, upload ready-to-serve HTML, CSS, JavaScript, and assets. Revdoku does not install
@@ -73,6 +78,12 @@ File writes alone do not change the live website. See [file operations](#file-pa
 [history](#bucket-version-history), and [publication settings](#publication-settings-and-status).
 
 ## Incoming email into a bucket
+
+The dashboard shows **Files / Mailbox** subtabs when email and ordinary files
+coexist. These are views of the same authorized files, not separate storage.
+List / Tiles stays inside Files. The Mailbox badge counts unread messages, not
+attachments. Clients use the existing file APIs below; no separate mailbox API
+or outgoing-email API is available.
 
 Anyone knowing a bucket's random address can send to it, including website
 buckets. Reading messages requires authorized bucket access. Revdoku never sends
@@ -1429,7 +1440,9 @@ single-file requests; older and multi-file operations remain in bucket logs.
 
 No recorded read is not proof of no prior access. Receipts do not reserve files,
 prove processing/OTP consumption, or list every reader. Incoming email's EML and
-JSON are independent files: inspect both when checking earlier access.
+JSON retain separate file receipts, but reading the current EML also acknowledges
+the canonical JSON message. Inspect both receipts and retained audit events when
+checking earlier access; a later Mark unread resets current message status.
 
 #### Bucket version history
 

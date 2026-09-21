@@ -2,8 +2,8 @@
   "schema_version": "v1",
   "name_for_human": "Revdoku",
   "name_for_model": "revdoku",
-  "description_for_human": "Publish and update websites; store files privately.",
-  "description_for_model": "Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics. Private storage follows the Terms of Use; previews and publications follow the Website Publishing Policy. Signup is browser-only. Connect an existing account through OAuth for hosted MCP or the CLI browser sign-in flow. Never ask users to paste credentials in chat. Check publication status before reporting success. The OpenAPI document covers selected REST endpoints; see api.md for the complete API.",
+  "description_for_human": "Secure cloud storage and incoming email.",
+  "description_for_model": "Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts. Private storage follows the Terms of Use; previews and publications follow the Website Publishing Policy. Signup is browser-only. Connect an existing account through OAuth for hosted MCP or the CLI browser sign-in flow. Never ask users to paste credentials in chat. Check publication status before reporting success. The OpenAPI document covers selected REST endpoints; see api.md for the complete API.",
   "auth": {
     "type": "user_http",
     "authorization_type": "bearer"

@@ -1,7 +1,7 @@
 # Revdoku — Claude Code plugin
 
-Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics.
-Private workspaces need no preview or website. Website republishing keeps the same URL.
+Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts.
+Private buckets need no preview or website. Publishing requires an enabled account and an explicit request.
 
 The plugin bundles:
 
@@ -30,7 +30,8 @@ bucket, or publish a website.
 
 Just ask in natural language, for example:
 
-- "Store this folder in Revdoku."
+- "Store this folder privately in Revdoku."
+- "Read the latest email and attachments in my project bucket."
 - "Publish the `dist/` folder to Revdoku as a website."
 - "Publish it as a password-protected site."
 - "Which of my Revdoku buckets are public?"

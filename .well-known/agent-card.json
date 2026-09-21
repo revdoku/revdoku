@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Publish and update static websites and files. Manage bucket files, versions, access settings, forms, and analytics.",
+  "description": "Secure cloud storage and incoming email for humans and AI agents. Store and version private files, receive messages and attachments, and manage authorized access. Website publishing is optional for enabled accounts.",
   "url": "https://revdoku.com/",
   "documentation_url": "https://revdoku.com/docs",
   "mcp_url": "https://app.revdoku.com/mcp",
@@ -18,9 +18,15 @@
       "account_required": true
     },
     {
+      "id": "incoming-email",
+      "name": "Receive email in a private bucket",
+      "description": "Read decoded messages, original MIME, and selected attachments through existing file tools. Message read/unread status is shared; attachments are read independently. Receive-only; no outgoing email.",
+      "account_required": true
+    },
+    {
       "id": "bucket-website-preview",
       "name": "Preview a bucket website",
-      "description": "Preview an authenticated bucket draft for 24 hours using its selected access settings. Poll bucket_publication_get until ready or failed.",
+      "description": "Requires website publishing to be enabled for the account. Preview an authenticated bucket draft for 24 hours using its selected access settings. Poll bucket_publication_get until ready or failed.",
       "account_required": true,
       "input_modes": [
         "text/html",
@@ -37,7 +43,7 @@
     {
       "id": "managed-publishing",
       "name": "Manage account websites",
-      "description": "Create buckets, manage files, publish or update sites, and inspect publication state through authenticated MCP tools.",
+      "description": "Requires website publishing to be enabled for the account. Create buckets, manage files, publish or update sites, and inspect publication state through authenticated MCP tools.",
       "account_required": true
     }
   ]

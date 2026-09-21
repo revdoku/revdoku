@@ -10,7 +10,8 @@ Free includes 1 active bucket, 12 incoming emails/month and 1 address rotation/m
 Published buckets also count toward the active-bucket limit. Existing excess data
 is retained; archive a bucket or upgrade to add another. Paid allowances are unchanged.
 
-Connect Revdoku, verify access, then publish or update the requested files.
+Connect Revdoku for secure cloud storage and incoming email. Verify access, then
+work with the requested private files or messages; publish only when requested.
 
 Prefer local shell and filesystem access; use
 hosted MCP only when local access is unavailable.
