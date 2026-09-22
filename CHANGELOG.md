@@ -2,6 +2,23 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.488 — 2026-09-22
+
+### Added
+
+- Incoming messages include readable `message.md` beside decoded JSON, the original
+  email and attachments. Reading Markdown updates shared message read status.
+- Invited paid accounts can connect one custom incoming email domain per account.
+
+### Improved
+
+- Choose personal activity emails immediately, daily, weekly, or off in Account
+  Settings → Notifications. High-volume immediate activity falls back to daily
+  summaries after the shared monthly sending allowance.
+- Free includes 30 incoming emails/month, 1 GiB storage and a 10 MiB file/email
+  limit, including PDFs. Incoming count and data limits protect all plans;
+  Pro Agency is $79.99/month.
+
 ## 1.0.481 — 2026-09-21
 
 ### Improved

@@ -1,6 +1,6 @@
 # Terms of Use
 
-*Version: 2026-09-16 · Effective: September 16, 2026*
+*Version: 2026-09-22 · Effective: September 22, 2026*
 
 These Terms of Use govern your access to and use of Revdoku, including buckets, workspaces, files, APIs, connected agents, shared links, static publishing, public websites, custom domains, and related services. By creating an account, using Revdoku, connecting an agent, uploading files, sharing links, publishing a website, or continuing to use the service after these Terms change, you agree to these Terms.
 
@@ -82,6 +82,21 @@ Our remedies may include warning you, requesting changes, hiding or removing con
 We reserve the sole and absolute right, in our sole discretion, to unpublish, suspend, disable, or remove any public website, shared link, or publication — including those of paid customers — at any time and with or without notice when we determine that something is wrong, unsafe, non-compliant, or creates legal, fraud, payment, chargeback, refund, provider, consumer-protection, or reputational risk. These rights apply equally to free and paid users. A paid plan, subscription, or payment does not create a right to continue serving, publishing, or keeping online any website, slug, domain, file, account, workspace, or feature that violates these Terms, creates risk, or depends on third-party services that are no longer available to us. Suspended or revoked public websites may become unavailable immediately. We are not required to preserve, restore, reuse, redirect, or reassign a public URL, slug, subdomain, custom domain route, publication, file, or account after enforcement action.
 
 We may act with or without prior notice. Where practical, we may offer a warning, request remediation, or allow an appeal, but we may skip notice or delay where required by law, requested by a provider, needed for security, necessary to prevent harm, or appropriate because of abuse reports, repeat violations, evasion, payment risk, legal risk, or risk to others.
+
+## Incoming Email Limits
+
+Incoming email is subject to your plan's monthly message count, incoming data,
+per-message size, storage and abuse limits. Incoming data includes message headers,
+MIME encoding and attachments; encrypted transport size may be used as a conservative
+measurement. Identifiable received messages count even if later rejected or not
+saved. Provider retries count once. Agency accounts and their clients share the
+billing account's monthly receiving allowances.
+
+Receiving may pause when either monthly allowance is exhausted and resume after
+the next reset or a limit increase, subject to other account or abuse restrictions.
+Deletion, address rotation and bucket moves do not refund receiving usage. We do
+not automatically purchase overages or reply to senders. Messages sent while
+receiving is paused may be rejected or lost and are not promised for later delivery.
 
 ## Free Plans, Paid Plans, Cancellation, and Refunds
 
