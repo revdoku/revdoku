@@ -75,7 +75,10 @@ Authenticate with OAuth before calling tools. Then call `revdoku_status`, create
 or choose a private bucket, and read or write the requested files. Bucket creation
 returns its incoming email address and receiving state. For an existing bucket, use `bucket_get(include_inbound_email: true)` with write access.
 Check `ready`, compare `received_count` for new mail, and read
-`last_received_path + "message.json"` with `bucket_file_read`.
+`last_received_path + "message.json"` with `bucket_file_read`; `message.md` provides readable Markdown.
+If not ready, explain `blocked_reason`; do not assume a paused or unknown inbox
+can receive. Read effective size/count/data limits from the service. Personal
+notification frequency is managed in Account Settings → Notifications.
 See the [email contract](https://revdoku.com/api.md#incoming-email-into-a-bucket).
 If the user has no account, direct them to `https://app.revdoku.com/users/sign_up` first.
 

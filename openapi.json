@@ -213,7 +213,7 @@
       "post": {
         "operationId": "rotateBucketInboundEmail",
         "summary": "Replace a bucket incoming email address after confirmation",
-        "description": "Requires write access. Immediately retires the old address, including queued mail. Update third-party signup/recovery addresses before rotating. On 409 or a lost response, reread the address before deciding whether to retry. Free: 1; paid: 10 per UTC calendar month shared by billing account and clients. Keeps the assigned domain.",
+        "description": "Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires a paid pilot account and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing inbound_email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Free allows 1; paid 10 successful rotations per UTC month shared across the billing group. Never use or synthesize a pending address.",
         "security": [
           {
             "bearerAuth": []
@@ -251,6 +251,15 @@
                   "account_id": {
                     "type": "string",
                     "description": "Explicitly granted account; omission uses credential default"
+                  },
+                  "domain": {
+                    "type": "string",
+                    "description": "Exact ready domain of this account, or platform for the deployment default."
+                  },
+                  "idempotency_key": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9_-]{8,80}$",
+                    "description": "Reuse the same key when retrying this address activation."
                   }
                 }
               }
@@ -290,6 +299,21 @@
           },
           "429": {
             "description": "INBOUND_EMAIL_ROTATION_LIMIT; plan disallows rotation or monthly allowance is exhausted."
+          },
+          "202": {
+            "description": "Pending activation. The returned address is still the current address. Poll GET inbound_email.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/BucketInboundEmail"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -462,6 +486,331 @@
           }
         }
       }
+    },
+    "/api/v1/account/inbound_email_domains": {
+      "get": {
+        "operationId": "listAccountInboundEmailDomains",
+        "summary": "List account email domains, DNS records, receiving state and usage",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot, independent of website publishing. Never change customer DNS without explicit authorization.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current domain configuration or result"
+          },
+          "403": {
+            "description": "Account admin/full-account access or pilot entitlement required"
+          },
+          "409": {
+            "description": "Domain is still in use"
+          },
+          "422": {
+            "description": "Invalid hostname, DNS conflict, or missing confirmation"
+          },
+          "429": {
+            "description": "Setup rate limit; follow Retry-After"
+          },
+          "503": {
+            "description": "Temporary provider/DNS error; details.retryable is true"
+          }
+        },
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Explicit granted account for this call; omission uses the credential account."
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createAccountInboundEmailDomain",
+        "summary": "Claim an exact incoming email domain",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot, independent of website publishing. Never change customer DNS without explicit authorization.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Account admin/full-account access or pilot entitlement required"
+          },
+          "409": {
+            "description": "Domain is still in use"
+          },
+          "422": {
+            "description": "Invalid hostname, DNS conflict, or missing confirmation"
+          },
+          "429": {
+            "description": "Setup rate limit; follow Retry-After"
+          },
+          "503": {
+            "description": "Temporary provider/DNS error; details.retryable is true"
+          },
+          "201": {
+            "description": "Exact domain claim created; add returned ownership TXT and verify."
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "hostname"
+                ],
+                "properties": {
+                  "hostname": {
+                    "type": "string",
+                    "description": "Dedicated root or unused subdomain, such as inbox.example.com. Subdomain recommended when root mail already exists."
+                  },
+                  "account_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/inbound_email_domains/{id}": {
+      "get": {
+        "operationId": "getAccountInboundEmailDomain",
+        "summary": "Read exact domain setup state",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot, independent of website publishing. Never change customer DNS without explicit authorization.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current domain configuration or result"
+          },
+          "403": {
+            "description": "Account admin/full-account access or pilot entitlement required"
+          },
+          "409": {
+            "description": "Domain is still in use"
+          },
+          "422": {
+            "description": "Invalid hostname, DNS conflict, or missing confirmation"
+          },
+          "429": {
+            "description": "Setup rate limit; follow Retry-After"
+          },
+          "503": {
+            "description": "Temporary provider/DNS error; details.retryable is true"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Explicit granted account for this call; omission uses the credential account."
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "removeAccountInboundEmailDomain",
+        "summary": "Remove unused receiving domain after confirmation",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot, independent of website publishing. Never change customer DNS without explicit authorization.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Account admin/full-account access or pilot entitlement required"
+          },
+          "409": {
+            "description": "Domain is still in use"
+          },
+          "422": {
+            "description": "Invalid hostname, DNS conflict, or missing confirmation"
+          },
+          "429": {
+            "description": "Setup rate limit; follow Retry-After"
+          },
+          "503": {
+            "description": "Temporary provider/DNS error; details.retryable is true"
+          },
+          "202": {
+            "description": "Verification/removal queued; poll the resource"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "hostname",
+                  "confirm"
+                ],
+                "properties": {
+                  "hostname": {
+                    "type": "string"
+                  },
+                  "confirm": {
+                    "type": "boolean",
+                    "const": true
+                  },
+                  "account_id": {
+                    "type": "string",
+                    "description": "Explicit granted account for this call."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/inbound_email_domains/{id}/verify": {
+      "post": {
+        "operationId": "verifyAccountInboundEmailDomain",
+        "summary": "Queue exact ownership, SES and MX verification",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot, independent of website publishing. Never change customer DNS without explicit authorization.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "403": {
+            "description": "Account admin/full-account access or pilot entitlement required"
+          },
+          "409": {
+            "description": "Domain is still in use"
+          },
+          "422": {
+            "description": "Invalid hostname, DNS conflict, or missing confirmation"
+          },
+          "429": {
+            "description": "Setup rate limit; follow Retry-After"
+          },
+          "503": {
+            "description": "Temporary provider/DNS error; details.retryable is true"
+          },
+          "202": {
+            "description": "Verification/removal queued; poll the resource"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "account_id": {
+                    "type": "string",
+                    "description": "Explicit granted account for this call."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/inbound_email_domains/check": {
+      "post": {
+        "operationId": "checkInboundEmailHostname",
+        "summary": "Validate and classify a root domain or subdomain",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot, independent of website publishing. Never change customer DNS without explicit authorization.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current domain configuration or result"
+          },
+          "403": {
+            "description": "Account admin/full-account access or pilot entitlement required"
+          },
+          "409": {
+            "description": "Domain is still in use"
+          },
+          "422": {
+            "description": "Invalid hostname, DNS conflict, or missing confirmation"
+          },
+          "429": {
+            "description": "Setup rate limit; follow Retry-After"
+          },
+          "503": {
+            "description": "Temporary provider/DNS error; details.retryable is true"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "hostname"
+                ],
+                "properties": {
+                  "hostname": {
+                    "type": "string",
+                    "description": "Dedicated root or unused subdomain, such as inbox.example.com. Subdomain recommended when root mail already exists."
+                  },
+                  "account_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -580,9 +929,10 @@
           },
           "ready": {
             "type": "boolean",
-            "description": "Configuration/account/bucket state only; not provider health or reserved capacity."
+            "description": "Configuration/account/bucket state and last observed platform receiving pause. Missing or stale status returns false. Observations normally refresh within five minutes; not a delivery guarantee or reserved capacity."
           },
           "blocked_reason": {
+            "description": "Includes global_receiving_paused, abuse_receiving_paused, receiving_status_unavailable and account/bucket/quota reasons. Null when ready.",
             "type": [
               "string",
               "null"
@@ -606,6 +956,113 @@
               "resets_at": {
                 "type": "string",
                 "format": "date-time"
+              }
+            }
+          },
+          "domain": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "custom_domain": {
+            "type": "boolean"
+          },
+          "available_domains": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "hostname": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "platform",
+                    "custom"
+                  ]
+                }
+              }
+            }
+          },
+          "usage": {
+            "type": "object",
+            "properties": {
+              "used": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "monthly_limit": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "remaining": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bytes_used": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "monthly_bytes_limit": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bytes_remaining": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "max_message_bytes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "resets_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "paused": {
+                "type": "boolean"
+              },
+              "pause_reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "assignment": {
+            "type": "object",
+            "description": "No candidate address is disclosed. Keep using address until status is active; on pending poll the inbound_email endpoint.",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "active",
+                  "failed"
+                ]
+              },
+              "hostname": {
+                "type": "string"
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  }
+                }
               }
             }
           }

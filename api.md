@@ -89,11 +89,29 @@ These are email statistics, not a general bucket version, unread count, or curso
 
 Creation and authorized address reads additionally return `address` (null when
 unconfigured), `configured`, `enabled`, `ready`, `blocked_reason`, `monthly_limit`,
-`max_file_size_bytes`, `max_pdf_size_bytes`, and `rotation` with `monthly_limit`,
-`used`, `remaining`, and `resets_at`. Readiness describes configuration/account/bucket
-state, not provider health or a capacity reservation. Use the returned address
+`max_file_size_bytes`, `max_pdf_size_bytes`, `usage`, and `rotation` with `monthly_limit`,
+`used`, `remaining`, and `resets_at`. Readiness includes configuration/account/bucket
+state and the last observed platform receiving pause. Global/platform pauses return
+`global_receiving_paused` / `abuse_receiving_paused`; a missing or stale observation
+returns `receiving_status_unavailable` with `ready: false`. Observation refreshes
+normally within five minutes; it is not a live delivery guarantee or a capacity
+reservation. Use the returned address
 verbatim; never derive it from IDs or the current default domain. Address reservation
 failure rolls back creation. Reading never creates an address.
+
+`usage` reports billing-group incoming traffic: `used`, `monthly_limit`, `remaining`,
+`bytes_used`, `monthly_bytes_limit`, `bytes_remaining`, `max_message_bytes`,
+`resets_at`, `paused`, and `pause_reason`. Limits apply to both message count and
+raw incoming bytes (including MIME encoding), shared across agency clients. Known
+SES receipts count even when later rejected; retries count once. Saving attachments
+also uses ordinary storage/file quotas. Monthly plan defaults are 30 / 300 / 3,000 /
+30,000 messages and 128 MiB / 512 MiB / 2 GiB / 10 GiB for Free / Starter / Pro /
+Pro Agency. Free messages are at most 10 MiB; paid messages are at most 40 MiB. These
+message limits include MIME encoding. Free uploads and attachment files use the
+same 10 MiB file limit, with no PDF-specific restriction.
+Use effective limits returned by the service. Exhaustion pauses receiving until a
+reset or limit increase; manual and abuse holds require separate recovery. New or
+rotated platform addresses may take up to five minutes to reach the receiving provider.
 
 Rotation requires `{"confirm":true,"current_address":"<current address>"}`.
 Free allows 1; paid plans allow 10 successful rotations per UTC calendar month,
@@ -102,8 +120,10 @@ shared by the billing account and its clients. See `/pricing.json` for
 allowance. Stale requests return 409 `INBOUND_EMAIL_ADDRESS_CHANGED`; unavailable
 buckets return 409 `INBOUND_EMAIL_ROTATION_UNAVAILABLE`; exhausted/disallowed
 rotation returns 429 `INBOUND_EMAIL_ROTATION_LIMIT`. After a lost response, reread
-the address before retrying. Rotation stays on the assigned domain, immediately
-retires the old address (including queued mail), and never reuses issued addresses.
+the address before retrying. Rotation stays on the assigned domain unless an explicit domain switch is requested.
+Platform rotation retires the old address immediately; custom-domain activation
+retires it only after confirmation. Retired addresses never receive queued mail
+and are never reused.
 Update third-party signup/recovery settings before retiring an address.
 
 Account Settings controls receiving for the whole account, independently for each
@@ -114,14 +134,84 @@ bucket-scoped credentials cannot change it. Re-enabling retains addresses and fi
 Use explicit `account_id` to target another granted account on REST/MCP calls;
 never infer the tenant from a bucket ID.
 
+### Personal notification schedules
+
+**Account Settings → Notifications** controls each person's emails for the selected
+account: None, Immediately (default, short burst grouping), Daily, or Weekly.
+Daily and weekly summaries arrive at 08:00 in the person's timezone; weekly is
+Monday. Only accounts with activity send summaries. None preserves bell notices.
+Website analytics has a separate setting, shown only when publishing is enabled.
+
+Immediate activity email attempts share a separate billing-group UTC monthly
+allowance equal to the effective incoming message-count limit. Each recipient
+counts once per send attempt, including failures. After exhaustion, activity uses
+daily summaries until the next month or a limit increase. This does not consume
+incoming-email quota or suppress security/account alerts.
+
+`GET/PATCH /api/v1/account/notification_settings` is for authenticated browser
+sessions only, not API/agent keys or MCP tools. PATCH requires `expected_account_id`
+and the page's `X-CSRF-Token` for cookie authentication. Editable fields are
+`activity_frequency` (`none`, `immediately`, `daily`, `weekly`) and
+`weekly_website_email_enabled` (boolean). Responses include the requested
+`activity_frequency`, effective `activity_delivery_frequency`, `account_id`,
+`time_zone`, and website settings/capability. During fallback the requested value
+remains `immediately` while delivery is `daily`. Direct people to the dashboard
+to change their preferences.
+
+### Custom receiving domains (invitation-only pilot)
+
+Paid plans allow one pending/connected email domain **per account**, including each
+agency client. The operator must enable `features.custom_inbound_email_domains`;
+website publishing is independent. Use Account Settings → Domains → Email to
+connect it. Prefer an unused subdomain such as `inbox.example.com` when the parent
+already handles email. Dedicated root domains are also accepted. Never silently
+prepend `inbox.`, modify unrelated MX/SPF/DKIM/DMARC, or change DNS without permission.
+An unrelated MX/CNAME is a conflict; a null MX must be replaced, never combined.
+
+Full-account administrators may use `GET/POST /api/v1/account/inbound_email_domains`,
+`GET/DELETE /api/v1/account/inbound_email_domains/:id`, and
+`POST /api/v1/account/inbound_email_domains/:id/verify`. Cookie writes require CSRF.
+Removal requires `confirm: true` and the exact `hostname`, and is blocked while
+buckets hold current/pending addresses on the domain. DNS challenges are visible
+only to full-account administrators. Unverified claims expire after seven days.
+Responses report receiving/pause state and structured errors with `retryable`.
+
+Connecting a domain never rewrites existing addresses or changes new-bucket
+creation. To switch an existing bucket, confirm its current address and add
+`domain: "inbox.example.com"` plus a stable `idempotency_key` to the rotate request.
+Use `domain: "platform"` to recover to the default platform domain, including after
+a downgrade. A custom rotation/switch returns **202** with `assignment.status:
+"pending"`. Poll the existing inbound-email GET endpoint; `address` remains the
+old current address until `assignment.status` becomes `active`. A failed activation
+keeps the old address and allowance intact. A successful switch charges once.
+Never invent an alias, use a pending candidate, or strip `+tag` to route mail.
+
+The response includes `domain`, `custom_domain`, `available_domains`, `usage`, and
+`assignment` (ID/status/hostname/error, never its candidate). Already assigned
+addresses survive plan downgrades; new setup/custom switching is blocked. Switch
+to a platform address before moving a bucket to another account. Copies always
+receive fresh platform addresses. While receiving is paused, delivery is not
+retained or automatically recovered. Accepted-email quota periods retain the
+existing billing-period rules; rotation allowances reset by UTC calendar month.
+
 Accepted messages commit these files together:
 
 ```text
 _email/in/<received-UTC>--<delivery-id>/
   message.eml
   message.json
+  message.md
   attachments/<safe-filename>
 ```
+
+
+New deliveries also save UTF-8 `message.md` from the same finalized JSON, with
+headers, delivery metadata, body/status and saved attachment paths. It is bounded
+to 512 KiB and labels truncation; sender-controlled text is indented as code so
+HTML, images and Markdown links remain inert. The EML remains authoritative.
+All three files and attachments count toward file and storage quotas; a delivery
+counts once. Existing messages are unchanged. Intentional Markdown reads share
+the JSON message read status, while attachments retain independent receipts.
 
 `message.eml` is the exact original. `message.json` is UTF-8 JSON (at most 512 KiB):
 `schema_version: 1`, nullable decoded `subject`, `from`, `to` header strings,
@@ -160,7 +250,7 @@ itself stays in the browser.
 
 ## Plans and onboarding
 
-New accounts start on Free. It includes 1 active bucket, 12 accepted incoming
+New accounts start on Free. It includes 1 active bucket, 30 received incoming
 emails/month, and 1 address rotation/month. Read current prices and versioned
 limits from <https://app.revdoku.com/pricing.json>; full-account profile responses
 include effective account overrides. Avoid hard-coding quotas in integrations.

@@ -44,7 +44,7 @@ Email**. Check `inbound_email.ready` before using the address.
 
 Receive invoices, documents, project updates, or authorized service verification
 messages. Each accepted email is saved as original `message.eml`, decoded
-`message.json`, and attachment files. Authorized people and agents can read these
+`message.json`, readable `message.md`, and attachment files. Authorized people and agents can read these
 with the same file tools used for other bucket content.
 
 Compare `inbound_email.received_count` to detect new mail, then read
@@ -57,7 +57,9 @@ and the [API contract](api.md#incoming-email-into-a-bucket).
 
 Create an account at <https://app.revdoku.com/users/sign_up> and connect in the
 browser. Never paste account credentials or verification codes into AI chat.
-Free includes 1 active bucket, 12 incoming emails/month, and 1 address rotation/month.
+Free includes 1 active bucket, 1 GiB storage, 30 incoming emails and 128 MiB incoming
+data/month, and 1 address rotation/month. Files (including PDFs) and complete emails
+are limited to 10 MiB each; email size includes MIME encoding.
 Read current prices and limits at <https://app.revdoku.com/pricing> or
 <https://app.revdoku.com/pricing.json>.
 
@@ -183,3 +185,14 @@ Account names and client names can differ. Unknown client names stay unset.
 `revdoku account --account-id ID` shows a client’s identity and provider guidance;
 client billing data remains restricted to the agency owner. Browser switching
 does not change the CLI credential’s default account.
+
+### Custom receiving domains
+
+Custom email domains are an invitation-only paid pilot. Setup lives in Account
+Settings → Domains → Email and requires an account administrator. Prefer an unused
+receiving subdomain; dedicated root domains are accepted. DNS changes require the
+user's authorization. Connecting a domain does not change existing bucket addresses.
+Use only the full address returned by Revdoku and check `ready`. A domain switch
+may return `assignment.status: pending`; poll until active or failed, keeping the
+current address in use meanwhile. Never construct aliases or use `+tag` variants.
+See [the email API contract](https://revdoku.com/api.md#custom-receiving-domains-invitation-only-pilot).
