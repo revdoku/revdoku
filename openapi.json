@@ -3,7 +3,7 @@
   "info": {
     "title": "Revdoku public agent API",
     "version": "1.0.0",
-    "description": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments. New accounts have website publishing disabled on all plans. Check features.website_publishing on the target account; WEBSITE_PUBLISHING_DISABLED is not an upgrade prompt. Signup is browser-only. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API."
+    "description": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments. Signup is browser-only. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API."
   },
   "servers": [
     {
@@ -49,12 +49,7 @@
                         },
                         "features": {
                           "type": "object",
-                          "properties": {
-                            "website_publishing": {
-                              "type": "boolean",
-                              "description": "Effective account flag. False for new accounts, independent of plan."
-                            }
-                          }
+                          "properties": {}
                         }
                       }
                     }
@@ -327,7 +322,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Selected creation fields shown; see api.md for full creation options. New address/readiness is returned automatically, including idempotent replays. No website is published.",
+        "description": "Selected creation fields shown; see api.md for full creation options. New address/readiness is returned automatically, including idempotent replays.",
         "requestBody": {
           "required": true,
           "content": {
@@ -491,7 +486,7 @@
       "get": {
         "operationId": "listAccountInboundEmailDomains",
         "summary": "List account email domains, DNS records, receiving state and usage",
-        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot, independent of website publishing. Never change customer DNS without explicit authorization.",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot. Never change customer DNS without explicit authorization.",
         "security": [
           {
             "bearerAuth": []
@@ -532,7 +527,7 @@
       "post": {
         "operationId": "createAccountInboundEmailDomain",
         "summary": "Claim an exact incoming email domain",
-        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot, independent of website publishing. Never change customer DNS without explicit authorization.",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot. Never change customer DNS without explicit authorization.",
         "security": [
           {
             "bearerAuth": []
@@ -586,7 +581,7 @@
       "get": {
         "operationId": "getAccountInboundEmailDomain",
         "summary": "Read exact domain setup state",
-        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot, independent of website publishing. Never change customer DNS without explicit authorization.",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot. Never change customer DNS without explicit authorization.",
         "security": [
           {
             "bearerAuth": []
@@ -635,7 +630,7 @@
       "delete": {
         "operationId": "removeAccountInboundEmailDomain",
         "summary": "Remove unused receiving domain after confirmation",
-        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot, independent of website publishing. Never change customer DNS without explicit authorization.",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot. Never change customer DNS without explicit authorization.",
         "security": [
           {
             "bearerAuth": []
@@ -704,7 +699,7 @@
       "post": {
         "operationId": "verifyAccountInboundEmailDomain",
         "summary": "Queue exact ownership, SES and MX verification",
-        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot, independent of website publishing. Never change customer DNS without explicit authorization.",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot. Never change customer DNS without explicit authorization.",
         "security": [
           {
             "bearerAuth": []
@@ -762,7 +757,7 @@
       "post": {
         "operationId": "checkInboundEmailHostname",
         "summary": "Validate and classify a root domain or subdomain",
-        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot, independent of website publishing. Never change customer DNS without explicit authorization.",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot. Never change customer DNS without explicit authorization.",
         "security": [
           {
             "bearerAuth": []
@@ -877,10 +872,6 @@
                 "type": "string"
               }
             }
-          },
-          "website_publishing_enabled": {
-            "type": "boolean",
-            "description": "Effective website publishing access; new accounts default to false."
           }
         }
       },

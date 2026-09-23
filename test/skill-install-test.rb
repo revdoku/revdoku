@@ -145,7 +145,8 @@ class RevdokuSkillInstallTest < Minitest::Test
       assert File.executable?(wrapper), "missing executable wrapper: #{wrapper}"
       stdout, stderr, status = run_wrapper(wrapper, "--help")
       assert status.success?, stderr
-      assert_includes stdout, "--site-mode MODE"
+      assert_includes stdout, "upload [PATH]"
+      refute_includes stdout, "--site-mode"
     end
     assert_no_download
   end
@@ -167,7 +168,8 @@ class RevdokuSkillInstallTest < Minitest::Test
     assert_equal expected_version, File.read(File.join(@tmp, "config/client_version")).strip
     stdout, stderr, status = run_wrapper(File.join(skill, "scripts/revdoku.sh"), "--help")
     assert status.success?, stderr
-    assert_includes stdout, "--site-mode MODE"
+    assert_includes stdout, "upload [PATH]"
+      refute_includes stdout, "--site-mode"
     assert_no_download
   end
 

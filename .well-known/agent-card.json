@@ -14,7 +14,7 @@
     {
       "id": "private-cloud-storage",
       "name": "Private cloud storage for AI",
-      "description": "Store, read, write, append, and restore files through authorized account connections. Humans and authorized AI apps collaborate on the same files and folders without creating a preview or website.",
+      "description": "Store, read, write, append, and restore files through authorized account connections. Humans and authorized AI apps collaborate on the same files and folders.",
       "account_required": true
     },
     {
@@ -22,31 +22,6 @@
       "name": "Buckets that receive email",
       "description": "Each bucket has an incoming address. Check receiving readiness, compare received_count for new mail, then read message.json, message.eml, and attachments through authorized file access.",
       "account_required": true
-    },
-    {
-      "id": "bucket-website-preview",
-      "name": "Preview a bucket website",
-      "description": "Only for accounts with features.website_publishing enabled; disabled for new accounts on all plans. Preview an authenticated bucket draft for 24 hours using its selected access settings. Poll bucket_publication_get until ready or failed.",
-      "account_required": true,
-      "input_modes": [
-        "text/html",
-        "text/css",
-        "application/javascript",
-        "image/*",
-        "application/pdf"
-      ],
-      "output": [
-        "public_url",
-        "expires_at"
-      ],
-      "requires_feature": "website_publishing"
-    },
-    {
-      "id": "managed-publishing",
-      "name": "Manage account websites",
-      "description": "Only for accounts with features.website_publishing enabled; disabled for new accounts on all plans. Create buckets, manage files, publish or update sites, and inspect publication state through authenticated MCP tools.",
-      "account_required": true,
-      "requires_feature": "website_publishing"
     }
   ]
 }

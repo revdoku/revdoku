@@ -14,7 +14,7 @@ Connect Revdoku so you can store and share my files, and read incoming email and
 
 Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install and use the local CLI. Otherwise, connect through hosted MCP.
 
-Complete sign-in in the browser, check the connection, and ask what I want to do with my files or incoming emails. Check account capabilities before offering website publishing; new accounts have it disabled.
+Complete sign-in in the browser, check the connection, and ask what I want to do with my files or incoming emails.
 ```
 
 ## Agent rules
@@ -26,11 +26,8 @@ Complete sign-in in the browser, check the connection, and ask what I want to do
 - Do not ask the user to send `continue` after a browser step. Resume by
   checking status yourself.
 - Create new accounts in the browser at `https://app.revdoku.com/users/sign_up` before connecting.
-- Keep `--draft` on CLI storage uploads. Share the dashboard link with authorized
+- Use `revdoku upload` for files and folders. Share the dashboard link with authorized
   people; the link itself does not grant access.
-- Website publishing is disabled for new accounts on every plan. Check
-  `features.website_publishing` before offering website features; upgrades do not
-  enable it. For enabled accounts, publish only on an explicit request.
 
 ## Local AI apps with shell access
 
@@ -55,15 +52,14 @@ curl -fsSL https://revdoku.com/install.sh | bash
 To save the requested files in a private bucket, run:
 
 ```sh
-revdoku p <folder> --draft
+revdoku upload <folder>
 ```
 
-Keep `--draft` for storage-only updates. Omit it only when the user asks to publish.
 
 With `npx skills`, run the bundled `scripts/revdoku.sh` from the installed
 skill directory in place of `revdoku`; this install does not add a CLI to `PATH`.
 
-Without credentials, the CLI opens browser sign-in. Re-running with `--draft`
+Without credentials, the CLI opens browser sign-in. Re-running the upload
 updates the same bucket. Use `revdoku files`, `revdoku read PATH`, and
 `revdoku versions` to inspect its files and history.
 
@@ -86,16 +82,11 @@ If the host does not support MCP or the agent needs local/binary files, use the
 local CLI. A hosted agent cannot read the user's computer.
 
 Private storage and collaboration follow the [Terms of Use](https://revdoku.com/terms/).
-For a requested website on an enabled account, follow the
-[publishing guide](https://revdoku.com/docs.md#publishing) and
-[Website Publishing Policy](https://revdoku.com/acceptable-use/).
-
 ## Pricing and limits
 
 Use <https://app.revdoku.com/pricing> for current prices and human-readable
-comparisons. Read the versioned plan limits and indexing contract from
-<https://app.revdoku.com/pricing.json>. `revdoku_status` embeds the public Free
-contract; full-account profile responses include effective account overrides.
+comparisons. Read the versioned plan limits from
+<https://app.revdoku.com/pricing.json>. Full-account profile responses include effective account overrides.
 
 ## Troubleshooting tutorials
 

@@ -21,8 +21,7 @@ Complete sign-in in the browser, check the connection, and ask what I want to do
 
 ## Store and share files
 
-Use `revdoku p ./project-files --draft` to save a local folder privately. Keep
-`--draft` on later uploads to the same bucket. Read files, inspect history, and
+Use `revdoku upload ./project-files` to save a local folder privately. Read files, inspect history, and
 restore earlier versions through the CLI, MCP, API, or dashboard. All stored files
 can be downloaded from Revdoku at any time.
 
@@ -99,7 +98,7 @@ arguments as the commands below.
 Store or update a local folder:
 
 ```sh
-revdoku p ./project-files --draft
+revdoku upload ./project-files
 ```
 
 The first run opens browser sign-in when credentials are missing. Re-running
@@ -107,7 +106,7 @@ updates the same bucket. New accounts can be created on the web signup page.
 
 Useful commands:
 
-- `revdoku p [PATH] --draft` — store or update private files.
+- `revdoku upload [PATH]` — store or update private files.
 - `revdoku files`, `revdoku read PATH` — list and read stored files and email.
 - `revdoku versions`, `revdoku restore ID` — inspect and restore history.
 - `revdoku status`, `revdoku ls` — inspect the connection and buckets.
@@ -139,23 +138,6 @@ Per AI client guides:
 Use those tutorials when manual setup or troubleshooting is needed. Follow the
 user's file storage, sharing, or incoming-email goal.
 
-## Website publishing for enabled accounts
-
-New accounts have website publishing disabled on every plan; upgrading does not
-enable it. Existing enabled accounts retain publishing. Check
-`features.website_publishing` in REST `GET /api/v1/status`, MCP `revdoku_status`,
-or CLI `status` before offering previews, public links, or website features.
-`WEBSITE_PUBLISHING_DISABLED` is not an upgrade prompt.
-
-For enabled accounts, publishing can serve selected files as a static website
-at `*.revdoku.site` or a custom domain, with Public, Password, or Require Email
-access, forms, and analytics. Owners can read form submissions through MCP/API or
-export them to CSV at any time. It requires
-an explicit request. File uploads alone do not create or update a live website.
-Read the [publishing guide](./docs.md#publishing) and
-[Website Publishing Policy](https://revdoku.com/acceptable-use/) before publishing.
-Private file sharing through account access needs no publication.
-
 ## Public package
 
 This repository contains the Revdoku CLI, skill, API documentation, and
@@ -176,7 +158,7 @@ include client accounts when connecting or in Account → Access.
 ```bash
 revdoku account create-client "Client files" --client-name "Acme Studio" --account-id acct_agency
 revdoku ls --account-id acct_...
-revdoku p ./project-files --account-id acct_... --draft
+revdoku upload ./project-files --account-id acct_...
 ```
 
 Pro Agency shares capacity, credits, and member seats across one agency and

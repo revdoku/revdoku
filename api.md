@@ -4,12 +4,6 @@ Revdoku is **cloud storage with an email address for every bucket**. The REST AP
 stores and organizes files, exposes received email and attachments, and lets
 authorized people and AI agents work with the same versioned files.
 
-New accounts have website publishing disabled on every plan; upgrading does not
-enable it. Check `features.website_publishing` in `GET /api/v1/status` for the target
-account before offering website features. Existing enabled accounts retain them.
-Publishing mutations return `WEBSITE_PUBLISHING_DISABLED` when disabled; private
-files, incoming email, history, existing website reads, and unpublishing remain available.
-
 Most AI-agent users should start with the Revdoku app's copied prompt or the
 Revdoku skill. Use the local CLI when the agent has shell and filesystem access,
 or hosted MCP otherwise. Use this HTTP API for custom clients, CI jobs, backend workers,
@@ -28,18 +22,13 @@ connection and its refresh credentials.
 
 Private bucket storage and collaboration follow the
 [Terms of Use](https://revdoku.com/terms/), including its rules against illegal
-and abusive use. The [Website Publishing Policy (Acceptable Use Policy)](https://revdoku.com/acceptable-use/)
-applies when content is served to visitors: public websites, published files,
-share links, previews, password- or email-protected sites, and public comments.
-It does not apply solely to private bucket files or authenticated account downloads.
-Publishing-only restrictions, including the political-content restriction, apply
-on every plan and in previews. Publication stays unavailable until review succeeds.
+and abusive use. Signup requires explicit Terms acceptance in the browser.
 
 ## Private storage workflow
 
 Authenticate, select the intended account, then create a bucket with
 `POST /api/v1/buckets`. Use the file/direct-upload operations below to save
-documents, data, source files, and binary assets without creating a publication.
+documents, data, source files, and binary assets in private bucket storage.
 Read files by path, append bounded UTF-8 text with
 `POST /api/v1/buckets/:id/files/append_text`, and inspect history with
 `GET /api/v1/buckets/:id/versions`. Restore a selected snapshot through
@@ -49,8 +38,7 @@ Separate authorized AI connections can operate on the same bucket within their
 permissions. Respect file/bucket locks and supply `expected_bucket_revision_id`
 on writes and appends to detect stale edits. Reread and reconcile on conflict.
 Append does not parse CSV or JSON; callers own formatting and merge logic.
-Storage quotas and version retention still apply. Private files need neither a
-website entry point nor a preview/publication request.
+Storage quotas and version retention still apply. Files are stored with their original paths and formats.
 
 Share the bucket's `dashboard_url` with authorized account members. Authorize each
 agent independently for the account or selected buckets; a dashboard link does not
@@ -68,8 +56,7 @@ existing file APIs below.
 
 Each bucket has its own incoming email address for receiving messages and
 attachments alongside uploaded files. Anyone knowing the address can email it;
-reading messages requires authorized bucket access. This also works for existing
-website buckets. Use the returned address; there is no custom alias editor.
+reading messages requires authorized bucket access. Use the returned address; there is no custom alias editor.
 
 | Operation | REST / MCP |
 | --- | --- |
@@ -140,7 +127,6 @@ never infer the tenant from a bucket ID.
 account: None, Immediately (default, short burst grouping), Daily, or Weekly.
 Daily and weekly summaries arrive at 08:00 in the person's timezone; weekly is
 Monday. Only accounts with activity send summaries. None preserves bell notices.
-Website analytics has a separate setting, shown only when publishing is enabled.
 
 Immediate activity email attempts share a separate billing-group UTC monthly
 allowance equal to the effective incoming message-count limit. Each recipient
@@ -151,18 +137,16 @@ incoming-email quota or suppress security/account alerts.
 `GET/PATCH /api/v1/account/notification_settings` is for authenticated browser
 sessions only, not API/agent keys or MCP tools. PATCH requires `expected_account_id`
 and the page's `X-CSRF-Token` for cookie authentication. Editable fields are
-`activity_frequency` (`none`, `immediately`, `daily`, `weekly`) and
-`weekly_website_email_enabled` (boolean). Responses include the requested
+`activity_frequency` (`none`, `immediately`, `daily`, `weekly`). Responses include the requested
 `activity_frequency`, effective `activity_delivery_frequency`, `account_id`,
-`time_zone`, and website settings/capability. During fallback the requested value
+and `time_zone`. During fallback the requested value
 remains `immediately` while delivery is `daily`. Direct people to the dashboard
 to change their preferences.
 
 ### Custom receiving domains (invitation-only pilot)
 
 Paid plans allow one pending/connected email domain **per account**, including each
-agency client. The operator must enable `features.custom_inbound_email_domains`;
-website publishing is independent. Use Account Settings → Domains → Email to
+agency client. The operator must enable `features.custom_inbound_email_domains`. Use Account Settings → Domains → Email to
 connect it. Prefer an unused subdomain such as `inbox.example.com` when the parent
 already handles email. Dedicated root domains are also accepted. Never silently
 prepend `inbox.`, modify unrelated MX/SPF/DKIM/DMARC, or change DNS without permission.
@@ -230,8 +214,7 @@ download the original and use a MIME parser. Do not regex raw MIME for a code.
 
 Original, JSON, and attachment copies all consume storage/file capacity; the
 monthly allowance counts accepted deliveries once. Retries do not double-charge.
-Email caps are shared across an agency group. `_email` is excluded from website
-publishing and does not create pending website changes. Existing older messages
+Email caps are shared across an agency group. Existing older messages
 keep their paths; inspect file listings instead of guessing filenames.
 
 For a user-authorized signup: save the current count, obtain a ready address,
@@ -302,7 +285,7 @@ Account names, owner emails, and membership in another account do not grant acce
 `account_id` is optional. Omit it to use the credential's original account.
 For another granted account, send it in the query for GET/HEAD requests and in
 the JSON body for writes. Repeat it on **every** request for that client;
-selection never changes the default. Every bucket/file/publication id must
+selection never changes the default. Every bucket/file id must
 belong to the selected account. Invalid or unauthorized selectors fail instead
 of falling back.
 
@@ -325,7 +308,7 @@ An Agency owner's authorized connection can create a client account:
 POST /api/v1/accounts
 Content-Type: application/json
 
-{"name":"Website & campaigns","client_name":"Acme Studio","account_id":"acct_agency"}
+{"name":"Project files","client_name":"Acme Studio","account_id":"acct_agency"}
 ```
 
 `name` is required. `client_name` is optional, trimmed, and limited to 100
@@ -346,7 +329,7 @@ Pro Agency includes ten accounts total and 15 unique people, including the
 owner once. Account capacity and credits are shared; tenant files, memberships,
 and branding stay separate. Clients have no separate subscription or welcome
 credits. Billing and signup require the browser. When Pro Agency entitlement
-ends, the group becomes read-only and its existing websites and data stay in place.
+ends, the group becomes read-only and its existing data stay in place.
 
 ### JSON Headers
 
@@ -401,15 +384,10 @@ Errors are wrapped in `error`:
 Use `error.code` for recovery logic. Use `request_id` when debugging with
 support.
 
-When an account becomes read-only, read requests remain available but mutating
-API calls fail with the account-state error code and `read_only: true`. Do not
-retry writes indefinitely. `GET /api/v1/status` exposes the current account
-state without exposing billing details. For a suspension, `account.restriction`
-uses `code: "ACCOUNT_SUSPENDED"` with a common message,
-`acceptable_use_policy_url`, and `support_email`. Tell the user the website was
-suspended, refer them to the AUP and support, and remind them they can still
-download their files from the bucket. Do not infer reasons, expose review
-details, create replacements, or retry mutations to evade the hold.
+When an account becomes read-only, reads remain available and writes return the
+account-state error. Relay the returned notice and support guidance; people can
+still download their files. Do not infer reasons, expose internal review details,
+or retry writes or create replacement accounts to evade a restriction.
 
 ### Versioning
 
@@ -447,13 +425,13 @@ can revoke the connection later from `/account/access`.
 Hosted MCP is stateless Streamable HTTP. Clients discover tools with `tools/list`
 when they connect, so reconnect after an update to discover newly added tools.
 OAuth metadata uses `REVDOKU_MCP_PUBLIC_BASE_URL` when set,
-so local HTTPS tunnels and reverse-proxy deployments can publish a stable public
+so local HTTPS tunnels and reverse-proxy deployments can expose a stable public
 resource URL.
 
 Hosted MCP exposes bucket tools for storing, reading, organizing, and versioning
 files, reading incoming messages and attachments, and working in authorized shared
 buckets. It cannot read a user's local filesystem. **To store a LOCAL folder, use
-the Revdoku CLI (`revdoku p <dir> --draft`)**. The CLI uploads binary files as well
+the Revdoku CLI (`revdoku upload <dir>`)**. The CLI uploads binary files as well
 as text; hosted MCP can then work with text in the same `bucket_id`. MCP file tools
 (`bucket_file_write`) are text-only; binary assets upload directly to object
 storage via the CLI or the REST direct-upload/upload-session endpoints. Forbidden file types
@@ -461,8 +439,7 @@ storage via the CLI or the REST direct-upload/upload-session endpoints. Forbidde
 by extension at upload, and uploaded content is scanned and removed if forbidden. To read existing bucket file content from a CLI or script, use
 `revdoku files` / `revdoku read PATH`, or `GET …/files/by_path`
 (see [Read a file's content](#read-a-files-content)); cloud MCP clients use
-`bucket_file_list` + `bucket_file_read`. `bucket_list` and `bucket_get` include bucket ids,
-website metadata, publication lifecycle state, and action metadata such as
+`bucket_file_list` + `bucket_file_read`. `bucket_list` and `bucket_get` include bucket ids and action metadata such as
 `archive.required_action` and `delete.confirmation` so agents can handle ids
 internally instead of asking users to type them. They also include active
 `github_sync` status and a `github_sync_setup.settings_url` browser handoff for
@@ -475,7 +452,7 @@ connecting or managing GitHub sync.
 Bucket list and detail responses include:
 
 - `github_sync`: `null` when disconnected; otherwise the repository URL,
-  branch, sync state, last sync/check times, automatic-publish setting, and any
+  branch, sync state, last sync/check times, and any
   current sync error.
 - `github_sync_setup`: eligibility plus a stable, login-required
   `settings_url` for Bucket Settings → GitHub Sync. `blocked_reason` is one of
@@ -538,7 +515,7 @@ returned `user_code` to the person as `Connection ID is <user_code>` and explain
 that it is only a safety check: they should make sure the same ID appears in the
 top-right of Revdoku, then select **Confirm Connection**. Never ask them to type,
 paste, or repeat the Connection ID in chat. Revdoku approves the connection with
-build/publish permissions by default; users can reduce access later in Account
+file and bucket management permissions by default; users can reduce access later in Account
 → Access. Poll `/oauth/token` with grant type
 `urn:ietf:params:oauth:grant-type:device_code` until the user approves. Local
 tooling may store the returned `revdoku_api_key` extension for REST API calls.
@@ -597,7 +574,6 @@ Example response:
     "bucket": {
       "id": "bkt_...",
       "title": "Project files and inbox",
-      "published": false,
       "dashboard_url": "https://app.revdoku.com/buckets/view?id=bkt_..."
     }
   }
@@ -607,11 +583,9 @@ Example response:
 Creation also returns `inbound_email` with the assigned address and receiving
 state. Check `ready` before using it; see the [email contract](#incoming-email-into-a-bucket).
 
-Every bucket response includes `dashboard_url` — a link that opens the bucket in
-the Revdoku dashboard (private or published). Once published, the bucket also
-carries `public_url` (the live site). When reporting a bucket to a user, show the
-link — `public_url` if published, otherwise `dashboard_url` — rather than the raw
-`bkt_` id.
+Every bucket response includes `dashboard_url`, a link for authorized people to
+open the bucket in Revdoku. Share this link instead of asking users to handle raw
+`bkt_` IDs. The link itself does not grant access.
 
 ### Upload a File
 
@@ -726,456 +700,6 @@ For large sessions, `finalize` may return HTTP `202` with
 header. Wait for the retry interval and call the same finalize endpoint again
 until the response no longer includes `finalize_pending:true`.
 
-### Website publishing availability
-
-The remaining website workflows require `features.website_publishing: true` on
-the target account. New accounts have it disabled on every plan. An upgrade does
-not enable it; `WEBSITE_PUBLISHING_DISABLED` is not a billing prompt.
-
-For enabled accounts, choose the folder to serve with `publication_root_directory`
-and publish only with explicit user authorization. Source siblings stay private.
-File writes do not update a live website. Use a review preview for new or materially
-changed sites unless the user has already reviewed them or requests immediate
-publishing. Poll until `publish_state` is `ready` or `failed` before reporting success.
-
-Enabled accounts' Free plan includes one permanent Password website; permanent
-Require Email needs a paid plan. On `PUBLICATION_UPGRADE_REQUIRED`, preserve the
-requested access and share the returned `upgrade_url`. Eligible protected settings
-can be evaluated in a temporary preview. Never fall back silently to Public.
-Permanent public sites are indexable by default; previews and protected sites are
-always `noindex`. See [publication settings](#publication-settings-and-status).
-
-### Publish a Bucket
-
-Publish explicitly when the bucket should have a website URL. Prefer the
-preview workflow below before a first live publish:
-
-```sh
-curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../publication" \
-  -H "Authorization: Bearer $REVDOKU_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "site_mode": "spa",
-    "access_mode": "public"
-  }'
-```
-
-**Home page.** The site root uses the served folder's `index.html` or `index.htm`
-when present. If the served source set is exactly one top-level HTML file, that
-file becomes the home page automatically. Every other missing-index site gets a
-navigation Auto-Index Page with a file listing. Supported document, data, image,
-audio, and video links open in the file viewer even when visited directly; HTML
-rows remain website pages. A `README.md`/`README.txt`/`index.md` is rendered below the listing,
-GitHub-style. There is no custom entry-filename parameter. Choose which folder is
-served with `publication_root_directory` (below).
-
-For a protected website, use `"access_mode": "password"`; it requires available
-protected-site capacity on the account. Use `"access_mode": "require_email"`
-when visitors should verify their email with an OTP and no site password. Omit
-`password` for Require Email. In Password mode, Revdoku generates a copyable
-password the first time protected access is enabled. Set
-`"regenerate_password": true` only when the owner
-explicitly wants to rotate the protected-site password. Agents should not ask
-users to type protected-site passwords in chat. Never put the password in the
-URL. After the build is ready, an authorized owner fetch includes the website URL
-and copyable password/share text.
-
-**Publish only one folder.** Set `"publication_root_directory": "website"` (in
-the publish request body, or as bucket `metadata`) to publish ONLY that bucket-relative
-folder as the site. Its resolved homepage and assets move to the root
-(`/styles.css`, not `/website/styles.css`). Every other file/folder in the bucket (e.g. a `scripts/`
-folder) stays stored and version-tracked but is NOT served. This lets a bucket
-hold both a published `website/` and an unserved `scripts/` sibling. Pass an
-empty string to publish the whole bucket again. Updated servers reject a folder
-with no publishable files (`PUBLICATION_ROOT_DIRECTORY_EMPTY`), preserving the
-previous site on republish. Older servers can fall back to the whole bucket, so
-verify the exact stored output folder before publishing.
-
-### Framework static builds
-
-Build Next.js locally with `output: 'export'` in the existing Next.js config.
-The static export defaults to `out/`; `distDir: 'dist'` selects `dist/` when
-export mode is enabled. `distDir` alone, `.next/`, and standalone server output
-are not deployable static exports. Revdoku runs no dependency install, Next.js
-build, or Node.js server. See the [configuration and compatibility guide](./docs.md#nextjs-static-websites).
-
-For Astro, use `output: 'static'`, prerender every route, and run `astro build`
-locally (usually through `npm run build`). Upload the complete `dist/` or
-configured `outDir`, including `_astro/` assets, and use `site_mode: "static"`.
-Astro SSR output or `dist/client/` alone cannot supply server-rendered pages.
-
-For other Node.js-based frontends, inspect the project's build script and output
-configuration, then build locally. Vite commonly writes to `dist/`; other tools
-may use `build/` or `out/`. Select the actual static output, not a directory based
-only on its name. Use `spa` when client-side routes require index fallback,
-otherwise `static`. Express apps and compiled Node.js/SSR server bundles require
-an external backend. See the [Astro and Node.js guide](./docs.md#astro-and-nodejs-based-websites).
-
-Upload the project source and complete export into the same bucket, preserving
-paths, including generated `_next/`, `_astro/`, or other scripts, styles, fonts,
-and route files.
-Exclude secrets, `node_modules/`, and build caches. Use direct uploads for
-binary assets. Then send these fields to `POST /api/v1/buckets/:id/publication`
-or `POST /api/v1/buckets/:id/publication/preview`:
-
-```json
-{
-  "publication_root_directory": "dist",
-  "site_mode": "static"
-}
-```
-
-This assumes files were uploaded as `dist/index.html`, `dist/_next/...`, etc.
-For `out/index.html`, select `out`. If the upload retains a project prefix such
-as `my-site/dist/index.html` (as the CLI does), select `my-site/dist` instead.
-Before publishing, list files and verify the selected folder contains the
-exported home page and assets. Updated servers reject a missing folder or one
-containing only excluded files. Files outside a valid selected root stay private
-and versioned. Paths inside it become website-root paths, so
-`my-site/dist/_next/...` is served at `/_next/...`.
-
-MCP uses the same `publication_root_directory` and `site_mode` fields on
-`bucket_publish`, `bucket_publish_password_protected`, and
-`bucket_publish_preview`. Hosted MCP cannot compile local projects or upload
-binary files; use a local agent with the CLI or REST uploads. Rebuild locally
-after source changes, upload the refreshed export, and republish the same bucket.
-Poll publication status until `ready` or `failed`; verify the home page, a direct
-nested route, and asset loading before reporting success.
-
-`GET /api/v1/status` and MCP `revdoku_status` expose this build policy under
-`publishing.static_site`.
-
-### Publication settings and status
-
-**Website lifetime.** Treat the returned `expires_at` as authoritative. A null
-value means the main publication has no scheduled expiry; previews always have
-an expiry. Do not infer a lifetime from account labels in client code.
-
-**Preview (staging).** `POST /api/v1/buckets/:id/publication/preview` publishes the
-bucket's current draft to a temporary public `preview-<slug>` URL that expires
-after 24 hours and is `noindex`, without touching the main publication or counting
-toward the live-site limit. The lifetime cannot be customized; re-running republishes
-to the same preview slug with a new 24-hour window. Like publishing, it is async — poll
-the returned publication's `publish_state` until `ready`, then share its `expires_at`.
-Preview requests may include the normal access and presentation settings. Free
-includes one permanent Password website; Require Email and other eligible paid
-access or presentation settings can be evaluated in a temporary preview.
-Publishing a paid-only setting on the
-main website returns `PUBLICATION_UPGRADE_REQUIRED` with preview, upgrade, and
-Public-on-Free choices.
-
-**Website slug.** Every signed-in plan can use `slug_suggestions` to steer the
-first URL and `PATCH .../custom_domains/public_slug` to rename it.
-Slugs must be at least 3 characters and cannot use reserved or prohibited words.
-
-Publishing is **asynchronous**. The request returns HTTP `202 Accepted` with the
-publication in a `queued`/`processing` state while the bundle is built in the
-background. Example
-response:
-
-```json
-{
-  "data": {
-    "publication": {
-      "id": "pub_...",
-      "bucket_id": "bkt_...",
-      "public_slug": "bright-canvas-meadow",
-      "public_url": "https://bright-canvas-meadow.revdoku.site/",
-      "status": "publishing",
-      "publish_state": "queued",
-      "publish_pending": true,
-      "site_mode": "spa",
-      "access_mode": "public",
-      "expires_at": null
-    }
-  }
-}
-```
-
-#### Check build status separately
-
-Do **not** hand out `public_url` while `publish_state` is `queued` or
-`processing` — it 404s until the build finishes. Poll the publication until it is
-terminal:
-
-```sh
-curl -fsS "$REVDOKU_URL/api/v1/publications/pub_..." \
-  -H "Authorization: Bearer $REVDOKU_API_KEY"
-```
-
-- `publish_state: "ready"` → the site is live; use `public_url`. Owner responses
-  include the access password / share text for protected sites here (it is no
-  longer in the immediate publish response — fetch it after the build).
-- `publish_state: "failed"` → read `publish_error`; recover with
-  `POST /api/v1/buckets/bkt_.../publication/retry` (reuses the saved request, no
-  need to resend settings). The publish-failed notification email is also sent.
-- `publish_state: "queued" | "processing"` → check again later. A stuck build is
-  auto-recovered by a background sweeper.
-- `publish_state: "unpublishing"` / `status: "unpublishing"` → an async unpublish
-  is removing public artifacts and edge metadata. Poll until `status:
-  "unpublished"` and `publish_state` is no longer `"unpublishing"` before
-  archiving or deleting the bucket.
-
-`publish_enqueued_at` / `publish_started_at` / `publish_completed_at` are exposed
-for progress/age. Changing only settings/access (no file changes) reuses the
-existing bundle and does not re-upload files.
-
-Use `site_mode: "static"` for ordinary static sites. Use `site_mode: "spa"` for
-React/Vite-style apps where deep links should fall back to the resolved entrypoint.
-`site_mode` is the canonical routing field. `site_type: "website"` remains an
-accepted compatibility field; app/database publication modes are retired and
-must not be used.
-
-If the served source set has no `index.html`/`index.htm` and is not exactly one
-top-level HTML file, Revdoku publishes an Auto-Index Page that lists files and
-opens supported non-HTML files in the viewer, including from direct file links.
-Account-specific Auto-Index templates must include the files macro as
-`{{files}}` or `{{ files }}`. Supported template macros are `{{title}}`,
-`{{description}}`, `{{files}}`, `{{theme_switch}}`, `{{account_name}}`, and
-`{{account_logo}}`, with optional whitespace inside the braces.
-
-Publishing never includes private runtime/development files in the static
-bundle. Paths such as `.workers/**`, `.env*`, `node_modules/**`, local lockfiles,
-and executable installer/script payloads are excluded from public/private
-published file manifests. Current storage safety rules still reject some secret-looking files
-such as `.env`; use Revdoku-managed secrets for credentials rather than asking
-agents or visitors to put secrets in chat or bucket files.
-
-Website analytics and browser-side Revdoku event tracking are enabled by
-default for every published website — leave them on so the owner's dashboard
-shows visits and view counts.
-Only set `"tracking_enabled": false` when the user explicitly asks to disable
-tracking; doing so stops new analytics and browser-side events for the
-publication. Existing retained history is not rewritten. Use
-`"publication_analytics_enabled"` and
-`"publication_client_events_enabled"` for separate control. `"analytics_enabled"`
-and `"client_events_enabled"` are accepted aliases.
-
-### Publish a Folder Efficiently
-
-Use publish sessions for larger folders. Revdoku compares file hashes, uploads
-only changed bytes, then finalizes the publication. The `files` manifest is a
-folder snapshot by default: active bucket files omitted from the manifest are
-soft-deleted during background finalize. Set `"delete_missing": false` only when
-you intentionally want an incremental publish that keeps omitted bucket files.
-
-Create the session:
-
-```sh
-curl -fsS "$REVDOKU_URL/api/v1/publish_sessions" \
-  -H "Authorization: Bearer $REVDOKU_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "bucket_title": "Marketing site",
-    "site_mode": "spa",
-    "access_mode": "password",
-    "delete_missing": true,
-    "files": [
-      {
-        "path": "index.html",
-        "byte_size": 1234,
-        "content_type": "text/html",
-        "checksum": "BASE64_MD5",
-        "sha256": "HEX_SHA256"
-      }
-    ]
-  }'
-```
-
-Upload each file to `data.publish_session.uploads[].upload.url` using exactly
-the returned upload headers. Do not send Revdoku auth headers to object-storage
-upload URLs.
-
-Finalize the session:
-
-```sh
-curl -fsS -X POST "$REVDOKU_URL/api/v1/publish_sessions/pus_.../finalize" \
-  -H "Authorization: Bearer $REVDOKU_API_KEY"
-```
-
-Finalize returns `202` with the publication in `publish_state: "queued"` — the
-uploaded files are written into the bucket, omitted files are pruned when
-`delete_missing` is enabled, and the bundle is built in the background. Poll
-`GET /api/v1/publications/pub_...` until `publish_state` is `ready` before using
-`public_url` (see "Check build status separately" above). Bad input (a stale session or
-bucket revision, a file locked by another agent, missing storage) still fails
-fast at finalize with `409`/`423`/`503`.
-
-If an upload URL expires, refresh it:
-
-```sh
-curl -fsS -X POST "$REVDOKU_URL/api/v1/publish_sessions/pus_.../uploads/refresh" \
-  -H "Authorization: Bearer $REVDOKU_API_KEY"
-```
-
-### Add a Custom Domain
-
-Custom-domain capacity and optional `www` support are plan entitlements. Read
-their current availability from <https://app.revdoku.com/pricing.json> and the
-full-account profile response instead of copying plan counts into an
-integration. Publish the bucket first.
-
-```sh
-curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../custom_domains" \
-  -H "Authorization: Bearer $REVDOKU_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{ "hostname": "example.com" }'
-```
-
-The first response is an ownership challenge. Revdoku does not send the
-hostname to Cloudflare until this TXT record is visible:
-
-```json
-{
-  "data": {
-    "custom_domain": {
-      "id": "pcd_...",
-      "hostname": "example.com",
-      "status": "pending_ownership",
-      "setup_stage": "verify_ownership",
-      "public_url": null,
-      "required_dns_records": [
-        {
-          "type": "TXT",
-          "name": "_revdoku-verification.example.com",
-          "value": "revdoku-domain-verification=...",
-          "purpose": "revdoku_ownership"
-        }
-      ],
-      "verification_expires_at": "2026-08-15T12:00:00Z"
-    },
-    "publication": {
-      "public_url": "https://bright-canvas-meadow.revdoku.site/"
-    },
-    "limits": {
-      "active_count": 1,
-      "max_custom_domains": 1
-    }
-  }
-}
-```
-
-Add the TXT record, then refresh. Once ownership is confirmed, the response
-changes to `setup_stage: "configure_dns"` and returns the traffic and
-certificate records. Add every returned record and refresh until
-`custom_domain.status` is `active`:
-
-```sh
-curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../custom_domains/pcd_.../refresh" \
-  -H "Authorization: Bearer $REVDOKU_API_KEY"
-```
-
-When active, the publication `public_url` switches to the custom domain.
-The managed `https://<bucket-slug>.revdoku.site/` URL keeps working.
-Incomplete setup expires after 72 hours. Website-domain changes are limited to
-3 per account per day, with a separate short-window DNS verification limit.
-
-For apex domains such as `example.com`, the DNS provider must support ALIAS,
-ANAME, or CNAME flattening. If it does not, use `www.example.com` as the custom
-domain and redirect `example.com` to `www.example.com` at the DNS/hosting
-provider.
-
-### Read Analytics
-
-Use `details_visible` to determine whether publication analytics are available.
-When false, analytics totals and breakdowns are unavailable and numeric fields
-are `null`, not zero.
-
-Except for `all`, each selected window is compared with its matching immediately
-preceding window. The `all` range covers complete stored history and returns
-`previous_period: null` plus null comparison values. `previous_period_totals` contains the earlier values and
-`diff_vs_previous_period` contains signed current-minus-previous values. For
-example, `"views": 6` means six more human views than the previous period and
-`"views": -6` means six fewer. `views` excludes bots; `hits` includes them. For
-the live `24h` range, comparison values are `null` when either hourly query is
-unavailable; never interpret those nulls as zero traffic.
-
-```sh
-curl -fsS "$REVDOKU_URL/api/v1/analytics?range=30d" \
-  -H "Authorization: Bearer $REVDOKU_API_KEY"
-```
-
-Example response with details:
-
-```json
-{
-  "data": {
-    "range": "30d",
-    "from": "2026-05-22",
-    "to": "2026-06-20",
-    "retention_limited": false,
-    "previous_period": { "from": "2026-04-22", "to": "2026-05-21" },
-    "first_event_at": "2026-05-22T09:12:33.000Z",
-    "last_event_at": "2026-05-26T18:32:14.000Z",
-    "totals": {
-      "hits_all_time": 8420,
-      "views": 1113,
-      "hits": 1204,
-      "visitors": 822,
-      "clicks": 58,
-      "downloads": 12,
-      "hits_assets": 31,
-      "hits_not_found": 18,
-      "hits_bots": 91
-    },
-    "previous_period_totals": {
-      "views": 1040,
-      "hits": 1122,
-      "visitors": 790,
-      "clicks": 52,
-      "downloads": 14,
-      "hits_assets": 28,
-      "hits_not_found": 12,
-      "hits_bots": 82
-    },
-    "diff_vs_previous_period": {
-      "views": 73,
-      "hits": 82,
-      "visitors": 32,
-      "clicks": 6,
-      "downloads": -2,
-      "hits_assets": 3,
-      "hits_not_found": 6,
-      "hits_bots": 9
-    },
-    "daily": [
-      { "date": "2026-05-26", "hits": 120, "visitors": 84, "hits_not_found": 2, "hits_bots": 9 }
-    ],
-    "buckets": [
-      {
-        "bucket_id": "bkt_abc123",
-        "bucket_title": "Handbook",
-        "publication_id": "pub_abc123",
-        "public_slug": "handbook",
-        "url": "https://handbook.revdoku.site/",
-        "hits": 1204
-      }
-    ],
-    "paths": [
-      { "path": "/", "hits": 650 }
-    ],
-    "downloads": [
-      { "path": "/guide.pdf", "hits": 12 }
-    ],
-    "referrers": [
-      { "referrer": "direct", "hits": 420 }
-    ],
-    "countries": [
-      { "country": "US", "hits": 510 }
-    ],
-    "bots": [
-      { "bot": "GPTBot", "hits": 91 }
-    ],
-    "paths_not_found": [
-      { "bucket_id": "bkt_abc123", "publication_id": "pub_abc123", "public_slug": "docs", "path": "/old-page", "hits": 18 }
-    ]
-  }
-}
-```
-
-`visitors` is a sum of each day's unique visitor count, not a global unique
-visitor count across the whole range.
-
 ## API Reference
 
 ### Authentication Endpoints
@@ -1213,8 +737,7 @@ Pending poll responses use standard device-flow errors:
 
 Successful device-code token responses include normal OAuth fields plus
 `revdoku_api_key`, a durable `revdoku_...` key for local REST API clients.
-The browser approval screen defaults to `bucket_admin` so agents can build and
-publish when the user asks. Users can reduce a connection later in
+The browser approval screen defaults to `bucket_admin` so agents can manage files and buckets. Users can reduce a connection later in
 Account → Access. OAuth approval and API-key creation flows can still
 request a narrower scope up front.
 
@@ -1223,8 +746,8 @@ request a narrower scope up front.
 | Scope | Meaning |
 | --- | --- |
 | `bucket_read` | List and read allowed bucket files only. |
-| `bucket_write` | Create and update allowed private bucket files; no publishing. |
-| `bucket_admin` | Create, update, publish, unpublish, and manage allowed buckets. |
+| `bucket_write` | Create and update allowed bucket files. |
+| `bucket_admin` | Create, update, and manage allowed buckets. |
 
 OAuth authorization and device authorization accept `permission_scope` with
 these values; their standard OAuth `scope` remains `revdoku:mcp` with optional
@@ -1311,7 +834,7 @@ Common `redirect_path` values:
 
 ### Bucket Endpoints
 
-All files that make up any bucket or published website remain downloadable from
+All files that make up a bucket remain downloadable from
 Revdoku at any time.
 
 | Method | Path | Purpose |
@@ -1319,16 +842,11 @@ Revdoku at any time.
 | `GET` | `/api/v1/buckets` | List active buckets by default. Use `?archived=true` to list archived buckets. |
 | `POST` | `/api/v1/buckets` | Create a bucket. |
 | `GET` | `/api/v1/buckets/:id` | Read a bucket. |
-| `PATCH` | `/api/v1/buckets/:id` | Update bucket metadata or public-website search visibility. |
-| `GET` | `/api/v1/buckets/templates` | List trusted starter templates. |
-| `POST` | `/api/v1/buckets/from_template` | Create a private bucket from a trusted template. |
-| `POST` | `/api/v1/buckets/:id/archive` | Archive a normal unpublished bucket. |
+| `PATCH` | `/api/v1/buckets/:id` | Update bucket metadata. |
+| `POST` | `/api/v1/buckets/:id/archive` | Archive a bucket. |
 | `POST` | `/api/v1/buckets/:id/unarchive` | Restore an archived normal bucket. |
-| `POST` | `/api/v1/buckets/:id/visibility_change_lock` | Prevent publish/unpublish/access/slug visibility changes; unlock is UI-only. |
 | `GET` | `/api/v1/buckets/:id/variables` | Read public variables and secret names (never secret values). |
 | `PATCH` | `/api/v1/buckets/:id/variables` | Replace variables and patch encrypted secrets. |
-| `GET` | `/api/v1/buckets/:id/form_submissions` | Read encrypted built-in form submissions as an owner with bucket write access. |
-| `GET` | `/api/v1/buckets/:id/form_submissions/:submission_id` | Read one form submission plus its document/revision context. |
 | `GET` | `/api/v1/buckets/:id/versions` | List bucket version history. |
 | `GET` | `/api/v1/buckets/:id/versions/:version_id` | Read one historical bucket version. |
 | `POST` | `/api/v1/buckets/:id/versions/restore` | Restore a historical version as a new latest version. |
@@ -1336,10 +854,9 @@ Revdoku at any time.
 | `GET` | `/api/v1/buckets/:id/github_sync/setup` | Read browser setup URL, eligibility, installations, and accessible repositories. |
 | `POST` | `/api/v1/buckets/:id/github_sync` | Connect an existing repository for the explicit initial import/export direction. |
 | `POST` | `/api/v1/buckets/:id/github_sync/export` | Create a new private bucket-named repository and export the bucket. |
-| `PATCH` | `/api/v1/buckets/:id/github_sync` | Enable or disable automatic republishing after sync. |
 | `POST` | `/api/v1/buckets/:id/github_sync/sync` | Enqueue a manual sync or conflict resolution. |
 | `DELETE` | `/api/v1/buckets/:id/github_sync` | Disconnect the repository without deleting either side. |
-| `DELETE` | `/api/v1/buckets/:id` | Permanently delete an archived, unpublished normal bucket with confirmation. |
+| `DELETE` | `/api/v1/buckets/:id` | Permanently delete an archived bucket with confirmation. |
 | `GET` | `/api/v1/tags` | List reusable bucket labels. |
 
 #### GET /api/v1/buckets
@@ -1360,23 +877,15 @@ Bucket list/detail responses include effective lifecycle action metadata:
 
 | Field | Meaning |
 | --- | --- |
-| `website` | Current or latest website publication metadata, including `public_url`, `status`, `published`, and `lifecycle_active`. |
-| `search_engine_visibility` | Effective affirmative search setting: `allow_search_indexing`, the stored `owner_preference`, and any enforced `locked_reason`. |
-| `publication_lifecycle_active` | `true` when a publication is active enough to block archive/delete, even if the public artifacts are unavailable. |
 | `archive.allowed` | Whether the current principal can archive now. |
-| `archive.required_action` | `unpublish_first` when the bucket must be unpublished before archive. |
 | `unarchive.allowed` | Whether the current principal can restore an archived bucket now. |
 | `delete.allowed` | Whether the current principal can permanently delete now. |
-| `delete.required_action` | `unpublish_first` when a website must be unpublished first; `archive_first` when an active bucket must be archived first. |
 | `delete.confirmation` | Confirmation phrase returned by the API; clients should pass it exactly to DELETE after human confirmation, not ask users to type bucket ids. |
 
 Archived buckets are read-only until unarchived. Metadata edits, label changes,
-file changes, direct upload targets, thumbnail uploads, bucket duplication,
-publication updates, and custom-domain mutations return
-`BUCKET_ARCHIVED`. Read/list endpoints, unarchive, permanent delete, and
-publication cleanup remain available when otherwise permitted. Copying files
-out of an archived bucket is allowed when the caller has read access to the
-source and write access to an active target bucket.
+file changes, uploads and duplication return `BUCKET_ARCHIVED`. Reads, unarchive,
+and eligible permanent deletion remain available. Copying files out is allowed
+with source read access and write access to an active target.
 
 #### POST /api/v1/buckets
 
@@ -1410,23 +919,16 @@ source, task, or local-folder context in `metadata`.
 }
 ```
 
-`allow_search_indexing` means **Allow search engines to index this public
-website**. It defaults to `true` for permanent public account websites. Set it
-to `false` to add Revdoku's platform `noindex` controls. Password, Require Email,
-temporary previews are always locked off and report the
-reason in `search_engine_visibility.locked_reason`. Enabling it does not remove a
-`noindex` tag supplied by the website itself and does not guarantee indexing.
-
 #### Bucket locks
 
-Use a bucket lock for broad folder uploads, full-site rewrites, or coordinated
+Use a bucket lock for broad folder uploads, folder reorganizations, or coordinated
 multi-file edits. Use file locks for narrow edits to specific paths.
 
 ```sh
 curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../lock" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{ "message": "Uploading website folder", "duration_seconds": 900 }'
+  -d '{ "message": "Uploading project folder", "duration_seconds": 900 }'
 ```
 
 ```sh
@@ -1434,7 +936,7 @@ curl -fsS -X DELETE "$REVDOKU_URL/api/v1/buckets/bkt_.../lock" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
-Active bucket locks block writes, deletes, publishing changes, direct uploads,
+Active bucket locks block writes, deletes, direct uploads,
 and file locks by other API keys. Revdoku checks the bucket lock before checking
 specific file locks. Conflicts return HTTP `423` with code `BUCKET_LOCKED`.
 
@@ -1448,7 +950,7 @@ Move and organize existing files server-side; do not download and re-upload byte
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/v1/buckets/:id/files` | List files; supports `limit`, `offset`, and `q`. `publication_targets=true` returns lean paths relative to the website root for a form success-target picker. |
+| `GET` | `/api/v1/buckets/:id/files` | List files; supports `limit`, `offset`, and `q`. |
 | `GET` | `/api/v1/buckets/:id/files/:file_id` | Read file metadata. |
 | `GET` | `/api/v1/buckets/:id/files/by_path?path=...` | Read/download a file by bucket-relative path. |
 | `POST` | `/api/v1/buckets/:id/files/:file_id/rename` | Rename or move within the same bucket without reuploading. |
@@ -1519,272 +1021,11 @@ newer history; it creates a new latest version from the selected snapshot:
 
 Send that body to `POST /api/v1/buckets/:id/versions/restore`.
 
-#### Built-in publication forms
-
-Known presets embedded with a Revdoku macro or popup button in published HTML
-register automatically, without a Website Settings entry. Forms added in Website
-Settings or `bucket.metadata.publication_forms` create widgets by default. Each form is an
-instance with a unique endpoint `name` and a behavior `template` (listed A–Z):
-`booking` (**Booking request**), paid-only `blank` (**Custom form**), `feedback`,
-`comments` (**Feedback (visible to all)**), `resource` (**Get a resource**),
-`get_in_touch` (**Get in touch**), `waitlist` (**Join waitlist**), `contact`
-(**Request a call**), `quote` (**Request a quote**), `information` (**Request
-information**), or `support`.
-Free plans use the templates unchanged. Plans with form customization may customize copy and the
-bounded field catalog, and may reuse a template under another endpoint name.
-Free accounts cannot save or preview customized forms.
-
-Bucket detail responses include `forms.inventory`: one row per form endpoint,
-combining saved settings with forms found in the live publication and newer previews.
-Rows include `placements` (`inline`, `popup`, `widget`), `page_paths`, and `state`
-(`live`, `preview`, `draft`). Live page paths come from the published version.
-`forms.forms` remains the saved definitions; customizing a detected form saves an
-override under the same name. Add widget reuses an existing preset's endpoint.
-Removing its widget keeps inline embeds and submissions. Removing an embed updates
-the inventory on the next publish. Ordinary third-party forms are not adopted.
-The submissions list returns the same rows as `form_inventory`; `form_names` also
-includes historical forms so their submissions remain filterable.
-
-The Get in touch preset requires email and includes optional name, phone, and
-comments. The Support preset requires email and a support request.
-The Booking request preset asks for name and email, with optional phone, message,
-and date. The date starts blank, uses its field copy as an in-control
-placeholder, and can be made required when form customization is available.
-
-```json
-{
-  "bucket": {
-    "metadata": {
-      "publication_forms": {
-        "enabled": true,
-        "forms": [
-          {
-            "name": "contact",
-            "template": "contact",
-            "hosted": true,
-            "widget_position": {
-              "desktop": "top-right",
-              "mobile": "bottom-right"
-            }
-          }
-        ],
-        "turnstile": "auto"
-      }
-    }
-  }
-}
-```
-
-An embedded form posts same-origin to `/_revdoku/form/contact`. Private-response
-forms work with Public, Password, or Require Email publications when that access
-mode is available. The shared `comments` form, **Feedback (visible to all)**,
-also works on Public sites. Public and Password sites accept guest comments with
-optional name/email; typed emails are private contact details, not verified
-identity. Require Email sites reuse the verified gate identity. The widget never
-asks for OTP. Visitors see approved shared feedback; authors also see their own
-pending comments. Shared history never exposes contact email addresses.
-Read the current submission limit
-from the API response instead of hard-coding account-specific quotas.
-Submissions are encrypted. The account owner can read them with bucket write
-access via `GET /api/v1/buckets/:id/form_submissions?form_name=contact&limit=50&offset=0`.
-The Bucket → Forms dashboard can export authorized submission data to CSV at
-any time; integrations can read the same data through these REST endpoints.
-Generic outbound form webhooks and self-service submission-retention policies
-are not currently available.
-Read one submission with
-`GET /api/v1/buckets/:id/form_submissions/:submission_id`. The response includes
-the encrypted form values after authorized decryption plus immutable document
-context captured at submit time:
-
-```json
-{
-  "data": {
-    "form_submission": {
-      "id": "fsub_...",
-      "form_name": "feedback",
-      "fields": { "message": "Move this section higher" },
-      "context": {
-        "document_path": "index.html",
-        "document_page": 1,
-        "document_selection": {
-          "version": 1,
-          "type": "rect",
-          "coordinates": [0.1, 0.2, 0.6, 0.5],
-          "coordinate_space": {
-            "width": 1,
-            "height": 1,
-            "unit": "document_ratio"
-          },
-          "color": "indigo"
-        }
-      }
-    }
-  }
-}
-```
-
-With the same bucket write access, integrations can manage the stored review
-thread:
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `PATCH` | `/api/v1/buckets/:id/form_submissions/:submission_id` | Update existing stored field values, or approve/hide shared feedback. New arbitrary field names are rejected. |
-| `POST` | `/api/v1/buckets/:id/form_submissions/:submission_id/reply` | Add a `team` reply, or a `public` reply when the shared-comments submission supports it. |
-| `DELETE` | `/api/v1/buckets/:id/form_submissions/:submission_id` | Delete one reply, or delete a root submission together with its replies. |
-
-Shared forms default to `"approval_required": true` on every plan. New visitor
-comments and replies start `pending`; explicit false autoapproves future
-submissions. Authorized moderator replies start `approved`. Changing the setting affects future
-submissions only. Publish or republish saved settings to activate them.
-
-Submissions expose `moderation_status` (`pending`, `approved`, `reported`, or
-`hidden`) and `updated_at`. Add `needs_review=true` to the list endpoint for pending
-and reported items; required parent rows are included for reply context. To
-moderate, PATCH the existing submission endpoint with:
-
-```json
-{
-  "moderation_action": "approve",
-  "expected_updated_at": "<updated_at from the submission response>"
-}
-```
-
-Use `"hide"` after confirming the target and consequence with the user. Moderation
-requires existing submission-management permissions; reviewers cannot moderate.
-A changed submission returns `409 FORM_SUBMISSION_STALE`; refresh before retrying.
-Repeated actions in the target state succeed without another transition. Field
-edits do not approve pending or hidden content.
-
-Visitors, including guests, can confirm Report in the widget. The first report
-changes an approved comment to `reported` and notifies the owner; the comment
-stays visible pending review. Repeated reports do nothing; a later approval
-allows reporting again. Historical reports that already hid comments stay hidden
-until reviewed. An authorized Hide action hides the comment; hiding a root also
-suppresses its replies, markers, and counts.
-
-Public shared history uses the approved recent-200 window plus required parents.
-Marker counts match that available feed. Updates normally appear within a few
-minutes. Public history reads stay at the edge, including cache misses, and
-authenticated responses are private and `no-store`. Access-mode changes invalidate
-comment sessions and keep earlier protected history out of the public feed;
-ordinary republishes preserve public history. Private feedback keeps its existing
-history behavior.
-
-Reply body:
-
-```json
-{
-  "message": "Updated copy is ready for review.",
-  "audience": "team"
-}
-```
-
-The `review_session` endpoint is browser-session-only. It can open either the
-normal submission workspace or preview review mode and is not an API-key
-integration surface.
-
-Selection coordinates are `[x1, y1, x2, y2]`. Units are `pdf_point`,
-`image_pixel`, `element_ratio`, or `document_ratio`; PDF selections also carry
-`document_page`.
-When form customization is included, set `label`, `description`, and ordered `fields`
-entries such as `{"name":"email","label":"Email","placeholder":"Work email","required":true}`.
-`placeholder` is optional and independent from the field label; Revdoku appends
-`(required)` or `(optional)` when the placeholder omits either marker.
-Field names are limited to `name`, `email`, `phone`, `company`, `budget`, `date`,
-`message`, and `comment`. The `message` and `comment` fields accept `type: "textarea"`
-or `type: "comment"`; other field types are fixed. Set `"field_types_version": 1`
-when editing fields. Hosted forms can set independent desktop
-and mobile `widget_position` values: `top-left`, `top-center`, `top-right`,
-`center-left`, `center`, `center-right`, `bottom-left`, `bottom-center`, or
-`bottom-right` (the default). Every form uses `Send` as its submit-button caption.
-
-Any form can include a Comment field (`"name": "comment", "type": "comment"`)
-to enable text and area selection in websites and file viewers. At most one
-Comment field is allowed per form. Set `"field_types_version": 1` when editing
-fields; use `"type": "textarea"` for plain Text with page, file, PDF-page, and
-media-time context only. The `feedback` and `comments` presets include Comment
-by default and preserve their existing `message` field name. Form privacy and
-reply settings remain independent. The legacy `area_selection_enabled` setting
-is accepted for older field definitions; new definitions derive it from the
-Comment field.
-
-Every configured form also accepts a `success_response`:
-
-```json
-{
-  "name": "resource",
-  "template": "resource",
-  "hosted": true,
-  "success_response": {
-    "mode": "file",
-    "path": "downloads/guide.pdf"
-  }
-}
-```
-
-Opening a supported resource after submission requires form customization.
-
-`mode` is `system` (the default saved message) or `file`. A file target is
-relative to the published website root and must exist by publish/republish;
-updates to an existing bucket reject a missing target. Supported PDFs, raster
-images, video/audio, Markdown/text, CSV/TSV, DOCX, and spreadsheets open in the
-same-origin Revdoku viewer. After a confirmed submission, Revdoku creates a
-six-hour signed link; the original resource path cannot be opened directly.
-Republishing rotates the signing key and invalidates older links. Password and
-Require Email resources also retain the website access gate. The dashboard does
-not offer HTML, SVG, folders, archives, executables, or unknown formats as new
-resource targets; existing legacy HTML/folder responses keep their direct redirect
-until changed. Form changes remain draft settings until publish/republish. Revdoku
-does not email the visitor for this response mode.
-
-Insert a preset inline in an HTML page:
-
-```html
-{{REVDOKU_FORM:waitlist}}
-```
-
-Revdoku detects the preset when publishing, registers its endpoint, and renders it
-without requiring a settings entry. Different named forms render independently.
-`{{REVDOKU_FORM}}` uses the first configured form, or Feedback if none is configured.
-Custom endpoint names require a definition. Ordinary third-party forms are not adopted.
-
-A native button opens a managed popup while keeping the website's button styling:
-
-```html
-<button type="button" class="your-cta" data-revdoku-form-popup="contact">
-  Get in touch
-</button>
-```
-
-Repeated buttons share one popup. Per-form `widget_mode` controls floating placement:
-
-| Value | Behavior |
-| --- | --- |
-| `always_show` | Shows even beside an embed. Default for forms added in settings. |
-| `auto` | Hides only when this same form is embedded inline or by a popup button on the current page. |
-| `hidden` | No floating widget. Default for automatically detected embeds. |
-
-For an inline Waitlist and floating Feedback, insert the Waitlist macro and configure
-only `{ "name": "feedback", "template": "feedback", "widget_mode": "always_show" }`.
-Both endpoints accept their own submissions. Placement modes are available on Free;
-custom copy and fields retain their plan requirements. Explicit `enabled: false`
-disables all forms. Path exclusions continue to override widget visibility.
-
-Legacy `hosted: false` maps to `hidden`; `show_floating_with_embeds` (and its older
-`show_floating_with_inline` alias) maps true to `always_show`, false to `auto`.
-An explicit `widget_mode` takes precedence. A hand-authored Revdoku form still needs
-a definition, uses that definition's fields, and posts to `/_revdoku/form/<name>`.
-
-A Comment field supports text and area selections in HTML, PDF, images, and
-other file viewers. Text selection shows emoji reactions and Comment,
-retains the selected quote, and anchors it to its page and file revision. Copying
-text and editing fields keep their normal behavior. Removed or ambiguous passages
-retain their quote without being highlighted at an unrelated location.
-
 #### Archive, unarchive, and permanent delete
 
-Buckets with active published websites must be unpublished before they can be
-archived. Permanent delete requires the bucket to be unpublished and archived.
+Honor `archive` and `delete` eligibility in bucket responses. If an operation
+is blocked, direct the user to the bucket dashboard to resolve it. Never delete
+files to work around a blocked archive. Permanent deletion requires archiving first.
 
 ```sh
 curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../archive" \
@@ -1824,298 +1065,11 @@ notification is delivered. If background deletion fails, the bucket is unlocked
 and a failed delete notification is sent so clients can retry.
 
 
-`GET /api/v1/publications` and `GET /api/v1/publications/:id` include the
-published file manifest by default for backward compatibility. Polling clients
-should pass `include_manifest=false` and use `published_files_count` until they
-need the full file list. `GET /api/v1/publications/:id/manifest` always returns
-the full manifest.
-
-Archived buckets cannot be published, republished, direct-publish finalized,
-or have publication settings updated until they are unarchived. Unpublish and
-publication revoke endpoints remain available for cleanup.
-
-#### POST /api/v1/buckets/:id/publication
-
-```json
-{
-  "site_mode": "spa",
-  "access_mode": "password",
-  "expires_at": null
-}
-```
-
-Publication response fields:
-
-| Field | Meaning |
-| --- | --- |
-| `public_url` | Same public website URL returned for users and agents. |
-| `asset_base_url` | Direct public object-storage/CDN directory. |
-| `public_slug` | Stable DNS-safe bucket publication slug. |
-| `status` | `published`, `unpublished`, or another lifecycle status. |
-| `expires_at` | ISO-8601 expiry. `null` means no scheduled expiry; previews always expire. |
-| `site_mode` | Whether deep links fall back to the index page (SPA routing). |
-| `site_type` | Compatibility field; published sites are `website`. Prefer `site_mode`. |
-| `access_mode` | `public`, `password`, or `require_email`. Protected websites require available protected-site capacity; `require_email` verifies visitors by email OTP and uses no site password. |
-| `password_configured` | Whether a protected website password is configured. |
-| `access_password` | Copyable stored password, returned only to account-owner publish keys. |
-| `generated_password` | Newly generated password, returned only to account-owner publish keys. |
-| `share_text` | Copyable owner-facing text containing the website link and password when visible. |
-| `publication_analytics_enabled` | Whether Revdoku records website analytics for this publication. |
-| `publication_client_events_enabled` | Whether browser-side Revdoku event tracking is enabled for this publication. |
-| `analytics.views_all_time` | Durable all-time human page views, excluding bots. |
-| `analytics.hits_all_time` | Durable all-time website hits, including bots. |
-| `analytics.last_event_at` | Latest recorded analytics event timestamp; `null` when hidden or not recorded yet. |
-
-Publication lifecycle endpoints:
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `POST` | `/api/v1/buckets/:id/publication/preview` | Publish a temporary noindex preview. |
-| `GET` | `/api/v1/publications` | List publications. |
-| `GET` | `/api/v1/publications/:id` | Read state; use `include_manifest=false` while polling. |
-| `GET` | `/api/v1/publications/:id/manifest` | Read the complete published file manifest. |
-| `PATCH` | `/api/v1/publications/:id` | Update title, routing, and listing settings. |
-| `GET` | `/api/v1/publications/:id/access` | Read Require Email leads/access details when authorized. |
-| `PATCH` | `/api/v1/publications/:id/access` | Change public/password/Require Email access. |
-| `POST` | `/api/v1/publications/:id/recipient_links` | Generate Require Email recipient links. |
-| `PATCH` | `/api/v1/buckets/:id/custom_domains/public_slug` | Rename the managed Revdoku slug. |
-
-#### DELETE /api/v1/buckets/:id/publication
-
-Unpublish is asynchronous. The endpoint returns `202` with `status:
-"unpublishing"` while the worker writes the unpublished marker, removes public
-artifacts, and syncs edge metadata. Poll `GET /api/v1/publications/:id` until
-`status: "unpublished"` and `publish_state` is no longer `"unpublishing"` before
-treating archive/delete as unblocked.
-
-#### POST /api/v1/publish_sessions
-
-Use this for larger folders and AI-generated websites.
-It accepts the same access and analytics/tracking fields as bucket publishing,
-including `tracking_enabled`, `publication_analytics_enabled`, and
-`publication_client_events_enabled`.
-
-```json
-{
-  "bucket_title": "Marketing site",
-  "bucket_description": "Generated launch assets",
-  "bucket_tag_paths": ["website"],
-  "site_mode": "spa",
-  "access_mode": "password",
-  "delete_missing": true,
-  "files": [
-    {
-      "path": "index.html",
-      "byte_size": 1234,
-      "content_type": "text/html",
-      "checksum": "BASE64_MD5",
-      "sha256": "HEX_SHA256"
-    }
-  ]
-}
-```
-
-The response includes:
-
-| Field | Meaning |
-| --- | --- |
-| `publish_session` | Session id, files, uploads, and status. |
-| `publish_session.uploads` | Direct upload URLs for changed files only. |
-| `finalize.url` | URL to finalize after uploads finish. |
-| `deploy_summary` | Short user-facing deployment summary. |
-
-If finalize returns `409` with `PUBLISH_SESSION_STALE`,
-`PUBLISH_SESSION_EXPIRED`, or `PUBLISH_SESSION_NOT_PENDING`, recreate the
-publish session from the same manifest and retry once.
-
-### Custom Domain Endpoints
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `GET` | `/api/v1/buckets/:bucket_id/custom_domains` | Read the bucket custom-domain state. |
-| `POST` | `/api/v1/buckets/:bucket_id/custom_domains` | Create or replace a custom domain. |
-| `GET` | `/api/v1/buckets/:bucket_id/custom_domains/:id` | Read one custom domain. |
-| `POST` | `/api/v1/buckets/:bucket_id/custom_domains/:id/refresh` | Refresh DNS and certificate state. |
-| `DELETE` | `/api/v1/buckets/:bucket_id/custom_domains/:id` | Remove a custom domain. |
-
-#### POST /api/v1/buckets/:bucket_id/custom_domains
-
-```json
-{
-  "hostname": "example.com"
-}
-```
-
-Custom-domain capacity is account-specific. Handle
-`CUSTOM_DOMAIN_LIMIT_REACHED` or an unavailable-capability response and direct
-the user to Revdoku rather than hard-coding account policy in an integration.
-
-When the account supports zero-downtime replacement, the previous active domain
-keeps serving until the new domain becomes active. For an account with a strict
-single-domain slot, Revdoku retires the old domain after ownership of the
-replacement is verified and before provisioning the new one.
-
-When the account response exposes `www` support, pass `"www": true` on create,
-or use `POST /api/v1/buckets/:bucket_id/custom_domains/www` with
-`{ "enabled": true }`, to add the quota-free companion.
-
-### Brand Domain Endpoints
-
-A Brand domain is separate from website custom-domain slots and produces exact
-hostnames such as `<project-slug>.<brand-domain>` for every active main website.
-Availability is plan-driven; use <https://app.revdoku.com/pricing.json> and the
-full-account profile response as the source.
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `GET` | `/api/v1/account/brand_domain` | Read Brand-domain setup and generated project hosts. |
-| `POST` | `/api/v1/account/brand_domain` | Create or replace the Brand domain. |
-| `POST` | `/api/v1/account/brand_domain/refresh` | Verify ownership or refresh setup. |
-| `DELETE` | `/api/v1/account/brand_domain` | Remove the Brand domain and generated hosts. |
-
-Create first returns a `_revdoku-verification.<brand-domain>` TXT challenge.
-After verification, add the returned wildcard CNAME for
-`*.<brand-domain>`. Revdoku still provisions one exact Cloudflare hostname and
-certificate per active website; the wildcard is DNS routing, not wildcard TLS.
-
-### Analytics Endpoints
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `GET` | `/api/v1/analytics?range=30d` | Account-wide publication analytics. |
-| `GET` | `/api/v1/analytics/weekly_summary?view=summary` | Compact account summary; defaults to the current week. |
-| `GET` | `/api/v1/publications/:id/analytics?range=30d` | Analytics for one publication. |
-
-#### Quick summary
-
-Use `bucket_publication_analytics(scope: "account")`, `revdoku analytics`, or
-`GET /api/v1/analytics/weekly_summary?view=summary`. All use the dashboard's
-summary for accessible main websites in one account, excluding previews.
-Pass `account_id` (CLI: `--account-id`) to select another granted account.
-
-The default `current_week` covers Monday through now in the account time zone,
-compared with the same elapsed part of last week. Supported `range` values are
-`today`, `yesterday`, `current_week`, `previous_week`, `current_month`,
-`previous_month`, `current_year`, `7d`, `30d`, `90d`, and `all` (CLI: `--range`).
-Account summaries do not accept website ids, `24h`, or custom dates.
-
-The response includes `scope`, `account_id`, `website_count`, `period_start`,
-`period_end`, `as_of`, `time_zone`, `totals`, `previous_period`,
-`previous_period_totals`, `diff_vs_previous_period`,
-`change_percent_vs_previous_period`, and up to three `top_websites` with bucket
-id, title, current views, and previous views. Totals cover views, public
-visitor-days, identified visitors, clicks, downloads, and form responses;
-legacy `visitors` remains for compatibility. Public visitor-days are not unique
-people across days. `measurement`, `source`, `availability`, and retention fields
-describe the data's limits. Null means unavailable; a zero baseline has no
-percentage change. `all` has no comparison. Chart data is omitted; the endpoint
-without `view=summary` retains the full dashboard response.
-
-#### GET /api/v1/analytics
-
-Supported ranges are `all`, `24h`, `today`, `yesterday`, `7d`, `30d`, `90d`,
-`180d`, `current_week`, `current_month`, and `current_year`. `all` covers the
-plan's retained daily history, returns `previous_period: null`, and leaves
-comparison values null. The response's `from` and `to` are the effective dates;
-`retention_limited` is true when a preset was shortened to retention. `24h` and
-`today` use hourly buckets; the other ranges use daily buckets. Pass both `from`
-and `to` as `YYYY-MM-DD` for an exact inclusive daily window of at most 90 days;
-exact dates override `range`.
-
-Responses with `details_visible: true` include:
-
-| Field | Meaning |
-| --- | --- |
-| `first_event_at` | First recorded event timestamp in the selected range. |
-| `last_event_at` | Last recorded event timestamp in the selected range. |
-| `analytics_tier` | `basic` on Free or `detailed` on Personal and Pro. |
-| `retention_days` | Dated-history retention: 30, 365, or 730 days. |
-| `totals.views_all_time` | Durable lifetime human page views, even after dated rows expire. |
-| `totals.hits_all_time` | Durable lifetime website hits, including bots. |
-| `totals.views` | Human page views in the selected range (`hits - hits_bots`, floored at zero). |
-| `totals.hits` | Website hits in the selected range. |
-| `totals.visitors` | Sum of daily unique visitors in the selected range; a return on another day counts again. |
-| `totals.hits_not_found` | Missing-path hits. |
-| `totals.hits_bots` | Likely or known bot hits. |
-| `previous_period` | Immediately preceding comparison window, or null for `all` or when that complete window is outside retention. Rolling/custom daily dates are inclusive; live and calendar windows use timestamps. |
-| `previous_period_totals` | Detailed totals for the previous period, using the same metric keys as the selected range. Live `24h` values are null if either hourly window is unavailable. |
-| `diff_vs_previous_period` | Signed current-minus-previous differences. Positive means growth; negative means decline; null means unavailable, not zero. |
-| `daily` | Website traffic series; points are hourly or daily according to `granularity`. |
-| `buckets` | Highest-traffic published buckets. |
-| `paths` | Highest-traffic page paths. Static assets and downloads are excluded. |
-| `downloads` | Explicit file downloads grouped by path. |
-| `document_pages` | Document-page engagement grouped by file path and page number. |
-| `referrers` | Referrer hosts, with `direct` for no referrer. |
-| `countries` | Country codes. |
-| `bots` | Bot hits grouped by bot name. |
-| `paths_not_found` | Highest-traffic missing paths. |
-
-Free responses use Basic analytics: 30 retained days, range totals, and up to
-three `paths` and three `sources`. `paths_truncated` or `sources_truncated` is
-true only when more ranked results exist. Paid responses include the full
-Detailed breakdowns. Responses with `details_visible: false` represent accounts
-without analytics access and use null totals:
-
-```json
-{
-  "data": {
-    "range": "30d",
-    "previous_period": { "from": "2026-04-22", "to": "2026-05-21" },
-    "details_visible": false,
-    "availability": {
-      "status": "unavailable",
-      "reason": "plan_unavailable",
-      "message": "Analytics results are not available for this account."
-    },
-    "granularity": "day",
-    "first_event_at": null,
-    "last_event_at": null,
-    "totals": {
-      "hits_all_time": null,
-      "views_all_time": null,
-      "views": null,
-      "hits": null,
-      "visitors": null,
-      "clicks": null,
-      "downloads": null,
-      "hits_assets": null,
-      "hits_not_found": null,
-      "hits_bots": null
-    },
-    "previous_period_totals": {
-      "views": null,
-      "hits": null,
-      "visitors": null,
-      "clicks": null,
-      "downloads": null,
-      "hits_assets": null,
-      "hits_not_found": null,
-      "hits_bots": null
-    },
-    "diff_vs_previous_period": {
-      "views": null,
-      "hits": null,
-      "visitors": null,
-      "clicks": null,
-      "downloads": null,
-      "hits_assets": null,
-      "hits_not_found": null,
-      "hits_bots": null
-    },
-    "daily": [],
-    "buckets": [],
-    "paths": [],
-    "downloads": [],
-    "document_pages": [],
-    "referrers": [],
-    "countries": [],
-    "bots": [],
-    "paths_not_found": []
-  }
-}
-```
-
 ## Common Errors
+
+When `account.restriction` reports a suspension, relay the returned notice and
+support guidance. Stored files remain downloadable. Do not infer reasons or evade
+the restriction.
 
 ### Rate Limits
 
@@ -2135,7 +1089,6 @@ session-keyed upload/delete control calls.
 | `409` | `DATABASE_BUSY_RETRY` | Related bucket changes are still committing; retry after the advertised delay. |
 | `409` | `BUCKET_FILE_PATH_INDEX_BACKFILL_PENDING` | Existing bucket file path lookup keys are being prepared; retry after the advertised delay. |
 | `429` | `RATE_LIMIT_EXCEEDED` | General account API rate limit exceeded. |
-| `429` | `PUBLISH_RATE_LIMIT_EXCEEDED` | Publishing API rate limit exceeded. |
 | `429` | `UPLOAD_RATE_LIMIT_EXCEEDED` | Upload-control API rate limit exceeded. |
 
 ### Authentication Errors
@@ -2151,8 +1104,7 @@ session-keyed upload/delete control calls.
 | --- | --- | --- |
 | `404` | `BUCKET_NOT_FOUND` | Bucket does not exist or is not visible to this key. |
 | `404` | `FILE_NOT_FOUND` | File does not exist or is not visible to this key. |
-| `403` | `BUCKET_DELETE_ADMIN_REQUIRED` | Only an account administrator can permanently delete this bucket, except for empty unpublished cleanup buckets created by the same user. |
-| `409` | `BUCKET_PUBLICATION_ACTIVE` | Unpublish this bucket before archiving or deleting it. |
+| `403` | `BUCKET_DELETE_ADMIN_REQUIRED` | Only an account administrator can permanently delete this bucket, except for empty cleanup buckets created by the same user. |
 | `409` | `BUCKET_ALREADY_ARCHIVED` | Bucket is already archived. |
 | `409` | `BUCKET_NOT_ARCHIVED` | The operation requires an archived bucket; archive before permanent delete, or only unarchive an archived bucket. |
 | `422` | `BUCKET_DELETE_CONFIRMATION_REQUIRED` | Pass the `delete.confirmation` value returned by bucket list/detail with the delete request. |
@@ -2163,55 +1115,13 @@ session-keyed upload/delete control calls.
 | `423` | `BUCKET_LOCKED` | Another key owns an active bucket lock. |
 | `423` | `FILE_LOCKED` | Another key owns an active file lock. |
 
-### Publishing Errors
-
-| HTTP | Code | Meaning |
-| --- | --- | --- |
-| `403` | `PUBLICATION_LIMIT_REACHED` | Account is at the public-site limit. |
-| `409` | `PUBLISH_SESSION_STALE` | Publish session is out of date; recreate or refresh. |
-| `410` | `PUBLISH_SESSION_EXPIRED` | Publish session expired; create a new one. |
-| `503` | `PUBLIC_STORAGE_NOT_CONFIGURED` | Public publishing is not configured for this deployment. |
-
-### Custom Domain Errors
-
-| HTTP | Code | Meaning |
-| --- | --- | --- |
-| `403` | `CUSTOM_DOMAIN_UNAVAILABLE` | Custom domains are not available for the account. |
-| `403` | `CUSTOM_DOMAIN_LIMIT_REACHED` | Account has reached its custom-domain limit. |
-| `402` | `CUSTOM_DOMAIN_WWW_UPGRADE_REQUIRED` | A Free account requested the paid `www` companion. |
-| `409` | `CUSTOM_DOMAIN_REPLACEMENT_IN_PROGRESS` | Finish or remove the current replacement first. |
-| `410` | `CUSTOM_DOMAIN_SETUP_EXPIRED` | The 72-hour setup window expired; start again. |
-| `429` | `CUSTOM_DOMAIN_RATE_LIMITED` | Domain-change or verification rate limit reached; honor `Retry-After`. |
-| `422` | `CUSTOM_DOMAIN_INVALID` | Hostname is invalid or already assigned. |
-| `422` | `CUSTOM_DOMAIN_REQUIRES_PUBLICATION` | Publish the bucket before assigning a domain. |
-| `503` | `CUSTOM_DOMAINS_NOT_CONFIGURED` | Deployment custom-domain support is not configured. |
-| `403` | `ACCOUNT_CUSTOM_DOMAIN_UNAVAILABLE` | A Brand domain is not included in the account plan. |
-| `403` | `ACCOUNT_CUSTOM_DOMAIN_LIMIT_REACHED` | Account has reached its Brand-domain limit. |
-| `409` | `ACCOUNT_CUSTOM_DOMAIN_REPLACEMENT_IN_PROGRESS` | Finish or remove the current Brand-domain replacement first. |
-| `410` | `ACCOUNT_CUSTOM_DOMAIN_SETUP_EXPIRED` | The Brand-domain setup window expired; start again. |
-
 ## Integration Guidelines
-
-### Keep Bucket URLs Stable
-
-Republish the same bucket when updating a website. Revdoku keeps the same
-`public_slug` and public URL across unpublish and republish.
-
-### Prefer Publish Sessions for Agents
-
-Agents publishing generated sites should use `POST /api/v1/publish_sessions` instead of
-uploading every file manually. Publish sessions reuse unchanged files and return
-a short `deploy_summary` that is easy to show to users.
-
-Use the preview endpoint before finalizing a new live website when the user has
-not reviewed it yet. Previewing is temporary and does not consume a live-site
-slot.
 
 ### Surface Account Limits Clearly
 
-When the API returns a limit error, tell the user what happened and suggest the
-least disruptive next action: unpublish an older site, remove an unused custom
-domain, or visit Revdoku in the browser to review account capacity.
+When a limit is reached, explain the returned reason and direct the user to
+Revdoku to review account capacity. Do not remove existing data without explicit
+authorization.
 
 ### Do Not Leak Secrets
 

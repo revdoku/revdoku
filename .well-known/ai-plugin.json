@@ -3,7 +3,7 @@
   "name_for_human": "Revdoku",
   "name_for_model": "revdoku",
   "description_for_human": "Cloud storage with an email address for every bucket.",
-  "description_for_model": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments. Read original messages, decoded bodies, and attachments with bucket file tools. Signup is browser-only. Connect through OAuth for hosted MCP or CLI browser sign-in; never ask users to paste credentials in chat. Storage and collaboration follow the Terms of Use. New accounts have website publishing disabled on all plans; check features.website_publishing before offering it. Upgrading does not enable publishing. The OpenAPI document covers selected REST endpoints; see api.md for the complete API.",
+  "description_for_model": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments. Read original messages, decoded bodies, and attachments with bucket file tools. Signup is browser-only. Connect through OAuth for hosted MCP or CLI browser sign-in; never ask users to paste credentials in chat. Storage and collaboration follow the Terms of Use. The OpenAPI document covers selected REST endpoints; see api.md for the complete API.",
   "auth": {
     "type": "user_http",
     "authorization_type": "bearer"

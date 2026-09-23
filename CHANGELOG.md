@@ -2,6 +2,18 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
+## 1.0.490 — 2026-09-23
+
+### Improved
+
+- Revdoku focuses on cloud file storage and incoming email. Website publishing is
+  disabled for all accounts, and existing websites are unpublished while buckets,
+  files and versions remain available.
+- Website controls and publishing tools are removed from the dashboard, API, MCP,
+  CLI and skill. Use `revdoku upload` to save files and folders.
+- Signup asks for Terms of Use acceptance only; website publishing rules are no
+  longer part of account creation.
+
 ## 1.0.488 — 2026-09-22
 
 ### Added

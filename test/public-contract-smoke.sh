@@ -68,82 +68,44 @@ bash -n "$INSTALL_FILE"
 bash -n "$UNINSTALL_FILE"
 
 
-require_text "$CLI_FILE" "--site-mode MODE"
-require_text "$CLI_FILE" "--form-preset NAME"
-require_text "$CLI_FILE" '--arg access_mode "$PUBLICATION_ACCESS_MODE"'
-require_text "$CLI_FILE" '--arg form_preset "$PUBLICATION_FORM_PRESET"'
-reject_text "$CLI_FILE" "/api/v1/quick_publish"
-reject_text "$CLI_FILE" "anonymous preview"
-require_text "$CLI_FILE" "PUBLICATION_UPGRADE_REQUIRED"
-require_text "$CLI_FILE" "Upgrade the account, then try again."
+require_text "$CLI_FILE" "upload [PATH]"
+require_text "$CLI_FILE" "--account-id ID"
+require_text "$CLI_FILE" "grant TOKEN"
+require_text "$CLI_FILE" "Opens browser sign-in when credentials are missing."
+require_text "$CLI_FILE" "https://app.revdoku.com/pricing.json"
 require_text "$README_FILE" "hosted MCP implementation"
 require_text "$README_FILE" "[CHANGELOG.md](./CHANGELOG.md)"
 require_text "$README_FILE" "npx skills add revdoku/revdoku --skill revdoku -g"
+require_text "$README_FILE" "app.revdoku.com/users/sign_up"
 require_text "$LLMS_INSTALL_FILE" "Prefer local shell and filesystem access"
+require_text "$LLMS_INSTALL_FILE" "Authenticate with OAuth before calling tools"
 for target in codex claude-code cursor antigravity opencode grok-build hermes openclaw; do
   require_text "$INSTALL_FILE" "$target"
   require_text "$UNINSTALL_FILE" "$target"
 done
-require_text "$README_FILE" "app.revdoku.com/users/sign_up"
-require_text "$README_FILE" "every tool descriptor requires OAuth"
-require_text "$README_FILE" "*.revdoku.site"
-require_text "$LLMS_INSTALL_FILE" "npx skills add revdoku/revdoku --skill revdoku -g"
-require_text "$LLMS_INSTALL_FILE" "app.revdoku.com/users/sign_up"
-require_text "$LLMS_INSTALL_FILE" "Authenticate with OAuth before calling tools"
-require_text "$LLMS_INSTALL_FILE" "https://app.revdoku.com/pricing"
-require_text "$LLMS_INSTALL_FILE" "https://app.revdoku.com/pricing.json"
-require_text "$LLMS_INSTALL_FILE" "Website publishing is disabled for new accounts on every plan"
-require_text "$CLI_FILE" "--login)"
-require_text "$CLI_FILE" "grant TOKEN"
-require_text "$CLI_FILE" "Opens browser sign-in when credentials are missing."
-require_text "$CLI_FILE" "https://app.revdoku.com/pricing.json"
-reject_text "$CLI_FILE" "up to 5 public websites"
-require_text "$CLI_FILE" "Preview the current private draft for 24 hours."
-require_text "$SKILL_FILE" 'scripts/revdoku.sh p <path>'
-reject_text "$SKILL_FILE" 'website_preview_create'
-reject_text "$API_FILE" '/api/v1/quick_publish'
-require_text "$API_FILE" "never ask the user to paste or repeat the verification code in"
-require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
-require_text "$API_FILE" '`PATCH` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
-require_text "$API_FILE" '`POST` | `/api/v1/buckets/:id/form_submissions/:submission_id/reply`'
-require_text "$API_FILE" '`DELETE` | `/api/v1/buckets/:id/form_submissions/:submission_id`'
-require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/versions`'
-require_text "$API_FILE" 'Selection coordinates are `[x1, y1, x2, y2]`.'
-require_text "$API_FILE" '`"field_types_version": 1`'
-require_text "$SKILL_FILE" '`bucket_publication_analytics`'
-require_text "$SKILL_FILE" 'Analytics accepts `all`'
-require_text "$SKILL_FILE" '`downloads` contains'
-require_text "$SKILL_FILE" '`bucket_env_get`'
+require_text "$SKILL_FILE" 'scripts/revdoku.sh upload <path>'
 require_text "$SKILL_FILE" '`bucket_lock_files`'
 require_text "$SKILL_FILE" '`bucket_delete_permanently`'
 require_text "$SKILL_FILE" '`github_sync_setup`'
-require_text "$SKILL_FILE" '`field_types_version: 1`'
-require_text "$SKILL_FILE" 'Password, and Require Email'
-require_text "$API_FILE" '`github_sync_setup`'
-require_text "$API_FILE" 'https://app.revdoku.com/pricing'
-require_text "$API_FILE" 'https://app.revdoku.com/pricing.json'
-require_text "$API_FILE" 'Permanent public sites are indexable by default'
-require_text "$SKILL_FILE" 'https://app.revdoku.com/pricing'
-require_text "$SKILL_FILE" 'Permanent public Free websites are indexable by default'
-require_text "$SKILL_FILE" 'Never silently publish protected content as'
-require_text "$SKILL_FILE" 'Every authenticated bucket preview lasts 24 hours'
-reject_text "$SKILL_FILE" 'up to 100 permanent public websites'
-reject_text "$SKILL_FILE" 'up to 5 public websites'
-reject_text "$SKILL_FILE" 'sites are noindex by default'
-reject_text "$SKILL_FILE" 'short-lived dashboard login link'
-reject_text "$SKILL_FILE" 'analytics, visitor activity'
-require_text "$API_FILE" '`/api/v1/account/brand_domain`'
-require_text "$API_FILE" '"status": "pending_ownership"'
-require_text "$API_FILE" 'The lifetime cannot be customized'
-require_text "$SOURCE_CLIENT_DIR/docs.md" 'Every bucket preview expires 24'
 require_text "$SKILL_FILE" '`ACCOUNT_SUSPENDED`'
 require_text "$SKILL_FILE" 'support@revdoku.com'
+require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/versions`'
+require_text "$API_FILE" '`github_sync_setup`'
 require_text "$API_FILE" '`account.restriction`'
-require_text "$SOURCE_CLIENT_DIR/docs.md" 'relay the common'
-require_text "$SOURCE_CLIENT_DIR/docs.md" 'https://revdoku.com/acceptable-use/'
-reject_text "$API_FILE" 'AUTOMATED_WEBSITE_MODERATION'
-require_text "$SOURCE_CLIENT_DIR/docs.md" 'Permanent public Free websites are indexable by default'
-reject_text "$SOURCE_CLIENT_DIR/docs.md" 'scheduler hitting a public action'
+for guidance in "$README_FILE" "$SKILL_FILE" "$API_FILE" "$SOURCE_CLIENT_DIR/docs.md" "$LLMS_INSTALL_FILE"; do
+  reject_text "$guidance" 'bucket_publish'
+  reject_text "$guidance" '/api/v1/publications'
+  reject_text "$guidance" 'features.website_publishing'
+  reject_text "$guidance" 'revdoku p '
+done
+RETIRED_COMMAND_OUTPUT="$(mktemp)"
+trap 'rm -f "$RETIRED_COMMAND_OUTPUT"' EXIT
+for command in publish preview unpublish sites analytics init; do
+  if bash "$CLI_FILE" "$command" --url http://127.0.0.1:1 --api-key unused > "$RETIRED_COMMAND_OUTPUT" 2>&1; then
+    die "retired command succeeded: $command"
+  fi
+  require_text "$RETIRED_COMMAND_OUTPUT" 'unavailable'
+done
 require_text "$PRICING_FILE" 'https://app.revdoku.com/pricing.md'
 require_text "$PRICING_FILE" 'https://app.revdoku.com/pricing.json'
 reject_text "$PRICING_FILE" '| Limit |'
@@ -190,11 +152,7 @@ for demo_file in "$README_FILE" "$SOURCE_CLIENT_DIR/docs.md"; do
 done
 
 require_text "$README_FILE" 'can be downloaded from Revdoku at'
-require_text "$README_FILE" 'export them to CSV at any time'
-require_text "$API_FILE" 'export authorized submission data to CSV at'
-require_text "$SKILL_FILE" 'export submission data to CSV at any time'
 
-require_text "$API_FILE" 'Supported ranges are `all`'
 
 skill_words="$(wc -w < "$SKILL_FILE" | tr -d '[:space:]')"
 [[ "$skill_words" -le 1800 ]] || die "SKILL.md is too large (${skill_words} words; maximum 1800)"

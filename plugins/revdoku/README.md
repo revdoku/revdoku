@@ -36,9 +36,7 @@ Just ask in natural language, for example:
 - "Update the files shared with my other agent."
 
 Share bucket dashboard links with authorized people. A link does not grant access;
-manage membership and agent permissions in Revdoku. New accounts have website
-publishing disabled on every plan. Check `features.website_publishing` before
-following any website workflow; upgrading does not enable it.
+manage membership and agent permissions in Revdoku.
 
 ## Local files
 
@@ -47,10 +45,10 @@ files directly from your **local machine** (local project, SSH, Docker, WSL2, or
 VM), run the bundled CLI from the plugin's `skills/revdoku` directory:
 
 ```text
-scripts/revdoku.sh p <folder> --draft
+scripts/revdoku.sh p <folder>
 ```
 
-Keep `--draft` for private storage. Omit it only for an explicitly requested publication on an enabled account.
+Uploads save files in private bucket storage.
 
 The wrapper uses the bundled CLI and installs a pinned, checksum-verified `jq`
 only if needed. No separate CLI installation is required.

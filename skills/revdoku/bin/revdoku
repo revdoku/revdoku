@@ -77,10 +77,10 @@ OUTPUT_PATH=""
 NO_WAIT="${REVDOKU_NO_WAIT:-false}"
 DRAFT="false"
 OPEN_DASHBOARD="false"
-SHOW_PUBLISH_HINT="false"
+SHOW_UPLOAD_HINT="false"
 PREVIEW_AFTER_STORE="false"
-# Project-local binding (.revdoku): remembers the bucket so `revdoku p` keeps
-# updating the same site. Populated from the target dir, --bucket-id overrides.
+# Project-local binding (.revdoku): remembers the bucket so `revdoku upload`
+# updates the same stored files. Populated from the target dir, --bucket-id overrides.
 REVDOKU_PROJECT_FILE=""
 BOUND_BUCKET_ID=""
 BOUND_URL=""
@@ -124,80 +124,50 @@ usage() {
   cat <<USAGE
 revdoku — cloud storage with an email address for every bucket.
 
-Free plan available. Current limits: https://app.revdoku.com/pricing.json
-Store files with --draft. Receive email and attachments in your buckets.
-Website publishing requires an enabled account; new accounts have it disabled.
-
 Usage: revdoku <command> [PATH] [options]
 
-Most-used commands (short alias, then full name — either works):
-  p,    publish [PATH]   Add --draft to store/update private files (default: current dir).
-                         Opens browser sign-in when credentials are missing.
-                         Without --draft, publishes a website on an enabled account.
-  ls,   list             List your buckets and existing websites.
-  o,    open             Open this folder's live site in the browser (--dashboard for the dashboard).
-  i,    init [PATH]      Scaffold a starter static/SPA site + agent instructions here.
-  st,   status           Show connection and account status.
-        login            Sign in to an existing account in the browser.
-        grant TOKEN      Use a one-time connection token from the web app.
-  down, unpublish        Take this folder's site offline (keeps the URL for later).
-        preview          Preview the current private draft for 24 hours.
-
-Publish options:
-  --protected          Publish as a password-protected website (alias: --private).
-  --password PASSWORD  Set the protected-site password (never sent in a URL).
-  --generate-password  Generate/rotate the protected-site password.
-  --access-mode MODE   public, password, or require_email (verified email, no password).
-  --form-preset NAME   Enable a built-in form preset (or off).
-  --site-mode MODE     static or spa (SPA serves index.html for client-side routes).
-  --draft              Save private files (use for storage and inbox accounts).
-  --no-wait            Return as soon as the URL is reserved (don't wait for the build).
-  --publish-folder DIR Publish ONLY this bucket-relative folder as the site (its index.html
-                       becomes the root); other folders stay stored but unserved.
-  --title TEXT         --description TEXT     --tag-path LABEL     --metadata JSON
-  --no-tracking / --tracking, --no-analytics / --analytics, --no-client-events / --client-events
-
-More commands (no short alias):
-  files                List files in --bucket-id.
-  read PATH            Print a bucket file (--bucket-id; --output FILE to save).
-  versions             Show version history (--bucket-id).
-  restore ID           Restore a bucket version (--bucket-id; --restore-comment TEXT).
-  append PATH          Append text to a bucket file (--content TEXT | --content-file FILE).
-  archive | unarchive | delete    Manage a bucket (--bucket-id).
-  account              Account, plan, and storage status.
-  analytics            Quick account-wide summary (this week vs. the same part of last week).
-                       --range today|yesterday|current_week|previous_week|current_month|previous_month|current_year|7d|30d|90d|all
+  upload [PATH]         Save local files or a folder (default: current folder).
+                        Opens browser sign-in when credentials are missing.
+  ls, list              List your buckets.
+  o, open               Open this bucket in the dashboard.
+  st, status            Show connection and account status.
+  login                 Sign in to an existing account in the browser.
+  grant TOKEN           Use a one-time connection token from the web app.
+  files                 List files and stored email in a bucket.
+  read PATH             Read a bucket file; --output FILE saves it locally.
+  versions              Show bucket version history.
+  restore ID            Restore a bucket version; --restore-comment TEXT.
+  append PATH           Append text; --content TEXT or --content-file FILE.
+  archive | unarchive | delete    Manage a bucket.
+  account               Account, plan and storage status.
   account create-client NAME     Create a client account on Pro Agency.
-  sites                List your public website URLs.
-  dashboard            Print the Revdoku dashboard URL (normal sign-in may be required).
+  dashboard             Print the dashboard URL; normal sign-in is required.
 
-Global options:
-  --account-id ID      Select a granted account for this command (default: credential account).
-  --client-name NAME   Client person or business (account create-client only).
-  --bucket-id ID       Act on a specific bucket (overrides the .revdoku binding).
-  --url URL            Revdoku app URL (default $DEFAULT_URL).
-  --api-key KEY        API key (default REVDOKU_API_KEY or $CREDENTIALS_PATH).
-  --agent NAME         Attribute uploads to this agent (default auto-detected).
-  --upload-mode MODE   auto or direct (default auto).
-  --version            Print the installed client version.
+Options:
+  --account-id ID       Select a granted account for this command.
+  --client-name NAME    Client person or business (account create-client).
+  --bucket-id ID        Target bucket; overrides the local .revdoku binding.
+  --title TEXT         --description TEXT     --tag-path LABEL     --metadata JSON
+  --url URL            App URL (default $DEFAULT_URL).
+  --api-key KEY        API credential (or REVDOKU_API_KEY / $CREDENTIALS_PATH).
+  --agent NAME         Attribute uploads (default: auto-detected).
+  --upload-mode MODE   auto or direct (default: auto).
+  --version            Print installed client version.
   -h, --help           Show this help.
 
 Examples:
-  revdoku p ./project-files --draft  # store or update private files
-  revdoku files                     # list bucket files and stored email
-  revdoku read notes.md             # read a stored file
-  revdoku versions                  # inspect version history
-  revdoku dashboard                # open the dashboard link
+  revdoku upload ./project-files
+  revdoku files --bucket-id bkt_...
+  revdoku read notes.md --bucket-id bkt_...
+  revdoku dashboard
 
-For requested websites on an enabled account:
-  revdoku preview .                # review a temporary website URL
-  revdoku p .                      # publish the current folder
+Free plan available. Current limits: https://app.revdoku.com/pricing.json
 USAGE
 }
 
 # ---------------------------------------------------------------------------
 # Command parsing. The first non-option token is the verb (publish, ls, open …);
-# options may appear before or after it. A bare path (`revdoku .`) means publish;
+# options may appear before or after it. A bare path (`revdoku .`) stores files;
 # no args at all shows status + a hint. The most common verb is the shortest.
 # ---------------------------------------------------------------------------
 VERB_SEEN="false"
@@ -394,9 +364,10 @@ while [[ $# -gt 0 ]]; do
       else
         VERB_SEEN="true"
         case "$1" in
+          upload|put)     shift ;;
           p|publish)      PUBLISH="true"; shift ;;
           ls|list)        ACTION="list_buckets"; shift ;;
-          o|open)         ACTION="open_site"; shift ;;
+          o|open)         ACTION="open_site"; OPEN_DASHBOARD="true"; shift ;;
           i|init)         ACTION="init_project"; shift ;;
           st|status)      ACTION="connection_status"; shift ;;
           login)          LOGIN="true"; shift ;;
@@ -428,7 +399,7 @@ while [[ $# -gt 0 ]]; do
           *)
             # Not a known verb: an existing or path-like token means "publish this".
             if [[ -e "$1" || "$1" == .* || "$1" == /* || "$1" == \~* ]]; then
-              PUBLISH="true"
+              PUBLISH="false"
               PATH_TO_STORE="$1"
               PATH_EXPLICIT="true"
               shift
@@ -443,18 +414,29 @@ while [[ $# -gt 0 ]]; do
 done
 
 # No verb and no path token: bare `revdoku` shows status + a hint; other
-# options-only invocations default to publishing the current folder.
+# options-only invocations store the current folder.
 if [[ "$VERB_SEEN" == "false" && "$ACTION" == "store" && "$PUBLISH" != "true" && "$LOGIN" != "true" ]]; then
   if [[ "$ORIGINAL_ARGC" -eq 0 ]]; then
     ACTION="connection_status"
-    SHOW_PUBLISH_HINT="true"
+    SHOW_UPLOAD_HINT="true"
   else
-    PUBLISH="true"
+    PUBLISH="false"
   fi
 fi
 
 # --draft always wins over the publish verb, regardless of argument order.
 [[ "$DRAFT" == "true" ]] && PUBLISH="false"
+
+# Keep the old private-upload spelling working, but fail retired publishing
+# commands before authentication or any network request.
+[[ "$PUBLISH" != "true" ]] || die "Website publishing is unavailable. Use revdoku upload PATH to store files."
+case "$ACTION" in
+  init_project|unpublish_bucket|preview_bucket|list_public_buckets|analytics_summary)
+    die "This command is unavailable. Use revdoku --help for storage commands." ;;
+esac
+if [[ -n "$PUBLISH_ROOT_DIR$PUBLICATION_ACCESS_MODE$PUBLICATION_PASSWORD$PUBLICATION_FORM_PRESET$PUBLICATION_SITE_MODE$PUBLICATION_ANALYTICS_ENABLED$PUBLICATION_CLIENT_EVENTS_ENABLED$PUBLICATION_TRACKING_ENABLED" || "$PUBLICATION_REGENERATE_PASSWORD" == "true" || "$NO_WAIT" == "true" ]]; then
+  die "Website options are unavailable. Use revdoku upload PATH to store files."
+fi
 
 if [[ -z "$PATH_TO_STORE" ]]; then
   if [[ -n "${1:-}" ]]; then
@@ -1243,11 +1225,10 @@ fi
 
 # Bare `revdoku` with no saved credentials: show a friendly hint instead of
 # forcing the interactive login flow.
-if [[ "$ACTION" == "connection_status" && "$SHOW_PUBLISH_HINT" == "true" && -z "$API_KEY" ]]; then
+if [[ "$ACTION" == "connection_status" && "$SHOW_UPLOAD_HINT" == "true" && -z "$API_KEY" ]]; then
   echo "Revdoku CLI — not signed in yet." >&2
   echo "  Sign in:   revdoku login" >&2
-  echo "  Preview:   revdoku preview .  (recommended before publishing)" >&2
-  echo "  Publish:   revdoku p          (Free available; current plan limits apply)" >&2
+  echo "  Upload:    revdoku upload PATH" >&2
   echo "  Commands:  revdoku --help" >&2
   exit 0
 fi
@@ -1258,8 +1239,7 @@ fi
 
 if [[ "$LOGIN" == "true" && "$ACTION" == "store" && "$PATH_EXPLICIT" == "false" ]]; then
   echo "Login complete. Credentials saved to $CREDENTIALS_PATH." >&2
-  echo "Next: preview an existing site with 'revdoku preview .', start one with 'revdoku init my-site', or choose a dashboard sample with 'revdoku dashboard'." >&2
-  echo "Publish live only when ready: revdoku p" >&2
+  echo "Next: revdoku upload PATH, or revdoku dashboard." >&2
   exit 0
 fi
 
@@ -1500,8 +1480,7 @@ connection_status() {
       accounts: .data.accounts,
       connection: .data.connection,
       features: .data.features,
-      onboarding: .data.onboarding,
-      publishing: .data.publishing
+      onboarding: .data.onboarding
     }
   }'
 }
@@ -1594,7 +1573,7 @@ print_acceptable_use_hint() {
 }
 
 print_publish_next_steps_hint() {
-  echo "Next: revdoku o (open site) | revdoku st (status) | revdoku dashboard" >&2
+  echo "Next: revdoku o (open dashboard) | revdoku st (status) | revdoku dashboard" >&2
 }
 
 # Publishing is asynchronous: POST /publication and publish-session finalize
@@ -1840,8 +1819,8 @@ case "$ACTION" in
     ;;
   connection_status)
     connection_status
-    if [[ "$SHOW_PUBLISH_HINT" == "true" ]]; then
-      echo "Tip: run 'revdoku p' to publish this folder, or 'revdoku --help' for all commands." >&2
+    if [[ "$SHOW_UPLOAD_HINT" == "true" ]]; then
+      echo "Tip: run 'revdoku upload .' to save this folder, or 'revdoku --help' for all commands." >&2
     fi
     exit 0
     ;;
@@ -2701,7 +2680,7 @@ store_bucket() {
     die "bucket id is required before uploading files"
   }
   echo "Bucket: $bucket_id" >&2
-  echo "Saved draft bucket: $bucket_id" >&2
+  echo "Saved bucket: $bucket_id" >&2
   store_bucket_session_upload "$bucket_id" "$file_list" "$PUBLISH" || {
     rm -f "$file_list"
     return 1
@@ -2847,7 +2826,7 @@ if ! store_bucket > "$bucket_id_file"; then
 fi
 bucket_id="$(cat "$bucket_id_file")"
 rm -f "$bucket_id_file"
-echo "Saved draft bucket: $bucket_id" >&2
+echo "Saved bucket: $bucket_id" >&2
 
 if [[ "$PREVIEW_AFTER_STORE" == "true" ]]; then
   BUCKET_ID="$bucket_id"

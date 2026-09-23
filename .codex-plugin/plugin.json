@@ -1,6 +1,6 @@
 {
   "name": "revdoku",
-  "version": "1.0.489",
+  "version": "1.0.490",
   "description": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments.",
   "author": {
     "name": "Revdoku",

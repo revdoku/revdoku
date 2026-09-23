@@ -32,24 +32,12 @@
     "Share bucket files with authorized people and AI connections",
     "Read, write, and append shared files; coordinate edits with locks and revision checks",
     "Inspect versions and change history; restore earlier files",
-    "Sign up in the browser, then connect an existing account",
-    "Manage websites only when features.website_publishing is enabled; disabled for new accounts on every plan"
+    "Sign up in the browser, then connect an existing account"
   ],
   "discovery": {
     "agent_card": "https://revdoku.com/.well-known/agent-card.json",
     "plugin_manifest": "https://revdoku.com/.well-known/ai-plugin.json",
     "schema_map": "https://revdoku.com/schema-map.xml",
     "agent_resources": "https://revdoku.com/schema-feeds/agent-resources.jsonl"
-  },
-  "bucket_preview": {
-    "account_required": true,
-    "lifetime_hours": 24,
-    "access_modes": [
-      "public",
-      "password",
-      "require_email"
-    ],
-    "robots": "noindex, nofollow, noarchive, noimageindex",
-    "requires_feature": "website_publishing"
   }
 }
