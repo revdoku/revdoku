@@ -57,7 +57,7 @@ class RevdokuSkillInstallTest < Minitest::Test
     system_jq
     %w[source standalone].each do |layout|
       wrapper, = fixture(layout: layout)
-      args = ["p", "folder with spaces", "--draft", "literal;$value", ""]
+      args = ["upload", "folder with spaces", "--title", "literal;$value", ""]
       stdout, stderr, status = run_wrapper(wrapper, *args, env: { "SKILL_TEST_EXIT" => "23" })
       assert_equal 23, status.exitstatus, stderr
       assert_equal args, stdout.split("\0", -1)[0...-1]
@@ -79,7 +79,7 @@ class RevdokuSkillInstallTest < Minitest::Test
 
   def test_missing_cli_fails_before_downloading_anything
     wrapper, skill = fixture(cli: false)
-    stdout, stderr, status = run_wrapper(wrapper, "p", "--draft")
+    stdout, stderr, status = run_wrapper(wrapper, "upload", ".")
     refute status.success?
     assert_empty stdout
     assert_includes stderr, "bundled Revdoku CLI is missing or not executable"

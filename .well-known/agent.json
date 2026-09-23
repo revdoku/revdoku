@@ -4,7 +4,7 @@
   "description": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments.",
   "homepage": "https://revdoku.com/",
   "docs": "https://revdoku.com/docs",
-  "pricing": "https://revdoku.com/pricing.md",
+  "pricing": "https://app.revdoku.com/pricing",
   "api": {
     "catalog": "https://revdoku.com/.well-known/api-catalog",
     "openapi": "https://revdoku.com/openapi.json"

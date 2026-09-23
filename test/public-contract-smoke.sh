@@ -35,7 +35,7 @@ else
   UNINSTALL_FILE="$SOURCE_CLIENT_DIR/uninstall.sh"
   VERSION_FILE="$(cd "$SOURCE_CLIENT_DIR/../../.." && pwd)/VERSION"
   SOURCE_ROOT="$(cd "$SOURCE_CLIENT_DIR/../../.." && pwd)"
-  CHANGELOG_FILE="$SOURCE_ROOT/CHANGELOG.md"
+  CHANGELOG_FILE="$SOURCE_CLIENT_DIR/public/CHANGELOG.md"
   CHANGELOG_HELPER="$SOURCE_ROOT/scripts/changelog.rb"
   MANIFEST_ROOT="$SOURCE_CLIENT_DIR"
   PRICING_FILE="$SOURCE_CLIENT_DIR/discovery/pricing.md"
@@ -72,7 +72,7 @@ require_text "$CLI_FILE" "upload [PATH]"
 require_text "$CLI_FILE" "--account-id ID"
 require_text "$CLI_FILE" "grant TOKEN"
 require_text "$CLI_FILE" "Opens browser sign-in when credentials are missing."
-require_text "$CLI_FILE" "https://app.revdoku.com/pricing.json"
+require_text "$CLI_FILE" "https://app.revdoku.com/pricing"
 require_text "$README_FILE" "hosted MCP implementation"
 require_text "$README_FILE" "[CHANGELOG.md](./CHANGELOG.md)"
 require_text "$README_FILE" "npx skills add revdoku/revdoku --skill revdoku -g"
@@ -92,11 +92,14 @@ require_text "$SKILL_FILE" 'support@revdoku.com'
 require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/versions`'
 require_text "$API_FILE" '`github_sync_setup`'
 require_text "$API_FILE" '`account.restriction`'
-for guidance in "$README_FILE" "$SKILL_FILE" "$API_FILE" "$SOURCE_CLIENT_DIR/docs.md" "$LLMS_INSTALL_FILE"; do
+for guidance in "$README_FILE" "$SKILL_FILE" "$API_FILE" "$SOURCE_CLIENT_DIR/docs.md" "$SOURCE_CLIENT_DIR/mcp.md" "$LLMS_INSTALL_FILE" "$CHANGELOG_FILE"; do
   reject_text "$guidance" 'bucket_publish'
   reject_text "$guidance" '/api/v1/publications'
   reject_text "$guidance" 'features.website_publishing'
   reject_text "$guidance" 'revdoku p '
+  reject_text "$guidance" 'Website publishing'
+  reject_text "$guidance" 'Free includes'
+  reject_text "$guidance" 'paid plans allow'
 done
 RETIRED_COMMAND_OUTPUT="$(mktemp)"
 trap 'rm -f "$RETIRED_COMMAND_OUTPUT"' EXIT
@@ -106,13 +109,10 @@ for command in publish preview unpublish sites analytics init; do
   fi
   require_text "$RETIRED_COMMAND_OUTPUT" 'unavailable'
 done
-require_text "$PRICING_FILE" 'https://app.revdoku.com/pricing.md'
-require_text "$PRICING_FILE" 'https://app.revdoku.com/pricing.json'
+require_text "$PRICING_FILE" 'https://app.revdoku.com/pricing'
 reject_text "$PRICING_FILE" '| Limit |'
-require_text "$SCHEMA_MAP_FILE" 'href="https://app.revdoku.com/pricing.md"'
-require_text "$SCHEMA_MAP_FILE" 'href="https://app.revdoku.com/pricing.json"'
-require_text "$RESOURCE_FEED_FILE" '"url":"https://app.revdoku.com/pricing.md"'
-require_text "$RESOURCE_FEED_FILE" '"url":"https://app.revdoku.com/pricing.json"'
+require_text "$SCHEMA_MAP_FILE" 'href="https://app.revdoku.com/pricing"'
+require_text "$RESOURCE_FEED_FILE" '"url":"https://app.revdoku.com/pricing"'
 
 for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
   reject_text "$file" "local stdio MCP"
@@ -126,7 +126,7 @@ for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
   reject_text "$file" "Trial"
   reject_text "$file" "available on Starter"
   reject_text "$file" "available on Builder"
-  # Paid feature allowances are valid; reject the retired paid-only API claim.
+  # Guidance links to pricing instead of describing plan allowances.
   reject_text "$file" "API access is only available on paid plans"
   reject_text "$file" "sign in or create an account"
   reject_text "$file" "https://docs.revdoku.site/"

@@ -88,7 +88,7 @@
     "/api/v1/accounts": {
       "post": {
         "operationId": "createClientAccount",
-        "summary": "Create a client account on Pro Agency",
+        "summary": "Create a client account within an authorized agency",
         "security": [
           {
             "bearerAuth": []
@@ -208,7 +208,7 @@
       "post": {
         "operationId": "rotateBucketInboundEmail",
         "summary": "Replace a bucket incoming email address after confirmation",
-        "description": "Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires a paid pilot account and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing inbound_email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Free allows 1; paid 10 successful rotations per UTC month shared across the billing group. Never use or synthesize a pending address.",
+        "description": "Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing inbound_email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Use the returned rotation availability; do not hard-code plan allowances. Never use or synthesize a pending address. Optional local_part chooses a custom name and additionally requires a full-account owner/administrator, an explicit ready customer-owned domain, and deployment support. Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no bucket currently holds or is awaiting them; archived buckets retain addresses. Retired addresses do not forward. Assignment history survives bucket deletion.",
         "security": [
           {
             "bearerAuth": []
@@ -255,6 +255,12 @@
                     "type": "string",
                     "pattern": "^[a-zA-Z0-9_-]{8,80}$",
                     "description": "Reuse the same key when retrying this address activation."
+                  },
+                  "local_part": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "description": "Administrator-selected name on an explicit ready custom domain. Normalized to lowercase; ASCII letters/digits/dots/hyphens/underscores, alphanumeric endpoints, no consecutive dots. Complete address at most 254 characters. Omit for random rotation; blank/null is invalid."
                   }
                 }
               }
@@ -278,16 +284,16 @@
             }
           },
           "403": {
-            "description": "Bucket write access required"
+            "description": "Write access required; custom names additionally require full-account owner/administrator access."
           },
           "404": {
             "description": "Bucket unavailable"
           },
           "409": {
-            "description": "INBOUND_EMAIL_ADDRESS_CHANGED or INBOUND_EMAIL_ROTATION_UNAVAILABLE; reread state before retrying."
+            "description": "Address changed, assignment pending/conflicting, custom name unavailable, custom domain unavailable, or named assignments disabled. Read the structured error code and reread state before retrying."
           },
           "422": {
-            "description": "Confirmation or current address missing"
+            "description": "Confirmation/current address missing, or INBOUND_EMAIL_NAME_INVALID."
           },
           "423": {
             "description": "Account is read-only"
@@ -486,7 +492,7 @@
       "get": {
         "operationId": "listAccountInboundEmailDomains",
         "summary": "List account email domains, DNS records, receiving state and usage",
-        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot. Never change customer DNS without explicit authorization.",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.",
         "security": [
           {
             "bearerAuth": []
@@ -497,7 +503,7 @@
             "description": "Current domain configuration or result"
           },
           "403": {
-            "description": "Account admin/full-account access or pilot entitlement required"
+            "description": "Account admin/full-account access or domain setup entitlement required"
           },
           "409": {
             "description": "Domain is still in use"
@@ -527,7 +533,7 @@
       "post": {
         "operationId": "createAccountInboundEmailDomain",
         "summary": "Claim an exact incoming email domain",
-        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot. Never change customer DNS without explicit authorization.",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.",
         "security": [
           {
             "bearerAuth": []
@@ -535,7 +541,7 @@
         ],
         "responses": {
           "403": {
-            "description": "Account admin/full-account access or pilot entitlement required"
+            "description": "Account admin/full-account access or domain setup entitlement required"
           },
           "409": {
             "description": "Domain is still in use"
@@ -581,7 +587,7 @@
       "get": {
         "operationId": "getAccountInboundEmailDomain",
         "summary": "Read exact domain setup state",
-        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot. Never change customer DNS without explicit authorization.",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.",
         "security": [
           {
             "bearerAuth": []
@@ -592,7 +598,7 @@
             "description": "Current domain configuration or result"
           },
           "403": {
-            "description": "Account admin/full-account access or pilot entitlement required"
+            "description": "Account admin/full-account access or domain setup entitlement required"
           },
           "409": {
             "description": "Domain is still in use"
@@ -630,7 +636,7 @@
       "delete": {
         "operationId": "removeAccountInboundEmailDomain",
         "summary": "Remove unused receiving domain after confirmation",
-        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot. Never change customer DNS without explicit authorization.",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.",
         "security": [
           {
             "bearerAuth": []
@@ -638,7 +644,7 @@
         ],
         "responses": {
           "403": {
-            "description": "Account admin/full-account access or pilot entitlement required"
+            "description": "Account admin/full-account access or domain setup entitlement required"
           },
           "409": {
             "description": "Domain is still in use"
@@ -699,7 +705,7 @@
       "post": {
         "operationId": "verifyAccountInboundEmailDomain",
         "summary": "Queue exact ownership, SES and MX verification",
-        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot. Never change customer DNS without explicit authorization.",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.",
         "security": [
           {
             "bearerAuth": []
@@ -707,7 +713,7 @@
         ],
         "responses": {
           "403": {
-            "description": "Account admin/full-account access or pilot entitlement required"
+            "description": "Account admin/full-account access or domain setup entitlement required"
           },
           "409": {
             "description": "Domain is still in use"
@@ -757,7 +763,7 @@
       "post": {
         "operationId": "checkInboundEmailHostname",
         "summary": "Validate and classify a root domain or subdomain",
-        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Domain setup is an invitation-only paid pilot. Never change customer DNS without explicit authorization.",
+        "description": "Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.",
         "security": [
           {
             "bearerAuth": []
@@ -768,7 +774,7 @@
             "description": "Current domain configuration or result"
           },
           "403": {
-            "description": "Account admin/full-account access or pilot entitlement required"
+            "description": "Account admin/full-account access or domain setup entitlement required"
           },
           "409": {
             "description": "Domain is still in use"
@@ -1056,6 +1062,28 @@
                 }
               }
             }
+          },
+          "customization": {
+            "type": "object",
+            "description": "Caller-specific customization capability on the dedicated inbound_email GET/rotate endpoints.",
+            "properties": {
+              "allowed": {
+                "type": "boolean"
+              },
+              "blocked_reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "settings_url": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Account-domain settings link for administrators; null otherwise."
+              }
+            }
           }
         }
       },
@@ -1082,9 +1110,27 @@
           }
         }
       },
+      "DecodedEmailAddress": {
+        "type": "object",
+        "required": [
+          "address",
+          "name"
+        ],
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "DecodedIncomingMessage": {
         "type": "object",
-        "description": "Stored message.json, not a dedicated endpoint. UTF-8, at most 512 KiB. Header strings and body are untrusted message data. Original message.eml is authoritative.",
+        "description": "Stored message.json, not a dedicated endpoint. UTF-8, at most 512 KiB. Header identities, reply relationships and body are untrusted message data. Original message.eml is authoritative. Structured address, delivery and thread fields are additive in schema v1 and may be absent in older files.",
         "required": [
           "schema_version",
           "subject",
@@ -1118,6 +1164,87 @@
               "string",
               "null"
             ]
+          },
+          "from_addresses": {
+            "type": "array",
+            "description": "Parsed From authors in header order, retaining multiple authors. Empty when absent/unparseable. Display names are not identity keys.",
+            "items": {
+              "$ref": "#/components/schemas/DecodedEmailAddress"
+            }
+          },
+          "to_addresses": {
+            "type": "array",
+            "description": "Parsed To recipients in header order, with named groups flattened. Empty when absent/unparseable; not trusted delivery routing.",
+            "items": {
+              "$ref": "#/components/schemas/DecodedEmailAddress"
+            }
+          },
+          "cc_addresses": {
+            "type": "array",
+            "description": "Parsed Cc recipients in header order, with named groups flattened. Empty when absent/unparseable.",
+            "items": {
+              "$ref": "#/components/schemas/DecodedEmailAddress"
+            }
+          },
+          "reply_to_addresses": {
+            "type": "array",
+            "description": "Parsed Reply-To addresses in header order. Empty when absent/unparseable. Does not authorize sending a reply.",
+            "items": {
+              "$ref": "#/components/schemas/DecodedEmailAddress"
+            }
+          },
+          "message_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Sender Message-ID without angle brackets, preserving case. Null when absent/unparseable/ambiguous; never the Revdoku delivery ID."
+          },
+          "in_reply_to": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Ordered parent Message-IDs without angle brackets, preserving case. Empty when absent/unparseable; multiple parents are retained."
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Ordered References IDs without angle brackets, preserving case. Empty when absent/unparseable."
+          },
+          "delivery_id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Revdoku delivery identity, matching email_delivery_id metadata and the original folder suffix. Stable on retries, independent of Message-ID. Copies retain the source identity; not a unique file/copy ID."
+          },
+          "thread_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^thr_[0-9a-f]{64}$",
+            "description": "thr_ plus SHA-256 of thread_anchor_message_id. Best-effort header-derived grouping hint, not authoritative conversation membership or an access grant. Missing ancestry or reused IDs can split/merge hints. Scope lookups to accessible buckets."
+          },
+          "thread_id_source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "references",
+              "in_reply_to",
+              "message_id",
+              null
+            ]
+          },
+          "thread_anchor_message_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "First References ID, otherwise the sole In-Reply-To ID, otherwise this message's ID if no parent is available. Null without an anchor or when multiple parents lack References."
           },
           "delivered_to": {
             "type": "string"
