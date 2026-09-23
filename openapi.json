@@ -812,68 +812,6 @@
           }
         }
       }
-    },
-    "/api/v1/buckets/{id}/files": {
-      "get": {
-        "operationId": "listBucketFiles",
-        "summary": "List files or related email without marking read",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "thread_for",
-            "in": "query",
-            "description": "Email file id. Return canonical message.json files (EML fallback) for the conversation, including this message and earlier/later replies in this bucket.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "include_email_threads",
-            "in": "query",
-            "description": "Also return email_threads: groups of canonical message file_ids for the whole bucket, independent of file pagination.",
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100
-            }
-          },
-          {
-            "name": "offset",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "minimum": 0
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Files and optional pagination/email_threads. Thread membership uses reply headers, never subject matching. Listing never marks messages read."
-          },
-          "404": {
-            "description": "Bucket or email unavailable to this caller."
-          }
-        }
-      }
     }
   },
   "components": {
