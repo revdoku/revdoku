@@ -2,7 +2,7 @@
 
 Notable customer-facing changes to Revdoku. Internal maintenance and operator-only changes are omitted.
 
-## 1.0.490 — 2026-09-23
+## 1.0.491 — 2026-09-23
 
 ### Improved
 
