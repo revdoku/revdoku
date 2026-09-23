@@ -60,9 +60,6 @@ folder path before reading selected attachments. For multiple arrivals, paginate
 cursor; `folder` is nonrecursive. New mail uses `_email/inbox/<sender>/<subject-group>/`
 with one folder per delivery; older `_email/in/` paths still work. Follow returned
 paths; subject groups are topics, not authoritative conversation membership.
-Related email: `bucket_file_list(bucket_id: ID, thread_for: FILE_ID)` returns the
-message and earlier/later replies (JSON, EML fallback), without marking read.
-CLI: `files --bucket-id ID --thread-for FILE_ID`. Follow returned paths to read.
 
 Dashboard: **Mailbox / Raw Files** tabs; attachments open inline.
 Shared message status uses current JSON `read_at`, `read_by`, `read_by_api_key`

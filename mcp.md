@@ -19,8 +19,7 @@ free; see [pricing](https://app.revdoku.com/pricing).
    deadline. On an increase, read `last_received_path + "message.json"` with
    `bucket_file_read`. This returns decoded headers, `body_text`, `body_status`,
    and attachment paths. `message.md` is readable text; `message.eml` is the original.
-5. Use `bucket_file_list(bucket_id, thread_for: FILE_ID)` for a message and its
-   earlier/later replies; listing does not mark read. For several arrivals or older messages, paginate `bucket_file_list` with
+5. For several arrivals or older messages, paginate `bucket_file_list` with
    `query: "_email/"`. Filter for `message.json` files and track their file IDs.
    `last_received_path` identifies only the latest folder; it is not a cursor.
    Do not assume the folder depth, ordering, or a sender's Message-ID is unique.

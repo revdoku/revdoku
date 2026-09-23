@@ -62,7 +62,6 @@ ACTION="store"
 PATH_TO_STORE=""
 PATH_EXPLICIT="false"
 READ_FILE_PATH=""
-THREAD_FOR=""
 OUTPUT_PATH=""
 SHOW_UPLOAD_HINT="false"
 # Project-local binding (.revdoku): remembers the bucket so `revdoku upload`
@@ -131,7 +130,6 @@ Options:
   --account-id ID       Select a granted account for this command.
   --client-name NAME    Client person or business (account create-client).
   --bucket-id ID        Target bucket; overrides the local .revdoku binding.
-  --thread-for FILE_ID  With files: list this email's conversation and replies.
   --title TEXT         --description TEXT     --tag-path LABEL     --metadata JSON
   --url URL            App URL (default $DEFAULT_URL).
   --api-key KEY        API credential (or REVDOKU_API_KEY / $CREDENTIALS_PATH).
@@ -198,11 +196,6 @@ while [[ $# -gt 0 ]]; do
     --bucket-id)
       [[ $# -ge 2 ]] || die "--bucket-id requires a value"
       BUCKET_ID="$2"
-      shift 2
-      ;;
-    --thread-for)
-      [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "--thread-for requires an email file id"
-      THREAD_FOR="$2"
       shift 2
       ;;
     --metadata)
@@ -990,11 +983,7 @@ list_versions() {
 
 list_files() {
   [[ -n "$BUCKET_ID" ]] || die "files requires --bucket-id (or a remembered selected bucket)"
-  local path="/api/v1/buckets/${BUCKET_ID}/files"
-  if [[ -n "$THREAD_FOR" ]]; then
-    path="${path}?thread_for=$("$JQ_BIN" -rn --arg value "$THREAD_FOR" '$value | @uri')"
-  fi
-  http_json GET "$path" "{}"
+  http_json GET "/api/v1/buckets/${BUCKET_ID}/files" "{}"
 }
 
 # Read a bucket file's content by its bucket-relative path. Uses the by_path
