@@ -82,11 +82,9 @@ If the host does not support MCP or the agent needs local/binary files, use the
 local CLI. A hosted agent cannot read the user's computer.
 
 Private storage and collaboration follow the [Terms of Use](https://revdoku.com/terms/).
-## Pricing and limits
+## Start free
 
-Use <https://app.revdoku.com/pricing> for current prices and human-readable
-comparisons. Read the versioned plan limits from
-<https://app.revdoku.com/pricing.json>. Full-account profile responses include effective account overrides.
+You can start free. See [pricing](https://app.revdoku.com/pricing) for current plans.
 
 ## Troubleshooting tutorials
 

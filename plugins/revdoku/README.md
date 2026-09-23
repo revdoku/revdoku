@@ -45,7 +45,7 @@ files directly from your **local machine** (local project, SSH, Docker, WSL2, or
 VM), run the bundled CLI from the plugin's `skills/revdoku` directory:
 
 ```text
-scripts/revdoku.sh p <folder>
+scripts/revdoku.sh upload <folder>
 ```
 
 Uploads save files in private bucket storage.
@@ -55,7 +55,7 @@ only if needed. No separate CLI installation is required.
 
 ## Links
 
-- Website: https://revdoku.com
+- Home: https://revdoku.com
 - App: https://app.revdoku.com
 - Claude setup guide: https://revdoku.com/claude
 

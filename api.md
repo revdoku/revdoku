@@ -49,14 +49,16 @@ access to existing files. See [file operations](#file-path-operations) and
 
 ## Incoming email into a bucket
 
-The dashboard shows **Files / Mailbox** subtabs when email and ordinary files
-coexist. These are views of the same authorized files. List / Tiles stays inside
-Files; the Mailbox badge counts unread messages, not attachments. Clients use the
+The dashboard shows **Mailbox / Raw Files** tabs when email files
+are present. These are views of the same authorized files. List / Tiles stays inside
+Raw Files; the Mailbox badge counts unread messages, not attachments. Clients use the
 existing file APIs below.
 
 Each bucket has its own incoming email address for receiving messages and
 attachments alongside uploaded files. Anyone knowing the address can email it;
-reading messages requires authorized bucket access. Use the returned address; there is no custom alias editor.
+reading messages requires authorized bucket access. Use only the returned address;
+custom names follow the verified-domain setup described below.
+Revdoku receives mail; it does not send email or reply to incoming messages.
 
 | Operation | REST / MCP |
 | --- | --- |
@@ -65,6 +67,10 @@ reading messages requires authorized bucket access. Use the returned address; th
 | Check for new mail | Bucket detail/list / `bucket_get` / `bucket_list`: compare `inbound_email.received_count` with your saved count. |
 | Read latest message | Read `last_received_path + "message.json"` with ordinary file tools. |
 | Rotate address | `POST /api/v1/buckets/:id/inbound_email/rotate`; requires write access and explicit confirmation. |
+
+For CLI use, `revdoku inbox --bucket-id ID` retrieves address/state, and
+`revdoku read PATH --bucket-id ID` reads a stored message. For hosted agents,
+see the [MCP mailbox walkthrough](https://github.com/revdoku/revdoku/blob/main/mcp.md).
 
 General reads return only `received_count`, `last_received_at`, and
 `last_received_path` under `inbound_email`. The latter two are null before receipt;
@@ -91,20 +97,15 @@ failure rolls back creation. Reading never creates an address.
 `resets_at`, `paused`, and `pause_reason`. Limits apply to both message count and
 raw incoming bytes (including MIME encoding), shared across agency clients. Known
 SES receipts count even when later rejected; retries count once. Saving attachments
-also uses ordinary storage/file quotas. Monthly plan defaults are 30 / 300 / 3,000 /
-30,000 messages and 128 MiB / 512 MiB / 2 GiB / 10 GiB for Free / Starter / Pro /
-Pro Agency. Free messages are at most 10 MiB; paid messages are at most 40 MiB. These
-message limits include MIME encoding. Free uploads and attachment files use the
-same 10 MiB file limit, with no PDF-specific restriction.
+also uses ordinary storage/file quotas. Message size includes MIME encoding.
 Use effective limits returned by the service. Exhaustion pauses receiving until a
 reset or limit increase; manual and abuse holds require separate recovery. New or
 rotated platform addresses may take up to five minutes to reach the receiving provider.
 
 Rotation requires `{"confirm":true,"current_address":"<current address>"}`.
-Free allows 1; paid plans allow 10 successful rotations per UTC calendar month,
-shared by the billing account and its clients. See `/pricing.json` for
-`max_inbound_email_address_rotations_per_month`. Initial assignment is free of this
-allowance. Stale requests return 409 `INBOUND_EMAIL_ADDRESS_CHANGED`; unavailable
+Check the returned `rotation` availability before requesting a change. Successful
+rotations are shared by the billing account and its clients. Initial assignment
+does not consume a rotation. Stale requests return 409 `INBOUND_EMAIL_ADDRESS_CHANGED`; unavailable
 buckets return 409 `INBOUND_EMAIL_ROTATION_UNAVAILABLE`; exhausted/disallowed
 rotation returns 429 `INBOUND_EMAIL_ROTATION_LIMIT`. After a lost response, reread
 the address before retrying. Rotation stays on the assigned domain unless an explicit domain switch is requested.
@@ -124,12 +125,13 @@ never infer the tenant from a bucket ID.
 ### Personal notification schedules
 
 **Account Settings → Notifications** controls each person's emails for the selected
-account: None, Immediately (default, short burst grouping), Daily, or Weekly.
+account. Daily is the default. Use `activity_frequency_editable` to determine
+whether the user can change it; do not infer availability from a plan name.
 Daily and weekly summaries arrive at 08:00 in the person's timezone; weekly is
 Monday. Only accounts with activity send summaries. None preserves bell notices.
 
 Immediate activity email attempts share a separate billing-group UTC monthly
-allowance equal to the effective incoming message-count limit. Each recipient
+allowance. Each recipient
 counts once per send attempt, including failures. After exhaustion, activity uses
 daily summaries until the next month or a limit increase. This does not consume
 incoming-email quota or suppress security/account alerts.
@@ -138,16 +140,16 @@ incoming-email quota or suppress security/account alerts.
 sessions only, not API/agent keys or MCP tools. PATCH requires `expected_account_id`
 and the page's `X-CSRF-Token` for cookie authentication. Editable fields are
 `activity_frequency` (`none`, `immediately`, `daily`, `weekly`). Responses include the requested
-`activity_frequency`, effective `activity_delivery_frequency`, `account_id`,
+`activity_frequency`, effective `activity_delivery_frequency`, `activity_frequency_editable`, `account_id`,
 and `time_zone`. During fallback the requested value
 remains `immediately` while delivery is `daily`. Direct people to the dashboard
 to change their preferences.
 
-### Custom receiving domains (invitation-only pilot)
+### Custom receiving domains
 
-Paid plans allow one pending/connected email domain **per account**, including each
-agency client. The operator must enable `features.custom_inbound_email_domains`. Use Account Settings → Domains → Email to
-connect it. Prefer an unused subdomain such as `inbox.example.com` when the parent
+Check `customization.allowed` and `blocked_reason` for the current account and
+caller. Use Account Settings → Domains → Email to connect a domain when available.
+Prefer an unused subdomain such as `inbox.example.com` when the parent
 already handles email. Dedicated root domains are also accepted. Never silently
 prepend `inbox.`, modify unrelated MX/SPF/DKIM/DMARC, or change DNS without permission.
 An unrelated MX/CNAME is a conflict; a null MX must be replaced, never combined.
@@ -163,12 +165,32 @@ Responses report receiving/pause state and structured errors with `retryable`.
 Connecting a domain never rewrites existing addresses or changes new-bucket
 creation. To switch an existing bucket, confirm its current address and add
 `domain: "inbox.example.com"` plus a stable `idempotency_key` to the rotate request.
-Use `domain: "platform"` to recover to the default platform domain, including after
-a downgrade. A custom rotation/switch returns **202** with `assignment.status:
+Use `domain: "platform"` to switch to the default platform domain when rotation is available. A custom rotation/switch returns **202** with `assignment.status:
 "pending"`. Poll the existing inbound-email GET endpoint; `address` remains the
 old current address until `assignment.status` becomes `active`. A failed activation
 keeps the old address and allowance intact. A successful switch charges once.
 Never invent an alias, use a pending candidate, or strip `+tag` to route mail.
+
+To choose a custom name, an account owner/administrator with full-account access
+may add `local_part: "my-agent"` and the explicit ready custom `domain` to this same
+confirmed request. This creates `my-agent@mail.example.com` when the selected
+domain is `mail.example.com`. The deployment must support custom names. Omitting
+`local_part` generates a random address; supplying a blank/null name is an error.
+Names are normalized to lowercase and accept 1–64 ASCII letters, digits, dots,
+hyphens and underscores, with alphanumeric endpoints and no consecutive dots.
+The complete address must fit 254 characters. Names on platform domains are
+always generated. Each successful change uses one rotation; unchanged saves,
+failed activations and retries do not consume an additional rotation.
+
+Custom names remain reserved to their original account, even after deletion.
+That account can reuse a name once it is no longer current or pending on another
+bucket; archived buckets still hold their addresses. Generated addresses remain
+nonreusable. Address assignment history is retained after bucket deletion with
+account-encrypted address text and permanent account/bucket IDs and digests.
+Old addresses stop receiving; history does not enable forwarding. Received files
+stay in their original bucket, and delayed deliveries cannot follow a reused name
+into a new assignment. History is recorded from this release onward; old
+digest-only reservations cannot reconstruct previously retired addresses.
 
 The response includes `domain`, `custom_domain`, `available_domains`, `usage`, and
 `assignment` (ID/status/hostname/error, never its candidate). Already assigned
@@ -178,16 +200,35 @@ receive fresh platform addresses. While receiving is paused, delivery is not
 retained or automatically recovered. Accepted-email quota periods retain the
 existing billing-period rules; rotation allowances reset by UTC calendar month.
 
+The dedicated inbound-email GET/rotate responses also include `customization`
+(`allowed`, `blocked_reason`, `settings_url`) for the current caller. The settings
+link is available only to account administrators; DNS verification details remain
+restricted to the account-domain endpoints.
+
 Accepted messages commit these files together:
 
 ```text
-_email/in/<received-UTC>--<delivery-id>/
-  message.eml
-  message.json
-  message.md
-  attachments/<safe-filename>
+_email/inbox/<sender-email>/<subject-group>/
+  <received-UTC>_<subject>--<delivery-id>/
+    message.eml
+    message.json
+    message.md
+    attachments/
+      ...
 ```
 
+New deliveries use one server-owned folder/file template, with no account/bucket
+layout preference. `subject-group` is a normalized subject slug plus a full SHA-256
+key: Unicode/whitespace/case are normalized and repeated leading `Re:` is removed.
+Forwards and ticket IDs stay distinct. Group labels and message subjects are bounded
+safe slugs; literal percent escapes are never URL-decoded, and `--` in subject text
+cannot impersonate the delivery separator. Hashes keep distinct subjects separate
+when sanitization or truncation produces the same slug. Original subjects remain
+in message content/metadata. Grouping is by sender/topic, not authoritative thread
+membership. Missing senders or subjects use delivery-specific fallbacks.
+
+Older `_email/in/` files retain their paths and remain readable. Search `_email/`
+to cover both roots and follow returned paths instead of assuming directory depth.
 
 New deliveries also save UTF-8 `message.md` from the same finalized JSON, with
 headers, delivery metadata, body/status and saved attachment paths. It is bounded
@@ -203,24 +244,49 @@ trusted envelope `delivered_to`, receipt `received_at` (ISO UTC), `body_text`,
 `body_status`, and `attachments`. Attachment entries contain `path` relative to
 this message folder, `original_filename`, `content_type`, and decoded `size_bytes`.
 An optional nonzero `omitted_attachment_count` records skipped ordinary attachments.
+Prefix an attachment's relative `path` with its message folder path before
+passing it to a bucket file read/download operation.
 Inline parts remain in the original. Saved paths use normalized collision-safe names.
+
+New messages also include these additive schema-v1 fields (older stored JSON may
+omit them):
+
+| Field | Meaning |
+| --- | --- |
+| `from_addresses` | Parsed From authors, each `{ "address": "person@example.org", "name": "Display name" }`. `name` is null when absent. Retains multiple authors. |
+| `to_addresses`, `cc_addresses`, `reply_to_addresses` | Address/name arrays in header order; named recipient groups are flattened. Empty when absent or unparseable. These are sender-provided headers, not the trusted delivery recipient. |
+| `message_id` | Parsed Message-ID without angle brackets, or null when absent/unparseable/ambiguous. Case is preserved. |
+| `in_reply_to`, `references` | Ordered arrays of bracket-free message IDs; empty when absent or unparseable. In-Reply-To can contain multiple parents. |
+| `delivery_id` | Revdoku's 32-character lowercase hexadecimal delivery identity, matching file metadata `email_delivery_id` and the original folder's delivery suffix. Stable across retries, independent of sender Message-ID. Copies preserve the source delivery identity; it is not a unique file/copy ID. |
+| `thread_id` | Nullable `thr_` plus the SHA-256 hex digest of `thread_anchor_message_id`. A deterministic, header-derived grouping hint, not authoritative conversation membership. |
+| `thread_id_source` | `references`, `in_reply_to`, `message_id`, or null. |
+| `thread_anchor_message_id` | First References ID; otherwise the sole In-Reply-To ID; otherwise this message's ID if no parent is available. Null when no anchor exists or multiple parents have no References chain. |
+
+There is no universal thread ID in email. Complete References chains produce the
+same hint even if subjects change. Missing/truncated ancestry or sender-reused IDs
+can split/merge hints; a lone In-Reply-To identifies a parent, not necessarily the
+root. Future conversation indexing must reconcile the preserved relationships.
+Never use thread IDs, sender names, or headers as authorization; scope all lookups
+to accessible buckets. No subject/name matching, automatic grouping, or new
+thread/filter endpoint is added. `message.eml` remains authoritative.
 
 Body statuses: `complete`; `empty` with `body_text: ""`; `truncated`; or
 `unavailable` with `body_text: null`. Prefer plain text; HTML-only mail is converted
 to text with link destinations, without remote fetches. Codes stay strings, including
 leading zeros. This is deterministic decoding, not AI summarization or OTP extraction.
-No `message.md` or separate headers JSON is generated. If decoding was incomplete,
+No separate headers JSON is generated. If decoding was incomplete,
 download the original and use a MIME parser. Do not regex raw MIME for a code.
 
-Original, JSON, and attachment copies all consume storage/file capacity; the
-monthly allowance counts accepted deliveries once. Retries do not double-charge.
+Original, JSON, Markdown, and attachment copies all consume storage/file capacity;
+incoming traffic is metered once at receipt, separately from successful storage.
+Retries do not double-charge.
 Email caps are shared across an agency group. Existing older messages
 keep their paths; inspect file listings instead of guessing filenames.
 
 For a user-authorized signup: save the current count, obtain a ready address,
 request the service's email, then poll bucket activity with bounded backoff and a
 deadline. If the count increased, read the latest JSON. If several messages arrived,
-paginate file listings (`bucket_file_list(query: "_email/in/")`) and track message
+paginate file listings (`bucket_file_list(query: "_email/")`) and track message
 file IDs; a latest-path pointer cannot enumerate all intervening mail. `folder` is
 nonrecursive. Read only needed attachments. CLI `files` and `read PATH` use the same
 files; no separate inbox wait, sender-filter, or OTP endpoint is needed.
@@ -233,10 +299,9 @@ itself stays in the browser.
 
 ## Plans and onboarding
 
-New accounts start on Free. It includes 1 active bucket, 30 received incoming
-emails/month, and 1 address rotation/month. Read current prices and versioned
-limits from <https://app.revdoku.com/pricing.json>; full-account profile responses
-include effective account overrides. Avoid hard-coding quotas in integrations.
+You can start free. See [pricing](https://app.revdoku.com/pricing) for current plans.
+Use effective availability and usage returned by the API; avoid hard-coding plan
+names or quotas in integrations.
 
 For an empty account, `GET /api/v1/status` returns `onboarding.state: "empty_account"`
 and `onboarding.suggested_projects`, led by an incoming-email inbox and a private
@@ -277,7 +342,7 @@ Each account identity includes:
 | `client_name` | Client person or business, or `null` when unset. Separate from the account name and owner. |
 | `agency_account` | Accessible parent `{ "id": "acct_...", "name": "Agency name" }`, otherwise `null`. A client remains a client when its parent is not granted. |
 
-Pro Agency owners may explicitly authorize a whole-account connection to include
+Agency owners may explicitly authorize a whole-account connection to include
 client accounts. Existing keys keep their original access; client or
 selected-bucket keys cannot select a parent, sibling, or unrelated account.
 Account names, owner emails, and membership in another account do not grant access.
@@ -325,10 +390,9 @@ an authorized browser session or full-account API credential. Set it to `null`
 to clear it. `account_name` updates the separate account name. Neither name
 changes ownership, agency membership, billing, or authentication.
 
-Pro Agency includes ten accounts total and 15 unique people, including the
-owner once. Account capacity and credits are shared; tenant files, memberships,
+Account capacity and credits are shared; tenant files, memberships,
 and branding stay separate. Clients have no separate subscription or welcome
-credits. Billing and signup require the browser. When Pro Agency entitlement
+credits. Billing and signup require the browser. When the agency entitlement
 ends, the group becomes read-only and its existing data stay in place.
 
 ### JSON Headers

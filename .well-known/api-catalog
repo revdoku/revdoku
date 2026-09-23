@@ -30,9 +30,9 @@
       ],
       "https://revdoku.com/rels/pricing": [
         {
-          "href": "https://revdoku.com/pricing.md",
-          "type": "text/markdown",
-          "title": "Revdoku pricing and limits"
+          "href": "https://app.revdoku.com/pricing",
+          "type": "text/html",
+          "title": "Revdoku pricing"
         }
       ]
     }
