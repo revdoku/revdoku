@@ -12,11 +12,7 @@ earlier files.
 ## Prompt for an AI agent
 
 ```text
-Connect Revdoku so you can store and organize my files, read incoming email, and work with shared buckets.
-
-Follow https://revdoku.com/llms-install.md. If you have shell and filesystem access, install and use the local CLI. Otherwise, connect through hosted MCP.
-
-Complete sign-in in the browser, check the connection, and ask what I want to do with my files or incoming email.
+Connect Revdoku so you can store and share my files and read incoming email. Follow https://revdoku.com/llms-install.md, help me sign in through the browser, and verify the connection. Then continue my task, or ask what I want to do.
 ```
 
 ## Store and share files
