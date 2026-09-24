@@ -30,6 +30,11 @@ sha256_file() {
 }
 
 ensure_cli() {
+  # Hub installers may write every file with mode 0644. The explicitly
+  # referenced shell payload is runnable through bash without chmod.
+  if [ -f "$SCRIPT_DIR/revdoku-cli.sh" ] && [ ! -L "$SCRIPT_DIR/revdoku-cli.sh" ]; then
+    return
+  fi
   # Skill installs bundle bin/revdoku; source checkouts keep it in the package.
   # A missing executable means the installation is incomplete, not an update.
   if [ -x "$SKILL_DIR/bin/revdoku" ] || [ -x "$PACKAGE_ROOT/bin/revdoku" ]; then
@@ -74,6 +79,15 @@ ensure_jq
 
 PATH="$SKILL_DIR/bin:$PATH"
 export PATH
+
+if [ -f "$SKILL_DIR/VERSION" ]; then
+  REVDOKU_CLIENT_VERSION_FILE="$SKILL_DIR/VERSION"
+  export REVDOKU_CLIENT_VERSION_FILE
+fi
+
+if [ -f "$SCRIPT_DIR/revdoku-cli.sh" ] && [ ! -L "$SCRIPT_DIR/revdoku-cli.sh" ]; then
+  exec bash "$SCRIPT_DIR/revdoku-cli.sh" "$@"
+fi
 
 if [ -x "$SKILL_DIR/bin/revdoku" ]; then
   exec "$SKILL_DIR/bin/revdoku" "$@"

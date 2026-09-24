@@ -4,16 +4,28 @@ description: >
   Use Revdoku secure cloud storage and incoming email, with an address for every
   bucket. Use for file storage, a cloud mailbox, sharing, versions, and reading messages or
   attachments with authorized people and agents.
+license: MIT-0
+metadata:
+  compatibility: Bash and curl on macOS or Linux; HTTPS access and browser sign-in.
+  openclaw:
+    requires:
+      bins: [bash, curl]
+      anyBins: [sha256sum, shasum, openssl]
+    homepage: https://revdoku.com
+  hermes:
+    tags: [cloud-storage, incoming-email, file-sharing]
+    category: productivity
 ---
 
 # Revdoku
 
 ## Connect and choose tools
 
-- **Local files:** all `revdoku` examples mean this skill's `scripts/revdoku.sh`. Use its absolute
-  path, never another executable from `PATH`. It runs the bundled CLI and installs pinned,
-  SHA-256-verified `jq` if needed. Start with `scripts/revdoku.sh login`, then
-  `scripts/revdoku.sh upload <path>`.
+- **Local files:** all `revdoku` examples mean `bash /absolute/path/to/this/skill/scripts/revdoku.sh`.
+  Use the [wrapper](scripts/revdoku.sh), never another executable from `PATH`.
+  It runs the [bundled CLI](scripts/revdoku-cli.sh), reads the [package version](VERSION), and installs pinned,
+  SHA-256-verified `jq` if needed. Start with `bash /absolute/path/to/this/skill/scripts/revdoku.sh login`, then
+  `bash /absolute/path/to/this/skill/scripts/revdoku.sh upload <path>`.
 - **Hosted agents:** connect through OAuth at `https://app.revdoku.com/mcp`.
   MCP reads/writes bucket text; it cannot read local files or upload binaries.
 - **Other integrations:** use the [REST API](https://revdoku.com/api.md).
@@ -24,6 +36,12 @@ or GitHub secrets in chat. After connection, read `revdoku_status` and
 `bucket_list` (CLI: `status`, `ls`); repeat status when account/access is unclear.
 Follow an existing project choice; otherwise offer `onboarding.suggested_projects`
 for `empty_account`. For `no_visible_buckets`, follow `onboarding.recommended_next_step`.
+
+Runtime: the wrapper downloads `jq` from GitHub only when missing, verifies its
+SHA-256, and caches it inside the skill. Browser sign-in stores credentials in
+`~/.revdoku/credentials`; no API-key environment variable is required. Network
+requests go to the configured Revdoku server and its authorized storage upload URLs.
+An account is required; service pricing is separate from this [MIT-0 skill](LICENSE).
 
 ## Store and collaborate privately
 

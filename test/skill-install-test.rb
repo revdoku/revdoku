@@ -87,6 +87,19 @@ class RevdokuSkillInstallTest < Minitest::Test
     assert_no_download
   end
 
+  def test_hub_layout_runs_with_all_files_nonexecutable_and_without_bin_directory
+    system_jq
+    wrapper, skill = fixture
+    FileUtils.cp(CLI, File.join(skill, "scripts/revdoku-cli.sh"))
+    FileUtils.rm_rf(File.join(skill, "bin"))
+    File.write(File.join(skill, "VERSION"), "7.8.9\n")
+    Dir.glob(File.join(skill, "**/*")).each { |p| File.chmod(0o644, p) if File.file?(p) }
+    stdout, stderr, status = Open3.capture3(@env, "/bin/bash", wrapper, "--version")
+    assert status.success?, stderr
+    assert_includes stdout, "7.8.9"
+    assert_no_download
+  end
+
   def test_nonexecutable_cli_is_not_silently_replaced
     wrapper, skill = fixture
     path = File.join(skill, "bin/revdoku")
@@ -166,6 +179,9 @@ class RevdokuSkillInstallTest < Minitest::Test
     assert_equal File.binread(CLI), File.binread(File.join(skill, "bin/revdoku"))
     expected_version = File.read(File.join(CLIENT_ROOT, PUBLIC_PACKAGE ? "VERSION" : "../../../VERSION")).strip
     assert_equal expected_version, File.read(File.join(@tmp, "config/client_version")).strip
+    assert_equal expected_version, File.read(File.join(skill, "VERSION")).strip
+    assert_equal File.binread(CLI), File.binread(File.join(skill, "scripts/revdoku-cli.sh"))
+    assert_includes File.read(File.join(skill, "LICENSE")), "MIT No Attribution"
     stdout, stderr, status = run_wrapper(File.join(skill, "scripts/revdoku.sh"), "--help")
     assert status.success?, stderr
     assert_includes stdout, "upload [PATH]"

@@ -1,0 +1,10 @@
+{
+  "name": "revdoku",
+  "version": "1.0.497",
+  "description": "Cloud storage with an email address for every bucket.",
+  "mcpServers": {
+    "revdoku": {
+      "httpUrl": "https://app.revdoku.com/mcp"
+    }
+  }
+}
