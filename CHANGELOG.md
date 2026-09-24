@@ -1,5 +1,12 @@
 # Revdoku Changelog
 
+## 1.0.499 — 2026-09-25
+
+- Filter messages by read status or attachments, and sort newest, oldest, or unread first.
+- Choose a bucket name before creation and keep it ready when retrying a failed request.
+- Review clearer activity totals and relative email arrival times, with exact timestamps on hover.
+- Install portable agent skills with bundled resources and updated plugin metadata.
+
 ## 1.0.492 — 2026-09-23
 
 - Store, share, and version files in private cloud buckets.
