@@ -23,7 +23,7 @@ class RevdokuInstallerIntegrityTest < Minitest::Test
     @target = File.join(@tmp, "installed with spaces")
     @scratch = File.join(@tmp, "scratch")
     FileUtils.mkdir_p([@commands, @target, @scratch])
-    %w[bash dirname mkdir mktemp sha256sum shasum openssl awk cp chmod mv rm uname tr].each do |name|
+    %w[bash dirname mkdir mktemp sha256sum shasum openssl awk cp chmod mv rm uname tr cat].each do |name|
       path = ENV.fetch("PATH").split(File::PATH_SEPARATOR).map { |dir| File.join(dir, name) }
         .find { |candidate| File.executable?(candidate) && !File.directory?(candidate) }
       File.symlink(path, File.join(@commands, name)) if path

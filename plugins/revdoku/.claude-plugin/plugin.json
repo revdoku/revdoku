@@ -19,12 +19,8 @@
     "cloud-storage",
     "incoming-email",
     "private-buckets",
-    "agents",
-    "files",
     "version-history",
     "collaboration",
-    "version-history",
-    "incoming-email",
     "attachments",
     "file-sharing"
   ]

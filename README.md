@@ -76,6 +76,24 @@ npx skills add revdoku/revdoku --skill revdoku -g
 To target one agent, add `--agent codex` (or `claude-code`, `cursor`, etc.).
 This also avoids the upstream PromptScript global-install error.
 
+Hermes can install the complete skill directly:
+
+```sh
+hermes skills install revdoku/revdoku/skills/revdoku
+```
+
+To subscribe to this repository as a Hermes source, use
+`hermes skills tap add revdoku/revdoku`.
+
+Claude Code users can run `/plugin marketplace add revdoku/revdoku`, then
+`/plugin install revdoku@revdoku`. Codex users can add the repository with
+`codex plugin marketplace add revdoku/revdoku` and select Revdoku in the plugin browser.
+Gemini CLI users can run `gemini extensions install https://github.com/revdoku/revdoku`.
+
+The Revdoku-owned skill and bundled CLI may also be used under MIT-0; see the
+skill's `LICENSE`. The repository's default license remains MIT. Third-party
+dependencies retain their own licenses.
+
 If npm is unavailable:
 
 ```sh
