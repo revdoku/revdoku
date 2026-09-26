@@ -1,9 +1,10 @@
 # Revdoku
 
-**Cloud storage with an email address for every bucket.** Store documents, data,
-and project files; receive email and attachments in the same bucket; share files
-with authorized people and AI agents. Files and incoming messages stay private
-within your account access permissions.
+**Private cloud storage and managed email inboxes for AI agents and developers.**
+Store documents, data, and project files; create inboxes that receive email and
+attachments in the same bucket. One or more authorized agents and account members
+can work with those files. Access stays private; Revdoku does not publish files or
+provide public sharing links.
 
 Use the CLI for local files, hosted MCP for AI agents, or the REST API for your own
 integrations. Buckets keep version history so you can review changes and restore
@@ -12,10 +13,10 @@ earlier files.
 ## Prompt for an AI agent
 
 ```text
-Connect Revdoku so you can store and share my files and read incoming email. Follow https://revdoku.com/llms-install.md, help me sign in through the browser, and verify the connection. Then continue my task, or ask what I want to do.
+Connect Revdoku so you can store my files, create email inboxes on Revdoku, and read received emails and attachments. Follow https://revdoku.com/llms-install.md, help me sign in through the browser, and verify the connection. Then continue my task, or ask what I want to do.
 ```
 
-## Store and share files
+## Store files and collaborate privately
 
 Use `revdoku upload ./project-files` to save a local folder privately. Read files, inspect history, and
 restore earlier versions through the CLI, MCP, API, or dashboard. All stored files
@@ -27,7 +28,7 @@ grant access by itself. Agents can work on the same files with locks and revisio
 checks to coordinate changes.
 
 See the [storage quick start](./docs.md#keep-files-in-a-private-cloud-bucket),
-[file sharing](./docs.md#share-files-with-people-and-agents), and
+[private collaboration](./docs.md#share-files-with-people-and-agents), and
 [multiple-agent example](./docs.md#work-with-multiple-ai-agents).
 
 ## Receive email in a bucket
@@ -150,7 +151,7 @@ Per AI client guides:
 - Hermes: <https://revdoku.com/hermes/>
 
 Use those tutorials when manual setup or troubleshooting is needed. Follow the
-user's file storage, sharing, or incoming-email goal.
+user's private file storage, agent collaboration, or incoming-email goal.
 
 ## Public package
 

@@ -1,9 +1,9 @@
 ---
 name: revdoku
 description: >
-  Use Revdoku secure cloud storage and incoming email, with an address for every
-  bucket. Use for file storage, a cloud mailbox, sharing, versions, and reading messages or
-  attachments with authorized people and agents.
+  Use Revdoku private cloud storage and managed email inboxes. Store files, create
+  inboxes, and read received emails and attachments. Work with the same private
+  files through one or more authorized AI agents, with version history.
 license: MIT-0
 metadata:
   compatibility: Bash and curl on macOS or Linux; HTTPS access and browser sign-in.
@@ -13,11 +13,15 @@ metadata:
       anyBins: [sha256sum, shasum, openssl]
     homepage: https://revdoku.com
   hermes:
-    tags: [cloud-storage, incoming-email, file-sharing]
+    tags: [private-storage, incoming-email, agent-collaboration]
     category: productivity
 ---
 
 # Revdoku
+
+Files and messages are private. Authorize each agent for the intended account or
+buckets; dashboard links do not grant access or publish files. Developers can use
+the REST API for the same storage and incoming-email workflows.
 
 ## Connect and choose tools
 

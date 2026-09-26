@@ -1,8 +1,10 @@
 # Revdoku API
 
-Revdoku is **cloud storage with an email address for every bucket**. The REST API
-stores and organizes files, exposes received email and attachments, and lets
-authorized people and AI agents work with the same versioned files.
+Revdoku provides **private cloud storage and managed email inboxes for AI agents
+and developers**. Use the REST API to create buckets with incoming addresses,
+store and organize files, and read received emails and attachments. Authorized
+people and AI agents can work with the same versioned files; the API does not
+publish files or create public sharing links.
 
 Most AI-agent users should start with the Revdoku app's copied prompt or the
 Revdoku skill. Use the local CLI when the agent has shell and filesystem access,

@@ -1,13 +1,14 @@
 # Revdoku Docs
 
-**Cloud storage with an email address for every bucket.** Store files, receive
-email and attachments, and share bucket contents with authorized people and AI
-agents. Use the CLI, MCP, REST API, or dashboard to read, update, and organize the
-same files with version history.
+**Private cloud storage and managed email inboxes for AI agents and developers.**
+Store files, create inboxes, and read received emails and attachments. Use the CLI,
+MCP, REST API, or dashboard to read, update, and organize the same files with
+version history. Multiple authorized agents and account members can collaborate
+privately; Revdoku does not publish files or provide public sharing links.
 
 Start with [file storage](#keep-files-in-a-private-cloud-bucket),
 [incoming email](#receive-email-and-third-party-verification-messages), or
-[file sharing](#share-files-with-people-and-agents).
+[private collaboration](#share-files-with-people-and-agents).
 Private storage and collaboration follow the [Terms of Use](https://revdoku.com/terms/).
 
 ## Quick Start
@@ -151,7 +152,9 @@ types (executables like `.exe`, `.dmg`, `.app`, `.msi`, … and secrets like `.e
 and keys) are refused **by extension** at upload; uploaded content is also scanned
 afterward and removed if it turns out to be a forbidden type.
 
-## Share files with people and agents
+<a id="share-files-with-people-and-agents"></a>
+
+## Private collaboration with people and agents
 
 Invite people to the account through Revdoku's access settings and choose the
 appropriate role. Authorize each agent connection for the account or selected

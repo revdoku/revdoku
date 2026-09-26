@@ -28,7 +28,7 @@ REVDOKU_SKILL_LICENSE
 }
 expected_sha256() {
   case "$1" in
-    skills/revdoku/SKILL.md) printf '%s\n' '96cf68691f16eac056bdce2cd78646064d7daa892b219568cc7c452c645730f0' ;;
+    skills/revdoku/SKILL.md) printf '%s\n' '0340a574c8b33226809007bf412178688413df21446d426f0ecc50f46979fc5e' ;;
     skills/revdoku/scripts/revdoku.sh) printf '%s\n' '8bd2fecbbbdf1ce7352dd3f1eaec4ac803a202a0d0e483a7a079ccbeda5f6ec2' ;;
     skills/revdoku/bin/revdoku) printf '%s\n' '4ce47b4da7d45fd2c0a19c31d219a047a7402c8ed3323f919765877956814504' ;;
     *) die "unknown installer payload: $1" ;;

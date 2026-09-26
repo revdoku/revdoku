@@ -1,6 +1,6 @@
 # Revdoku — Claude Code plugin
 
-Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments.
+Private cloud storage and managed email inboxes for AI agents and developers. Store files, receive emails and attachments, and collaborate through authorized access.
 Each bucket holds uploaded files, original messages, decoded email, and attachments.
 
 The plugin bundles:

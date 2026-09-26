@@ -1,1 +1,1 @@
-Connect Revdoku so you can store and share my files and read incoming email. Follow https://revdoku.com/llms-install.md, help me sign in through the browser, and verify the connection. Then continue my task, or ask what I want to do.
+Connect Revdoku so you can store my files, create email inboxes on Revdoku, and read received emails and attachments. Follow https://revdoku.com/llms-install.md, help me sign in through the browser, and verify the connection. Then continue my task, or ask what I want to do.

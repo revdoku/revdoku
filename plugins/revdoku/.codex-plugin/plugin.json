@@ -1,7 +1,7 @@
 {
   "name": "revdoku",
   "version": "1.0.500",
-  "description": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments.",
+  "description": "Private cloud storage and managed email inboxes for AI agents and developers. Store files, receive emails and attachments, and collaborate through authorized access.",
   "author": {
     "name": "Revdoku",
     "url": "https://revdoku.com"
@@ -27,7 +27,7 @@
   "interface": {
     "displayName": "Revdoku",
     "shortDescription": "Cloud storage with email-receiving buckets.",
-    "longDescription": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments.",
+    "longDescription": "Private cloud storage and managed email inboxes for AI agents and developers. Store files, receive emails and attachments, and collaborate through authorized access.",
     "developerName": "Revdoku",
     "category": "Coding",
     "capabilities": [

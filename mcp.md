@@ -1,4 +1,8 @@
-# Revdoku MCP: files and a cloud mailbox
+# Revdoku MCP: private files and managed email inboxes
+
+Store files, create inboxes, and read received emails and attachments through
+authorized AI agents. Multiple agents can work in the same private bucket.
+Revdoku does not publish files or provide public sharing links.
 
 Connect to `https://app.revdoku.com/mcp` using Streamable HTTP and complete OAuth
 in the browser. Each agent needs its own authorized connection. You can start
