@@ -6,6 +6,11 @@ Each bucket has its own email address and holds original messages, decoded email
 attachments, and uploaded files. Revdoku receives email; it does not send messages
 or replies.
 
+The skill can upload selected local files, write and restore stored files, archive
+buckets, permanently delete approved buckets, and create explicitly requested
+agency client accounts. Connecting an inbox grants no approval for those changes.
+The bundled CLI stores Revdoku credentials and state locally under host tool policy.
+
 The plugin bundles:
 
 - the **Revdoku skill**, which tells Claude how to receive and read email, store, share, version, lock,

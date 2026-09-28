@@ -1,5 +1,12 @@
 # Revdoku Changelog
 
+## 1.0.508 — 2026-09-29
+
+- Skill and plugin descriptions disclose file uploads, changes, bucket deletion,
+  and agency client creation alongside receiving email.
+- Exclude Revdoku credentials, saved selections, update/version stamps, and deletion
+  previews from uploads, including when configuration is stored in a project.
+
 ## 1.0.507 — 2026-09-28
 
 - Find Revdoku as an email inbox with shared file storage for people and AI agents.

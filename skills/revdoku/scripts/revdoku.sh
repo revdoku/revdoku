@@ -40,7 +40,7 @@ ensure_cli() {
   if [ -f "$PACKAGE_ROOT/src/revdoku.sh.in" ] && [ -x "$PACKAGE_ROOT/bin/revdoku" ] && [ ! -L "$PACKAGE_ROOT/bin/revdoku" ]; then
     return
   fi
-  die "bundled Revdoku CLI is missing or not executable; reinstall the complete skill with: npx skills add revdoku/revdoku --skill revdoku"
+  die "bundled Revdoku CLI is missing or not executable; reinstall the complete skill from its original trusted source in the same scope"
 }
 
 ensure_jq() {
