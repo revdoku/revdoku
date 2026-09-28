@@ -249,3 +249,21 @@ Use only the full address returned by Revdoku and check `ready`. A domain switch
 may return `assignment.status: pending`; poll until active or failed, keeping the
 current address in use meanwhile. Never construct aliases or use `+tag` variants.
 See [the email API contract](https://revdoku.com/api.md#custom-receiving-domains).
+
+## Explain the action
+
+For intentional reads, downloads, and changes, AI agents should include an optional
+`reason`: a short explanation of the purpose when known. Do not invent a reason or
+include secrets, file contents, or transcripts. Do not ask the user for a reason
+when the task already explains the purpose; omit it when unknown.
+
+MCP uses `reason`; CLI uses `--reason TEXT`; REST uses a `reason` query parameter
+for reads and a JSON/body field for changes. The limit is 2,000 characters.
+Reasons appear in authorized Timeline and Logs views even with full request
+logging disabled. Change reasons are also saved in version history; read reasons
+belong to access events and never replace a saved version's reason.
+
+```bash
+revdoku read invoices.csv --bucket-id bkt_... --reason "Reconcile September expenses"
+revdoku upload ./approved.csv --bucket-id bkt_... --reason "Store the approved totals"
+```

@@ -68,6 +68,14 @@
               "type": "string"
             },
             "description": "Select a granted account for this request only; omit for the credential's default account."
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActionReason"
+            }
           }
         ]
       }
@@ -117,6 +125,9 @@
                     "type": "string",
                     "maxLength": 100,
                     "description": "Optional client person or business, separate from the account name. Omit when unknown."
+                  },
+                  "reason": {
+                    "$ref": "#/components/schemas/ActionReason"
                   }
                 }
               }
@@ -177,6 +188,14 @@
               "type": "string"
             },
             "description": "Explicitly granted account; omission uses credential default"
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActionReason"
+            }
           }
         ],
         "responses": {
@@ -261,6 +280,9 @@
                     "minLength": 1,
                     "maxLength": 64,
                     "description": "Administrator-selected name on an explicit ready custom domain. Normalized to lowercase; ASCII letters/digits/dots/hyphens/underscores, alphanumeric endpoints, no consecutive dots. Complete address at most 254 characters. Omit for random rotation; blank/null is invalid."
+                  },
+                  "reason": {
+                    "$ref": "#/components/schemas/ActionReason"
                   }
                 }
               }
@@ -349,6 +371,9 @@
                         "type": "string"
                       }
                     }
+                  },
+                  "reason": {
+                    "$ref": "#/components/schemas/ActionReason"
                   }
                 },
                 "required": [
@@ -451,6 +476,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActionReason"
+            }
           }
         ],
         "responses": {
@@ -527,6 +560,14 @@
               "type": "string"
             },
             "description": "Explicit granted account for this call; omission uses the credential account."
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActionReason"
+            }
           }
         ]
       },
@@ -575,6 +616,9 @@
                   },
                   "account_id": {
                     "type": "string"
+                  },
+                  "reason": {
+                    "$ref": "#/components/schemas/ActionReason"
                   }
                 }
               }
@@ -630,6 +674,14 @@
               "type": "string"
             },
             "description": "Explicit granted account for this call; omission uses the credential account."
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActionReason"
+            }
           }
         ]
       },
@@ -693,6 +745,9 @@
                   "account_id": {
                     "type": "string",
                     "description": "Explicit granted account for this call."
+                  },
+                  "reason": {
+                    "$ref": "#/components/schemas/ActionReason"
                   }
                 }
               }
@@ -751,6 +806,9 @@
                   "account_id": {
                     "type": "string",
                     "description": "Explicit granted account for this call."
+                  },
+                  "reason": {
+                    "$ref": "#/components/schemas/ActionReason"
                   }
                 }
               }
@@ -805,6 +863,9 @@
                   },
                   "account_id": {
                     "type": "string"
+                  },
+                  "reason": {
+                    "$ref": "#/components/schemas/ActionReason"
                   }
                 }
               }
@@ -862,6 +923,14 @@
             "schema": {
               "type": "integer",
               "minimum": 0
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActionReason"
             }
           }
         ],
@@ -1363,6 +1432,14 @@
             }
           }
         }
+      },
+      "ActionReason": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "maxLength": 2000,
+        "description": "Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts."
       }
     }
   }

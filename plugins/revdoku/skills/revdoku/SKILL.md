@@ -31,7 +31,6 @@ metadata:
       - {name: REVDOKU_BUCKET_METADATA, required: false, description: "JSON metadata for an authorized upload."}
       - {name: REVDOKU_UPLOAD_MODE, required: false, description: "Upload mode; auto or direct."}
       - {name: REVDOKU_RESTORE_VERSION_ID, required: false, description: "Version selected for an authorized restore."}
-      - {name: REVDOKU_RESTORE_COMMENT, required: false, description: "Comment for an authorized restore."}
       - {name: REVDOKU_BROWSER_LOGIN_PATH, required: false, description: "Dashboard path on the official service."}
       - {name: REVDOKU_APPEND_TEXT_PATH, required: false, description: "Destination path for an authorized append."}
       - {name: REVDOKU_APPEND_TEXT_CONTENT, required: false, description: "Text explicitly selected for an append."}
@@ -209,3 +208,12 @@ Check custom receiving-domain availability in Account Settings → Domains → E
 DNS edits require authorization; prefer unused subdomains. Preserve existing
 addresses, use only returned addresses (no guessed aliases or `+tags`), and poll
 pending setup until active/failed. See the [domain contract](https://revdoku.com/api.md#custom-receiving-domains).
+
+## Explain the action
+
+AI agents should add optional `--reason "purpose"` to intentional reads, downloads,
+and changes when the task explains why. Omit unknown reasons; never invent them or
+include secrets, contents, or transcripts. Maximum: 2,000 characters.
+
+MCP/REST use `reason`. Reasons appear in Timeline/Logs; change reasons also appear
+in versions. Reads leave version reasons unchanged. See [API details](https://revdoku.com/api.md#action-reasons).
