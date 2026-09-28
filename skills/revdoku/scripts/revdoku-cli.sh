@@ -2088,14 +2088,27 @@ collect_files() {
 
 should_skip_storage_path() {
   local file="$1"
-  local rel name lower_rel lower_name part extension
-  # These are local credential stores, independent of server filename policy.
+  local rel name lower_rel lower_name part extension state_file confirmation_directory
+  # Match path names only: return success to EXCLUDE these credential stores.
+  # Never open or upload their contents; this is independent of server policy.
   case "$file" in
     */.aws|*/.aws/*|*/.ssh|*/.ssh/*|*/.gnupg|*/.gnupg/*|*/.azure|*/.azure/*|*/.config/gcloud/*|*/.docker/config.json|*/.kube/config|*/.codex/auth.json|*/.claude/.credentials.json)
       return 0 ;;
   esac
-  if [[ -e "$CREDENTIALS_PATH" && "$file" == "$(abs_path "$CREDENTIALS_PATH")" ]]; then
-    return 0
+  # Keep the client's private state out even when its config paths are inside
+  # the selected folder. A custom credential location must not expose sibling
+  # bucket selections, version/update stamps, or deletion preview tokens.
+  for state_file in "$CREDENTIALS_PATH" "$DEFAULT_BUCKET_PATH" "$CLIENT_VERSION_FILE" "$UPDATE_CHECK_STAMP"; do
+    if [[ -e "$state_file" && "$file" == "$(abs_path "$state_file")" ]]; then
+      return 0
+    fi
+  done
+  confirmation_directory="${REVDOKU_CONFIG_DIR}/delete-confirmations"
+  if [[ -d "$confirmation_directory" ]]; then
+    confirmation_directory="$(abs_path "$confirmation_directory")"
+    if [[ "$file" == "$confirmation_directory" || "$file" == "$confirmation_directory/"* ]]; then
+      return 0
+    fi
   fi
   rel="$(relative_path_for "$file")"
   name="$(basename "$file")"

@@ -11,6 +11,12 @@ monitor replies to submissions. Use hosted MCP for AI agents, the CLI for local
 files and inbox access, or the REST API for your own integrations. Buckets keep
 file versions so you can review changes and restore earlier files.
 
+The skill supports uploads and file changes as well as reading mail. It also
+supports bucket archiving, permanent bucket deletion, and agency client account
+creation when explicitly requested and authorized. Permanent deletion requires
+approval for the exact account and bucket. Local CLI use stores Revdoku credentials
+and state on your machine; host tool permissions remain in control.
+
 ## Prompt for an AI agent
 
 ```text
