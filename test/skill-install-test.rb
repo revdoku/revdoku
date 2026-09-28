@@ -12,7 +12,7 @@ class RevdokuSkillInstallTest < Minitest::Test
   PUBLIC_PACKAGE = File.directory?(File.join(CLIENT_ROOT, "skills/revdoku"))
   SKILL_ROOT = File.join(CLIENT_ROOT, PUBLIC_PACKAGE ? "skills/revdoku" : "skill")
   WRAPPER = File.join(SKILL_ROOT, "scripts/revdoku.sh")
-  CLI = File.join(CLIENT_ROOT, PUBLIC_PACKAGE ? "skills/revdoku/bin/revdoku" : "bin/revdoku")
+  CLI = File.join(CLIENT_ROOT, PUBLIC_PACKAGE ? "skills/revdoku/scripts/revdoku-cli.sh" : "bin/revdoku")
 
   def setup
     @tmp = Dir.mktmpdir("revdoku-skill-test-")
@@ -100,16 +100,17 @@ class RevdokuSkillInstallTest < Minitest::Test
     assert_no_download
   end
 
-  def test_nonexecutable_cli_is_not_silently_replaced
+  def test_symlink_cli_is_not_executed_or_silently_replaced
     wrapper, skill = fixture
-    path = File.join(skill, "bin/revdoku")
+    path = File.join(skill, "scripts/revdoku-cli.sh")
     original = File.binread(path)
-    File.chmod(0o644, path)
+    File.rename(path, "#{path}.original")
+    File.symlink("#{path}.original", path)
     _, stderr, status = run_wrapper(wrapper, "--help")
     refute status.success?
     assert_includes stderr, "not executable"
     assert_equal original, File.binread(path)
-    refute File.executable?(path)
+    assert File.symlink?(path)
     assert_no_download
   end
 
@@ -123,7 +124,7 @@ class RevdokuSkillInstallTest < Minitest::Test
 
   def test_corrupt_jq_download_never_reaches_cli_execution
     wrapper, skill = fixture
-    stdout, stderr, status = run_wrapper(wrapper, "--help")
+    stdout, stderr, status = run_wrapper(wrapper, "status")
     refute status.success?
     assert_empty stdout
     assert_includes stderr, "downloaded jq checksum mismatch"
@@ -139,11 +140,11 @@ class RevdokuSkillInstallTest < Minitest::Test
       # Pin the harmless fixture bytes in the test copy; use the real hash verifier.
       fixture_hash = Digest::SHA256.file(@env.fetch("SKILL_TEST_DOWNLOAD")).hexdigest
       File.write(wrapper, File.read(wrapper).gsub(/expected=[0-9a-f]{64}/, "expected=#{fixture_hash}"))
-      _, stderr, status = run_wrapper(wrapper, "--help")
+      _, stderr, status = run_wrapper(wrapper, "status")
       assert status.success?, stderr
       assert File.executable?(File.join(skill, "bin/jq"))
       downloads = File.read(@env.fetch("SKILL_TEST_DOWNLOADS"))
-      _, stderr, status = run_wrapper(wrapper, "--help")
+      _, stderr, status = run_wrapper(wrapper, "status")
       assert status.success?, stderr
       assert_equal downloads, File.read(@env.fetch("SKILL_TEST_DOWNLOADS"))
     end
@@ -158,7 +159,7 @@ class RevdokuSkillInstallTest < Minitest::Test
       assert File.executable?(wrapper), "missing executable wrapper: #{wrapper}"
       stdout, stderr, status = run_wrapper(wrapper, "--help")
       assert status.success?, stderr
-      assert_includes stdout, "upload [PATH]"
+      assert_includes stdout, "upload PATH"
       refute_includes stdout, "--site-mode"
     end
     assert_no_download
@@ -176,7 +177,7 @@ class RevdokuSkillInstallTest < Minitest::Test
     ), "/bin/bash", File.join(CLIENT_ROOT, "install.sh"))
     assert status.success?, "#{stderr}\n#{stdout}"
     skill = File.join(install_root, "skills/revdoku")
-    assert_equal File.binread(CLI), File.binread(File.join(skill, "bin/revdoku"))
+    assert_includes File.read(File.join(skill, "bin/revdoku")), 'exec bash "$SKILL_DIR/scripts/revdoku.sh"'
     expected_version = File.read(File.join(CLIENT_ROOT, PUBLIC_PACKAGE ? "VERSION" : "../../../VERSION")).strip
     assert_equal expected_version, File.read(File.join(@tmp, "config/client_version")).strip
     assert_equal expected_version, File.read(File.join(skill, "VERSION")).strip
@@ -184,8 +185,27 @@ class RevdokuSkillInstallTest < Minitest::Test
     assert_includes File.read(File.join(skill, "LICENSE")), "MIT No Attribution"
     stdout, stderr, status = run_wrapper(File.join(skill, "scripts/revdoku.sh"), "--help")
     assert status.success?, stderr
-    assert_includes stdout, "upload [PATH]"
+    assert_includes stdout, "upload PATH"
       refute_includes stdout, "--site-mode"
+    assert_no_download
+  end
+
+  def test_incomplete_hub_install_does_not_run_a_sibling_executable
+    wrapper, skill = fixture(cli: false)
+    executable(File.join(File.dirname(skill), "bin/revdoku"), "#!/bin/sh\necho wrong-cli\n")
+    stdout, stderr, status = run_wrapper(wrapper, "--help")
+    refute status.success?
+    assert_empty stdout
+    assert_includes stderr, "bundled Revdoku CLI is missing"
+    assert_no_download
+  end
+
+  def test_inspection_and_dry_run_never_download_dependencies
+    wrapper, = fixture
+    %w[--help --version --dry-run].each do |arg|
+      _, stderr, status = run_wrapper(wrapper, arg)
+      assert status.success?, stderr
+    end
     assert_no_download
   end
 
@@ -209,7 +229,12 @@ class RevdokuSkillInstallTest < Minitest::Test
     wrapper = File.join(skill, "scripts/revdoku.sh")
     FileUtils.mkdir_p(File.dirname(wrapper))
     FileUtils.cp(WRAPPER, wrapper)
-    cli_path = File.join(layout == "source" ? package : skill, "bin/revdoku")
+    cli_path = layout == "source" ? File.join(package, "bin/revdoku") : File.join(skill, "scripts/revdoku-cli.sh")
+    FileUtils.mkdir_p(File.join(skill, "bin"))
+    if layout == "source"
+      FileUtils.mkdir_p(File.join(package, "src"))
+      File.write(File.join(package, "src/revdoku.sh.in"), "fixture source marker\n")
+    end
     executable(cli_path, "#!/bin/sh\nprintf '%s\\0' \"$@\"\nexit \"$SKILL_TEST_EXIT\"\n") if cli
     [wrapper, skill]
   end

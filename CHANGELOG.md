@@ -1,5 +1,18 @@
 # Revdoku Changelog
 
+## 1.0.506 — 2026-09-28
+
+- Uploads require an explicit path; use `upload .` for the current folder or
+  `upload PATH --dry-run` to inspect the selection without connecting.
+- Permanent deletion requires an explicit account/bucket preview followed by
+  `--confirm-delete TOKEN`. Confirmations expire after ten minutes and are single-use.
+- Public CLI API/auth requests require https://app.revdoku.com. Storage transfers
+  use approved HTTPS origins and cannot select local files outside the upload manifest.
+- Skill packages contain one readable CLI implementation and a compatibility launcher.
+- Preserve normal Rails storage uploads and macOS parent paths while validating
+  headers and protecting temporary files. Deletion previews use current revision
+  metadata and complete counts; offline upload previews honor the saved destination.
+
 ## 1.0.499 — 2026-09-25
 
 - Filter messages by read status or attachments, and sort newest, oldest, or unread first.

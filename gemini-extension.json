@@ -1,6 +1,6 @@
 {
   "name": "revdoku",
-  "version": "1.0.500",
+  "version": "1.0.506",
   "description": "Cloud storage with an email address for every bucket.",
   "mcpServers": {
     "revdoku": {

@@ -13,7 +13,8 @@ class RevdokuInstallerIntegrityTest < Minitest::Test
   PAYLOADS = {
     "skills/revdoku/SKILL.md" => PUBLIC_PACKAGE ? "skills/revdoku/SKILL.md" : "skill/SKILL.md",
     "skills/revdoku/scripts/revdoku.sh" => PUBLIC_PACKAGE ? "skills/revdoku/scripts/revdoku.sh" : "skill/scripts/revdoku.sh",
-    "skills/revdoku/bin/revdoku" => PUBLIC_PACKAGE ? "skills/revdoku/bin/revdoku" : "bin/revdoku"
+    "skills/revdoku/bin/revdoku" => PUBLIC_PACKAGE ? "skills/revdoku/bin/revdoku" : "skill/bin/revdoku",
+    "skills/revdoku/scripts/revdoku-cli.sh" => PUBLIC_PACKAGE ? "skills/revdoku/scripts/revdoku-cli.sh" : "bin/revdoku"
   }.freeze
 
   def setup
@@ -43,6 +44,8 @@ class RevdokuInstallerIntegrityTest < Minitest::Test
     write(File.join(@commands, "curl"), <<~SH, mode: 0o755)
       #!/bin/sh
       set -eu
+      [ "$1" = '-q' ] || exit 89
+      shift
       [ "$1" = '--proto' ] && [ "$2" = '=https' ] || exit 90
       [ "$3" = '--proto-redir' ] && [ "$4" = '=https' ] || exit 91
       shift 4
@@ -79,10 +82,10 @@ class RevdokuInstallerIntegrityTest < Minitest::Test
       PAYLOADS.each_key do |path|
         destination = File.join(@target, agent, path)
         assert_equal File.binread(File.join(@remote, path)), File.binread(destination)
-        assert_equal(path.end_with?("SKILL.md") ? 0o644 : 0o755, File.stat(destination).mode & 0o777)
+        assert_equal(path.end_with?("SKILL.md", "revdoku-cli.sh") ? 0o644 : 0o755, File.stat(destination).mode & 0o777)
       end
     end
-    assert_equal File.binread(File.join(@remote, "skills/revdoku/bin/revdoku")), File.binread(File.join(@target, "bin/revdoku"))
+    assert_equal File.binread(File.join(@remote, "skills/revdoku/scripts/revdoku-cli.sh")), File.binread(File.join(@target, "bin/revdoku"))
     version_file = File.join(CLIENT_ROOT, PUBLIC_PACKAGE ? "VERSION" : "../../../VERSION")
     assert_equal File.read(version_file).strip, File.read(File.join(@target, "config/client_version")).strip
     assert_empty Dir.children(@scratch)
