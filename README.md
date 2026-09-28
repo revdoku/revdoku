@@ -1,36 +1,23 @@
 # Revdoku
 
-**Cloud storage with an email address for every bucket.** Store documents, data,
-and project files; receive email and attachments in the same bucket; share files
-with authorized people and AI agents. Files and incoming messages stay private
-within your account access permissions.
+**Email inboxes with shared file storage for people and AI agents.** Give an agent
+or project its own inbox to receive messages and attachments. Each inbox is a
+private storage bucket with its own email address, where you can also store and
+share documents, data, and project files with authorized people and agents.
+Revdoku receives email; it does not send messages or replies.
 
-Use the CLI for local files, hosted MCP for AI agents, or the REST API for your own
-integrations. Buckets keep version history so you can review changes and restore
-earlier files.
+Ask your agent to summarize incoming mail, collect invoices and attachments, or
+monitor replies to submissions. Use hosted MCP for AI agents, the CLI for local
+files and inbox access, or the REST API for your own integrations. Buckets keep
+file versions so you can review changes and restore earlier files.
 
 ## Prompt for an AI agent
 
 ```text
-Connect Revdoku so you can store and share my files and read incoming email. Follow https://revdoku.com/llms-install.md, help me sign in through the browser, and verify the connection. Then continue my task, or ask what I want to do.
+Connect Revdoku so you can receive and read email and attachments, and store and share my files. Follow https://revdoku.com/llms-install.md, help me sign in through the browser, and verify the connection. Then continue my task, or ask what I want to do.
 ```
 
-## Store and share files
-
-Use `revdoku upload ./project-files` to save a local folder privately. Read files, inspect history, and
-restore earlier versions through the CLI, MCP, API, or dashboard. All stored files
-can be downloaded from Revdoku at any time.
-
-Share the bucket's dashboard link with people who have account access. Authorize
-each AI connection separately for the intended buckets. A dashboard link does not
-grant access by itself. Agents can work on the same files with locks and revision
-checks to coordinate changes.
-
-See the [storage quick start](./docs.md#keep-files-in-a-private-cloud-bucket),
-[file sharing](./docs.md#share-files-with-people-and-agents), and
-[multiple-agent example](./docs.md#work-with-multiple-ai-agents).
-
-## Receive email in a bucket
+## Receive and read email
 
 Each bucket has its own incoming email address. Bucket creation returns the
 address and receiving state; for an existing bucket, use
@@ -50,6 +37,21 @@ Compare `inbound_email.received_count` to detect new mail, then read
 knowing the address can email the bucket; reading its contents requires access.
 See [incoming email](docs.md#receive-email-and-third-party-verification-messages)
 and the [API contract](api.md#incoming-email-into-a-bucket).
+
+## Store and share files
+
+Use `revdoku upload ./project-files` to save a local folder privately. Read files, inspect history, and
+restore earlier versions through the CLI, MCP, API, or dashboard. All stored files
+can be downloaded from Revdoku at any time.
+
+Share the bucket's dashboard link with people who have account access. Authorize
+each AI connection separately for the intended buckets. A dashboard link does not
+grant access by itself. Agents can work on the same files with locks and revision
+checks to coordinate changes.
+
+See the [storage quick start](./docs.md#keep-files-in-a-private-cloud-bucket),
+[file sharing](./docs.md#share-files-with-people-and-agents), and
+[multiple-agent example](./docs.md#work-with-multiple-ai-agents).
 
 ## Start free
 

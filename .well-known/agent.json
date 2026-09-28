@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments.",
+  "description": "Email inboxes with shared file storage for people and AI agents. Receive and read messages and attachments, and share files through authorized bucket access. Incoming email only.",
   "homepage": "https://revdoku.com/",
   "docs": "https://revdoku.com/docs",
   "pricing": "https://app.revdoku.com/pricing",
@@ -26,9 +26,9 @@
     "source": "https://github.com/revdoku/revdoku/tree/main/skills/revdoku"
   },
   "capabilities": [
-    "Store documents, data, and source files in private cloud buckets",
     "Receive email and attachments at each bucket's incoming address",
     "Read decoded message bodies, original email, and attachments with file tools",
+    "Store documents, data, and source files in private cloud buckets",
     "Share bucket files with authorized people and AI connections",
     "Read, write, and append shared files; coordinate edits with locks and revision checks",
     "Inspect versions and change history; restore earlier files",

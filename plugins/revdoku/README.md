@@ -1,11 +1,14 @@
 # Revdoku — Claude Code plugin
 
-Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments.
-Each bucket holds uploaded files, original messages, decoded email, and attachments.
+Email inboxes with shared file storage for people and AI agents. Receive and read
+messages and attachments, and share files through authorized bucket access.
+Each bucket has its own email address and holds original messages, decoded email,
+attachments, and uploaded files. Revdoku receives email; it does not send messages
+or replies.
 
 The plugin bundles:
 
-- the **Revdoku skill**, which tells Claude how to store, receive email, share, version, lock,
+- the **Revdoku skill**, which tells Claude how to receive and read email, store, share, version, lock,
   and clean up Revdoku **buckets**, with its bundled local CLI, and
 - the hosted **Revdoku MCP server** (`https://app.revdoku.com/mcp`), which exposes
   the `bucket_*` and `revdoku_*` tools. Claude Code handles sign-in through the
@@ -23,16 +26,18 @@ The plugin bundles:
 Reload plugins (or start a new Claude Code session), then run `/mcp` and start
 Revdoku OAuth. A new user can create a Free account in the browser before
 authorizing Claude. Revdoku's bucket tools are then available, and the skill
-helps when you ask to store or manage files in Revdoku, collaborate on an existing
-bucket, or read incoming email and attachments.
+helps when you ask to use an agent mailbox, read incoming email and attachments,
+store or manage files in Revdoku, or collaborate on an existing bucket.
 
 ## Usage
 
 Just ask in natural language, for example:
 
-- "Store this folder in Revdoku."
 - "Give me the incoming email address for my project bucket."
-- "Read the latest email and summarize its attachments in the same bucket."
+- "Summarize the latest emails in my project inbox."
+- "Collect invoices and attachments from this inbox."
+- "Check for replies to my submissions."
+- "Store this folder in Revdoku."
 - "Update the files shared with my other agent."
 
 Share bucket dashboard links with authorized people. A link does not grant access;
