@@ -72,3 +72,21 @@ Share `dashboard_url` with authorized people. A link does not grant access.
 Reconnect the MCP client after updates to refresh its discovered tools.
 See the [API contract](./api.md#incoming-email-into-a-bucket) and
 [storage and mailbox guide](./docs.md).
+
+## Explain the action
+
+For intentional reads, downloads, and changes, AI agents should include an optional
+`reason`: a short explanation of the purpose when known. Do not invent a reason or
+include secrets, file contents, or transcripts. Do not ask the user for a reason
+when the task already explains the purpose; omit it when unknown.
+
+MCP uses `reason`; CLI uses `--reason TEXT`; REST uses a `reason` query parameter
+for reads and a JSON/body field for changes. The limit is 2,000 characters.
+Reasons appear in authorized Timeline and Logs views even with full request
+logging disabled. Change reasons are also saved in version history; read reasons
+belong to access events and never replace a saved version's reason.
+
+```bash
+revdoku read invoices.csv --bucket-id bkt_... --reason "Reconcile September expenses"
+revdoku upload ./approved.csv --bucket-id bkt_... --reason "Store the approved totals"
+```

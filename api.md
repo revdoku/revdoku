@@ -421,6 +421,29 @@ Content-Type: application/json
 Accept: application/json
 ```
 
+### Action reasons
+
+AI clients should include an optional `reason` for intentional reads, downloads,
+and changes, explaining the purpose when known. Omit it when unknown; never invent
+an explanation or include secrets, file contents, or transcripts.
+
+Use `?reason=...` on reads and `"reason": "..."` in JSON or form bodies on changes.
+The field accepts up to 2,000 Unicode characters; whitespace is trimmed and blank
+or null means no reason. Invalid types or oversized values return `INVALID_REASON`.
+MCP exposes the same optional argument; the CLI uses `--reason TEXT`.
+
+Reasons are retained in encrypted audit metadata even when full request logging
+is disabled and are visible under the existing Timeline/Logs permissions and
+retention. Reads record their purpose without changing the file version. Changes
+save the reason on file versions and bucket snapshots, exposed as `reason`.
+Batch writes and path operations accept a per-entry `reason` that overrides the
+shared reason for that file version. Upload sessions retain their reason through
+later finalization. The human save dialog uses **Reason for change (optional)**.
+
+```json
+{"bucket_id":"bkt_...","path":"invoices.csv","reason":"Reconcile September expenses"}
+```
+
 ### Agent Headers
 
 Agent clients should identify themselves. These headers are used for audit logs
@@ -1095,7 +1118,7 @@ newer history; it creates a new latest version from the selected snapshot:
 ```json
 {
   "version_id": "bktrv_...",
-  "comment": "Restore the approved client version"
+  "reason": "Restore the approved client version"
 }
 ```
 

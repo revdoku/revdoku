@@ -32,7 +32,7 @@ UPLOAD_MODE="${REVDOKU_UPLOAD_MODE:-auto}"
 BUCKET_ID="${REVDOKU_BUCKET_ID:-}"
 METADATA_JSON="${REVDOKU_BUCKET_METADATA:-}"
 RESTORE_VERSION_ID="${REVDOKU_RESTORE_VERSION_ID:-}"
-RESTORE_COMMENT="${REVDOKU_RESTORE_COMMENT:-}"
+ACTION_REASON=""
 BROWSER_LOGIN_PATH="${REVDOKU_BROWSER_LOGIN_PATH:-/buckets}"
 APPEND_TEXT_PATH="${REVDOKU_APPEND_TEXT_PATH:-}"
 APPEND_TEXT_CONTENT="${REVDOKU_APPEND_TEXT_CONTENT:-}"
@@ -190,7 +190,7 @@ Usage: revdoku <command> [PATH] [options]
   files                 List files and stored email in a bucket.
   read PATH             Read a bucket file; --output FILE saves it locally.
   versions              Show bucket version history.
-  restore ID            Restore a bucket version; --restore-comment TEXT.
+  restore ID            Restore a bucket version.
   append PATH           Append text; --content TEXT or --content-file FILE.
   archive | unarchive    Manage a bucket.
   delete                Preview permanent deletion; requires explicit account/bucket.
@@ -199,6 +199,8 @@ Usage: revdoku <command> [PATH] [options]
   dashboard             Print the dashboard URL; normal sign-in is required.
 
 Options:
+  --reason TEXT         Optional purpose for this action (up to 2000 characters).
+                        AI agents should explain intentional reads and changes.
   --account-id ID       Select a granted account for this command.
   --client-name NAME    Client person or business (account create-client).
   --bucket-id ID        Target bucket; overrides the local .revdoku binding.
@@ -215,7 +217,7 @@ Options:
 Examples:
   revdoku upload ./project-files
   revdoku files --bucket-id bkt_...
-  revdoku read notes.md --bucket-id bkt_...
+  revdoku read notes.md --bucket-id bkt_... --reason "Review project decisions"
   revdoku dashboard
 
 You can start free. Plans: https://app.revdoku.com/pricing
@@ -293,9 +295,9 @@ while [[ $# -gt 0 ]]; do
       OUTPUT_PATH="$2"
       shift 2
       ;;
-    --restore-comment)
-      [[ $# -ge 2 ]] || die "--restore-comment requires a value"
-      RESTORE_COMMENT="$2"
+    --reason)
+      [[ $# -ge 2 ]] || die "--reason requires a value"
+      ACTION_REASON="$2"
       shift 2
       ;;
     --content)
@@ -442,6 +444,9 @@ elif command -v jq >/dev/null 2>&1; then
 else
   die "requires jq"
 fi
+
+ACTION_REASON="$("$JQ_BIN" -rn --arg reason "$ACTION_REASON" '$reason | gsub("^\\s+|\\s+$"; "")')"
+"$JQ_BIN" -en --arg reason "$ACTION_REASON" '$reason | length <= 2000' >/dev/null || die "--reason must be 2000 characters or fewer"
 
 API_KEY_FROM_CREDENTIALS="false"
 if [[ -z "$API_KEY" && -f "$CREDENTIALS_PATH" ]]; then
@@ -676,6 +681,15 @@ agent_header_args() {
   [[ -n "$AGENT_TASK" ]] && printf "%s\0" "-H" "X-Revdoku-Agent-Task: ${AGENT_TASK}"
 }
 
+reason_request_path() {
+  local path="$1" separator="?"
+  if [[ -n "$ACTION_REASON" ]]; then
+    [[ "$path" != *\?* ]] || separator="&"
+    path="${path}${separator}reason=$("$JQ_BIN" -rn --arg value "$ACTION_REASON" '$value | @uri')"
+  fi
+  printf '%s' "$path"
+}
+
 http_json() {
   local method="$1"
   local path="$2"
@@ -688,6 +702,13 @@ http_json() {
       path="$(account_request_path "$path")"
     else
       payload="$("$JQ_BIN" -c --arg account_id "$ACCOUNT_ID" '. + {account_id: $account_id}' <<<"$payload")"
+    fi
+  fi
+  if [[ -n "$ACTION_REASON" && "$auth" == "true" && "$path" == /api/v1/* ]]; then
+    if [[ "$method" == "GET" || "$method" == "HEAD" ]]; then
+      path="$(reason_request_path "$path")"
+    else
+      payload="$("$JQ_BIN" -c --arg reason "$ACTION_REASON" '. + {reason: $reason}' <<<"$payload")"
     fi
   fi
   local body_file status message code request_id retry_after details_json attempt curl_status delay agent_args=()
@@ -1109,9 +1130,9 @@ list_files() {
 # Follow downloads one hop at a time so each destination is checked before use.
 read_file() {
   [[ -n "$BUCKET_ID" && -n "$READ_FILE_PATH" ]] || die "read requires a bucket and PATH"
-  local encoded url body_file headers status location hop auth_args=()
+  local encoded url body_file headers status location hop value auth_args=()
   encoded="$("$JQ_BIN" -rn --arg s "$READ_FILE_PATH" '$s|@uri')"
-  url="$(api_url "$(account_request_path "/api/v1/buckets/${BUCKET_ID}/files/by_path?path=${encoded}&disposition=inline")")"
+  url="$(api_url "$(reason_request_path "$(account_request_path "/api/v1/buckets/${BUCKET_ID}/files/by_path?path=${encoded}&disposition=inline")")")"
   body_file="$(mktemp)"
   headers="$(mktemp)"
   for hop in 0 1 2 3 4 5; do
@@ -1120,7 +1141,10 @@ read_file() {
       die "download destination is not approved"
     fi
     auth_args=()
-    [[ "$url" != "$BASE_URL/"* ]] || auth_args=(-H "Authorization: Bearer $API_KEY")
+    if [[ "$url" == "$BASE_URL/"* ]]; then
+      auth_args=(-H "Authorization: Bearer $API_KEY")
+      while IFS= read -r -d '' value; do auth_args+=("$value"); done < <(agent_header_args)
+    fi
     if ! status="$(safe_curl -sS --max-time 120 -D "$headers" -o "$body_file" -w "%{http_code}" \
       ${auth_args[@]+"${auth_args[@]}"} -H "Accept: */*" --url "$url")"; then
       rm -f "$body_file" "$headers"
@@ -1162,8 +1186,7 @@ restore_version() {
   [[ -n "$RESTORE_VERSION_ID" ]] || die "restore requires a bucket version id"
   payload="$("$JQ_BIN" -nc \
     --arg version_id "$RESTORE_VERSION_ID" \
-    --arg comment "$RESTORE_COMMENT" \
-    '{version_id:$version_id} + (if $comment != "" then {comment:$comment} else {} end)')"
+    '{version_id:$version_id}')"
   http_json POST "/api/v1/buckets/${BUCKET_ID}/versions/restore" "$payload"
 }
 
@@ -1827,7 +1850,7 @@ bucket_upload_session_client_key() {
     printf "%s" "$BUCKET_UPLOAD_CLIENT_SESSION_KEY"
     return 0
   fi
-  digest="$(printf "%s:%s:%s" "$bucket_id" "$manifest_json" "$delete_missing" | openssl dgst -sha256 -hex | awk '{print $2}')"
+  digest="$(printf "%s:%s:%s:%s" "$bucket_id" "$manifest_json" "$delete_missing" "$ACTION_REASON" | openssl dgst -sha256 -hex | awk '{print $2}')"
   printf "cli:%s:%s" "$bucket_id" "$digest"
 }
 
