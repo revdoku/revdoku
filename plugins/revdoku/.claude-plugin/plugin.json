@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "revdoku",
-  "version": "1.0.506",
-  "description": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments.",
+  "version": "1.0.507",
+  "description": "Email inboxes with shared file storage for people and AI agents. Receive and read messages and attachments, and share files through authorized bucket access. Incoming email only.",
   "author": {
     "name": "Revdoku",
     "url": "https://revdoku.com"
@@ -12,6 +12,9 @@
   "license": "MIT",
   "keywords": [
     "revdoku",
+    "email",
+    "inbox",
+    "mailbox",
     "storage",
     "agents",
     "bucket",

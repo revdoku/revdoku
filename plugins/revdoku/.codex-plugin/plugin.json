@@ -1,7 +1,7 @@
 {
   "name": "revdoku",
-  "version": "1.0.506",
-  "description": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments.",
+  "version": "1.0.507",
+  "description": "Email inboxes with shared file storage for people and AI agents. Receive and read messages and attachments, and share files through authorized bucket access. Incoming email only.",
   "author": {
     "name": "Revdoku",
     "url": "https://revdoku.com"
@@ -13,6 +13,9 @@
   "skills": "./skills/",
   "keywords": [
     "revdoku",
+    "email",
+    "inbox",
+    "mailbox",
     "agents",
     "bucket",
     "files",
@@ -26,8 +29,8 @@
   ],
   "interface": {
     "displayName": "Revdoku",
-    "shortDescription": "Cloud storage with email-receiving buckets.",
-    "longDescription": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments.",
+    "shortDescription": "Email inboxes and shared files for AI agents.",
+    "longDescription": "Email inboxes with shared file storage for people and AI agents. Receive and read messages and attachments, and share files through authorized bucket access. Incoming email only.",
     "developerName": "Revdoku",
     "category": "Coding",
     "capabilities": [
@@ -35,9 +38,9 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Summarize recent emails today",
-      "Check new invoices and receipts in email attachments",
-      "Setup a new bucket with its own email address"
+      "Summarize the latest emails in my project inbox",
+      "Collect invoices and attachments from this inbox",
+      "Set up an inbox for my project with its own email address"
     ],
     "websiteURL": "https://revdoku.com"
   }

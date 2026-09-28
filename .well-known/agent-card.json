@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Cloud storage with an email address for every bucket. Store and share files with authorized people and AI agents; receive email and attachments.",
+  "description": "Email inboxes with shared file storage for people and AI agents. Receive and read messages and attachments, and share files through authorized bucket access. Incoming email only.",
   "url": "https://revdoku.com/",
   "documentation_url": "https://revdoku.com/docs",
   "mcp_url": "https://app.revdoku.com/mcp",
@@ -12,15 +12,15 @@
   },
   "skills": [
     {
-      "id": "private-cloud-storage",
-      "name": "Private cloud storage for AI",
-      "description": "Store, read, write, append, and restore files through authorized account connections. Humans and authorized AI apps collaborate on the same files and folders.",
+      "id": "incoming-email",
+      "name": "Email inboxes for people and AI agents",
+      "description": "Each bucket has an incoming address. Check receiving readiness, compare received_count for new mail, then read message.json, message.eml, and attachments through authorized file access.",
       "account_required": true
     },
     {
-      "id": "incoming-email",
-      "name": "Buckets that receive email",
-      "description": "Each bucket has an incoming address. Check receiving readiness, compare received_count for new mail, then read message.json, message.eml, and attachments through authorized file access.",
+      "id": "private-cloud-storage",
+      "name": "Private cloud storage for AI",
+      "description": "Store, read, write, append, and restore files through authorized account connections. Humans and authorized AI apps collaborate on the same files and folders.",
       "account_required": true
     }
   ]

@@ -1,5 +1,12 @@
 # Revdoku Changelog
 
+## 1.0.507 — 2026-09-28
+
+- Find Revdoku as an email inbox with shared file storage for people and AI agents.
+- Start with examples for summarizing mail, collecting invoices and attachments,
+  and monitoring submission replies. Email guidance appears before file storage.
+- Skill and plugin descriptions make clear that email support is incoming only.
+
 ## 1.0.506 — 2026-09-28
 
 - Uploads require an explicit path; use `upload .` for the current folder or
