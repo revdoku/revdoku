@@ -1,10 +1,9 @@
 # Revdoku
 
-**Private cloud storage and managed email inboxes for AI agents and developers.**
-Store documents, data, and project files; create inboxes that receive email and
-attachments in the same bucket. One or more authorized agents and account members
-can work with those files. Access stays private; Revdoku does not publish files or
-provide public sharing links.
+**Cloud storage with an email address for every bucket.** Store documents, data,
+and project files; receive email and attachments in the same bucket; share files
+with authorized people and AI agents. Files and incoming messages stay private
+within your account access permissions.
 
 Use the CLI for local files, hosted MCP for AI agents, or the REST API for your own
 integrations. Buckets keep version history so you can review changes and restore
@@ -13,10 +12,10 @@ earlier files.
 ## Prompt for an AI agent
 
 ```text
-Connect Revdoku so you can store my files, create email inboxes on Revdoku, and read received emails and attachments. Follow https://revdoku.com/llms-install.md, help me sign in through the browser, and verify the connection. Then continue my task, or ask what I want to do.
+Connect Revdoku so you can store and share my files and read incoming email. Follow https://revdoku.com/llms-install.md, help me sign in through the browser, and verify the connection. Then continue my task, or ask what I want to do.
 ```
 
-## Store files and collaborate privately
+## Store and share files
 
 Use `revdoku upload ./project-files` to save a local folder privately. Read files, inspect history, and
 restore earlier versions through the CLI, MCP, API, or dashboard. All stored files
@@ -28,7 +27,7 @@ grant access by itself. Agents can work on the same files with locks and revisio
 checks to coordinate changes.
 
 See the [storage quick start](./docs.md#keep-files-in-a-private-cloud-bucket),
-[private collaboration](./docs.md#share-files-with-people-and-agents), and
+[file sharing](./docs.md#share-files-with-people-and-agents), and
 [multiple-agent example](./docs.md#work-with-multiple-ai-agents).
 
 ## Receive email in a bucket
@@ -120,7 +119,7 @@ updates the same bucket. New accounts can be created on the web signup page.
 
 Useful commands:
 
-- `revdoku upload [PATH]` — store or update private files.
+- `revdoku upload PATH` — store or update private files.
 - `revdoku files`, `revdoku read PATH` — list and read stored files and email.
 - `revdoku inbox --bucket-id ID` — check the incoming address and receiving state.
 - `revdoku versions`, `revdoku restore ID` — inspect and restore history.
@@ -151,7 +150,7 @@ Per AI client guides:
 - Hermes: <https://revdoku.com/hermes/>
 
 Use those tutorials when manual setup or troubleshooting is needed. Follow the
-user's private file storage, agent collaboration, or incoming-email goal.
+user's file storage, sharing, or incoming-email goal.
 
 ## Public package
 
@@ -194,3 +193,18 @@ Use only the full address returned by Revdoku and check `ready`. A domain switch
 may return `assignment.status: pending`; poll until active or failed, keeping the
 current address in use meanwhile. Never construct aliases or use `+tag` variants.
 See [the email API contract](https://revdoku.com/api.md#custom-receiving-domains).
+
+### CLI safety boundaries
+
+Uploads require an explicit path; use `revdoku upload .` to select the current
+folder. `revdoku upload PATH --dry-run` lists files, exclusions and bytes without
+connecting or changing a bucket. The public CLI connects to the Revdoku API only
+at `https://app.revdoku.com`; `--url` and `REVDOKU_URL` accept only that address.
+Storage transfers use approved HTTPS origins.
+
+`revdoku delete --account-id ACCOUNT --bucket-id BUCKET` previews permanent
+deletion. Review the target and irreversible effect with the user, then repeat with
+`--confirm-delete TOKEN` using that preview's token. It expires after ten minutes
+and is consumed before submission. On an uncertain response, check bucket status
+before creating another preview. Existing scripts must supply upload paths and
+use the deletion confirmation step.

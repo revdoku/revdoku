@@ -35,9 +35,9 @@ ensure_cli() {
   if [ -f "$SCRIPT_DIR/revdoku-cli.sh" ] && [ ! -L "$SCRIPT_DIR/revdoku-cli.sh" ]; then
     return
   fi
-  # Skill installs bundle bin/revdoku; source checkouts keep it in the package.
+  # Source checkouts keep the generated public CLI in the package.
   # A missing executable means the installation is incomplete, not an update.
-  if [ -x "$SKILL_DIR/bin/revdoku" ] || [ -x "$PACKAGE_ROOT/bin/revdoku" ]; then
+  if [ -f "$PACKAGE_ROOT/src/revdoku.sh.in" ] && [ -x "$PACKAGE_ROOT/bin/revdoku" ] && [ ! -L "$PACKAGE_ROOT/bin/revdoku" ]; then
     return
   fi
   die "bundled Revdoku CLI is missing or not executable; reinstall the complete skill with: npx skills add revdoku/revdoku --skill revdoku"
@@ -62,7 +62,7 @@ ensure_jq() {
   JQ_TEMP_DIR=$(mktemp -d "$SKILL_DIR/bin/.jq.XXXXXX")
   tmp="$JQ_TEMP_DIR/jq"
   command -v curl >/dev/null 2>&1 || die "requires curl"
-  curl --proto '=https' --proto-redir '=https' -fsSL "$JQ_BASE_URL/$asset" -o "$tmp"
+  curl -q --proto '=https' --proto-redir '=https' -fsSL "$JQ_BASE_URL/$asset" -o "$tmp"
   actual=$(sha256_file "$tmp")
   if [ "$actual" != "$expected" ]; then
     rm -f "$tmp"
@@ -75,7 +75,11 @@ ensure_jq() {
 }
 
 ensure_cli
-ensure_jq
+offline=false
+for arg in "$@"; do
+  case "$arg" in --dry-run|--help|-h|help|--version|version) offline=true ;; esac
+done
+if [ "$offline" = false ]; then ensure_jq; fi
 
 PATH="$SKILL_DIR/bin:$PATH"
 export PATH
@@ -87,10 +91,6 @@ fi
 
 if [ -f "$SCRIPT_DIR/revdoku-cli.sh" ] && [ ! -L "$SCRIPT_DIR/revdoku-cli.sh" ]; then
   exec bash "$SCRIPT_DIR/revdoku-cli.sh" "$@"
-fi
-
-if [ -x "$SKILL_DIR/bin/revdoku" ]; then
-  exec "$SKILL_DIR/bin/revdoku" "$@"
 fi
 
 exec "$PACKAGE_ROOT/bin/revdoku" "$@"

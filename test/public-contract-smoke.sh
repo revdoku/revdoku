@@ -7,7 +7,7 @@ SOURCE_CLIENT_DIR="$(cd "$TEST_DIR/.." && pwd)"
 if [[ -f "$TEST_DIR/../skills/revdoku/SKILL.md" ]]; then
   # Public GitHub distribution layout.
   DIST_ROOT="$(cd "$TEST_DIR/.." && pwd)"
-  CLI_FILE="$DIST_ROOT/skills/revdoku/bin/revdoku"
+  CLI_FILE="$DIST_ROOT/skills/revdoku/scripts/revdoku-cli.sh"
   SKILL_FILE="$DIST_ROOT/skills/revdoku/SKILL.md"
   API_FILE="$DIST_ROOT/api.md"
   LLMS_INSTALL_FILE="$DIST_ROOT/llms-install.md"
@@ -68,7 +68,7 @@ bash -n "$INSTALL_FILE"
 bash -n "$UNINSTALL_FILE"
 
 
-require_text "$CLI_FILE" "upload [PATH]"
+require_text "$CLI_FILE" "upload PATH"
 require_text "$CLI_FILE" "--account-id ID"
 require_text "$CLI_FILE" "grant TOKEN"
 require_text "$CLI_FILE" "Opens browser sign-in when credentials are missing."
