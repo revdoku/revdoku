@@ -1,0 +1,64 @@
+name: Verify and release CLI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['cli-v*']
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+      - run: npm ci --ignore-scripts --prefix examples
+      - run: npm run check --prefix examples
+      - run: bash test/public-contract-smoke.sh
+      - run: bash cli/package-release.sh "$RUNNER_TEMP/cli-assets"
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/cli-v')
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prepare verified release assets
+        shell: bash
+        run: |
+          test "$GITHUB_REF_NAME" = "cli-v$(tr -d '[:space:]' < VERSION)"
+          bash cli/package-release.sh "$RUNNER_TEMP/cli-assets"
+      - name: Publish standalone CLI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/cli-notes.md" <<'NOTES'
+          Standalone Revdoku CLI for macOS, Linux, and WSL. No AI integration is required.
+
+          Download `install-cli.sh` and run `bash install-cli.sh`. It verifies the executable's SHA-256 checksum before installation. For manual installation, verify `revdoku` against `SHA256SUMS` before running it.
+
+          See [CLI usage](https://github.com/revdoku/revdoku/blob/main/cli/README.md) and [JavaScript / TypeScript examples](https://github.com/revdoku/revdoku/tree/main/examples) for incoming email and storage workflows.
+          NOTES
+          gh release create "$GITHUB_REF_NAME" --verify-tag --draft \
+            --title "Revdoku CLI ${GITHUB_REF_NAME#cli-v}" --notes-file "$RUNNER_TEMP/cli-notes.md" \
+            "$RUNNER_TEMP/cli-assets/revdoku" "$RUNNER_TEMP/cli-assets/install-cli.sh" \
+            "$RUNNER_TEMP/cli-assets/LICENSE" "$RUNNER_TEMP/cli-assets/SHA256SUMS"
+          gh release edit "$GITHUB_REF_NAME" --draft=false --latest

@@ -686,6 +686,13 @@ Example response:
 Creation also returns `inbound_email` with the assigned address and receiving
 state. Check `ready` before using it; see the [email contract](#incoming-email-into-a-bucket).
 
+For safe retries, supply a stable `bucket.metadata._revdoku_client_create_key`
+with the creation request. Reuse it for the same intended inbox, including after
+a lost response. An active bucket with that key is returned instead of creating
+another. A new intended inbox needs a new key. Archived/deleted buckets are not
+active replay targets; restore an archived bucket through its restore action.
+See the runnable [JavaScript and TypeScript examples](https://github.com/revdoku/revdoku/tree/main/examples).
+
 Every bucket response includes `dashboard_url`, a link for authorized people to
 open the bucket in Revdoku. Share this link instead of asking users to handle raw
 `bkt_` IDs. The link itself does not grant access.
@@ -1193,6 +1200,14 @@ session-keyed upload/delete control calls.
 | `409` | `BUCKET_FILE_PATH_INDEX_BACKFILL_PENDING` | Existing bucket file path lookup keys are being prepared; retry after the advertised delay. |
 | `429` | `RATE_LIMIT_EXCEEDED` | General account API rate limit exceeded. |
 | `429` | `UPLOAD_RATE_LIMIT_EXCEEDED` | Upload-control API rate limit exceeded. |
+| `429` | `BUCKET_CREATION_LIMIT_REACHED` | Monthly creation capacity exhausted; stop and report `error.details.resets_at`. |
+
+Monthly bucket creation usage is separate from the active-bucket limit and email
+address rotations. Deleting or archiving a bucket does not refund a creation.
+An authenticated full-account profile exposes `plan_contract.bucket_creation_usage`
+with `used`, `remaining`, `monthly_limit`, and `resets_at`. This allowance is shared
+across a billing group and resets on the UTC calendar month. Do not treat this
+quota error as a short-lived throttle or automatically retry until the reset.
 
 ### Authentication Errors
 

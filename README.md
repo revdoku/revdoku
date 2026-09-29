@@ -17,6 +17,21 @@ creation when explicitly requested and authorized. Permanent deletion requires
 approval for the exact account and bucket. Local CLI use stores Revdoku credentials
 and state on your machine; host tool permissions remain in control.
 
+## For developers
+
+| Start here | What you get |
+| --- | --- |
+| [Standalone CLI](./cli/README.md) | Terminal installation and usage without an AI integration. |
+| [Versioned CLI downloads](https://github.com/revdoku/revdoku/releases/latest) | A portable Bash executable, installer, and SHA-256 checksums. |
+| [JavaScript examples](./examples/javascript/README.md) | Runnable Node.js examples with no runtime dependencies. |
+| [TypeScript examples](./examples/typescript/README.md) | The same workflows with types and shared source. |
+| [API reference](./api.md) · [OpenAPI](./openapi.json) | Authentication, inbox creation, incoming mail, and private storage. |
+
+The examples cover creating an inbox and waiting for receiving readiness,
+reading incoming messages, downloading attachments, uploading and reading files,
+and handling quotas and retries. CLI, examples, skills, and plugins share this
+repository. For agent setup, see [Local AI apps](#local-ai-apps).
+
 ## Prompt for an AI agent
 
 ```text

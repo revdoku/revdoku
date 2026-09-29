@@ -1,5 +1,14 @@
 # Revdoku Changelog
 
+## 1.0.513 — 2026-09-29
+
+- Install the CLI independently from versioned GitHub Release downloads with
+  SHA-256 checksums. Existing skill and plugin installation paths remain available.
+- Run JavaScript or TypeScript examples for inbox creation and readiness, mail
+  reading, attachment downloads, file uploads/readback, and quota handling.
+- Retry inbox creation with a stable key and inspect monthly creation usage through
+  the authenticated account profile. Deletion does not refund creation capacity.
+
 ## 1.0.508 — 2026-09-29
 
 - Skill and plugin descriptions disclose file uploads, changes, bucket deletion,

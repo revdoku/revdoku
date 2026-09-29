@@ -241,6 +241,8 @@ fi
 
 ruby "$TEST_DIR/skill-install-test.rb"
 ruby "$TEST_DIR/installer-integrity-test.rb"
+ruby "$TEST_DIR/standalone-cli-test.rb"
+node --test "$DIST_ROOT/examples/test/client.test.js" "$DIST_ROOT/examples/test/examples.test.js"
 
 # Current public guidance uses the canonical website domain. Historical release
 # notes and private development/compatibility configuration are not guidance.
