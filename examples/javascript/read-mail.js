@@ -8,7 +8,7 @@ await run(async () => {
     const directory = '.revdoku-examples';
     await mkdir(directory, { recursive: true, mode: 0o700 });
     const statePath = join(directory, `${id}-read.json`);
-    let saved = { bucket_id: id, file_ids: [] };
+    let saved = { bucket_id: id };
     try {
         saved = JSON.parse(await readFile(statePath, 'utf8'));
     }
@@ -16,27 +16,30 @@ await run(async () => {
         if (error.code !== 'ENOENT')
             throw error;
     }
-    if (saved.bucket_id !== id || !Array.isArray(saved.file_ids))
+    if (saved.bucket_id !== id || (saved.cursor !== undefined && typeof saved.cursor !== 'string'))
         throw new Error('Mail checkpoint does not match this bucket.');
-    const seen = new Set(saved.file_ids);
-    const inbox = await client.api(`/api/v1/buckets/${id}/inbound_email`);
-    console.log(`Received messages: ${inbox.received_count}`);
-    // A latest-path pointer is not a cursor. Scan every page and remember file IDs.
-    const files = await client.listFiles(id, '_email/');
     let fresh = 0;
-    for (const file of files) {
-        const path = file.path ?? file.relative_path ?? '';
-        if (!path.startsWith('_email/') || !path.endsWith('/message.json') || seen.has(file.id))
-            continue;
-        const mail = JSON.parse((await client.readFile(id, path, 512 * 1024)).toString('utf8'));
-        console.log(JSON.stringify({ file_id: file.id, path, from: mail.from, subject: mail.subject, body_status: mail.body_status, attachments: mail.attachments?.length ?? 0 }));
-        if (process.argv.includes('--show-body'))
-            console.log(mail.body_text ?? '[Body unavailable; read message.eml]');
-        seen.add(file.id);
-        fresh++;
+    for (let page = 0; page < 1000; page++) {
+        const result = await client.listEmails(id, saved.cursor);
+        for (const summary of result.emails) {
+            const mail = await client.readEmail(id, summary.id);
+            console.log(JSON.stringify({ id: mail.id, from: mail.from, subject: mail.subject, body_status: mail.body_status, attachments: mail.attachments?.length ?? 0 }));
+            if (process.argv.includes('--show-body'))
+                console.log(mail.body_text ?? '[Body unavailable; download the original]');
+            fresh++;
+        }
+        if (result.pagination.has_more && saved.cursor === result.pagination.next_cursor)
+            throw new Error('Email pagination did not advance.');
+        saved.cursor = result.pagination.next_cursor;
+        // Commit after processing each page. Repeated work after a crash is possible;
+        // production consumers should make their own side effects idempotent by mail.id.
+        const temporary = `${statePath}.${randomUUID()}.tmp`;
+        await writeFile(temporary, JSON.stringify(saved) + '\n', { flag: 'wx', mode: 0o600 });
+        await rename(temporary, statePath);
+        if (!result.pagination.has_more) {
+            console.log(`New messages read: ${fresh}`);
+            return;
+        }
     }
-    const temporary = `${statePath}.${randomUUID()}.tmp`;
-    await writeFile(temporary, JSON.stringify({ bucket_id: id, file_ids: [...seen] }) + '\n', { flag: 'wx', mode: 0o600 });
-    await rename(temporary, statePath);
-    console.log(`New messages read: ${fresh}`);
+    throw new Error('Example page limit reached; rerun to continue from the checkpoint.');
 });

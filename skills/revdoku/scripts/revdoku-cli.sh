@@ -70,7 +70,16 @@ UPLOAD_MANIFEST=""
 UPLOAD_LOCAL_MAP=""
 SKIPPED_PATHS=""
 READ_FILE_PATH=""
-THREAD_FOR=""
+EMAIL_ID=""
+EMAIL_ATTACHMENT_ID=""
+EMAIL_PURPOSE="open"
+EMAIL_LIMIT="100"
+FILE_OFFSET="0"
+EMAIL_CURSOR=""
+EMAIL_SENDER=""
+EMAIL_SUBJECT=""
+EMAIL_CONVERSATION=""
+EMAIL_READ=""
 OUTPUT_PATH=""
 SHOW_UPLOAD_HINT="false"
 # Project-local binding (.revdoku): remembers the bucket so `revdoku upload`
@@ -175,7 +184,7 @@ detect_agent_name() {
 
 usage() {
   cat <<USAGE
-revdoku — cloud storage with an email address for every bucket.
+revdoku — email inboxes for people and AI agents, with private file storage.
 
 Usage: revdoku <command> [PATH] [options]
 
@@ -187,7 +196,11 @@ Usage: revdoku <command> [PATH] [options]
   login                 Sign in to an existing account in the browser.
   grant TOKEN           Use a one-time connection token from the web app.
   inbox                 Show incoming address, readiness, and email activity.
-  files                 List files and stored email in a bucket.
+  emails                List received emails; returns a resumable polling cursor.
+  email ID              Read decoded email; --background preserves read status.
+  email-status ID       Set shared read status with --read true|false.
+  email-download ID     Download original EML or --attachment-id ID.
+  files                 List bucket files.
   read PATH             Read a bucket file; --output FILE saves it locally.
   versions              Show bucket version history.
   restore ID            Restore a bucket version.
@@ -204,7 +217,12 @@ Options:
   --account-id ID       Select a granted account for this command.
   --client-name NAME    Client person or business (account create-client).
   --bucket-id ID        Target bucket; overrides the local .revdoku binding.
-  --thread-for FILE_ID  With files: list this email's conversation and replies.
+  --cursor CURSOR      --limit N       Email pagination (maximum 100).
+  --sender ADDRESS     --subject TEXT  Email filters.
+  --conversation-id ID                 Filter an email conversation.
+  --read true|false                    Email filter or desired read status.
+  --background                        Read without marking the message read.
+  --attachment-id ID   --output FILE   Download a selected email attachment.
   --title TEXT         --description TEXT     --tag-path LABEL     --metadata JSON
   --dry-run            Preview an upload locally, without network requests.
   --confirm-delete TOKEN  Execute a reviewed deletion preview (expires in 10 minutes).
@@ -275,10 +293,23 @@ while [[ $# -gt 0 ]]; do
       BUCKET_EXPLICIT="true"
       shift 2
       ;;
-    --thread-for)
-      [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "--thread-for requires an email file id"
-      THREAD_FOR="$2"
+    --cursor|--limit|--offset|--sender|--subject|--conversation-id|--read|--attachment-id)
+      [[ $# -ge 2 && -n "$2" ]] || die "$1 requires a value"
+      case "$1" in
+        --cursor) EMAIL_CURSOR="$2" ;;
+        --offset) [[ "$2" =~ ^[0-9]+$ ]] || die "--offset requires a nonnegative integer"; FILE_OFFSET="$2" ;;
+        --limit) [[ "$2" =~ ^[0-9]+$ ]] || die "--limit requires a nonnegative integer"; EMAIL_LIMIT="$2" ;;
+        --sender) EMAIL_SENDER="$2" ;;
+        --subject) EMAIL_SUBJECT="$2" ;;
+        --conversation-id) EMAIL_CONVERSATION="$2" ;;
+        --read) [[ "$2" == "true" || "$2" == "false" ]] || die "--read must be true or false"; EMAIL_READ="$2" ;;
+        --attachment-id) EMAIL_ATTACHMENT_ID="$2" ;;
+      esac
       shift 2
+      ;;
+    --background)
+      EMAIL_PURPOSE="background"
+      shift
       ;;
     --metadata)
       [[ $# -ge 2 ]] || die "--metadata requires a JSON object"
@@ -367,6 +398,10 @@ while [[ $# -gt 0 ]]; do
           st|status)      ACTION="connection_status"; shift ;;
           login)          LOGIN="true"; shift ;;
           grant)          [[ $# -ge 2 && "$2" != -* ]] || die "grant needs the one-time token right after it"; ACTION="exchange_grant"; GRANT_TOKEN="$2"; shift 2 ;;
+          emails)         ACTION="list_emails"; shift ;;
+          email|email-status|email-download)
+            [[ $# -ge 2 && "$2" != -* ]] || die "$1 requires an email id"
+            ACTION="$1"; EMAIL_ID="$2"; shift 2 ;;
           files)          ACTION="list_files"; shift ;;
           inbox)          ACTION="inbox_status"; shift ;;
           read)           [[ $# -ge 2 && "$2" != -* ]] || die "read needs a bucket PATH right after it, e.g. revdoku read notes.md --bucket-id ID"; ACTION="read_file"; READ_FILE_PATH="$2"; shift 2 ;;
@@ -1120,19 +1155,21 @@ list_versions() {
 
 list_files() {
   [[ -n "$BUCKET_ID" ]] || die "files requires --bucket-id (or a remembered selected bucket)"
-  local path="/api/v1/buckets/${BUCKET_ID}/files"
-  if [[ -n "$THREAD_FOR" ]]; then
-    path="${path}?thread_for=$("$JQ_BIN" -rn --arg value "$THREAD_FOR" '$value | @uri')"
-  fi
+  local path="/api/v1/buckets/${BUCKET_ID}/files?limit=${EMAIL_LIMIT}&offset=${FILE_OFFSET}"
   http_json GET "$path" "{}"
 }
 
 # Follow downloads one hop at a time so each destination is checked before use.
 read_file() {
   [[ -n "$BUCKET_ID" && -n "$READ_FILE_PATH" ]] || die "read requires a bucket and PATH"
-  local encoded url body_file headers status location hop value auth_args=()
+  local encoded url
   encoded="$("$JQ_BIN" -rn --arg s "$READ_FILE_PATH" '$s|@uri')"
   url="$(api_url "$(reason_request_path "$(account_request_path "/api/v1/buckets/${BUCKET_ID}/files/by_path?path=${encoded}&disposition=inline")")")"
+  download_file_url "$url" "$READ_FILE_PATH"
+}
+
+download_file_url() {
+  local url="$1" label="$2" body_file headers status location hop value auth_args=()
   body_file="$(mktemp)"
   headers="$(mktemp)"
   for hop in 0 1 2 3 4 5; do
@@ -1163,7 +1200,7 @@ read_file() {
             rm -f "$body_file"
             return 1
           fi
-          echo "Saved $READ_FILE_PATH to $OUTPUT_PATH" >&2
+          echo "Saved $label to $OUTPUT_PATH" >&2
         else
           cat "$body_file"
         fi
@@ -1178,6 +1215,42 @@ read_file() {
   done
   rm -f "$body_file" "$headers"
   die "too many file download redirects"
+}
+
+email_command() {
+  [[ -n "$BUCKET_ID" ]] || die "email commands require --bucket-id or a bound folder"
+  local path="/api/v1/buckets/${BUCKET_ID}/emails" query response url filename
+  if [[ "$ACTION" == "list_emails" ]]; then
+    [[ "$EMAIL_LIMIT" =~ ^[0-9]+$ ]] || die "--limit must be an integer"
+    query="$("$JQ_BIN" -rn --arg limit "$EMAIL_LIMIT" --arg cursor "$EMAIL_CURSOR" --arg sender "$EMAIL_SENDER" \
+      --arg subject "$EMAIL_SUBJECT" --arg conversation_id "$EMAIL_CONVERSATION" --arg read "$EMAIL_READ" \
+      '{limit:$limit,cursor:$cursor,sender:$sender,subject:$subject,conversation_id:$conversation_id,read:$read} | to_entries | map(select(.value != "") | (.key + "=" + (.value | @uri))) | join("&")')"
+    http_json GET "${path}?${query}" "{}"
+    return
+  fi
+  [[ "$EMAIL_ID" =~ ^eml_[A-Za-z0-9]+$ ]] || die "invalid email id"
+  path="${path}/${EMAIL_ID}"
+  case "$ACTION" in
+    email)
+      http_json GET "${path}?purpose=${EMAIL_PURPOSE}" "{}"
+      ;;
+    email-status)
+      [[ -n "$EMAIL_READ" ]] || die "email-status requires --read true|false"
+      http_json PATCH "$path" "$("$JQ_BIN" -nc --argjson read "$EMAIL_READ" '{read:$read}')"
+      ;;
+    email-download)
+      if [[ -n "$EMAIL_ATTACHMENT_ID" ]]; then
+        [[ "$EMAIL_ATTACHMENT_ID" =~ ^df_[A-Za-z0-9]+$ ]] || die "invalid attachment id"
+        path="${path}/attachments/${EMAIL_ATTACHMENT_ID}"
+      else
+        path="${path}/raw"
+      fi
+      response="$(http_json GET "${path}?purpose=${EMAIL_PURPOSE}" "{}")"
+      url="$("$JQ_BIN" -er '.data.download.url' <<<"$response")"
+      filename="$("$JQ_BIN" -r '.data.download.filename' <<<"$response")"
+      download_file_url "$url" "$filename"
+      ;;
+  esac
 }
 
 restore_version() {
@@ -1433,13 +1506,17 @@ maybe_notify_update() {
 [[ "$DRY_RUN" == "true" || "$ACTION" == "delete_bucket" ]] || maybe_notify_update || true
 
 case "$ACTION" in
+  list_emails|email|email-status|email-download)
+    email_command
+    exit 0
+    ;;
   list_buckets)
     list_buckets
     exit 0
     ;;
   inbox_status)
     [[ -n "$BUCKET_ID" ]] || die "inbox requires --bucket-id or a bound folder"
-    http_json GET "/api/v1/buckets/${BUCKET_ID}/inbound_email" "{}"
+    http_json GET "/api/v1/buckets/${BUCKET_ID}/email" "{}"
     exit 0
     ;;
   list_files)
@@ -1685,8 +1762,9 @@ bucket_payload() {
     --argjson metadata "$metadata" \
     --argjson tag_paths "$tag_paths" \
     '{
+      idempotency_key: $client_create_key,
       bucket: (
-        {title: $title, metadata: ($metadata + {"_revdoku_client_create_key": $client_create_key})}
+        {title: $title, metadata: $metadata}
         + (if $description != "" then {description: $description} else {} end)
         + (if ($tag_paths | length) > 0 then {tag_paths: $tag_paths} else {} end)
       )

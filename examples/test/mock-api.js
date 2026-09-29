@@ -6,8 +6,8 @@ let upload;
 const folder = '_email/inbox/sender/example/delivery/';
 const mail = { subject: 'Fixture message', from: 'sender@example.test', body_text: 'Fixture body',
   body_status: 'complete', received_at: '2026-09-29T00:00:00Z',
-  attachments: [{ path: 'attachments/note.txt', original_filename: '../untrusted.txt', size_bytes: 5 }] };
-const ok = data => Response.json({ data });
+  attachments: [{ id: 'df_note', filename: 'note.txt', size_bytes: 5 }] };
+const ok = data => Response.json({ success: true, data });
 
 globalThis.fetch = async (input, options = {}) => {
   const url = new URL(input);
@@ -19,11 +19,18 @@ globalThis.fetch = async (input, options = {}) => {
     if ((options.method ?? 'GET') === 'GET') assert.equal(url.searchParams.get('account_id'), 'acct_fixture');
     else assert.equal(body.account_id, 'acct_fixture');
     if (url.pathname === '/api/v1/buckets') {
-      assert.equal(body.bucket.metadata._revdoku_client_create_key, 'fixture-create-v1');
+      assert.equal(body.idempotency_key, 'fixture-create-v1');
       return ok({ bucket: { id: 'bkt_fixture', title: body.bucket.title, dashboard_url: 'https://app.revdoku.com/buckets/bkt_fixture' } });
     }
-    if (url.pathname.endsWith('/inbound_email')) return ok({ address: 'fixture@revdokumail.com',
+    if (url.pathname.endsWith('/email')) return ok({ address: 'fixture@revdokumail.com',
       ready: ++readinessChecks > (process.env.FIXTURE_PENDING ? 1 : 0), blocked_reason: 'routing_pending', received_count: 2 });
+    if (url.pathname.endsWith('/emails')) {
+      const cursor = url.searchParams.get('cursor');
+      return ok({ emails: cursor === 'end' ? [] : [{ id: cursor ? 'eml_second' : 'eml_first' }],
+        pagination: { has_more: !cursor, next_cursor: cursor ? 'end' : 'next' } });
+    }
+    if (url.pathname.endsWith('/attachments/df_note')) return ok({ download: { url: 'https://storage.example/file?path=attachments/note.txt', filename: 'note.txt', authentication: 'none' } });
+    if (url.pathname.includes('/emails/eml_')) return ok({ email: { id: url.pathname.split('/').at(-1), ...mail } });
     if (url.pathname.endsWith('/files/by_path')) return ok({ url: `https://storage.example/file?path=${encodeURIComponent(url.searchParams.get('path'))}` });
     if (url.pathname.endsWith('/files') && options.method === 'POST') {
       assert.equal(body.signed_blob_id, 'fixture-signed-id'); assert.equal(body.path, 'project/notes.txt'); return ok({ file: { id: 'file_uploaded' } });
@@ -47,7 +54,7 @@ globalThis.fetch = async (input, options = {}) => {
     if (url.pathname === '/upload' && options.method === 'PUT') { upload = Buffer.from(options.body); return new Response(null); }
     const path = url.searchParams.get('path');
     if (path.endsWith('/message.json')) return Response.json(mail);
-    if (path.endsWith('/attachments/note.txt')) return new Response('hello');
+    if (path.endsWith('attachments/note.txt')) return new Response('hello');
     if (path === 'project/notes.txt' && upload) return new Response(upload);
   }
   throw new Error(`Unexpected offline request: ${url.origin}${url.pathname}`);

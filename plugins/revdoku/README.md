@@ -3,8 +3,7 @@
 Email inboxes with shared file storage for people and AI agents. Receive and read
 messages and attachments, and share files through authorized bucket access.
 Each bucket has its own email address and holds original messages, decoded email,
-attachments, and uploaded files. Revdoku receives email; it does not send messages
-or replies.
+attachments, and uploaded files. Email sending: **Coming soon**.
 
 The skill can upload selected local files, write and restore stored files, archive
 buckets, permanently delete approved buckets, and create explicitly requested

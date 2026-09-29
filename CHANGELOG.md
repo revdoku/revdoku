@@ -1,5 +1,17 @@
 # Revdoku Changelog
 
+## 1.0.516 — 2026-09-30
+
+- Read emails, conversations, originals and attachments through the email API,
+  MCP and CLI. Email settings use `email` across clients and examples.
+- Use consistent success and error responses, arrival cursors and retry guidance
+  in the API and runnable JavaScript/TypeScript examples.
+- Navigate with Buckets and Analytics in the header and switch accounts from
+  the sidebar. API connections come first in the Connect menu.
+- Keep sensitive file and email metadata protected with account keys on HIPAA
+  and high-security accounts; ordinary accounts retain queryable metadata.
+- Account settings have a separate Subscription tab for billing and usage.
+
 ## 1.0.513 — 2026-09-29
 
 - Install the CLI independently from versioned GitHub Release downloads with

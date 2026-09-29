@@ -6,7 +6,7 @@ import { basename, resolve } from 'node:path';
 const API_ORIGIN = 'https://app.revdoku.com';
 const MAX_BYTES = 64 * 1024 * 1024;
 type JsonObject = Record<string, unknown>;
-type Fetch = typeof fetch;
+type ErrorDetails = JsonObject | { field: string; message: string }[];
 
 export interface Inbox {
   address: string | null;
@@ -15,17 +15,19 @@ export interface Inbox {
   received_count: number;
   last_received_path: string | null;
 }
-export interface Bucket { id: string; title: string; dashboard_url: string; inbound_email: Inbox }
+export interface Bucket { id: string; title: string; dashboard_url: string; email: Inbox }
 export interface StoredFile { id: string; path: string; relative_path?: string }
 export interface Mail {
-  subject: string | null; from: string | null; body_text: string | null;
-  body_status: string; received_at: string;
-  attachments: { path: string; original_filename: string | null; size_bytes: number }[];
+  id: string; conversation_id: string; subject: string | null; from: string | null;
+  body_text?: string | null; body_status: string; received_at: string; read: boolean;
+  attachments?: { id: string; filename: string; size_bytes: number }[];
 }
+export interface EmailPage { emails: Mail[]; pagination: { has_more: boolean; next_cursor: string } }
+export interface Download { url: string; authentication: 'none' | 'bearer'; filename: string }
 
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string,
-    public details: JsonObject = {}, public requestId?: string) { super(message); }
+    public details: ErrorDetails = {}, public requestId?: string) { super(message); }
 }
 
 export function requiredEnv(name: string): string {
@@ -43,31 +45,25 @@ export function safePath(value: string): string {
   }
   return value;
 }
-export function attachmentPath(messagePath: string, attachment: string): string {
-  safePath(messagePath); safePath(attachment);
-  if (!messagePath.startsWith('_email/') || !messagePath.endsWith('/message.json') || !attachment.startsWith('attachments/')) {
-    throw new Error('Attachment must belong to the selected message folder.');
-  }
-  return messagePath.slice(0, -'message.json'.length) + attachment;
+export function emailId(value: string): string {
+  if (!/^eml_[A-Za-z0-9]+$/.test(value)) throw new Error('Expected an eml_ email identifier.');
+  return value;
 }
 
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
-export function retryDelay(value: string | null, attempt: number, now = Date.now()): number {
+export function retryDelay(value: string | null, attempt: number): number {
   if (value) {
     const seconds = Number(value);
-    const delay = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(value) - now;
+    const delay = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(value) - Date.now();
     if (Number.isFinite(delay)) return Math.max(0, delay);
   }
   return Math.min(500 * 2 ** attempt, 5000) + Math.floor(Math.random() * 250);
 }
 
-// Dependency injection is for offline tests; credentials only go to API_ORIGIN.
-export function createClient(options: { apiKey?: string; accountId?: string; fetch?: Fetch; sleep?: typeof sleep } = {}) {
-  const apiKey = options.apiKey ?? requiredEnv('REVDOKU_API_KEY');
-  const accountId = options.accountId ?? process.env.REVDOKU_ACCOUNT_ID?.trim();
+export function createClient() {
+  const apiKey = requiredEnv('REVDOKU_API_KEY');
+  const accountId = process.env.REVDOKU_ACCOUNT_ID?.trim();
   if (accountId && !/^acct_[A-Za-z0-9]+$/.test(accountId)) throw new Error('Invalid account identifier.');
-  const transport = options.fetch ?? fetch;
-  const pause = options.sleep ?? sleep;
 
   async function api<T>(path: string, opts: { method?: string; body?: unknown; retrySafe?: boolean; timeoutMs?: number } = {}): Promise<T> {
     if (!path.startsWith('/api/v1/')) throw new Error('Expected an API-relative path.');
@@ -82,7 +78,7 @@ export function createClient(options: { apiKey?: string; accountId?: string; fet
     for (let attempt = 0; ; attempt++) {
       let response: Response;
       try {
-        response = await transport(url, {
+        response = await fetch(url, {
           method, redirect: 'error', signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
           headers: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json',
             'Content-Type': 'application/json' },
@@ -91,22 +87,23 @@ export function createClient(options: { apiKey?: string; accountId?: string; fet
       } catch {
         // A write may have committed before a lost response. Retry only when safe.
         if (!canRetry || attempt >= 3 || Date.now() + 1000 >= deadline) throw new Error('Request failed or timed out. Check the result before repeating a write.');
-        await pause(500); continue;
+        await sleep(500); continue;
       }
-      const payload = await response.json().catch(() => ({})) as { data?: T; error?: { code?: string; message?: string; details?: JsonObject; request_id?: string } };
+      const payload = await response.json().catch(() => ({})) as { success?: boolean; data?: T; error?: { code?: string; message?: string; details?: ErrorDetails; request_id?: string } };
       if (response.ok) {
-        if (payload.data === undefined) throw new Error('API response did not contain data.');
+        if (payload.success !== true || payload.data === undefined || payload.error !== undefined) throw new Error('Invalid API success response.');
         return payload.data;
       }
       const error = new ApiError(response.status, payload.error?.code ?? 'HTTP_ERROR',
         payload.error?.message ?? `HTTP ${response.status}`, payload.error?.details, payload.error?.request_id);
-      const monthlyQuota = error.code === 'BUCKET_CREATION_LIMIT_REACHED' || typeof error.details.resets_at === 'string';
+      const details = Array.isArray(error.details) ? {} : error.details;
+      const monthlyQuota = error.code === 'BUCKET_CREATION_LIMIT_REACHED' || typeof details.resets_at === 'string';
       const transient = response.status === 429 || [502, 503, 504].includes(response.status) ||
         (response.status === 409 && ['DATABASE_BUSY_RETRY', 'BUCKET_FILE_PATH_INDEX_BACKFILL_PENDING'].includes(error.code));
-      const retryAfter = response.headers.get('Retry-After') ?? (error.details.retry_after == null ? null : String(error.details.retry_after));
+      const retryAfter = response.headers.get('Retry-After') ?? (details.retry_after == null ? null : String(details.retry_after));
       const delay = retryDelay(retryAfter, attempt);
       if (!canRetry || monthlyQuota || !transient || attempt >= 3 || Date.now() + delay >= deadline) throw error;
-      await pause(delay);
+      await sleep(delay);
     }
   }
 
@@ -116,7 +113,7 @@ export function createClient(options: { apiKey?: string; accountId?: string; fet
       if (target.protocol !== 'https:' || target.username || target.password) throw new Error('Storage URL must use HTTPS without embedded credentials.');
       const headers = new Headers(init.headers);
       if (headers.has('Authorization') || headers.has('Cookie')) throw new Error('Credentials must not be sent to object storage.');
-      const response = await transport(target, { ...init, headers, redirect: 'manual', signal: AbortSignal.timeout(30000) });
+      const response = await fetch(target, { ...init, headers, redirect: 'manual', signal: AbortSignal.timeout(30000) });
       if ([301, 302, 303, 307, 308].includes(response.status) && (init.method ?? 'GET') === 'GET') {
         const location = response.headers.get('Location');
         await response.body?.cancel();
@@ -133,6 +130,10 @@ export function createClient(options: { apiKey?: string; accountId?: string; fet
     const query = new URLSearchParams({ path: safePath(path), content_url: '1' });
     const { url } = await api<{ url: string }>(`/api/v1/buckets/${bucketId(id)}/files/by_path?${query}`);
     const response = await storage(url);
+    return readBytes(response, maxBytes);
+  }
+
+  async function readBytes(response: Response, maxBytes = MAX_BYTES): Promise<Buffer> {
     if (Number(response.headers.get('Content-Length')) > maxBytes) { await response.body?.cancel(); throw new Error('File exceeds the example download size limit.'); }
     const reader = response.body?.getReader();
     if (!reader) throw new Error('Storage response has no body.');
@@ -146,6 +147,34 @@ export function createClient(options: { apiKey?: string; accountId?: string; fet
       }
     } finally { await reader.cancel(); }
     return Buffer.concat(chunks);
+  }
+
+  async function listEmails(id: string, cursor?: string): Promise<EmailPage> {
+    const params = new URLSearchParams({ limit: '100', ...(cursor ? { cursor } : {}) });
+    return api<EmailPage>(`/api/v1/buckets/${bucketId(id)}/emails?${params}`);
+  }
+
+  async function readEmail(id: string, messageId: string, background = false): Promise<Mail> {
+    const { email } = await api<{ email: Mail }>(`/api/v1/buckets/${bucketId(id)}/emails/${emailId(messageId)}?purpose=${background ? 'background' : 'open'}`);
+    return email;
+  }
+
+  async function downloadEmail(id: string, messageId: string, attachmentId?: string): Promise<Buffer> {
+    if (attachmentId && !/^df_[A-Za-z0-9]+$/.test(attachmentId)) throw new Error('Invalid attachment identifier.');
+    const path = `/api/v1/buckets/${bucketId(id)}/emails/${emailId(messageId)}/${attachmentId ? `attachments/${attachmentId}` : 'raw'}`;
+    const { download } = await api<{ download: Download }>(path);
+    let response: Response;
+    if (download.authentication === 'bearer') {
+      const url = new URL(download.url);
+      if (url.origin !== API_ORIGIN || url.pathname !== path || url.username || url.password) throw new Error('Invalid authenticated download URL.');
+      if (accountId) url.searchParams.set('account_id', accountId);
+      response = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(30000),
+        headers: { Authorization: `Bearer ${apiKey}` } });
+      if (!response.ok) throw new Error(`Download returned HTTP ${response.status}.`);
+    } else if (download.authentication === 'none') {
+      response = await storage(download.url);
+    } else throw new Error('Unknown download authentication mode.');
+    return readBytes(response);
   }
 
   async function listFiles(id: string, query = ''): Promise<StoredFile[]> {
@@ -164,10 +193,10 @@ export function createClient(options: { apiKey?: string; accountId?: string; fet
   async function waitForInbox(id: string, timeoutMs = 120000): Promise<Inbox> {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
-      const inbox = await api<Inbox>(`/api/v1/buckets/${bucketId(id)}/inbound_email`, { timeoutMs: Math.min(30000, deadline - Date.now()) });
+      const inbox = await api<Inbox>(`/api/v1/buckets/${bucketId(id)}/email`, { timeoutMs: Math.min(30000, deadline - Date.now()) });
       if (inbox.ready) return inbox;
       if (inbox.blocked_reason && inbox.blocked_reason !== 'routing_pending') throw new Error(`Receiving is blocked: ${inbox.blocked_reason}. Check inbox settings.`);
-      await pause(Math.min(2000, Math.max(0, deadline - Date.now())));
+      await sleep(Math.min(2000, Math.max(0, deadline - Date.now())));
     }
     throw new Error('Receiving is still pending. Re-run with the same creation key or check the existing inbox.');
   }
@@ -183,7 +212,7 @@ export function createClient(options: { apiKey?: string; accountId?: string; fet
     await api(`/api/v1/buckets/${id}/files`, { method: 'POST', body: { path, signed_blob_id: descriptor.signed_id } });
   }
 
-  return { api, readFile, listFiles, waitForInbox, uploadFile };
+  return { api, readFile, listFiles, listEmails, readEmail, downloadEmail, waitForInbox, uploadFile };
 }
 
 export async function saveAttachment(directory: string, index: number, attachment: string, bytes: Buffer): Promise<string> {
@@ -200,7 +229,7 @@ export async function run(main: () => Promise<void>): Promise<void> {
   catch (error) {
     if (error instanceof ApiError) {
       console.error(`${error.code}: ${error.message}`);
-      if (error.details.resets_at) console.error(`Allowance resets at ${error.details.resets_at}.`);
+      if (!Array.isArray(error.details) && error.details.resets_at) console.error(`Allowance resets at ${error.details.resets_at}.`);
       if (error.requestId) console.error(`Support request ID: ${error.requestId}`);
     } else console.error(error instanceof Error ? error.message : 'Example failed.');
     process.exitCode = 1;

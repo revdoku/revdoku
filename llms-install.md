@@ -1,8 +1,8 @@
 # Revdoku agent setup
 
-Revdoku is cloud storage with an email address for every bucket. Connect to store
-and share files with authorized people and agents, and receive email and attachments.
-Verify access, then complete the requested file or incoming-email task.
+Revdoku provides email inboxes for people and AI agents, with private file storage.
+Connect to create inboxes, read messages and attachments, and store additional files.
+Email sending: Coming soon. Verify access, then complete the requested task.
 
 Prefer local shell and filesystem access; use
 hosted MCP only when local access is unavailable.
@@ -10,7 +10,7 @@ hosted MCP only when local access is unavailable.
 ## Public prompt
 
 ```text
-Connect Revdoku so you can store and share my files and read incoming email. Follow https://revdoku.com/llms-install.md, help me sign in through the browser, and verify the connection. Then continue my task, or ask what I want to do.
+Connect Revdoku so you can manage my email inboxes, read messages and attachments, and store files. Follow https://revdoku.com/llms-install.md, help me sign in through the browser, and verify the connection. Then continue my task, or ask what I want to do.
 ```
 
 ## Agent rules
@@ -65,9 +65,10 @@ Endpoint: `https://app.revdoku.com/mcp`
 
 Authenticate with OAuth before calling tools. Then call `revdoku_status`, create
 or choose a private bucket, and read or write the requested files. Bucket creation
-returns its incoming email address and receiving state. For an existing bucket, use `bucket_get(include_inbound_email: true)` with write access.
-Check `ready`, compare `received_count` for new mail, and read
-`last_received_path + "message.json"` with `bucket_file_read`; `message.md` provides readable Markdown.
+returns its incoming email address and receiving state. For an existing bucket, use `bucket_get(include_email: true)` with write access.
+Check `ready`, then use `bucket_email_list` with a saved `pagination.next_cursor`
+to poll. Read `eml_` IDs with `bucket_email_get`; download attachments or the original
+with `bucket_email_download`.
 If not ready, explain `blocked_reason`; do not assume a paused or unknown inbox
 can receive. Read effective size/count/data limits from the service. Personal
 notification frequency is managed in Account Settings → Notifications.
