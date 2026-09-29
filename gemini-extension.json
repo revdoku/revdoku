@@ -1,6 +1,6 @@
 {
   "name": "revdoku",
-  "version": "1.0.513",
+  "version": "1.0.514",
   "description": "Email inboxes and shared cloud files for people and AI agents. Receive and read messages and attachments, upload selected files, and write, restore, or organize stored files. Supports bucket archiving, permanent deletion, and agency client account creation when explicitly requested and authorized. Email is receive-only; storage supports reads and writes.",
   "mcpServers": {
     "revdoku": {
