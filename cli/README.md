@@ -1,7 +1,7 @@
 # Revdoku CLI
 
-Use Revdoku from your terminal or automation to store files and read incoming
-email. This standalone installation adds one `revdoku` executable. It does not
+Use Revdoku from your terminal or automation to read email and attachments
+and store additional files. This standalone installation adds one `revdoku` executable. It does not
 install skills, plugins, or AI app configuration.
 
 ## Install
@@ -53,13 +53,16 @@ revdoku status
 revdoku ls
 revdoku inbox --bucket-id bkt_...
 revdoku files --bucket-id bkt_...
-revdoku read '_email/inbox/.../message.json' --bucket-id bkt_...
+revdoku emails --bucket-id bkt_...
+revdoku email eml_... --bucket-id bkt_...
+revdoku email-status eml_... --bucket-id bkt_... --read false
+revdoku email-download eml_... --bucket-id bkt_... --attachment-id df_... --output attachment.pdf
 revdoku upload ./project-files --bucket-id bkt_...
 ```
 
-Use a returned file path rather than constructing an email path yourself.
+Use returned email and attachment IDs for message operations; use paths for file operations.
 `inbox` reports the receiving address, readiness, and message activity. Revdoku
-receives email and attachments; sending and replies are unavailable.
+receives email and attachments. Email sending: **Coming soon**.
 
 For automation, set `REVDOKU_API_KEY` through your secret manager or environment.
 Use `--account-id acct_...` when selecting another authorized account. Credentials

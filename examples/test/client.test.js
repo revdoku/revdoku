@@ -1,16 +1,56 @@
-import test from 'node:test';
+import test, { beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ApiError, attachmentPath, createClient, retryDelay, saveAttachment } from '../javascript/client.js';
+import { setTimeout } from 'node:timers';
+import { ApiError, emailId, createClient, retryDelay, saveAttachment } from '../javascript/client.js';
 
-const ok = data => Response.json({ data });
-const client = (fetch, extra = {}) => createClient({ apiKey: 'test-only-secret', accountId: '', fetch, sleep: async () => {}, ...extra });
+const ok = data => Response.json({ success: true, data });
+beforeEach(t => {
+  const previous = { REVDOKU_API_KEY: process.env.REVDOKU_API_KEY, REVDOKU_ACCOUNT_ID: process.env.REVDOKU_ACCOUNT_ID };
+  process.env.REVDOKU_API_KEY = 'test-only-secret';
+  delete process.env.REVDOKU_ACCOUNT_ID;
+  t.after(() => {
+    for (const [name, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  });
+  // Test-only replacements; the public client uses native fetch and timers.
+  t.mock.method(globalThis, 'fetch', async () => { throw new Error('Unexpected offline request'); });
+  t.mock.method(globalThis, 'setTimeout', (callback, _delay, ...args) => setTimeout(callback, 0, ...args));
+});
+
+const client = fetch => {
+  globalThis.fetch.mock.mockImplementation(fetch);
+  return createClient();
+};
+
+test('preserves validation details and request IDs without retrying invalid input', async () => {
+  let calls = 0;
+  const details = [{ field: 'description', message: 'is too long' }];
+  const api = client(async () => { calls++; return Response.json({ success: false,
+    error: { code: 'VALIDATION_ERROR', message: 'Validation failed', request_id: 'request-invalid', details } }, { status: 422 }); });
+  await assert.rejects(api.api('/api/v1/buckets'), error => {
+    assert.equal(error.code, 'VALIDATION_ERROR');
+    assert.equal(error.requestId, 'request-invalid');
+    assert.deepEqual(error.details, details);
+    return true;
+  });
+  assert.equal(calls, 1);
+});
+
+test('rejects contradictory and missing success envelopes', async () => {
+  for (const payload of [{ data: {} }, { success: false, data: {} }, { success: true, data: {}, error: {} }]) {
+    await assert.rejects(client(async () => Response.json(payload)).api('/api/v1/status'), /Invalid API success response/);
+  }
+});
 
 test('selects authorized accounts in every query or write body', async () => {
   const calls = [];
-  const api = client(async (url, options) => { calls.push([url, options]); return ok({}); }, { accountId: 'acct_client' });
+  process.env.REVDOKU_ACCOUNT_ID = 'acct_client';
+  const api = client(async (url, options) => { calls.push([url, options]); return ok({}); });
   await api.api('/api/v1/status');
   await api.api('/api/v1/buckets', { method: 'POST', body: { bucket: { title: 'Inbox' } } });
   assert.equal(calls[0][0].searchParams.get('account_id'), 'acct_client');
@@ -18,14 +58,14 @@ test('selects authorized accounts in every query or write body', async () => {
   assert.equal(calls[0][1].redirect, 'error');
 });
 
-test('retries temporary throttling and honors Retry-After', async () => {
-  let calls = 0; const waits = [];
+test('retries temporary throttling and honors Retry-After', async t => {
+  let calls = 0;
   const api = client(async () => ++calls === 1
-    ? Response.json({ error: { code: 'RATE_LIMIT_EXCEEDED' } }, { status: 429, headers: { 'Retry-After': '2' } }) : ok({ done: true }),
-  { sleep: async ms => waits.push(ms) });
+    ? Response.json({ error: { code: 'RATE_LIMIT_EXCEEDED' } }, { status: 429, headers: { 'Retry-After': '2' } }) : ok({ done: true }));
   assert.deepEqual(await api.api('/api/v1/status'), { done: true });
-  assert.deepEqual(waits, [2000]);
-  assert.equal(retryDelay('Thu, 01 Jan 1970 00:00:03 GMT', 0, 1000), 2000);
+  assert.deepEqual(globalThis.setTimeout.mock.calls.map(call => call.arguments[1]), [2000]);
+  t.mock.method(Date, 'now', () => 1000);
+  assert.equal(retryDelay('Thu, 01 Jan 1970 00:00:03 GMT', 0), 2000);
 });
 
 test('monthly quotas stop immediately and retain structured reset information', async () => {
@@ -99,8 +139,8 @@ test('rejects unsafe storage URLs and credential-bearing storage headers', async
 test('keeps attachment downloads in their selected folder and never overwrites', async () => {
   const folder = await mkdtemp(join(tmpdir(), 'revdoku-attachment-'));
   try {
-    assert.equal(attachmentPath('_email/inbox/demo/message.json', 'attachments/a.txt'), '_email/inbox/demo/attachments/a.txt');
-    for (const path of ['../secret', 'attachments/../../secret', '/etc/passwd', 'attachments\\secret']) assert.throws(() => attachmentPath('_email/inbox/demo/message.json', path));
+    assert.equal(emailId('eml_example'), 'eml_example');
+    for (const id of ['../secret', '/etc/passwd', 'eml_bad/path']) assert.throws(() => emailId(id));
     const target = await saveAttachment(folder, 0, 'attachments/a.txt', Buffer.from('original'));
     await assert.rejects(saveAttachment(folder, 0, 'attachments/a.txt', Buffer.from('overwrite')), { code: 'EEXIST' });
     assert.equal(await readFile(target, 'utf8'), 'original');

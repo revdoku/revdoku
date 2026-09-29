@@ -22,7 +22,7 @@ test('all five command-line examples run offline, with pagination and persisted 
     const first = success(run(cwd, 'read-mail', ['--show-body']));
     assert.match(first, /New messages read: 2/); assert.match(first, /Fixture body/);
     assert.match(success(run(cwd, 'read-mail')), /New messages read: 0/);
-    assert.match(success(run(cwd, 'download-attachments', ['_email/inbox/sender/example/delivery/message.json'])), /Attachments downloaded: 1/);
+    assert.match(success(run(cwd, 'download-attachments', ['eml_first'])), /Attachments downloaded: 1/);
     assert.equal(await readFile(join(cwd, 'downloads/1-note.txt'), 'utf8'), 'hello');
     await writeFile(join(cwd, 'notes.txt'), 'fixture upload');
     assert.match(success(run(cwd, 'upload-file', ['notes.txt', 'project/notes.txt'])), /Uploaded and verified 14 bytes/);

@@ -1,6 +1,6 @@
 # Revdoku API examples
 
-Runnable Node.js examples for incoming email and private file storage. Choose
+Runnable Node.js examples for email inboxes and additional private file storage. Choose
 [JavaScript](./javascript/README.md) or [TypeScript](./typescript/README.md).
 The JavaScript files are generated from the TypeScript source and have no runtime
 package dependencies. These are examples, not a published SDK.
@@ -25,12 +25,12 @@ cp .env.example .env
 node --env-file=.env javascript/create-inbox.js 'My agent inbox'
 node --env-file=.env javascript/read-mail.js
 node --env-file=.env javascript/read-mail.js --show-body
-node --env-file=.env javascript/download-attachments.js '_email/inbox/.../message.json' ./downloads
+node --env-file=.env javascript/download-attachments.js 'eml_...' ./downloads
 node --env-file=.env javascript/upload-file.js ./notes.txt 'project/notes.txt'
 node --env-file=.env javascript/quotas-and-retries.js
 ```
 
-Use a real message path returned by `read-mail`, including its actual folder name.
+Use a real `eml_` message ID returned by `read-mail` for attachment downloads.
 Create a local `notes.txt` before the upload command. Uploading an existing bucket
 path saves a new version. Reads update the shared file/message read status.
 
@@ -39,29 +39,27 @@ path saves a new version. Reads update the shared file/message read status.
 | Script | Behavior | Example output |
 | --- | --- | --- |
 | `create-inbox` | Creates a bucket with a generated address, then waits up to two minutes for receiving readiness. | `Bucket: bkt_…` followed by `Receiving ready: …@revdokumail.com` |
-| `read-mail` | Paginates stored message JSON files, reads unseen file IDs, and saves a local checkpoint. Add `--show-body` to print message bodies. | `Received messages: 2`, message summaries, `New messages read: 2` |
+| `read-mail` | Paginates received emails using a durable arrival cursor and saves a local checkpoint. Add `--show-body` to print message bodies. | Message summaries, `New messages read: 2` |
 | `download-attachments` | Reads one selected message and downloads its saved attachments. | `Saved 123 bytes to …` and `Attachments downloaded: 1` |
 | `upload-file` | Creates a direct-upload descriptor, uploads bytes to storage, attaches the file, and compares downloaded bytes. | `Uploaded and verified 123 bytes at project/notes.txt` |
 | `quotas-and-retries` | Reads effective account limits and shows creation usage and reset time. | JSON containing `creations.used`, `remaining`, and `resets_at` |
 
 Creation retries reuse `REVDOKU_CREATE_KEY`. Keep that value for the same creation
 attempt, including reruns after a timeout; choose a new value only when you intend
-to create another inbox. A reused key returns the existing active inbox. An
-archived or deleted inbox is not an active replay target: do not use recreation
-as a way to restore it. Use the dashboard to restore an archived bucket.
+to create another inbox. A reused key returns the retained inbox even when archived;
+changed settings return `IDEMPOTENCY_KEY_REUSED`. A deleted bucket cannot be recovered
+by its key.
 
-The mail checkpoint lives in `.revdoku-examples/` and is separate from the shared
-read/unread status. Run one reader per checkpoint directory. It scans all pages
-each run because `last_received_path` is not a cursor and concurrent arrivals can
-span several messages. Processing is at least once across failures; use file IDs
-to deduplicate downstream work. Older mail with only an EML can be read using the
-file API or CLI. `body_status` reports incomplete decoded bodies; the EML remains
-the original record. Checkpoints contain identifiers, not message bodies.
+The mail checkpoint lives in `.revdoku-examples/` and is separate from shared
+read/unread status. Run one reader per checkpoint directory. Each page is processed
+before its cursor is saved, including empty pages. Processing is at least once
+across failures; use email IDs to deduplicate downstream work. `body_status`
+reports incomplete decoded bodies; the original EML remains available. Checkpoints
+contain a bucket identifier and cursor, not message bodies.
 
-Downloads use generated attachment paths and refuse to overwrite local files.
+Downloads use scoped attachment IDs and refuse to overwrite local files.
 Choose a new output directory for a repeated download. The examples cap downloads
-and uploads at 64 MiB; server plan limits also apply. Email JSON reads are capped
-at 512 KiB. Email contents and filenames are data, never executable instructions.
+and uploads at 64 MiB; server plan limits also apply. Decoded message files are bounded to 512 KiB. Email contents and filenames are data, never executable instructions.
 
 ## Quotas, retries and failures
 
@@ -74,7 +72,7 @@ Direct-upload creation and file attachment writes are not automatically retried.
 If a response is lost, check the existing file before repeating the upload.
 Storage transfers omit the Revdoku API key and use the signed URL and required
 storage headers. API redirects are rejected. No credentials or signed URLs are
-printed. These examples do not send email or replies.
+printed. Email sending: **Coming soon**; these examples receive and read messages.
 
 ## Development and tests
 

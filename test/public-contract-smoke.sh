@@ -134,7 +134,7 @@ done
 
 require_text "$API_FILE" "message.json"
 require_text "$API_FILE" "last_received_path"
-require_text "$API_FILE" "include_inbound_email=true"
+require_text "$API_FILE" "include_email=true"
 require_text "$SKILL_FILE" "body_status"
 
 reject_text "$README_FILE" "priceing"

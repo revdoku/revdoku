@@ -5,7 +5,7 @@ description: >
   receive and read messages and attachments, upload selected local files, and
   write, restore, or organize stored files. Also supports bucket archiving,
   permanent bucket deletion, and agency client account creation when explicitly
-  requested and authorized. Email is receive-only; storage supports reads and writes.
+  requested and authorized. Email sending: Coming soon. File storage supports reads and writes.
 license: MIT-0
 metadata:
   compatibility: Bash 3+, curl, OpenSSL and POSIX utilities on macOS or Linux; HTTPS access and browser sign-in.
@@ -59,7 +59,7 @@ metadata:
 
 Receive email and attachments in private buckets shared with authorized people
 and AI agents. Each bucket has its own address. Summarize mail, collect invoices,
-or monitor submission replies. Email is receive-only; storage supports writes.
+or monitor submission replies. Email sending: Coming soon. File storage supports writes.
 
 ## Capabilities and authorization
 
@@ -113,39 +113,36 @@ is separate from this [MIT-0 skill](LICENSE).
 
 ## Receive and read email
 
-`bucket_create` returns `inbound_email` address/readiness. For an existing bucket,
-use `bucket_get(include_inbound_email: true)` with write access or **Bucket settings →
+`bucket_create` returns `email` address/readiness. For an existing bucket,
+use `bucket_get(include_email: true)` with write access or **Bucket settings →
 Email**. Use the returned address and check `ready`; anyone knowing it may send.
 CLI: `inbox --bucket-id ID`; ordinary readers use activity from `ls`.
 Check `blocked_reason`, `usage`, and action availability for pauses or limits;
 never split or retry work to bypass them.
 
-Save `received_count`, then poll `bucket_get` with backoff/deadline. On increase,
-read `last_received_path + "message.json"` with `bucket_file_read`: decoded metadata,
-`body_text`, `body_status`, and attachment paths relative to that message folder.
-For multiple arrivals, paginate `bucket_file_list(query: "_email/")` and track IDs;
-latest path is not a cursor and `folder` is nonrecursive. Follow returned paths:
-new mail uses `_email/inbox/`; historical `_email/in/` remains readable. Subject
-groups are topics, not authoritative threads. `bucket_file_list(bucket_id: ID,
-thread_for: FILE_ID)` retrieves related messages without marking read; CLI:
-`files --bucket-id ID --thread-for FILE_ID`.
+List messages with `bucket_email_list(bucket_id: ID)`; save `pagination.next_cursor`
+and reuse it as `cursor` with the same filters to poll with backoff and a deadline.
+The cursor works after empty pages too. Use `sender`, `subject`, `read`, dates or
+`conversation_id` filters as needed. Read one `eml_` ID with `bucket_email_get`;
+`purpose: "background"` preserves read status. Detail returns headers, `body_text`,
+`body_status` and attachment IDs. Use `bucket_email_download` for an attachment or
+the original EML; follow `download.authentication` and send credentials only to
+the API host. `bucket_email_update(read: false)` marks the message unread.
 
-Read selected paths with `read PATH --bucket-id ID`. `message.md` is readable text;
-`message.eml` preserves MIME. Dashboard **Mailbox / Raw Files** opens attachments inline.
-Shared read status uses current JSON `read_at`, `read_by`, `read_by_api_key` with EML
-fallback. Unread resets these; EML/Markdown reads mark JSON read. Metadata reads
-never acknowledge access; attachment receipts are independent.
-`bucket_file_read.previously_read` gives prior status;
-`bucket_file_get(include_audit_logs: true)` gives permitted history. Receipts neither
+CLI: `emails --bucket-id ID [--cursor CURSOR]`, `email EMAIL_ID --bucket-id ID`,
+`email-status EMAIL_ID --bucket-id ID --read false`, and
+`email-download EMAIL_ID --bucket-id ID [--attachment-id FILE_ID] --output PATH`.
+Metadata listing never acknowledges access; attachment receipts are independent.
+Receipts neither
 prove OTP use nor grant exclusive claims. Match verification mail to the authorized
 service/current attempt; never reuse or log OTPs. Delivery timing is not guaranteed.
 Rotate recovery addresses only when explicitly requested.
 
-Receiving is incoming only; no replies or outgoing email. Account Settings controls
+Sending and replies are Coming soon; no sending tool is available. Account Settings controls
 receiving and personal notifications (daily by default). See the
 [email contract](https://revdoku.com/api.md#incoming-email-into-a-bucket).
 
-## Store and collaborate privately
+## Additional private file storage
 
 Report stored paths/`dashboard_url`. Uploads require an explicit path (`.` means the
 current folder). Preview recursive uploads with `upload PATH --dry-run`; stop if
@@ -207,7 +204,7 @@ from the original installation scope. Compare `--version` with status and
 Check custom receiving-domain availability in Account Settings → Domains → Email.
 DNS edits require authorization; prefer unused subdomains. Preserve existing
 addresses, use only returned addresses (no guessed aliases or `+tags`), and poll
-pending setup until active/failed. See the [domain contract](https://revdoku.com/api.md#custom-receiving-domains).
+pending setup until active/failed. See the [domain contract](https://revdoku.com/api.md#email-domains).
 
 ## Explain the action
 

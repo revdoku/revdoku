@@ -4,7 +4,7 @@
 or project its own inbox to receive messages and attachments. Each inbox is a
 private storage bucket with its own email address, where you can also store and
 share documents, data, and project files with authorized people and agents.
-Revdoku receives email; it does not send messages or replies.
+Email sending: **Coming soon**.
 
 Ask your agent to summarize incoming mail, collect invoices and attachments, or
 monitor replies to submissions. Use hosted MCP for AI agents, the CLI for local
@@ -42,24 +42,26 @@ Connect Revdoku so you can receive and read email and attachments, and store and
 
 Each bucket has its own incoming email address. Bucket creation returns the
 address and receiving state; for an existing bucket, use
-`bucket_get(include_inbound_email: true)` with write access or **Bucket settings →
-Email**. Check `inbound_email.ready` before using the address.
+`bucket_get(include_email: true)` with write access or **Bucket settings →
+Email**. Check `email.ready` before using the address.
 
 With the CLI, run `revdoku inbox --bucket-id bkt_...` to retrieve the address,
-readiness, and activity. Use `revdoku read PATH --bucket-id bkt_...` for stored mail.
+readiness, and activity. Use `revdoku emails --bucket-id bkt_...` to list mail and
+`revdoku email eml_... --bucket-id bkt_...` to read it.
 
 Receive invoices, documents, project updates, or authorized service verification
 messages. Each accepted email is saved as original `message.eml`, decoded
 `message.json`, readable `message.md`, and attachment files. Authorized people and agents can read these
-with the same file tools used for other bucket content.
+through the email API and tools; file tools also expose the stored representations.
 
-Compare `inbound_email.received_count` to detect new mail, then read
-`last_received_path + "message.json"` for the body and attachment paths. Anyone
+Use `bucket_email_list` or the CLI `emails` command with a saved `next_cursor`
+to poll for incoming messages. `bucket_email_get` returns a message directly;
+`bucket_email_download` retrieves attachments or the original. Anyone
 knowing the address can email the bucket; reading its contents requires access.
 See [incoming email](docs.md#receive-email-and-third-party-verification-messages)
 and the [API contract](api.md#incoming-email-into-a-bucket).
 
-## Store and share files
+## Additional file storage
 
 Use `revdoku upload ./project-files` to save a local folder privately. Read files, inspect history, and
 restore earlier versions through the CLI, MCP, API, or dashboard. All stored files
@@ -215,7 +217,7 @@ user's authorization. Connecting a domain does not change existing bucket addres
 Use only the full address returned by Revdoku and check `ready`. A domain switch
 may return `assignment.status: pending`; poll until active or failed, keeping the
 current address in use meanwhile. Never construct aliases or use `+tag` variants.
-See [the email API contract](https://revdoku.com/api.md#custom-receiving-domains).
+See [the email API contract](https://revdoku.com/api.md#email-domains).
 
 ### CLI safety boundaries
 
