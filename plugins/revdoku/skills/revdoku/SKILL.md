@@ -214,4 +214,4 @@ include secrets, contents, or transcripts. Maximum: 2,000 characters.
 MCP/REST use `reason`. Reasons appear in Timeline/Logs; change reasons also appear
 in versions. Reads leave version reasons unchanged. See [API details](https://revdoku.com/api.md#action-reasons).
 
-Read effective mailbox and storage quotas with `revdoku account limits`, or MCP `account_get(include_limits: true)`. Ordinary bucket responses omit account quotas.
+Read effective mailbox and storage quotas with `revdoku account limits`, or MCP `account_limits`. Ordinary bucket responses omit account quotas.

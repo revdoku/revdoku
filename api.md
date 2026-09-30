@@ -1,6 +1,6 @@
 # Revdoku API
 
-Revdoku provides **email inboxes for people and AI agents**, with private file
+Revdoku provides **email inboxes for humans and AI agents**, with private file
 storage in each bucket. The REST API creates inboxes, lists and reads messages,
 and downloads attachments. Buckets also support uploaded files and version history.
 
@@ -240,6 +240,21 @@ An API key can access one or more accounts. Each request operates on one selecte
 | Read an account | `account_get(account_id: ID)` | `revdoku account get ID` |
 | Select an account for an operation | `account_id: ID` | `--account-id ID` |
 
+## Read one resource at a time
+
+| Resource | REST request | MCP tool |
+| --- | --- | --- |
+| Account identity and permissions | `GET /v1/accounts/:id` | `account_get` |
+| Effective quotas | `GET /v1/account/limits` | `account_limits` |
+| Bucket details | `GET /v1/buckets/:id` | `bucket_get` |
+| Received messages | `GET /v1/buckets/:id/emails` | `bucket_email_list` |
+| Stored files | `GET /v1/buckets/:id/files` | `bucket_file_list` |
+
+A bucket read includes its identity, current revision and summary counts.
+Fetch file lists, messages, version history and account limits separately.
+Responses keep their named resources under `data`, such as `data.bucket` or
+`data.files`. Related results of a write may share one response.
+
 ## Account limits
 
 Read quotas when choosing a plan or handling a quota error. They are not included
@@ -295,7 +310,7 @@ per account. Received email files also consume storage/file allowances.
 | Interface | Read limits |
 | --- | --- |
 | REST | `GET /v1/account/limits`; optional `account_id` query selects a granted account. |
-| MCP | `account_get` with `include_limits: true`. |
+| MCP | `account_limits`. |
 | CLI | `revdoku account limits`; optional `--account-id ID`. |
 
 ## Storing files inside a bucket
@@ -347,9 +362,6 @@ Renames retain message IDs, while copies receive new IDs. Use the email endpoint
 | `has_attachments` | Omitted | Filter messages with or without saved attachments. |
 | `conversation_id` | Omitted | An email ID identifying a conversation; replies are linked by email headers. |
 | `include_storage` | `false` | Include backing file IDs and storage mappings for file-browser integrations. |
-
-High-security/HIPAA accounts support listing and content reads, but sender, subject
-and conversation searches return `CONTENT_SEARCH_DISABLED`.
 
 ### Email response fields
 
@@ -425,8 +437,7 @@ Request the link for the selected attachment or original EML using the endpoints
 | `authentication` | `none`: do not send the API key to this URL. |
 | `expires_in` | `900` seconds (15 minutes). Request a fresh link after expiry. |
 
-- Standard files use S3-compatible signed storage links.
-- Protected files use signed API links that check access and decrypt the file. Responses use `Cache-Control: no-store` and are bounded to 41 MiB including encryption overhead.
+- Fetch the returned URL as provided; no API key is needed.
 - Bodies and attachments remain stored files; the original EML is available if decoded text is incomplete.
 
 ### Delete a message
@@ -445,7 +456,7 @@ Separately copied files remain independent.
 | --- | --- | --- |
 | 401 | Unauthenticated | Supply a valid credential. |
 | 403 | Access denied | Check the credential's bucket permissions. |
-| 403 | `CONTENT_SEARCH_DISABLED` | Remove content-search filters for this protected account. |
+| 403 | `CONTENT_SEARCH_DISABLED` | Content search is unavailable for this account; remove the search filters. |
 | 404 | Email or attachment absent | Check the bucket and resource IDs. |
 | 409 | `EMAIL_CHANGED` | Read the current email state before retrying. |
 | 422 | `INVALID_EMAIL_ARGUMENT`, `INVALID_EMAIL_CURSOR` | Correct the arguments or start with a fresh cursor. |
@@ -620,6 +631,7 @@ with an account-administrator credential.
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET | `/v1/account/email_domains` | List account email domains. |
+| POST | `/v1/account/email_domains/check` | Check a hostname for DNS conflicts before connecting it. |
 | POST | `/v1/account/email_domains` | Start connecting a domain. |
 | GET | `/v1/account/email_domains/:id` | Read DNS requirements and receiving state. |
 | POST | `/v1/account/email_domains/:id/verify` | Check ownership and provider setup. |
@@ -633,10 +645,28 @@ with an account-administrator credential.
 | `confirm: true` | Explicit confirmation for deletion. |
 | `retryable` | Whether a reported setup error can be retried. |
 
-- Use an unused subdomain such as `inbox.example.com` if the parent already handles email.
+#### Choose a domain
+
+| Your setup | Domain to connect | Example mailbox |
+| --- | --- | --- |
+| `yourdomain.com` already receives email through another provider | An unused subdomain, such as `inbox.yourdomain.com` | `support@inbox.yourdomain.com` |
+| A domain dedicated to Revdoku email | The root domain, such as `yourdomain.com` | `support@yourdomain.com` |
+
+Using `inbox.yourdomain.com` keeps existing mailboxes at `yourdomain.com` with their
+current provider. Add DNS records only at the hostname shown in the setup instructions.
+
+| DNS check | Result |
+| --- | --- |
+| Another provider's MX records at the chosen hostname | HTTP 422, `EMAIL_DNS_CONFLICT`. Keep those records and choose an unused subdomain. |
+| Revdoku and another provider's MX records together, or a CNAME | HTTP 422, `EMAIL_DNS_CONFLICT`. MX priority cannot split individual mailboxes between providers. |
+| DNS lookup temporarily unavailable | HTTP 503, `EMAIL_DNS_TEMPORARY`; retry the check later. |
+| Null MX (the hostname currently accepts no mail) | Setup can start; replace the null MX with the required receiving MX before activation. |
+
+Checks run before connecting and again during verification. Revdoku does not
+change your DNS records. A successful check does not activate receiving.
+
 - DNS ownership instructions are visible only to full-account administrators.
 - Unverified claims expire after seven days.
-- Conflicting MX/CNAME records must be resolved; replace a null MX instead of combining records.
 - Cookie-authenticated writes require CSRF protection.
 
 #### Use a connected domain
@@ -878,7 +908,7 @@ when they connect, so reconnect after an update to discover newly added tools.
 
 Hosted MCP cannot access your local filesystem. Uploads enforce file-type and
 content rules. Bucket responses provide authorized action metadata so tools can
-handle resource IDs without asking people to type them.
+handle resource IDs without asking users to type them.
 
 ## Common Workflows
 
@@ -1134,7 +1164,7 @@ send `{"bucket": {}}`.
 - Success means the receiving address has been confirmed; no readiness polling is required.
 - If confirmation cannot finish within 25 seconds, the API returns `503 EMAIL_NOT_READY` with the created `bucket_id` in `error.details`. Check that bucket before creating another.
 - The same error reports receiving holds through `error.details.blocked_reason`.
-- `dashboard_url` opens the bucket for authorized people; it does not grant access.
+- `dashboard_url` opens the bucket for authorized human users; it does not grant access.
 - Browser signup already creates one starter mailbox.
 
 ### Upload a File
@@ -1727,6 +1757,7 @@ A quota error is not a short-lived throttle. Do not retry automatically until re
 | `422` | `BUCKET_DELETE_CONFIRMATION_REQUIRED` | Pass the `delete.confirmation` value returned by bucket list/detail with the delete request. |
 | `403` | `BUCKET_ARCHIVED` | Bucket is archived and cannot be edited until it is unarchived. |
 | `404` | `BUCKET_FILE_NOT_FOUND` | Bucket file path does not exist. |
+| `422` | `INVALID_BUCKET_ARGUMENT` | Bucket details accept no collection-expansion parameters. Request files or versions through their endpoints. |
 | `422` | `UNSUPPORTED_TEXT_APPEND_TYPE` | `append_text` was used on a non-text file. |
 | `422` | `INVALID_TEXT_ENCODING` | `append_text` content or the existing file is not valid UTF-8 text. |
 | `423` | `BUCKET_LOCKED` | Another key owns an active bucket lock. |
@@ -1743,3 +1774,16 @@ authorization.
 ### Do Not Leak Secrets
 
 Never print, paste, commit, or log `revdoku_...` API keys or direct-upload URLs.
+
+## HIPAA and high-security accounts
+
+These account modes have the following differences.
+
+| Area | Behavior |
+| --- | --- |
+| Account setup | Selected when creating an account; existing accounts cannot be converted. |
+| Sensitive data | Files and sensitive metadata use additional per-account encryption. |
+| Search | Content indexing is disabled. Email filters `sender`, `subject` and `conversation_id` return `CONTENT_SEARCH_DISABLED`. |
+| Reading email | Authorized listing, message reads and attachment downloads remain available. |
+| Download links | Standard accounts use signed storage URLs. These modes use signed API URLs that check access and decrypt the file. Fetch either returned URL without an API key. |
+| Email download bounds | Decrypted email/attachment downloads use `Cache-Control: no-store` and a 41 MiB bound including encryption overhead. |

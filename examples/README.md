@@ -15,7 +15,7 @@ Set `REVDOKU_BUCKET_ID` to an existing authorized bucket for the reading and
 uploading examples. Browser signup creates a default mailbox; you can use that
 inbox without creating another. Inbox creation requires account-wide permission
 and available active-bucket and creation capacity. Address/readiness queries and
-uploads require write access. The quota example requires full-account access.
+uploads require write access. The quota example requires an authenticated connection to the selected account.
 Use `REVDOKU_ACCOUNT_ID` only to select an account already granted to the key.
 
 ```sh
@@ -42,7 +42,7 @@ path saves a new version. Email reads leave shared read status unchanged. File r
 | `read-mail` | Paginates received emails using a durable arrival cursor and saves a local checkpoint. Add `--show-body` to print message bodies. | Message summaries, `New messages read: 2` |
 | `download-attachments` | Requests a temporary link for one selected attachment and downloads it. | `Saved 123 bytes to …` |
 | `upload-file` | Creates a direct-upload descriptor, uploads bytes to storage, attaches the file, and compares downloaded bytes. | `Uploaded and verified 123 bytes at project/notes.txt` |
-| `quotas-and-retries` | Reads effective account limits and shows creation usage and reset time. | JSON containing `creations.used`, `remaining`, and `resets_at` |
+| `quotas-and-retries` | Reads effective account limits through the limits endpoint, with bounded retries for temporary failures. | JSON containing limits such as `max_buckets` and `max_storage_bytes` |
 
 The creation example sends one request and returns a ready receiving address.
 After a lost response, check your buckets before creating another.
@@ -64,8 +64,6 @@ backoff, and retries temporary rate limits for that GET.  It stops on monthly qu
 date. It does not wait until next month or create replacement accounts.
 
 Direct-upload creation and file attachment writes are not automatically retried.
-Direct uploads are unavailable for accounts with additional file encryption
-(`DIRECT_UPLOADS_DISABLED`); the email reading/download examples support those accounts.
 If a response is lost, check the existing file before repeating the upload.
 Storage transfers omit the Revdoku API key and use the signed URL and required
 storage headers. API redirects are rejected. No credentials or signed URLs are
@@ -87,3 +85,9 @@ commit the matching generated JavaScript. See [api.md](../api.md) and
 
 [Python receiving examples](python/README.md) use `requests` directly for mailbox
 creation, readiness, reading mail, and selected attachment downloads.
+
+## HIPAA and high-security accounts
+
+Direct uploads are unavailable for accounts with additional file encryption
+(`DIRECT_UPLOADS_DISABLED`). The email reading and download examples support
+these accounts. See the [account-mode details](../api.md#hipaa-and-high-security-accounts).
