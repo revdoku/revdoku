@@ -3,7 +3,7 @@
 From `examples/`, follow the [shared setup](../README.md), then run:
 
 ```sh
-node --env-file=.env javascript/create-inbox.js 'My agent inbox'
+node --env-file=.env javascript/create-inbox.js 'project.alerts'
 node --env-file=.env javascript/read-mail.js
 node --env-file=.env javascript/quotas-and-retries.js
 ```

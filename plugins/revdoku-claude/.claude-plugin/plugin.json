@@ -1,8 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "revdoku",
-  "version": "1.0.517",
-  "description": "Email inboxes and shared cloud files for people and AI agents. Receive and read messages and attachments, manage stored text files, and collaborate through authorized bucket access using the hosted Revdoku MCP connector. Email sending: Coming soon.",
+  "version": "1.0.519",
+  "description": "Email inboxes and shared cloud files for people and AI agents. Receive and read messages and attachments, manage stored text files, and collaborate through authorized bucket access using the hosted Revdoku MCP connector. ",
   "author": {
     "name": "Revdoku",
     "url": "https://revdoku.com"

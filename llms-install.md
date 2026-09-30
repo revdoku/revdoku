@@ -2,7 +2,7 @@
 
 Revdoku provides email inboxes for people and AI agents, with private file storage.
 Connect to create inboxes, read messages and attachments, and store additional files.
-Email sending: Coming soon. Verify access, then complete the requested task.
+ Verify access, then complete the requested task.
 
 Prefer local shell and filesystem access; use
 hosted MCP only when local access is unavailable.
@@ -51,7 +51,6 @@ To save the requested files in a private bucket, run:
 revdoku upload <folder>
 ```
 
-
 With `npx skills`, run the bundled `scripts/revdoku.sh` from the installed
 skill directory in place of `revdoku`; this install does not add a CLI to `PATH`.
 
@@ -66,11 +65,11 @@ Endpoint: `https://mcp.revdoku.com`
 Authenticate with OAuth before calling tools. Then call `revdoku_status`, create
 or choose a private bucket, and read or write the requested files. Bucket creation
 returns its incoming email address and receiving state. For an existing bucket, use `bucket_get(include_email: true)` with write access.
-Check `ready`, then use `bucket_email_list` with a saved `pagination.next_cursor`
+Check `receiving_enabled`, then use `bucket_email_list` with a saved `pagination.next_cursor`
 to poll. Read `eml_` IDs with `bucket_email_get`; download attachments or the original
 with `bucket_email_download`.
 If not ready, explain `blocked_reason`; do not assume a paused or unknown inbox
-can receive. Read effective size/count/data limits from the service. Personal
+can receive. Read quotas with `account_get(include_limits: true)`. Personal
 notification frequency is managed in Account Settings → Notifications.
 See the [email contract](https://revdoku.com/api.md#incoming-email-into-a-bucket).
 If the user has no account, direct them to `https://app.revdoku.com/users/sign_up` first.

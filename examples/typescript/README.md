@@ -5,7 +5,7 @@ From `examples/`, follow the [shared setup](../README.md), then compile and run:
 ```sh
 npm ci
 npm run build
-node --env-file=.env javascript/create-inbox.js 'My agent inbox'
+node --env-file=.env javascript/create-inbox.js 'project.alerts'
 node --env-file=.env javascript/read-mail.js
 npm run check
 ```

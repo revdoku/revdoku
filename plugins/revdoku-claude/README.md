@@ -2,7 +2,7 @@
 
 Email inboxes with shared file storage for people and AI agents. Receive and read
 messages and attachments, manage stored text files and versions, and collaborate
-through authorized bucket access. Email sending: **Coming soon**.
+through authorized bucket access.
 
 This plugin includes the Revdoku skill and hosted MCP connector at
 `https://mcp.revdoku.com`. It runs no local programs and downloads no executable

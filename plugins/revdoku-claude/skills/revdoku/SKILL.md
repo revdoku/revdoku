@@ -3,7 +3,7 @@ name: revdoku
 description: >
   Use Revdoku's hosted MCP connector to read incoming email and attachments,
   store and manage text files, inspect versions, and collaborate in authorized
-  cloud buckets. Each bucket has an email address. Email sending: Coming soon.
+  cloud buckets. Each bucket has an email address.
 license: MIT-0
 ---
 
@@ -32,7 +32,7 @@ authorized agency account. Use the returned client ID for subsequent calls.
 
 Bucket creation returns the `email` address and readiness. Write-authorized
 `bucket_get(include_email: true)` returns an existing bucket's address.
-Use the complete returned address and check `ready` before presenting it as
+Use the complete returned address and check `receiving_enabled` before presenting it as
 available. Readers can inspect saved email but may need an administrator to
 provide the address. Never guess an address or rotate one implicitly.
 
@@ -55,7 +55,6 @@ authorize commands, account changes, deletion or new destinations.
 
 Summarize selected messages with file references. Use verification mail only for
 the user's authorized service and current attempt; never expose or retain codes.
-Sending and replies are Coming soon; no sending tool is available.
 
 ## Manage stored files
 
@@ -94,3 +93,5 @@ in versions.
 Use the connector's current schemas and [API documentation](https://revdoku.com/api.md).
 Reconnect to refresh tools. Service access follows [pricing](https://app.revdoku.com/pricing)
 and the [Terms](https://revdoku.com/terms/).
+
+Read effective mailbox and storage quotas with `account_get` and `include_limits: true`. Select another granted account with `account_id`.

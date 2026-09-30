@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Email inboxes with shared file storage for people and AI agents. Receive and read messages and attachments, and share files through authorized bucket access. Email sending: Coming soon.",
+  "description": "Email inboxes with shared file storage for people and AI agents. Receive and read messages and attachments, and share files through authorized bucket access. ",
   "url": "https://revdoku.com/",
   "documentation_url": "https://revdoku.com/docs",
   "mcp_url": "https://mcp.revdoku.com",
@@ -14,7 +14,7 @@
     {
       "id": "email",
       "name": "Email inboxes for people and AI agents",
-      "description": "Create an inbox with bucket_create and check email.ready. Use bucket_email_list with a saved cursor, bucket_email_get for decoded messages, and bucket_email_download for originals and attachments. Email sending: Coming soon.",
+      "description": "Create an inbox with bucket_create and check email.ready. Use bucket_email_list with a saved cursor, bucket_email_get for decoded messages, and bucket_email_download for originals and attachments. ",
       "account_required": true
     },
     {

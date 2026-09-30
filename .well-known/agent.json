@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Email inboxes with shared file storage for people and AI agents. Receive and read messages and attachments, and share files through authorized bucket access. Email sending: Coming soon.",
+  "description": "Email inboxes with shared file storage for people and AI agents. Receive and read messages and attachments, and share files through authorized bucket access. ",
   "homepage": "https://revdoku.com/",
   "docs": "https://revdoku.com/docs",
   "pricing": "https://app.revdoku.com/pricing",

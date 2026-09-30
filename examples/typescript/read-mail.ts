@@ -1,35 +1,48 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { join } from 'node:path';
-import { bucketId, createClient, run } from './client.js';
 
-await run(async () => {
-  const id = bucketId();
-  const client = createClient();
-  const directory = '.revdoku-examples';
-  await mkdir(directory, { recursive: true, mode: 0o700 });
-  const statePath = join(directory, `${id}-read.json`);
-  let saved: { bucket_id: string; cursor?: string } = { bucket_id: id };
-  try { saved = JSON.parse(await readFile(statePath, 'utf8')); }
-  catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
-  if (saved.bucket_id !== id || (saved.cursor !== undefined && typeof saved.cursor !== 'string')) throw new Error('Mail checkpoint does not match this bucket.');
-  let fresh = 0;
-  for (let page = 0; page < 1000; page++) {
-    const result = await client.listEmails(id, saved.cursor);
-    for (const summary of result.emails) {
-      const mail = await client.readEmail(id, summary.id);
-      console.log(JSON.stringify({ id: mail.id, from: mail.from, subject: mail.subject, body_status: mail.body_status, attachments: mail.attachments?.length ?? 0 }));
-      if (process.argv.includes('--show-body')) console.log(mail.body_text ?? '[Body unavailable; download the original]');
-      fresh++;
-    }
-    if (result.pagination.has_more && saved.cursor === result.pagination.next_cursor) throw new Error('Email pagination did not advance.');
-    saved.cursor = result.pagination.next_cursor;
-    // Commit after processing each page. Repeated work after a crash is possible;
-    // production consumers should make their own side effects idempotent by mail.id.
-    const temporary = `${statePath}.${randomUUID()}.tmp`;
-    await writeFile(temporary, JSON.stringify(saved) + '\n', { flag: 'wx', mode: 0o600 });
-    await rename(temporary, statePath);
-    if (!result.pagination.has_more) { console.log(`New messages read: ${fresh}`); return; }
+const apiKey = process.env.REVDOKU_API_KEY;
+if (!apiKey) throw new Error('Set REVDOKU_API_KEY in your local .env file.');
+const accountId = process.env.REVDOKU_ACCOUNT_ID;
+const headers = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
+const bucketId = process.env.REVDOKU_BUCKET_ID;
+if (!bucketId || !/^bkt_[A-Za-z0-9]+$/.test(bucketId)) throw new Error('Set REVDOKU_BUCKET_ID.');
+
+await mkdir('.revdoku-examples', { recursive: true, mode: 0o700 });
+const checkpoint = `.revdoku-examples/${accountId ?? 'default'}-${bucketId}.json`;
+if (accountId && !/^acct_[A-Za-z0-9]+$/.test(accountId)) throw new Error('Invalid account ID.');
+let cursor: string | undefined;
+try { cursor = JSON.parse(await readFile(checkpoint, 'utf8')).cursor; }
+catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+let count = 0;
+for (let page = 0; page < 100; page++) {
+  const url = new URL(`https://api.revdoku.com/v1/buckets/${bucketId}/emails`);
+  if (accountId) url.searchParams.set('account_id', accountId);
+  if (cursor) url.searchParams.set('cursor', cursor);
+  const response = await fetch(url, { headers, redirect: 'error', signal: AbortSignal.timeout(30000) });
+  const result = await response.json();
+  if (!response.ok) throw new Error(`${result.error.code}: ${result.error.message}`);
+  for (const summary of result.data.emails) {
+    const detailUrl = new URL(`https://api.revdoku.com/v1/buckets/${bucketId}/emails/${encodeURIComponent(summary.id)}`);
+    if (accountId) detailUrl.searchParams.set('account_id', accountId);
+    const detail = await fetch(detailUrl, { headers, redirect: 'error', signal: AbortSignal.timeout(30000) });
+    const decoded = await detail.json();
+    if (!detail.ok) throw new Error(`${decoded.error.code}: ${decoded.error.message}`);
+    const mail = decoded.data.email;
+    console.log(JSON.stringify({ id: mail.id, from: mail.from, subject: mail.subject,
+      body_status: mail.body_status, attachments: mail.attachments }));
+    if (process.argv.includes('--show-body')) console.log(mail.body_text ?? '[Download original for full content]');
+    count++;
   }
-  throw new Error('Example page limit reached; rerun to continue from the checkpoint.');
-});
+  const pagination = result.data.pagination;
+  if (pagination.has_more && (!pagination.next_cursor || pagination.next_cursor === cursor)) throw new Error('Cursor did not advance.');
+  cursor = pagination.next_cursor;
+  // Save only after this page is processed. Deduplicate downstream effects by email ID.
+  const temporary = `${checkpoint}.${randomUUID()}.tmp`;
+  await writeFile(temporary, JSON.stringify({ cursor }), { flag: 'wx', mode: 0o600 });
+  await rename(temporary, checkpoint);
+  if (!pagination.has_more) break;
+  if (page === 99) throw new Error('Page limit reached. Rerun to continue from the checkpoint.');
+}
+console.log(`New messages read: ${count}`);
+// GET does not change read status. PATCH /emails/:id with {read:true} does.

@@ -73,6 +73,8 @@ UPLOAD_LOCAL_MAP=""
 SKIPPED_PATHS=""
 READ_FILE_PATH=""
 EMAIL_ID=""
+EMAIL_USERNAME=""
+EMAIL_DOMAIN=""
 EMAIL_ATTACHMENT_ID=""
 EMAIL_PURPOSE="open"
 EMAIL_LIMIT="100"
@@ -195,15 +197,17 @@ Usage: revdoku <command> [PATH] [options]
   upload PATH           Save the selected local file or folder (use . explicitly).
                         Opens browser sign-in when credentials are missing.
   ls, list              List your buckets.
+  create                Create a mailbox; optionally choose --username and --domain.
   o, open               Open this bucket in the dashboard.
   st, status            Show connection and account status.
   login                 Sign in to an existing account in the browser.
   grant TOKEN           Use a one-time connection token from the web app.
   inbox                 Show incoming address, readiness, and email activity.
   emails                List received emails; returns a resumable polling cursor.
-  email ID              Read decoded email; --background preserves read status.
+  email ID              Read decoded email without changing shared read status.
   email-status ID       Set shared read status with --read true|false.
   email-download ID     Download original EML or --attachment-id ID.
+  email-delete ID       Delete an email and attachments; confirm with --confirm-delete ID.
   files                 List bucket files.
   read PATH             Read a bucket file; --output FILE saves it locally.
   versions              Show bucket version history.
@@ -211,6 +215,9 @@ Usage: revdoku <command> [PATH] [options]
   append PATH           Append text; --content TEXT or --content-file FILE.
   archive | unarchive    Manage a bucket.
   delete                Preview permanent deletion; requires explicit account/bucket.
+  accounts              List accounts granted to this credential.
+  account limits                 Read effective mailbox and storage quotas
+  account get ID        Read one granted account.
   account               Account, plan and storage status.
   account create-client NAME     Create a client account within an authorized agency.
   dashboard             Print the dashboard URL; normal sign-in is required.
@@ -228,6 +235,7 @@ Options:
   --background                        Read without marking the message read.
   --attachment-id ID   --output FILE   Download a selected email attachment.
   --title TEXT         --description TEXT     --tag-path LABEL     --metadata JSON
+  --username NAME      --domain HOST          Mailbox creation address options.
   --dry-run            Preview an upload locally, without network requests.
   --confirm-delete TOKEN  Execute a reviewed deletion preview (expires in 10 minutes).
   --api-key KEY        API credential (or REVDOKU_API_KEY / $CREDENTIALS_PATH).
@@ -269,6 +277,14 @@ while [[ $# -gt 0 ]]; do
     --title)
       [[ $# -ge 2 ]] || die "--title requires a value"
       TITLE="$2"
+      shift 2
+      ;;
+    --username|--domain)
+      [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "$1 requires a value"
+      case "$1" in
+        --username) EMAIL_USERNAME="$2" ;;
+        --domain) EMAIL_DOMAIN="$2" ;;
+      esac
       shift 2
       ;;
     --description)
@@ -398,12 +414,14 @@ while [[ $# -gt 0 ]]; do
           p|publish|down|unpublish|preview|sites|analytics|i|init)
             die "This command is unavailable. Use revdoku --help for storage commands." ;;
           ls|list)        ACTION="list_buckets"; shift ;;
+          accounts)       ACTION="list_accounts"; shift ;;
+          create)         ACTION="create_mailbox"; shift ;;
           o|open)         ACTION="open_dashboard"; shift ;;
           st|status)      ACTION="connection_status"; shift ;;
           login)          LOGIN="true"; shift ;;
           grant)          [[ $# -ge 2 && "$2" != -* ]] || die "grant needs the one-time token right after it"; ACTION="exchange_grant"; GRANT_TOKEN="$2"; shift 2 ;;
           emails)         ACTION="list_emails"; shift ;;
-          email|email-status|email-download)
+          email|email-status|email-download|email-delete)
             [[ $# -ge 2 && "$2" != -* ]] || die "$1 requires an email id"
             ACTION="$1"; EMAIL_ID="$2"; shift 2 ;;
           files)          ACTION="list_files"; shift ;;
@@ -420,6 +438,11 @@ while [[ $# -gt 0 ]]; do
             if [[ "${1:-}" == "create-client" ]]; then
               [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "account create-client needs a name"
               ACTION="create_client_account"; CLIENT_ACCOUNT_NAME="$2"; shift 2
+            elif [[ "${1:-}" == "limits" ]]; then
+              ACTION="account_limits"; shift
+            elif [[ "${1:-}" == "get" ]]; then
+              [[ $# -ge 2 && "$2" =~ ^acct_[A-Za-z0-9]+$ ]] || die "account get needs an account id"
+              ACTION="get_account"; ACCOUNT_DETAILS_ID="$2"; shift 2
             else
               ACTION="account_status"
             fi
@@ -465,7 +488,10 @@ if [[ "$ACTION" == "store" && "$LOGIN" != "true" && "$PATH_EXPLICIT" != "true" ]
   die "upload requires an explicit PATH; use 'revdoku upload .' for this folder"
 fi
 [[ "$DRY_RUN" != "true" || ( "$ACTION" == "store" && "$LOGIN" != "true" ) ]] || die "--dry-run is only available with upload PATH"
-[[ -z "$DELETE_CONFIRMATION" || "$ACTION" == "delete_bucket" ]] || die "--confirm-delete is only available with delete"
+[[ -z "$DELETE_CONFIRMATION" || "$ACTION" == "delete_bucket" || "$ACTION" == "email-delete" ]] || die "--confirm-delete is only available with delete or email-delete"
+if [[ -n "$EMAIL_USERNAME$EMAIL_DOMAIN" && "$ACTION" != "create_mailbox" ]]; then
+  die "--username and --domain require create"
+fi
 if [[ "$ACTION" == "delete_bucket" ]]; then
   [[ "$BUCKET_EXPLICIT" == "true" && -n "$BUCKET_ID" && -n "$ACCOUNT_ID" ]] || die "delete requires explicit --account-id and --bucket-id"
 fi
@@ -653,9 +679,6 @@ http_success_json_replay_allowed() {
     GET:*)
       return 0
       ;;
-    POST:/api/v1/buckets)
-      return 0
-      ;;
     POST:*/upload_sessions|POST:*/upload_sessions/*/uploads|POST:*/upload_sessions/*/finalize|POST:*/upload_sessions/*/finalize_batch)
       return 0
       ;;
@@ -670,9 +693,6 @@ http_conflict_retry_allowed() {
   local path="$2"
   case "$method:$path" in
     GET:*)
-      return 0
-      ;;
-    POST:/api/v1/buckets)
       return 0
       ;;
     POST:*/upload_sessions|POST:*/upload_sessions/*/uploads|POST:*/upload_sessions/*/finalize|POST:*/upload_sessions/*/finalize_batch)
@@ -740,6 +760,10 @@ http_json() {
   local auth="${4:-true}"
   local HTTP_TRANSIENT_MAX_ATTEMPTS="$HTTP_TRANSIENT_MAX_ATTEMPTS"
   [[ "$method" != "DELETE" ]] || HTTP_TRANSIENT_MAX_ATTEMPTS=0
+  # Creation has no replay key. A lost or failed response may follow a commit.
+  if [[ "$method" == "POST" && "$path" == "/api/v1/buckets" ]]; then
+    HTTP_TRANSIENT_MAX_ATTEMPTS=0
+  fi
   if [[ -n "$ACCOUNT_ID" && "$auth" == "true" && "$path" == /api/v1/* ]]; then
     if [[ "$method" == "GET" || "$method" == "HEAD" ]]; then
       path="$(account_request_path "$path")"
@@ -1246,6 +1270,10 @@ email_command() {
       [[ -n "$EMAIL_READ" ]] || die "email-status requires --read true|false"
       http_json PATCH "$path" "$("$JQ_BIN" -nc --argjson read "$EMAIL_READ" '{read:$read}')"
       ;;
+    email-delete)
+      [[ "$DELETE_CONFIRMATION" == "$EMAIL_ID" ]] || die "To delete this email and its attachments, repeat with --confirm-delete $EMAIL_ID"
+      http_json DELETE "$path" "{}"
+      ;;
     email-download)
       if [[ -n "$EMAIL_ATTACHMENT_ID" ]]; then
         [[ "$EMAIL_ATTACHMENT_ID" =~ ^df_[A-Za-z0-9]+$ ]] || die "invalid attachment id"
@@ -1259,6 +1287,15 @@ email_command() {
       download_file_url "$url" "$filename"
       ;;
   esac
+}
+
+create_mailbox() {
+  local payload
+  payload="$("$JQ_BIN" -nc --arg title "$TITLE" --arg description "$DESCRIPTION" \
+    --arg username "$EMAIL_USERNAME" --arg domain "$EMAIL_DOMAIN" \
+    '{bucket: (({title:$title,description:$description} | with_entries(select(.value != ""))) +
+      {email: ({username:$username,domain:$domain} | with_entries(select(.value != "")))})}')"
+  http_json POST "/api/v1/buckets" "$payload"
 }
 
 restore_version() {
@@ -1397,8 +1434,7 @@ connection_status() {
       default_account_id: .data.default_account_id,
       accounts: .data.accounts,
       connection: .data.connection,
-      features: .data.features,
-      onboarding: .data.onboarding
+      features: .data.features
     }
   }'
 }
@@ -1514,8 +1550,24 @@ maybe_notify_update() {
 [[ "$DRY_RUN" == "true" || "$ACTION" == "delete_bucket" ]] || maybe_notify_update || true
 
 case "$ACTION" in
-  list_emails|email|email-status|email-download)
+  account_limits)
+    http_json GET "/api/v1/account/limits" "{}"
+    exit 0
+    ;;
+  get_account)
+    http_json GET "/api/v1/accounts/${ACCOUNT_DETAILS_ID}" "{}"
+    exit 0
+    ;;
+  list_accounts)
+    http_json GET "/api/v1/accounts" "{}"
+    exit 0
+    ;;
+  list_emails|email|email-status|email-download|email-delete)
     email_command
+    exit 0
+    ;;
+  create_mailbox)
+    create_mailbox
     exit 0
     ;;
   list_buckets)
@@ -1759,33 +1811,21 @@ tag_paths_json() {
 
 bucket_payload() {
   local title="$1"
-  local tag_paths metadata client_create_key
+  local tag_paths metadata
   tag_paths="$(tag_paths_json)"
   metadata="$(effective_metadata_json)"
-  client_create_key="$(bucket_client_create_key "$title" "$metadata" "$tag_paths")"
   "$JQ_BIN" -nc \
     --arg title "$title" \
     --arg description "$DESCRIPTION" \
-    --arg client_create_key "$client_create_key" \
     --argjson metadata "$metadata" \
     --argjson tag_paths "$tag_paths" \
     '{
-      idempotency_key: $client_create_key,
       bucket: (
         {title: $title, metadata: $metadata}
         + (if $description != "" then {description: $description} else {} end)
         + (if ($tag_paths | length) > 0 then {tag_paths: $tag_paths} else {} end)
       )
     }'
-}
-
-bucket_client_create_key() {
-  local title="$1"
-  local metadata="$2"
-  local tag_paths="$3"
-  local digest
-  digest="$(printf "%s\n%s\n%s\n%s\n%s" "$title" "$ROOT_PATH" "$metadata" "$tag_paths" "$AGENT_RUN_ID" | openssl dgst -sha256 -hex | awk '{print $2}')"
-  printf "cli:%s" "$digest"
 }
 
 bucket_update_payload() {

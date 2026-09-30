@@ -1,5 +1,47 @@
 # Revdoku Changelog
 
+## 1.0.519 — 2026-09-30
+
+### Improved
+
+- Create mailboxes with a confirmed receiving address in one request. Creation no
+  longer requires a retry key or client-side readiness polling.
+- Complete API signup with one private signup token. Human-authorized terms and
+  privacy acknowledgments replace client-supplied policy versions.
+- Read effective mailbox and storage quotas from a dedicated limits endpoint,
+  the CLI, or MCP. Public mailbox responses use one receiving-state flag.
+- Follow reorganized API and developer guides with request/response examples,
+  field tables, and direct HTTP examples for JavaScript, TypeScript and Python.
+
+### Fixed
+
+- Hide disabled GitHub Sync controls and remove its public routes and documentation.
+- Keep mailbox creation errors, website examples, CLI commands and MCP schemas
+  aligned with actual API responses.
+
+## 1.0.518 — 2026-09-30
+
+### Added
+
+- Choose a mailbox username through the API, MCP, CLI, and signup. Omit it for
+  a generated address. Retired platform addresses remain reserved.
+- Discover authorized accounts and delete individual emails with their attachments
+  through the API and agent tools.
+
+### Improved
+
+- Keep email responses focused on message content, with storage details available
+  on request. Reading email no longer changes its shared read status.
+- Use direct HTTP examples for JavaScript, TypeScript, and Python, without a
+  Revdoku SDK or client wrapper.
+- Protect direct API signup with human-operator email verification, shared abuse
+  limits, and bounded requests. Deployments enable this flow through configuration.
+
+### Fixed
+
+- Download protected email attachments through expiring authorized links that
+  return usable bytes without exposing an API key to storage.
+
 ## 1.0.516 — 2026-09-30
 
 - Read emails, conversations, originals and attachments through the email API,
