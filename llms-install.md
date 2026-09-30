@@ -69,7 +69,7 @@ Check `receiving_enabled`, then use `bucket_email_list` with a saved `pagination
 to poll. Read `eml_` IDs with `bucket_email_get`; download attachments or the original
 with `bucket_email_download`.
 If not ready, explain `blocked_reason`; do not assume a paused or unknown inbox
-can receive. Read quotas with `account_get(include_limits: true)`. Personal
+can receive. Read quotas with `account_limits`. Personal
 notification frequency is managed in Account Settings → Notifications.
 See the [email contract](https://revdoku.com/api.md#incoming-email-into-a-bucket).
 If the user has no account, direct them to `https://app.revdoku.com/users/sign_up` first.

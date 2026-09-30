@@ -1358,7 +1358,7 @@ unarchive_bucket() {
 }
 
 delete_bucket() {
-  local bucket_response account_response state token directory path claimed now expires payload response
+  local bucket_response account_response files_response versions_response state token directory path claimed now expires payload response
   directory="$REVDOKU_CONFIG_DIR/delete-confirmations"
   [[ ! -L "$directory" ]] || die "refusing symlink confirmation storage"
   if [[ -d "$directory" ]]; then
@@ -1372,21 +1372,24 @@ delete_bucket() {
     "$JQ_BIN" -e --argjson now "$now" --arg origin "$BASE_URL" --arg account "$ACCOUNT_ID" --arg bucket "$BUCKET_ID" \
       '.expires_at > $now and .state.origin == $origin and .state.account.id == $account and .state.bucket.id == $bucket' "$path" >/dev/null || die "deletion preview expired or targets differ; preview again"
   fi
-  bucket_response="$(http_json GET "/api/v1/buckets/${BUCKET_ID}?include=source_files,versions" "{}")" || return 1
-  account_response="$(http_json GET "/api/v1/status" "{}")" || return 1
-  state="$(printf '%s\n%s\n' "$bucket_response" "$account_response" | "$JQ_BIN" -csS --arg origin "$BASE_URL" '
+  versions_response="$(http_json GET "/api/v1/buckets/${BUCKET_ID}/versions" "{}")" || return 1
+  files_response="$(http_json GET "/api/v1/buckets/${BUCKET_ID}/source_files" "{}")" || return 1
+  bucket_response="$(http_json GET "/api/v1/buckets/${BUCKET_ID}" "{}")" || return 1
+  account_response="$(http_json GET "/api/v1/accounts/${ACCOUNT_ID}" "{}")" || return 1
+  state="$(printf '%s\n%s\n%s\n%s\n' "$bucket_response" "$account_response" "$files_response" "$versions_response" | "$JQ_BIN" -csS --arg origin "$BASE_URL" '
     .[0].data.bucket as $b | .[1].data.account as $account |
+    .[2].data.source_files as $files | .[3].data.versions as $versions |
     if (($b.metadata_version | type == "string" and length > 0) and
         ($b | has("current_bucket_revision_id")) and
         ($b.current_bucket_revision_id | . == null or type == "string") and
-        ($b.source_files | type == "array") and ($b.bucket_versions | type == "array") and
-        all($b.source_files[]; .source_file_versions | type == "array")) | not
+        ($files | type == "array") and ($versions | type == "array") and
+        all($files[]; .source_file_versions | type == "array")) | not
     then error("Incomplete bucket deletion state; update the client or review in the dashboard") else
     {origin:$origin, account:($account | {id,name}),
      bucket:($b | {id, title, account_id, archived, archived_at, metadata_version,
        current_bucket_revision_id, storage_bytes, delete,
-       source_file_count:(.source_files | length), version_count:(.bucket_versions | length),
-       file_version_count:([.source_files[].source_file_versions | length] | add // 0)})}
+       source_file_count:($files | length), version_count:($versions | length),
+       file_version_count:([$files[].source_file_versions | length] | add // 0)})}
     end')" || return 1
   "$JQ_BIN" -e --arg account "$ACCOUNT_ID" --arg bucket "$BUCKET_ID" '
     .account.id == $account and .bucket.id == $bucket and

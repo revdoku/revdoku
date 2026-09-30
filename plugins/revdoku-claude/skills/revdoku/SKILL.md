@@ -94,4 +94,4 @@ Use the connector's current schemas and [API documentation](https://revdoku.com/
 Reconnect to refresh tools. Service access follows [pricing](https://app.revdoku.com/pricing)
 and the [Terms](https://revdoku.com/terms/).
 
-Read effective mailbox and storage quotas with `account_get` and `include_limits: true`. Select another granted account with `account_id`.
+Read effective mailbox and storage quotas with `account_limits`. Select another granted account with `account_id`.

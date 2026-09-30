@@ -27,8 +27,7 @@ use an agent mailbox or ask for OTPs or API keys in chat.
    `bucket_email_update(read: true|false)`.
 6. Request `bucket_email_download` only for the selected `attachment_id`, or
    omit it for the original EML. The returned URL expires in 15 minutes and needs
-   no extra credential. Standard files use signed storage links; protected files
-   use scoped signed API links that preserve their encryption. Never send an API
+   no extra credential. Fetch the returned URL as provided. Never send an API
    key or OAuth token to a download URL.
 7. With user authorization, `bucket_email_delete` deletes one email and its owned
    files and attachments. This requires bucket admin access. There is no email
@@ -40,16 +39,14 @@ Example arguments for listing a conversation:
 {"bucket_id":"bkt_...","conversation_id":"eml_...","limit":50}
 ```
 
-Pass them to `bucket_email_list`. Sender/subject/conversation filters are disabled
-on high-security and HIPAA accounts; authorized listing and detail reads remain
-available. Content and attachments remain stored as files.
+Pass them to `bucket_email_list`. Content and attachments remain stored as files.
 
 Replace placeholders with returned values. For another granted account, include
 its `account_id` on every call. Omitting it uses the connection's default account.
 
 ## Account limits
 
-Call `account_get` with `include_limits: true` to read mailbox and file quotas.
+Call `account_limits` to read mailbox and file quotas.
 Use `account_id` to select a granted account. Limits are returned once under
 `limits`; they are not repeated on every bucket.
 
@@ -100,3 +97,9 @@ revdoku upload ./approved.csv --bucket-id bkt_... --reason "Store the approved t
 ```
 
 Receiving diagnostics and audit logs are viewed by humans in the dashboard. Tools expose current receiving readiness and errors. No sending, drafts, attachment extraction or analysis operations are provided.
+
+## HIPAA and high-security accounts
+
+- Email filters `sender`, `subject` and `conversation_id` are unavailable. Authorized listing and detail reads still work.
+- Download tools return scoped signed API URLs that decrypt protected files. Fetch the returned URL without an API key or OAuth token.
+- See the [account-mode details](api.md#hipaa-and-high-security-accounts).
