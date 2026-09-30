@@ -1,6 +1,6 @@
 # Revdoku MCP: email inboxes and file storage
 
-Connect to `https://app.revdoku.com/mcp` using Streamable HTTP and complete OAuth
+Connect to `https://mcp.revdoku.com` using Streamable HTTP and complete OAuth
 in the browser. Each agent needs its own authorized connection. You can start
 free; see [pricing](https://app.revdoku.com/pricing).
 

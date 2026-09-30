@@ -153,7 +153,7 @@ Useful commands:
 
 ## Hosted and web agents
 
-The hosted MCP endpoint is `https://app.revdoku.com/mcp`. All tools use OAuth.
+The hosted MCP endpoint is `https://mcp.revdoku.com`. All tools use OAuth.
 If the user has no Revdoku account, direct them to browser signup before using
 account tools.
 
@@ -181,7 +181,7 @@ user's file storage, sharing, or incoming-email goal.
 
 This repository contains the Revdoku CLI, skill, API documentation, and
 Claude/Codex/Cursor plugin manifests. The hosted MCP implementation runs at
-`https://app.revdoku.com/mcp`. MCP manifests use OAuth, and every tool descriptor requires OAuth.
+`https://mcp.revdoku.com`. MCP manifests use OAuth, and every tool descriptor requires OAuth.
 
 See [CHANGELOG.md](./CHANGELOG.md), [api.md](./api.md), and the
 [MCP mailbox guide](./mcp.md).
@@ -224,7 +224,9 @@ See [the email API contract](https://revdoku.com/api.md#email-domains).
 Uploads require an explicit path; use `revdoku upload .` to select the current
 folder. `revdoku upload PATH --dry-run` lists files, exclusions and bytes without
 connecting or changing a bucket. The public CLI connects to the Revdoku API only
-at `https://app.revdoku.com`; `--url` and `REVDOKU_URL` accept only that address.
+at `https://api.revdoku.com`. `--url` and `REVDOKU_URL` also accept the previous
+`https://app.revdoku.com` setting and route its API calls to the new host.
+Browser sign-in and dashboard links use `https://app.revdoku.com`.
 Storage transfers use approved HTTPS origins.
 
 `revdoku delete --account-id ACCOUNT --bucket-id BUCKET` previews permanent

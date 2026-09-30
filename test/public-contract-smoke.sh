@@ -89,12 +89,13 @@ require_text "$SKILL_FILE" '`bucket_delete_permanently`'
 require_text "$SKILL_FILE" '`github_sync_setup`'
 require_text "$SKILL_FILE" '`ACCOUNT_SUSPENDED`'
 require_text "$SKILL_FILE" 'support@revdoku.com'
-require_text "$API_FILE" '`GET` | `/api/v1/buckets/:id/versions`'
+require_text "$API_FILE" '`GET` | `/v1/buckets/:id/versions`'
+require_text "$API_FILE" 'https://api.revdoku.com/v1/buckets'
 require_text "$API_FILE" '`github_sync_setup`'
 require_text "$API_FILE" '`account.restriction`'
 for guidance in "$README_FILE" "$SKILL_FILE" "$API_FILE" "$SOURCE_CLIENT_DIR/docs.md" "$SOURCE_CLIENT_DIR/mcp.md" "$LLMS_INSTALL_FILE" "$CHANGELOG_FILE"; do
   reject_text "$guidance" 'bucket_publish'
-  reject_text "$guidance" '/api/v1/publications'
+  reject_text "$guidance" '/v1/publications'
   reject_text "$guidance" 'features.website_publishing'
   reject_text "$guidance" 'revdoku p '
   reject_text "$guidance" 'Website publishing'
@@ -164,7 +165,7 @@ if [[ "$PUBLIC_DISTRIBUTION" == true ]]; then
   manifest_paths=(
     "$MANIFEST_ROOT/.codex-plugin/plugin.json"
     "$MANIFEST_ROOT/.cursor-plugin/plugin.json"
-    "$MANIFEST_ROOT/plugins/revdoku/.claude-plugin/plugin.json"
+    "$MANIFEST_ROOT/plugins/revdoku-claude/.claude-plugin/plugin.json"
   )
 else
   manifest_paths=(
@@ -194,7 +195,7 @@ else
 fi
 for mcp_file in "${mcp_files[@]}"; do
   ruby -rjson -e '
-    expected = { "type" => "http", "url" => "https://app.revdoku.com/mcp" }
+    expected = { "type" => "http", "url" => "https://mcp.revdoku.com" }
     actual = JSON.parse(File.read(ARGV.fetch(0))).dig("mcpServers", "revdoku")
     abort "public MCP config must contain only the hosted Revdoku server" unless actual == expected
   ' "$mcp_file"

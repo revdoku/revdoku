@@ -3,7 +3,9 @@
 set -euo pipefail
 umask 077
 
-DEFAULT_URL="https://app.revdoku.com"
+DEFAULT_URL="https://api.revdoku.com"
+APP_URL="https://app.revdoku.com"
+MCP_RESOURCE="https://mcp.revdoku.com"
 CREDENTIALS_PATH="${REVDOKU_CREDENTIALS:-${HOME}/.revdoku/credentials}"
 DEFAULT_BUCKET_PATH="${REVDOKU_DEFAULT_BUCKET_FILE:-${CREDENTIALS_PATH}.bucket}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -102,8 +104,10 @@ need_cmd() {
 }
 
 validate_base_url() {
+  # Existing configurations using the app origin now use the dedicated API.
+  [[ "$BASE_URL" != "$APP_URL" ]] || BASE_URL="$DEFAULT_URL"
   [[ "$BASE_URL" == "$DEFAULT_URL" ]] && return 0
-  die "API/auth requests require https://app.revdoku.com"
+  die "API/auth requests require https://api.revdoku.com"
 }
 
 safe_curl() {
@@ -112,13 +116,13 @@ safe_curl() {
 }
 
 validate_api_url() {
-  [[ "$1" == "$BASE_URL/"* && "$1" != *[[:space:][:cntrl:]\\]* && "$1" != *'#'* ]] || die "untrusted API/auth URL"
+  [[ ( "$1" == "$BASE_URL/"* || "$1" == "$APP_URL/"* ) && "$1" != *[[:space:][:cntrl:]\\]* && "$1" != *'#'* ]] || die "untrusted API/auth URL"
 }
 
 validate_transfer_url() {
   local url="$1" rest origin
   [[ "$url" != *[[:space:][:cntrl:]\\]* && "$url" != *'#'* ]] || return 1
-  [[ "$url" == "$BASE_URL/"* ]] && return 0
+  [[ "$url" == "$BASE_URL/"* || "$url" == "$APP_URL/"* ]] && return 0
   [[ "$url" == https://*/* ]] || return 1
   rest="${url#https://}"
   origin="https://${rest%%/*}"
@@ -587,7 +591,11 @@ account_request_path() {
 
 api_url() {
   [[ "$1" == /* && "$1" != //* && "$1" != *[[:space:][:cntrl:]\\]* && "$1" != *'#'* ]] || die "invalid API path"
-  printf "%s%s" "$BASE_URL" "$1"
+  if [[ "$BASE_URL" == "$DEFAULT_URL" && "$1" == /api/v1/* ]]; then
+    printf "%s%s" "$BASE_URL" "${1#/api}"
+  else
+    printf "%s%s" "$APP_URL" "$1"
+  fi
 }
 
 json_string() {
@@ -969,7 +977,7 @@ request_device_agent_key() {
   client_id="$("$JQ_BIN" -r '.client_id // empty' <<<"$response")"
   [[ -n "$client_id" ]] || return 1
 
-  payload="$("$JQ_BIN" -nc --arg client_id "$client_id" --arg resource "${BASE_URL%/}/mcp" '{client_id:$client_id, scope:"revdoku:mcp", resource:$resource}')"
+  payload="$("$JQ_BIN" -nc --arg client_id "$client_id" --arg resource "$MCP_RESOURCE" '{client_id:$client_id, scope:"revdoku:mcp", resource:$resource}')"
   response="$(http_json_quiet POST "/oauth/device_authorization" "$payload")" || return 1
   device_code="$("$JQ_BIN" -r '.device_code // empty' <<<"$response")"
   user_code="$("$JQ_BIN" -r '.user_code // empty' <<<"$response")"
@@ -1002,7 +1010,7 @@ request_device_agent_key() {
     fi
 
     sleep "$interval"
-    token_payload="$("$JQ_BIN" -nc --arg grant "$DEVICE_CODE_GRANT_TYPE" --arg client_id "$client_id" --arg device_code "$device_code" --arg resource "${BASE_URL%/}/mcp" '{grant_type:$grant, client_id:$client_id, device_code:$device_code, resource:$resource}')"
+    token_payload="$("$JQ_BIN" -nc --arg grant "$DEVICE_CODE_GRANT_TYPE" --arg client_id "$client_id" --arg device_code "$device_code" --arg resource "$MCP_RESOURCE" '{grant_type:$grant, client_id:$client_id, device_code:$device_code, resource:$resource}')"
     : > "$response_file"
     # Keep http_json_quiet in this shell. Command substitution would run it in a
     # subshell and discard LAST_ERROR_CODE, turning the expected
@@ -1054,7 +1062,7 @@ request_email_agent_key() {
   done
 
   echo "If $email can receive Revdoku sign-in codes, a verification code was sent." >&2
-  echo "If no code arrives, sign in at ${BASE_URL%/}/users/sign_in or retry browser device sign-in with 'revdoku login'." >&2
+  echo "If no code arrives, sign in at $APP_URL/users/sign_in or retry browser device sign-in with 'revdoku login'." >&2
 
   code="$(prompt_read "Code: ")"
   [[ -n "$code" ]] || die "code is required"
@@ -1178,7 +1186,7 @@ download_file_url() {
       die "download destination is not approved"
     fi
     auth_args=()
-    if [[ "$url" == "$BASE_URL/"* ]]; then
+    if [[ "$url" == "$BASE_URL/"* || "$url" == "$APP_URL/"* ]]; then
       auth_args=(-H "Authorization: Bearer $API_KEY")
       while IFS= read -r -d '' value; do auth_args+=("$value"); done < <(agent_header_args)
     fi
@@ -2291,7 +2299,7 @@ rm -f "$bucket_id_file"
 echo "Saved bucket: $bucket_id" >&2
 
 # stdout stays the bucket ID for scripts; the dashboard link goes to stderr.
-echo "View in Revdoku: $BASE_URL/buckets/view?id=$bucket_id" >&2
+echo "View in Revdoku: $APP_URL/buckets/view?id=$bucket_id" >&2
 write_project_binding "$bucket_id" ""
 print_terminal_link_hint
 printf "%s\n" "$bucket_id"

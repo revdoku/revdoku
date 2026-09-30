@@ -5,7 +5,7 @@ await run(async () => {
   const data = await client.api<{ profile: { current_account: { plan_contract: {
     plan: { name: string }; limits: Record<string, unknown>;
     bucket_creation_usage: { monthly_limit: number; used: number; remaining: number; resets_at: string };
-  } } } }>('/api/v1/account/profile');
+  } } } }>('/v1/account/profile');
   const contract = data.profile.current_account.plan_contract;
   console.log(JSON.stringify({ plan: contract.plan.name, creations: contract.bucket_creation_usage,
     active_bucket_limit: contract.limits.max_buckets,

@@ -32,7 +32,7 @@ test('preserves validation details and request IDs without retrying invalid inpu
   const details = [{ field: 'description', message: 'is too long' }];
   const api = client(async () => { calls++; return Response.json({ success: false,
     error: { code: 'VALIDATION_ERROR', message: 'Validation failed', request_id: 'request-invalid', details } }, { status: 422 }); });
-  await assert.rejects(api.api('/api/v1/buckets'), error => {
+  await assert.rejects(api.api('/v1/buckets'), error => {
     assert.equal(error.code, 'VALIDATION_ERROR');
     assert.equal(error.requestId, 'request-invalid');
     assert.deepEqual(error.details, details);
@@ -43,7 +43,7 @@ test('preserves validation details and request IDs without retrying invalid inpu
 
 test('rejects contradictory and missing success envelopes', async () => {
   for (const payload of [{ data: {} }, { success: false, data: {} }, { success: true, data: {}, error: {} }]) {
-    await assert.rejects(client(async () => Response.json(payload)).api('/api/v1/status'), /Invalid API success response/);
+    await assert.rejects(client(async () => Response.json(payload)).api('/v1/status'), /Invalid API success response/);
   }
 });
 
@@ -51,8 +51,8 @@ test('selects authorized accounts in every query or write body', async () => {
   const calls = [];
   process.env.REVDOKU_ACCOUNT_ID = 'acct_client';
   const api = client(async (url, options) => { calls.push([url, options]); return ok({}); });
-  await api.api('/api/v1/status');
-  await api.api('/api/v1/buckets', { method: 'POST', body: { bucket: { title: 'Inbox' } } });
+  await api.api('/v1/status');
+  await api.api('/v1/buckets', { method: 'POST', body: { bucket: { title: 'Inbox' } } });
   assert.equal(calls[0][0].searchParams.get('account_id'), 'acct_client');
   assert.deepEqual(JSON.parse(calls[1][1].body), { account_id: 'acct_client', bucket: { title: 'Inbox' } });
   assert.equal(calls[0][1].redirect, 'error');
@@ -62,7 +62,7 @@ test('retries temporary throttling and honors Retry-After', async t => {
   let calls = 0;
   const api = client(async () => ++calls === 1
     ? Response.json({ error: { code: 'RATE_LIMIT_EXCEEDED' } }, { status: 429, headers: { 'Retry-After': '2' } }) : ok({ done: true }));
-  assert.deepEqual(await api.api('/api/v1/status'), { done: true });
+  assert.deepEqual(await api.api('/v1/status'), { done: true });
   assert.deepEqual(globalThis.setTimeout.mock.calls.map(call => call.arguments[1]), [2000]);
   t.mock.method(Date, 'now', () => 1000);
   assert.equal(retryDelay('Thu, 01 Jan 1970 00:00:03 GMT', 0), 2000);
@@ -71,7 +71,7 @@ test('retries temporary throttling and honors Retry-After', async t => {
 test('monthly quotas stop immediately and retain structured reset information', async () => {
   let calls = 0;
   const api = client(async () => { calls++; return Response.json({ error: { code: 'BUCKET_CREATION_LIMIT_REACHED', message: 'Limit reached', details: { resets_at: '2026-10-01T00:00:00Z' } } }, { status: 429 }); });
-  await assert.rejects(api.api('/api/v1/buckets', { method: 'POST', retrySafe: true, body: {} }), error => {
+  await assert.rejects(api.api('/v1/buckets', { method: 'POST', retrySafe: true, body: {} }), error => {
     assert.ok(error instanceof ApiError); assert.equal(error.details.resets_at, '2026-10-01T00:00:00Z'); return true;
   });
   assert.equal(calls, 1);
@@ -80,17 +80,17 @@ test('monthly quotas stop immediately and retain structured reset information', 
 test('never automatically retries an uncertain non-idempotent write', async () => {
   let calls = 0;
   const api = client(async () => { calls++; throw new Error('network failure'); });
-  await assert.rejects(api.api('/api/v1/direct_uploads', { method: 'POST', body: {} }), /Check the result/);
+  await assert.rejects(api.api('/v1/direct_uploads', { method: 'POST', body: {} }), /Check the result/);
   assert.equal(calls, 1);
 });
 
 test('caps retries and refuses a wait beyond the request deadline', async () => {
   let calls = 0;
   const api = client(async () => { calls++; return Response.json({}, { status: 503 }); });
-  await assert.rejects(api.api('/api/v1/status'), ApiError); assert.equal(calls, 4);
+  await assert.rejects(api.api('/v1/status'), ApiError); assert.equal(calls, 4);
   calls = 0;
   const slow = client(async () => { calls++; return Response.json({}, { status: 429, headers: { 'Retry-After': '86400' } }); });
-  await assert.rejects(slow.api('/api/v1/status'), ApiError); assert.equal(calls, 1);
+  await assert.rejects(slow.api('/v1/status'), ApiError); assert.equal(calls, 1);
 });
 
 test('pagination advances and includes every page', async () => {
@@ -105,7 +105,7 @@ test('signed downloads omit API credentials across redirects and enforce a byte 
   const requests = [];
   const api = client(async (url, options) => {
     requests.push([url, options]);
-    if (url.origin === 'https://app.revdoku.com') return ok({ url: 'https://storage.example/first' });
+    if (url.origin === 'https://api.revdoku.com') return ok({ url: 'https://storage.example/first' });
     if (url.pathname === '/first') return new Response(null, { status: 302, headers: { Location: 'https://storage2.example/file' } });
     return new Response('hello');
   });
@@ -118,7 +118,7 @@ test('uploads use checksums, isolated storage headers, and an explicit file atta
   const calls = [];
   const api = client(async (url, opts) => {
     calls.push([url, opts]);
-    if (url.pathname === '/api/v1/direct_uploads') return ok({ signed_id: 'signed-test', direct_upload: { url: 'https://storage.example/blob', headers: { 'Content-Type': 'text/plain' } } });
+    if (url.pathname === '/v1/direct_uploads') return ok({ signed_id: 'signed-test', direct_upload: { url: 'https://storage.example/blob', headers: { 'Content-Type': 'text/plain' } } });
     return url.origin === 'https://storage.example' ? new Response(null, { status: 200 }) : ok({ file: {} });
   });
   await api.uploadFile('bkt_example', 'notes.txt', Buffer.from('hello'), 'text/plain');
@@ -145,4 +145,28 @@ test('keeps attachment downloads in their selected folder and never overwrites',
     await assert.rejects(saveAttachment(folder, 0, 'attachments/a.txt', Buffer.from('overwrite')), { code: 'EEXIST' });
     assert.equal(await readFile(target, 'utf8'), 'original');
   } finally { await rm(folder, { recursive: true, force: true }); }
+});
+
+test('REST uses the API host and protected email downloads accept only matching first-party paths', async () => {
+  const path = '/v1/buckets/bkt_example/emails/eml_example/raw';
+  for (const downloadUrl of [`https://api.revdoku.com${path}?download=1`, `https://app.revdoku.com/api${path}?download=1`]) {
+    const calls = [];
+    const api = client(async (url, options) => {
+      calls.push([url, options]);
+      return calls.length === 1 ? ok({ download: { authentication: 'bearer', url: downloadUrl } }) : new Response('protected email');
+    });
+    assert.equal((await api.downloadEmail('bkt_example', 'eml_example')).toString(), 'protected email');
+    assert.equal(calls[0][0].href, `https://api.revdoku.com${path}`);
+    assert.equal(calls[1][0].href, downloadUrl);
+    assert.equal(calls[1][1].headers.Authorization, 'Bearer test-only-secret');
+    assert.equal(calls[1][1].redirect, 'error');
+  }
+  for (const url of [`https://evil.example${path}`, `https://api.revdoku.com.evil.example${path}`,
+    `https://api.revdoku.com${path}/other`, `https://app.revdoku.com${path}`,
+    `https://api.revdoku.com@evil.example${path}`]) {
+    let calls = 0;
+    const api = client(async () => { calls++; return ok({ download: { authentication: 'bearer', url } }); });
+    await assert.rejects(api.downloadEmail('bkt_example', 'eml_example'), /Invalid authenticated download URL/);
+    assert.equal(calls, 1);
+  }
 });

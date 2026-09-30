@@ -5,13 +5,13 @@
     "url": "https://revdoku.com"
   },
   "metadata": {
-    "description": "Email inboxes and shared cloud files for people and AI agents. Receive and read messages and attachments, upload selected files, and write, restore, or organize stored files. Supports bucket archiving, permanent deletion, and agency client account creation when explicitly requested and authorized. Email sending: Coming soon. File storage supports reads and writes."
+    "description": "Email inboxes and shared cloud files for people and AI agents. Receive and read messages and attachments, manage stored text files, and collaborate through authorized bucket access using the hosted Revdoku MCP connector. Email sending: Coming soon."
   },
   "plugins": [
     {
       "name": "revdoku",
-      "source": "./plugins/revdoku",
-      "description": "Email inboxes and shared cloud files for people and AI agents. Receive and read messages and attachments, upload selected files, and write, restore, or organize stored files. Supports bucket archiving, permanent deletion, and agency client account creation when explicitly requested and authorized. Email sending: Coming soon. File storage supports reads and writes.",
+      "source": "./plugins/revdoku-claude",
+      "description": "Email inboxes and shared cloud files for people and AI agents. Receive and read messages and attachments, manage stored text files, and collaborate through authorized bucket access using the hosted Revdoku MCP connector. Email sending: Coming soon.",
       "author": {
         "name": "Revdoku",
         "url": "https://revdoku.com"

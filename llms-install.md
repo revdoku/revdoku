@@ -61,7 +61,7 @@ updates the same bucket. Use `revdoku files`, `revdoku read PATH`, and
 
 ## Hosted MCP agent
 
-Endpoint: `https://app.revdoku.com/mcp`
+Endpoint: `https://mcp.revdoku.com`
 
 Authenticate with OAuth before calling tools. Then call `revdoku_status`, create
 or choose a private bucket, and read or write the requested files. Bucket creation

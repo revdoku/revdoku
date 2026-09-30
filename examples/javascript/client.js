@@ -2,7 +2,8 @@
 import { createHash } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { basename, resolve } from 'node:path';
-const API_ORIGIN = 'https://app.revdoku.com';
+const API_ORIGIN = 'https://api.revdoku.com';
+const APP_ORIGIN = 'https://app.revdoku.com';
 const MAX_BYTES = 64 * 1024 * 1024;
 export class ApiError extends Error {
     status;
@@ -55,7 +56,7 @@ export function createClient() {
     if (accountId && !/^acct_[A-Za-z0-9]+$/.test(accountId))
         throw new Error('Invalid account identifier.');
     async function api(path, opts = {}) {
-        if (!path.startsWith('/api/v1/'))
+        if (!path.startsWith('/v1/'))
             throw new Error('Expected an API-relative path.');
         const url = new URL(path, API_ORIGIN);
         if (url.origin !== API_ORIGIN)
@@ -127,7 +128,7 @@ export function createClient() {
     }
     async function readFile(id, path, maxBytes = MAX_BYTES) {
         const query = new URLSearchParams({ path: safePath(path), content_url: '1' });
-        const { url } = await api(`/api/v1/buckets/${bucketId(id)}/files/by_path?${query}`);
+        const { url } = await api(`/v1/buckets/${bucketId(id)}/files/by_path?${query}`);
         const response = await storage(url);
         return readBytes(response, maxBytes);
     }
@@ -159,21 +160,24 @@ export function createClient() {
     }
     async function listEmails(id, cursor) {
         const params = new URLSearchParams({ limit: '100', ...(cursor ? { cursor } : {}) });
-        return api(`/api/v1/buckets/${bucketId(id)}/emails?${params}`);
+        return api(`/v1/buckets/${bucketId(id)}/emails?${params}`);
     }
     async function readEmail(id, messageId, background = false) {
-        const { email } = await api(`/api/v1/buckets/${bucketId(id)}/emails/${emailId(messageId)}?purpose=${background ? 'background' : 'open'}`);
+        const { email } = await api(`/v1/buckets/${bucketId(id)}/emails/${emailId(messageId)}?purpose=${background ? 'background' : 'open'}`);
         return email;
     }
     async function downloadEmail(id, messageId, attachmentId) {
         if (attachmentId && !/^df_[A-Za-z0-9]+$/.test(attachmentId))
             throw new Error('Invalid attachment identifier.');
-        const path = `/api/v1/buckets/${bucketId(id)}/emails/${emailId(messageId)}/${attachmentId ? `attachments/${attachmentId}` : 'raw'}`;
+        const path = `/v1/buckets/${bucketId(id)}/emails/${emailId(messageId)}/${attachmentId ? `attachments/${attachmentId}` : 'raw'}`;
         const { download } = await api(path);
         let response;
         if (download.authentication === 'bearer') {
             const url = new URL(download.url);
-            if (url.origin !== API_ORIGIN || url.pathname !== path || url.username || url.password)
+            // Protected downloads may use the app's original Rails route.
+            const approved = (url.origin === API_ORIGIN && url.pathname === path) ||
+                (url.origin === APP_ORIGIN && url.pathname === `/api${path}`);
+            if (!approved || url.username || url.password)
                 throw new Error('Invalid authenticated download URL.');
             if (accountId)
                 url.searchParams.set('account_id', accountId);
@@ -194,7 +198,7 @@ export function createClient() {
         let offset = 0;
         for (let page = 0; page < 1000; page++) {
             const params = new URLSearchParams({ limit: '100', offset: String(offset), q: query });
-            const result = await api(`/api/v1/buckets/${bucketId(id)}/files?${params}`);
+            const result = await api(`/v1/buckets/${bucketId(id)}/files?${params}`);
             files.push(...result.files);
             if (!result.pagination.has_more)
                 return files;
@@ -207,7 +211,7 @@ export function createClient() {
     async function waitForInbox(id, timeoutMs = 120000) {
         const deadline = Date.now() + timeoutMs;
         while (Date.now() < deadline) {
-            const inbox = await api(`/api/v1/buckets/${bucketId(id)}/email`, { timeoutMs: Math.min(30000, deadline - Date.now()) });
+            const inbox = await api(`/v1/buckets/${bucketId(id)}/email`, { timeoutMs: Math.min(30000, deadline - Date.now()) });
             if (inbox.ready)
                 return inbox;
             if (inbox.blocked_reason && inbox.blocked_reason !== 'routing_pending')
@@ -221,12 +225,12 @@ export function createClient() {
         bucketId(id);
         if (bytes.length > MAX_BYTES)
             throw new Error('This example supports files up to 64 MiB; account limits also apply.');
-        const descriptor = await api('/api/v1/direct_uploads', {
+        const descriptor = await api('/v1/direct_uploads', {
             method: 'POST', body: { bucket_id: id, path, blob: { filename: basename(path), byte_size: bytes.length,
                     checksum: createHash('md5').update(bytes).digest('base64'), sha256: createHash('sha256').update(bytes).digest('hex'), content_type: contentType, purpose: 'bucket_file' } },
         });
         await storage(descriptor.direct_upload.url, { method: 'PUT', headers: descriptor.direct_upload.headers, body: new Uint8Array(bytes) });
-        await api(`/api/v1/buckets/${id}/files`, { method: 'POST', body: { path, signed_blob_id: descriptor.signed_id } });
+        await api(`/v1/buckets/${id}/files`, { method: 'POST', body: { path, signed_blob_id: descriptor.signed_id } });
     }
     return { api, readFile, listFiles, listEmails, readEmail, downloadEmail, waitForInbox, uploadFile };
 }

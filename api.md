@@ -59,30 +59,30 @@ their protocol-specific response formats.
 
 ## Email API quick start
 
-Base URL: `https://app.revdoku.com`. Set `Authorization: Bearer YOUR_API_KEY`.
+API origin: `https://api.revdoku.com`; versioned base URL: `https://api.revdoku.com/v1`. Set `Authorization: Bearer YOUR_API_KEY`.
 Use the returned IDs and receiving address. All calls require access to the selected
 account; add `account_id` when choosing another granted account.
 
 ```sh
 # Create an inbox. Keep the same idempotency key when retrying this request.
-curl -sS https://app.revdoku.com/api/v1/buckets \
+curl -sS https://api.revdoku.com/v1/buckets \
   -H "Authorization: Bearer $REVDOKU_API_KEY" -H 'Content-Type: application/json' \
   -d '{"idempotency_key":"my-inbox-1","bucket":{"title":"My inbox"}}'
 
 # Wait until the returned address is ready before using it.
-curl -sS "https://app.revdoku.com/api/v1/buckets/$BUCKET_ID/email" \
+curl -sS "https://api.revdoku.com/v1/buckets/$BUCKET_ID/email" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 
 # List messages. Save data.pagination.next_cursor for the next poll.
-curl -sS "https://app.revdoku.com/api/v1/buckets/$BUCKET_ID/emails?limit=50" \
+curl -sS "https://api.revdoku.com/v1/buckets/$BUCKET_ID/emails?limit=50" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 
 # Read an eml_ ID directly, with decoded headers, body and attachments.
-curl -sS "https://app.revdoku.com/api/v1/buckets/$BUCKET_ID/emails/$EMAIL_ID" \
+curl -sS "https://api.revdoku.com/v1/buckets/$BUCKET_ID/emails/$EMAIL_ID" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 
 # Get a download descriptor for one attachment.
-curl -sS "https://app.revdoku.com/api/v1/buckets/$BUCKET_ID/emails/$EMAIL_ID/attachments/$ATTACHMENT_ID" \
+curl -sS "https://api.revdoku.com/v1/buckets/$BUCKET_ID/emails/$EMAIL_ID/attachments/$ATTACHMENT_ID" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -109,12 +109,12 @@ connection and its refresh credentials.
 ## Additional file storage
 
 Authenticate, select the intended account, then create a bucket with
-`POST /api/v1/buckets`. Use the file/direct-upload operations below to save
+`POST /v1/buckets`. Use the file/direct-upload operations below to save
 documents, data, source files, and binary assets in private bucket storage.
 Read files by path, append bounded UTF-8 text with
-`POST /api/v1/buckets/:id/files/append_text`, and inspect history with
-`GET /api/v1/buckets/:id/versions`. Restore a selected snapshot through
-`POST /api/v1/buckets/:id/versions/restore`; this creates a new latest version.
+`POST /v1/buckets/:id/files/append_text`, and inspect history with
+`GET /v1/buckets/:id/versions`. Restore a selected snapshot through
+`POST /v1/buckets/:id/versions/restore`; this creates a new latest version.
 
 Separate authorized AI connections can operate on the same bucket within their
 permissions. Respect file/bucket locks and supply `expected_bucket_revision_id`
@@ -138,11 +138,11 @@ remain files; the database stores a message projection for listing and search.
 
 | Method | Path | Result |
 | --- | --- | --- |
-| GET | `/api/v1/buckets/:bucket_id/emails` | `data.emails` and `data.pagination` |
-| GET | `/api/v1/buckets/:bucket_id/emails/:email_id` | `data.email`, including `body_text`, `body_status`, `attachments` |
-| PATCH | `/api/v1/buckets/:bucket_id/emails/:email_id` | Accepts `{"read":true}` or `{"read":false}`; returns `data.email` |
-| GET | `/api/v1/buckets/:bucket_id/emails/:email_id/raw` | `data.download` for the original EML |
-| GET | `/api/v1/buckets/:bucket_id/emails/:email_id/attachments/:attachment_id` | `data.download` for a saved attachment belonging to this email |
+| GET | `/v1/buckets/:bucket_id/emails` | `data.emails` and `data.pagination` |
+| GET | `/v1/buckets/:bucket_id/emails/:email_id` | `data.email`, including `body_text`, `body_status`, `attachments` |
+| PATCH | `/v1/buckets/:bucket_id/emails/:email_id` | Accepts `{"read":true}` or `{"read":false}`; returns `data.email` |
+| GET | `/v1/buckets/:bucket_id/emails/:email_id/raw` | `data.download` for the original EML |
+| GET | `/v1/buckets/:bucket_id/emails/:email_id/attachments/:attachment_id` | `data.download` for a saved attachment belonging to this email |
 
 Listing supports `limit` (default 50, maximum 100), opaque `cursor`, `order`
 (`asc` default, or `desc`), `sender` (exact address, case insensitive), `subject`
@@ -207,11 +207,11 @@ Email sending and replies are Coming soon; no sending operation is available yet
 
 | Operation | REST / MCP |
 | --- | --- |
-| Create an inbox | `POST /api/v1/buckets` / `bucket_create`; creation automatically returns `bucket.email` with address and receiving state. Template/copy creation assigns a separate address. |
-| Get address/state | `GET /api/v1/buckets/:id/email`, or bucket detail / `bucket_get` with `include_email=true`; requires upload/write access. |
-| Check for new mail | `GET /api/v1/buckets/:id/emails` / `bucket_email_list`; save `pagination.next_cursor`. |
-| Read a message | `GET /api/v1/buckets/:id/emails/:email_id` / `bucket_email_get`. |
-| Rotate address | `POST /api/v1/buckets/:id/email/rotate`; requires write access and explicit confirmation. |
+| Create an inbox | `POST /v1/buckets` / `bucket_create`; creation automatically returns `bucket.email` with address and receiving state. Template/copy creation assigns a separate address. |
+| Get address/state | `GET /v1/buckets/:id/email`, or bucket detail / `bucket_get` with `include_email=true`; requires upload/write access. |
+| Check for new mail | `GET /v1/buckets/:id/emails` / `bucket_email_list`; save `pagination.next_cursor`. |
+| Read a message | `GET /v1/buckets/:id/emails/:email_id` / `bucket_email_get`. |
+| Rotate address | `POST /v1/buckets/:id/email/rotate`; requires write access and explicit confirmation. |
 
 For CLI use, `revdoku inbox --bucket-id ID` retrieves address/state, and
 `revdoku emails --bucket-id ID` lists messages; `revdoku email EMAIL_ID --bucket-id ID` reads one. For hosted agents,
@@ -260,7 +260,7 @@ and are never reused.
 Update third-party signup/recovery settings before retiring an address.
 
 Account Settings controls receiving for the whole account, independently for each
-agency/client account. Administrators may also `PATCH /api/v1/account/profile`
+agency/client account. Administrators may also `PATCH /v1/account/profile`
 with `email_receiving_enabled`, `expected_account_id`, and, when disabling,
 `confirm_email_receiving_disable: true`. This requires a full-account credential;
 bucket-scoped credentials cannot change it. Re-enabling retains addresses and files.
@@ -269,11 +269,11 @@ never infer the tenant from a bucket ID.
 
 ### Allowed senders
 
-`GET /api/v1/buckets/:id/email` also returns `sender_allowlist` to account
+`GET /v1/buckets/:id/email` also returns `sender_allowlist` to account
 owners/administrators with bucket-admin permission. It includes `enabled`,
 `entries`, `version`, `max_entries`, and `editable`. The default is disabled.
 
-`PATCH /api/v1/buckets/:id/email/allowlist` replaces the policy:
+`PATCH /v1/buckets/:id/email/allowlist` replaces the policy:
 
 ```json
 {"sender_allowlist":{"enabled":true,"entries":["sender@example.com","vendor.example"]},"expected_version":"VERSION_FROM_GET"}
@@ -302,7 +302,7 @@ counts once per send attempt, including failures. After exhaustion, activity use
 daily summaries until the next month or a limit increase. This does not consume
 incoming-email quota or suppress security/account alerts.
 
-`GET/PATCH /api/v1/account/notification_settings` is for authenticated browser
+`GET/PATCH /v1/account/notification_settings` is for authenticated browser
 sessions only, not API/agent keys or MCP tools. PATCH requires `expected_account_id`
 and the page's `X-CSRF-Token` for cookie authentication. Editable fields are
 `activity_frequency` (`none`, `immediately`, `daily`, `weekly`). Responses include the requested
@@ -322,9 +322,9 @@ already handles email. Dedicated root domains are also accepted. Never silently
 prepend `inbox.`, modify unrelated MX/SPF/DKIM/DMARC, or change DNS without permission.
 An unrelated MX/CNAME is a conflict; a null MX must be replaced, never combined.
 
-Full-account administrators may use `GET/POST /api/v1/account/email_domains`,
-`GET/DELETE /api/v1/account/email_domains/:id`, and
-`POST /api/v1/account/email_domains/:id/verify`. Cookie writes require CSRF.
+Full-account administrators may use `GET/POST /v1/account/email_domains`,
+`GET/DELETE /v1/account/email_domains/:id`, and
+`POST /v1/account/email_domains/:id/verify`. Cookie writes require CSRF.
 Removal requires `confirm: true` and the exact `hostname`, and is blocked while
 buckets hold current/pending addresses on the domain. DNS challenges are visible
 only to full-account administrators. Unverified claims expire after seven days.
@@ -476,7 +476,7 @@ You can start free. See [pricing](https://app.revdoku.com/pricing) for current p
 Use effective availability and usage returned by the API; avoid hard-coding plan
 names or quotas in integrations.
 
-For an empty account, `GET /api/v1/status` returns `onboarding.state: "empty_account"`
+For an empty account, `GET /v1/status` returns `onboarding.state: "empty_account"`
 and `onboarding.suggested_projects`, led by an incoming-email inbox and a private
 workspace. Create or select a bucket for the user's files or incoming email.
 Once a bucket exists, the state is `active` and the starter list is empty.
@@ -488,7 +488,7 @@ may need an owner to grant bucket access rather than create another bucket.
 ### Base URL
 
 ```sh
-export REVDOKU_URL=https://app.revdoku.com
+export REVDOKU_URL=https://api.revdoku.com
 export REVDOKU_API_KEY=revdoku_...
 ```
 
@@ -502,7 +502,7 @@ Authorization: Bearer $REVDOKU_API_KEY
 
 ### Agency account selection
 
-`GET /api/v1/status` returns the selected `account`, `default_account_id`, and
+`GET /v1/status` returns the selected `account`, `default_account_id`, and
 a lean `accounts` list containing only accounts granted to this credential.
 Each account identity includes:
 
@@ -528,22 +528,22 @@ belong to the selected account. Invalid or unauthorized selectors fail instead
 of falling back.
 
 ```http
-GET /api/v1/status?account_id=acct_client
-GET /api/v1/buckets?account_id=acct_client
+GET /v1/status?account_id=acct_client
+GET /v1/buckets?account_id=acct_client
 ```
 
 Hosted MCP mirrors this through `revdoku_status` and the optional `account_id`
 on every tool. The CLI uses `--account-id`. The browser's
-`POST /api/v1/account/switch_account` changes its browser session only and is
+`POST /v1/account/switch_account` changes its browser session only and is
 unavailable to API/agent keys. Browser switching never switches an agent's account.
-`GET /api/v1/me` lists browser memberships or full-account API grants and also
+`GET /v1/me` lists browser memberships or full-account API grants and also
 includes owner identity, roles, counts, and client-creation availability.
 Bucket-scoped credentials use `/status`; they cannot call `/me` or profile endpoints.
 
 An Agency owner's authorized connection can create a client account:
 
 ```http
-POST /api/v1/accounts
+POST /v1/accounts
 Content-Type: application/json
 
 {"name":"Project files","client_name":"Acme Studio","account_id":"acct_agency"}
@@ -558,7 +558,7 @@ subsequent requests. Browser sessions may also target an agency they own with
 `account_id` on this create endpoint, without switching their current session.
 
 Existing client names can be edited in Account Settings or through
-`PATCH /api/v1/account/profile` with `{ "client_name": "Acme Studio" }`, using
+`PATCH /v1/account/profile` with `{ "client_name": "Acme Studio" }`, using
 an authorized browser session or full-account API credential. Set it to `null`
 to clear it. `account_name` updates the separate account name. Neither name
 changes ownership, agency membership, billing, or authentication.
@@ -654,7 +654,7 @@ or retry writes or create replacement accounts to evade a restriction.
 ### Versioning
 
 Every API response carries an `X-Revdoku-Client-Version` header (the current
-CLI/connector release). `GET /api/v1/status` also returns `server_version` (the
+CLI/connector release). `GET /v1/status` also returns `server_version` (the
 running Revdoku version) and `client_version`. Clients can compare
 `client_version` against their installed version to detect and prompt for an
 update — the bundled CLI does this automatically. The MCP connector reports the
@@ -663,7 +663,7 @@ same via the `initialize` handshake (`serverInfo.version`) and the
 added tools by reconnecting or restarting so they run `tools/list` again. Update
 the local CLI by rerunning the official installer.
 
-Both `GET /api/v1/status` and `revdoku_status` expose account-level GitHub Sync
+Both `GET /v1/status` and `revdoku_status` expose account-level GitHub Sync
 eligibility at `features.github_sync`. Bucket-specific connection state and the
 setup deep link remain on bucket list/detail responses.
 
@@ -673,7 +673,7 @@ Cloud agents that support custom remote MCP connectors connect to Revdoku throug
 the production remote MCP endpoint:
 
 ```text
-https://app.revdoku.com/mcp
+https://mcp.revdoku.com
 ```
 
 Follow <https://revdoku.com/connect/> for the current client-specific setup.
@@ -734,8 +734,8 @@ From that page the user chooses one explicit direction:
 
 After the initial transfer, both modes automatically sync changes in both
 directions. Read full connection state with
-`GET /api/v1/buckets/:bucket_id/github_sync`; enqueue a manual retry with
-`POST /api/v1/buckets/:bucket_id/github_sync/sync`. Connecting, changing, or
+`GET /v1/buckets/:bucket_id/github_sync`; enqueue a manual retry with
+`POST /v1/buckets/:bucket_id/github_sync/sync`. Connecting, changing, or
 disconnecting a repository requires bucket-administration permission.
 
 ### Connect an Agent
@@ -743,11 +743,11 @@ disconnecting a repository requires bucket-administration permission.
 For ChatGPT, Claude, or another remote MCP client, connect:
 
 ```text
-https://app.revdoku.com/mcp
+https://mcp.revdoku.com
 ```
 
 Agents and clients can discover supported auth methods at
-`GET /api/v1/agent_auth/capabilities`. The preferred local flow is OAuth device
+`GET /v1/agent_auth/capabilities`. The preferred local flow is OAuth device
 authorization. Remote MCP clients use Revdoku OAuth authorization code flow.
 
 Local CLI/device-code flow:
@@ -768,7 +768,7 @@ curl -fsS "$REVDOKU_URL/oauth/device_authorization" \
   -d '{
     "client_id": "mcp_client_...",
     "scope": "revdoku:mcp",
-    "resource": "https://app.revdoku.com/mcp"
+    "resource": "https://mcp.revdoku.com"
   }'
 ```
 
@@ -785,11 +785,11 @@ tooling may store the returned `revdoku_api_key` extension for REST API calls.
 Legacy fallback email-code flow:
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/agent_auth/request_code" \
+curl -fsS "$REVDOKU_URL/v1/agent_auth/request_code" \
   -H "Content-Type: application/json" \
   -d '{ "email": "person@example.com" }'
 
-curl -fsS "$REVDOKU_URL/api/v1/agent_auth/verify_code" \
+curl -fsS "$REVDOKU_URL/v1/agent_auth/verify_code" \
   -H "Content-Type: application/json" \
   -d '{
     "email": "person@example.com",
@@ -812,7 +812,7 @@ working directory, bucket titles, or domain/folder names. Use labels chosen for
 organization; store project or task context in `metadata`.
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/buckets" \
+curl -fsS "$REVDOKU_URL/v1/buckets" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -852,7 +852,7 @@ The retained bucket is returned with HTTP 201 without spending another creation.
 Different settings return 409 `IDEMPOTENCY_KEY_REUSED`; invalid keys return 422
 `INVALID_IDEMPOTENCY_KEY`. Archived buckets remain replay targets. Deleting a
 bucket or moving it to another account removes its key. Use a new key for each intended inbox. Keys are account scoped.
-`GET /api/v1/buckets?idempotency_key=KEY` can recover a creation within your grants;
+`GET /v1/buckets?idempotency_key=KEY` can recover a creation within your grants;
 add `archived=true` when looking for an archived bucket.
 See the runnable [JavaScript and TypeScript examples](https://github.com/revdoku/revdoku/tree/main/examples).
 
@@ -867,7 +867,7 @@ returned object-storage URL, then attach the signed blob id to the bucket. The
 server opens and finalizes a one-file bucket upload session automatically.
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/direct_uploads" \
+curl -fsS "$REVDOKU_URL/v1/direct_uploads" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -889,7 +889,7 @@ headers required for the object-storage `PUT`. Upload the bytes to that URL
 without the Revdoku authorization header, then attach the uploaded blob:
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../files" \
+curl -fsS "$REVDOKU_URL/v1/buckets/bkt_.../files" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -918,7 +918,7 @@ uploads are abandoned when the session expires, and the bucket write lock is
 released automatically.
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../upload_sessions" \
+curl -fsS "$REVDOKU_URL/v1/buckets/bkt_.../upload_sessions" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"delete_missing":true,"expected_file_count":123}'
@@ -927,7 +927,7 @@ curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../upload_sessions" \
 Then request descriptors for one subbatch:
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/buckets/bkt_.../upload_sessions/bus_.../uploads" \
+curl -fsS "$REVDOKU_URL/v1/buckets/bkt_.../upload_sessions/bus_.../uploads" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -949,7 +949,7 @@ object-storage `PUT`. Do not send Revdoku authorization headers to object
 storage. After each successful descriptor subbatch, commit a bounded batch:
 
 ```sh
-curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../upload_sessions/bus_.../finalize_batch" \
+curl -fsS -X POST "$REVDOKU_URL/v1/buckets/bkt_.../upload_sessions/bus_.../finalize_batch" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"limit":12}'
@@ -962,7 +962,7 @@ canceling or interrupting the upload; it closes the session and releases the
 lock without committing any unfinalized staged uploads.
 
 ```sh
-curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../upload_sessions/bus_.../finalize" \
+curl -fsS -X POST "$REVDOKU_URL/v1/buckets/bkt_.../upload_sessions/bus_.../finalize" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"complete":true}'
@@ -979,11 +979,11 @@ until the response no longer includes `finalize_pending:true`.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/v1/agent_auth/capabilities` | Machine-readable agent auth manifest. |
-| `GET` | `/api/v1/agent_auth/status` | API-key status alias for agents; same connection payload as `/api/v1/status`. |
-| `POST` | `/api/v1/agent_auth/request_code` | Request an email verification code without revealing whether the email has a Revdoku account. New hosted accounts are created in the web UI at app.revdoku.com/users/sign_up, not here. |
-| `POST` | `/api/v1/agent_auth/verify_code` | Verify the email code and create an API key when the code is valid. |
-| `POST` | `/api/v1/agent_auth/browser_login_link` | Return a stable dashboard URL (legacy endpoint name; normal sign-in is required). |
+| `GET` | `/v1/agent_auth/capabilities` | Machine-readable agent auth manifest. |
+| `GET` | `/v1/agent_auth/status` | API-key status alias for agents; same connection payload as `/v1/status`. |
+| `POST` | `/v1/agent_auth/request_code` | Request an email verification code without revealing whether the email has a Revdoku account. New hosted accounts are created in the web UI at app.revdoku.com/users/sign_up, not here. |
+| `POST` | `/v1/agent_auth/verify_code` | Verify the email code and create an API key when the code is valid. |
+| `POST` | `/v1/agent_auth/browser_login_link` | Return a stable dashboard URL (legacy endpoint name; normal sign-in is required). |
 | `POST` | `/oauth/device_authorization` | Start OAuth device authorization for local CLI/agent clients. |
 | `GET` / `POST` | `/oauth/device` | Browser page where the user enters/approves a device code. |
 | `POST` | `/oauth/token` | Exchange OAuth authorization codes, device codes, or refresh tokens. |
@@ -1029,7 +1029,7 @@ legacy `scope` alias. The requested permission is shown and bound to OAuth
 consent. If omitted, agent connections and named API-key setup use
 `bucket_admin` by default; an invalid value is rejected rather than broadened.
 
-#### POST /api/v1/agent_auth/request_code
+#### POST /v1/agent_auth/request_code
 
 This endpoint returns the same success shape for every syntactically valid email.
 It does not reveal whether the email has a Revdoku account, whether the account is
@@ -1054,7 +1054,7 @@ agent must not ask the user to paste or repeat the code in chat.
 }
 ```
 
-#### POST /api/v1/agent_auth/verify_code
+#### POST /v1/agent_auth/verify_code
 
 Verifies the email code and returns a `revdoku_...` API key when the code is
 valid for an account that can use email-code agent sign-in. The account's default
@@ -1086,7 +1086,7 @@ For selected-bucket access, use:
 }
 ```
 
-#### POST /api/v1/agent_auth/browser_login_link
+#### POST /v1/agent_auth/browser_login_link
 
 Requires `Authorization`. This compatibility endpoint returns a stable internal
 dashboard URL and never exchanges an API key for a browser session. The user
@@ -1112,37 +1112,37 @@ Revdoku at any time.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/v1/buckets` | List active buckets by default. Use `?archived=true` to list archived buckets. |
-| `POST` | `/api/v1/buckets` | Create a bucket. |
-| `GET` | `/api/v1/buckets/:id` | Read a bucket. |
-| `PATCH` | `/api/v1/buckets/:id` | Update bucket metadata. |
-| `POST` | `/api/v1/buckets/:id/archive` | Archive a bucket. |
-| `POST` | `/api/v1/buckets/:id/unarchive` | Restore an archived normal bucket. |
-| `GET` | `/api/v1/buckets/:id/variables` | Read public variables and secret names (never secret values). |
-| `PATCH` | `/api/v1/buckets/:id/variables` | Replace variables and patch encrypted secrets. |
-| `GET` | `/api/v1/buckets/:id/versions` | List bucket version history. |
-| `GET` | `/api/v1/buckets/:id/versions/:version_id` | Read one historical bucket version. |
-| `POST` | `/api/v1/buckets/:id/versions/restore` | Restore a historical version as a new latest version. |
-| `GET` | `/api/v1/buckets/:id/github_sync` | Read full GitHub connection and sync state. |
-| `GET` | `/api/v1/buckets/:id/github_sync/setup` | Read browser setup URL, eligibility, installations, and accessible repositories. |
-| `POST` | `/api/v1/buckets/:id/github_sync` | Connect an existing repository for the explicit initial import/export direction. |
-| `POST` | `/api/v1/buckets/:id/github_sync/export` | Create a new private bucket-named repository and export the bucket. |
-| `POST` | `/api/v1/buckets/:id/github_sync/sync` | Enqueue a manual sync or conflict resolution. |
-| `DELETE` | `/api/v1/buckets/:id/github_sync` | Disconnect the repository without deleting either side. |
-| `DELETE` | `/api/v1/buckets/:id` | Permanently delete an archived bucket with confirmation. |
-| `GET` | `/api/v1/tags` | List reusable bucket labels. |
+| `GET` | `/v1/buckets` | List active buckets by default. Use `?archived=true` to list archived buckets. |
+| `POST` | `/v1/buckets` | Create a bucket. |
+| `GET` | `/v1/buckets/:id` | Read a bucket. |
+| `PATCH` | `/v1/buckets/:id` | Update bucket metadata. |
+| `POST` | `/v1/buckets/:id/archive` | Archive a bucket. |
+| `POST` | `/v1/buckets/:id/unarchive` | Restore an archived normal bucket. |
+| `GET` | `/v1/buckets/:id/variables` | Read public variables and secret names (never secret values). |
+| `PATCH` | `/v1/buckets/:id/variables` | Replace variables and patch encrypted secrets. |
+| `GET` | `/v1/buckets/:id/versions` | List bucket version history. |
+| `GET` | `/v1/buckets/:id/versions/:version_id` | Read one historical bucket version. |
+| `POST` | `/v1/buckets/:id/versions/restore` | Restore a historical version as a new latest version. |
+| `GET` | `/v1/buckets/:id/github_sync` | Read full GitHub connection and sync state. |
+| `GET` | `/v1/buckets/:id/github_sync/setup` | Read browser setup URL, eligibility, installations, and accessible repositories. |
+| `POST` | `/v1/buckets/:id/github_sync` | Connect an existing repository for the explicit initial import/export direction. |
+| `POST` | `/v1/buckets/:id/github_sync/export` | Create a new private bucket-named repository and export the bucket. |
+| `POST` | `/v1/buckets/:id/github_sync/sync` | Enqueue a manual sync or conflict resolution. |
+| `DELETE` | `/v1/buckets/:id/github_sync` | Disconnect the repository without deleting either side. |
+| `DELETE` | `/v1/buckets/:id` | Permanently delete an archived bucket with confirmation. |
+| `GET` | `/v1/tags` | List reusable bucket labels. |
 
-#### GET /api/v1/buckets
+#### GET /v1/buckets
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/buckets" \
+curl -fsS "$REVDOKU_URL/v1/buckets" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
 By default, this returns active buckets. To list archived buckets, call:
 
 ```sh
-curl -fsS "$REVDOKU_URL/api/v1/buckets?archived=true" \
+curl -fsS "$REVDOKU_URL/v1/buckets?archived=true" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -1160,7 +1160,7 @@ file changes, uploads and duplication return `BUCKET_ARCHIVED`. Reads, unarchive
 and eligible permanent deletion remain available. Copying files out is allowed
 with source read access and write access to an active target.
 
-#### POST /api/v1/buckets
+#### POST /v1/buckets
 
 Bucket tags are user-facing labels, not filesystem breadcrumbs. Use
 `tag_paths` only for explicit reusable labels such as `project`; store project,
@@ -1179,7 +1179,7 @@ source, task, or local-folder context in `metadata`.
 }
 ```
 
-#### PATCH /api/v1/buckets/:id
+#### PATCH /v1/buckets/:id
 
 ```json
 {
@@ -1198,14 +1198,14 @@ Use a bucket lock for broad folder uploads, folder reorganizations, or coordinat
 multi-file edits. Use file locks for narrow edits to specific paths.
 
 ```sh
-curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../lock" \
+curl -fsS -X POST "$REVDOKU_URL/v1/buckets/bkt_.../lock" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{ "message": "Uploading project folder", "duration_seconds": 900 }'
 ```
 
 ```sh
-curl -fsS -X DELETE "$REVDOKU_URL/api/v1/buckets/bkt_.../lock" \
+curl -fsS -X DELETE "$REVDOKU_URL/v1/buckets/bkt_.../lock" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -1213,9 +1213,9 @@ Active bucket locks block writes, deletes, direct uploads,
 and file locks by other API keys. Revdoku checks the bucket lock before checking
 specific file locks. Conflicts return HTTP `423` with code `BUCKET_LOCKED`.
 
-Use `POST /api/v1/buckets/:id/files/lock` with `paths`, `message`, and optional
+Use `POST /v1/buckets/:id/files/lock` with `paths`, `message`, and optional
 `duration_seconds` to lock specific paths. Unlock a path by resolving its file id
-and calling `DELETE /api/v1/buckets/:id/files/:file_id/lock`.
+and calling `DELETE /v1/buckets/:id/files/:file_id/lock`.
 
 #### File path operations
 
@@ -1223,14 +1223,14 @@ Move and organize existing files server-side; do not download and re-upload byte
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/v1/buckets/:id/files` | List files; supports `limit`, `offset`, `q`, `folder`, for ordinary files. Default/maximum page size is 100. |
-| `GET` | `/api/v1/buckets/:id/files/:file_id` | Read file metadata. |
-| `GET` | `/api/v1/buckets/:id/files/by_path?path=...` | Read/download a file by bucket-relative path. |
-| `POST` | `/api/v1/buckets/:id/files/:file_id/rename` | Rename or move within the same bucket without reuploading. |
-| `POST` | `/api/v1/buckets/:id/files/:file_id/copy` | Copy by blob reference, optionally across buckets. |
-| `POST` | `/api/v1/buckets/:id/files/:file_id/move` | Move by blob reference, optionally across buckets. |
-| `POST` | `/api/v1/buckets/:id/files/reorganize` | Apply multiple rename/copy/move/delete path operations atomically. |
-| `POST` | `/api/v1/buckets/:id/files/append_text` | Append bounded UTF-8 text to an existing text file. |
+| `GET` | `/v1/buckets/:id/files` | List files; supports `limit`, `offset`, `q`, `folder`, for ordinary files. Default/maximum page size is 100. |
+| `GET` | `/v1/buckets/:id/files/:file_id` | Read file metadata. |
+| `GET` | `/v1/buckets/:id/files/by_path?path=...` | Read/download a file by bucket-relative path. |
+| `POST` | `/v1/buckets/:id/files/:file_id/rename` | Rename or move within the same bucket without reuploading. |
+| `POST` | `/v1/buckets/:id/files/:file_id/copy` | Copy by blob reference, optionally across buckets. |
+| `POST` | `/v1/buckets/:id/files/:file_id/move` | Move by blob reference, optionally across buckets. |
+| `POST` | `/v1/buckets/:id/files/reorganize` | Apply multiple rename/copy/move/delete path operations atomically. |
+| `POST` | `/v1/buckets/:id/files/append_text` | Append bounded UTF-8 text to an existing text file. |
 
 #### Read metadata and file logs
 
@@ -1249,7 +1249,7 @@ response also identifies the served `version_id`. Redirect downloads provide
 `X-Revdoku-Previously-Read`. Tracking failures do not prevent file access.
 Automatic previews/preloads use `purpose=background`; the dashboard acknowledges
 an intentional open, including cached content, with
-`POST /api/v1/source_file_versions/:version_id/read`. This requires read access.
+`POST /v1/source_file_versions/:version_id/read`. This requires read access.
 
 Incoming email has shared Mailbox status on the current decoded body (`email_part=body`,
 normally `message.json`), with the original EML as fallback when no body exists.
@@ -1257,7 +1257,7 @@ An intentional read of current EML also marks its body read. Attachments and
 historical revisions remain independent. REST original-read responses include
 `email_read_status` with the canonical `version_id` and its current read metadata.
 
-`PATCH /api/v1/buckets/:bucket_id/emails/:email_id` with
+`PATCH /v1/buckets/:bucket_id/emails/:email_id` with
 `{"read":true}` or `{"read":false}` explicitly changes shared message status.
 It requires read access to the bucket; reviewers can use it on read-only/locked
 content. Unread clears all three markers without creating a content version.
@@ -1265,7 +1265,7 @@ Each actual change and its before/after audit event commit together on all plans
 audit failure returns an error and rolls back the change. Repeated desired states
 are idempotent. A concurrent content change can return 409 `EMAIL_CHANGED`; reload the email.
 
-Use `GET /api/v1/audit_logs?bucket_id=...&file_id=...` and optional `version_id`
+Use `GET /v1/audit_logs?bucket_id=...&file_id=...` and optional `version_id`
 to inspect subsequent accesses. Cursor pagination uses `pagination=cursor`,
 `per_page` (up to 200), and `cursor`. Audit items carry `file_id` and `version_id`.
 MCP `bucket_file_get` accepts `include_audit_logs`, optional `version_id`,
@@ -1281,8 +1281,8 @@ checking earlier access; a later Mark unread resets current message status.
 
 #### Bucket version history
 
-`GET /api/v1/buckets/:id/versions` lists immutable bucket versions. Read one
-with `GET /api/v1/buckets/:id/versions/:version_id`. Restoring does not delete
+`GET /v1/buckets/:id/versions` lists immutable bucket versions. Read one
+with `GET /v1/buckets/:id/versions/:version_id`. Restoring does not delete
 newer history; it creates a new latest version from the selected snapshot:
 
 ```json
@@ -1292,7 +1292,7 @@ newer history; it creates a new latest version from the selected snapshot:
 }
 ```
 
-Send that body to `POST /api/v1/buckets/:id/versions/restore`.
+Send that body to `POST /v1/buckets/:id/versions/restore`.
 
 #### Archive, unarchive, and permanent delete
 
@@ -1301,21 +1301,21 @@ is blocked, direct the user to the bucket dashboard to resolve it. Never delete
 files to work around a blocked archive. Permanent deletion requires archiving first.
 
 ```sh
-curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../archive" \
+curl -fsS -X POST "$REVDOKU_URL/v1/buckets/bkt_.../archive" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
 ```sh
-curl -fsS -X POST "$REVDOKU_URL/api/v1/buckets/bkt_.../unarchive" \
+curl -fsS -X POST "$REVDOKU_URL/v1/buckets/bkt_.../unarchive" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
 Permanent delete requires an archived bucket plus the confirmation phrase
-returned by `GET /api/v1/buckets` or `GET /api/v1/buckets/:id` in
+returned by `GET /v1/buckets` or `GET /v1/buckets/:id` in
 `delete.confirmation`.
 
 ```sh
-curl -fsS -X DELETE "$REVDOKU_URL/api/v1/buckets/bkt_..." \
+curl -fsS -X DELETE "$REVDOKU_URL/v1/buckets/bkt_..." \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{ "confirmation": "<delete.confirmation from bucket list/detail>" }'
@@ -1325,8 +1325,8 @@ UI and agent clients should ask users to confirm by bucket title or natural
 language, then pass `delete.confirmation` internally.
 
 Permanent deletion is **not** a bulk operation. Buckets must be
-deleted one at a time via `DELETE /api/v1/buckets/:id` so each removal is
-confirmed individually. The `POST /api/v1/buckets/bulk` endpoint accepts
+deleted one at a time via `DELETE /v1/buckets/:id` so each removal is
+confirmed individually. The `POST /v1/buckets/bulk` endpoint accepts
 only `archive` and `unarchive` operations and rejects `delete`.
 
 Large bucket deletes can return HTTP `202` with `data.bucket.deletion_started`
