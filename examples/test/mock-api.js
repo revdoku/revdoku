@@ -13,14 +13,14 @@ globalThis.fetch = async (input, options = {}) => {
   const url = new URL(input);
   const headers = new Headers(options.headers);
   const body = options.body && typeof options.body === 'string' ? JSON.parse(options.body) : null;
-  if (url.origin === 'https://app.revdoku.com') {
+  if (url.origin === 'https://api.revdoku.com') {
     assert.equal(headers.get('Authorization'), 'Bearer offline-fixture-key');
     assert.equal(options.redirect, 'error');
     if ((options.method ?? 'GET') === 'GET') assert.equal(url.searchParams.get('account_id'), 'acct_fixture');
     else assert.equal(body.account_id, 'acct_fixture');
-    if (url.pathname === '/api/v1/buckets') {
+    if (url.pathname === '/v1/buckets') {
       assert.equal(body.idempotency_key, 'fixture-create-v1');
-      return ok({ bucket: { id: 'bkt_fixture', title: body.bucket.title, dashboard_url: 'https://app.revdoku.com/buckets/bkt_fixture' } });
+      return ok({ bucket: { id: 'bkt_fixture', title: body.bucket.title, dashboard_url: 'https://api.revdoku.com/buckets/bkt_fixture' } });
     }
     if (url.pathname.endsWith('/email')) return ok({ address: 'fixture@revdokumail.com',
       ready: ++readinessChecks > (process.env.FIXTURE_PENDING ? 1 : 0), blocked_reason: 'routing_pending', received_count: 2 });
@@ -41,11 +41,11 @@ globalThis.fetch = async (input, options = {}) => {
       return ok({ files: [{ id: `file_${offset}`, path: `${folder}${offset ? 'second/' : ''}message.json` }],
         pagination: { has_more: offset === 0, next_offset: offset === 0 ? 1 : null } });
     }
-    if (url.pathname === '/api/v1/direct_uploads') {
+    if (url.pathname === '/v1/direct_uploads') {
       assert.equal(body.blob.purpose, 'bucket_file'); assert.equal(body.bucket_id, 'bkt_fixture');
       return ok({ signed_id: 'fixture-signed-id', direct_upload: { url: 'https://storage.example/upload', headers: { 'Content-Type': body.blob.content_type } } });
     }
-    if (url.pathname === '/api/v1/account/profile') {
+    if (url.pathname === '/v1/account/profile') {
       if (process.env.FIXTURE_QUOTA) return Response.json({ error: { code: 'BUCKET_CREATION_LIMIT_REACHED', message: 'Monthly creation limit reached', details: { resets_at: '2026-10-01T00:00:00Z' } } }, { status: 429 });
       return ok({ profile: { current_account: { plan_contract: { plan: { name: 'Fixture' }, limits: { max_buckets: 25, api_rate_limit_requests_per_minute: 120 }, bucket_creation_usage: { used: 1, remaining: 74, monthly_limit: 75, resets_at: '2026-10-01T00:00:00Z' } } } } });
     }

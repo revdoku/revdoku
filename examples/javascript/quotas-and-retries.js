@@ -1,7 +1,7 @@
 import { createClient, run } from './client.js';
 await run(async () => {
     const client = createClient();
-    const data = await client.api('/api/v1/account/profile');
+    const data = await client.api('/v1/account/profile');
     const contract = data.profile.current_account.plan_contract;
     console.log(JSON.stringify({ plan: contract.plan.name, creations: contract.bucket_creation_usage,
         active_bucket_limit: contract.limits.max_buckets,

@@ -10,7 +10,7 @@
     "openapi": "https://revdoku.com/openapi.json"
   },
   "mcp": {
-    "endpoint": "https://app.revdoku.com/mcp",
+    "endpoint": "https://mcp.revdoku.com",
     "transport": "streamable-http",
     "account_authentication": {
       "type": "oauth2",

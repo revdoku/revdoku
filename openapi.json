@@ -7,12 +7,12 @@
   },
   "servers": [
     {
-      "url": "https://app.revdoku.com",
+      "url": "https://api.revdoku.com",
       "description": "Revdoku application API"
     }
   ],
   "paths": {
-    "/api/v1/status": {
+    "/v1/status": {
       "get": {
         "operationId": "getRevdokuStatus",
         "summary": "Read current account identity and granted accounts",
@@ -105,7 +105,7 @@
         ]
       }
     },
-    "/api/v1/agent_auth/capabilities": {
+    "/v1/agent_auth/capabilities": {
       "get": {
         "operationId": "getAgentAuthCapabilities",
         "summary": "Discover Revdoku agent authentication flows",
@@ -121,7 +121,7 @@
         }
       }
     },
-    "/api/v1/accounts": {
+    "/v1/accounts": {
       "post": {
         "operationId": "createClientAccount",
         "summary": "Create a client account within an authorized agency",
@@ -214,7 +214,7 @@
         }
       }
     },
-    "/api/v1/buckets/{id}/email": {
+    "/v1/buckets/{id}/email": {
       "get": {
         "operationId": "getBucketEmailSettings",
         "summary": "Read a bucket email address and limits",
@@ -301,7 +301,7 @@
         }
       }
     },
-    "/api/v1/buckets/{id}/email/rotate": {
+    "/v1/buckets/{id}/email/rotate": {
       "post": {
         "operationId": "rotateBucketEmailAddress",
         "summary": "Replace a bucket email address after confirmation",
@@ -466,7 +466,7 @@
         }
       }
     },
-    "/api/v1/buckets": {
+    "/v1/buckets": {
       "post": {
         "operationId": "createBucket",
         "summary": "Create a private bucket and assign its email address",
@@ -778,7 +778,7 @@
         }
       }
     },
-    "/api/v1/buckets/{id}": {
+    "/v1/buckets/{id}": {
       "get": {
         "operationId": "getBucket",
         "summary": "Read bucket activity and optionally its incoming address",
@@ -881,7 +881,7 @@
         }
       }
     },
-    "/api/v1/account/email_domains": {
+    "/v1/account/email_domains": {
       "get": {
         "operationId": "listAccountEmailDomains",
         "summary": "List account email domains, DNS records, receiving state and usage",
@@ -993,7 +993,7 @@
         }
       }
     },
-    "/api/v1/account/email_domains/{id}": {
+    "/v1/account/email_domains/{id}": {
       "get": {
         "operationId": "getAccountEmailDomain",
         "summary": "Read exact domain setup state",
@@ -1128,7 +1128,7 @@
         }
       }
     },
-    "/api/v1/account/email_domains/{id}/verify": {
+    "/v1/account/email_domains/{id}/verify": {
       "post": {
         "operationId": "verifyAccountEmailDomain",
         "summary": "Queue exact ownership, SES and MX verification",
@@ -1192,7 +1192,7 @@
         }
       }
     },
-    "/api/v1/account/email_domains/check": {
+    "/v1/account/email_domains/check": {
       "post": {
         "operationId": "checkEmailHostname",
         "summary": "Validate and classify a root domain or subdomain",
@@ -1252,7 +1252,7 @@
         }
       }
     },
-    "/api/v1/buckets/{id}/files": {
+    "/v1/buckets/{id}/files": {
       "get": {
         "operationId": "listBucketFiles",
         "summary": "List files or related email without marking read",
@@ -1376,7 +1376,7 @@
         }
       }
     },
-    "/api/v1/buckets/{bucket_id}/emails": {
+    "/v1/buckets/{bucket_id}/emails": {
       "get": {
         "operationId": "listEmails",
         "summary": "List received emails",
@@ -1570,7 +1570,7 @@
         "x-controller": "api/v1/bucket_emails"
       }
     },
-    "/api/v1/buckets/{bucket_id}/emails/{email_id}": {
+    "/v1/buckets/{bucket_id}/emails/{email_id}": {
       "get": {
         "operationId": "getEmail",
         "summary": "Read a received email",
@@ -1808,7 +1808,7 @@
         }
       }
     },
-    "/api/v1/buckets/{bucket_id}/emails/{email_id}/raw": {
+    "/v1/buckets/{bucket_id}/emails/{email_id}/raw": {
       "get": {
         "operationId": "downloadEmailOriginal",
         "summary": "Get the original EML download",
@@ -1936,7 +1936,7 @@
         "x-controller": "api/v1/bucket_emails"
       }
     },
-    "/api/v1/buckets/{bucket_id}/emails/{email_id}/attachments/{attachment_id}": {
+    "/v1/buckets/{bucket_id}/emails/{email_id}/attachments/{attachment_id}": {
       "get": {
         "operationId": "downloadEmailAttachment",
         "summary": "Get an email attachment download",
@@ -2072,7 +2072,7 @@
         "x-controller": "api/v1/bucket_emails"
       }
     },
-    "/api/v1/buckets/{id}/email/allowlist": {
+    "/v1/buckets/{id}/email/allowlist": {
       "patch": {
         "operationId": "updateBucketEmailAllowlist",
         "summary": "Replace the allowed senders for a bucket",

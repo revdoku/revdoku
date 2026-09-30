@@ -56,7 +56,7 @@ revdoku email eml_... --bucket-id bkt_...
 
 Replace the bucket and email IDs with returned values. The `inbox`
 command retrieves the address and readiness with write access. To create an
-empty mailbox, use the dashboard, MCP `bucket_create`, or `POST /api/v1/buckets`.
+empty mailbox, use the dashboard, MCP `bucket_create`, or `POST /v1/buckets`.
 The CLI can also create a bucket when you upload files to it.
 
 New messages save under `_email/inbox/`, grouped by sender and normalized subject,
@@ -74,7 +74,8 @@ incremental polling, including empty pages. Read an `eml_` ID with
 `bucket_email_update` marks a message read/unread. `bucket_email_download` returns
 a download descriptor for an attachment ID, or the original EML when omitted.
 Only send bearer credentials when `authentication` is `bearer` and the URL is on
-`https://app.revdoku.com`. Storage URLs use `authentication: "none"`.
+`https://api.revdoku.com` or `https://app.revdoku.com`, with the expected
+message or attachment download path. Storage URLs use `authentication: "none"`.
 Email sending: **Coming soon**.
 
 ## Buckets
@@ -136,7 +137,7 @@ operations, locks, and version history.
 Hosted MCP clients can connect to:
 
 ```text
-https://app.revdoku.com/mcp
+https://mcp.revdoku.com
 ```
 
 Use Streamable HTTP transport and Revdoku OAuth. Do not paste a Revdoku

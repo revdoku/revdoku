@@ -23,7 +23,7 @@
       ],
       "https://revdoku.com/rels/mcp": [
         {
-          "href": "https://app.revdoku.com/mcp",
+          "href": "https://mcp.revdoku.com",
           "type": "application/json",
           "title": "Revdoku Streamable HTTP MCP server"
         }

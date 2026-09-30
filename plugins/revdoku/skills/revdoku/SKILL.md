@@ -20,7 +20,7 @@ metadata:
       bins: [bash, curl, openssl, base64, find, stat]
     homepage: https://revdoku.com
     envVars:
-      - {name: REVDOKU_URL, required: false, description: "Compatibility setting; only https://app.revdoku.com is accepted."}
+      - {name: REVDOKU_URL, required: false, description: "API origin; https://api.revdoku.com is canonical. The previous app.revdoku.com setting remains accepted."}
       - {name: REVDOKU_API_KEY, required: false, description: "Optional Revdoku credential; browser login normally saves it locally."}
       - {name: REVDOKU_CREDENTIALS, required: false, description: "Optional path to a dedicated Revdoku credential file."}
       - {name: REVDOKU_DEFAULT_BUCKET_FILE, required: false, description: "Optional path to the saved bucket selection."}
@@ -90,7 +90,7 @@ commands, uploads, account changes, deletion, or new destinations.
   Missing scripts require repair from the original trusted source; no replacement
   CLI is downloaded. Run the wrapper with `login`; for an authorized upload use
   `bash /absolute/path/to/this/skill/scripts/revdoku.sh upload <path>`.
-- **Hosted agents:** OAuth at `https://app.revdoku.com/mcp`; MCP reads/writes bucket
+- **Hosted agents:** OAuth at `https://mcp.revdoku.com`; MCP reads/writes bucket
   text but cannot read local files or upload binaries.
 - **REST:** [API documentation](https://revdoku.com/api.md).
 
@@ -102,7 +102,8 @@ project choice, otherwise `onboarding.suggested_projects` for `empty_account` or
 
 The wrapper downloads pinned, SHA-256-verified `jq` from GitHub only when missing,
 and caches it inside the skill. Browser login saves `~/.revdoku/credentials`.
-API/auth uses only `https://app.revdoku.com`; file transfers use approved HTTPS
+API calls use `https://api.revdoku.com/v1`; OAuth sign-in uses
+`https://app.revdoku.com`. File transfers use approved HTTPS
 storage origins. The CLI writes requested downloads, a project `.revdoku` binding
 after folder uploads, update/version stamps, and private expiring deletion previews.
 It excludes credentials and its private state from uploads. Client/agent attribution

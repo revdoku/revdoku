@@ -4,7 +4,7 @@
   "description": "Email inboxes with shared file storage for people and AI agents. Receive and read messages and attachments, and share files through authorized bucket access. Email sending: Coming soon.",
   "url": "https://revdoku.com/",
   "documentation_url": "https://revdoku.com/docs",
-  "mcp_url": "https://app.revdoku.com/mcp",
+  "mcp_url": "https://mcp.revdoku.com",
   "supports_a2a_rpc": false,
   "authentication": {
     "account_tools": "OAuth 2.0 sign-in for existing accounts",

@@ -3,7 +3,8 @@ import { createHash } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { basename, resolve } from 'node:path';
 
-const API_ORIGIN = 'https://app.revdoku.com';
+const API_ORIGIN = 'https://api.revdoku.com';
+const APP_ORIGIN = 'https://app.revdoku.com';
 const MAX_BYTES = 64 * 1024 * 1024;
 type JsonObject = Record<string, unknown>;
 type ErrorDetails = JsonObject | { field: string; message: string }[];
@@ -66,7 +67,7 @@ export function createClient() {
   if (accountId && !/^acct_[A-Za-z0-9]+$/.test(accountId)) throw new Error('Invalid account identifier.');
 
   async function api<T>(path: string, opts: { method?: string; body?: unknown; retrySafe?: boolean; timeoutMs?: number } = {}): Promise<T> {
-    if (!path.startsWith('/api/v1/')) throw new Error('Expected an API-relative path.');
+    if (!path.startsWith('/v1/')) throw new Error('Expected an API-relative path.');
     const url = new URL(path, API_ORIGIN);
     if (url.origin !== API_ORIGIN) throw new Error('Invalid API origin.');
     const method = opts.method ?? 'GET';
@@ -128,7 +129,7 @@ export function createClient() {
 
   async function readFile(id: string, path: string, maxBytes = MAX_BYTES): Promise<Buffer> {
     const query = new URLSearchParams({ path: safePath(path), content_url: '1' });
-    const { url } = await api<{ url: string }>(`/api/v1/buckets/${bucketId(id)}/files/by_path?${query}`);
+    const { url } = await api<{ url: string }>(`/v1/buckets/${bucketId(id)}/files/by_path?${query}`);
     const response = await storage(url);
     return readBytes(response, maxBytes);
   }
@@ -151,22 +152,25 @@ export function createClient() {
 
   async function listEmails(id: string, cursor?: string): Promise<EmailPage> {
     const params = new URLSearchParams({ limit: '100', ...(cursor ? { cursor } : {}) });
-    return api<EmailPage>(`/api/v1/buckets/${bucketId(id)}/emails?${params}`);
+    return api<EmailPage>(`/v1/buckets/${bucketId(id)}/emails?${params}`);
   }
 
   async function readEmail(id: string, messageId: string, background = false): Promise<Mail> {
-    const { email } = await api<{ email: Mail }>(`/api/v1/buckets/${bucketId(id)}/emails/${emailId(messageId)}?purpose=${background ? 'background' : 'open'}`);
+    const { email } = await api<{ email: Mail }>(`/v1/buckets/${bucketId(id)}/emails/${emailId(messageId)}?purpose=${background ? 'background' : 'open'}`);
     return email;
   }
 
   async function downloadEmail(id: string, messageId: string, attachmentId?: string): Promise<Buffer> {
     if (attachmentId && !/^df_[A-Za-z0-9]+$/.test(attachmentId)) throw new Error('Invalid attachment identifier.');
-    const path = `/api/v1/buckets/${bucketId(id)}/emails/${emailId(messageId)}/${attachmentId ? `attachments/${attachmentId}` : 'raw'}`;
+    const path = `/v1/buckets/${bucketId(id)}/emails/${emailId(messageId)}/${attachmentId ? `attachments/${attachmentId}` : 'raw'}`;
     const { download } = await api<{ download: Download }>(path);
     let response: Response;
     if (download.authentication === 'bearer') {
       const url = new URL(download.url);
-      if (url.origin !== API_ORIGIN || url.pathname !== path || url.username || url.password) throw new Error('Invalid authenticated download URL.');
+      // Protected downloads may use the app's original Rails route.
+      const approved = (url.origin === API_ORIGIN && url.pathname === path) ||
+        (url.origin === APP_ORIGIN && url.pathname === `/api${path}`);
+      if (!approved || url.username || url.password) throw new Error('Invalid authenticated download URL.');
       if (accountId) url.searchParams.set('account_id', accountId);
       response = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(30000),
         headers: { Authorization: `Bearer ${apiKey}` } });
@@ -181,7 +185,7 @@ export function createClient() {
     const files: StoredFile[] = []; let offset = 0;
     for (let page = 0; page < 1000; page++) {
       const params = new URLSearchParams({ limit: '100', offset: String(offset), q: query });
-      const result = await api<{ files: StoredFile[]; pagination: { has_more: boolean; next_offset: number | null } }>(`/api/v1/buckets/${bucketId(id)}/files?${params}`);
+      const result = await api<{ files: StoredFile[]; pagination: { has_more: boolean; next_offset: number | null } }>(`/v1/buckets/${bucketId(id)}/files?${params}`);
       files.push(...result.files);
       if (!result.pagination.has_more) return files;
       if (result.pagination.next_offset == null || result.pagination.next_offset <= offset) throw new Error('File pagination did not advance.');
@@ -193,7 +197,7 @@ export function createClient() {
   async function waitForInbox(id: string, timeoutMs = 120000): Promise<Inbox> {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
-      const inbox = await api<Inbox>(`/api/v1/buckets/${bucketId(id)}/email`, { timeoutMs: Math.min(30000, deadline - Date.now()) });
+      const inbox = await api<Inbox>(`/v1/buckets/${bucketId(id)}/email`, { timeoutMs: Math.min(30000, deadline - Date.now()) });
       if (inbox.ready) return inbox;
       if (inbox.blocked_reason && inbox.blocked_reason !== 'routing_pending') throw new Error(`Receiving is blocked: ${inbox.blocked_reason}. Check inbox settings.`);
       await sleep(Math.min(2000, Math.max(0, deadline - Date.now())));
@@ -204,12 +208,12 @@ export function createClient() {
   async function uploadFile(id: string, path: string, bytes: Buffer, contentType = 'application/octet-stream'): Promise<void> {
     safePath(path); bucketId(id);
     if (bytes.length > MAX_BYTES) throw new Error('This example supports files up to 64 MiB; account limits also apply.');
-    const descriptor = await api<{ signed_id: string; direct_upload: { url: string; headers: Record<string, string> } }>('/api/v1/direct_uploads', {
+    const descriptor = await api<{ signed_id: string; direct_upload: { url: string; headers: Record<string, string> } }>('/v1/direct_uploads', {
       method: 'POST', body: { bucket_id: id, path, blob: { filename: basename(path), byte_size: bytes.length,
         checksum: createHash('md5').update(bytes).digest('base64'), sha256: createHash('sha256').update(bytes).digest('hex'), content_type: contentType, purpose: 'bucket_file' } },
     });
     await storage(descriptor.direct_upload.url, { method: 'PUT', headers: descriptor.direct_upload.headers, body: new Uint8Array(bytes) });
-    await api(`/api/v1/buckets/${id}/files`, { method: 'POST', body: { path, signed_blob_id: descriptor.signed_id } });
+    await api(`/v1/buckets/${id}/files`, { method: 'POST', body: { path, signed_blob_id: descriptor.signed_id } });
   }
 
   return { api, readFile, listFiles, listEmails, readEmail, downloadEmail, waitForInbox, uploadFile };

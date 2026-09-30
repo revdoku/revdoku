@@ -4,7 +4,7 @@ await run(async () => {
   const client = createClient();
   const key = requiredEnv('REVDOKU_CREATE_KEY');
   if (!/^[A-Za-z0-9._:-]{1,200}$/.test(key)) throw new Error('Creation key must contain 1–200 letters, digits, dots, underscores, colons or hyphens.');
-  const { bucket } = await client.api<{ bucket: Bucket }>('/api/v1/buckets', {
+  const { bucket } = await client.api<{ bucket: Bucket }>('/v1/buckets', {
     method: 'POST', retrySafe: true,
     body: { idempotency_key: key, bucket: { title: process.argv[2] ?? 'API inbox' } },
   });
