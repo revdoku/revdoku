@@ -1558,6 +1558,20 @@ Move and organize existing files server-side; do not download and re-upload byte
 | `POST` | `/v1/buckets/:id/files/reorganize` | Apply multiple rename/copy/move/delete path operations atomically. |
 | `POST` | `/v1/buckets/:id/files/append_text` | Append bounded UTF-8 text to an existing text file. |
 
+#### Download a file by path
+
+| Query parameter | Required | Meaning |
+| --- | --- | --- |
+| `path` | Yes | Bucket-relative file path, such as `reports/summary.txt`. |
+| `content_url` | No | Set to `1` to receive JSON with a temporary download URL in `data.url`. Without it, the endpoint returns an HTTP 302 download redirect. |
+
+```http
+GET /v1/buckets/bkt_example/files/by_path?path=reports/summary.txt&content_url=1
+```
+
+Download from the returned URL without forwarding your Revdoku API key.
+Use `GET /v1/buckets/:id/files/:file_id` when you only need file metadata.
+
 #### Read metadata and file logs
 
 File details expose the current version's read receipt. Metadata queries do not
