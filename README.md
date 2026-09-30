@@ -4,7 +4,6 @@
 or project its own inbox to receive messages and attachments. Each inbox is a
 private storage bucket with its own email address, where you can also store and
 share documents, data, and project files with authorized people and agents.
-Email sending: **Coming soon**.
 
 Ask your agent to summarize incoming mail, collect invoices and attachments, or
 monitor replies to submissions. Use hosted MCP for AI agents, the CLI for local
@@ -27,7 +26,7 @@ and state on your machine; host tool permissions remain in control.
 | [TypeScript examples](./examples/typescript/README.md) | The same workflows with types and shared source. |
 | [API reference](./api.md) · [OpenAPI](./openapi.json) | Authentication, inbox creation, incoming mail, and private storage. |
 
-The examples cover creating an inbox and waiting for receiving readiness,
+The examples cover creating a ready inbox,
 reading incoming messages, downloading attachments, uploading and reading files,
 and handling quotas and retries. CLI, examples, skills, and plugins share this
 repository. For agent setup, see [Local AI apps](#local-ai-apps).
@@ -43,7 +42,7 @@ Connect Revdoku so you can receive and read email and attachments, and store and
 Each bucket has its own incoming email address. Bucket creation returns the
 address and receiving state; for an existing bucket, use
 `bucket_get(include_email: true)` with write access or **Bucket settings →
-Email**. Check `email.ready` before using the address.
+Email**. Check `email.receiving_enabled` before using the address.
 
 With the CLI, run `revdoku inbox --bucket-id bkt_...` to retrieve the address,
 readiness, and activity. Use `revdoku emails --bucket-id bkt_...` to list mail and
@@ -214,10 +213,10 @@ Check custom-domain availability in Account Settings. Setup lives in Account
 Settings → Domains → Email and requires an account administrator. Prefer an unused
 receiving subdomain; dedicated root domains are accepted. DNS changes require the
 user's authorization. Connecting a domain does not change existing bucket addresses.
-Use only the full address returned by Revdoku and check `ready`. A domain switch
+Use only the full address returned by Revdoku and check `receiving_enabled`. A domain switch
 may return `assignment.status: pending`; poll until active or failed, keeping the
 current address in use meanwhile. Never construct aliases or use `+tag` variants.
-See [the email API contract](https://revdoku.com/api.md#email-domains).
+See [the email API contract](https://revdoku.com/api.md#custom-email-domains).
 
 ### CLI safety boundaries
 

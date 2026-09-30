@@ -50,27 +50,36 @@ Its version is embedded, so it also works outside an installed skill.
 ```sh
 revdoku login
 revdoku status
+revdoku accounts
+revdoku account get acct_...
 revdoku ls
+revdoku create --username acme-orders
 revdoku inbox --bucket-id bkt_...
 revdoku files --bucket-id bkt_...
 revdoku emails --bucket-id bkt_...
 revdoku email eml_... --bucket-id bkt_...
 revdoku email-status eml_... --bucket-id bkt_... --read false
 revdoku email-download eml_... --bucket-id bkt_... --attachment-id df_... --output attachment.pdf
+# Delete only after confirming the email ID:
+revdoku email-delete eml_... --bucket-id bkt_... --confirm-delete eml_...
 revdoku upload ./project-files --bucket-id bkt_...
 ```
 
 Use returned email and attachment IDs for message operations; use paths for file operations.
 `inbox` reports the receiving address, readiness, and message activity. Revdoku
-receives email and attachments. Email sending: **Coming soon**.
+receives email and attachments.
+
+CLI signup and sign-in use browser OAuth. Separate [direct API signup](../api.md#direct-api-signup)
+requires the human owner’s `human_operator_email` and private OTP entry when enabled.
 
 For automation, set `REVDOKU_API_KEY` through your secret manager or environment.
 Use `--account-id acct_...` when selecting another authorized account. Credentials
 and selection state otherwise live under `~/.revdoku/`; keep them private.
 
 Uploading without an existing bucket binding can create a bucket and consume
-creation capacity. The CLI currently has no standalone empty-inbox creation
-command; use the [API examples](../examples/README.md) for that workflow.
+creation capacity. `revdoku create` creates an empty mailbox. Omit `--username` to
+generate a name, or select an exact available name. Generic names are reserved on
+platform email domains. Creation returns when receiving is ready.
 
 See [the API reference](../api.md) and `revdoku --help` for commands, scopes,
 quota errors, and confirmation requirements. For AI integration, use the
@@ -81,3 +90,12 @@ quota errors, and confirmation requirements. For AI integration, use the
 Remove the executable from the directory you selected. Your remote buckets and
 files remain. Remove `~/.revdoku/` separately only if you also want to remove
 saved local credentials and preferences.
+
+### Account limits
+
+```sh
+revdoku account limits
+revdoku account limits --account-id acct_RETURNED_ID
+```
+
+Returns effective mailbox and file quotas under `data.limits`.

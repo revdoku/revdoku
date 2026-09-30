@@ -86,12 +86,14 @@ done
 require_text "$SKILL_FILE" 'scripts/revdoku.sh upload <path>'
 require_text "$SKILL_FILE" '`bucket_lock_files`'
 require_text "$SKILL_FILE" '`bucket_delete_permanently`'
-require_text "$SKILL_FILE" '`github_sync_setup`'
+reject_text "$SKILL_FILE" 'github_sync'
 require_text "$SKILL_FILE" '`ACCOUNT_SUSPENDED`'
 require_text "$SKILL_FILE" 'support@revdoku.com'
 require_text "$API_FILE" '`GET` | `/v1/buckets/:id/versions`'
-require_text "$API_FILE" 'https://api.revdoku.com/v1/buckets'
-require_text "$API_FILE" '`github_sync_setup`'
+require_text "$API_FILE" 'https://api.revdoku.com/v1'
+require_text "$API_FILE" 'POST /v1/buckets'
+require_text "$API_FILE" '201 Created'
+reject_text "$API_FILE" 'github_sync'
 require_text "$API_FILE" '`account.restriction`'
 for guidance in "$README_FILE" "$SKILL_FILE" "$API_FILE" "$SOURCE_CLIENT_DIR/docs.md" "$SOURCE_CLIENT_DIR/mcp.md" "$LLMS_INSTALL_FILE" "$CHANGELOG_FILE"; do
   reject_text "$guidance" 'bucket_publish'
@@ -243,7 +245,7 @@ fi
 ruby "$TEST_DIR/skill-install-test.rb"
 ruby "$TEST_DIR/installer-integrity-test.rb"
 ruby "$TEST_DIR/standalone-cli-test.rb"
-node --test "$DIST_ROOT/examples/test/client.test.js" "$DIST_ROOT/examples/test/examples.test.js"
+node --test "$DIST_ROOT/examples/test/examples.test.js"
 
 # Current public guidance uses the canonical website domain. Historical release
 # notes and private development/compatibility configuration are not guidance.

@@ -1,16 +1,21 @@
-import { createClient, requiredEnv, run } from './client.js';
-await run(async () => {
-    const client = createClient();
-    const key = requiredEnv('REVDOKU_CREATE_KEY');
-    if (!/^[A-Za-z0-9._:-]{1,200}$/.test(key))
-        throw new Error('Creation key must contain 1–200 letters, digits, dots, underscores, colons or hyphens.');
-    const { bucket } = await client.api('/v1/buckets', {
-        method: 'POST', retrySafe: true,
-        body: { idempotency_key: key, bucket: { title: process.argv[2] ?? 'API inbox' } },
-    });
-    console.log(`Bucket: ${bucket.id}`);
-    console.log(`Dashboard: ${bucket.dashboard_url}`);
-    const inbox = await client.waitForInbox(bucket.id);
-    console.log(`Receiving ready: ${inbox.address}`);
-    console.log('Set REVDOKU_BUCKET_ID to this bucket ID for the remaining examples.');
+const apiKey = process.env.REVDOKU_API_KEY;
+if (!apiKey)
+    throw new Error('Set REVDOKU_API_KEY in your local .env file.');
+const username = process.argv[2];
+const response = await fetch('https://api.revdoku.com/v1/buckets', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    redirect: 'error',
+    signal: AbortSignal.timeout(30000),
+    body: JSON.stringify({
+        account_id: process.env.REVDOKU_ACCOUNT_ID,
+        bucket: { email: username ? { username } : {} },
+    }),
 });
+const result = await response.json();
+if (!response.ok)
+    throw new Error(`${result.error.code}: ${result.error.message}`);
+const inbox = result.data.bucket;
+console.log(`Bucket: ${inbox.id}`);
+console.log(`Receiving ready: ${inbox.email.address}`);
+export {};

@@ -1,4 +1,4 @@
-{"type":"product","name":"Revdoku","url":"https://revdoku.com/","description":"Email inboxes for people and AI agents, with private file storage. Create inboxes, read messages and attachments, and store additional files. Email sending: Coming soon."}
+{"type":"product","name":"Revdoku","url":"https://revdoku.com/","description":"Email inboxes for people and AI agents, with private file storage. Create inboxes, read messages and attachments, and store additional files. "}
 {"type":"mcp","url":"https://mcp.revdoku.com","transport":"streamable-http","account_auth":"oauth2"}
 {"type":"skill","url":"https://github.com/revdoku/revdoku/tree/main/skills/revdoku","install_npm":"npx skills add revdoku/revdoku --skill revdoku -g","install_shell":"curl -fsSL https://revdoku.com/install.sh | bash"}
 {"type":"documentation","url":"https://revdoku.com/docs"}
