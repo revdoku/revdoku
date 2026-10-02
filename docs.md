@@ -32,13 +32,7 @@ POST /v1/buckets
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
-{
-  "bucket": {
-    "email": {
-      "username": "project.alerts"
-    }
-  }
-}
+{ "bucket": {} }
 ```
 
 201 Created (selected fields)
@@ -49,9 +43,9 @@ Content-Type: application/json
   "data": {
     "bucket": {
       "id": "bkt_example",
-      "title": "project.alerts",
+      "title": "maple.river7k2xq9",
       "email": {
-        "address": "project.alerts@revdokumail.com",
+        "address": "maple.river7k2xq9@revdokumail.com",
         "receiving_enabled": true,
         "sending_enabled": false
       }

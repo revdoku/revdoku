@@ -27,8 +27,14 @@ for (let page = 0; page < 100; page++) {
         url.searchParams.set('account_id', accountId);
     if (cursor)
         url.searchParams.set('cursor', cursor);
-    const response = await fetch(url, { headers, redirect: 'error', signal: AbortSignal.timeout(30000) });
-    const result = await response.json();
+    let response = await fetch(url, { headers, redirect: 'error', signal: AbortSignal.timeout(30000) });
+    let result = await response.json();
+    // A new mailbox may need a moment to build its email index. Retry only this read.
+    for (let attempt = 0; !response.ok && result.error?.code === 'EMAIL_INDEX_BUILDING' && attempt < 3; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * 2 ** attempt));
+        response = await fetch(url, { headers, redirect: 'error', signal: AbortSignal.timeout(30000) });
+        result = await response.json();
+    }
     if (!response.ok)
         throw new Error(`${result.error.code}: ${result.error.message}`);
     for (const summary of result.data.emails) {

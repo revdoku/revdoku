@@ -41,13 +41,7 @@ POST /v1/buckets
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
-{
-  "bucket": {
-    "email": {
-      "username": "project.alerts"
-    }
-  }
-}
+{ "bucket": {} }
 ```
 
 201 Created (selected fields)
@@ -58,10 +52,10 @@ Content-Type: application/json
   "data": {
     "bucket": {
       "id": "bkt_example",
-      "title": "project.alerts",
+      "title": "maple.river7k2xq9",
       "email": {
-        "username": "project.alerts",
-        "address": "project.alerts@revdokumail.com",
+        "username": "maple.river7k2xq9",
+        "address": "maple.river7k2xq9@revdokumail.com",
         "receiving_enabled": true,
         "sending_enabled": false
       }
@@ -626,7 +620,9 @@ These endpoints require a browser session; API keys and MCP tools do not access 
 ### Custom email domains
 
 Connect a domain in **Account Settings → Domains → Email**, or use these endpoints
-with an account-administrator credential.
+with a whole-account `bucket_admin` credential belonging to an account owner or administrator.
+Selected-bucket, read-only and write-only credentials cannot manage domain ownership.
+Existing `full_account_access` credentials continue to work.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -1087,7 +1083,7 @@ and a `blocked_reason`. Check that mailbox before sending; do not create another
 
 | Result | Next step |
 | --- | --- |
-| `api_key` returned | Store it privately now; it is returned once. Use it as the bearer token. |
+| `api_key` returned | Store it privately now; it is returned once. Use it as the bearer token. This signup credential counts as one AI agent connection; no second key is needed. |
 | Username error | Resubmit verification with the same token and a corrected `username`; no new code is needed after successful proof. |
 | `SIGN_IN_REQUIRED` | The human already has an account. Use browser sign-in. |
 | HTTP `200` with completed IDs but no key | This signup already completed. Sign in and manage API keys under Account → Access. |

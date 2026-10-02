@@ -3,6 +3,7 @@ import json
 import os
 import re
 import sys
+import time
 from urllib.parse import quote
 import requests
 
@@ -18,6 +19,16 @@ for page in range(100):
         params={"account_id": account_id, "cursor": cursor}, timeout=30, allow_redirects=False,
     )
     result = response.json()
+    # Retry only a read whose email index is still being prepared.
+    for attempt in range(3):
+        if response.status_code == 200 or result.get("error", {}).get("code") != "EMAIL_INDEX_BUILDING":
+            break
+        time.sleep(2 ** attempt)
+        response = requests.get(
+            f"https://api.revdoku.com/v1/buckets/{bucket_id}/emails", headers=headers,
+            params={"account_id": account_id, "cursor": cursor}, timeout=30, allow_redirects=False,
+        )
+        result = response.json()
     if response.status_code != 200:
         raise RuntimeError(f"{result['error']['code']}: {result['error']['message']}")
     for summary in result["data"]["emails"]:

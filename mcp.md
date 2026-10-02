@@ -8,12 +8,32 @@ Hosted MCP signup stays in the browser. The separate [direct API signup](api.md#
 when enabled, requires `human_operator_email` supplied by the human owner. Do not
 use an agent mailbox or ask for OTPs or API keys in chat.
 
+## Connect without a terminal
+
+| Client | Setup |
+| --- | --- |
+| Claude | Open **Settings → Connectors → Add custom connector**. Name it Revdoku and enter `https://mcp.revdoku.com`. Connect, then complete Revdoku sign-in and access selection. [Claude instructions](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp) |
+| ChatGPT | Enable **Settings → Security and login → Developer mode** if your workspace permits it. Open **Plugins**, choose **+**, and add `https://mcp.revdoku.com`. Complete the connection and Revdoku authorization. [OpenAI instructions](https://developers.openai.com/plugins/deploy/connect-chatgpt) |
+
+In a new chat, enable the connection and ask: **“List my Revdoku accounts and mailboxes.”**
+Select the intended account before reading or changing its contents.
+
+## Refresh an existing connection
+
+- **Hosted MCP:** refresh the connection's tools in your AI app and start a new
+  chat. For ChatGPT developer connections, open the plugin and choose **Refresh**.
+- **Installed skill:** update Revdoku with the same installer you used originally,
+  then start a new agent session so it loads the updated instructions.
+- Keep existing credentials. Updating instructions or tool metadata does not
+  require creating another API key.
+
 ## Receive and read email
 
 1. Call `account_list` and choose a granted account. Include its `account_id`
    on each call; omission uses the connection default.
 2. Use `bucket_list` to find an existing mailbox. To create one, call
-   `bucket_create(username: "project.alerts")`. Omit `username` to generate it.
+   `bucket_create` without a username to generate an available address.
+   Optionally request your own name with `username`.
    `title` is optional and defaults to the assigned username. A taken or retired
    address returns `EMAIL_ALREADY_EXISTS`; platform role names are reserved.
 3. Creation waits for receiving setup and returns `email.receiving_enabled: true`. For an existing mailbox, call `bucket_get`
