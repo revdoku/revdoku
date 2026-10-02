@@ -8,13 +8,13 @@
   "supports_a2a_rpc": false,
   "authentication": {
     "account_tools": "OAuth 2.0 sign-in for existing accounts",
-    "signup": "Browser only at https://app.revdoku.com/users/sign_up"
+    "signup": "Public MCP signup tools require human_operator_email, accept_terms_and_policy=true and private email verification; see https://revdoku.com/mcp.md#direct-mcp-signup"
   },
   "skills": [
     {
       "id": "email",
       "name": "Email inboxes for people and AI agents",
-      "description": "Create an inbox with bucket_create and check email.ready. Use bucket_email_list with a saved cursor, bucket_email_get for decoded messages, and bucket_email_download for originals and attachments. ",
+      "description": "Create an inbox with bucket_create and check email.receiving_enabled. Use bucket_email_list with a saved cursor, bucket_email_get for decoded messages, and bucket_email_download for originals and attachments. ",
       "account_required": true
     },
     {

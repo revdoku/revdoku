@@ -20,6 +20,7 @@ and state on your machine; host tool permissions remain in control.
 
 | Start here | What you get |
 | --- | --- |
+| [API signup](./api.md#direct-api-signup) | Create an account, first inbox, and API key after owner authorization and email verification. |
 | [Standalone CLI](./cli/README.md) | Terminal installation and usage without an AI integration. |
 | [Versioned CLI downloads](https://github.com/revdoku/revdoku/releases/latest) | A portable Bash executable, installer, and SHA-256 checksums. |
 | [JavaScript examples](./examples/javascript/README.md) | Runnable Node.js examples with no runtime dependencies. |
@@ -34,7 +35,7 @@ repository. For agent setup, see [Local AI apps](#local-ai-apps).
 ## Prompt for an AI agent
 
 ```text
-Connect Revdoku so you can receive and read email and attachments, and store and share my files. Follow https://revdoku.com/llms-install.md, help me sign in through the browser, and verify the connection. Then continue my task, or ask what I want to do.
+Connect Revdoku so you can create and manage email inboxes for my AI agents, read emails and attachments, and store files. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, check https://revdoku.com/api.md#direct-api-signup. Use API signup when you can handle my authorization and email verification privately; otherwise guide me through browser signup. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do.
 ```
 
 ## Receive and read email
@@ -77,8 +78,10 @@ See the [storage quick start](./docs.md#keep-files-in-a-private-cloud-bucket),
 
 ## Start free
 
-Create an account at <https://app.revdoku.com/users/sign_up> and connect in the
-browser. Never paste account credentials or verification codes into AI chat.
+Use [API signup](./api.md#direct-api-signup) or [MCP signup](./mcp.md#direct-mcp-signup)
+from a private client with the human owner's authorization and email verification.
+You can also create an account at <https://app.revdoku.com/users/sign_up>.
+Keep account credentials and verification codes out of AI chat.
 You can start free. See [pricing](https://app.revdoku.com/pricing) for current plans.
 
 Private storage and collaboration follow the [Terms of Use](https://revdoku.com/terms/).
@@ -152,9 +155,9 @@ Useful commands:
 
 ## Hosted and web agents
 
-The hosted MCP endpoint is `https://mcp.revdoku.com`. All tools use OAuth.
-If the user has no Revdoku account, direct them to browser signup before using
-account tools.
+The hosted MCP endpoint is `https://mcp.revdoku.com`. Signup tools are public; account tools use OAuth. See [MCP signup](mcp.md#direct-mcp-signup).
+Create an account through private MCP signup or browser signup, then connect with
+OAuth before using account tools.
 
 Hosted agents cannot read files from the user's computer. Use the local Revdoku CLI for
 local folders, JavaScript bundles, images, fonts, PDFs, and other binary assets.

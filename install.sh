@@ -28,7 +28,7 @@ REVDOKU_SKILL_LICENSE
 }
 expected_sha256() {
   case "$1" in
-    skills/revdoku/SKILL.md) printf '%s\n' 'd8bc206f91c13f06e521ed42e283de98eb025655a5a836637d597340f285528d' ;;
+    skills/revdoku/SKILL.md) printf '%s\n' '3a5ed01598f8db71d0a814dd61d6662debf382109f2b9e32beb806d8ea339ed0' ;;
     skills/revdoku/scripts/revdoku.sh) printf '%s\n' '2b202427cda731057e65eec6e3b1f66cd98cf1e889bd5d6cfc0f4ca00ae4e47f' ;;
     skills/revdoku/bin/revdoku) printf '%s\n' '52e264e7b13b4a45a11192501a7a18e9552ae8a356bd0a70b09f39674658e3fa' ;;
     skills/revdoku/scripts/revdoku-cli.sh) printf '%s\n' 'ab34f11ada22a126d1680b194f56718fc0086105e4149d82177e2c6b23052cfb' ;;
