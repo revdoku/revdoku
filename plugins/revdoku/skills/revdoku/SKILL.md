@@ -94,9 +94,14 @@ commands, uploads, account changes, deletion, or new destinations.
   text but cannot read local files or upload binaries.
 - **REST:** [API documentation](https://revdoku.com/api.md).
 
-Use browser signup/sign-in. Direct API signup requires human-supplied `human_operator_email`. Never request API keys, OTPs,
+Use browser sign-in for account access. Clients with private verification input
+may create an account with `revdoku_signup`, `revdoku_signup_verify` and
+`revdoku_signup_resend`, or REST signup. Both require human-supplied
+`human_operator_email` and human-authorized `accept_terms_and_policy: true`: Terms/AUP
+acceptance and privacy acknowledgment. See [MCP signup](https://revdoku.com/mcp.md#direct-mcp-signup).
+Otherwise use browser signup. Never request API keys, OTPs,
 TOTP/backup codes, or GitHub secrets in chat. Read `revdoku_status` and `bucket_list`
-(CLI: `status`, `ls`) after connection and when access is unclear. Use the account and bucket requested by the user.
+(CLI: `status`, `ls`) after connection and when access is unclear. Use the requested account and bucket.
 
 The wrapper downloads pinned, SHA-256-verified `jq` from GitHub only when missing,
 and caches it inside the skill. Browser login saves `~/.revdoku/credentials`.

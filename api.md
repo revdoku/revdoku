@@ -8,23 +8,187 @@ and downloads attachments. Buckets also support uploaded files and version histo
 
 | Task | Section |
 | --- | --- |
+| Sign up through the API and get your first inbox | [Direct API signup](#direct-api-signup) |
 | Make your first API request | [Quick start](#email-api-quick-start) |
 | Understand JSON and errors | [Response format](#response-format) |
 | Select an account | [Accounts](#accounts) |
 | Check quotas | [Account limits](#account-limits) |
 | Read email and attachments | [Received email operations](#received-email-operations) |
 | Choose an email username | [Create a bucket](#create-a-bucket) |
-| Create an account through the API | [Direct API signup](#direct-api-signup) |
 | Upload a file | [Upload a file](#upload-a-file) |
+
+## Direct API signup
+
+**Start here if you need a Revdoku account.** An AI agent or private application
+can use this flow with the human owner's authorization and email verification.
+Successful verification creates an account, its first email inbox with cloud
+storage, and an API key. No existing API key is required.
+
+Base URL: `https://api.revdoku.com/v1`.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/v1/agent/signups` | Send a verification code to the human owner's email. |
+| POST | `/v1/agent/signups/verify` | Verify the code and create the account, first inbox, and API key. |
+| POST | `/v1/agent/signups/resend` | Resend the code after the returned waiting period. |
+
+Check `GET /v1/agent_auth/capabilities`: `data.signup.available` reports whether
+API signup is enabled. If unavailable, use [browser signup](https://app.revdoku.com/users/sign_up).
+Existing users use [browser sign-in](https://app.revdoku.com/users/sign_in).
+MCP offers the same flow through [signup tools](mcp.md#direct-mcp-signup).
+Clients must handle owner authorization and verification privately. CLI sign-in
+and hosted MCP account access use browser OAuth.
+
+### 1. Request a code
+
+The human operator must provide their email and authorize the acknowledgments.
+The server records the current policy versions; your client does not send a version.
+
+| Field | Required | Purpose |
+| --- | --- | --- |
+| `human_operator_email` | Yes | The human owner's email, supplied by that person. Do not substitute an agent's mailbox. |
+| `accept_terms_and_policy` | Yes; `true` | The human agrees to the [Terms](https://revdoku.com/terms) and [acceptable use policy](https://revdoku.com/acceptable-use), and acknowledges the [privacy notice](https://revdoku.com/privacy). This is not consent to optional processing. |
+| `username` | No | Requested first mailbox username; generated if omitted. |
+| `permission_scope` | No | `bucket_read`, `bucket_write`, or `bucket_admin` (default). |
+| `label` | No | A name for the API connection. |
+
+```http
+POST /v1/agent/signups
+Host: api.revdoku.com
+Content-Type: application/json
+
+{
+  "human_operator_email": "owner@customer.example",
+  "accept_terms_and_policy": true
+}
+
+202 Accepted
+{
+  "success": true,
+  "data": {
+    "signup": {
+      "signup_token": "RETURNED_SIGNUP_TOKEN",
+      "expires_in": 600,
+      "resend_after": 60
+    }
+  }
+}
+```
+
+No account or mailbox is created until the email code is verified.
+
+| Returned field | Use |
+| --- | --- |
+| `signup_token` | Save privately; include it when verifying or resending. It identifies and protects this signup attempt. |
+| `expires_in` | Seconds left to finish signup. |
+| `resend_after` | Seconds to wait before requesting another code. |
+
+### 2. Verify the code
+
+Collect the code in your private application interface. Do not put the token or
+code in URLs, logs, command-line arguments, or AI chat.
+
+```http
+POST /v1/agent/signups/verify
+Host: api.revdoku.com
+Content-Type: application/json
+
+{
+  "signup_token": "RETURNED_SIGNUP_TOKEN",
+  "code": "123456"
+}
+
+201 Created
+{
+  "success": true,
+  "data": {
+    "signup": {
+      "status": "completed"
+    },
+    "api_key": "RETURNED_ONCE_STORE_PRIVATELY",
+    "scope": "bucket_admin",
+    "expires_at": "2027-09-30T12:00:00Z",
+    "account": {
+      "id": "acct_RETURNED_ID"
+    },
+    "bucket": {
+      "id": "bkt_RETURNED_ID",
+      "title": "flaky.forest3v8x2p",
+      "email": {
+        "address": "flaky.forest3v8x2p@revdokumail.com",
+        "receiving_enabled": true,
+        "sending_enabled": false
+      }
+    }
+  }
+}
+```
+
+The example shows selected fields. Signup creates your account, API key and first
+mailbox together, then waits for receiving confirmation. If the provider is
+unavailable, signup still returns your API key, with `receiving_enabled: false`
+and a `blocked_reason`. Check `email.receiving_enabled` before using the address;
+reuse the returned mailbox rather than creating another account.
+
+| Result | Next step |
+| --- | --- |
+| `api_key` returned | Store it privately now; it is returned once. Use it as the bearer token. This signup credential counts as one AI agent connection; no second key is needed. |
+| Username error | Resubmit verification with the same token and a corrected `username`; no new code is needed after successful proof. |
+| `SIGN_IN_REQUIRED` | The human already has an account. Use browser sign-in. |
+| HTTP `200` with completed IDs but no key | This signup already completed. Sign in and manage API keys under Account → Access. |
+| `INVALID_SIGNUP_TOKEN` | The token is invalid or expired. Start again with the human's authorization. |
+
+### Resend a code
+
+Wait the returned `resend_after` seconds, then:
+
+```http
+POST /v1/agent/signups/resend
+Host: api.revdoku.com
+Content-Type: application/json
+
+{
+  "signup_token": "RETURNED_SIGNUP_TOKEN"
+}
+```
+
+HTTP `200 OK` returns the same signup structure with the remaining timers. The
+previous code stops working. Resending does not extend the expiry or reset attempts.
+
+### Signup limits
+
+| Limit | Allowance |
+| --- | --- |
+| Start/resend per IP | 5 per 15 minutes, shared with browser signup and legacy code requests. |
+| Verification per IP | 10 per 15 minutes. |
+| Attempts per challenge | 5. |
+| Verification per canonical human email | 10 per 15 minutes. |
+| API email sends | 60-second cooldown; 3 per 30 minutes. |
+| Shared browser/API/sign-in email sends | 3 per canonical email per 5 minutes. |
+| Global signup requests | 300 per minute. |
+| Global signup emails | 100 per hour. |
+| Request body | At most 8 KiB of uncompressed JSON. |
+
+- Invalid challenges and fake credentials still count toward limits.
+- Throttles return HTTP 429 with `Retry-After`.
+- Error codes: `RATE_LIMIT_EXCEEDED`, `SIGNUP_RATE_LIMITED`, or `SIGNUP_ATTEMPTS_EXCEEDED`.
+- Limits may be tightened to protect availability.
+
+Signup responses use `Cache-Control: no-store`. Availability is reported by
+`GET /v1/agent_auth/capabilities` in `data.signup.available`.
+CLI and MCP use browser OAuth; they do not collect signup codes in chat.
 
 ## Email API quick start
 
-1. [Sign up](https://app.revdoku.com/users/sign_up) or sign in.
-2. Create an API key from **Connect via API** or **Account → Access**.
-3. Replace `YOUR_API_KEY` below with that key in your private application.
+1. [Sign up through the API](#direct-api-signup) and save the returned API key privately.
+   If you already have an account, sign in and create a key from **Connect via API**
+   or **Account → Access**.
+2. Replace `YOUR_API_KEY` below with that key in your private application.
+3. Reuse the first inbox created during signup. API signup returns it in `data.bucket`;
+   use `GET /v1/buckets` to find an inbox created through browser signup.
 
-Browser signup already creates one mailbox. Use `GET /v1/buckets` to find it,
-or create another with the example below.
+If you have an inbox already, skip to [listing messages](#2-list-messages).
+Use the creation example only when you need another inbox.
 
 
 | Setting | Value |
@@ -70,7 +234,7 @@ Keep the returned bucket ID for later requests.
 ### 2. List messages
 
 Send a test email to the returned address from your normal email app.
-Replace `bkt_example` with the bucket ID from step 1.
+Replace `bkt_example` with the bucket ID returned by signup or inbox creation.
 Save the returned cursor even when the list is empty:
 
 ```http
@@ -110,9 +274,9 @@ Revdoku skill. Use the local CLI when the agent has shell and filesystem access,
 or hosted MCP otherwise. Use this HTTP API for custom clients, CI jobs, backend workers,
 or direct integrations.
 
-Hosted MCP requires OAuth before account tools can run. CLI and hosted MCP users sign up at
-<https://app.revdoku.com/users/sign_up>. Direct private clients can use
-[API signup](#direct-api-signup) when discovery reports it available.
+Direct private clients can use [API signup](#direct-api-signup) when discovery
+reports it available. CLI and hosted MCP users sign up at
+<https://app.revdoku.com/users/sign_up> and connect with browser OAuth.
 
 Hosted MCP and CLI device login use revocable agent connections. Reusable API
 keys are for custom clients and automation when that capability is available to
@@ -619,6 +783,18 @@ These endpoints require a browser session; API keys and MCP tools do not access 
 
 ### Custom email domains
 
+Built-in domains such as `revdokumail.com` work on every plan, including when
+explicitly supplied as `bucket.email.domain`. For custom domains:
+
+| Error code | Action |
+| --- | --- |
+| `EMAIL_DOMAINS_UPGRADE_REQUIRED` | Upgrade at [Pricing](https://app.revdoku.com/pricing); `error.details.upgrade_url` contains this link. |
+| `EMAIL_DOMAIN_NOT_REGISTERED` | Add and verify the domain in [Account Settings → Domains](https://app.revdoku.com/account/domains) first. |
+| `EMAIL_DOMAIN_NOT_READY` | Complete verification or resolve receiving restrictions for the registered domain. |
+
+The latter two errors include `error.details.settings_url`. Mailbox creation
+does not automatically register a custom domain or fall back to another domain.
+
 Connect a domain in **Account Settings → Domains → Email**, or use these endpoints
 with a whole-account `bucket_admin` credential belonging to an account owner or administrator.
 Selected-bucket, read-only and write-only credentials cannot manage domain ownership.
@@ -986,148 +1162,6 @@ server includes it. This fallback belongs in a private interactive client UI,
 not an AI chat: never ask the user to paste or repeat the verification code in
 chat. Do not print or log the key.
 
-### Direct API signup
-
-Use this flow to create an account from your application. Existing users sign in
-through the browser. No API key is required for these three endpoints.
-
-#### 1. Request a code
-
-The human operator must provide their email and authorize the acknowledgments.
-The server records the current policy versions; your client does not send a version.
-
-| Field | Required | Purpose |
-| --- | --- | --- |
-| `human_operator_email` | Yes | The human owner's email, supplied by that person. Do not substitute an agent's mailbox. |
-| `accept_terms` | Yes; `true` | Human agrees to the [Terms](https://revdoku.com/terms) and [acceptable use policy](https://revdoku.com/acceptable-use). |
-| `acknowledge_privacy_policy` | Yes; `true` | Human acknowledges the [privacy notice](https://revdoku.com/privacy). This is not consent to optional processing. |
-| `username` | No | Requested first mailbox username; generated if omitted. |
-| `permission_scope` | No | `bucket_read`, `bucket_write`, or `bucket_admin` (default). |
-| `label` | No | A name for the API connection. |
-
-```http
-POST /v1/agent/signups
-Content-Type: application/json
-
-{
-  "human_operator_email": "owner@customer.example",
-  "accept_terms": true,
-  "acknowledge_privacy_policy": true
-}
-
-202 Accepted
-{
-  "success": true,
-  "data": {
-    "signup": {
-      "signup_token": "RETURNED_SIGNUP_TOKEN",
-      "expires_in": 600,
-      "resend_after": 60
-    }
-  }
-}
-```
-
-No account or mailbox is created until the email code is verified.
-
-| Returned field | Use |
-| --- | --- |
-| `signup_token` | Save privately; include it when verifying or resending. It identifies and protects this signup attempt. |
-| `expires_in` | Seconds left to finish signup. |
-| `resend_after` | Seconds to wait before requesting another code. |
-
-#### 2. Verify the code
-
-Collect the code in your private application interface. Do not put the token or
-code in URLs, logs, command-line arguments, or AI chat.
-
-```http
-POST /v1/agent/signups/verify
-Content-Type: application/json
-
-{
-  "signup_token": "RETURNED_SIGNUP_TOKEN",
-  "code": "123456"
-}
-
-201 Created
-{
-  "success": true,
-  "data": {
-    "signup": {
-      "status": "completed"
-    },
-    "api_key": "RETURNED_ONCE_STORE_PRIVATELY",
-    "scope": "bucket_admin",
-    "expires_at": "2027-09-30T12:00:00Z",
-    "account": {
-      "id": "acct_RETURNED_ID"
-    },
-    "bucket": {
-      "id": "bkt_RETURNED_ID",
-      "title": "flaky.forest3v8x2p",
-      "email": {
-        "address": "flaky.forest3v8x2p@revdokumail.com",
-        "receiving_enabled": true,
-        "sending_enabled": false
-      }
-    }
-  }
-}
-```
-
-The example shows selected fields. Signup creates your account, API key and first
-mailbox together, then waits for receiving confirmation. If the provider is
-unavailable, signup still returns your API key, with `receiving_enabled: false`
-and a `blocked_reason`. Check that mailbox before sending; do not create another account.
-
-| Result | Next step |
-| --- | --- |
-| `api_key` returned | Store it privately now; it is returned once. Use it as the bearer token. This signup credential counts as one AI agent connection; no second key is needed. |
-| Username error | Resubmit verification with the same token and a corrected `username`; no new code is needed after successful proof. |
-| `SIGN_IN_REQUIRED` | The human already has an account. Use browser sign-in. |
-| HTTP `200` with completed IDs but no key | This signup already completed. Sign in and manage API keys under Account → Access. |
-| `INVALID_SIGNUP_TOKEN` | The token is invalid or expired. Start again with the human's authorization. |
-
-#### Resend a code
-
-Wait the returned `resend_after` seconds, then:
-
-```http
-POST /v1/agent/signups/resend
-Content-Type: application/json
-
-{
-  "signup_token": "RETURNED_SIGNUP_TOKEN"
-}
-```
-
-HTTP `200 OK` returns the same signup structure with the remaining timers. The
-previous code stops working. Resending does not extend the expiry or reset attempts.
-
-#### Signup limits
-
-| Limit | Allowance |
-| --- | --- |
-| Start/resend per IP | 5 per 15 minutes, shared with browser signup and legacy code requests. |
-| Verification per IP | 10 per 15 minutes. |
-| Attempts per challenge | 5. |
-| Verification per canonical human email | 10 per 15 minutes. |
-| API email sends | 60-second cooldown; 3 per 30 minutes. |
-| Shared browser/API/sign-in email sends | 3 per canonical email per 5 minutes. |
-| Global signup requests | 300 per minute. |
-| Global signup emails | 100 per hour. |
-| Request body | At most 8 KiB of uncompressed JSON. |
-
-- Invalid challenges and fake credentials still count toward limits.
-- Throttles return HTTP 429 with `Retry-After`.
-- Error codes: `RATE_LIMIT_EXCEEDED`, `SIGNUP_RATE_LIMITED`, or `SIGNUP_ATTEMPTS_EXCEEDED`.
-- Limits may be tightened to protect availability.
-
-Signup responses use `Cache-Control: no-store`. Availability is reported by
-`GET /v1/agent_auth/capabilities` in `data.signup.available`.
-CLI and MCP use browser OAuth; they do not collect signup codes in chat.
-
 ### Create a Bucket
 
 See the [first inbox example](#1-create-an-inbox). To generate a username,
@@ -1138,7 +1172,7 @@ send `{"bucket": {}}`.
 | Field | Default | Purpose |
 | --- | --- | --- |
 | `bucket.email.username` | Generated name, such as `flaky.forest3v8x2p` | Choose the name before `@`. Available on all plans. |
-| `bucket.email.domain` | Platform domain | Use a ready custom email domain owned by this account. |
+| `bucket.email.domain` | Platform domain | Built-in domain such as `revdokumail.com` (all plans), or a ready custom email domain owned by this account. |
 | `bucket.title` | Assigned username | Set a display title; it can be changed later. |
 | `bucket.description` | Empty | Add a bucket description. |
 | `bucket.tag_paths` | None | Apply user-chosen organizational labels. |
@@ -1319,6 +1353,17 @@ For large sessions, finalization can take several requests.
 Repeat finalization until the pending flag is no longer true.
 
 ## API Reference
+
+### Signup endpoints — no API key required
+
+Start with the [signup workflow](#direct-api-signup) for owner authorization,
+private email verification, and response fields.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/v1/agent/signups` | Send the human owner a verification code; return a private signup token. |
+| `POST` | `/v1/agent/signups/verify` | Verify the code; create the account, first inbox, and API key. |
+| `POST` | `/v1/agent/signups/resend` | Resend the code using the same signup token after the waiting period. |
 
 ### Authentication Endpoints
 

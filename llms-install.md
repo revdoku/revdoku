@@ -1,8 +1,8 @@
 # Revdoku agent setup
 
 Revdoku provides email inboxes for people and AI agents, with private file storage.
-Connect to create inboxes, read messages and attachments, and store additional files.
- Verify access, then complete the requested task.
+Connect to create and manage inboxes, read messages and attachments, and store files.
+Verify access, then complete the requested task.
 
 Prefer local shell and filesystem access; use
 hosted MCP only when local access is unavailable.
@@ -10,8 +10,31 @@ hosted MCP only when local access is unavailable.
 ## Public prompt
 
 ```text
-Connect Revdoku so you can manage my email inboxes, read messages and attachments, and store files. Follow https://revdoku.com/llms-install.md, help me sign in through the browser, and verify the connection. Then continue my task, or ask what I want to do.
+Connect Revdoku so you can create and manage email inboxes for my AI agents, read emails and attachments, and store files. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, check https://revdoku.com/api.md#direct-api-signup. Use API signup when you can handle my authorization and email verification privately; otherwise guide me through browser signup. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do.
 ```
+
+## Account setup
+
+1. If you already have an authorized connection, verify it and continue the task.
+2. If you need an account and your private API client can handle human authorization
+   and email verification, follow [API signup](https://revdoku.com/api.md#direct-api-signup).
+   Check `https://api.revdoku.com/v1/agent_auth/capabilities` for `data.signup.available`.
+   No existing API key is needed. Use the human owner's supplied email, with their
+   authorization for `accept_terms_and_policy: true` (Terms/AUP acceptance and
+   privacy acknowledgment). Collect
+   verification privately; never ask for a code in AI chat.
+3. MCP clients with a private verification flow may use `revdoku_signup`,
+   `revdoku_signup_verify` and `revdoku_signup_resend` with the same acceptance
+   field; see [MCP signup](mcp.md#direct-mcp-signup).
+4. For CLI setup, or when private API/MCP signup is unavailable, use
+   [browser signup](https://app.revdoku.com/users/sign_up), then browser sign-in.
+   Existing account owners use normal sign-in.
+
+Signup creates the first inbox. With API signup, save the returned API key privately
+and use the returned bucket; with CLI or MCP, list the accessible buckets after
+connecting. Reuse that inbox for the task, or create another only when needed.
+Check `email.receiving_enabled` before using an address, and share its email address
+and dashboard link with the user. If receiving is unavailable, explain `blocked_reason`.
 
 ## Agent rules
 
@@ -21,7 +44,7 @@ Connect Revdoku so you can manage my email inboxes, read messages and attachment
   connection token, protected-site password, or payment details in chat.
 - Do not ask the user to send `continue` after a browser step. Resume by
   checking status yourself.
-- Create new accounts in the browser at `https://app.revdoku.com/users/sign_up` before connecting.
+- Follow the account setup flow above. Hosted MCP offers signup tools; account access uses browser OAuth.
 - Use `revdoku upload` for files and folders. Share the dashboard link with authorized
   people; the link itself does not grant access.
 
@@ -62,7 +85,7 @@ updates the same bucket. Use `revdoku files`, `revdoku read PATH`, and
 
 Endpoint: `https://mcp.revdoku.com`
 
-Authenticate with OAuth before calling tools. Then call `revdoku_status`, create
+Authenticate with OAuth before calling account tools. Then call `revdoku_status`, create
 or choose a private bucket, and read or write the requested files. Bucket creation
 returns its incoming email address and receiving state. For an existing bucket, use `bucket_get(include_email: true)` with write access.
 Check `receiving_enabled`, then use `bucket_email_list` with a saved `pagination.next_cursor`
@@ -72,7 +95,7 @@ If not ready, explain `blocked_reason`; do not assume a paused or unknown inbox
 can receive. Read quotas with `account_limits`. Personal
 notification frequency is managed in Account Settings → Notifications.
 See the [email contract](https://revdoku.com/api.md#incoming-email-into-a-bucket).
-If the user has no account, direct them to `https://app.revdoku.com/users/sign_up` first.
+If the user has no account, follow Account setup above.
 
 If the host does not support MCP or the agent needs local/binary files, use the
 local CLI. A hosted agent cannot read the user's computer.

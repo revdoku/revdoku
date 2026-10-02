@@ -4,9 +4,46 @@ Connect to `https://mcp.revdoku.com` using Streamable HTTP and complete OAuth
 in the browser. Each agent needs its own authorized connection. You can start
 free; see [pricing](https://app.revdoku.com/pricing).
 
-Hosted MCP signup stays in the browser. The separate [direct API signup](api.md#direct-api-signup),
-when enabled, requires `human_operator_email` supplied by the human owner. Do not
-use an agent mailbox or ask for OTPs or API keys in chat.
+## Direct MCP signup
+
+New users can create an account through MCP without an existing connection when
+API signup is enabled. The tools use the same verification and policy records as
+[REST signup](api.md#direct-api-signup). Clients must support private input and
+storage for verification codes, signup tokens and API keys; otherwise use
+[browser signup](https://app.revdoku.com/users/sign_up).
+
+| Tool | Required arguments | Result |
+| --- | --- | --- |
+| `revdoku_signup` | `human_operator_email`, `accept_terms_and_policy: true` | Private `signup_token`, `expires_in`, `resend_after`; sends an email code. |
+| `revdoku_signup_verify` | `signup_token`, `code` | Creates the account, first inbox and scoped API key after email proof. |
+| `revdoku_signup_resend` | `signup_token` | Resends after the cooldown; retains the original expiry. |
+
+| Signup field | Meaning |
+| --- | --- |
+| `human_operator_email` | Email supplied by the human owner. Never substitute an agent mailbox. |
+| `accept_terms_and_policy` | Must be boolean `true`, authorized by the human: agreement to the [Terms](https://revdoku.com/terms) and [AUP](https://revdoku.com/acceptable-use), and acknowledgment of the [privacy notice](https://revdoku.com/privacy). This is not consent to optional processing. |
+| `username` | Optional first mailbox username; generated if omitted. May also be supplied to verification to correct a rejected name. |
+| `permission_scope` | Optional `bucket_read`, `bucket_write` or `bucket_admin` (default), authorized by the human. |
+| `label` | Optional connection name. |
+
+1. Call `revdoku_signup` with the human's authorization:
+
+   ```json
+   {"human_operator_email":"owner@customer.example","accept_terms_and_policy":true}
+   ```
+
+2. Collect the emailed code through private application input and call
+   `revdoku_signup_verify` with that code and the returned token. No account,
+   mailbox or key exists before verification succeeds. Never put these secrets
+   in ordinary chat, URLs or logs.
+3. Save the returned API key privately; it is returned only once. It authorizes
+   REST requests. Complete OAuth to use hosted MCP account tools. The local MCP
+   shim returns the key without replacing any existing connection.
+
+Send one signup tool call per request, with an uncompressed JSON envelope of at
+most 8 KiB. Limits are shared with REST signup. Do not automatically retry an
+uncertain signup or verification response. Use normal sign-in for existing
+accounts. Signup does not bypass sign-in, 2FA or account restrictions.
 
 ## Connect without a terminal
 

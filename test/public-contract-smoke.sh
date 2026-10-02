@@ -78,7 +78,7 @@ require_text "$README_FILE" "[CHANGELOG.md](./CHANGELOG.md)"
 require_text "$README_FILE" "npx skills add revdoku/revdoku --skill revdoku -g"
 require_text "$README_FILE" "app.revdoku.com/users/sign_up"
 require_text "$LLMS_INSTALL_FILE" "Prefer local shell and filesystem access"
-require_text "$LLMS_INSTALL_FILE" "Authenticate with OAuth before calling tools"
+require_text "$LLMS_INSTALL_FILE" "Authenticate with OAuth before calling account tools"
 for target in codex claude-code cursor antigravity opencode grok-build hermes openclaw; do
   require_text "$INSTALL_FILE" "$target"
   require_text "$UNINSTALL_FILE" "$target"

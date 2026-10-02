@@ -4,5 +4,5 @@
 {"type":"documentation","url":"https://revdoku.com/docs"}
 {"type":"openapi","url":"https://revdoku.com/openapi.json"}
 {"type":"pricing","url":"https://app.revdoku.com/pricing"}
-{"type":"signup","url":"https://app.revdoku.com/users/sign_up","browser_only":true,"available_in_agent_chat":false}
+{"type":"signup","url":"https://app.revdoku.com/users/sign_up","browser_only":false,"available_in_agent_chat":false,"mcp_tools":["revdoku_signup","revdoku_signup_verify","revdoku_signup_resend"],"documentation":"https://revdoku.com/mcp.md#direct-mcp-signup"}
 {"type":"terms","url":"https://revdoku.com/terms.md","scope":"All service use, including private storage"}
