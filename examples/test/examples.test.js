@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const example = name => fileURLToPath(new URL(`../javascript/${name}.js`, import.meta.url));
 const fixture = fileURLToPath(new URL('./mock-api.js', import.meta.url));
 function run(cwd, name, args = [], env = {}) {
-  return spawnSync(process.execPath, ['--import', fixture, example(name), ...args], { cwd, encoding: 'utf8', timeout: 10000,
+  return spawnSync(process.execPath, ['--import', fixture, example(name), ...args], { cwd, encoding: 'utf8', timeout: 12000,
     env: { ...process.env, REVDOKU_API_KEY: 'offline-fixture-key', REVDOKU_BUCKET_ID: 'bkt_fixture',
       REVDOKU_ACCOUNT_ID: 'acct_fixture', ...env } });
 }
@@ -29,5 +29,15 @@ test('all five command-line examples run offline, with pagination and persisted 
     assert.match(success(run(cwd, 'quotas-and-retries')), /"max_buckets": 25/);
     const quota = run(cwd, 'quotas-and-retries', [], { FIXTURE_QUOTA: '1' });
     assert.equal(quota.status, 1); assert.match(quota.stderr, /Allowance resets at 2026-10-01/);
+  } finally { await rm(cwd, { recursive: true, force: true }); }
+});
+
+test('cold email indexes recover with bounded read retries and leave checkpoints unchanged on failure', async () => {
+  const cwd = await mkdtemp(join(tmpdir(), 'revdoku-index-retry-'));
+  try {
+    const unavailable = run(cwd, 'read-mail', [], { FIXTURE_INDEX_BUILDING: 'always' });
+    assert.equal(unavailable.status, 1, unavailable.stderr);
+    assert.match(unavailable.stderr, /EMAIL_INDEX_BUILDING/);
+    assert.match(success(run(cwd, 'read-mail', [], { FIXTURE_INDEX_BUILDING: 'twice' })), /New messages read: 2/);
   } finally { await rm(cwd, { recursive: true, force: true }); }
 });

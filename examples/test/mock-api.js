@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 
 let upload;
+let emailListAttempts = 0;
 const folder = '_email/inbox/sender/example/delivery/';
 const mail = { subject: 'Fixture message', from: 'sender@example.test', body_text: 'Fixture body',
   body_status: 'complete', received_at: '2026-09-29T00:00:00Z',
@@ -22,6 +23,14 @@ globalThis.fetch = async (input, options = {}) => {
       return ok({ bucket: { id: 'bkt_fixture', title: body.bucket.title, email: { address: 'fixture@revdokumail.com', receiving_enabled: true, sending_enabled: false }, dashboard_url: 'https://app.revdoku.com/buckets/bkt_fixture' } });
     }
     if (url.pathname.endsWith('/emails')) {
+      emailListAttempts++;
+      if (process.env.FIXTURE_INDEX_BUILDING === 'always') {
+        assert.ok(emailListAttempts <= 4, 'Read retries must be bounded');
+      }
+      if (process.env.FIXTURE_INDEX_BUILDING === 'always' ||
+          (process.env.FIXTURE_INDEX_BUILDING === 'twice' && emailListAttempts <= 2)) {
+        return Response.json({ error: { code: 'EMAIL_INDEX_BUILDING', message: 'Email index is being prepared' } }, { status: 503 });
+      }
       const cursor = url.searchParams.get('cursor');
       return ok({ emails: cursor === 'end' ? [] : [{ id: cursor ? 'eml_second' : 'eml_first' }],
         pagination: { has_more: !cursor, next_cursor: cursor ? 'end' : 'next' } });

@@ -22,7 +22,7 @@ Use `REVDOKU_ACCOUNT_ID` only to select an account already granted to the key.
 cd examples
 cp .env.example .env
 # Edit .env locally before running a command.
-node --env-file=.env javascript/create-inbox.js 'project.alerts'
+node --env-file=.env javascript/create-inbox.js
 node --env-file=.env javascript/read-mail.js
 node --env-file=.env javascript/read-mail.js --show-body
 node --env-file=.env javascript/download-attachments.js 'eml_...' 'df_...' ./downloads

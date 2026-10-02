@@ -7,15 +7,16 @@ python3 -m venv .venv
 . .venv/bin/activate
 pip install requests
 # Set REVDOKU_API_KEY using your secret manager or local environment.
-python python/create-inbox.py acme-orders
+python python/create-inbox.py
 export REVDOKU_BUCKET_ID=bkt_RETURNED_ID
 python python/read-mail.py
 python python/download-attachment.py eml_RETURNED_ID df_RETURNED_ID attachment.pdf
 ```
 
 Run from `examples/`. Set `REVDOKU_ACCOUNT_ID` to select another granted account.
-Omit the username to generate one. Keep the same creation key when retrying the
-same request. Do not reuse it for another mailbox.
+Omit the username to generate one. To choose a name, pass it as the argument;
+`EMAIL_ALREADY_EXISTS` means it is unavailable. If a creation response is lost,
+list your buckets before deciding whether to create another one.
 
 Creation prints the bucket ID and ready receiving address. Reading prints JSON
 metadata, attachment IDs and `next_cursor`; `--show-body` also prints body text.
