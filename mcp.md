@@ -133,8 +133,8 @@ including queued saves.
 
 Share `dashboard_url` with authorized people. A link does not grant access.
 Reconnect the MCP client after updates to refresh its discovered tools.
-See the [API contract](./api.md#incoming-email-into-a-bucket) and
-[storage and mailbox guide](./docs.md).
+See the [API contract](https://revdoku.com/api.md#incoming-email-into-a-bucket) and
+[storage and mailbox guide](https://revdoku.com/docs.md).
 
 ## Explain the action
 
@@ -160,7 +160,7 @@ Receiving diagnostics and audit logs are viewed by humans in the dashboard. Tool
 
 New users can create an account through MCP without an existing connection when
 API signup is enabled. The tools use the same verification and policy records as
-[REST signup](api.md#direct-api-signup). Clients must support private input and
+[REST signup](https://revdoku.com/api.md#direct-api-signup). Clients must support private input and
 storage for verification codes, signup tokens and API keys; otherwise use
 [browser signup](https://app.revdoku.com/users/sign_up).
 
@@ -201,4 +201,4 @@ accounts. Signup does not bypass sign-in, 2FA or account restrictions.
 
 - Email filters `sender`, `subject` and `conversation_id` are unavailable. Authorized listing and detail reads still work.
 - Download tools return scoped signed API URLs that decrypt protected files. Fetch the returned URL without an API key or OAuth token.
-- See the [account-mode details](api.md#hipaa-and-high-security-accounts).
+- See the [account-mode details](https://revdoku.com/api.md#hipaa-and-high-security-accounts).
