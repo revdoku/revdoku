@@ -99,3 +99,15 @@ revdoku account limits --account-id acct_RETURNED_ID
 ```
 
 Returns effective mailbox and file quotas under `data.limits`.
+
+### New email notifications
+
+| Command | Purpose |
+| --- | --- |
+| `revdoku webhook --bucket-id ID` | Read the configured endpoint |
+| `revdoku webhook-set --bucket-id ID --webhook-url HTTPS_URL` | Set one signed webhook; save the returned secret privately |
+| Add `--rotate-secret` | Replace the signing secret and cancel pending deliveries |
+| `revdoku webhook-delete --bucket-id ID --confirm-delete ID` | Disable deliveries |
+| `revdoku email-subscription --bucket-id ID` | Get a WebSocket URL and short-lived ticket |
+
+Use `--account-id ID` to select an authorized account. A running receiver is required. See the [examples](../examples/README.md) for signature verification and WebSocket reconnect/catch-up. Human administrators can inspect delivery attempts and retry failures in **Analytics → Webhooks**.

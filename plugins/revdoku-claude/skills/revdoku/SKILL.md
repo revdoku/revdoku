@@ -100,3 +100,7 @@ Reconnect to refresh tools. Service access follows [pricing](https://app.revdoku
 and the [Terms](https://revdoku.com/terms/).
 
 Read effective mailbox and storage quotas with `account_limits`. Select another granted account with `account_id`.
+
+## Email events
+
+Use `bucket_email_webhook_get`, `bucket_email_webhook_set`, and `bucket_email_webhook_delete` to manage one signed HTTPS receiver per mailbox. Confirm the destination and disabling/rotation intent with the user. Keep returned secrets private. `bucket_email_subscription` returns a short-lived ticket and WebSocket URL for a running client; request a fresh ticket on reconnect and catch up with the saved email-list cursor. Include `account_id` for the intended granted account. These connections do not wake an idle AI chat. Human administrators inspect delivery history and retry failures in Analytics → Webhooks. Runnable examples are in the public repository's `examples/` directory.

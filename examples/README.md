@@ -91,3 +91,34 @@ creation, readiness, reading mail, and selected attachment downloads.
 Direct uploads are unavailable for accounts with additional file encryption
 (`DIRECT_UPLOADS_DISABLED`). The email reading and download examples support
 these accounts. See the [account-mode details](../api.md#hipaa-and-high-security-accounts).
+
+## An inbox for each customer
+
+Follow the [SaaS inbox guide](../guides/saas-inboxes.md). Set `REVDOKU_ACCOUNT_ID` explicitly, then run:
+
+```bash
+node --env-file=.env javascript/provision-customer-inbox.js customer-123
+node --env-file=.env javascript/process-customer-mail.js
+```
+
+Provisioning saves a customer-to-bucket mapping and receiving address. Rerunning checks the saved bucket; an uncertain POST is reconciled with reads instead of repeating creation. Set `REVDOKU_EMAIL_DOMAIN` to use a verified receiving domain.
+
+The reader processes every mapped inbox once, saves summaries and cursors together, and skips messages already saved. Rerun it periodically to catch missed notifications. The saved summary is the demonstration's result; external actions need their own idempotency using account/bucket/email ID. Your application must authorize each customer's access to their mapped bucket.
+
+Keep `.revdoku-examples/` private and persistent (`REVDOKU_STATE_DIR` changes its location). Each journal has a single-process lock. After a crash, confirm that process stopped before removing its `.lock` file. Use your application's database for multiple workers; these examples are small local scripts.
+
+## New email notifications
+
+| Example | Run from this directory | Expected output |
+| --- | --- | --- |
+| WebSocket reconnect and catch-up | `node --env-file=.env javascript/watch-mail.js` | New email summaries and `New messages read: N` after subscription confirmation and events |
+| Signed webhook receiver (Node) | `node --env-file=.env javascript/webhook-receiver.js` | Local listener address, then received email IDs and subjects |
+| Signed webhook receiver (Python) | `pip install flask requests`, then `python3 python/webhook-receiver.py` | Flask listener, then received email IDs and subjects |
+
+Export the `.env` values in your shell for Python. Set a mailbox and authorized account explicitly. These are ordinary HTTP/WebSocket examples; no Revdoku SDK is required.
+
+For webhooks, expose port 8080 through your HTTPS reverse proxy, then configure that HTTPS `/webhook` URL with the CLI or API. Save the returned secret as `REVDOKU_WEBHOOK_SECRET` and restart the receiver. The examples verify the raw body, timestamp (five-minute tolerance), and signature before reading the email. Duplicate event IDs are recorded locally; keep `.revdoku-examples/` private and persistent. Each example is designed for one process. Production applications with multiple workers should use their existing database/queue for deduplication and acknowledge promptly after durable acceptance. Deduplicate downstream effects by email ID; delivery is at least once.
+
+The WebSocket example subscribes before catching up, reuses `read-mail.js` for cursor pagination, detects stale connections, and obtains a new ticket on reconnect. Run one watcher per account/mailbox checkpoint. WebSockets are live hints; the saved HTTP cursor supplies missed messages. A running receiver is required; notifications cannot wake an idle AI chat.
+
+Webhook history and manual retries are available to human administrators in **Analytics → Webhooks**.

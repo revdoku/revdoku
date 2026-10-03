@@ -8,188 +8,36 @@ and downloads attachments. Buckets also support uploaded files and version histo
 
 | Task | Section |
 | --- | --- |
-| Sign up through the API and get your first inbox | [Direct API signup](#direct-api-signup) |
 | Make your first API request | [Quick start](#email-api-quick-start) |
+| Build customer inboxes in your application | [SaaS inbox guide](https://github.com/revdoku/revdoku/blob/main/guides/saas-inboxes.md) |
 | Understand JSON and errors | [Response format](#response-format) |
 | Select an account | [Accounts](#accounts) |
 | Check quotas | [Account limits](#account-limits) |
 | Read email and attachments | [Received email operations](#received-email-operations) |
+| Webhooks and local live events | [Email events](#email-webhooks-and-live-subscriptions) |
 | Choose an email username | [Create a bucket](#create-a-bucket) |
+| Use extra addresses or your own domain | [Aliases](#inbox-aliases) · [Custom domains](#custom-email-domains) |
 | Upload a file | [Upload a file](#upload-a-file) |
-
-## Direct API signup
-
-**Start here if you need a Revdoku account.** An AI agent or private application
-can use this flow with the human owner's authorization and email verification.
-Successful verification creates an account, its first email inbox with cloud
-storage, and an API key. No existing API key is required.
-
-Base URL: `https://api.revdoku.com/v1`.
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| POST | `/v1/agent/signups` | Send a verification code to the human owner's email. |
-| POST | `/v1/agent/signups/verify` | Verify the code and create the account, first inbox, and API key. |
-| POST | `/v1/agent/signups/resend` | Resend the code after the returned waiting period. |
-
-Check `GET /v1/agent_auth/capabilities`: `data.signup.available` reports whether
-API signup is enabled. If unavailable, use [browser signup](https://app.revdoku.com/users/sign_up).
-Existing users use [browser sign-in](https://app.revdoku.com/users/sign_in).
-MCP offers the same flow through [signup tools](mcp.md#direct-mcp-signup).
-Clients must handle owner authorization and verification privately. CLI sign-in
-and hosted MCP account access use browser OAuth.
-
-### 1. Request a code
-
-The human operator must provide their email and authorize the acknowledgments.
-The server records the current policy versions; your client does not send a version.
-
-| Field | Required | Purpose |
-| --- | --- | --- |
-| `human_operator_email` | Yes | The human owner's email, supplied by that person. Do not substitute an agent's mailbox. |
-| `accept_terms_and_policy` | Yes; `true` | The human agrees to the [Terms](https://revdoku.com/terms) and [acceptable use policy](https://revdoku.com/acceptable-use), and acknowledges the [privacy notice](https://revdoku.com/privacy). This is not consent to optional processing. |
-| `username` | No | Requested first mailbox username; generated if omitted. |
-| `permission_scope` | No | `bucket_read`, `bucket_write`, or `bucket_admin` (default). |
-| `label` | No | A name for the API connection. |
-
-```http
-POST /v1/agent/signups
-Host: api.revdoku.com
-Content-Type: application/json
-
-{
-  "human_operator_email": "owner@customer.example",
-  "accept_terms_and_policy": true
-}
-
-202 Accepted
-{
-  "success": true,
-  "data": {
-    "signup": {
-      "signup_token": "RETURNED_SIGNUP_TOKEN",
-      "expires_in": 600,
-      "resend_after": 60
-    }
-  }
-}
-```
-
-No account or mailbox is created until the email code is verified.
-
-| Returned field | Use |
-| --- | --- |
-| `signup_token` | Save privately; include it when verifying or resending. It identifies and protects this signup attempt. |
-| `expires_in` | Seconds left to finish signup. |
-| `resend_after` | Seconds to wait before requesting another code. |
-
-### 2. Verify the code
-
-Collect the code in your private application interface. Do not put the token or
-code in URLs, logs, command-line arguments, or AI chat.
-
-```http
-POST /v1/agent/signups/verify
-Host: api.revdoku.com
-Content-Type: application/json
-
-{
-  "signup_token": "RETURNED_SIGNUP_TOKEN",
-  "code": "123456"
-}
-
-201 Created
-{
-  "success": true,
-  "data": {
-    "signup": {
-      "status": "completed"
-    },
-    "api_key": "RETURNED_ONCE_STORE_PRIVATELY",
-    "scope": "bucket_admin",
-    "expires_at": "2027-09-30T12:00:00Z",
-    "account": {
-      "id": "acct_RETURNED_ID"
-    },
-    "bucket": {
-      "id": "bkt_RETURNED_ID",
-      "title": "flaky.forest3v8x2p",
-      "email": {
-        "address": "flaky.forest3v8x2p@revdokumail.com",
-        "receiving_enabled": true,
-        "sending_enabled": false
-      }
-    }
-  }
-}
-```
-
-The example shows selected fields. Signup creates your account, API key and first
-mailbox together, then waits for receiving confirmation. If the provider is
-unavailable, signup still returns your API key, with `receiving_enabled: false`
-and a `blocked_reason`. Check `email.receiving_enabled` before using the address;
-reuse the returned mailbox rather than creating another account.
-
-| Result | Next step |
-| --- | --- |
-| `api_key` returned | Store it privately now; it is returned once. Use it as the bearer token. This signup credential counts as one AI agent connection; no second key is needed. |
-| Username error | Resubmit verification with the same token and a corrected `username`; no new code is needed after successful proof. |
-| `SIGN_IN_REQUIRED` | The human already has an account. Use browser sign-in. |
-| HTTP `200` with completed IDs but no key | This signup already completed. Sign in and manage API keys under Account → Access. |
-| `INVALID_SIGNUP_TOKEN` | The token is invalid or expired. Start again with the human's authorization. |
-
-### Resend a code
-
-Wait the returned `resend_after` seconds, then:
-
-```http
-POST /v1/agent/signups/resend
-Host: api.revdoku.com
-Content-Type: application/json
-
-{
-  "signup_token": "RETURNED_SIGNUP_TOKEN"
-}
-```
-
-HTTP `200 OK` returns the same signup structure with the remaining timers. The
-previous code stops working. Resending does not extend the expiry or reset attempts.
-
-### Signup limits
-
-| Limit | Allowance |
-| --- | --- |
-| Start/resend per IP | 5 per 15 minutes, shared with browser signup and legacy code requests. |
-| Verification per IP | 10 per 15 minutes. |
-| Attempts per challenge | 5. |
-| Verification per canonical human email | 10 per 15 minutes. |
-| API email sends | 60-second cooldown; 3 per 30 minutes. |
-| Shared browser/API/sign-in email sends | 3 per canonical email per 5 minutes. |
-| Global signup requests | 300 per minute. |
-| Global signup emails | 100 per hour. |
-| Request body | At most 8 KiB of uncompressed JSON. |
-
-- Invalid challenges and fake credentials still count toward limits.
-- Throttles return HTTP 429 with `Retry-After`.
-- Error codes: `RATE_LIMIT_EXCEEDED`, `SIGNUP_RATE_LIMITED`, or `SIGNUP_ATTEMPTS_EXCEEDED`.
-- Limits may be tightened to protect availability.
-
-Signup responses use `Cache-Control: no-store`. Availability is reported by
-`GET /v1/agent_auth/capabilities` in `data.signup.available`.
-CLI and MCP use browser OAuth; they do not collect signup codes in chat.
+| Create a new owner's account through the API | [Direct API signup](#direct-api-signup) |
 
 ## Email API quick start
 
-1. [Sign up through the API](#direct-api-signup) and save the returned API key privately.
-   If you already have an account, sign in and create a key from **Connect via API**
-   or **Account → Access**.
-2. Replace `YOUR_API_KEY` below with that key in your private application.
-3. Reuse the first inbox created during signup. API signup returns it in `data.bucket`;
-   use `GET /v1/buckets` to find an inbox created through browser signup.
+1. Sign in to your existing account and create a backend key from **Connect via API**
+   or **Account → Access**. If you need an account, [browser signup](https://app.revdoku.com/users/sign_up)
+   creates your first mailbox; [direct signup](#direct-api-signup) is also available.
+2. Keep the key on your backend. Replace `YOUR_API_KEY` below in your private application.
+3. List the existing buckets and choose an authorized inbox. A read-only key can
+   complete this read workflow; creating another inbox requires account-wide admin access.
 
-If you have an inbox already, skip to [listing messages](#2-list-messages).
-Use the creation example only when you need another inbox.
+```http
+GET /v1/buckets
+Authorization: Bearer YOUR_API_KEY
+```
 
+The response contains `data.buckets`. Keep the chosen `id` for the requests below.
+For multiple accounts, first [list granted accounts](#accounts), then pass
+`account_id=acct_RETURNED_ID` on every GET and in each write body. Switching accounts
+in the dashboard does not change your credential's default.
 
 | Setting | Value |
 | --- | --- |
@@ -198,7 +46,56 @@ Use the creation example only when you need another inbox.
 | JSON requests | `Content-Type: application/json` |
 | Account | Credential default; pass `account_id` to select another granted account. |
 
-### 1. Create an inbox
+<a id="2-list-messages"></a>
+
+### List messages
+
+Replace `bkt_example` with the chosen bucket ID. To send a test message, use the
+address saved during provisioning or displayed to an authorized writer in the
+dashboard; address discovery requires write access.
+Save the returned cursor even when the list is empty:
+
+```http
+GET /v1/buckets/bkt_example/emails?limit=50
+Authorization: Bearer YOUR_API_KEY
+```
+
+200 OK
+
+```json
+{
+  "success": true,
+  "data": {
+    "emails": [],
+    "pagination": {
+      "limit": 50,
+      "has_more": false,
+      "next_cursor": "OPAQUE_CURSOR"
+    }
+  }
+}
+```
+
+<a id="3-read-messages-and-attachments"></a>
+
+### Read messages and attachments
+
+| Task | Request |
+| --- | --- |
+| Read a returned message | `GET /v1/buckets/:bucket_id/emails/:email_id` |
+| Get a temporary attachment link | `GET /v1/buckets/:bucket_id/emails/:email_id/attachments/:attachment_id` |
+
+See [received email operations](#received-email-operations),
+[OpenAPI](https://revdoku.com/openapi.json),
+[runnable JS/TypeScript examples](https://github.com/revdoku/revdoku/tree/main/examples), and the
+[SaaS inbox guide](https://github.com/revdoku/revdoku/blob/main/guides/saas-inboxes.md).
+
+<a id="1-create-an-inbox"></a>
+
+### Create another inbox
+
+Use this only when you need another bucket. Browser and direct signup already
+create a first mailbox.
 
 ```http
 POST /v1/buckets
@@ -229,45 +126,11 @@ Content-Type: application/json
 ```
 
 Creation waits for receiving setup. After `201 Created`, use the returned address immediately.
-Keep the returned bucket ID for later requests.
-
-### 2. List messages
-
-Send a test email to the returned address from your normal email app.
-Replace `bkt_example` with the bucket ID returned by signup or inbox creation.
-Save the returned cursor even when the list is empty:
-
-```http
-GET /v1/buckets/bkt_example/emails?limit=50
-Authorization: Bearer YOUR_API_KEY
-```
-
-200 OK
-
-```json
-{
-  "success": true,
-  "data": {
-    "emails": [],
-    "pagination": {
-      "limit": 50,
-      "has_more": false,
-      "next_cursor": "OPAQUE_CURSOR"
-    }
-  }
-}
-```
-
-### 3. Read messages and attachments
-
-| Task | Request |
-| --- | --- |
-| Read a returned message | `GET /v1/buckets/:bucket_id/emails/:email_id` |
-| Get a temporary attachment link | `GET /v1/buckets/:bucket_id/emails/:email_id/attachments/:attachment_id` |
-
-See [received email operations](#received-email-operations),
-[OpenAPI](https://revdoku.com/openapi.json), and
-[runnable JS/TypeScript examples](https://github.com/revdoku/revdoku/tree/main/examples).
+Keep the returned bucket ID for later requests. Creation consumes a separate UTC
+monthly allowance; deleting or archiving the bucket does not refund it. Read
+[creation usage](#account-limits) before a batch. On `EMAIL_NOT_READY`, preserve
+the created bucket ID. After a lost response, reconcile existing buckets; do not
+automatically repeat the POST. See [creation results](#creation-result).
 
 AI-agent users can start with the Revdoku app's copied prompt or the
 Revdoku skill. Use the local CLI when the agent has shell and filesystem access,
@@ -441,7 +304,7 @@ Authorization: Bearer YOUR_API_KEY
 
 | Field in `limits` | What it limits |
 | --- | --- |
-| `max_buckets` | Buckets retained in the billing group. |
+| `max_buckets` | Active buckets in the billing group. Archived content still consumes storage. |
 | `max_bucket_creations_per_month` | New buckets per UTC calendar month. Deleting a bucket does not refund a creation. |
 | `max_files_per_bucket` | Current files in one bucket. |
 | `max_current_files` | Current files across the billing group. |
@@ -453,6 +316,7 @@ Authorization: Bearer YOUR_API_KEY
 | `max_received_emails_per_month` | Incoming messages per billing period. |
 | `max_received_email_bytes_per_month` | Incoming raw-message bytes per billing period, including MIME encoding. |
 | `max_received_email_message_bytes` | Bytes in one incoming message. |
+| `max_email_aliases_per_bucket` | Active aliases per inbox. |
 | `max_email_address_rotations_per_month` | Address replacements per UTC calendar month. |
 | `max_account_members` | Human members. |
 | `max_api_keys` | Normal API keys. |
@@ -464,6 +328,27 @@ Values come from the current plan and account overrides; use the returned values
 Zero means no allowance; `null` means no cap for that field. Storage, mailbox and
 incoming-traffic allowances are shared within a billing group. Domain slots are
 per account. Received email files also consume storage/file allowances.
+
+### Creation usage
+
+`data.usage.bucket_creations` is an optional object, separate from `data.limits`.
+It is returned to a full-account browser session or an unrestricted account-wide
+connection with admin permission (`bucket_admin` or `full_account_access`).
+The human membership must also cover the whole account. Read-only/write-only,
+selected-bucket, denied-bucket and bucket-scoped memberships do not receive this
+usage object; their existing limits response remains available.
+
+| Field in `usage.bucket_creations` | Meaning |
+| --- | --- |
+| `monthly_limit` | Shared billing-group allowance for this UTC calendar month. |
+| `used` | Committed creations this month. |
+| `remaining` | Creations left; deleting or archiving a bucket does not refund usage. |
+| `resets_at` | ISO 8601 UTC reset time. |
+
+Use this for planning, then handle `BUCKET_CREATION_LIMIT_REACHED` from the actual
+creation request. Concurrent callers can spend capacity after a preflight read.
+The dashboard shows creation usage in **Account → Subscription**. This allowance
+is separate from active bucket capacity.
 
 | Interface | Read limits |
 | --- | --- |
@@ -532,6 +417,7 @@ Renames retain message IDs, while copies receive new IDs. Use the email endpoint
 | `to` | List and detail | Recipient addresses from the message headers; may differ from the delivery address for forwarded or BCC mail. |
 | `received_at` | List and detail | Receipt timestamp. |
 | `attachment_count` | List and detail | Number of saved attachments. |
+| `omitted_attachment_count` | List and detail, when present | Attachments omitted during decoding/storage. Historical messages may lack this field; absence does not establish that every original attachment was saved. |
 | `read` | List and detail | Shared read/unread state. |
 | `read_at` | List and detail | Time the message was marked read. |
 | `read_by` | List and detail | Person who marked it read, when known. |
@@ -597,6 +483,8 @@ Request the link for the selected attachment or original EML using the endpoints
 
 - Fetch the returned URL as provided; no API key is needed.
 - Bodies and attachments remain stored files; the original EML is available if decoded text is incomplete.
+- Store attachment IDs and request links on demand. A previously issued standard
+  storage link can remain usable until expiry after the issuing credential is revoked.
 
 ### Delete a message
 
@@ -622,10 +510,163 @@ Separately copied files remain independent.
 | 503 | `EMAIL_INDEX_BUILDING` | The initial index is being prepared. Retry after the returned five-second delay. |
 | 503 | `EMAIL_READ_STATUS_UNAVAILABLE` | The read-status change was not saved. Retry later. |
 
+## Email webhooks and live subscriptions
+
+Hosted applications receive signed HTTP webhooks. Local projects open an outbound
+WebSocket through Rails Action Cable; no public domain or tunnel is required.
+Both deliver the same event after the complete email and attachments are saved.
+Read contents through the existing email API.
+
+| Endpoint | Permission | Result |
+| --- | --- | --- |
+| GET /v1/buckets/:bucket_id/email/webhook | Bucket admin | Endpoint, or webhook: null; excludes the signing secret. |
+| PUT /v1/buckets/:bucket_id/email/webhook | Bucket admin | Set one URL; returns the endpoint and signing secret. |
+| DELETE /v1/buckets/:bucket_id/email/webhook | Bucket admin | Disable delivery; 204 No Content. |
+| GET /v1/buckets/:bucket_id/email/subscription | Bucket read | Signed WebSocket ticket valid for 60 seconds. |
+
+Use your normal bearer API key. Select another granted account with account_id in
+the query for GET/DELETE, or in the JSON body for PUT. Endpoints must use public
+HTTPS, including explicit ports such as 8443, with no URL user/password or fragment. Local/private addresses
+and redirects are rejected. Invalid configuration returns INVALID_EMAIL_WEBHOOK (422).
+
+| PUT field | Meaning |
+| --- | --- |
+| webhook_url | Required public HTTPS receiver URL, up to 2048 bytes. |
+| rotate_secret | Optional boolean, default false. Replace the secret even when the URL is unchanged; pending deliveries are canceled. |
+| account_id | Optional explicitly granted account; defaults to the credential's account. |
+
+### Hosted application workflow
+
+1. Implement an HTTPS POST receiver.
+2. PUT {"webhook_url":"https://example.org/email-events"} to configure it. Securely save
+   data.webhook.signing_secret. Repeating PUT with the same URL retains the secret;
+   replacing the URL rotates it and cancels pending old-endpoint deliveries.
+3. Verify the exact request bytes before parsing JSON.
+4. Deduplicate the event ID, durably accept the event, and return any 2xx.
+5. Fetch /v1/buckets/:bucket_id/emails/:email_id with your own API key.
+
+~~~json
+{
+  "id": "email.received:eml_example",
+  "type": "email.received",
+  "created_at": "2026-10-01T12:00:00.000000Z",
+  "data": {
+    "account_id": "acct_example",
+    "bucket_id": "bkt_example",
+    "email_id": "eml_example",
+    "received_at": "2026-10-01T11:59:58.000000Z",
+    "attachment_count": 1
+  }
+}
+~~~
+
+| Field | Meaning |
+| --- | --- |
+| id | Stable event ID for deduplication; unchanged on retries. |
+| type | email.received. |
+| created_at | UTC time when intake queued the event. |
+| data.account_id, data.bucket_id | Account and mailbox that saved the message. |
+| data.email_id | Stable email ID for the existing read endpoint. |
+| data.received_at | UTC email receipt time. |
+| data.attachment_count | Number of saved attachments. |
+
+Events contain no subjects, senders, bodies, download links or API credentials.
+Only new accepted deliveries emit them. Edits, copies, backfills and read changes
+do not. Configuring a webhook does not replay history. Copies and account moves
+clear the webhook; configure the destination explicitly.
+
+| Header | Meaning |
+| --- | --- |
+| X-Revdoku-Event-Id | Event id. |
+| X-Revdoku-Timestamp | Unix seconds for this delivery attempt. |
+| X-Revdoku-Signature | v1= followed by lowercase HMAC-SHA256 hex. |
+
+Sign timestamp + "." + raw_body. Reject timestamps outside a five-minute window
+and compare signatures in constant time. A Rails receiver can use:
+
+~~~ruby
+timestamp = request.headers["X-Revdoku-Timestamp"].to_s
+body = request.raw_post
+provided = request.headers["X-Revdoku-Signature"].to_s.delete_prefix("v1=")
+fresh = timestamp.match?(/\A\d+\z/) && (Time.current.to_i - timestamp.to_i).abs <= 300
+expected = OpenSSL::HMAC.hexdigest("SHA256", ENV.fetch("REVDOKU_WEBHOOK_SECRET"), "#{timestamp}.#{body}")
+return head :unauthorized unless fresh && ActiveSupport::SecurityUtils.secure_compare(expected, provided)
+event = JSON.parse(body)
+# Persist/deduplicate event["id"] and queue application work before returning 2xx.
+head :no_content
+~~~
+
+Use your application's normal webhook CSRF exemption. Verify signatures before accepting requests.
+
+| Delivery rule | Behavior |
+| --- | --- |
+| Automatic attempts | Up to 8 total for network failures, HTTP 408, 429 and 5xx |
+| Retry delay | Polynomial backoff; valid `Retry-After` on 429/503 is bounded to 1–3,600 seconds |
+| Other failures | Other non-2xx responses, redirects, private destinations, or responses over 64 KiB stop delivery |
+| Timeout | 15 seconds total per request; acknowledge promptly after durable acceptance |
+| Fairness | One delivery at a time per billing account; retries share this limit |
+| Disable / replace / rotate | Cancels pending attempts; an in-flight request may finish |
+| Manual retry | Dashboard administrators may make up to 3 additional attempts, limited to 10 requests/minute per billing account |
+| Retry identity | Same event ID, fresh timestamp and signature; no additional incoming-email charge |
+
+Email storage, delivery history and notification enqueueing commit together.
+Worker interruptions are recovered every five minutes within 24 hours of the event.
+Delivery can repeat or arrive out of order; deduplicate by event ID.
+
+### Plans and delivery history
+
+| Allowance | Effective value |
+| --- | --- |
+| Inboxes with a webhook | Existing active-bucket capacity; read `limits.max_buckets`. |
+| Endpoints per mailbox | One. |
+| New email events | Follow accepted messages within incoming count, byte and storage limits. |
+| Delivery history | Read `limits.audit_retention_days`. |
+
+Webhook capacity follows the account's existing mailbox and incoming-email limits, including overrides and shared billing. There is no separate webhook event allowance.
+
+Account administrators use **Analytics → Webhooks** in the dashboard.
+
+- Filter by mailbox, date and delivery status.
+- Inspect HTTP status, attempt times and the next automatic retry.
+- Retry failed deliveries while the account is writable and the same webhook is active.
+- `Delivered` means the endpoint returned HTTP 2xx.
+- History contains operational metadata. Email contents and receiver response bodies are excluded; endpoint paths and queries are redacted.
+
+### Local project workflow
+
+1. GET a subscription ticket with your read-authorized API key.
+2. Open the returned `websocket_url`, adding `email_subscription_token=TICKET`
+   within 60 seconds, using the `actioncable-v1-json` subprotocol.
+3. Subscribe to EmailReceivedChannel with the returned account_id and bucket_id.
+   Wait for confirm_subscription.
+4. List messages with your saved ascending arrival cursor and process every page.
+   Deduplicate email IDs against live events received during catch-up.
+5. Handle each live event's message and fetch its email through REST.
+6. On a temporary disconnect, get a fresh ticket, reconnect, and repeat cursor catch-up. Stop if the server rejects the subscription or sends `reconnect: false`.
+
+Runnable [JavaScript/TypeScript and Python examples](https://github.com/revdoku/revdoku/tree/main/examples) cover signed receivers and reconnects. The Node `watch-mail.js` example waits for subscription confirmation, catches up with a saved cursor, detects stale connections, and requests a fresh ticket on reconnect.
+
+| Client guard | Limit |
+| --- | --- |
+| Duplicate mailbox subscriptions | One per connection |
+| Mailbox subscriptions | 32 per connection; tickets authorize one mailbox |
+| Connections | 32 per credential per web process |
+| Handshakes | 120 per minute per source IP |
+| Client commands | 120 per minute per connection; 4 KiB maximum per command |
+
+Keep account, bucket and filters unchanged when reusing a cursor. Preserve `pagination.next_cursor` even after an empty page. WebSocket events are live hints; REST catch-up supplies messages received while disconnected.
+
+A receiver must remain running. Webhooks and WebSockets do not wake an idle AI chat. The CLI's `email-subscription` and MCP's `bucket_email_subscription` return connection details for that receiver. Webhook configuration is available through `webhook`, `webhook-set`, `webhook-delete` and the corresponding `bucket_email_webhook_get`, `bucket_email_webhook_set`, `bucket_email_webhook_delete` MCP tools.
+
+Ticket expiry limits connection establishment; an established subscription lasts
+until disconnect or access revocation. Credentials and membership are checked before
+each transmitted event. Treat the ticket as a temporary credential: it authorizes
+only its selected mailbox channel, never account notification streams.
+
 ## Incoming email into a bucket
 
-The dashboard shows **Mailbox / Raw Files** tabs when email files
-are present. These are views of the same authorized files. List / Tiles stays inside
+The dashboard provides **Mailbox / Raw Files** tabs for each bucket.
+These are views of the same authorized files. List / Tiles stays inside
 Raw Files; the Mailbox badge counts unread messages, not attachments. Clients use
 the email resource below; original files remain accessible through the file API.
 
@@ -655,6 +696,7 @@ Inspect an existing mailbox with `GET /v1/buckets/:id/email`.
 | --- | --- |
 | `address` | Full email address; use it exactly as returned. |
 | `username` | The part before `@`. |
+| `aliases` | Extra receiving addresses: each has `id`, `address` and `active`. Inactive records are preserved after a limit reduction. |
 | `receiving_enabled` | Whether this mailbox can currently receive email. |
 | `sending_enabled` | Always `false`; sending is not implemented. |
 | `blocked_reason` | Why receiving is unavailable. Omitted when receiving is enabled. |
@@ -662,6 +704,11 @@ Inspect an existing mailbox with `GET /v1/buckets/:id/email`.
 A mailbox may stop receiving if its quota is exhausted or receiving is paused.
 Saved messages remain readable. Limits are available separately at
 [`GET /v1/account/limits`](#account-limits).
+
+An owner/administrator manages per-bucket Pause/Resume in the browser, including
+cooldown and other holds. Those controls and detailed diagnostic logs are not
+API/MCP operations. Follow the [receiving runbook](https://github.com/revdoku/revdoku/blob/main/guides/saas-inboxes.md#when-receiving-stops)
+for an incident handoff. Mail rejected while paused must be resent.
 
 ### Activity fields
 
@@ -682,20 +729,57 @@ Read the current mailbox settings before requesting a replacement.
 
 | JSON field | Required | Purpose |
 | --- | --- | --- |
-| `confirm` | Yes; `true` | Confirm retiring the current address. |
+| `confirm` | Yes; `true` | Confirm changing the current address. |
 | `current_address` | Yes | Address returned by the latest mailbox settings request. |
-| `domain` | No | Keep the current domain, select a ready custom domain, or use `platform`. |
+| `domain` | No | Keep the current domain, select an available platform or ready custom domain, or use `platform`. |
+| `username` | No | Choose a name on the selected domain; requires full-account administrator access. Omit for a generated name. |
+| `keep_old_as_alias` | No; default `false` | Retain the old primary for the same inbox; requires full-account administrator access and an available alias slot. |
 
 - Check `max_email_address_rotations_per_month` in [account limits](#account-limits). Initial inbox creation does not use it.
 - After a lost response, reread the address before requesting another change.
 - Update third-party account/recovery settings before retiring an address.
-- Retired addresses stop receiving. Platform names remain permanently reserved.
+- Old addresses stop receiving unless retained as aliases. Platform names remain permanently reserved.
 
 | Status | Error code | Meaning |
 | --- | --- | --- |
 | 409 | `EMAIL_ADDRESS_CHANGED` | The supplied current address is stale. |
 | 409 | `EMAIL_ROTATION_UNAVAILABLE` | This mailbox cannot rotate its address. |
+| 409 | `EMAIL_ALIAS_LIMIT` | No alias slot is available. The existing address remains unchanged. |
 | 429 | `EMAIL_ROTATION_LIMIT` | The shared rotation allowance is exhausted or unavailable. |
+
+### Inbox aliases
+
+Aliases are extra addresses created directly or retained during an address change. They deliver
+to the same inbox and share its sender restrictions, quotas, pause state and message
+history. Read the effective `max_email_aliases_per_bucket` from account limits;
+a zero allowance means aliases are unavailable.
+
+1. Read the current mailbox settings and account limits.
+2. Submit `POST /v1/buckets/:id/email/aliases` with `username` and optionally `domain`.
+3. Poll mailbox settings until `receiving_enabled` is true. The new address appears
+   in `aliases`; the primary stays unchanged and no rotation allowance is spent.
+
+| Parameter | Required | Meaning |
+| --- | --- | --- |
+| `username` | Yes | Local part of the new address. Platform reserved names are unavailable. |
+| `domain` | No | Available platform domain or ready domain owned by the account; defaults to the platform domain. |
+
+To keep the old primary during a rename, submit the address change with
+`keep_old_as_alias: true`. It uses alias capacity and charges a primary-address
+rotation when the replacement activates.
+
+| Endpoint | Access | Result |
+| --- | --- | --- |
+| `GET /v1/buckets/:id/email` | Bucket write | Primary settings and `aliases`. |
+| `POST /v1/buckets/:id/email/aliases` | Full-account owner/administrator with bucket-admin access | `202` with updated mailbox settings; receiving registration continues in the background. |
+| `DELETE /v1/buckets/:id/email/aliases/:alias_id` | Full-account owner/administrator with bucket-admin access | Updated mailbox settings after removing one alias. |
+
+Removing an alias stops new and queued deliveries to it. Existing messages remain.
+A lower plan limit preserves alias records and enables only the oldest permitted
+addresses; a zero allowance disables them. Copies have no aliases. Platform aliases
+move with their inbox; remove custom-domain aliases before moving accounts.
+One message delivered to the primary and an alias is saved once, while both
+provider receipts count toward incoming traffic.
 
 ### Account receiving control
 
@@ -849,17 +933,18 @@ or use the address replacement endpoint for an existing inbox.
 | Replacement field | Purpose |
 | --- | --- |
 | `domain` | Exact ready domain, such as `mail.example.com`; use `platform` for the platform domain. |
-| `username` | Optional custom-domain name, such as `my-agent`. Omit for a generated name. |
+| `username` | Optional chosen name, such as `my-agent`. Omit for a generated name. |
 | `current_address` | Current address being replaced. |
 | `confirm` | Must be `true`. |
 
 Custom names require account-administrator access and deployment support.
-[Username rules](#username-rules) also apply. Rotations on platform domains generate a name.
+[Username rules](#username-rules) also apply. Platform domains also accept chosen
+names; their reserved-name rules still apply.
 
 | Replacement result | Behavior |
 | --- | --- |
 | `202`, assignment `pending` | Setup is running. Read the mailbox settings to check progress. The old address remains current. |
-| Assignment `active` | The returned address is ready; one rotation is charged. |
+| Assignment `active` | The new primary is assigned and one rotation is charged. Check `receiving_enabled` before using it. |
 | Assignment `failed` | The old address and rotation allowance are preserved. |
 
 | Mailbox settings field | Meaning |
@@ -872,10 +957,10 @@ Custom names require account-administrator access and deployment support.
 | `customization.blocked_reason` | Why customization is unavailable. |
 | `customization.settings_url` | Dashboard settings link for account administrators. |
 
-- Custom-domain names remain reserved to their original account. That account may reuse a released name; archived inboxes retain their addresses.
+- Custom-domain names remain reserved to their original account. That account may reuse a released name once no primary, alias or pending assignment holds it; archived inboxes retain their addresses.
 - Platform addresses cannot be reused, even after deletion.
 - A downgrade preserves assigned addresses but can block new domain setup or switching.
-- Switch to a platform address before moving a bucket to another account. Copies get fresh platform addresses.
+- Switch to a platform address and remove custom-domain aliases before moving a bucket to another account. Copies get fresh platform addresses without aliases.
 - Mail sent while receiving is paused is not automatically recovered.
 
 ### Email files in `_email/`
@@ -1352,6 +1437,168 @@ For large sessions, finalization can take several requests.
 
 Repeat finalization until the pending flag is no longer true.
 
+## Direct API signup
+
+Use this flow to create a new owner's Revdoku account, with that human's
+authorization and email verification. To add an inbox for an application customer,
+use the [SaaS mapping](https://github.com/revdoku/revdoku/blob/main/guides/saas-inboxes.md#map-customers-and-choose-access).
+Successful verification creates an account, its first email inbox with cloud
+storage, and an API key. No existing API key is required.
+
+Base URL: `https://api.revdoku.com/v1`.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/v1/agent/signups` | Send a verification code to the human owner's email. |
+| POST | `/v1/agent/signups/verify` | Verify the code and create the account, first inbox, and API key. |
+| POST | `/v1/agent/signups/resend` | Resend the code after the returned waiting period. |
+
+Check `GET /v1/agent_auth/capabilities`: `data.signup.available` reports whether
+API signup is enabled. If unavailable, use [browser signup](https://app.revdoku.com/users/sign_up).
+Existing users use [browser sign-in](https://app.revdoku.com/users/sign_in).
+MCP offers the same flow through [signup tools](mcp.md#direct-mcp-signup).
+Clients must handle owner authorization and verification privately. CLI sign-in
+and hosted MCP account access use browser OAuth.
+
+### 1. Request a code
+
+The human operator must provide their email and authorize the acknowledgments.
+The server records the current policy versions; your client does not send a version.
+
+| Field | Required | Purpose |
+| --- | --- | --- |
+| `human_operator_email` | Yes | The human owner's email, supplied by that person. Do not substitute an agent's mailbox. |
+| `accept_terms_and_policy` | Yes; `true` | The human agrees to the [Terms](https://revdoku.com/terms) and [acceptable use policy](https://revdoku.com/acceptable-use), and acknowledges the [privacy notice](https://revdoku.com/privacy). This is not consent to optional processing. |
+| `username` | No | Requested first mailbox username; generated if omitted. |
+| `permission_scope` | No | `bucket_read`, `bucket_write`, or `bucket_admin` (default). |
+| `label` | No | A name for the API connection. |
+
+```http
+POST /v1/agent/signups
+Host: api.revdoku.com
+Content-Type: application/json
+
+{
+  "human_operator_email": "owner@customer.example",
+  "accept_terms_and_policy": true
+}
+
+202 Accepted
+{
+  "success": true,
+  "data": {
+    "signup": {
+      "signup_token": "RETURNED_SIGNUP_TOKEN",
+      "expires_in": 600,
+      "resend_after": 60
+    }
+  }
+}
+```
+
+No account or mailbox is created until the email code is verified.
+
+| Returned field | Use |
+| --- | --- |
+| `signup_token` | Save privately; include it when verifying or resending. It identifies and protects this signup attempt. |
+| `expires_in` | Seconds left to finish signup. |
+| `resend_after` | Seconds to wait before requesting another code. |
+
+### 2. Verify the code
+
+Collect the code in your private application interface. Do not put the token or
+code in URLs, logs, command-line arguments, or AI chat.
+
+```http
+POST /v1/agent/signups/verify
+Host: api.revdoku.com
+Content-Type: application/json
+
+{
+  "signup_token": "RETURNED_SIGNUP_TOKEN",
+  "code": "123456"
+}
+
+201 Created
+{
+  "success": true,
+  "data": {
+    "signup": {
+      "status": "completed"
+    },
+    "api_key": "RETURNED_ONCE_STORE_PRIVATELY",
+    "scope": "bucket_admin",
+    "expires_at": "2027-09-30T12:00:00Z",
+    "account": {
+      "id": "acct_RETURNED_ID"
+    },
+    "bucket": {
+      "id": "bkt_RETURNED_ID",
+      "title": "flaky.forest3v8x2p",
+      "email": {
+        "address": "flaky.forest3v8x2p@revdokumail.com",
+        "receiving_enabled": true,
+        "sending_enabled": false
+      }
+    }
+  }
+}
+```
+
+The example shows selected fields. Signup creates your account, API key and first
+mailbox together, then waits for receiving confirmation. If the provider is
+unavailable, signup still returns your API key, with `receiving_enabled: false`
+and a `blocked_reason`. Check `email.receiving_enabled` before using the address;
+reuse the returned mailbox rather than creating another account.
+
+| Result | Next step |
+| --- | --- |
+| `api_key` returned | Store it privately now; it is returned once. Use it as the bearer token. This signup credential counts as one AI agent connection; no second key is needed. |
+| Username error | Resubmit verification with the same token and a corrected `username`; no new code is needed after successful proof. |
+| `SIGN_IN_REQUIRED` | The human already has an account. Use browser sign-in. |
+| HTTP `200` with completed IDs but no key | This signup already completed. Sign in and manage API keys under Account → Access. |
+| `INVALID_SIGNUP_TOKEN` | The token is invalid or expired. Start again with the human's authorization. |
+
+### Resend a code
+
+Wait the returned `resend_after` seconds, then:
+
+```http
+POST /v1/agent/signups/resend
+Host: api.revdoku.com
+Content-Type: application/json
+
+{
+  "signup_token": "RETURNED_SIGNUP_TOKEN"
+}
+```
+
+HTTP `200 OK` returns the same signup structure with the remaining timers. The
+previous code stops working. Resending does not extend the expiry or reset attempts.
+
+### Signup limits
+
+| Limit | Allowance |
+| --- | --- |
+| Start/resend per IP | 5 per 15 minutes, shared with browser signup and legacy code requests. |
+| Verification per IP | 10 per 15 minutes. |
+| Attempts per challenge | 5. |
+| Verification per canonical human email | 10 per 15 minutes. |
+| API email sends | 60-second cooldown; 3 per 30 minutes. |
+| Shared browser/API/sign-in email sends | 3 per canonical email per 5 minutes. |
+| Global signup requests | 300 per minute. |
+| Global signup emails | 100 per hour. |
+| Request body | At most 8 KiB of uncompressed JSON. |
+
+- Invalid challenges and fake credentials still count toward limits.
+- Throttles return HTTP 429 with `Retry-After`.
+- Error codes: `RATE_LIMIT_EXCEEDED`, `SIGNUP_RATE_LIMITED`, or `SIGNUP_ATTEMPTS_EXCEEDED`.
+- Limits may be tightened to protect availability.
+
+Signup responses use `Cache-Control: no-store`. Availability is reported by
+`GET /v1/agent_auth/capabilities` in `data.signup.available`.
+CLI and MCP use browser OAuth; they do not collect signup codes in chat.
+
 ## API Reference
 
 ### Signup endpoints — no API key required
@@ -1400,9 +1647,11 @@ Pending poll responses use standard device-flow errors:
 
 Successful device-code token responses include normal OAuth fields plus
 `revdoku_api_key`, a durable `revdoku_...` key for local REST API clients.
-The browser approval screen defaults to `bucket_admin` so agents can manage files and buckets. Users can reduce a connection later in
-Account → Access. OAuth approval and API-key creation flows can still
-request a narrower scope up front.
+The browser approval screen defaults to selected buckets and `bucket_read` when
+the client does not request a scope. Choose the buckets and permission on that
+screen. Selecting all existing buckets keeps a fixed selection; **All current and
+future buckets** is a separate choice. Read access supports message/file reads;
+provisioning new buckets requires account-wide `bucket_admin`.
 
 #### Permission scopes
 
@@ -1418,8 +1667,11 @@ request a narrower scope up front.
 | OAuth `scope` | Protocol scope: `revdoku:mcp`, optionally `offline_access`. |
 | Email-code `scope` | Legacy alias for `permission_scope` on email-code key creation only. |
 
-Omitted permission defaults to `bucket_admin` for agent connections and named
-API-key setup. Invalid values are rejected.
+OAuth/device requests and dashboard one-time connection prompts default to
+`bucket_read` when permission is omitted. Legacy email-code login, direct signup,
+and raw API-key creation retain their `bucket_admin` default; request an explicit
+permission for those flows. Invalid values are rejected. Account → Access defaults
+new keys to selected buckets and read permission.
 
 #### POST /v1/agent_auth/request_code
 
@@ -1581,8 +1833,11 @@ source, task, or local-folder context in `metadata`.
 
 #### Bucket locks
 
-Use a bucket lock for broad folder uploads, folder reorganizations, or coordinated
-multi-file edits. Use file locks for narrow edits to specific paths.
+Use file locks for narrow edits to specific paths. Bucket-wide locks and bucket
+moves can reject incoming mail, including a queued message whose save rechecks the
+lock. For broad uploads or reorganizations while an inbox must keep receiving,
+use a separate working bucket. If you deliberately lock the inbox, coordinate
+the interruption and have senders resend rejected mail after receiving is ready.
 
 ```http
 POST /v1/buckets/bkt_.../lock
@@ -1768,14 +2023,9 @@ Do not automatically repeat mailbox creation after losing its response.
 Monthly creations have a separate allowance from active buckets and address
 rotations. Deleting or archiving a bucket does not refund a creation.
 
-A full-account profile returns `plan_contract.bucket_creation_usage`:
-
-| Field | Meaning |
-| --- | --- |
-| `used` | Creations used this month. |
-| `remaining` | Creations left. |
-| `monthly_limit` | Shared billing-group allowance. |
-| `resets_at` | UTC calendar-month reset time. |
+Authorized callers can read [`data.usage.bucket_creations`](#creation-usage) from
+the dedicated account-limits endpoint. Full-account profiles retain
+`plan_contract.bucket_creation_usage` with the same calculation.
 
 A quota error is not a short-lived throttle. Do not retry automatically until reset.
 

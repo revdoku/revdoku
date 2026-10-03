@@ -2,10 +2,16 @@
 
 Revdoku provides email inboxes for people and AI agents, with private file storage.
 Connect to create and manage inboxes, read messages and attachments, and store files.
-Verify access, then complete the requested task.
+Verify the account and granted access with a read, then complete the requested task.
 
-Prefer local shell and filesystem access; use
-hosted MCP only when local access is unavailable.
+| Task | Connection |
+| --- | --- |
+| Application backend | [REST API](https://revdoku.com/api/) with a normal API key |
+| Local coding assistant | Skill with bundled CLI |
+| Desktop or cloud assistant | [Hosted MCP setup](https://revdoku.com/connect/) |
+
+Use an existing connection when its account and scope fit. Installation prompts
+are instructions for one of these methods; they do not require another credential.
 
 ## Public prompt
 
@@ -33,8 +39,11 @@ Connect Revdoku so you can create and manage email inboxes for my AI agents, rea
 Signup creates the first inbox. With API signup, save the returned API key privately
 and use the returned bucket; with CLI or MCP, list the accessible buckets after
 connecting. Reuse that inbox for the task, or create another only when needed.
-Check `email.receiving_enabled` before using an address, and share its email address
-and dashboard link with the user. If receiving is unavailable, explain `blocked_reason`.
+With write access, check `email.receiving_enabled` before sharing an address.
+Read-only connections verify access by listing authorized buckets and reading an
+existing message; ask the operator for the address when needed. Show the account
+ID and granted scope. Browser account switching does not change a tool credential's
+default: use an explicit `account_id` or CLI `--account-id` for the intended account.
 
 ## Agent rules
 
@@ -50,6 +59,7 @@ and dashboard link with the user. If receiving is unavailable, explain `blocked_
 
 ## Local AI apps with shell access
 
+Prefer local shell and filesystem access for local coding assistants.
 Supported targets include Codex, Claude Code, Cursor, Antigravity CLI, OpenCode,
 Grok Build, Hermes, and OpenClaw. Other coding agents can use the same CLI.
 
@@ -85,8 +95,10 @@ updates the same bucket. Use `revdoku files`, `revdoku read PATH`, and
 
 Endpoint: `https://mcp.revdoku.com`
 
-Authenticate with OAuth before calling account tools. Then call `revdoku_status`, create
-or choose a private bucket, and read or write the requested files. Bucket creation
+Authenticate with OAuth before calling account tools. Choose selected buckets and
+read access for reading tasks; choose broader access only for the requested task.
+Call `account_list`, then `account_get` with the chosen ID, and list its authorized
+buckets. Read an existing message before making requested changes. Bucket creation
 returns its incoming email address and receiving state. For an existing bucket, use `bucket_get(include_email: true)` with write access.
 Check `receiving_enabled`, then use `bucket_email_list` with a saved `pagination.next_cursor`
 to poll. Read `eml_` IDs with `bucket_email_get`; download attachments or the original
@@ -109,8 +121,7 @@ You can start free. See [pricing](https://app.revdoku.com/pricing) for current p
 
 Link one tutorial only when the simple flow is unavailable or the user asks:
 
-Use the same setup instructions for every AI app. Do not invent a product-
-specific prompt or setup flow.
+Use the client-specific instructions linked from the setup hub; desktop settings and terminal commands differ.
 
 - Universal local setup: <https://revdoku.com/llms-install.md>
 - General setup hub: <https://revdoku.com/connect/>
@@ -119,7 +130,10 @@ specific prompt or setup flow.
 ## Verification prompt
 
 ```text
-Create a private bucket for my project notes, save a README.md, and give me its
-dashboard link and incoming email address. Check whether the bucket is ready to
-receive email. If I ask for changes, update the same bucket.
+Confirm my Revdoku account ID and granted access. List the buckets you can access,
+ask which to use, and read its latest message if one exists. Do not change anything.
 ```
+
+A bucket-wide edit lock blocks incoming email. Prefer individual file locks or
+revision checks while an inbox is receiving. Human administrators inspect receiving
+holds and logs in the dashboard.

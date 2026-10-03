@@ -1,5 +1,6 @@
 // Imported only by offline subprocess tests. Every unknown request fails closed.
 import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 let upload;
 let emailListAttempts = 0;
@@ -16,12 +17,37 @@ globalThis.fetch = async (input, options = {}) => {
   if (url.origin === 'https://api.revdoku.com') {
     assert.equal(headers.get('Authorization'), 'Bearer offline-fixture-key');
     assert.equal(options.redirect, 'error');
+    if (url.pathname === '/v1/accounts/acct_fixture') return ok({ account: { id: 'acct_fixture' } });
     if ((options.method ?? 'GET') === 'GET') assert.equal(url.searchParams.get('account_id'), 'acct_fixture');
     else assert.equal(body.account_id, 'acct_fixture');
+    if (process.env.FIXTURE_CUSTOMERS && (url.pathname === '/v1/buckets' || /^\/v1\/buckets\/bkt_\d+$/.test(url.pathname))) {
+      let buckets = [];
+      try { buckets = JSON.parse(readFileSync('.fixture-buckets.json', 'utf8')); }
+      catch (error) { if (error.code !== 'ENOENT') throw error; }
+      if (options.method === 'POST') {
+        assert.equal(body.idempotency_key, undefined);
+        const bucket = { id: `bkt_${buckets.length + 1}`, title: body.bucket.title,
+          email: { address: `fixture${buckets.length + 1}@revdokumail.com`, receiving_enabled: true } };
+        buckets.push(bucket);
+        writeFileSync('.fixture-buckets.json', JSON.stringify(buckets));
+        if (process.env.FIXTURE_CREATE === 'lost') throw new TypeError('Connection dropped after commit');
+        if (process.env.FIXTURE_CREATE === 'not_ready') return Response.json({ error: { code: 'EMAIL_NOT_READY', details: { bucket_id: bucket.id } } }, { status: 503 });
+        return ok({ bucket });
+      }
+      if (url.pathname === '/v1/buckets') return ok({ buckets: buckets.filter(bucket => bucket.title === url.searchParams.get('q')) });
+      const bucket = buckets.find(bucket => bucket.id === url.pathname.split('/').at(-1));
+      assert.ok(bucket);
+      if (process.env.FIXTURE_CREATE === 'not_ready') bucket.email = { ...bucket.email, receiving_enabled: false, blocked_reason: 'routing_pending' };
+      return ok({ bucket });
+    }
     if (url.pathname === '/v1/buckets') {
       assert.equal(body.idempotency_key, undefined);
       return ok({ bucket: { id: 'bkt_fixture', title: body.bucket.title, email: { address: 'fixture@revdokumail.com', receiving_enabled: true, sending_enabled: false }, dashboard_url: 'https://app.revdoku.com/buckets/bkt_fixture' } });
     }
+    if (url.pathname.endsWith('/email/subscription')) return ok({ subscription: {
+      token: 'offline-ticket', websocket_url: 'wss://app.revdoku.com/cable', channel: 'EmailReceivedChannel',
+      account_id: 'acct_fixture', bucket_id: 'bkt_fixture'
+    } });
     if (url.pathname.endsWith('/emails')) {
       emailListAttempts++;
       if (process.env.FIXTURE_INDEX_BUILDING === 'always') {
@@ -36,7 +62,10 @@ globalThis.fetch = async (input, options = {}) => {
         pagination: { has_more: !cursor, next_cursor: cursor ? 'end' : 'next' } });
     }
     if (url.pathname.endsWith('/attachments/df_note')) return ok({ download: { url: 'https://storage.example/file?path=attachments/note.txt', filename: 'note.txt', authentication: 'none' } });
-    if (url.pathname.includes('/emails/eml_')) return ok({ email: { id: url.pathname.split('/').at(-1), ...mail } });
+    if (url.pathname.includes('/emails/eml_')) {
+      if (process.env.FIXTURE_EMAIL_DELAY) await new Promise(resolve => setTimeout(resolve, 250));
+      return ok({ email: { id: url.pathname.split('/').at(-1), ...mail } });
+    }
     if (url.pathname.endsWith('/files/by_path')) {
       assert.equal(url.searchParams.get('content_url'), '1', 'A file download descriptor needs content_url=1');
       return ok({ url: `https://storage.example/file?path=${encodeURIComponent(url.searchParams.get('path'))}` });
@@ -68,3 +97,18 @@ globalThis.fetch = async (input, options = {}) => {
   }
   throw new Error(`Unexpected offline request: ${url.origin}${url.pathname}`);
 };
+
+// Test-only transport; published examples use the native WebSocket unchanged.
+if (process.env.FIXTURE_SOCKET_END) {
+  globalThis.WebSocket = class extends EventTarget {
+    constructor(url) {
+      super();
+      assert.equal(new URL(url).searchParams.get('email_subscription_token'), 'offline-ticket');
+      setTimeout(() => this.dispatchEvent(new Event('open')), 0);
+    }
+    send() {
+      this.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ type: process.env.FIXTURE_SOCKET_END, reconnect: false }) }));
+    }
+    close() { this.dispatchEvent(new Event('close')); }
+  };
+}

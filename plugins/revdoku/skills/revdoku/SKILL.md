@@ -1,11 +1,9 @@
 ---
 name: revdoku
 description: >
-  Email inboxes and shared cloud files for people and AI agents. Use Revdoku to
-  receive and read messages and attachments, upload selected local files, and
-  write, restore, or organize stored files. Also supports bucket archiving,
-  permanent bucket deletion, and agency client account creation when explicitly
-  requested and authorized. File storage supports reads and writes.
+  Receive email, read messages and attachments, and store or share files with
+  humans and AI agents. Use Revdoku for authorized uploads, file changes,
+  restore, archiving, permanent deletion, and agency client account creation.
 license: MIT-0
 metadata:
   compatibility: Bash 3+, curl, OpenSSL and POSIX utilities on macOS or Linux; HTTPS access and browser sign-in.
@@ -22,13 +20,13 @@ metadata:
     envVars:
       - {name: REVDOKU_URL, required: false, description: "API origin; https://api.revdoku.com is canonical. The previous app.revdoku.com setting remains accepted."}
       - {name: REVDOKU_API_KEY, required: false, description: "Optional Revdoku credential; browser login normally saves it locally."}
-      - {name: REVDOKU_CREDENTIALS, required: false, description: "Optional path to a dedicated Revdoku credential file."}
-      - {name: REVDOKU_DEFAULT_BUCKET_FILE, required: false, description: "Optional path to the saved bucket selection."}
-      - {name: REVDOKU_CLIENT_VERSION_FILE, required: false, description: "Optional installed-version stamp path."}
-      - {name: REVDOKU_BUCKET_ID, required: false, description: "Default upload/read bucket; deletion requires an explicit flag."}
-      - {name: REVDOKU_BUCKET_TITLE, required: false, description: "Title for an authorized upload."}
-      - {name: REVDOKU_BUCKET_DESCRIPTION, required: false, description: "Description for an authorized upload."}
-      - {name: REVDOKU_BUCKET_METADATA, required: false, description: "JSON metadata for an authorized upload."}
+      - {name: REVDOKU_CREDENTIALS, required: false, description: "Dedicated credential file path."}
+      - {name: REVDOKU_DEFAULT_BUCKET_FILE, required: false, description: "Saved bucket selection path."}
+      - {name: REVDOKU_CLIENT_VERSION_FILE, required: false, description: "Version stamp path."}
+      - {name: REVDOKU_BUCKET_ID, required: false, description: "Default bucket; deletion needs explicit selection."}
+      - {name: REVDOKU_BUCKET_TITLE, required: false, description: "Upload title."}
+      - {name: REVDOKU_BUCKET_DESCRIPTION, required: false, description: "Upload description."}
+      - {name: REVDOKU_BUCKET_METADATA, required: false, description: "Upload JSON metadata."}
       - {name: REVDOKU_UPLOAD_MODE, required: false, description: "Upload mode; auto or direct."}
       - {name: REVDOKU_RESTORE_VERSION_ID, required: false, description: "Version selected for an authorized restore."}
       - {name: REVDOKU_BROWSER_LOGIN_PATH, required: false, description: "Dashboard path on the official service."}
@@ -37,12 +35,12 @@ metadata:
       - {name: REVDOKU_APPEND_TEXT_CONTENT_FILE, required: false, description: "Local file explicitly selected for an append."}
       - {name: REVDOKU_APPEND_TEXT_NEWLINE_BEFORE, required: false, description: "Whether to insert a newline before appended text."}
       - {name: REVDOKU_AGENT_NAME, required: false, description: "Optional attribution label; otherwise detects the agent type."}
-      - {name: REVDOKU_AGENT_CLIENT, required: false, description: "Optional client attribution label."}
-      - {name: REVDOKU_AGENT_VERSION, required: false, description: "Optional client version attribution."}
-      - {name: REVDOKU_AGENT_RUN_ID, required: false, description: "Optional run identifier sent in request headers."}
-      - {name: REVDOKU_AGENT_PROJECT, required: false, description: "Optional project label sent in request headers."}
-      - {name: REVDOKU_AGENT_TASK, required: false, description: "Optional task label sent in request headers; never a transcript."}
-      - {name: REVDOKU_WRITE_BINDING, required: false, description: "Whether successful folder uploads save a local .revdoku binding."}
+      - {name: REVDOKU_AGENT_CLIENT, required: false, description: "Client attribution."}
+      - {name: REVDOKU_AGENT_VERSION, required: false, description: "Client version."}
+      - {name: REVDOKU_AGENT_RUN_ID, required: false, description: "Run identifier header."}
+      - {name: REVDOKU_AGENT_PROJECT, required: false, description: "Project label header."}
+      - {name: REVDOKU_AGENT_TASK, required: false, description: "Task label header; never a transcript."}
+      - {name: REVDOKU_WRITE_BINDING, required: false, description: "Save local .revdoku binding after uploads."}
       - {name: REVDOKU_BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE, required: false, description: "Upload descriptor batch size."}
       - {name: REVDOKU_BUCKET_UPLOAD_CLIENT_SESSION_KEY, required: false, description: "Optional upload resume identifier."}
       - {name: REVDOKU_HTTP_TRANSIENT_MAX_ATTEMPTS, required: false, description: "Bounded retry count; never retries permanent deletion."}
@@ -57,9 +55,8 @@ metadata:
 
 # Revdoku
 
-Receive email and attachments in private buckets shared with authorized people
-and AI agents. Each bucket has its own address. Summarize mail, collect invoices,
-or monitor submission replies.
+Receive email and attachments in private buckets, each with its own address,
+shared with authorized humans and AI agents.
 
 ## Capabilities and authorization
 
@@ -101,7 +98,7 @@ may create an account with `revdoku_signup`, `revdoku_signup_verify` and
 acceptance and privacy acknowledgment. See [MCP signup](https://revdoku.com/mcp.md#direct-mcp-signup).
 Otherwise use browser signup. Never request API keys, OTPs,
 TOTP/backup codes, or GitHub secrets in chat. Read `revdoku_status` and `bucket_list`
-(CLI: `status`, `ls`) after connection and when access is unclear. Use the requested account and bucket.
+(CLI: `status`, `ls`) after connection and when access is unclear. Use the account and bucket requested by the user.
 
 The wrapper downloads pinned, SHA-256-verified `jq` from GitHub only when missing,
 and caches it inside the skill. Browser login saves `~/.revdoku/credentials`.
@@ -219,4 +216,10 @@ include secrets, contents, or transcripts. Maximum: 2,000 characters.
 MCP/REST use `reason`. Reasons appear in Timeline/Logs; change reasons also appear
 in versions. Reads leave version reasons unchanged. See [API details](https://revdoku.com/api.md#action-reasons).
 
-Read effective mailbox and storage quotas with `revdoku account limits`, or MCP `account_limits`. Ordinary bucket responses omit account quotas.
+Read quotas with CLI `account limits` or MCP `account_limits`; bucket responses omit account quotas.
+
+## Email events
+
+Use `webhook-set --bucket-id ID --webhook-url HTTPS_URL` only for an authorized receiver; keep the returned secret private. `--rotate-secret` cancels pending deliveries. `webhook` reads settings; `webhook-delete --confirm-delete ID` disables them after confirmation.
+
+`email-subscription` returns a WebSocket ticket. Running clients need fresh tickets on reconnect and saved email cursors for catch-up. Neither transport wakes idle chats. Human administrators view/retry deliveries in Analytics → Webhooks. See public `examples/` for receivers.
