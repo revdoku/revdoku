@@ -86,6 +86,21 @@ test('live example stops when the server refuses a subscription or disallows rec
   } finally { await rm(cwd, { recursive: true, force: true }); }
 });
 
+test('live catch-up emits checkpointed messages even when a later page fails', async () => {
+  const cwd = await mkdtemp(join(tmpdir(), 'revdoku-watch-recovery-'));
+  try {
+    const result = run(cwd, 'watch-mail', [], {
+      FIXTURE_WATCH_RECOVERY: '1',
+      NODE_OPTIONS: [process.env.NODE_OPTIONS, '--import', JSON.stringify(fixture)].filter(Boolean).join(' ')
+    });
+    const output = success(result);
+    const messages = output.trim().split('\n').filter(line => line.startsWith('{')).map(line => JSON.parse(line).id);
+    assert.deepEqual(messages, ['eml_first', 'eml_second']);
+    assert.match(result.stderr, /Catch-up failed/);
+    assert.equal(JSON.parse(await readFile(join(cwd, '.revdoku-examples/acct_fixture-bkt_fixture.json'))).cursor, 'end');
+  } finally { await rm(cwd, { recursive: true, force: true }); }
+});
+
 
 test('customer mapping and processing survive restarts without cross-customer or repeated work', async () => {
   const cwd = await mkdtemp(join(tmpdir(), 'revdoku-customers-'));

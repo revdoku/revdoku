@@ -58,6 +58,12 @@ globalThis.fetch = async (input, options = {}) => {
         return Response.json({ error: { code: 'EMAIL_INDEX_BUILDING', message: 'Email index is being prepared' } }, { status: 503 });
       }
       const cursor = url.searchParams.get('cursor');
+      if (process.env.FIXTURE_WATCH_RECOVERY && cursor === 'next') {
+        try {
+          writeFileSync('.fixture-page-failed', '', { flag: 'wx' });
+          return Response.json({ error: { code: 'UNAVAILABLE', message: 'Later page failed once' } }, { status: 503 });
+        } catch (error) { if (error.code !== 'EEXIST') throw error; }
+      }
       return ok({ emails: cursor === 'end' ? [] : [{ id: cursor ? 'eml_second' : 'eml_first' }],
         pagination: { has_more: !cursor, next_cursor: cursor ? 'end' : 'next' } });
     }
@@ -110,5 +116,34 @@ if (process.env.FIXTURE_SOCKET_END) {
       this.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ type: process.env.FIXTURE_SOCKET_END, reconnect: false }) }));
     }
     close() { this.dispatchEvent(new Event('close')); }
+  };
+}
+
+if (process.env.FIXTURE_WATCH_RECOVERY) {
+  globalThis.WebSocket = class extends EventTarget {
+    timer;
+    closed = false;
+    constructor(url) {
+      super();
+      assert.equal(new URL(url).searchParams.get('email_subscription_token'), 'offline-ticket');
+      setTimeout(() => this.dispatchEvent(new Event('open')), 0);
+    }
+    send() {
+      this.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ type: 'confirm_subscription' }) }));
+      this.timer = setInterval(() => {
+        let cursor;
+        try { cursor = JSON.parse(readFileSync('.revdoku-examples/acct_fixture-bkt_fixture.json', 'utf8')).cursor; }
+        catch (error) { if (error.code !== 'ENOENT') throw error; }
+        if (cursor === 'end') {
+          this.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ type: 'disconnect', reconnect: false }) }));
+        }
+      }, 20);
+    }
+    close() {
+      if (this.closed) return;
+      this.closed = true;
+      clearInterval(this.timer);
+      this.dispatchEvent(new Event('close'));
+    }
   };
 }

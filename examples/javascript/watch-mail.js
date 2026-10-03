@@ -1,5 +1,4 @@
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
+import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 const apiKey = process.env.REVDOKU_API_KEY;
 const bucketId = process.env.REVDOKU_BUCKET_ID;
@@ -8,7 +7,6 @@ if (!apiKey || !bucketId || !/^bkt_[A-Za-z0-9]+$/.test(bucketId))
     throw new Error('Set REVDOKU_API_KEY and REVDOKU_BUCKET_ID.');
 if (accountId && !/^acct_[A-Za-z0-9]+$/.test(accountId))
     throw new Error('Invalid account ID.');
-const run = promisify(execFile);
 let stopped = false;
 let socket;
 for (const signal of ['SIGINT', 'SIGTERM'])
@@ -50,8 +48,12 @@ while (!stopped) {
             catchup = catchup.then(async () => {
                 while (pending && !stopped) {
                     pending = false;
-                    const { stdout } = await run(process.execPath, [fileURLToPath(new URL('./read-mail.js', import.meta.url))], { maxBuffer: 4 * 1024 * 1024 });
-                    process.stdout.write(stdout);
+                    // Emit each processed page before its cursor advances, even if a later page fails.
+                    await new Promise((resolve, reject) => {
+                        const child = spawn(process.execPath, [fileURLToPath(new URL('./read-mail.js', import.meta.url))], { stdio: ['ignore', 'inherit', 'inherit'] });
+                        child.once('error', reject);
+                        child.once('close', (code, signal) => code === 0 ? resolve() : reject(new Error(`read-mail exited with ${signal ?? code}`)));
+                    });
                 }
             }).catch(error => { console.error('Catch-up failed:', error.message); ws.close(); }).finally(() => { reading = false; });
         };

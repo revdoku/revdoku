@@ -128,7 +128,7 @@ keys to survive a crash before completion is recorded.
 Catch up with ascending cursors on startup and periodically, even with webhooks.
 Save cursors after durably handling each page, including empty pages. Read-state
 changes do not replay arrivals. See the
-[notification examples](../examples/README.md#new-email-notifications) for signed
+[notification examples](https://github.com/revdoku/revdoku/blob/main/examples/README.md#new-email-notifications) for signed
 receivers and local WebSocket reconnects.
 
 ## Display messages and attachments
@@ -142,7 +142,7 @@ original EML when needed. Saved attachment metadata and optional
 Authorize the customer mapping, store attachment IDs, and request links on demand.
 Standard links last 15 minutes and can survive key revocation until expiry.
 Never send the API key to a download URL. Use
-[download-attachments](../examples/javascript/download-attachments.js) separately;
+[download-attachments](https://github.com/revdoku/revdoku/blob/main/examples/javascript/download-attachments.js) separately;
 individual message/file deletion is an explicit action, never processing acknowledgement.
 
 ## When receiving stops
