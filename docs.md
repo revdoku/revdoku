@@ -17,7 +17,17 @@ Use the REST API, CLI, MCP, or dashboard to create mailboxes and read messages.
 
 1. [Create an account](https://app.revdoku.com/users/sign_up) or sign in. Browser signup creates your first mailbox automatically.
 2. Create an API key from **Connect via API** or **Account → Access**.
-3. Use the key in the `Authorization` header. Keep it private.
+3. Keep the key on your backend and list your existing buckets:
+
+```http
+GET /v1/buckets
+Authorization: Bearer YOUR_API_KEY
+```
+
+Choose an authorized bucket from `data.buckets`, then [read its messages](#receive-and-read-email).
+A read-only key is enough; address discovery needs write access. To give each
+application customer an inbox, follow the
+[SaaS inbox guide](https://github.com/revdoku/revdoku/blob/main/guides/saas-inboxes.md).
 
 | Setting | Value |
 | --- | --- |
@@ -25,7 +35,20 @@ Use the REST API, CLI, MCP, or dashboard to create mailboxes and read messages.
 | Authentication | `Authorization: Bearer YOUR_API_KEY` |
 | JSON request bodies | `Content-Type: application/json` |
 
-### Create another mailbox
+### New email notifications
+
+| Use | Connection |
+| --- | --- |
+| Hosted backend | One signed HTTPS webhook per mailbox |
+| Local development | WebSocket connection with a short-lived ticket |
+| Delivery status and retries | Dashboard → Analytics → Webhooks (account administrators) |
+
+Both send a small `email.received` event after the email and attachments are stored. Read content through the email API. Receivers must remain running; an idle AI chat cannot receive background notifications. See the [event API](https://revdoku.com/api.md#email-webhooks-and-live-subscriptions) and [runnable examples](https://github.com/revdoku/revdoku/tree/main/examples).
+
+## Create another mailbox
+
+Create a bucket only when another inbox is needed. This requires account-wide
+admin access and consumes both active-bucket capacity and monthly creation capacity.
 
 ```http
 POST /v1/buckets
@@ -60,9 +83,10 @@ Content-Type: application/json
 | Send `{"bucket": {}}` | Generate a username automatically. |
 | Omit `bucket.title` | Use the username as the display title. |
 
-Creation waits for receiving confirmation. Use the returned address immediately
-after a successful response. See [creation errors](https://revdoku.com/api.md#creation-result)
-if provider confirmation fails.
+Creation waits for receiving confirmation. Use the returned address after a
+successful response. On `EMAIL_NOT_READY`, save the returned bucket ID and inspect
+that existing bucket. After a lost response, reconcile existing buckets before
+any further creation. See [creation errors](https://revdoku.com/api.md#creation-result).
 
 Runnable examples use standard HTTP clients:
 [JavaScript](https://github.com/revdoku/revdoku/tree/main/examples/javascript),
@@ -76,7 +100,7 @@ can send to it; reading saved mail requires bucket access.
 
 | Task | REST | CLI | MCP |
 | --- | --- | --- | --- |
-| Inspect an existing receiving address | `GET /v1/buckets/:id/email` | `revdoku inbox --bucket-id ID` | `bucket_get` with `include_email: true` |
+| Inspect an existing receiving address (write access) | `GET /v1/buckets/:id/email` | `revdoku inbox --bucket-id ID` | `bucket_get` with `include_email: true` |
 | List received messages | `GET /v1/buckets/:id/emails` | `revdoku emails --bucket-id ID` | `bucket_email_list` |
 | Read one message | `GET /v1/buckets/:id/emails/:email_id` | `revdoku email EMAIL_ID --bucket-id ID` | `bucket_email_get` |
 | Mark read/unread | `PATCH /v1/buckets/:id/emails/:email_id` | `revdoku email-status EMAIL_ID --read true --bucket-id ID` | `bucket_email_update` |
@@ -129,7 +153,10 @@ older messages may use `_email/in/`.
 
 - CLI and REST uploads support binary files. Hosted MCP file writes support text.
 - Hosted MCP cannot read local folders; use the CLI to upload them.
-- Stored files and email representations count toward storage/file allowances.
+- Files, versions and email representations consume storage; current files also
+  consume file-count allowances.
+  Incoming raw-email traffic has separate count and byte limits; deleting saved
+  content does not refund that traffic.
 - Executables and secret files are refused. Uploaded content is also scanned.
 - Append adds UTF-8 text; your application handles CSV/JSON formatting.
 
@@ -143,6 +170,10 @@ older messages may use `_email/in/`.
 
 The response groups effective quotas under `limits`. Bucket responses describe
 the mailbox; they do not repeat account quotas. See [limit fields](https://revdoku.com/api.md#account-limits).
+Full-account browser sessions and unrestricted admin connections also receive
+optional `usage.bucket_creations` with used, remaining, monthly limit and UTC
+reset time. Selected-bucket/read-only connections retain their normal limits
+response. Deleting or archiving buckets does not refund creation capacity.
 
 ## Multiple accounts
 
@@ -153,7 +184,9 @@ the mailbox; they do not repeat account quotas. See [limit fields](https://revdo
 | Choose an account for a request | `account_id` in query/body | `--account-id ID` | `account_id: ID` |
 
 Omitting the selector uses the credential's default account. Selecting an account
-does not change that default or grant additional access.
+does not change that default or grant additional access. Browser account switching
+does not change API, CLI or MCP defaults. Include the granted `account_id` on each
+request when working across accounts.
 
 ## Share access and coordinate edits
 
@@ -163,7 +196,8 @@ does not change that default or grant additional access.
 
 | Edit control | Purpose |
 | --- | --- |
-| File/bucket lock | Coordinate an edit that takes time; release your lock afterward. |
+| File lock | Coordinate edits to specific files; release your lock afterward. |
+| Bucket lock | Blocks incoming mail, including queued saves. Prefer file locks and revision checks while an inbox receives mail. |
 | `expected_bucket_revision_id` | Detect that another writer changed the bucket since your last read. |
 | `BUCKET_REVISION_CONFLICT` | Reread current content and reconcile before retrying the edit. |
 | `reason` | Optional explanation saved in activity/history. Maximum 2,000 characters; omit secrets and file contents. |

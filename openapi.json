@@ -377,7 +377,7 @@
       "post": {
         "operationId": "rotateBucketEmailAddress",
         "summary": "Replace a bucket email address after confirmation",
-        "description": "Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Optional username chooses a custom name and additionally requires a full-account owner/administrator, an explicit ready customer-owned domain, and deployment support. Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no bucket currently holds or is awaiting them; archived buckets retain addresses. Retired addresses do not forward. Assignment history survives bucket deletion.",
+        "description": "Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Optional username chooses a custom name and additionally requires a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived buckets retain addresses. Retired addresses do not forward. Assignment history survives bucket deletion. Optional keep_old_as_alias retains the old primary for the same inbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.",
         "security": [
           {
             "bearerAuth": []
@@ -427,7 +427,12 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "description": "Administrator-selected name on an explicit ready custom domain. Normalized to lowercase; ASCII letters/digits/dots/hyphens/underscores, alphanumeric endpoints, no consecutive dots. Complete address at most 254 characters. Omit for random rotation; blank/null is invalid."
+                    "description": "Administrator-selected name on an available platform or ready owned custom domain. Normalized to lowercase; ASCII letters/digits/dots/hyphens/underscores, alphanumeric endpoints, no consecutive dots. Complete address at most 254 characters. Omit for random rotation; blank/null is invalid."
+                  },
+                  "keep_old_as_alias": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Keep the old primary as an alias for this inbox after activation. Requires full-account administrator access and an available alias slot."
                   }
                 }
               }
@@ -2861,6 +2866,39 @@
                         },
                         "limits": {
                           "$ref": "#/components/schemas/AccountLimits"
+                        },
+                        "usage": {
+                          "type": "object",
+                          "description": "Present only for full-account administrator credentials and full-account browser sessions.",
+                          "properties": {
+                            "bucket_creations": {
+                              "type": "object",
+                              "required": [
+                                "used",
+                                "remaining",
+                                "monthly_limit",
+                                "resets_at"
+                              ],
+                              "properties": {
+                                "used": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "remaining": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "monthly_limit": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "resets_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              }
+                            }
+                          }
                         }
                       }
                     }
@@ -2871,6 +2909,598 @@
           },
           "default": {
             "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/v1/buckets/{bucket_id}/email/webhook": {
+      "get": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-controller": "api/v1/bucket_email_webhooks",
+        "operationId": "getEmailWebhook",
+        "summary": "Read a mailbox webhook endpoint",
+        "description": "Requires bucket admin permission. Returns null when disabled; never includes the signing secret.",
+        "parameters": [
+          {
+            "name": "bucket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AccountId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "webhook"
+                      ],
+                      "properties": {
+                        "webhook": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "url": {
+                              "type": "string",
+                              "format": "uri"
+                            },
+                            "event": {
+                              "type": "string",
+                              "const": "email.received"
+                            }
+                          },
+                          "required": [
+                            "url",
+                            "event"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "not": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "error"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "error_message"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "422": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "default": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-controller": "api/v1/bucket_email_webhooks",
+        "operationId": "setEmailWebhook",
+        "summary": "Configure one received-email webhook per mailbox",
+        "description": "Requires bucket admin permission. Public HTTPS, including explicit ports such as 8443. Generates an encrypted signing secret, returned here. Same-URL updates retain it; replacing the URL rotates it and cancels pending old-version deliveries. Events are signed and retried up to eight attempts on transient failure; duplicates are possible. Worker-crash recovery is bounded to 24 hours from event creation. Exhausted and permanent failures require operator review.",
+        "parameters": [
+          {
+            "name": "bucket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "webhook_url"
+                ],
+                "properties": {
+                  "webhook_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048
+                  },
+                  "account_id": {
+                    "type": "string"
+                  },
+                  "rotate_secret": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Rotate the secret for the same endpoint and cancel pending deliveries."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "webhook"
+                      ],
+                      "properties": {
+                        "webhook": {
+                          "type": "object",
+                          "properties": {
+                            "url": {
+                              "type": "string",
+                              "format": "uri"
+                            },
+                            "event": {
+                              "type": "string",
+                              "const": "email.received"
+                            },
+                            "signing_secret": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "url",
+                            "event",
+                            "signing_secret"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "not": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "error"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "error_message"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "422": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "default": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-controller": "api/v1/bucket_email_webhooks",
+        "operationId": "deleteEmailWebhook",
+        "summary": "Disable a mailbox webhook",
+        "description": "Requires bucket admin permission. Cancels queued attempts; a request already in flight may finish.",
+        "parameters": [
+          {
+            "name": "bucket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AccountId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Webhook disabled"
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "422": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "default": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/v1/buckets/{bucket_id}/email/subscription": {
+      "get": {
+        "operationId": "getEmailSubscription",
+        "summary": "Get a short-lived Action Cable ticket for local email monitoring",
+        "description": "Requires bucket read permission. Connect to the returned websocket_url with email_subscription_token=TICKET using actioncable-v1-json within 60 seconds. Subscribe to EmailReceivedChannel with the returned account_id/bucket_id. Frames contain EmailReceivedEvent in message. Live only: after confirmation and on reconnect, catch up using existing ascending email arrival cursors.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-controller": "api/v1/bucket_email_subscriptions",
+        "parameters": [
+          {
+            "name": "bucket_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/AccountId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "subscription"
+                      ],
+                      "properties": {
+                        "subscription": {
+                          "type": "object",
+                          "required": [
+                            "token",
+                            "expires_in",
+                            "channel",
+                            "account_id",
+                            "bucket_id",
+                            "websocket_url"
+                          ],
+                          "properties": {
+                            "token": {
+                              "type": "string"
+                            },
+                            "expires_in": {
+                              "type": "integer",
+                              "const": 60
+                            },
+                            "channel": {
+                              "type": "string",
+                              "const": "EmailReceivedChannel"
+                            },
+                            "account_id": {
+                              "type": "string"
+                            },
+                            "bucket_id": {
+                              "type": "string"
+                            },
+                            "websocket_url": {
+                              "type": "string",
+                              "format": "uri",
+                              "description": "Base WebSocket endpoint. Append email_subscription_token as a query parameter."
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "not": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "error"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "error_message"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "404": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "422": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "default": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/v1/buckets/{id}/email/aliases/{alias_id}": {
+      "delete": {
+        "operationId": "deleteBucketEmailAlias",
+        "summary": "Remove one email alias",
+        "description": "Requires a full-account owner/administrator with bucket-admin access. Immediately revokes this alias, including queued deliveries. Retains existing messages and the permanent address reservation. Returns updated mailbox settings.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Authorized bucket prefix ID"
+          },
+          {
+            "name": "alias_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Alias ID from mailbox settings"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bucket email configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/BucketEmail"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "not": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "error"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "error_message"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Full-account owner/administrator with bucket-admin access required."
+          },
+          "404": {
+            "description": "Bucket or alias unavailable."
+          },
+          "409": {
+            "description": "Bucket locked or unavailable for changes."
+          },
+          "423": {
+            "description": "Account is read-only"
+          },
+          "default": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        }
+      }
+    },
+    "/v1/buckets/{id}/email/aliases": {
+      "post": {
+        "operationId": "createBucketEmailAlias",
+        "summary": "Add an email alias to an inbox",
+        "description": "Requires a full-account owner/administrator with bucket-admin access and an available alias slot. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Authorized bucket prefix ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "description": "Local part of the new address; platform reserved names are unavailable."
+                  },
+                  "domain": {
+                    "type": "string",
+                    "description": "Available platform domain or ready account-owned domain; defaults to the platform domain."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Updated mailbox settings; receiving registration is pending.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/BucketEmail"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "not": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "error"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "error_message"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Full-account owner/administrator with bucket-admin access required."
+          },
+          "409": {
+            "description": "Alias limit, address conflict, domain unavailable, or another address change pending."
+          },
+          "422": {
+            "description": "Invalid username or domain."
           }
         }
       }
@@ -3088,6 +3718,29 @@
             "type": "boolean",
             "const": false,
             "description": "Always false. Sending is not implemented."
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "address",
+                "active"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "address": {
+                  "type": "string"
+                },
+                "active": {
+                  "type": "boolean",
+                  "description": "Within the current alias allowance. Inbox receiving holds still apply."
+                }
+              }
+            }
           }
         }
       },
@@ -3830,7 +4483,8 @@
           "max_api_keys",
           "max_agent_connections",
           "api_rate_limit_requests_per_minute",
-          "audit_retention_days"
+          "audit_retention_days",
+          "max_email_aliases_per_bucket"
         ],
         "properties": {
           "max_buckets": {
@@ -3958,6 +4612,63 @@
               "null"
             ],
             "minimum": 0
+          },
+          "max_email_aliases_per_bucket": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Active retained email addresses per inbox; Free always has zero."
+          }
+        }
+      },
+      "EmailReceivedEvent": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "created_at",
+          "data"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable event ID; deduplicate across retries."
+          },
+          "type": {
+            "type": "string",
+            "const": "email.received"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "data": {
+            "type": "object",
+            "required": [
+              "account_id",
+              "bucket_id",
+              "email_id",
+              "received_at",
+              "attachment_count"
+            ],
+            "properties": {
+              "account_id": {
+                "type": "string"
+              },
+              "bucket_id": {
+                "type": "string"
+              },
+              "email_id": {
+                "type": "string"
+              },
+              "received_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "attachment_count": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
           }
         }
       }

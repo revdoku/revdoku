@@ -251,7 +251,7 @@ node --test "$DIST_ROOT/examples/test/examples.test.js"
 # notes and private development/compatibility configuration are not guidance.
 ruby -e '
   root = ARGV.fetch(0)
-  patterns = %w[*.md *.sh bin/* skill/**/* skills/**/* plugins/**/* claude-plugin/**/* public/**/* discovery/**/* .well-known/**/* .codex-plugin/**/* .cursor-plugin/**/* .claude-plugin/**/* schema-feeds/**/* *.json *.xml *.jsonl]
+  patterns = %w[guides/**/*.md *.md *.sh bin/* skill/**/* skills/**/* plugins/**/* claude-plugin/**/* public/**/* discovery/**/* .well-known/**/* .codex-plugin/**/* .cursor-plugin/**/* .claude-plugin/**/* schema-feeds/**/* *.json *.xml *.jsonl]
   files = patterns.flat_map { |pattern| Dir.glob(File.join(root, pattern), File::FNM_DOTMATCH) }.uniq
   stale = files.select { |path| File.file?(path) && File.basename(path) != "CHANGELOG.md" && File.binread(path).include?("localhost3000.love") }
   abort "Retired domain in current public guidance: #{stale.join(", ")}" unless stale.empty?

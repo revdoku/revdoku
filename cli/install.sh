@@ -2,8 +2,8 @@
 set -euo pipefail
 umask 077
 
-VERSION='1.0.522'
-EXPECTED_SHA256='9f18d70f23e4b9b104a798d81c7957aa69ce6e25afdbca6c77d5f62f179c0455'
+VERSION='1.0.525'
+EXPECTED_SHA256='718486bfce490c795535362cd2b0e9d9d75d2d6e61b91e9ec3d825e055a39f76'
 INSTALL_DIR="${HOME}/.local/bin"
 case "${1:-}" in
   --help|-h)
