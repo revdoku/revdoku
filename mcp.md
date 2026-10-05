@@ -82,7 +82,7 @@ messages without discovering the address. See the
 ### Create another mailbox
 
 With account-wide admin access, call `mailbox_create` only when another mailbox is
-needed. Omit `username` to generate an address; `title` defaults to the username.
+needed. Omit `username` to generate an address.
 A taken or retired address returns `EMAIL_ALREADY_EXISTS`; platform role names
 are reserved. Creation consumes a monthly allowance as well as active-mailbox capacity.
 

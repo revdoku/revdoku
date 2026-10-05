@@ -10,7 +10,7 @@ try:
     with ApiClient(Configuration(access_token=key)) as client:
         result = DefaultApi(client).create_mailbox(CreateMailboxRequest(
             account_id=os.getenv("REVDOKU_ACCOUNT_ID") or None,
-            mailbox=CreateMailboxRequestMailbox(title="Example mailbox"),
+            mailbox=CreateMailboxRequestMailbox(),
         ))
         print(result.data.mailbox.id, result.data.mailbox.email.address)
 except ApiException as error:

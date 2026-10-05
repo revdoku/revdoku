@@ -759,10 +759,6 @@
                   "mailbox": {
                     "type": "object",
                     "properties": {
-                      "title": {
-                        "type": "string",
-                        "description": "Optional display title; defaults to the assigned username."
-                      },
                       "description": {
                         "type": "string"
                       },
@@ -864,8 +860,7 @@
                         "receiving_enabled": true,
                         "sending_enabled": false
                       },
-                      "account_id": "acct_example",
-                      "title": "acme-orders"
+                      "account_id": "acct_example"
                     }
                   }
                 }
@@ -2924,7 +2919,7 @@
     "/v1/agent/signups": {
       "post": {
         "operationId": "startAgentSignup",
-        "summary": "Start signup with the human operator’s email",
+        "summary": "Start signup with the human operator\u2019s email",
         "description": "Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.",
         "security": [],
         "requestBody": {
@@ -3035,7 +3030,7 @@
     "/v1/agent/signups/verify": {
       "post": {
         "operationId": "verifyAgentSignup",
-        "summary": "Verify the human’s code and create the first mailbox",
+        "summary": "Verify the human\u2019s code and create the first mailbox",
         "description": "Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.",
         "security": [],
         "requestBody": {
@@ -3129,16 +3124,12 @@
                             "id": {
                               "type": "string"
                             },
-                            "title": {
-                              "type": "string"
-                            },
                             "email": {
                               "$ref": "#/components/schemas/MailboxEmail"
                             }
                           },
                           "required": [
                             "id",
-                            "title",
                             "email"
                           ]
                         }
@@ -3243,7 +3234,7 @@
     "/v1/agent/signups/resend": {
       "post": {
         "operationId": "resendAgentSignupCode",
-        "summary": "Resend the human operator’s verification code",
+        "summary": "Resend the human operator\u2019s verification code",
         "description": "Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.",
         "security": [],
         "requestBody": {
@@ -4146,7 +4137,7 @@
       },
       "MailboxEmail": {
         "type": "object",
-        "description": "Receiving address/state on creation and authorized opt-in reads. Ordinary mailbox reads expose activity only; use the emails collection for a durable arrival cursor.",
+        "description": "Authorized mailbox reads include the email address. Creation and opt-in reads also include receiving settings; use the emails collection for a durable arrival cursor.",
         "properties": {
           "address": {
             "type": [
@@ -5417,9 +5408,6 @@
           "account_id": {
             "type": "string"
           },
-          "title": {
-            "type": "string"
-          },
           "description": {
             "type": [
               "string",
@@ -5551,11 +5539,10 @@
             "$ref": "#/components/schemas/MailboxAction"
           }
         },
-        "description": "Public mailbox details. Ordinary reads include email activity only; creation and authorized include_email reads also include receiving addresses.",
+        "description": "Public mailbox details. Write-authorized reads include email.address. Creation and authorized include_email reads also include receiving settings.",
         "required": [
           "id",
           "account_id",
-          "title",
           "email"
         ]
       },

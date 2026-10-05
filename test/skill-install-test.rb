@@ -57,7 +57,7 @@ class RevdokuSkillInstallTest < Minitest::Test
     system_jq
     %w[source standalone].each do |layout|
       wrapper, = fixture(layout: layout)
-      args = ["upload", "folder with spaces", "--title", "literal;$value", ""]
+      args = ["upload", "folder with spaces", "--description", "literal;$value", ""]
       stdout, stderr, status = run_wrapper(wrapper, *args, env: { "SKILL_TEST_EXIT" => "23" })
       assert_equal 23, status.exitstatus, stderr
       assert_equal args, stdout.split("\0", -1)[0...-1]

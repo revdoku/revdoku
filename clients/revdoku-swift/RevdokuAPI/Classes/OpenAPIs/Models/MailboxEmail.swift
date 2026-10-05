@@ -10,7 +10,7 @@ import Foundation
 import AnyCodable
 #endif
 
-/** Receiving address/state on creation and authorized opt-in reads. Ordinary mailbox reads expose activity only; use the emails collection for a durable arrival cursor. */
+/** Authorized mailbox reads include the email address. Creation and opt-in reads also include receiving settings; use the emails collection for a durable arrival cursor. */
 public struct MailboxEmail: Codable, JSONEncodable, Hashable {
 
     public static let receivedCountRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)

@@ -26,15 +26,16 @@ globalThis.fetch = async (input, options = {}) => {
       catch (error) { if (error.code !== 'ENOENT') throw error; }
       if (options.method === 'POST') {
         assert.equal(body.idempotency_key, undefined);
-        const mailbox = { id: `bkt_${mailboxes.length + 1}`, title: body.mailbox.title,
-          email: { address: `fixture${mailboxes.length + 1}@revdokumail.com`, receiving_enabled: true } };
+        assert.equal(body.mailbox.title, undefined);
+        const mailbox = { id: `bkt_${mailboxes.length + 1}`,
+          email: { address: `${body.mailbox.email.username}@${body.mailbox.email.domain || "revdokumail.com"}`, receiving_enabled: true } };
         mailboxes.push(mailbox);
         writeFileSync('.fixture-mailboxes.json', JSON.stringify(mailboxes));
         if (process.env.FIXTURE_CREATE === 'lost') throw new TypeError('Connection dropped after commit');
         if (process.env.FIXTURE_CREATE === 'not_ready') return Response.json({ error: { code: 'EMAIL_NOT_READY', details: { mailbox_id: mailbox.id } } }, { status: 503 });
         return ok({ mailbox });
       }
-      if (url.pathname === '/v1/mailboxes') return ok({ mailboxes: mailboxes.filter(mailbox => mailbox.title === url.searchParams.get('q')) });
+      if (url.pathname === '/v1/mailboxes') return ok({ mailboxes: mailboxes.filter(mailbox => mailbox.email.address.includes(url.searchParams.get('q'))) });
       const mailbox = mailboxes.find(mailbox => mailbox.id === url.pathname.split('/').at(-1));
       assert.ok(mailbox);
       if (process.env.FIXTURE_CREATE === 'not_ready') mailbox.email = { ...mailbox.email, receiving_enabled: false, blocked_reason: 'routing_pending' };
@@ -42,7 +43,7 @@ globalThis.fetch = async (input, options = {}) => {
     }
     if (url.pathname === '/v1/mailboxes') {
       assert.equal(body.idempotency_key, undefined);
-      return ok({ mailbox: { id: 'bkt_fixture', title: body.mailbox.title, email: { address: 'fixture@revdokumail.com', receiving_enabled: true, sending_enabled: false }, dashboard_url: 'https://app.revdoku.com/mailboxes/bkt_fixture' } });
+      return ok({ mailbox: { id: 'bkt_fixture', email: { address: 'fixture@revdokumail.com', receiving_enabled: true, sending_enabled: false }, dashboard_url: 'https://app.revdoku.com/mailboxes/bkt_fixture' } });
     }
     if (url.pathname.endsWith('/email/subscription')) return ok({ subscription: {
       token: 'offline-ticket', websocket_url: 'wss://app.revdoku.com/cable', channel: 'EmailReceivedChannel',

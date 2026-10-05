@@ -18,12 +18,11 @@ CLIENT_VERSION_FILE="${REVDOKU_CLIENT_VERSION_FILE:-${REVDOKU_CONFIG_DIR}/client
 UPDATE_CHECK_STAMP="${REVDOKU_CONFIG_DIR}/.update_check"
 
 installed_client_version() {
-  printf '%s' '1.0.533'
+  printf '%s' '1.0.535'
 }
 
 BASE_URL="${REVDOKU_URL:-$DEFAULT_URL}"
 API_KEY="${REVDOKU_API_KEY:-}"
-TITLE="${REVDOKU_BUCKET_TITLE:-}"
 DESCRIPTION="${REVDOKU_BUCKET_DESCRIPTION:-}"
 UPLOAD_MODE="${REVDOKU_UPLOAD_MODE:-auto}"
 MAILBOX_ID="${REVDOKU_BUCKET_ID:-}"
@@ -235,7 +234,7 @@ Options:
   --read true|false                    Email filter or desired read status.
   --background                        Read without marking the message read.
   --attachment-id ID   --output FILE   Download a selected email attachment.
-  --title TEXT         --description TEXT     --tag-path LABEL     --metadata JSON
+  --description TEXT     --tag-path LABEL     --metadata JSON
   --username NAME      --domain HOST          Mailbox creation address options.
   --dry-run            Preview an upload locally, without network requests.
   --confirm-delete TOKEN  Execute a reviewed deletion preview (expires in 10 minutes).
@@ -277,11 +276,6 @@ while [[ $# -gt 0 ]]; do
     --url)
       [[ $# -ge 2 ]] || die "--url requires a value"
       BASE_URL="$2"
-      shift 2
-      ;;
-    --title)
-      [[ $# -ge 2 ]] || die "--title requires a value"
-      TITLE="$2"
       shift 2
       ;;
     --username|--domain)
@@ -1303,9 +1297,9 @@ email_command() {
 
 create_mailbox() {
   local payload
-  payload="$("$JQ_BIN" -nc --arg title "$TITLE" --arg description "$DESCRIPTION" \
+  payload="$("$JQ_BIN" -nc --arg description "$DESCRIPTION" \
     --arg username "$EMAIL_USERNAME" --arg domain "$EMAIL_DOMAIN" \
-    '{mailbox: (({title:$title,description:$description} | with_entries(select(.value != ""))) +
+    '{mailbox: (({description:$description} | with_entries(select(.value != ""))) +
       {email: ({username:$username,domain:$domain} | with_entries(select(.value != "")))})}')"
   http_json POST "/api/v1/mailboxes" "$payload"
 }
@@ -1398,7 +1392,7 @@ delete_mailbox() {
         all($files[]; .source_file_versions | type == "array")) | not
     then error("Incomplete mailbox deletion state; update the client or review in the dashboard") else
     {origin:$origin, account:($account | {id,name}),
-     mailbox:($b | {id, title, account_id, archived, archived_at, metadata_version,
+     mailbox:($b | {id, email, account_id, archived, archived_at, metadata_version,
        current_mailbox_revision_id, storage_bytes, delete,
        source_file_count:($files | length), version_count:($versions | length),
        file_version_count:([$files[].source_file_versions | length] | add // 0)})}
@@ -1680,23 +1674,6 @@ if [[ -d "$ROOT_PATH" ]]; then
   REVDOKU_PROJECT_FILE="$ROOT_PATH/.revdoku"
 fi
 
-default_title() {
-  # ROOT_PATH is absolute. Use the folder name, but if it's a generic build
-  # output dir (docs/dist/build/...), use the project (parent) dir name instead,
-  # so e.g. ~/projects/my-site/docs -> "my-site".
-  local name parent
-  name="$(basename "$ROOT_PATH")"
-  if [[ -d "$ROOT_PATH" ]]; then
-    case "$name" in
-      docs|dist|build|public|out|_site|site|www|html|htdocs|wwwroot|public_html|_public)
-        parent="$(basename "$(dirname "$ROOT_PATH")")"
-        [[ -n "$parent" && "$parent" != "/" && "$parent" != "." ]] && name="$parent"
-        ;;
-    esac
-  fi
-  printf '%s\n' "$name"
-}
-
 effective_metadata_json() {
   printf "%s" "$METADATA_JSON"
 }
@@ -1819,10 +1796,8 @@ validate_upload_descriptors() {
 }
 
 create_mailbox() {
-  local title payload response id
-  title="$TITLE"
-  [[ -n "$title" ]] || title="$(default_title)"
-  payload="$(mailbox_payload "$title")"
+  local payload response id
+  payload="$(mailbox_payload)"
   response="$(http_json POST "/api/v1/mailboxes" "$payload")" || die "mailbox create failed"
   id="$("$JQ_BIN" -r '.data.mailbox.id // empty' <<<"$response")"
   validate_id mailbox_id "$id"
@@ -1838,18 +1813,16 @@ tag_paths_json() {
 }
 
 mailbox_payload() {
-  local title="$1"
   local tag_paths metadata
   tag_paths="$(tag_paths_json)"
   metadata="$(effective_metadata_json)"
   "$JQ_BIN" -nc \
-    --arg title "$title" \
     --arg description "$DESCRIPTION" \
     --argjson metadata "$metadata" \
     --argjson tag_paths "$tag_paths" \
     '{
       mailbox: (
-        {title: $title, metadata: $metadata}
+        {metadata: $metadata}
         + (if $description != "" then {description: $description} else {} end)
         + (if ($tag_paths | length) > 0 then {tag_paths: $tag_paths} else {} end)
       )
@@ -1860,14 +1833,12 @@ mailbox_update_payload() {
   local tag_paths
   tag_paths="$(tag_paths_json)"
   "$JQ_BIN" -nc \
-    --arg title "$TITLE" \
     --arg description "$DESCRIPTION" \
     --argjson metadata "$METADATA_JSON" \
     --argjson tag_paths "$tag_paths" \
     '{
       mailbox: (
         {}
-        + (if $title != "" then {title: $title} else {} end)
         + (if $description != "" then {description: $description} else {} end)
         + (if ($metadata | length) > 0 then {metadata: $metadata} else {} end)
         + (if ($tag_paths | length) > 0 then {tag_paths: $tag_paths} else {} end)

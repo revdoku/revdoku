@@ -1,7 +1,7 @@
 [package]
 repository = "https://github.com/revdoku/revdoku-rust"
 name = "revdoku-api"
-version = "1.0.527"
+version = "1.0.535"
 authors = ["Revdoku <support@revdoku.com>"]
 description = "Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Direct API signup requires verification of the human operator email. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API."
 license = "MIT"

@@ -10,7 +10,7 @@ import Foundation
 import AnyCodable
 #endif
 
-/** Public mailbox details. Ordinary reads include email activity only; creation and authorized include_email reads also include receiving addresses. */
+/** Public mailbox details. Write-authorized reads include email.address. Creation and authorized include_email reads also include receiving settings. */
 public struct Mailbox: Codable, JSONEncodable, Hashable {
 
     public static let storageBytesRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
@@ -18,7 +18,6 @@ public struct Mailbox: Codable, JSONEncodable, Hashable {
     public static let currentMailboxRevisionNumberRule = NumericRule<Int>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
     public var id: String
     public var accountId: String
-    public var title: String
     public var description: String?
     public var metadata: [String: AnyCodable]?
     public var metadataVersion: String?
@@ -37,10 +36,9 @@ public struct Mailbox: Codable, JSONEncodable, Hashable {
     public var unarchive: MailboxAction?
     public var delete: MailboxAction?
 
-    public init(id: String, accountId: String, title: String, description: String? = nil, metadata: [String: AnyCodable]? = nil, metadataVersion: String? = nil, email: MailboxEmail, archived: Bool? = nil, archivedAt: Date? = nil, lock: MailboxLock? = nil, storageBytes: Int64? = nil, filesCount: Int64? = nil, createdAt: Date? = nil, updatedAt: Date? = nil, dashboardUrl: String? = nil, currentMailboxRevisionId: String? = nil, currentMailboxRevisionNumber: Int? = nil, archive: MailboxAction? = nil, unarchive: MailboxAction? = nil, delete: MailboxAction? = nil) {
+    public init(id: String, accountId: String, description: String? = nil, metadata: [String: AnyCodable]? = nil, metadataVersion: String? = nil, email: MailboxEmail, archived: Bool? = nil, archivedAt: Date? = nil, lock: MailboxLock? = nil, storageBytes: Int64? = nil, filesCount: Int64? = nil, createdAt: Date? = nil, updatedAt: Date? = nil, dashboardUrl: String? = nil, currentMailboxRevisionId: String? = nil, currentMailboxRevisionNumber: Int? = nil, archive: MailboxAction? = nil, unarchive: MailboxAction? = nil, delete: MailboxAction? = nil) {
         self.id = id
         self.accountId = accountId
-        self.title = title
         self.description = description
         self.metadata = metadata
         self.metadataVersion = metadataVersion
@@ -63,7 +61,6 @@ public struct Mailbox: Codable, JSONEncodable, Hashable {
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case id
         case accountId = "account_id"
-        case title
         case description
         case metadata
         case metadataVersion = "metadata_version"
@@ -89,7 +86,6 @@ public struct Mailbox: Codable, JSONEncodable, Hashable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(accountId, forKey: .accountId)
-        try container.encode(title, forKey: .title)
         try container.encodeIfPresent(description, forKey: .description)
         try container.encodeIfPresent(metadata, forKey: .metadata)
         try container.encodeIfPresent(metadataVersion, forKey: .metadataVersion)

@@ -14,36 +14,30 @@ class VerifyAgentSignup201ResponseDataMailbox {
   /// Returns a new [VerifyAgentSignup201ResponseDataMailbox] instance.
   VerifyAgentSignup201ResponseDataMailbox({
     required this.id,
-    required this.title,
     required this.email,
   });
 
   String id;
-
-  String title;
 
   MailboxEmail email;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is VerifyAgentSignup201ResponseDataMailbox &&
     other.id == id &&
-    other.title == title &&
     other.email == email;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
     (id.hashCode) +
-    (title.hashCode) +
     (email.hashCode);
 
   @override
-  String toString() => 'VerifyAgentSignup201ResponseDataMailbox[id=$id, title=$title, email=$email]';
+  String toString() => 'VerifyAgentSignup201ResponseDataMailbox[id=$id, email=$email]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
       json[r'id'] = this.id;
-      json[r'title'] = this.title;
       json[r'email'] = this.email;
     return json;
   }
@@ -61,8 +55,6 @@ class VerifyAgentSignup201ResponseDataMailbox {
       assert(() {
         assert(json.containsKey(r'id'), 'Required key "VerifyAgentSignup201ResponseDataMailbox[id]" is missing from JSON.');
         assert(json[r'id'] != null, 'Required key "VerifyAgentSignup201ResponseDataMailbox[id]" has a null value in JSON.');
-        assert(json.containsKey(r'title'), 'Required key "VerifyAgentSignup201ResponseDataMailbox[title]" is missing from JSON.');
-        assert(json[r'title'] != null, 'Required key "VerifyAgentSignup201ResponseDataMailbox[title]" has a null value in JSON.');
         assert(json.containsKey(r'email'), 'Required key "VerifyAgentSignup201ResponseDataMailbox[email]" is missing from JSON.');
         assert(json[r'email'] != null, 'Required key "VerifyAgentSignup201ResponseDataMailbox[email]" has a null value in JSON.');
         return true;
@@ -70,7 +62,6 @@ class VerifyAgentSignup201ResponseDataMailbox {
 
       return VerifyAgentSignup201ResponseDataMailbox(
         id: mapValueOfType<String>(json, r'id')!,
-        title: mapValueOfType<String>(json, r'title')!,
         email: MailboxEmail.fromJson(json[r'email'])!,
       );
     }
@@ -120,7 +111,6 @@ class VerifyAgentSignup201ResponseDataMailbox {
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
     'id',
-    'title',
     'email',
   };
 }

@@ -13,8 +13,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         bearer_access_token: Some(key),
         ..Configuration::default()
     };
-    let mut mailbox = CreateMailboxRequestMailbox::new();
-    mailbox.title = Some("Example mailbox".into());
+    let mailbox = CreateMailboxRequestMailbox::new();
     let mut body = CreateMailboxRequest::new(mailbox);
     body.account_id = std::env::var("REVDOKU_ACCOUNT_ID")
         .ok()

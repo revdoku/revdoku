@@ -13,18 +13,15 @@ import AnyCodable
 public struct VerifyAgentSignup201ResponseDataMailbox: Codable, JSONEncodable, Hashable {
 
     public var id: String
-    public var title: String
     public var email: MailboxEmail
 
-    public init(id: String, title: String, email: MailboxEmail) {
+    public init(id: String, email: MailboxEmail) {
         self.id = id
-        self.title = title
         self.email = email
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case id
-        case title
         case email
     }
 
@@ -33,7 +30,6 @@ public struct VerifyAgentSignup201ResponseDataMailbox: Codable, JSONEncodable, H
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
-        try container.encode(title, forKey: .title)
         try container.encode(email, forKey: .email)
     }
 }

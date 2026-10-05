@@ -3,7 +3,7 @@
 #
 
 name: 'revdoku_api'
-version: '1.0.527'
+version: '1.0.535'
 description: 'Generated Revdoku email mailbox and private file storage API client.'
 homepage: 'https://revdoku.com'
 repository: https://github.com/revdoku/revdoku-dart

@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .filter(|s| !s.is_empty());
     let result = default_api::list_mailboxes(&config, account.as_deref(), None, None).await?;
     for mailbox in result.data.mailboxes {
-        println!("{} {}", mailbox.id, mailbox.title);
+        println!("{} {}", mailbox.id, mailbox.email.address.flatten().unwrap_or_default());
     }
     Ok(())
 }
