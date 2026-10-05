@@ -40,8 +40,6 @@ class GetAccountLimits200ResponseDataUsage {
     final json = <String, dynamic>{};
     if (this.mailboxCreations != null) {
       json[r'mailbox_creations'] = this.mailboxCreations;
-    } else {
-      json[r'mailbox_creations'] = null;
     }
     return json;
   }

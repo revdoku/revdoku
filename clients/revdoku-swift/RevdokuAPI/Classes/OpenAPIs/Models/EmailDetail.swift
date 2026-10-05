@@ -65,10 +65,14 @@ public struct EmailDetail: Codable, JSONEncodable, Hashable {
     public var readByApiKey: AnyCodable?
     public var files: EmailSummaryFiles?
     public var forwarding: EmailForwardingContent?
+    /** Decoded Cc header; use the corresponding parsed address array for individual addresses. */
+    public var cc: String?
+    /** Decoded Reply-To header; use the corresponding parsed address array for individual addresses. */
+    public var replyTo: String?
     public var bodyText: String?
     public var attachments: [EmailAttachment]
 
-    public init(schemaVersion: SchemaVersion? = nil, subject: String? = nil, from: String? = nil, to: String? = nil, fromAddresses: [DecodedEmailAddress]? = nil, toAddresses: [DecodedEmailAddress]? = nil, ccAddresses: [DecodedEmailAddress]? = nil, replyToAddresses: [DecodedEmailAddress]? = nil, messageId: String? = nil, inReplyTo: [String]? = nil, references: [String]? = nil, threadId: String? = nil, deliveredTo: String? = nil, receivedAt: Date, bodyStatus: BodyStatus, omittedAttachmentCount: Int? = nil, id: String, conversationId: String, fileId: String? = nil, versionId: String? = nil, attachmentCount: Int, read: Bool, readAt: Date?, readBy: AnyCodable?, readByApiKey: AnyCodable?, files: EmailSummaryFiles? = nil, forwarding: EmailForwardingContent? = nil, bodyText: String?, attachments: [EmailAttachment]) {
+    public init(schemaVersion: SchemaVersion? = nil, subject: String? = nil, from: String? = nil, to: String? = nil, fromAddresses: [DecodedEmailAddress]? = nil, toAddresses: [DecodedEmailAddress]? = nil, ccAddresses: [DecodedEmailAddress]? = nil, replyToAddresses: [DecodedEmailAddress]? = nil, messageId: String? = nil, inReplyTo: [String]? = nil, references: [String]? = nil, threadId: String? = nil, deliveredTo: String? = nil, receivedAt: Date, bodyStatus: BodyStatus, omittedAttachmentCount: Int? = nil, id: String, conversationId: String, fileId: String? = nil, versionId: String? = nil, attachmentCount: Int, read: Bool, readAt: Date?, readBy: AnyCodable?, readByApiKey: AnyCodable?, files: EmailSummaryFiles? = nil, forwarding: EmailForwardingContent? = nil, cc: String? = nil, replyTo: String? = nil, bodyText: String?, attachments: [EmailAttachment]) {
         self.schemaVersion = schemaVersion
         self.subject = subject
         self.from = from
@@ -96,6 +100,8 @@ public struct EmailDetail: Codable, JSONEncodable, Hashable {
         self.readByApiKey = readByApiKey
         self.files = files
         self.forwarding = forwarding
+        self.cc = cc
+        self.replyTo = replyTo
         self.bodyText = bodyText
         self.attachments = attachments
     }
@@ -128,6 +134,8 @@ public struct EmailDetail: Codable, JSONEncodable, Hashable {
         case readByApiKey = "read_by_api_key"
         case files
         case forwarding
+        case cc
+        case replyTo = "reply_to"
         case bodyText = "body_text"
         case attachments
     }
@@ -163,6 +171,8 @@ public struct EmailDetail: Codable, JSONEncodable, Hashable {
         try container.encode(readByApiKey, forKey: .readByApiKey)
         try container.encodeIfPresent(files, forKey: .files)
         try container.encodeIfPresent(forwarding, forKey: .forwarding)
+        try container.encodeIfPresent(cc, forKey: .cc)
+        try container.encodeIfPresent(replyTo, forKey: .replyTo)
         try container.encode(bodyText, forKey: .bodyText)
         try container.encode(attachments, forKey: .attachments)
     }

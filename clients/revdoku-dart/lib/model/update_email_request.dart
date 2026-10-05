@@ -52,8 +52,6 @@ class UpdateEmailRequest {
       json[r'read'] = this.read;
     if (this.accountId != null) {
       json[r'account_id'] = this.accountId;
-    } else {
-      json[r'account_id'] = null;
     }
     if (this.reason != null) {
       json[r'reason'] = this.reason;

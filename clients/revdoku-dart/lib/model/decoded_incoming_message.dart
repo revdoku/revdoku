@@ -35,6 +35,8 @@ class DecodedIncomingMessage {
     this.omittedAttachmentCount,
     this.attachments = const [],
     this.forwarding,
+    this.cc,
+    this.replyTo,
   });
 
   DecodedIncomingMessageSchemaVersionEnum schemaVersion;
@@ -110,6 +112,12 @@ class DecodedIncomingMessage {
   ///
   EmailForwardingContent? forwarding;
 
+  /// Decoded Cc header; use the corresponding parsed address array for individual addresses.
+  String? cc;
+
+  /// Decoded Reply-To header; use the corresponding parsed address array for individual addresses.
+  String? replyTo;
+
   @override
   bool operator ==(Object other) => identical(this, other) || other is DecodedIncomingMessage &&
     other.schemaVersion == schemaVersion &&
@@ -133,7 +141,9 @@ class DecodedIncomingMessage {
     other.bodyStatus == bodyStatus &&
     other.omittedAttachmentCount == omittedAttachmentCount &&
     _deepEquality.equals(other.attachments, attachments) &&
-    other.forwarding == forwarding;
+    other.forwarding == forwarding &&
+    other.cc == cc &&
+    other.replyTo == replyTo;
 
   @override
   int get hashCode =>
@@ -159,10 +169,12 @@ class DecodedIncomingMessage {
     (bodyStatus.hashCode) +
     (omittedAttachmentCount == null ? 0 : omittedAttachmentCount!.hashCode) +
     (attachments.hashCode) +
-    (forwarding == null ? 0 : forwarding!.hashCode);
+    (forwarding == null ? 0 : forwarding!.hashCode) +
+    (cc == null ? 0 : cc!.hashCode) +
+    (replyTo == null ? 0 : replyTo!.hashCode);
 
   @override
-  String toString() => 'DecodedIncomingMessage[schemaVersion=$schemaVersion, subject=$subject, from=$from, to=$to, fromAddresses=$fromAddresses, toAddresses=$toAddresses, ccAddresses=$ccAddresses, replyToAddresses=$replyToAddresses, messageId=$messageId, inReplyTo=$inReplyTo, references=$references, deliveryId=$deliveryId, threadId=$threadId, threadIdSource=$threadIdSource, threadAnchorMessageId=$threadAnchorMessageId, deliveredTo=$deliveredTo, receivedAt=$receivedAt, bodyText=$bodyText, bodyStatus=$bodyStatus, omittedAttachmentCount=$omittedAttachmentCount, attachments=$attachments, forwarding=$forwarding]';
+  String toString() => 'DecodedIncomingMessage[schemaVersion=$schemaVersion, subject=$subject, from=$from, to=$to, fromAddresses=$fromAddresses, toAddresses=$toAddresses, ccAddresses=$ccAddresses, replyToAddresses=$replyToAddresses, messageId=$messageId, inReplyTo=$inReplyTo, references=$references, deliveryId=$deliveryId, threadId=$threadId, threadIdSource=$threadIdSource, threadAnchorMessageId=$threadAnchorMessageId, deliveredTo=$deliveredTo, receivedAt=$receivedAt, bodyText=$bodyText, bodyStatus=$bodyStatus, omittedAttachmentCount=$omittedAttachmentCount, attachments=$attachments, forwarding=$forwarding, cc=$cc, replyTo=$replyTo]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -195,8 +207,6 @@ class DecodedIncomingMessage {
       json[r'references'] = this.references;
     if (this.deliveryId != null) {
       json[r'delivery_id'] = this.deliveryId;
-    } else {
-      json[r'delivery_id'] = null;
     }
     if (this.threadId != null) {
       json[r'thread_id'] = this.threadId;
@@ -223,14 +233,20 @@ class DecodedIncomingMessage {
       json[r'body_status'] = this.bodyStatus;
     if (this.omittedAttachmentCount != null) {
       json[r'omitted_attachment_count'] = this.omittedAttachmentCount;
-    } else {
-      json[r'omitted_attachment_count'] = null;
     }
       json[r'attachments'] = this.attachments;
     if (this.forwarding != null) {
       json[r'forwarding'] = this.forwarding;
+    }
+    if (this.cc != null) {
+      json[r'cc'] = this.cc;
     } else {
-      json[r'forwarding'] = null;
+      json[r'cc'] = null;
+    }
+    if (this.replyTo != null) {
+      json[r'reply_to'] = this.replyTo;
+    } else {
+      json[r'reply_to'] = null;
     }
     return json;
   }
@@ -290,6 +306,8 @@ class DecodedIncomingMessage {
         omittedAttachmentCount: mapValueOfType<int>(json, r'omitted_attachment_count'),
         attachments: DecodedIncomingMessageAttachmentsInner.listFromJson(json[r'attachments']),
         forwarding: EmailForwardingContent.fromJson(json[r'forwarding']),
+        cc: mapValueOfType<String>(json, r'cc'),
+        replyTo: mapValueOfType<String>(json, r'reply_to'),
       );
     }
     return null;

@@ -20,7 +20,7 @@ class ApiSuccess {
   bool success;
 
   /// Endpoint-specific result fields. See the endpoint documentation for the domain or authentication-capability fields.
-  Map<String, Object> data;
+  Map<String, Object?> data;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is ApiSuccess &&
@@ -63,7 +63,7 @@ class ApiSuccess {
 
       return ApiSuccess(
         success: mapValueOfType<bool>(json, r'success')!,
-        data: mapCastOfType<String, Object>(json, r'data')!,
+        data: mapCastOfType<String, Object?>(json, r'data')!,
       );
     }
     return null;

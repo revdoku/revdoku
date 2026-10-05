@@ -1,6 +1,6 @@
 # github.com/revdoku/revdoku-go
 
-Email mailboxes with private file storage. Generated API client, version 1.0.526.
+Email mailboxes with private file storage. Generated API client, version 1.0.527.
 Source installation works now; a GitHub repository does not imply availability in a package registry.
 
 ## Start

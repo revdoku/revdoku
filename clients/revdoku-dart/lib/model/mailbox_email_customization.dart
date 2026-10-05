@@ -51,8 +51,6 @@ class MailboxEmailCustomization {
     final json = <String, dynamic>{};
     if (this.allowed != null) {
       json[r'allowed'] = this.allowed;
-    } else {
-      json[r'allowed'] = null;
     }
     if (this.blockedReason != null) {
       json[r'blocked_reason'] = this.blockedReason;

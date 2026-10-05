@@ -62,8 +62,12 @@ public struct DecodedIncomingMessage: Codable, JSONEncodable, Hashable {
     public var omittedAttachmentCount: Int?
     public var attachments: [DecodedIncomingMessageAttachmentsInner]
     public var forwarding: EmailForwardingContent?
+    /** Decoded Cc header; use the corresponding parsed address array for individual addresses. */
+    public var cc: String?
+    /** Decoded Reply-To header; use the corresponding parsed address array for individual addresses. */
+    public var replyTo: String?
 
-    public init(schemaVersion: SchemaVersion, subject: String?, from: String?, to: String?, fromAddresses: [DecodedEmailAddress]? = nil, toAddresses: [DecodedEmailAddress]? = nil, ccAddresses: [DecodedEmailAddress]? = nil, replyToAddresses: [DecodedEmailAddress]? = nil, messageId: String? = nil, inReplyTo: [String]? = nil, references: [String]? = nil, deliveryId: String? = nil, threadId: String? = nil, threadIdSource: ThreadIdSource? = nil, threadAnchorMessageId: String? = nil, deliveredTo: String, receivedAt: Date, bodyText: String?, bodyStatus: BodyStatus, omittedAttachmentCount: Int? = nil, attachments: [DecodedIncomingMessageAttachmentsInner], forwarding: EmailForwardingContent? = nil) {
+    public init(schemaVersion: SchemaVersion, subject: String?, from: String?, to: String?, fromAddresses: [DecodedEmailAddress]? = nil, toAddresses: [DecodedEmailAddress]? = nil, ccAddresses: [DecodedEmailAddress]? = nil, replyToAddresses: [DecodedEmailAddress]? = nil, messageId: String? = nil, inReplyTo: [String]? = nil, references: [String]? = nil, deliveryId: String? = nil, threadId: String? = nil, threadIdSource: ThreadIdSource? = nil, threadAnchorMessageId: String? = nil, deliveredTo: String, receivedAt: Date, bodyText: String?, bodyStatus: BodyStatus, omittedAttachmentCount: Int? = nil, attachments: [DecodedIncomingMessageAttachmentsInner], forwarding: EmailForwardingContent? = nil, cc: String? = nil, replyTo: String? = nil) {
         self.schemaVersion = schemaVersion
         self.subject = subject
         self.from = from
@@ -86,6 +90,8 @@ public struct DecodedIncomingMessage: Codable, JSONEncodable, Hashable {
         self.omittedAttachmentCount = omittedAttachmentCount
         self.attachments = attachments
         self.forwarding = forwarding
+        self.cc = cc
+        self.replyTo = replyTo
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
@@ -111,6 +117,8 @@ public struct DecodedIncomingMessage: Codable, JSONEncodable, Hashable {
         case omittedAttachmentCount = "omitted_attachment_count"
         case attachments
         case forwarding
+        case cc
+        case replyTo = "reply_to"
     }
 
     // Encodable protocol methods
@@ -139,6 +147,8 @@ public struct DecodedIncomingMessage: Codable, JSONEncodable, Hashable {
         try container.encodeIfPresent(omittedAttachmentCount, forKey: .omittedAttachmentCount)
         try container.encode(attachments, forKey: .attachments)
         try container.encodeIfPresent(forwarding, forKey: .forwarding)
+        try container.encodeIfPresent(cc, forKey: .cc)
+        try container.encodeIfPresent(replyTo, forKey: .replyTo)
     }
 }
 

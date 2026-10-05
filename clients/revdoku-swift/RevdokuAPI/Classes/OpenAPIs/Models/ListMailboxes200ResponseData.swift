@@ -12,9 +12,9 @@ import AnyCodable
 
 public struct ListMailboxes200ResponseData: Codable, JSONEncodable, Hashable {
 
-    public var mailboxes: [ListMailboxes200ResponseDataMailboxesInner]
+    public var mailboxes: [Mailbox]
 
-    public init(mailboxes: [ListMailboxes200ResponseDataMailboxesInner]) {
+    public init(mailboxes: [Mailbox]) {
         self.mailboxes = mailboxes
     }
 

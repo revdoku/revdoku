@@ -76,13 +76,9 @@ class EmailAttachment {
       json[r'size_bytes'] = this.sizeBytes;
     if (this.versionId != null) {
       json[r'version_id'] = this.versionId;
-    } else {
-      json[r'version_id'] = null;
     }
     if (this.origin != null) {
       json[r'origin'] = this.origin;
-    } else {
-      json[r'origin'] = null;
     }
     return json;
   }

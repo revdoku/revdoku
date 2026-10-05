@@ -16,17 +16,21 @@ public struct EmailSummaryFiles: Codable, JSONEncodable, Hashable {
     public var bodyId: String?
     public var originalId: String?
     public var attachmentIds: [String]
+    /** Storage folder containing this email, without a trailing slash. */
+    public var directory: String?
 
-    public init(bodyId: String?, originalId: String?, attachmentIds: [String]) {
+    public init(bodyId: String?, originalId: String?, attachmentIds: [String], directory: String? = nil) {
         self.bodyId = bodyId
         self.originalId = originalId
         self.attachmentIds = attachmentIds
+        self.directory = directory
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case bodyId = "body_id"
         case originalId = "original_id"
         case attachmentIds = "attachment_ids"
+        case directory
     }
 
     // Encodable protocol methods
@@ -36,6 +40,7 @@ public struct EmailSummaryFiles: Codable, JSONEncodable, Hashable {
         try container.encode(bodyId, forKey: .bodyId)
         try container.encode(originalId, forKey: .originalId)
         try container.encode(attachmentIds, forKey: .attachmentIds)
+        try container.encodeIfPresent(directory, forKey: .directory)
     }
 }
 

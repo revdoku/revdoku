@@ -17,6 +17,11 @@ class GetRevdokuStatus200ResponseData {
     this.defaultAccountId,
     this.accounts = const [],
     this.features,
+    this.connected,
+    this.serverVersion,
+    this.clientVersion,
+    this.connection,
+    this.limits = const {},
   });
 
   ///
@@ -37,14 +42,53 @@ class GetRevdokuStatus200ResponseData {
   /// source code must fall back to having a nullable type.
   /// Consider adding a "default:" property in the specification file to hide this note.
   ///
-  Object? features;
+  GetRevdokuStatus200ResponseDataFeatures? features;
+
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  bool? connected;
+
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  String? serverVersion;
+
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  String? clientVersion;
+
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  GetRevdokuStatus200ResponseDataConnection? connection;
+
+  Map<String, Object?>? limits;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is GetRevdokuStatus200ResponseData &&
     other.account == account &&
     other.defaultAccountId == defaultAccountId &&
     _deepEquality.equals(other.accounts, accounts) &&
-    other.features == features;
+    other.features == features &&
+    other.connected == connected &&
+    other.serverVersion == serverVersion &&
+    other.clientVersion == clientVersion &&
+    other.connection == connection &&
+    _deepEquality.equals(other.limits, limits);
 
   @override
   int get hashCode =>
@@ -52,17 +96,20 @@ class GetRevdokuStatus200ResponseData {
     (account == null ? 0 : account!.hashCode) +
     (defaultAccountId == null ? 0 : defaultAccountId!.hashCode) +
     (accounts.hashCode) +
-    (features == null ? 0 : features!.hashCode);
+    (features == null ? 0 : features!.hashCode) +
+    (connected == null ? 0 : connected!.hashCode) +
+    (serverVersion == null ? 0 : serverVersion!.hashCode) +
+    (clientVersion == null ? 0 : clientVersion!.hashCode) +
+    (connection == null ? 0 : connection!.hashCode) +
+    (limits == null ? 0 : limits!.hashCode);
 
   @override
-  String toString() => 'GetRevdokuStatus200ResponseData[account=$account, defaultAccountId=$defaultAccountId, accounts=$accounts, features=$features]';
+  String toString() => 'GetRevdokuStatus200ResponseData[account=$account, defaultAccountId=$defaultAccountId, accounts=$accounts, features=$features, connected=$connected, serverVersion=$serverVersion, clientVersion=$clientVersion, connection=$connection, limits=$limits]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
     if (this.account != null) {
       json[r'account'] = this.account;
-    } else {
-      json[r'account'] = null;
     }
     if (this.defaultAccountId != null) {
       json[r'default_account_id'] = this.defaultAccountId;
@@ -72,8 +119,23 @@ class GetRevdokuStatus200ResponseData {
       json[r'accounts'] = this.accounts;
     if (this.features != null) {
       json[r'features'] = this.features;
+    }
+    if (this.connected != null) {
+      json[r'connected'] = this.connected;
+    }
+    if (this.serverVersion != null) {
+      json[r'server_version'] = this.serverVersion;
+    }
+    if (this.clientVersion != null) {
+      json[r'client_version'] = this.clientVersion;
+    }
+    if (this.connection != null) {
+      json[r'connection'] = this.connection;
+    }
+    if (this.limits != null) {
+      json[r'limits'] = this.limits;
     } else {
-      json[r'features'] = null;
+      json[r'limits'] = null;
     }
     return json;
   }
@@ -96,7 +158,12 @@ class GetRevdokuStatus200ResponseData {
         account: AccountIdentity.fromJson(json[r'account']),
         defaultAccountId: mapValueOfType<String>(json, r'default_account_id'),
         accounts: AccountIdentity.listFromJson(json[r'accounts']),
-        features: mapValueOfType<Object>(json, r'features'),
+        features: GetRevdokuStatus200ResponseDataFeatures.fromJson(json[r'features']),
+        connected: mapValueOfType<bool>(json, r'connected'),
+        serverVersion: mapValueOfType<String>(json, r'server_version'),
+        clientVersion: mapValueOfType<String>(json, r'client_version'),
+        connection: GetRevdokuStatus200ResponseDataConnection.fromJson(json[r'connection']),
+        limits: mapCastOfType<String, Object?>(json, r'limits') ?? const {},
       );
     }
     return null;

@@ -89,13 +89,9 @@ class RotateMailboxEmailAddressRequest {
       json[r'current_address'] = this.currentAddress;
     if (this.accountId != null) {
       json[r'account_id'] = this.accountId;
-    } else {
-      json[r'account_id'] = null;
     }
     if (this.domain != null) {
       json[r'domain'] = this.domain;
-    } else {
-      json[r'domain'] = null;
     }
     if (this.reason != null) {
       json[r'reason'] = this.reason;
@@ -104,8 +100,6 @@ class RotateMailboxEmailAddressRequest {
     }
     if (this.username != null) {
       json[r'username'] = this.username;
-    } else {
-      json[r'username'] = null;
     }
       json[r'keep_old_as_alias'] = this.keepOldAsAlias;
     return json;

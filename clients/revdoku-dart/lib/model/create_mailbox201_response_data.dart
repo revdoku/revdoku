@@ -13,16 +13,10 @@ part of revdoku.api;
 class CreateMailbox201ResponseData {
   /// Returns a new [CreateMailbox201ResponseData] instance.
   CreateMailbox201ResponseData({
-    this.mailbox,
+    required this.mailbox,
   });
 
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  CreateMailbox201ResponseDataMailbox? mailbox;
+  Mailbox mailbox;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is CreateMailbox201ResponseData &&
@@ -31,18 +25,14 @@ class CreateMailbox201ResponseData {
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (mailbox == null ? 0 : mailbox!.hashCode);
+    (mailbox.hashCode);
 
   @override
   String toString() => 'CreateMailbox201ResponseData[mailbox=$mailbox]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-    if (this.mailbox != null) {
       json[r'mailbox'] = this.mailbox;
-    } else {
-      json[r'mailbox'] = null;
-    }
     return json;
   }
 
@@ -57,11 +47,13 @@ class CreateMailbox201ResponseData {
       // Note 1: the values aren't checked for validity beyond being non-null.
       // Note 2: this code is stripped in release mode!
       assert(() {
+        assert(json.containsKey(r'mailbox'), 'Required key "CreateMailbox201ResponseData[mailbox]" is missing from JSON.');
+        assert(json[r'mailbox'] != null, 'Required key "CreateMailbox201ResponseData[mailbox]" has a null value in JSON.');
         return true;
       }());
 
       return CreateMailbox201ResponseData(
-        mailbox: CreateMailbox201ResponseDataMailbox.fromJson(json[r'mailbox']),
+        mailbox: Mailbox.fromJson(json[r'mailbox'])!,
       );
     }
     return null;
@@ -109,6 +101,7 @@ class CreateMailbox201ResponseData {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
+    'mailbox',
   };
 }
 

@@ -12,9 +12,9 @@ import AnyCodable
 
 public struct CreateMailbox201ResponseData: Codable, JSONEncodable, Hashable {
 
-    public var mailbox: CreateMailbox201ResponseDataMailbox?
+    public var mailbox: Mailbox
 
-    public init(mailbox: CreateMailbox201ResponseDataMailbox? = nil) {
+    public init(mailbox: Mailbox) {
         self.mailbox = mailbox
     }
 
@@ -26,7 +26,7 @@ public struct CreateMailbox201ResponseData: Codable, JSONEncodable, Hashable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encodeIfPresent(mailbox, forKey: .mailbox)
+        try container.encode(mailbox, forKey: .mailbox)
     }
 }
 

@@ -15,13 +15,23 @@ public struct GetRevdokuStatus200ResponseData: Codable, JSONEncodable, Hashable 
     public var account: AccountIdentity?
     public var defaultAccountId: String?
     public var accounts: [AccountIdentity]?
-    public var features: AnyCodable?
+    public var features: GetRevdokuStatus200ResponseDataFeatures?
+    public var connected: Bool?
+    public var serverVersion: String?
+    public var clientVersion: String?
+    public var connection: GetRevdokuStatus200ResponseDataConnection?
+    public var limits: [String: AnyCodable]?
 
-    public init(account: AccountIdentity? = nil, defaultAccountId: String? = nil, accounts: [AccountIdentity]? = nil, features: AnyCodable? = nil) {
+    public init(account: AccountIdentity? = nil, defaultAccountId: String? = nil, accounts: [AccountIdentity]? = nil, features: GetRevdokuStatus200ResponseDataFeatures? = nil, connected: Bool? = nil, serverVersion: String? = nil, clientVersion: String? = nil, connection: GetRevdokuStatus200ResponseDataConnection? = nil, limits: [String: AnyCodable]? = nil) {
         self.account = account
         self.defaultAccountId = defaultAccountId
         self.accounts = accounts
         self.features = features
+        self.connected = connected
+        self.serverVersion = serverVersion
+        self.clientVersion = clientVersion
+        self.connection = connection
+        self.limits = limits
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
@@ -29,6 +39,11 @@ public struct GetRevdokuStatus200ResponseData: Codable, JSONEncodable, Hashable 
         case defaultAccountId = "default_account_id"
         case accounts
         case features
+        case connected
+        case serverVersion = "server_version"
+        case clientVersion = "client_version"
+        case connection
+        case limits
     }
 
     // Encodable protocol methods
@@ -39,6 +54,11 @@ public struct GetRevdokuStatus200ResponseData: Codable, JSONEncodable, Hashable 
         try container.encodeIfPresent(defaultAccountId, forKey: .defaultAccountId)
         try container.encodeIfPresent(accounts, forKey: .accounts)
         try container.encodeIfPresent(features, forKey: .features)
+        try container.encodeIfPresent(connected, forKey: .connected)
+        try container.encodeIfPresent(serverVersion, forKey: .serverVersion)
+        try container.encodeIfPresent(clientVersion, forKey: .clientVersion)
+        try container.encodeIfPresent(connection, forKey: .connection)
+        try container.encodeIfPresent(limits, forKey: .limits)
     }
 }
 

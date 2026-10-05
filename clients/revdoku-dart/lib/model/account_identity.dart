@@ -95,13 +95,9 @@ class AccountIdentity {
     }
     if (this.status != null) {
       json[r'status'] = this.status;
-    } else {
-      json[r'status'] = null;
     }
     if (this.permissions != null) {
       json[r'permissions'] = this.permissions;
-    } else {
-      json[r'permissions'] = null;
     }
     return json;
   }

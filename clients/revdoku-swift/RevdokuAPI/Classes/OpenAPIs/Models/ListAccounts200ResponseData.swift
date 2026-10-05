@@ -12,11 +12,11 @@ import AnyCodable
 
 public struct ListAccounts200ResponseData: Codable, JSONEncodable, Hashable {
 
-    public var accounts: [AccountIdentity]?
+    public var accounts: [AccountIdentity]
     public var defaultAccountId: String?
-    public var pagination: AnyCodable?
+    public var pagination: AccountPagination
 
-    public init(accounts: [AccountIdentity]? = nil, defaultAccountId: String? = nil, pagination: AnyCodable? = nil) {
+    public init(accounts: [AccountIdentity], defaultAccountId: String?, pagination: AccountPagination) {
         self.accounts = accounts
         self.defaultAccountId = defaultAccountId
         self.pagination = pagination
@@ -32,9 +32,9 @@ public struct ListAccounts200ResponseData: Codable, JSONEncodable, Hashable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encodeIfPresent(accounts, forKey: .accounts)
-        try container.encodeIfPresent(defaultAccountId, forKey: .defaultAccountId)
-        try container.encodeIfPresent(pagination, forKey: .pagination)
+        try container.encode(accounts, forKey: .accounts)
+        try container.encode(defaultAccountId, forKey: .defaultAccountId)
+        try container.encode(pagination, forKey: .pagination)
     }
 }
 

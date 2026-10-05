@@ -59,13 +59,9 @@ class VerifyAgentSignupRequest {
     final json = <String, dynamic>{};
     if (this.code != null) {
       json[r'code'] = this.code;
-    } else {
-      json[r'code'] = null;
     }
     if (this.username != null) {
       json[r'username'] = this.username;
-    } else {
-      json[r'username'] = null;
     }
       json[r'signup_token'] = this.signupToken;
     return json;

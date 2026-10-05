@@ -61,8 +61,6 @@ class DecodedIncomingMessageAttachmentsInner {
       json[r'size_bytes'] = this.sizeBytes;
     if (this.origin != null) {
       json[r'origin'] = this.origin;
-    } else {
-      json[r'origin'] = null;
     }
     return json;
   }

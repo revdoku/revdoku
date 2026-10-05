@@ -240,7 +240,7 @@ class DefaultApi {
     return null;
   }
 
-  /// Add an email alias to an mailbox
+  /// Add an email alias to a mailbox
   ///
   /// Requires a full-account owner/administrator with mailbox-admin access and an available alias slot. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
   ///
@@ -252,7 +252,12 @@ class DefaultApi {
   ///   Authorized mailbox prefix ID
   ///
   /// * [CreateMailboxEmailAliasRequest] createMailboxEmailAliasRequest (required):
-  Future<Response> createMailboxEmailAliasWithHttpInfo(String id, CreateMailboxEmailAliasRequest createMailboxEmailAliasRequest, { Future<void>? abortTrigger, }) async {
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account; otherwise use the credential default.
+  ///
+  /// * [String] reason:
+  Future<Response> createMailboxEmailAliasWithHttpInfo(String id, CreateMailboxEmailAliasRequest createMailboxEmailAliasRequest, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
     final path = r'/v1/mailboxes/{id}/email/aliases'
       .replaceAll('{id}', id);
@@ -263,6 +268,13 @@ class DefaultApi {
     final queryParams = <QueryParam>[];
     final headerParams = <String, String>{};
     final formParams = <String, String>{};
+
+    if (accountId != null) {
+      queryParams.addAll(_queryParams('', 'account_id', accountId));
+    }
+    if (reason != null) {
+      queryParams.addAll(_queryParams('', 'reason', reason));
+    }
 
     const contentTypes = <String>['application/json'];
 
@@ -279,7 +291,7 @@ class DefaultApi {
     );
   }
 
-  /// Add an email alias to an mailbox
+  /// Add an email alias to a mailbox
   ///
   /// Requires a full-account owner/administrator with mailbox-admin access and an available alias slot. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
   ///
@@ -289,8 +301,13 @@ class DefaultApi {
   ///   Authorized mailbox prefix ID
   ///
   /// * [CreateMailboxEmailAliasRequest] createMailboxEmailAliasRequest (required):
-  Future<GetMailboxEmailSettings200Response?> createMailboxEmailAlias(String id, CreateMailboxEmailAliasRequest createMailboxEmailAliasRequest, { Future<void>? abortTrigger, }) async {
-    final response = await createMailboxEmailAliasWithHttpInfo(id, createMailboxEmailAliasRequest, abortTrigger: abortTrigger,);
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account; otherwise use the credential default.
+  ///
+  /// * [String] reason:
+  Future<GetMailboxEmailSettings200Response?> createMailboxEmailAlias(String id, CreateMailboxEmailAliasRequest createMailboxEmailAliasRequest, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+    final response = await createMailboxEmailAliasWithHttpInfo(id, createMailboxEmailAliasRequest, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -449,7 +466,12 @@ class DefaultApi {
   ///
   /// * [String] aliasId (required):
   ///   Alias ID from mailbox settings
-  Future<Response> deleteMailboxEmailAliasWithHttpInfo(String id, String aliasId, { Future<void>? abortTrigger, }) async {
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account; otherwise use the credential default.
+  ///
+  /// * [String] reason:
+  Future<Response> deleteMailboxEmailAliasWithHttpInfo(String id, String aliasId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
     final path = r'/v1/mailboxes/{id}/email/aliases/{alias_id}'
       .replaceAll('{id}', id)
@@ -461,6 +483,13 @@ class DefaultApi {
     final queryParams = <QueryParam>[];
     final headerParams = <String, String>{};
     final formParams = <String, String>{};
+
+    if (accountId != null) {
+      queryParams.addAll(_queryParams('', 'account_id', accountId));
+    }
+    if (reason != null) {
+      queryParams.addAll(_queryParams('', 'reason', reason));
+    }
 
     const contentTypes = <String>[];
 
@@ -488,8 +517,13 @@ class DefaultApi {
   ///
   /// * [String] aliasId (required):
   ///   Alias ID from mailbox settings
-  Future<GetMailboxEmailSettings200Response?> deleteMailboxEmailAlias(String id, String aliasId, { Future<void>? abortTrigger, }) async {
-    final response = await deleteMailboxEmailAliasWithHttpInfo(id, aliasId, abortTrigger: abortTrigger,);
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account; otherwise use the credential default.
+  ///
+  /// * [String] reason:
+  Future<GetMailboxEmailSettings200Response?> deleteMailboxEmailAlias(String id, String aliasId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+    final response = await deleteMailboxEmailAliasWithHttpInfo(id, aliasId, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -2179,7 +2213,10 @@ class DefaultApi {
   ///
   /// * [String] accountId:
   ///   Select another granted account; otherwise use the credential default.
-  Future<Response> updateEmailWithHttpInfo(String mailboxId, String emailId, UpdateEmailRequest updateEmailRequest, { String? accountId, Future<void>? abortTrigger, }) async {
+  ///
+  /// * [bool] includeStorage:
+  ///   Include the related file identifiers in the updated email response.
+  Future<Response> updateEmailWithHttpInfo(String mailboxId, String emailId, UpdateEmailRequest updateEmailRequest, { String? accountId, bool? includeStorage, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
     final path = r'/v1/mailboxes/{mailbox_id}/emails/{email_id}'
       .replaceAll('{mailbox_id}', mailboxId)
@@ -2194,6 +2231,9 @@ class DefaultApi {
 
     if (accountId != null) {
       queryParams.addAll(_queryParams('', 'account_id', accountId));
+    }
+    if (includeStorage != null) {
+      queryParams.addAll(_queryParams('', 'include_storage', includeStorage));
     }
 
     const contentTypes = <String>['application/json'];
@@ -2225,8 +2265,11 @@ class DefaultApi {
   ///
   /// * [String] accountId:
   ///   Select another granted account; otherwise use the credential default.
-  Future<UpdateEmail200Response?> updateEmail(String mailboxId, String emailId, UpdateEmailRequest updateEmailRequest, { String? accountId, Future<void>? abortTrigger, }) async {
-    final response = await updateEmailWithHttpInfo(mailboxId, emailId, updateEmailRequest, accountId: accountId, abortTrigger: abortTrigger,);
+  ///
+  /// * [bool] includeStorage:
+  ///   Include the related file identifiers in the updated email response.
+  Future<UpdateEmail200Response?> updateEmail(String mailboxId, String emailId, UpdateEmailRequest updateEmailRequest, { String? accountId, bool? includeStorage, Future<void>? abortTrigger, }) async {
+    final response = await updateEmailWithHttpInfo(mailboxId, emailId, updateEmailRequest, accountId: accountId, includeStorage: includeStorage, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

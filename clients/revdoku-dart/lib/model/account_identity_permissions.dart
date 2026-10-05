@@ -62,18 +62,12 @@ class AccountIdentityPermissions {
     final json = <String, dynamic>{};
     if (this.scope != null) {
       json[r'scope'] = this.scope;
-    } else {
-      json[r'scope'] = null;
     }
     if (this.mailboxAccess != null) {
       json[r'mailbox_access'] = this.mailboxAccess;
-    } else {
-      json[r'mailbox_access'] = null;
     }
     if (this.canCreateMailboxes != null) {
       json[r'can_create_mailboxes'] = this.canCreateMailboxes;
-    } else {
-      json[r'can_create_mailboxes'] = null;
     }
     return json;
   }

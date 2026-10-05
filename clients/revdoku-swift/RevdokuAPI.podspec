@@ -4,8 +4,8 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.13'
   s.tvos.deployment_target = '11.0'
   s.watchos.deployment_target = '4.0'
-  s.version = '1.0.526'
-  s.source = { :git => 'https://github.com/revdoku/revdoku-swift.git', :tag => 'v1.0.526' }
+  s.version = '1.0.527'
+  s.source = { :git => 'https://github.com/revdoku/revdoku-swift.git', :tag => 'v1.0.527' }
   s.authors = 'Revdoku'
   s.license = { :type => 'MIT', :file => 'LICENSE' }
   s.homepage = 'https://revdoku.com'
