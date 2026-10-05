@@ -1,7 +1,7 @@
 # Revdoku agent setup
 
-Revdoku provides email inboxes for people and AI agents, with private file storage.
-Connect to create and manage inboxes, read messages and attachments, and store files.
+Revdoku provides email mailboxes for people and AI agents, with private file storage.
+Connect to create and manage mailboxes, read messages and attachments, and store files.
 Verify the account and granted access with a read, then complete the requested task.
 
 | Task | Connection |
@@ -16,7 +16,7 @@ are instructions for one of these methods; they do not require another credentia
 ## Public prompt
 
 ```text
-Connect Revdoku so you can create and manage email inboxes for my AI agents, read emails and attachments, and store files. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, check https://revdoku.com/api.md#direct-api-signup. Use API signup when you can handle my authorization and email verification privately; otherwise guide me through browser signup. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do.
+Connect Revdoku so you can create and manage email mailboxes for my AI agents, read emails and attachments, and store files. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, check https://revdoku.com/api.md#direct-api-signup. Use API signup when you can handle my authorization and email verification privately; otherwise guide me through browser signup. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do.
 ```
 
 ## Account setup
@@ -36,11 +36,11 @@ Connect Revdoku so you can create and manage email inboxes for my AI agents, rea
    [browser signup](https://app.revdoku.com/users/sign_up), then browser sign-in.
    Existing account owners use normal sign-in.
 
-Signup creates the first inbox. With API signup, save the returned API key privately
-and use the returned bucket; with CLI or MCP, list the accessible buckets after
-connecting. Reuse that inbox for the task, or create another only when needed.
+Signup creates the first mailbox. With API signup, save the returned API key privately
+and use the returned mailbox; with CLI or MCP, list the accessible mailboxes after
+connecting. Reuse that mailbox for the task, or create another only when needed.
 With write access, check `email.receiving_enabled` before sharing an address.
-Read-only connections verify access by listing authorized buckets and reading an
+Read-only connections verify access by listing authorized mailboxes and reading an
 existing message; ask the operator for the address when needed. Show the account
 ID and granted scope. Browser account switching does not change a tool credential's
 default: use an explicit `account_id` or CLI `--account-id` for the intended account.
@@ -78,7 +78,7 @@ Otherwise:
 curl -fsSL https://revdoku.com/install.sh | bash
 ```
 
-To save the requested files in a private bucket, run:
+To save the requested files in a private mailbox, run:
 
 ```sh
 revdoku upload <folder>
@@ -88,25 +88,25 @@ With `npx skills`, run the bundled `scripts/revdoku.sh` from the installed
 skill directory in place of `revdoku`; this install does not add a CLI to `PATH`.
 
 Without credentials, the CLI opens browser sign-in. Re-running the upload
-updates the same bucket. Use `revdoku files`, `revdoku read PATH`, and
+updates the same mailbox. Use `revdoku files`, `revdoku read PATH`, and
 `revdoku versions` to inspect its files and history.
 
 ## Hosted MCP agent
 
 Endpoint: `https://mcp.revdoku.com`
 
-Authenticate with OAuth before calling account tools. Choose selected buckets and
+Authenticate with OAuth before calling account tools. Choose selected mailboxes and
 read access for reading tasks; choose broader access only for the requested task.
 Call `account_list`, then `account_get` with the chosen ID, and list its authorized
-buckets. Read an existing message before making requested changes. Bucket creation
-returns its incoming email address and receiving state. For an existing bucket, use `bucket_get(include_email: true)` with write access.
-Check `receiving_enabled`, then use `bucket_email_list` with a saved `pagination.next_cursor`
-to poll. Read `eml_` IDs with `bucket_email_get`; download attachments or the original
-with `bucket_email_download`.
-If not ready, explain `blocked_reason`; do not assume a paused or unknown inbox
+mailboxes. Read an existing message before making requested changes. Mailbox creation
+returns its incoming email address and receiving state. For an existing mailbox, use `mailbox_get(include_email: true)` with write access.
+Check `receiving_enabled`, then use `mailbox_email_list` with a saved `pagination.next_cursor`
+to poll. Read `eml_` IDs with `mailbox_email_get`; download attachments or the original
+with `mailbox_email_download`.
+If not ready, explain `blocked_reason`; do not assume a paused or unknown mailbox
 can receive. Read quotas with `account_limits`. Personal
 notification frequency is managed in Account Settings → Notifications.
-See the [email contract](https://revdoku.com/api.md#incoming-email-into-a-bucket).
+See the [email contract](https://revdoku.com/api.md#incoming-email-into-a-mailbox).
 If the user has no account, follow Account setup above.
 
 If the host does not support MCP or the agent needs local/binary files, use the
@@ -130,10 +130,10 @@ Use the client-specific instructions linked from the setup hub; desktop settings
 ## Verification prompt
 
 ```text
-Confirm my Revdoku account ID and granted access. List the buckets you can access,
+Confirm my Revdoku account ID and granted access. List the mailboxes you can access,
 ask which to use, and read its latest message if one exists. Do not change anything.
 ```
 
-A bucket-wide edit lock blocks incoming email. Prefer individual file locks or
-revision checks while an inbox is receiving. Human administrators inspect receiving
+A mailbox-wide edit lock blocks incoming email. Prefer individual file locks or
+revision checks while an mailbox is receiving. Human administrators inspect receiving
 holds and logs in the dashboard.

@@ -1,0 +1,6045 @@
+openapi: 3.0.3
+info:
+  description: "Email mailboxes for people and AI agents, with private file storage.\
+    \ Create mailboxes, read messages and attachments, and store additional files.\
+    \ Direct API signup requires verification of the human operator email. This document\
+    \ covers selected endpoints; see https://revdoku.com/api.md for the complete API."
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Revdoku public agent API
+  version: 1.0.526
+servers:
+- description: Revdoku application API
+  url: https://api.revdoku.com
+paths:
+  /v1/status:
+    get:
+      operationId: getRevdokuStatus
+      parameters:
+      - description: Select a granted account for this request only; omit for the
+          credential's default account.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: reason
+        required: false
+        schema:
+          $ref: "#/components/schemas/ActionReason"
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getRevdokuStatus_200_response"
+          description: "Current account, account types, client names, accessible parent\
+            \ agencies, fixed credential default, and granted accounts."
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Read current account identity and granted accounts
+  /v1/agent_auth/capabilities:
+    get:
+      description: "Reports available sign-in flows and signup availability, current\
+        \ consent version, required human_operator_email and allowed scopes. Never\
+        \ creates an account."
+      operationId: getAgentAuthCapabilities
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiSuccess"
+          description: Authentication capabilities
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security: []
+      summary: Discover Revdoku agent authentication flows
+  /v1/accounts:
+    get:
+      operationId: listAccounts
+      parameters:
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 500
+          minimum: 1
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listAccounts_200_response"
+          description: Granted account data. Selecting an account never changes the
+            credential default.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: List accounts granted to this credential
+    post:
+      operationId: createClientAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createClientAccount_request"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/createClientAccount_201_response"
+          description: Created client identity with its granted parent in data.account.
+            The credential default is unchanged.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Agency owner authorization required or account capacity reached
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Create a client account within an authorized agency
+  /v1/mailboxes/{id}/email:
+    get:
+      description: "Requires upload/write access. Anyone knowing the address can send;\
+        \ reading files requires mailbox authorization. Original message.eml, decoded\
+        \ message.json, and attachments are stored together."
+      operationId: getMailboxEmailSettings
+      parameters:
+      - description: Authorized mailbox prefix ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Explicitly granted account; omission uses credential default
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: reason
+        required: false
+        schema:
+          $ref: "#/components/schemas/ActionReason"
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getMailboxEmailSettings_200_response"
+          description: Mailbox email configuration
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Mailbox upload access required
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Mailbox unavailable
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Read a mailbox email address and limits
+  /v1/mailboxes/{id}/email/rotate:
+    post:
+      description: "Requires write access and confirmation. Rotations stay on the\
+        \ current domain unless domain is supplied. A ready custom domain requires\
+        \ account eligibility and exact tenant ownership; platform recovers to the\
+        \ default platform domain. Custom activation returns 202; poll the existing\
+        \ email endpoint until assignment.status is active or failed. The old address\
+        \ remains current until successful commit, which charges once. Read /v1/account/limits\
+        \ for the rotation allowance; do not hard-code plan allowances. Never use\
+        \ or synthesize a pending address. Optional username chooses a custom name\
+        \ and additionally requires a full-account owner/administrator, an available\
+        \ platform domain or a ready customer-owned domain (with deployment support\
+        \ for custom domains). Blank/null names are invalid. Unchanged saves cost\
+        \ no rotation. Named addresses may be reused only in their original account\
+        \ once no primary, alias or pending assignment holds them; archived mailboxes\
+        \ retain addresses. Retired addresses do not forward. Assignment history survives\
+        \ mailbox deletion. Optional keep_old_as_alias retains the old primary for\
+        \ the same mailbox, requiring full-account administrator access and an available\
+        \ alias slot. Free has no aliases; query account limits for the effective\
+        \ cap. Retention commits atomically with activation."
+      operationId: rotateMailboxEmailAddress
+      parameters:
+      - description: Authorized mailbox prefix ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/rotateMailboxEmailAddress_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getMailboxEmailSettings_200_response"
+          description: Mailbox email configuration
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Write access required; custom names additionally require full-account
+            owner/administrator access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Mailbox unavailable
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Address changed, assignment pending/conflicting, custom name\
+            \ unavailable, custom domain unavailable, or named assignments disabled.\
+            \ Read the structured error code and reread state before retrying."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Confirmation/current address missing, or EMAIL_NAME_INVALID."
+        "423":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Account is read-only
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: EMAIL_ROTATION_LIMIT; plan disallows rotation or monthly allowance
+            is exhausted.
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getMailboxEmailSettings_200_response"
+          description: Pending activation. The returned address is still the current
+            address. Poll GET email.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Replace a mailbox email address after confirmation
+  /v1/mailboxes:
+    get:
+      operationId: listMailboxes
+      parameters:
+      - description: Select another granted account; otherwise use the credential
+          default.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: archived
+        required: false
+        schema:
+          default: false
+          type: boolean
+        style: form
+      - explode: true
+        in: query
+        name: q
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listMailboxes_200_response"
+          description: Success
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: List accessible mailboxes
+    post:
+      description: "Creates a mailbox with file storage and waits for receiving confirmation.\
+        \ Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY\
+        \ includes the retained mailbox_id. Creation quotas apply."
+      operationId: createMailbox
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createMailbox_request"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  mailbox:
+                    id: bkt_example
+                    email:
+                      address: acme-orders@revdokumail.com
+                      receiving_enabled: true
+                      sending_enabled: false
+              schema:
+                $ref: "#/components/schemas/createMailbox_201_response"
+          description: Created mailbox with its confirmed receiving address.
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/createMailbox_201_response"
+          description: Created mailbox with its confirmed receiving address.
+        "401":
+          content:
+            application/json:
+              example:
+                success: false
+                error:
+                  code: UNAUTHORIZED
+                  message: Authentication required
+                  request_id: req_example
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Missing, invalid or expired API credential."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "EMAIL_NOT_READY: receiving could not be confirmed within 25\
+            \ seconds. error.details.mailbox_id identifies the retained mailbox; do\
+            \ not create a replacement blindly."
+      security:
+      - bearerAuth: []
+      summary: Create a mailbox with a ready receiving address
+  /v1/mailboxes/{id}:
+    get:
+      description: "Read mailbox details. List files, emails, versions and account\
+        \ limits through their separate endpoints."
+      operationId: getMailbox
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Requires upload/write access. Omission exposes activity only.
+        explode: true
+        in: query
+        name: include_email
+        required: false
+        schema:
+          default: false
+          type: boolean
+        style: form
+      - explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: reason
+        required: false
+        schema:
+          $ref: "#/components/schemas/ActionReason"
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/createMailbox_201_response"
+          description: Mailbox details including email address/receiving state when
+            authorized.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Requested address requires upload/write access.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Read mailbox activity and optionally its incoming address
+  /v1/account/email_domains:
+    get:
+      description: Full-account owner/administrator authorization required. Cookie-authenticated
+        writes require CSRF. Check the returned domain setup availability. Never change
+        customer DNS without explicit authorization.
+      operationId: listAccountEmailDomains
+      parameters:
+      - description: Explicit granted account for this call; omission uses the credential
+          account.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: reason
+        required: false
+        schema:
+          $ref: "#/components/schemas/ActionReason"
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiSuccess"
+          description: Current domain configuration or result
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Account admin/full-account access or domain setup entitlement
+            required
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Domain is still in use
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Invalid hostname, DNS conflict, or missing confirmation"
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Setup rate limit; follow Retry-After
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Temporary provider/DNS error; details.retryable is true
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: "List account email domains, DNS records, receiving state and usage"
+    post:
+      description: Full-account owner/administrator authorization required. Cookie-authenticated
+        writes require CSRF. Check the returned domain setup availability. Never change
+        customer DNS without explicit authorization.
+      operationId: createAccountEmailDomain
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createAccountEmailDomain_request"
+        required: true
+      responses:
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Account admin/full-account access or domain setup entitlement
+            required
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Domain is still in use
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Invalid hostname, DNS conflict, or missing confirmation"
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Setup rate limit; follow Retry-After
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Temporary provider/DNS error; details.retryable is true
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiSuccess"
+          description: Exact domain claim created; add returned ownership TXT and
+            verify.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Claim an exact email domain
+  /v1/account/email_domains/{id}:
+    delete:
+      description: Full-account owner/administrator authorization required. Cookie-authenticated
+        writes require CSRF. Check the returned domain setup availability. Never change
+        customer DNS without explicit authorization.
+      operationId: removeAccountEmailDomain
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/removeAccountEmailDomain_request"
+        required: true
+      responses:
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Account admin/full-account access or domain setup entitlement
+            required
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Domain is still in use
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Invalid hostname, DNS conflict, or missing confirmation"
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Setup rate limit; follow Retry-After
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Temporary provider/DNS error; details.retryable is true
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiSuccess"
+          description: Verification/removal queued; poll the resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Remove unused receiving domain after confirmation
+    get:
+      description: Full-account owner/administrator authorization required. Cookie-authenticated
+        writes require CSRF. Check the returned domain setup availability. Never change
+        customer DNS without explicit authorization.
+      operationId: getAccountEmailDomain
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Explicit granted account for this call; omission uses the credential
+          account.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: reason
+        required: false
+        schema:
+          $ref: "#/components/schemas/ActionReason"
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiSuccess"
+          description: Current domain configuration or result
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Account admin/full-account access or domain setup entitlement
+            required
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Domain is still in use
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Invalid hostname, DNS conflict, or missing confirmation"
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Setup rate limit; follow Retry-After
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Temporary provider/DNS error; details.retryable is true
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Read exact domain setup state
+  /v1/account/email_domains/{id}/verify:
+    post:
+      description: Full-account owner/administrator authorization required. Cookie-authenticated
+        writes require CSRF. Check the returned domain setup availability. Never change
+        customer DNS without explicit authorization.
+      operationId: verifyAccountEmailDomain
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/verifyAccountEmailDomain_request"
+        required: false
+      responses:
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Account admin/full-account access or domain setup entitlement
+            required
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Domain is still in use
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Invalid hostname, DNS conflict, or missing confirmation"
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Setup rate limit; follow Retry-After
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Temporary provider/DNS error; details.retryable is true
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiSuccess"
+          description: Verification/removal queued; poll the resource
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: "Queue exact ownership, SES and MX verification"
+  /v1/account/email_domains/check:
+    post:
+      description: "Requires full-account owner/administrator access. Checks the exact\
+        \ hostname for conflicting MX or CNAME records without creating a claim or\
+        \ changing DNS. If the root already receives email elsewhere, use an unused\
+        \ subdomain such as mailbox.yourdomain.com. Cookie-authenticated requests\
+        \ require CSRF."
+      operationId: checkEmailHostname
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createAccountEmailDomain_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiSuccess"
+          description: Current domain configuration or result
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Account admin/full-account access or domain setup entitlement
+            required
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Domain is still in use
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Invalid hostname, DNS conflict, or missing confirmation"
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Setup rate limit; follow Retry-After
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Temporary provider/DNS error; details.retryable is true
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Check a domain hostname and existing DNS routing
+  /v1/mailboxes/{id}/files:
+    get:
+      operationId: listMailboxFiles
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Default and maximum 100.
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 100
+          maximum: 100
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: reason
+        required: false
+        schema:
+          $ref: "#/components/schemas/ActionReason"
+        style: form
+      - explode: true
+        in: query
+        name: q
+        required: false
+        schema:
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: folder
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Select another granted account; otherwise use the credential
+          default.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listMailboxFiles_200_response"
+          description: Success
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Mailbox or email unavailable to this caller.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: List files or related email without marking read
+  /v1/mailboxes/{mailbox_id}/emails:
+    get:
+      description: "Requires mailbox read permission. Ascending arrival order supports\
+        \ incremental polling: retain next_cursor even after an empty page. Reuse\
+        \ account, mailbox and filters. Late receipt timestamps are included. Descending\
+        \ order browses history. Edits/read changes/restorations do not replay earlier\
+        \ arrivals. Listing does not mark read."
+      operationId: listEmails
+      parameters:
+      - explode: false
+        in: path
+        name: mailbox_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Select another granted account; otherwise use the credential
+          default.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Maximum messages on this page.
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 50
+          maximum: 100
+          minimum: 1
+          type: integer
+        style: form
+      - description: Opaque next_cursor from a previous page.
+        explode: true
+        in: query
+        name: cursor
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Arrival order.
+        explode: true
+        in: query
+        name: order
+        required: false
+        schema:
+          default: asc
+          enum:
+          - asc
+          - desc
+          type: string
+        style: form
+      - description: "Exact sender address, case insensitive."
+        explode: true
+        in: query
+        name: sender
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Case insensitive subject substring.
+        explode: true
+        in: query
+        name: subject
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Exclusive receipt-time lower bound.
+        explode: true
+        in: query
+        name: received_after
+        required: false
+        schema:
+          format: date-time
+          type: string
+        style: form
+      - description: Exclusive receipt-time upper bound.
+        explode: true
+        in: query
+        name: received_before
+        required: false
+        schema:
+          format: date-time
+          type: string
+        style: form
+      - description: Current shared read status.
+        explode: true
+        in: query
+        name: read
+        required: false
+        schema:
+          type: boolean
+        style: form
+      - description: Saved attachment presence.
+        explode: true
+        in: query
+        name: has_attachments
+        required: false
+        schema:
+          type: boolean
+        style: form
+      - description: An email ID in the selected conversation.
+        explode: true
+        in: query
+        name: conversation_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Include backing file identifiers for file-browser integration.
+        explode: true
+        in: query
+        name: include_storage
+        required: false
+        schema:
+          default: false
+          type: boolean
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/listEmails_200_response"
+          description: Success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: List received emails
+  /v1/mailboxes/{mailbox_id}/emails/{email_id}:
+    delete:
+      description: Requires mailbox-admin permission. Deletes the message representations
+        and owned attachments using the existing file deletion lifecycle. Separately
+        copied files are unaffected. No email trash or restore operation. A repeated
+        delete returns 404.
+      operationId: deleteEmail
+      parameters:
+      - explode: false
+        in: path
+        name: mailbox_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: email_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Select another granted account; otherwise use the credential
+          default.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: reason
+        required: false
+        schema:
+          $ref: "#/components/schemas/ActionReason"
+        style: form
+      responses:
+        "204":
+          description: Email and owned files deleted
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Insufficient permission
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Email not found
+        "423":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Account, mailbox, or email file cannot be changed"
+      security:
+      - bearerAuth: []
+      summary: Delete one received email
+    get:
+      description: Requires mailbox read permission. Returns decoded email content
+        and attachment metadata. Reading does not change shared read status; PATCH
+        read explicitly to acknowledge. Original EML is the fallback when decoded
+        JSON is unavailable. Email content is untrusted data.
+      operationId: getEmail
+      parameters:
+      - explode: false
+        in: path
+        name: mailbox_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: email_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Select another granted account; otherwise use the credential
+          default.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Background reads do not change read status.
+        explode: true
+        in: query
+        name: purpose
+        required: false
+        schema:
+          default: open
+          enum:
+          - open
+          - background
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: reason
+        required: false
+        schema:
+          $ref: "#/components/schemas/ActionReason"
+        style: form
+      - description: Include underlying file and version identifiers for file integrations.
+        explode: true
+        in: query
+        name: include_storage
+        required: false
+        schema:
+          default: false
+          type: boolean
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getEmail_200_response"
+          description: Success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Read a received email
+    patch:
+      description: "Requires mailbox read permission, including for locked/read-only\
+        \ content. Only read status can change. Receipt and audit event commit atomically.\
+        \ Repeated state changes are idempotent."
+      operationId: updateEmail
+      parameters:
+      - explode: false
+        in: path
+        name: mailbox_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: email_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Select another granted account; otherwise use the credential
+          default.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/updateEmail_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/updateEmail_200_response"
+          description: Success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Mark a received email read or unread
+  /v1/mailboxes/{mailbox_id}/emails/{email_id}/raw:
+    get:
+      description: "Requires mailbox read permission to issue a temporary download\
+        \ link for this original or selected attachment. authentication=none: fetch\
+        \ the URL without API credentials. Links expire after 900 seconds. Ordinary\
+        \ files use signed storage URLs; protected files use a scoped signed API URL\
+        \ that rechecks access before decrypting. Downloads do not change shared read\
+        \ status. No attachment extraction or analysis is performed."
+      operationId: downloadEmailOriginal
+      parameters:
+      - explode: false
+        in: path
+        name: mailbox_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: email_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Select another granted account; otherwise use the credential
+          default.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Background reads do not change read status.
+        explode: true
+        in: query
+        name: purpose
+        required: false
+        schema:
+          default: open
+          enum:
+          - open
+          - background
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: reason
+        required: false
+        schema:
+          $ref: "#/components/schemas/ActionReason"
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/downloadEmailOriginal_200_response"
+            application/octet-stream:
+              schema:
+                format: binary
+                type: string
+          description: Success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "413":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Get the original EML download
+  /v1/mailboxes/{mailbox_id}/emails/{email_id}/attachments/{attachment_id}:
+    get:
+      description: "Requires mailbox read permission to issue a temporary download\
+        \ link for this original or selected attachment. authentication=none: fetch\
+        \ the URL without API credentials. Links expire after 900 seconds. Ordinary\
+        \ files use signed storage URLs; protected files use a scoped signed API URL\
+        \ that rechecks access before decrypting. Downloads do not change shared read\
+        \ status. No attachment extraction or analysis is performed."
+      operationId: downloadEmailAttachment
+      parameters:
+      - explode: false
+        in: path
+        name: mailbox_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: email_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: attachment_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Select another granted account; otherwise use the credential
+          default.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Background reads do not change read status.
+        explode: true
+        in: query
+        name: purpose
+        required: false
+        schema:
+          default: open
+          enum:
+          - open
+          - background
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: reason
+        required: false
+        schema:
+          $ref: "#/components/schemas/ActionReason"
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/downloadEmailOriginal_200_response"
+            application/octet-stream:
+              schema:
+                format: binary
+                type: string
+          description: Success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "413":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Get an email attachment download
+  /v1/mailboxes/{id}/email/allowlist:
+    patch:
+      description: "Requires account owner/administrator and mailbox-admin permission.\
+        \ Read sender_allowlist.version from GET /mailboxes/{id}/email first. Entries\
+        \ match exact authenticated From addresses or domains, with no wildcards or\
+        \ implicit subdomains. A stale or missing version returns EMAIL_ALLOWLIST_CHANGED;\
+        \ invalid entries return EMAIL_ALLOWLIST_INVALID. Disabled policies retain\
+        \ the supplied entries. Locks and read-only account state apply."
+      operationId: updateMailboxEmailAllowlist
+      parameters:
+      - description: Authorized mailbox prefix ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Explicitly granted account; omission uses credential default
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: reason
+        required: false
+        schema:
+          $ref: "#/components/schemas/ActionReason"
+        style: form
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/updateMailboxEmailAllowlist_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/updateMailboxEmailAllowlist_200_response"
+          description: Updated allowed senders
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Account administrator and mailbox-admin permission required
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Mailbox not found
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: EMAIL_ALLOWLIST_CHANGED
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: EMAIL_ALLOWLIST_INVALID
+        "423":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Account or mailbox locked
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Replace the allowed senders for a mailbox
+  /v1/accounts/{id}:
+    get:
+      operationId: getAccount
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getAccount_200_response"
+          description: Granted account data. Selecting an account never changes the
+            credential default.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Read one granted account
+  /v1/agent/signups:
+    post:
+      description: "Available only when data.signup.available is true in discovery.\
+        \ Requests use uncompressed JSON at most 8 KiB. IP/global request limits run\
+        \ before challenge lookup; canonical-email send limits are shared with browser\
+        \ and legacy sign-in. Returns a private signup_token and emails an OTP. Creates\
+        \ no user, account, mailbox, API key or address reservation before proof.\
+        \ MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify\
+        \ and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use\
+        \ browser OAuth."
+      operationId: startAgentSignup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/startAgentSignup_request"
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/startAgentSignup_202_response"
+          description: "Pending signup; keep signup_token private. Cache-Control:\
+            \ no-store."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "413":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security: []
+      summary: Start signup with the human operator’s email
+  /v1/agent/signups/verify:
+    post:
+      description: "Requires the signup_token and privately entered OTP. Five attempts\
+        \ per challenge, ten per IP/canonical email per 15 minutes; challenge expires\
+        \ after ten minutes. Existing identities must use normal sign-in after proof,\
+        \ preserving 2FA and suspension. A name conflict can be corrected using username\
+        \ in the same verified session without another OTP. No-store. A successful\
+        \ replay returns completed IDs without the key; recover through normal sign-in\
+        \ and connection management."
+      operationId: verifyAgentSignup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/verifyAgentSignup_request"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/verifyAgentSignup_201_response"
+          description: Created user/account/mailbox and one scoped connection
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/verifyAgentSignup_200_response"
+          description: Already completed; no key replay
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "413":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security: []
+      summary: Verify the human’s code and create the first mailbox
+  /v1/agent/signups/resend:
+    post:
+      description: "Requires signup_token. Replaces the old code without resetting\
+        \ attempts or the ten-minute expiry. Enforces the 60-second canonical-email\
+        \ cooldown, three API-signup sends per 30 minutes, shared three sends per\
+        \ five minutes, and global hourly send cap. Return 429 with Retry-After when\
+        \ limited; never automatically restart the flow to bypass a limit."
+      operationId: resendAgentSignupCode
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/resendAgentSignupCode_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/startAgentSignup_202_response"
+          description: Pending challenge with remaining timers; no-store
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "413":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "415":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security: []
+      summary: Resend the human operator’s verification code
+  /v1/account/limits:
+    get:
+      description: For the selected account. Uses the same plan and overrides as enforcement.
+        Limits are not repeated in mailbox responses. Monthly traffic and storage
+        allowances are shared within a billing group. Zero means none; null means
+        no cap for that field.
+      operationId: getAccountLimits
+      parameters:
+      - description: Select another granted account; otherwise use the credential
+          default.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getAccountLimits_200_response"
+          description: Effective limits
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      summary: Read effective mailbox and file storage limits
+  /v1/mailboxes/{mailbox_id}/email/webhook:
+    delete:
+      description: Requires mailbox admin permission. Cancels queued attempts; a request
+        already in flight may finish.
+      operationId: deleteEmailWebhook
+      parameters:
+      - explode: false
+        in: path
+        name: mailbox_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Select another granted account; otherwise use the credential
+          default.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "204":
+          description: Webhook disabled
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Disable a mailbox webhook
+    get:
+      description: Requires mailbox admin permission. Returns null when disabled;
+        never includes the signing secret.
+      operationId: getEmailWebhook
+      parameters:
+      - explode: false
+        in: path
+        name: mailbox_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Select another granted account; otherwise use the credential
+          default.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getEmailWebhook_200_response"
+          description: Success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Read a mailbox webhook endpoint
+    put:
+      description: "Requires mailbox admin permission. Public HTTPS, including explicit\
+        \ ports such as 8443. Generates an encrypted signing secret, returned here.\
+        \ Same-URL updates retain it; replacing the URL rotates it and cancels pending\
+        \ old-version deliveries. Events are signed and retried up to eight attempts\
+        \ on transient failure; duplicates are possible. Worker-crash recovery is\
+        \ bounded to 24 hours from event creation. Exhausted and permanent failures\
+        \ require operator review."
+      operationId: setEmailWebhook
+      parameters:
+      - explode: false
+        in: path
+        name: mailbox_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/setEmailWebhook_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/setEmailWebhook_200_response"
+          description: Success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Configure one received-email webhook per mailbox
+  /v1/mailboxes/{mailbox_id}/email/subscription:
+    get:
+      description: "Requires mailbox read permission. Connect to the returned websocket_url\
+        \ with email_subscription_token=TICKET using actioncable-v1-json within 60\
+        \ seconds. Subscribe to EmailReceivedChannel with the returned account_id/mailbox_id.\
+        \ Frames contain EmailReceivedEvent in message. Live only: after confirmation\
+        \ and on reconnect, catch up using existing ascending email arrival cursors."
+      operationId: getEmailSubscription
+      parameters:
+      - explode: false
+        in: path
+        name: mailbox_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Select another granted account; otherwise use the credential
+          default.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getEmailSubscription_200_response"
+          description: Success
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Get a short-lived Action Cable ticket for local email monitoring
+  /v1/mailboxes/{id}/email/aliases/{alias_id}:
+    delete:
+      description: "Requires a full-account owner/administrator with mailbox-admin\
+        \ access. Immediately revokes this alias, including queued deliveries. Retains\
+        \ existing messages and the permanent address reservation. Returns updated\
+        \ mailbox settings."
+      operationId: deleteMailboxEmailAlias
+      parameters:
+      - description: Authorized mailbox prefix ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Alias ID from mailbox settings
+        explode: false
+        in: path
+        name: alias_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getMailboxEmailSettings_200_response"
+          description: Mailbox email configuration
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Full-account owner/administrator with mailbox-admin access
+            required.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Mailbox or alias unavailable.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Mailbox locked or unavailable for changes.
+        "423":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Account is read-only
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Remove one email alias
+  /v1/mailboxes/{id}/email/aliases:
+    post:
+      description: "Requires a full-account owner/administrator with mailbox-admin\
+        \ access and an available alias slot. Accepts a username on an available platform\
+        \ domain or a ready domain owned by this account. Leaves the primary address\
+        \ unchanged and does not consume a rotation. Returns 202 while receiving registration\
+        \ is pending; read mailbox settings until receiving_enabled is true. After\
+        \ an uncertain response, read existing aliases before retrying."
+      operationId: createMailboxEmailAlias
+      parameters:
+      - description: Authorized mailbox prefix ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/createMailboxEmailAlias_request"
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/getMailboxEmailSettings_200_response"
+          description: Updated mailbox settings; receiving registration is pending.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Full-account owner/administrator with mailbox-admin access
+            required.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Alias limit, address conflict, domain unavailable, or another\
+            \ address change pending."
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: Invalid username or domain.
+      security:
+      - bearerAuth: []
+      summary: Add an email alias to an mailbox
+components:
+  parameters:
+    AccountId:
+      description: Select another granted account; otherwise use the credential default.
+      explode: true
+      in: query
+      name: account_id
+      required: false
+      schema:
+        type: string
+      style: form
+    Purpose:
+      description: Background reads do not change read status.
+      explode: true
+      in: query
+      name: purpose
+      required: false
+      schema:
+        default: open
+        enum:
+        - open
+        - background
+        type: string
+      style: form
+    Reason:
+      explode: true
+      in: query
+      name: reason
+      required: false
+      schema:
+        $ref: "#/components/schemas/ActionReason"
+      style: form
+  responses:
+    ApiError:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+      description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+        \ includes Retry-After: 5."
+  schemas:
+    AccountIdentity:
+      example:
+        id: id
+        name: name
+        account_kind: standard
+        client_name: client_name
+        agency_account:
+          id: id
+          name: name
+        region: region
+        status: active
+        permissions:
+          scope: scope
+          mailbox_access: mailbox_access
+          can_create_mailboxes: true
+      properties:
+        id:
+          type: string
+        name:
+          description: "Account name, separate from the client person or business."
+          type: string
+        account_kind:
+          enum:
+          - standard
+          - agency
+          - client
+          type: string
+        client_name:
+          description: "Client person or business name, or null when unset."
+          maxLength: 100
+          nullable: true
+          type: string
+        agency_account:
+          $ref: "#/components/schemas/AccountIdentity_agency_account"
+        region:
+          nullable: true
+          type: string
+        status:
+          enum:
+          - active
+          - read_only
+          type: string
+        permissions:
+          $ref: "#/components/schemas/AccountIdentity_permissions"
+      required:
+      - account_kind
+      - agency_account
+      - client_name
+      - id
+      - name
+      type: object
+    MailboxEmail:
+      description: Receiving address/state on creation and authorized opt-in reads.
+        Ordinary mailbox reads expose activity only; use the emails collection for
+        a durable arrival cursor.
+      example:
+        address: address
+        received_count: 0
+        last_received_at: 2000-01-23T04:56:07.000+00:00
+        last_received_path: last_received_path
+        blocked_reason: blocked_reason
+        available_domains:
+        - hostname: hostname
+          kind: platform
+        - hostname: hostname
+          kind: platform
+        assignment:
+          id: id
+          status: pending
+          hostname: hostname
+          error:
+            code: code
+            message: message
+            retryable: true
+        customization:
+          allowed: true
+          blocked_reason: blocked_reason
+          settings_url: settings_url
+        receiving_enabled: true
+        sender_allowlist:
+          enabled: true
+          entries:
+          - entries
+          - entries
+          - entries
+          - entries
+          - entries
+          version: version
+          max_entries: 6
+          editable: true
+        username: username
+        sending_enabled: true
+        aliases:
+        - id: id
+          address: address
+          active: true
+        - id: id
+          address: address
+          active: true
+      properties:
+        address:
+          nullable: true
+          type: string
+        received_count:
+          minimum: 0
+          type: integer
+        last_received_at:
+          format: date-time
+          nullable: true
+          type: string
+        last_received_path:
+          description: Latest message folder with trailing slash; null before receipt.
+            May become stale after manual file moves/deletion.
+          nullable: true
+          type: string
+        blocked_reason:
+          description: Why receiving is unavailable; omitted when receiving_enabled
+            is true.
+          nullable: true
+          type: string
+        available_domains:
+          items:
+            $ref: "#/components/schemas/MailboxEmail_available_domains_inner"
+          type: array
+        assignment:
+          $ref: "#/components/schemas/MailboxEmail_assignment"
+        customization:
+          $ref: "#/components/schemas/MailboxEmail_customization"
+        receiving_enabled:
+          description: "Whether this mailbox can currently receive email. False when\
+            \ configuration, account state, quota or routing prevents receiving."
+          type: boolean
+        sender_allowlist:
+          $ref: "#/components/schemas/EmailSenderAllowlist"
+        username:
+          nullable: true
+          type: string
+        sending_enabled:
+          description: Always false. Sending is not implemented.
+          type: boolean
+        aliases:
+          items:
+            $ref: "#/components/schemas/MailboxEmail_aliases_inner"
+          type: array
+      type: object
+    MailboxEmailActivity:
+      properties:
+        received_count:
+          minimum: 0
+          type: integer
+        last_received_at:
+          format: date-time
+          nullable: true
+          type: string
+        last_received_path:
+          description: Latest message folder with trailing slash; null before receipt.
+            May become stale after manual file moves/deletion.
+          nullable: true
+          type: string
+      type: object
+    DecodedEmailAddress:
+      example:
+        address: address
+        name: name
+      properties:
+        address:
+          type: string
+        name:
+          nullable: true
+          type: string
+      required:
+      - address
+      - name
+      type: object
+    DecodedIncomingMessage:
+      description: "Stored message.json, not a dedicated endpoint. UTF-8, at most\
+        \ 512 KiB. Header identities, reply relationships and body are untrusted message\
+        \ data. Original message.eml is authoritative. Structured address, delivery\
+        \ and thread fields are additive in schema v1 and may be absent in older files."
+      properties:
+        schema_version:
+          enum:
+          - 1
+          type: integer
+        subject:
+          nullable: true
+          type: string
+        from:
+          nullable: true
+          type: string
+        to:
+          nullable: true
+          type: string
+        from_addresses:
+          description: "Parsed From authors in header order, retaining multiple authors.\
+            \ Empty when absent/unparseable. Display names are not identity keys."
+          items:
+            $ref: "#/components/schemas/DecodedEmailAddress"
+          type: array
+        to_addresses:
+          description: "Parsed To recipients in header order, with named groups flattened.\
+            \ Empty when absent/unparseable; not trusted delivery routing."
+          items:
+            $ref: "#/components/schemas/DecodedEmailAddress"
+          type: array
+        cc_addresses:
+          description: "Parsed Cc recipients in header order, with named groups flattened.\
+            \ Empty when absent/unparseable."
+          items:
+            $ref: "#/components/schemas/DecodedEmailAddress"
+          type: array
+        reply_to_addresses:
+          description: Parsed Reply-To addresses in header order. Empty when absent/unparseable.
+            Does not authorize sending a reply.
+          items:
+            $ref: "#/components/schemas/DecodedEmailAddress"
+          type: array
+        message_id:
+          description: "Sender Message-ID without angle brackets, preserving case.\
+            \ Null when absent/unparseable/ambiguous; never the Revdoku delivery ID."
+          nullable: true
+          type: string
+        in_reply_to:
+          description: "Ordered parent Message-IDs without angle brackets, preserving\
+            \ case. Empty when absent/unparseable; multiple parents are retained."
+          items:
+            type: string
+          type: array
+        references:
+          description: "Ordered References IDs without angle brackets, preserving\
+            \ case. Empty when absent/unparseable."
+          items:
+            type: string
+          type: array
+        delivery_id:
+          description: "Revdoku delivery identity, matching email_delivery_id metadata\
+            \ and the original folder suffix. Stable on retries, independent of Message-ID.\
+            \ Copies retain the source identity; not a unique file/copy ID."
+          pattern: "^[0-9a-f]{32}$"
+          type: string
+        thread_id:
+          description: "thr_ plus SHA-256 of thread_anchor_message_id. Best-effort\
+            \ header-derived grouping hint, not authoritative conversation membership\
+            \ or an access grant. Missing ancestry or reused IDs can split/merge hints.\
+            \ Scope lookups to accessible mailboxes."
+          nullable: true
+          pattern: "^thr_[0-9a-f]{64}$"
+          type: string
+        thread_id_source:
+          enum:
+          - references
+          - in_reply_to
+          - message_id
+          - null
+          nullable: true
+          type: string
+        thread_anchor_message_id:
+          description: "First References ID, otherwise the sole In-Reply-To ID, otherwise\
+            \ this message's ID if no parent is available. Null without an anchor\
+            \ or when multiple parents lack References."
+          nullable: true
+          type: string
+        delivered_to:
+          type: string
+        received_at:
+          format: date-time
+          type: string
+        body_text:
+          nullable: true
+          type: string
+        body_status:
+          enum:
+          - complete
+          - empty
+          - truncated
+          - unavailable
+          type: string
+        omitted_attachment_count:
+          minimum: 1
+          type: integer
+        attachments:
+          items:
+            $ref: "#/components/schemas/DecodedIncomingMessage_attachments_inner"
+          type: array
+        forwarding:
+          $ref: "#/components/schemas/EmailForwardingContent"
+      required:
+      - attachments
+      - body_status
+      - body_text
+      - delivered_to
+      - from
+      - received_at
+      - schema_version
+      - subject
+      - to
+      type: object
+    ActionReason:
+      description: "Optional purpose for this action. AI agents should explain intentional\
+        \ reads and changes when known; omit when unknown. Do not include secrets,\
+        \ file contents, or transcripts."
+      maxLength: 2000
+      nullable: true
+      type: string
+    ApiError:
+      example:
+        success: true
+        error:
+          code: code
+          message: message
+          details: ""
+          request_id: request_id
+          docs_url: https://openapi-generator.tech
+          timestamp: 2000-01-23T04:56:07.000+00:00
+          recoverable: true
+          next_action: next_action
+          browser_url: browser_url
+      not:
+        $ref: "#/components/schemas/ApiError_not"
+      properties:
+        success:
+          type: boolean
+        error:
+          $ref: "#/components/schemas/ApiError_error"
+      required:
+      - error
+      - success
+      type: object
+    EmailPagination:
+      example:
+        limit: 56
+        has_more: true
+        next_cursor: next_cursor
+      properties:
+        limit:
+          maximum: 100
+          minimum: 1
+          type: integer
+        has_more:
+          type: boolean
+        next_cursor:
+          type: string
+      required:
+      - has_more
+      - limit
+      - next_cursor
+      type: object
+    EmailSummary:
+      example:
+        schema_version: 0
+        subject: subject
+        from: from
+        to: to
+        from_addresses:
+        - address: address
+          name: name
+        - address: address
+          name: name
+        to_addresses:
+        - address: address
+          name: name
+        - address: address
+          name: name
+        cc_addresses:
+        - address: address
+          name: name
+        - address: address
+          name: name
+        reply_to_addresses:
+        - address: address
+          name: name
+        - address: address
+          name: name
+        message_id: message_id
+        in_reply_to:
+        - in_reply_to
+        - in_reply_to
+        references:
+        - references
+        - references
+        thread_id: thread_id
+        delivered_to: delivered_to
+        received_at: 2000-01-23T04:56:07.000+00:00
+        body_status: complete
+        omitted_attachment_count: 1
+        id: id
+        conversation_id: conversation_id
+        file_id: file_id
+        version_id: version_id
+        attachment_count: 0
+        read: true
+        read_at: 2000-01-23T04:56:07.000+00:00
+        read_by: "{}"
+        read_by_api_key: "{}"
+        files:
+          body_id: body_id
+          original_id: original_id
+          attachment_ids:
+          - attachment_ids
+          - attachment_ids
+        forwarding:
+          method: method
+          member_id: member_id
+          member_email: member_email
+          intake_account_id: intake_account_id
+          outer_from: outer_from
+          outer_subject: outer_subject
+          outer_message_id: outer_message_id
+          original_date_raw: original_date_raw
+          original_sent_at: original_sent_at
+          attribution: member_forwarded
+          parser_version: 1
+      properties:
+        schema_version:
+          enum:
+          - 1
+          type: integer
+        subject:
+          nullable: true
+          type: string
+        from:
+          nullable: true
+          type: string
+        to:
+          nullable: true
+          type: string
+        from_addresses:
+          description: "Parsed From authors in header order, retaining multiple authors.\
+            \ Empty when absent/unparseable. Display names are not identity keys."
+          items:
+            $ref: "#/components/schemas/DecodedEmailAddress"
+          type: array
+        to_addresses:
+          description: "Parsed To recipients in header order, with named groups flattened.\
+            \ Empty when absent/unparseable; not trusted delivery routing."
+          items:
+            $ref: "#/components/schemas/DecodedEmailAddress"
+          type: array
+        cc_addresses:
+          description: "Parsed Cc recipients in header order, with named groups flattened.\
+            \ Empty when absent/unparseable."
+          items:
+            $ref: "#/components/schemas/DecodedEmailAddress"
+          type: array
+        reply_to_addresses:
+          description: Parsed Reply-To addresses in header order. Empty when absent/unparseable.
+            Does not authorize sending a reply.
+          items:
+            $ref: "#/components/schemas/DecodedEmailAddress"
+          type: array
+        message_id:
+          description: "Sender Message-ID without angle brackets, preserving case.\
+            \ Null when absent/unparseable/ambiguous; never the Revdoku delivery ID."
+          nullable: true
+          type: string
+        in_reply_to:
+          description: "Ordered parent Message-IDs without angle brackets, preserving\
+            \ case. Empty when absent/unparseable; multiple parents are retained."
+          items:
+            type: string
+          type: array
+        references:
+          description: "Ordered References IDs without angle brackets, preserving\
+            \ case. Empty when absent/unparseable."
+          items:
+            type: string
+          type: array
+        thread_id:
+          description: "thr_ plus SHA-256 of thread_anchor_message_id. Best-effort\
+            \ header-derived grouping hint, not authoritative conversation membership\
+            \ or an access grant. Missing ancestry or reused IDs can split/merge hints.\
+            \ Scope lookups to accessible mailboxes."
+          nullable: true
+          pattern: "^thr_[0-9a-f]{64}$"
+          type: string
+        delivered_to:
+          type: string
+        received_at:
+          format: date-time
+          type: string
+        body_status:
+          enum:
+          - complete
+          - empty
+          - truncated
+          - unavailable
+          type: string
+        omitted_attachment_count:
+          minimum: 1
+          type: integer
+        id:
+          pattern: ^eml_
+          type: string
+        conversation_id:
+          pattern: ^eml_
+          type: string
+        file_id:
+          description: Included only with include_storage=true for file-browser integration.
+          pattern: ^df_
+          type: string
+        version_id:
+          description: Included only with include_storage=true for file-browser integration.
+          pattern: ^dfrev_
+          type: string
+        attachment_count:
+          minimum: 0
+          type: integer
+        read:
+          type: boolean
+        read_at:
+          format: date-time
+          nullable: true
+          type: string
+        read_by:
+          nullable: true
+          type: object
+        read_by_api_key:
+          nullable: true
+          type: object
+        files:
+          $ref: "#/components/schemas/EmailSummary_files"
+        forwarding:
+          $ref: "#/components/schemas/EmailForwarding"
+      required:
+      - attachment_count
+      - conversation_id
+      - id
+      - read
+      - read_at
+      - read_by
+      - read_by_api_key
+      - received_at
+      type: object
+    EmailAttachment:
+      example:
+        id: id
+        filename: filename
+        content_type: content_type
+        size_bytes: 0
+        version_id: version_id
+        origin: original
+      properties:
+        id:
+          pattern: ^df_
+          type: string
+        filename:
+          type: string
+        content_type:
+          nullable: true
+          type: string
+        size_bytes:
+          format: int64
+          minimum: 0
+          type: integer
+        version_id:
+          description: Present only with include_storage=true.
+          type: string
+        origin:
+          description: "For normalized forwards: inner attachment, member addition,\
+            \ attached source EML, or unknown inline-forward origin."
+          enum:
+          - original
+          - forwarder
+          - forwarded_message
+          - unspecified
+          type: string
+      required:
+      - content_type
+      - filename
+      - id
+      - size_bytes
+      type: object
+    EmailDetail:
+      allOf:
+      - $ref: "#/components/schemas/EmailSummary"
+      - properties:
+          body_text:
+            nullable: true
+            type: string
+          body_status:
+            enum:
+            - complete
+            - empty
+            - truncated
+            - unavailable
+            type: string
+          attachments:
+            items:
+              $ref: "#/components/schemas/EmailAttachment"
+            type: array
+          forwarding:
+            $ref: "#/components/schemas/EmailForwardingContent"
+        required:
+        - attachments
+        - body_status
+        - body_text
+        type: object
+      example:
+        schema_version: 0
+        subject: subject
+        from: from
+        to: to
+        from_addresses:
+        - address: address
+          name: name
+        - address: address
+          name: name
+        to_addresses:
+        - address: address
+          name: name
+        - address: address
+          name: name
+        cc_addresses:
+        - address: address
+          name: name
+        - address: address
+          name: name
+        reply_to_addresses:
+        - address: address
+          name: name
+        - address: address
+          name: name
+        message_id: message_id
+        in_reply_to:
+        - in_reply_to
+        - in_reply_to
+        references:
+        - references
+        - references
+        thread_id: thread_id
+        delivered_to: delivered_to
+        received_at: 2000-01-23T04:56:07.000+00:00
+        body_status: complete
+        omitted_attachment_count: 1
+        id: id
+        conversation_id: conversation_id
+        file_id: file_id
+        version_id: version_id
+        attachment_count: 0
+        read: true
+        read_at: 2000-01-23T04:56:07.000+00:00
+        read_by: "{}"
+        read_by_api_key: "{}"
+        files:
+          body_id: body_id
+          original_id: original_id
+          attachment_ids:
+          - attachment_ids
+          - attachment_ids
+        forwarding:
+          note_text: note_text
+          note_status: complete
+        body_text: body_text
+        attachments:
+        - id: id
+          filename: filename
+          content_type: content_type
+          size_bytes: 0
+          version_id: version_id
+          origin: original
+        - id: id
+          filename: filename
+          content_type: content_type
+          size_bytes: 0
+          version_id: version_id
+          origin: original
+    EmailDownload:
+      example:
+        url: https://openapi-generator.tech
+        authentication: none
+        filename: filename
+        content_type: content_type
+        expires_in: 0
+        size_bytes: 0
+      properties:
+        url:
+          format: uri
+          type: string
+        authentication:
+          enum:
+          - none
+          type: string
+        filename:
+          type: string
+        content_type:
+          nullable: true
+          type: string
+        expires_in:
+          enum:
+          - 900
+          type: integer
+        size_bytes:
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+      - authentication
+      - content_type
+      - expires_in
+      - filename
+      - size_bytes
+      - url
+      type: object
+    FilePagination:
+      example:
+        limit: 0
+        offset: 6
+        count: 1
+        total: 5
+        has_more: true
+        next_offset: 5
+      properties:
+        limit:
+          type: integer
+        offset:
+          type: integer
+        count:
+          type: integer
+        total:
+          type: integer
+        has_more:
+          type: boolean
+        next_offset:
+          nullable: true
+          type: integer
+      required:
+      - count
+      - has_more
+      - limit
+      - next_offset
+      - offset
+      - total
+      type: object
+    EmailSenderAllowlist:
+      example:
+        enabled: true
+        entries:
+        - entries
+        - entries
+        - entries
+        - entries
+        - entries
+        version: version
+        max_entries: 6
+        editable: true
+      properties:
+        enabled:
+          type: boolean
+        entries:
+          items:
+            type: string
+          maxItems: 500
+          type: array
+        version:
+          type: string
+        max_entries:
+          type: integer
+        editable:
+          type: boolean
+      required:
+      - editable
+      - enabled
+      - entries
+      - max_entries
+      - version
+      type: object
+    SignupChallenge:
+      example:
+        expires_in: 0
+        resend_after: 0
+        signup_token: signup_token
+      properties:
+        expires_in:
+          minimum: 0
+          type: integer
+        resend_after:
+          minimum: 0
+          type: integer
+        signup_token:
+          description: Private signup token returned by the first request. Send only
+            in the JSON body; never log it or show it in chat.
+          pattern: "^[A-Za-z0-9_-]{43}$"
+          type: string
+      required:
+      - expires_in
+      - resend_after
+      - signup_token
+      type: object
+    AccountLimits:
+      additionalProperties: false
+      example:
+        max_mailboxes: 0
+        max_mailbox_creations_per_month: 0
+        max_files_per_mailbox: 0
+        max_current_files: 0
+        max_storage_bytes: 0
+        max_file_size_bytes: 0
+        max_pdf_size_bytes: 0
+        max_file_versions_per_file: 0
+        max_email_domains: 0
+        max_received_emails_per_month: 0
+        max_received_email_bytes_per_month: 0
+        max_received_email_message_bytes: 0
+        max_email_address_rotations_per_month: 0
+        max_account_members: 0
+        max_api_keys: 0
+        max_agent_connections: 0
+        api_rate_limit_requests_per_minute: 0
+        audit_retention_days: 0
+        max_email_aliases_per_mailbox: 0
+      properties:
+        max_mailboxes:
+          minimum: 0
+          nullable: true
+          type: integer
+        max_mailbox_creations_per_month:
+          minimum: 0
+          nullable: true
+          type: integer
+        max_files_per_mailbox:
+          minimum: 0
+          nullable: true
+          type: integer
+        max_current_files:
+          minimum: 0
+          nullable: true
+          type: integer
+        max_storage_bytes:
+          format: int64
+          minimum: 0
+          nullable: true
+          type: integer
+        max_file_size_bytes:
+          format: int64
+          minimum: 0
+          nullable: true
+          type: integer
+        max_pdf_size_bytes:
+          format: int64
+          minimum: 0
+          nullable: true
+          type: integer
+        max_file_versions_per_file:
+          minimum: 0
+          nullable: true
+          type: integer
+        max_email_domains:
+          minimum: 0
+          nullable: true
+          type: integer
+        max_received_emails_per_month:
+          minimum: 0
+          nullable: true
+          type: integer
+        max_received_email_bytes_per_month:
+          format: int64
+          minimum: 0
+          nullable: true
+          type: integer
+        max_received_email_message_bytes:
+          format: int64
+          minimum: 0
+          nullable: true
+          type: integer
+        max_email_address_rotations_per_month:
+          minimum: 0
+          nullable: true
+          type: integer
+        max_account_members:
+          minimum: 0
+          nullable: true
+          type: integer
+        max_api_keys:
+          minimum: 0
+          nullable: true
+          type: integer
+        max_agent_connections:
+          minimum: 0
+          nullable: true
+          type: integer
+        api_rate_limit_requests_per_minute:
+          minimum: 0
+          nullable: true
+          type: integer
+        audit_retention_days:
+          minimum: 0
+          nullable: true
+          type: integer
+        max_email_aliases_per_mailbox:
+          description: Active retained email addresses per mailbox; Free always has
+            zero.
+          minimum: 0
+          type: integer
+      required:
+      - api_rate_limit_requests_per_minute
+      - audit_retention_days
+      - max_account_members
+      - max_agent_connections
+      - max_api_keys
+      - max_current_files
+      - max_email_address_rotations_per_month
+      - max_email_aliases_per_mailbox
+      - max_email_domains
+      - max_file_size_bytes
+      - max_file_versions_per_file
+      - max_files_per_mailbox
+      - max_mailbox_creations_per_month
+      - max_mailboxes
+      - max_pdf_size_bytes
+      - max_received_email_bytes_per_month
+      - max_received_email_message_bytes
+      - max_received_emails_per_month
+      - max_storage_bytes
+      type: object
+    EmailReceivedEvent:
+      properties:
+        id:
+          description: Stable event ID; deduplicate across retries.
+          type: string
+        type:
+          enum:
+          - email.received
+          type: string
+        created_at:
+          format: date-time
+          type: string
+        data:
+          $ref: "#/components/schemas/EmailReceivedEvent_data"
+      required:
+      - created_at
+      - data
+      - id
+      - type
+      type: object
+    ApiSuccess:
+      example:
+        success: true
+        data:
+          key: ""
+      properties:
+        success:
+          type: boolean
+        data:
+          additionalProperties: true
+          description: Endpoint-specific result fields. See the endpoint documentation
+            for the domain or authentication-capability fields.
+          type: object
+      required:
+      - data
+      - success
+      type: object
+    EmailForwarding:
+      description: "Server-recorded member forwarding provenance. The original author\
+        \ is reported by the member, not independently authenticated. Absent for ordinary\
+        \ or unrecognized mail."
+      example:
+        method: method
+        member_id: member_id
+        member_email: member_email
+        intake_account_id: intake_account_id
+        outer_from: outer_from
+        outer_subject: outer_subject
+        outer_message_id: outer_message_id
+        original_date_raw: original_date_raw
+        original_sent_at: original_sent_at
+        attribution: member_forwarded
+        parser_version: 1
+      properties:
+        method:
+          type: string
+        member_id:
+          type: string
+        member_email:
+          type: string
+        intake_account_id:
+          type: string
+        outer_from:
+          type: string
+        outer_subject:
+          type: string
+        outer_message_id:
+          type: string
+        original_date_raw:
+          type: string
+        original_sent_at:
+          type: string
+        attribution:
+          enum:
+          - member_forwarded
+          type: string
+        parser_version:
+          description: Parser implementation used at intake; does not change the forwarding
+            response shape.
+          minimum: 1
+          type: integer
+      required:
+      - attribution
+      - intake_account_id
+      - member_email
+      - member_id
+      - method
+      - parser_version
+      type: object
+    EmailForwardingContent:
+      allOf:
+      - $ref: "#/components/schemas/EmailForwarding"
+      - properties:
+          note_text:
+            description: "Separate member note, bounded to 64 KiB. Never part of the\
+              \ original body."
+            type: string
+          note_status:
+            enum:
+            - complete
+            - empty
+            - truncated
+            - unavailable
+            type: string
+        type: object
+      example:
+        note_text: note_text
+        note_status: complete
+    getRevdokuStatus_200_response_data:
+      example:
+        account:
+          id: id
+          name: name
+          account_kind: standard
+          client_name: client_name
+          agency_account:
+            id: id
+            name: name
+          region: region
+          status: active
+          permissions:
+            scope: scope
+            mailbox_access: mailbox_access
+            can_create_mailboxes: true
+        default_account_id: default_account_id
+        accounts:
+        - id: id
+          name: name
+          account_kind: standard
+          client_name: client_name
+          agency_account:
+            id: id
+            name: name
+          region: region
+          status: active
+          permissions:
+            scope: scope
+            mailbox_access: mailbox_access
+            can_create_mailboxes: true
+        - id: id
+          name: name
+          account_kind: standard
+          client_name: client_name
+          agency_account:
+            id: id
+            name: name
+          region: region
+          status: active
+          permissions:
+            scope: scope
+            mailbox_access: mailbox_access
+            can_create_mailboxes: true
+        features: "{}"
+      properties:
+        account:
+          $ref: "#/components/schemas/AccountIdentity"
+        default_account_id:
+          nullable: true
+          type: string
+        accounts:
+          items:
+            $ref: "#/components/schemas/AccountIdentity"
+          type: array
+        features:
+          properties: {}
+          type: object
+      type: object
+    getRevdokuStatus_200_response_not:
+      anyOf:
+      - required:
+        - error
+      - required:
+        - error_message
+    getRevdokuStatus_200_response:
+      example:
+        data:
+          account:
+            id: id
+            name: name
+            account_kind: standard
+            client_name: client_name
+            agency_account:
+              id: id
+              name: name
+            region: region
+            status: active
+            permissions:
+              scope: scope
+              mailbox_access: mailbox_access
+              can_create_mailboxes: true
+          default_account_id: default_account_id
+          accounts:
+          - id: id
+            name: name
+            account_kind: standard
+            client_name: client_name
+            agency_account:
+              id: id
+              name: name
+            region: region
+            status: active
+            permissions:
+              scope: scope
+              mailbox_access: mailbox_access
+              can_create_mailboxes: true
+          - id: id
+            name: name
+            account_kind: standard
+            client_name: client_name
+            agency_account:
+              id: id
+              name: name
+            region: region
+            status: active
+            permissions:
+              scope: scope
+              mailbox_access: mailbox_access
+              can_create_mailboxes: true
+          features: "{}"
+        success: true
+      not:
+        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
+      properties:
+        data:
+          $ref: "#/components/schemas/getRevdokuStatus_200_response_data"
+        success:
+          type: boolean
+      required:
+      - data
+      - success
+      type: object
+    listAccounts_200_response_data:
+      example:
+        accounts:
+        - id: id
+          name: name
+          account_kind: standard
+          client_name: client_name
+          agency_account:
+            id: id
+            name: name
+          region: region
+          status: active
+          permissions:
+            scope: scope
+            mailbox_access: mailbox_access
+            can_create_mailboxes: true
+        - id: id
+          name: name
+          account_kind: standard
+          client_name: client_name
+          agency_account:
+            id: id
+            name: name
+          region: region
+          status: active
+          permissions:
+            scope: scope
+            mailbox_access: mailbox_access
+            can_create_mailboxes: true
+        default_account_id: default_account_id
+        pagination: "{}"
+      properties:
+        accounts:
+          items:
+            $ref: "#/components/schemas/AccountIdentity"
+          type: array
+        default_account_id:
+          nullable: true
+          type: string
+        pagination:
+          type: object
+      type: object
+    listAccounts_200_response:
+      example:
+        success: true
+        data:
+          accounts:
+          - id: id
+            name: name
+            account_kind: standard
+            client_name: client_name
+            agency_account:
+              id: id
+              name: name
+            region: region
+            status: active
+            permissions:
+              scope: scope
+              mailbox_access: mailbox_access
+              can_create_mailboxes: true
+          - id: id
+            name: name
+            account_kind: standard
+            client_name: client_name
+            agency_account:
+              id: id
+              name: name
+            region: region
+            status: active
+            permissions:
+              scope: scope
+              mailbox_access: mailbox_access
+              can_create_mailboxes: true
+          default_account_id: default_account_id
+          pagination: "{}"
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/listAccounts_200_response_data"
+      required:
+      - data
+      - success
+      type: object
+    createClientAccount_request:
+      properties:
+        name:
+          description: Account name.
+          minLength: 1
+          type: string
+        account_id:
+          description: Optional granted Agency account id. Does not change the credential
+            default.
+          type: string
+        client_name:
+          description: "Optional client person or business, separate from the account\
+            \ name. Omit when unknown."
+          maxLength: 100
+          type: string
+        reason:
+          description: "Optional purpose for this action. AI agents should explain\
+            \ intentional reads and changes when known; omit when unknown. Do not\
+            \ include secrets, file contents, or transcripts."
+          maxLength: 2000
+          nullable: true
+          type: string
+      required:
+      - name
+      type: object
+    createClientAccount_201_response_data:
+      example:
+        account:
+          id: id
+          name: name
+          account_kind: standard
+          client_name: client_name
+          agency_account:
+            id: id
+            name: name
+          region: region
+          status: active
+          permissions:
+            scope: scope
+            mailbox_access: mailbox_access
+            can_create_mailboxes: true
+      properties:
+        account:
+          $ref: "#/components/schemas/AccountIdentity"
+      type: object
+    createClientAccount_201_response:
+      example:
+        data:
+          account:
+            id: id
+            name: name
+            account_kind: standard
+            client_name: client_name
+            agency_account:
+              id: id
+              name: name
+            region: region
+            status: active
+            permissions:
+              scope: scope
+              mailbox_access: mailbox_access
+              can_create_mailboxes: true
+        success: true
+      not:
+        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
+      properties:
+        data:
+          $ref: "#/components/schemas/createClientAccount_201_response_data"
+        success:
+          type: boolean
+      required:
+      - data
+      - success
+      type: object
+    getMailboxEmailSettings_200_response:
+      example:
+        data:
+          address: address
+          received_count: 0
+          last_received_at: 2000-01-23T04:56:07.000+00:00
+          last_received_path: last_received_path
+          blocked_reason: blocked_reason
+          available_domains:
+          - hostname: hostname
+            kind: platform
+          - hostname: hostname
+            kind: platform
+          assignment:
+            id: id
+            status: pending
+            hostname: hostname
+            error:
+              code: code
+              message: message
+              retryable: true
+          customization:
+            allowed: true
+            blocked_reason: blocked_reason
+            settings_url: settings_url
+          receiving_enabled: true
+          sender_allowlist:
+            enabled: true
+            entries:
+            - entries
+            - entries
+            - entries
+            - entries
+            - entries
+            version: version
+            max_entries: 6
+            editable: true
+          username: username
+          sending_enabled: true
+          aliases:
+          - id: id
+            address: address
+            active: true
+          - id: id
+            address: address
+            active: true
+        success: true
+      not:
+        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
+      properties:
+        data:
+          $ref: "#/components/schemas/MailboxEmail"
+        success:
+          type: boolean
+      required:
+      - data
+      - success
+      type: object
+    rotateMailboxEmailAddress_request:
+      properties:
+        confirm:
+          type: boolean
+        current_address:
+          type: string
+        account_id:
+          description: Explicitly granted account; omission uses credential default
+          type: string
+        domain:
+          description: "Exact ready domain of this account, or platform for the deployment\
+            \ default."
+          type: string
+        reason:
+          description: "Optional purpose for this action. AI agents should explain\
+            \ intentional reads and changes when known; omit when unknown. Do not\
+            \ include secrets, file contents, or transcripts."
+          maxLength: 2000
+          nullable: true
+          type: string
+        username:
+          description: "Administrator-selected name on an available platform or ready\
+            \ owned custom domain. Normalized to lowercase; ASCII letters/digits/dots/hyphens/underscores,\
+            \ alphanumeric endpoints, no consecutive dots. Complete address at most\
+            \ 254 characters. Omit for random rotation; blank/null is invalid."
+          maxLength: 64
+          minLength: 1
+          type: string
+        keep_old_as_alias:
+          default: false
+          description: Keep the old primary as an alias for this mailbox after activation.
+            Requires full-account administrator access and an available alias slot.
+          type: boolean
+      required:
+      - confirm
+      - current_address
+      type: object
+    listMailboxes_200_response_data_mailboxes_inner:
+      example:
+        id: id
+        title: title
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+      required:
+      - id
+      - title
+      type: object
+    listMailboxes_200_response_data:
+      example:
+        mailboxes:
+        - id: id
+          title: title
+        - id: id
+          title: title
+      properties:
+        mailboxes:
+          items:
+            $ref: "#/components/schemas/listMailboxes_200_response_data_mailboxes_inner"
+          type: array
+      required:
+      - mailboxes
+      type: object
+    listMailboxes_200_response:
+      example:
+        success: true
+        data:
+          mailboxes:
+          - id: id
+            title: title
+          - id: id
+            title: title
+      not:
+        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/listMailboxes_200_response_data"
+      required:
+      - data
+      - success
+      type: object
+    createMailbox_request_mailbox_email:
+      additionalProperties: false
+      properties:
+        username:
+          description: Name before @. Normalized to lowercase. Omit to generate; blank/null
+            is invalid. Reserved platform names return EMAIL_NAME_RESERVED; occupied
+            or retired names return EMAIL_ALREADY_EXISTS.
+          maxLength: 64
+          minLength: 1
+          type: string
+        domain:
+          description: "Built-in domain such as revdokumail.com on any plan, or a\
+            \ ready custom email domain owned by the selected account on an eligible\
+            \ plan. Omit for the default platform domain."
+          type: string
+      type: object
+    createMailbox_request_mailbox:
+      properties:
+        title:
+          description: Optional display title; defaults to the assigned username.
+          type: string
+        description:
+          type: string
+        metadata:
+          additionalProperties: true
+          type: object
+        tag_ids:
+          items:
+            type: string
+          type: array
+        tag_paths:
+          items:
+            type: string
+          type: array
+        email:
+          $ref: "#/components/schemas/createMailbox_request_mailbox_email"
+      type: object
+    createMailbox_request:
+      properties:
+        account_id:
+          type: string
+        mailbox:
+          $ref: "#/components/schemas/createMailbox_request_mailbox"
+        reason:
+          description: "Optional purpose for this action. AI agents should explain\
+            \ intentional reads and changes when known; omit when unknown. Do not\
+            \ include secrets, file contents, or transcripts."
+          maxLength: 2000
+          nullable: true
+          type: string
+      required:
+      - mailbox
+      type: object
+    createMailbox_201_response_data_mailbox:
+      example:
+        id: id
+        email:
+          address: address
+          received_count: 0
+          last_received_at: 2000-01-23T04:56:07.000+00:00
+          last_received_path: last_received_path
+          blocked_reason: blocked_reason
+          available_domains:
+          - hostname: hostname
+            kind: platform
+          - hostname: hostname
+            kind: platform
+          assignment:
+            id: id
+            status: pending
+            hostname: hostname
+            error:
+              code: code
+              message: message
+              retryable: true
+          customization:
+            allowed: true
+            blocked_reason: blocked_reason
+            settings_url: settings_url
+          receiving_enabled: true
+          sender_allowlist:
+            enabled: true
+            entries:
+            - entries
+            - entries
+            - entries
+            - entries
+            - entries
+            version: version
+            max_entries: 6
+            editable: true
+          username: username
+          sending_enabled: true
+          aliases:
+          - id: id
+            address: address
+            active: true
+          - id: id
+            address: address
+            active: true
+      properties:
+        id:
+          type: string
+        email:
+          $ref: "#/components/schemas/MailboxEmail"
+      type: object
+    createMailbox_201_response_data:
+      example:
+        mailbox:
+          id: id
+          email:
+            address: address
+            received_count: 0
+            last_received_at: 2000-01-23T04:56:07.000+00:00
+            last_received_path: last_received_path
+            blocked_reason: blocked_reason
+            available_domains:
+            - hostname: hostname
+              kind: platform
+            - hostname: hostname
+              kind: platform
+            assignment:
+              id: id
+              status: pending
+              hostname: hostname
+              error:
+                code: code
+                message: message
+                retryable: true
+            customization:
+              allowed: true
+              blocked_reason: blocked_reason
+              settings_url: settings_url
+            receiving_enabled: true
+            sender_allowlist:
+              enabled: true
+              entries:
+              - entries
+              - entries
+              - entries
+              - entries
+              - entries
+              version: version
+              max_entries: 6
+              editable: true
+            username: username
+            sending_enabled: true
+            aliases:
+            - id: id
+              address: address
+              active: true
+            - id: id
+              address: address
+              active: true
+      properties:
+        mailbox:
+          $ref: "#/components/schemas/createMailbox_201_response_data_mailbox"
+      type: object
+    createMailbox_201_response:
+      example:
+        data:
+          mailbox:
+            id: id
+            email:
+              address: address
+              received_count: 0
+              last_received_at: 2000-01-23T04:56:07.000+00:00
+              last_received_path: last_received_path
+              blocked_reason: blocked_reason
+              available_domains:
+              - hostname: hostname
+                kind: platform
+              - hostname: hostname
+                kind: platform
+              assignment:
+                id: id
+                status: pending
+                hostname: hostname
+                error:
+                  code: code
+                  message: message
+                  retryable: true
+              customization:
+                allowed: true
+                blocked_reason: blocked_reason
+                settings_url: settings_url
+              receiving_enabled: true
+              sender_allowlist:
+                enabled: true
+                entries:
+                - entries
+                - entries
+                - entries
+                - entries
+                - entries
+                version: version
+                max_entries: 6
+                editable: true
+              username: username
+              sending_enabled: true
+              aliases:
+              - id: id
+                address: address
+                active: true
+              - id: id
+                address: address
+                active: true
+        success: true
+      not:
+        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
+      properties:
+        data:
+          $ref: "#/components/schemas/createMailbox_201_response_data"
+        success:
+          type: boolean
+      required:
+      - data
+      - success
+      type: object
+    createAccountEmailDomain_request:
+      properties:
+        hostname:
+          description: "Dedicated root or unused subdomain, such as mailbox.example.com.\
+            \ Subdomain recommended when root mail already exists."
+          type: string
+        account_id:
+          type: string
+        reason:
+          description: "Optional purpose for this action. AI agents should explain\
+            \ intentional reads and changes when known; omit when unknown. Do not\
+            \ include secrets, file contents, or transcripts."
+          maxLength: 2000
+          nullable: true
+          type: string
+      required:
+      - hostname
+      type: object
+    removeAccountEmailDomain_request:
+      properties:
+        hostname:
+          type: string
+        confirm:
+          type: boolean
+        account_id:
+          description: Explicit granted account for this call.
+          type: string
+        reason:
+          description: "Optional purpose for this action. AI agents should explain\
+            \ intentional reads and changes when known; omit when unknown. Do not\
+            \ include secrets, file contents, or transcripts."
+          maxLength: 2000
+          nullable: true
+          type: string
+      required:
+      - confirm
+      - hostname
+      type: object
+    verifyAccountEmailDomain_request:
+      properties:
+        account_id:
+          description: Explicit granted account for this call.
+          type: string
+        reason:
+          description: "Optional purpose for this action. AI agents should explain\
+            \ intentional reads and changes when known; omit when unknown. Do not\
+            \ include secrets, file contents, or transcripts."
+          maxLength: 2000
+          nullable: true
+          type: string
+      type: object
+    listMailboxFiles_200_response_data:
+      example:
+        files:
+        - "{}"
+        - "{}"
+        pagination:
+          limit: 0
+          offset: 6
+          count: 1
+          total: 5
+          has_more: true
+          next_offset: 5
+      properties:
+        files:
+          items:
+            type: object
+          type: array
+        pagination:
+          $ref: "#/components/schemas/FilePagination"
+      required:
+      - files
+      - pagination
+      type: object
+    listMailboxFiles_200_response:
+      example:
+        success: true
+        data:
+          files:
+          - "{}"
+          - "{}"
+          pagination:
+            limit: 0
+            offset: 6
+            count: 1
+            total: 5
+            has_more: true
+            next_offset: 5
+      not:
+        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/listMailboxFiles_200_response_data"
+      required:
+      - data
+      - success
+      type: object
+    listEmails_200_response_data:
+      example:
+        emails:
+        - schema_version: 0
+          subject: subject
+          from: from
+          to: to
+          from_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          to_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          cc_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          reply_to_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          message_id: message_id
+          in_reply_to:
+          - in_reply_to
+          - in_reply_to
+          references:
+          - references
+          - references
+          thread_id: thread_id
+          delivered_to: delivered_to
+          received_at: 2000-01-23T04:56:07.000+00:00
+          body_status: complete
+          omitted_attachment_count: 1
+          id: id
+          conversation_id: conversation_id
+          file_id: file_id
+          version_id: version_id
+          attachment_count: 0
+          read: true
+          read_at: 2000-01-23T04:56:07.000+00:00
+          read_by: "{}"
+          read_by_api_key: "{}"
+          files:
+            body_id: body_id
+            original_id: original_id
+            attachment_ids:
+            - attachment_ids
+            - attachment_ids
+          forwarding:
+            method: method
+            member_id: member_id
+            member_email: member_email
+            intake_account_id: intake_account_id
+            outer_from: outer_from
+            outer_subject: outer_subject
+            outer_message_id: outer_message_id
+            original_date_raw: original_date_raw
+            original_sent_at: original_sent_at
+            attribution: member_forwarded
+            parser_version: 1
+        - schema_version: 0
+          subject: subject
+          from: from
+          to: to
+          from_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          to_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          cc_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          reply_to_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          message_id: message_id
+          in_reply_to:
+          - in_reply_to
+          - in_reply_to
+          references:
+          - references
+          - references
+          thread_id: thread_id
+          delivered_to: delivered_to
+          received_at: 2000-01-23T04:56:07.000+00:00
+          body_status: complete
+          omitted_attachment_count: 1
+          id: id
+          conversation_id: conversation_id
+          file_id: file_id
+          version_id: version_id
+          attachment_count: 0
+          read: true
+          read_at: 2000-01-23T04:56:07.000+00:00
+          read_by: "{}"
+          read_by_api_key: "{}"
+          files:
+            body_id: body_id
+            original_id: original_id
+            attachment_ids:
+            - attachment_ids
+            - attachment_ids
+          forwarding:
+            method: method
+            member_id: member_id
+            member_email: member_email
+            intake_account_id: intake_account_id
+            outer_from: outer_from
+            outer_subject: outer_subject
+            outer_message_id: outer_message_id
+            original_date_raw: original_date_raw
+            original_sent_at: original_sent_at
+            attribution: member_forwarded
+            parser_version: 1
+        pagination:
+          limit: 56
+          has_more: true
+          next_cursor: next_cursor
+      properties:
+        emails:
+          items:
+            $ref: "#/components/schemas/EmailSummary"
+          type: array
+        pagination:
+          $ref: "#/components/schemas/EmailPagination"
+      required:
+      - emails
+      - pagination
+      type: object
+    listEmails_200_response:
+      example:
+        success: true
+        data:
+          emails:
+          - schema_version: 0
+            subject: subject
+            from: from
+            to: to
+            from_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            to_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            cc_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            reply_to_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            message_id: message_id
+            in_reply_to:
+            - in_reply_to
+            - in_reply_to
+            references:
+            - references
+            - references
+            thread_id: thread_id
+            delivered_to: delivered_to
+            received_at: 2000-01-23T04:56:07.000+00:00
+            body_status: complete
+            omitted_attachment_count: 1
+            id: id
+            conversation_id: conversation_id
+            file_id: file_id
+            version_id: version_id
+            attachment_count: 0
+            read: true
+            read_at: 2000-01-23T04:56:07.000+00:00
+            read_by: "{}"
+            read_by_api_key: "{}"
+            files:
+              body_id: body_id
+              original_id: original_id
+              attachment_ids:
+              - attachment_ids
+              - attachment_ids
+            forwarding:
+              method: method
+              member_id: member_id
+              member_email: member_email
+              intake_account_id: intake_account_id
+              outer_from: outer_from
+              outer_subject: outer_subject
+              outer_message_id: outer_message_id
+              original_date_raw: original_date_raw
+              original_sent_at: original_sent_at
+              attribution: member_forwarded
+              parser_version: 1
+          - schema_version: 0
+            subject: subject
+            from: from
+            to: to
+            from_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            to_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            cc_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            reply_to_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            message_id: message_id
+            in_reply_to:
+            - in_reply_to
+            - in_reply_to
+            references:
+            - references
+            - references
+            thread_id: thread_id
+            delivered_to: delivered_to
+            received_at: 2000-01-23T04:56:07.000+00:00
+            body_status: complete
+            omitted_attachment_count: 1
+            id: id
+            conversation_id: conversation_id
+            file_id: file_id
+            version_id: version_id
+            attachment_count: 0
+            read: true
+            read_at: 2000-01-23T04:56:07.000+00:00
+            read_by: "{}"
+            read_by_api_key: "{}"
+            files:
+              body_id: body_id
+              original_id: original_id
+              attachment_ids:
+              - attachment_ids
+              - attachment_ids
+            forwarding:
+              method: method
+              member_id: member_id
+              member_email: member_email
+              intake_account_id: intake_account_id
+              outer_from: outer_from
+              outer_subject: outer_subject
+              outer_message_id: outer_message_id
+              original_date_raw: original_date_raw
+              original_sent_at: original_sent_at
+              attribution: member_forwarded
+              parser_version: 1
+          pagination:
+            limit: 56
+            has_more: true
+            next_cursor: next_cursor
+      not:
+        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/listEmails_200_response_data"
+      required:
+      - data
+      - success
+      type: object
+    getEmail_200_response_data:
+      example:
+        email:
+          schema_version: 0
+          subject: subject
+          from: from
+          to: to
+          from_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          to_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          cc_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          reply_to_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          message_id: message_id
+          in_reply_to:
+          - in_reply_to
+          - in_reply_to
+          references:
+          - references
+          - references
+          thread_id: thread_id
+          delivered_to: delivered_to
+          received_at: 2000-01-23T04:56:07.000+00:00
+          body_status: complete
+          omitted_attachment_count: 1
+          id: id
+          conversation_id: conversation_id
+          file_id: file_id
+          version_id: version_id
+          attachment_count: 0
+          read: true
+          read_at: 2000-01-23T04:56:07.000+00:00
+          read_by: "{}"
+          read_by_api_key: "{}"
+          files:
+            body_id: body_id
+            original_id: original_id
+            attachment_ids:
+            - attachment_ids
+            - attachment_ids
+          forwarding:
+            note_text: note_text
+            note_status: complete
+          body_text: body_text
+          attachments:
+          - id: id
+            filename: filename
+            content_type: content_type
+            size_bytes: 0
+            version_id: version_id
+            origin: original
+          - id: id
+            filename: filename
+            content_type: content_type
+            size_bytes: 0
+            version_id: version_id
+            origin: original
+      properties:
+        email:
+          $ref: "#/components/schemas/EmailDetail"
+      required:
+      - email
+      type: object
+    getEmail_200_response:
+      example:
+        success: true
+        data:
+          email:
+            schema_version: 0
+            subject: subject
+            from: from
+            to: to
+            from_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            to_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            cc_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            reply_to_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            message_id: message_id
+            in_reply_to:
+            - in_reply_to
+            - in_reply_to
+            references:
+            - references
+            - references
+            thread_id: thread_id
+            delivered_to: delivered_to
+            received_at: 2000-01-23T04:56:07.000+00:00
+            body_status: complete
+            omitted_attachment_count: 1
+            id: id
+            conversation_id: conversation_id
+            file_id: file_id
+            version_id: version_id
+            attachment_count: 0
+            read: true
+            read_at: 2000-01-23T04:56:07.000+00:00
+            read_by: "{}"
+            read_by_api_key: "{}"
+            files:
+              body_id: body_id
+              original_id: original_id
+              attachment_ids:
+              - attachment_ids
+              - attachment_ids
+            forwarding:
+              note_text: note_text
+              note_status: complete
+            body_text: body_text
+            attachments:
+            - id: id
+              filename: filename
+              content_type: content_type
+              size_bytes: 0
+              version_id: version_id
+              origin: original
+            - id: id
+              filename: filename
+              content_type: content_type
+              size_bytes: 0
+              version_id: version_id
+              origin: original
+      not:
+        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/getEmail_200_response_data"
+      required:
+      - data
+      - success
+      type: object
+    updateEmail_request:
+      properties:
+        read:
+          type: boolean
+        account_id:
+          type: string
+        reason:
+          description: "Optional purpose for this action. AI agents should explain\
+            \ intentional reads and changes when known; omit when unknown. Do not\
+            \ include secrets, file contents, or transcripts."
+          maxLength: 2000
+          nullable: true
+          type: string
+      required:
+      - read
+      type: object
+    updateEmail_200_response_data:
+      example:
+        email:
+          schema_version: 0
+          subject: subject
+          from: from
+          to: to
+          from_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          to_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          cc_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          reply_to_addresses:
+          - address: address
+            name: name
+          - address: address
+            name: name
+          message_id: message_id
+          in_reply_to:
+          - in_reply_to
+          - in_reply_to
+          references:
+          - references
+          - references
+          thread_id: thread_id
+          delivered_to: delivered_to
+          received_at: 2000-01-23T04:56:07.000+00:00
+          body_status: complete
+          omitted_attachment_count: 1
+          id: id
+          conversation_id: conversation_id
+          file_id: file_id
+          version_id: version_id
+          attachment_count: 0
+          read: true
+          read_at: 2000-01-23T04:56:07.000+00:00
+          read_by: "{}"
+          read_by_api_key: "{}"
+          files:
+            body_id: body_id
+            original_id: original_id
+            attachment_ids:
+            - attachment_ids
+            - attachment_ids
+          forwarding:
+            method: method
+            member_id: member_id
+            member_email: member_email
+            intake_account_id: intake_account_id
+            outer_from: outer_from
+            outer_subject: outer_subject
+            outer_message_id: outer_message_id
+            original_date_raw: original_date_raw
+            original_sent_at: original_sent_at
+            attribution: member_forwarded
+            parser_version: 1
+      properties:
+        email:
+          $ref: "#/components/schemas/EmailSummary"
+      required:
+      - email
+      type: object
+    updateEmail_200_response:
+      example:
+        success: true
+        data:
+          email:
+            schema_version: 0
+            subject: subject
+            from: from
+            to: to
+            from_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            to_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            cc_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            reply_to_addresses:
+            - address: address
+              name: name
+            - address: address
+              name: name
+            message_id: message_id
+            in_reply_to:
+            - in_reply_to
+            - in_reply_to
+            references:
+            - references
+            - references
+            thread_id: thread_id
+            delivered_to: delivered_to
+            received_at: 2000-01-23T04:56:07.000+00:00
+            body_status: complete
+            omitted_attachment_count: 1
+            id: id
+            conversation_id: conversation_id
+            file_id: file_id
+            version_id: version_id
+            attachment_count: 0
+            read: true
+            read_at: 2000-01-23T04:56:07.000+00:00
+            read_by: "{}"
+            read_by_api_key: "{}"
+            files:
+              body_id: body_id
+              original_id: original_id
+              attachment_ids:
+              - attachment_ids
+              - attachment_ids
+            forwarding:
+              method: method
+              member_id: member_id
+              member_email: member_email
+              intake_account_id: intake_account_id
+              outer_from: outer_from
+              outer_subject: outer_subject
+              outer_message_id: outer_message_id
+              original_date_raw: original_date_raw
+              original_sent_at: original_sent_at
+              attribution: member_forwarded
+              parser_version: 1
+      not:
+        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/updateEmail_200_response_data"
+      required:
+      - data
+      - success
+      type: object
+    downloadEmailOriginal_200_response_data:
+      example:
+        download:
+          url: https://openapi-generator.tech
+          authentication: none
+          filename: filename
+          content_type: content_type
+          expires_in: 0
+          size_bytes: 0
+      properties:
+        download:
+          $ref: "#/components/schemas/EmailDownload"
+      required:
+      - download
+      type: object
+    downloadEmailOriginal_200_response:
+      example:
+        success: true
+        data:
+          download:
+            url: https://openapi-generator.tech
+            authentication: none
+            filename: filename
+            content_type: content_type
+            expires_in: 0
+            size_bytes: 0
+      not:
+        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/downloadEmailOriginal_200_response_data"
+      required:
+      - data
+      - success
+      type: object
+    updateMailboxEmailAllowlist_request_sender_allowlist:
+      properties:
+        enabled:
+          type: boolean
+        entries:
+          items:
+            maxLength: 256
+            type: string
+          maxItems: 500
+          type: array
+      required:
+      - enabled
+      - entries
+      type: object
+    updateMailboxEmailAllowlist_request:
+      properties:
+        sender_allowlist:
+          $ref: "#/components/schemas/updateMailboxEmailAllowlist_request_sender_allowlist"
+        expected_version:
+          type: string
+        account_id:
+          type: string
+        reason:
+          maxLength: 2000
+          nullable: true
+          type: string
+      required:
+      - expected_version
+      - sender_allowlist
+      type: object
+    updateMailboxEmailAllowlist_200_response_data:
+      example:
+        sender_allowlist:
+          enabled: true
+          entries:
+          - entries
+          - entries
+          - entries
+          - entries
+          - entries
+          version: version
+          max_entries: 6
+          editable: true
+      properties:
+        sender_allowlist:
+          $ref: "#/components/schemas/EmailSenderAllowlist"
+      required:
+      - sender_allowlist
+      type: object
+    updateMailboxEmailAllowlist_200_response:
+      example:
+        data:
+          sender_allowlist:
+            enabled: true
+            entries:
+            - entries
+            - entries
+            - entries
+            - entries
+            - entries
+            version: version
+            max_entries: 6
+            editable: true
+        success: true
+      not:
+        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
+      properties:
+        data:
+          $ref: "#/components/schemas/updateMailboxEmailAllowlist_200_response_data"
+        success:
+          type: boolean
+      required:
+      - data
+      - success
+      type: object
+    getAccount_200_response:
+      example:
+        success: true
+        data:
+          account:
+            id: id
+            name: name
+            account_kind: standard
+            client_name: client_name
+            agency_account:
+              id: id
+              name: name
+            region: region
+            status: active
+            permissions:
+              scope: scope
+              mailbox_access: mailbox_access
+              can_create_mailboxes: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/createClientAccount_201_response_data"
+      required:
+      - data
+      - success
+      type: object
+    startAgentSignup_request:
+      properties:
+        human_operator_email:
+          description: Email supplied by the human who owns and authorizes this account.
+            Do not use an AI agent mailbox or invent this value. Verification proves
+            control of the address.
+          format: email
+          maxLength: 254
+          type: string
+        username:
+          description: Optional exact name for the first mailbox. Omit to generate
+            a name. Platform reserved and retired name rules apply.
+          maxLength: 64
+          minLength: 1
+          type: string
+        label:
+          maxLength: 100
+          type: string
+        permission_scope:
+          default: mailbox_admin
+          enum:
+          - mailbox_read
+          - mailbox_write
+          - mailbox_admin
+          type: string
+        accept_terms_and_policy:
+          description: "The human agrees to the current Terms (https://revdoku.com/terms)\
+            \ and service acceptable use policy (https://revdoku.com/acceptable-use),\
+            \ and acknowledges the privacy notice (https://revdoku.com/privacy). This\
+            \ is not consent to optional processing."
+          type: boolean
+      required:
+      - accept_terms_and_policy
+      - human_operator_email
+      type: object
+    startAgentSignup_202_response_data:
+      example:
+        signup:
+          expires_in: 0
+          resend_after: 0
+          signup_token: signup_token
+      properties:
+        signup:
+          $ref: "#/components/schemas/SignupChallenge"
+      required:
+      - signup
+      type: object
+    startAgentSignup_202_response:
+      example:
+        success: true
+        data:
+          signup:
+            expires_in: 0
+            resend_after: 0
+            signup_token: signup_token
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/startAgentSignup_202_response_data"
+      required:
+      - data
+      - success
+      type: object
+    verifyAgentSignup_request:
+      properties:
+        code:
+          description: "Required until the challenge is verified; collect privately,\
+            \ never in chat."
+          pattern: "^[0-9]{6}$"
+          type: string
+        username:
+          description: Optional exact name for the first mailbox. Omit to generate
+            a name. Platform reserved and retired name rules apply.
+          maxLength: 64
+          minLength: 1
+          type: string
+        signup_token:
+          description: Private signup token returned by the first request. Send only
+            in the JSON body; never log it or show it in chat.
+          pattern: "^[A-Za-z0-9_-]{43}$"
+          type: string
+      required:
+      - signup_token
+      type: object
+    verifyAgentSignup_201_response_data_signup:
+      example:
+        status: completed
+      properties:
+        status:
+          enum:
+          - completed
+          type: string
+      required:
+      - status
+      type: object
+    verifyAgentSignup_201_response_data_account:
+      example:
+        id: id
+      properties:
+        id:
+          type: string
+      required:
+      - id
+      type: object
+    verifyAgentSignup_201_response_data_mailbox:
+      example:
+        id: id
+        title: title
+        email:
+          address: address
+          received_count: 0
+          last_received_at: 2000-01-23T04:56:07.000+00:00
+          last_received_path: last_received_path
+          blocked_reason: blocked_reason
+          available_domains:
+          - hostname: hostname
+            kind: platform
+          - hostname: hostname
+            kind: platform
+          assignment:
+            id: id
+            status: pending
+            hostname: hostname
+            error:
+              code: code
+              message: message
+              retryable: true
+          customization:
+            allowed: true
+            blocked_reason: blocked_reason
+            settings_url: settings_url
+          receiving_enabled: true
+          sender_allowlist:
+            enabled: true
+            entries:
+            - entries
+            - entries
+            - entries
+            - entries
+            - entries
+            version: version
+            max_entries: 6
+            editable: true
+          username: username
+          sending_enabled: true
+          aliases:
+          - id: id
+            address: address
+            active: true
+          - id: id
+            address: address
+            active: true
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        email:
+          $ref: "#/components/schemas/MailboxEmail"
+      required:
+      - email
+      - id
+      - title
+      type: object
+    verifyAgentSignup_201_response_data:
+      example:
+        signup:
+          status: completed
+        api_key: api_key
+        scope: mailbox_read
+        expires_at: 2000-01-23T04:56:07.000+00:00
+        account:
+          id: id
+        mailbox:
+          id: id
+          title: title
+          email:
+            address: address
+            received_count: 0
+            last_received_at: 2000-01-23T04:56:07.000+00:00
+            last_received_path: last_received_path
+            blocked_reason: blocked_reason
+            available_domains:
+            - hostname: hostname
+              kind: platform
+            - hostname: hostname
+              kind: platform
+            assignment:
+              id: id
+              status: pending
+              hostname: hostname
+              error:
+                code: code
+                message: message
+                retryable: true
+            customization:
+              allowed: true
+              blocked_reason: blocked_reason
+              settings_url: settings_url
+            receiving_enabled: true
+            sender_allowlist:
+              enabled: true
+              entries:
+              - entries
+              - entries
+              - entries
+              - entries
+              - entries
+              version: version
+              max_entries: 6
+              editable: true
+            username: username
+            sending_enabled: true
+            aliases:
+            - id: id
+              address: address
+              active: true
+            - id: id
+              address: address
+              active: true
+      properties:
+        signup:
+          $ref: "#/components/schemas/verifyAgentSignup_201_response_data_signup"
+        api_key:
+          description: Returned once; store privately. Never write to logs or chat.
+          type: string
+        scope:
+          enum:
+          - mailbox_read
+          - mailbox_write
+          - mailbox_admin
+          type: string
+        expires_at:
+          format: date-time
+          type: string
+        account:
+          $ref: "#/components/schemas/verifyAgentSignup_201_response_data_account"
+        mailbox:
+          $ref: "#/components/schemas/verifyAgentSignup_201_response_data_mailbox"
+      required:
+      - account
+      - api_key
+      - expires_at
+      - mailbox
+      - scope
+      - signup
+      type: object
+    verifyAgentSignup_201_response:
+      example:
+        success: true
+        data:
+          signup:
+            status: completed
+          api_key: api_key
+          scope: mailbox_read
+          expires_at: 2000-01-23T04:56:07.000+00:00
+          account:
+            id: id
+          mailbox:
+            id: id
+            title: title
+            email:
+              address: address
+              received_count: 0
+              last_received_at: 2000-01-23T04:56:07.000+00:00
+              last_received_path: last_received_path
+              blocked_reason: blocked_reason
+              available_domains:
+              - hostname: hostname
+                kind: platform
+              - hostname: hostname
+                kind: platform
+              assignment:
+                id: id
+                status: pending
+                hostname: hostname
+                error:
+                  code: code
+                  message: message
+                  retryable: true
+              customization:
+                allowed: true
+                blocked_reason: blocked_reason
+                settings_url: settings_url
+              receiving_enabled: true
+              sender_allowlist:
+                enabled: true
+                entries:
+                - entries
+                - entries
+                - entries
+                - entries
+                - entries
+                version: version
+                max_entries: 6
+                editable: true
+              username: username
+              sending_enabled: true
+              aliases:
+              - id: id
+                address: address
+                active: true
+              - id: id
+                address: address
+                active: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/verifyAgentSignup_201_response_data"
+      required:
+      - data
+      - success
+      type: object
+    verifyAgentSignup_200_response_data_signup:
+      example:
+        status: completed
+        account_id: account_id
+        mailbox_id: mailbox_id
+      properties:
+        status:
+          enum:
+          - completed
+          type: string
+        account_id:
+          type: string
+        mailbox_id:
+          type: string
+      required:
+      - account_id
+      - mailbox_id
+      - status
+      type: object
+    verifyAgentSignup_200_response_data:
+      example:
+        signup:
+          status: completed
+          account_id: account_id
+          mailbox_id: mailbox_id
+        recovery_url: https://openapi-generator.tech
+      properties:
+        signup:
+          $ref: "#/components/schemas/verifyAgentSignup_200_response_data_signup"
+        recovery_url:
+          format: uri
+          type: string
+      required:
+      - recovery_url
+      - signup
+      type: object
+    verifyAgentSignup_200_response:
+      example:
+        success: true
+        data:
+          signup:
+            status: completed
+            account_id: account_id
+            mailbox_id: mailbox_id
+          recovery_url: https://openapi-generator.tech
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/verifyAgentSignup_200_response_data"
+      required:
+      - data
+      - success
+      type: object
+    resendAgentSignupCode_request:
+      properties:
+        signup_token:
+          description: Private signup token returned by the first request. Send only
+            in the JSON body; never log it or show it in chat.
+          pattern: "^[A-Za-z0-9_-]{43}$"
+          type: string
+      required:
+      - signup_token
+      type: object
+    getAccountLimits_200_response_data_usage_mailbox_creations:
+      example:
+        used: 0
+        remaining: 0
+        monthly_limit: 0
+        resets_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        used:
+          minimum: 0
+          type: integer
+        remaining:
+          minimum: 0
+          type: integer
+        monthly_limit:
+          minimum: 0
+          type: integer
+        resets_at:
+          format: date-time
+          type: string
+      required:
+      - monthly_limit
+      - remaining
+      - resets_at
+      - used
+      type: object
+    getAccountLimits_200_response_data_usage:
+      description: Present only for full-account administrator credentials and full-account
+        browser sessions.
+      example:
+        mailbox_creations:
+          used: 0
+          remaining: 0
+          monthly_limit: 0
+          resets_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        mailbox_creations:
+          $ref: "#/components/schemas/getAccountLimits_200_response_data_usage_mailbox_creations"
+      type: object
+    getAccountLimits_200_response_data:
+      example:
+        account_id: account_id
+        limits:
+          max_mailboxes: 0
+          max_mailbox_creations_per_month: 0
+          max_files_per_mailbox: 0
+          max_current_files: 0
+          max_storage_bytes: 0
+          max_file_size_bytes: 0
+          max_pdf_size_bytes: 0
+          max_file_versions_per_file: 0
+          max_email_domains: 0
+          max_received_emails_per_month: 0
+          max_received_email_bytes_per_month: 0
+          max_received_email_message_bytes: 0
+          max_email_address_rotations_per_month: 0
+          max_account_members: 0
+          max_api_keys: 0
+          max_agent_connections: 0
+          api_rate_limit_requests_per_minute: 0
+          audit_retention_days: 0
+          max_email_aliases_per_mailbox: 0
+        usage:
+          mailbox_creations:
+            used: 0
+            remaining: 0
+            monthly_limit: 0
+            resets_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        account_id:
+          type: string
+        limits:
+          $ref: "#/components/schemas/AccountLimits"
+        usage:
+          $ref: "#/components/schemas/getAccountLimits_200_response_data_usage"
+      required:
+      - account_id
+      - limits
+      type: object
+    getAccountLimits_200_response:
+      example:
+        success: true
+        data:
+          account_id: account_id
+          limits:
+            max_mailboxes: 0
+            max_mailbox_creations_per_month: 0
+            max_files_per_mailbox: 0
+            max_current_files: 0
+            max_storage_bytes: 0
+            max_file_size_bytes: 0
+            max_pdf_size_bytes: 0
+            max_file_versions_per_file: 0
+            max_email_domains: 0
+            max_received_emails_per_month: 0
+            max_received_email_bytes_per_month: 0
+            max_received_email_message_bytes: 0
+            max_email_address_rotations_per_month: 0
+            max_account_members: 0
+            max_api_keys: 0
+            max_agent_connections: 0
+            api_rate_limit_requests_per_minute: 0
+            audit_retention_days: 0
+            max_email_aliases_per_mailbox: 0
+          usage:
+            mailbox_creations:
+              used: 0
+              remaining: 0
+              monthly_limit: 0
+              resets_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/getAccountLimits_200_response_data"
+      required:
+      - data
+      - success
+      type: object
+    getEmailWebhook_200_response_data_webhook:
+      example:
+        url: https://openapi-generator.tech
+        event: email.received
+      nullable: true
+      properties:
+        url:
+          format: uri
+          type: string
+        event:
+          enum:
+          - email.received
+          type: string
+      required:
+      - event
+      - url
+      type: object
+    getEmailWebhook_200_response_data:
+      example:
+        webhook:
+          url: https://openapi-generator.tech
+          event: email.received
+      properties:
+        webhook:
+          $ref: "#/components/schemas/getEmailWebhook_200_response_data_webhook"
+      required:
+      - webhook
+      type: object
+    getEmailWebhook_200_response:
+      example:
+        success: true
+        data:
+          webhook:
+            url: https://openapi-generator.tech
+            event: email.received
+      not:
+        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/getEmailWebhook_200_response_data"
+      required:
+      - data
+      - success
+      type: object
+    setEmailWebhook_request:
+      properties:
+        webhook_url:
+          format: uri
+          maxLength: 2048
+          type: string
+        account_id:
+          type: string
+        rotate_secret:
+          default: false
+          description: Rotate the secret for the same endpoint and cancel pending
+            deliveries.
+          type: boolean
+      required:
+      - webhook_url
+      type: object
+    setEmailWebhook_200_response_data_webhook:
+      example:
+        url: https://openapi-generator.tech
+        event: email.received
+        signing_secret: signing_secret
+      properties:
+        url:
+          format: uri
+          type: string
+        event:
+          enum:
+          - email.received
+          type: string
+        signing_secret:
+          type: string
+      required:
+      - event
+      - signing_secret
+      - url
+      type: object
+    setEmailWebhook_200_response_data:
+      example:
+        webhook:
+          url: https://openapi-generator.tech
+          event: email.received
+          signing_secret: signing_secret
+      properties:
+        webhook:
+          $ref: "#/components/schemas/setEmailWebhook_200_response_data_webhook"
+      required:
+      - webhook
+      type: object
+    setEmailWebhook_200_response:
+      example:
+        success: true
+        data:
+          webhook:
+            url: https://openapi-generator.tech
+            event: email.received
+            signing_secret: signing_secret
+      not:
+        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/setEmailWebhook_200_response_data"
+      required:
+      - data
+      - success
+      type: object
+    getEmailSubscription_200_response_data_subscription:
+      example:
+        token: token
+        expires_in: 0
+        channel: EmailReceivedChannel
+        account_id: account_id
+        mailbox_id: mailbox_id
+        websocket_url: https://openapi-generator.tech
+      properties:
+        token:
+          type: string
+        expires_in:
+          enum:
+          - 60
+          type: integer
+        channel:
+          enum:
+          - EmailReceivedChannel
+          type: string
+        account_id:
+          type: string
+        mailbox_id:
+          type: string
+        websocket_url:
+          description: Base WebSocket endpoint. Append email_subscription_token as
+            a query parameter.
+          format: uri
+          type: string
+      required:
+      - account_id
+      - channel
+      - expires_in
+      - mailbox_id
+      - token
+      - websocket_url
+      type: object
+    getEmailSubscription_200_response_data:
+      example:
+        subscription:
+          token: token
+          expires_in: 0
+          channel: EmailReceivedChannel
+          account_id: account_id
+          mailbox_id: mailbox_id
+          websocket_url: https://openapi-generator.tech
+      properties:
+        subscription:
+          $ref: "#/components/schemas/getEmailSubscription_200_response_data_subscription"
+      required:
+      - subscription
+      type: object
+    getEmailSubscription_200_response:
+      example:
+        success: true
+        data:
+          subscription:
+            token: token
+            expires_in: 0
+            channel: EmailReceivedChannel
+            account_id: account_id
+            mailbox_id: mailbox_id
+            websocket_url: https://openapi-generator.tech
+      not:
+        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/getEmailSubscription_200_response_data"
+      required:
+      - data
+      - success
+      type: object
+    createMailboxEmailAlias_request:
+      properties:
+        username:
+          description: Local part of the new address; platform reserved names are
+            unavailable.
+          maxLength: 64
+          minLength: 1
+          type: string
+        domain:
+          description: Available platform domain or ready account-owned domain; defaults
+            to the platform domain.
+          type: string
+      required:
+      - username
+      type: object
+    AccountIdentity_agency_account:
+      description: Parent agency only when granted to this credential. Null does not
+        make a client independent.
+      example:
+        id: id
+        name: name
+      nullable: true
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      type: object
+    AccountIdentity_permissions:
+      example:
+        scope: scope
+        mailbox_access: mailbox_access
+        can_create_mailboxes: true
+      properties:
+        scope:
+          type: string
+        mailbox_access:
+          type: string
+        can_create_mailboxes:
+          type: boolean
+      type: object
+    MailboxEmail_available_domains_inner:
+      example:
+        hostname: hostname
+        kind: platform
+      properties:
+        hostname:
+          type: string
+        kind:
+          enum:
+          - platform
+          - custom
+          type: string
+      type: object
+    MailboxEmail_assignment_error:
+      example:
+        code: code
+        message: message
+        retryable: true
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        retryable:
+          type: boolean
+      type: object
+    MailboxEmail_assignment:
+      description: No candidate address is disclosed. Keep using address until status
+        is active; on pending poll the email endpoint.
+      example:
+        id: id
+        status: pending
+        hostname: hostname
+        error:
+          code: code
+          message: message
+          retryable: true
+      properties:
+        id:
+          type: string
+        status:
+          enum:
+          - pending
+          - active
+          - failed
+          type: string
+        hostname:
+          type: string
+        error:
+          $ref: "#/components/schemas/MailboxEmail_assignment_error"
+      type: object
+    MailboxEmail_customization:
+      description: Caller-specific customization capability on the dedicated email
+        GET/rotate endpoints.
+      example:
+        allowed: true
+        blocked_reason: blocked_reason
+        settings_url: settings_url
+      properties:
+        allowed:
+          type: boolean
+        blocked_reason:
+          nullable: true
+          type: string
+        settings_url:
+          description: Account-domain settings link for administrators; null otherwise.
+          nullable: true
+          type: string
+      type: object
+    MailboxEmail_aliases_inner:
+      example:
+        id: id
+        address: address
+        active: true
+      properties:
+        id:
+          type: string
+        address:
+          type: string
+        active:
+          description: Within the current alias allowance. Mailbox receiving holds
+            still apply.
+          type: boolean
+      required:
+      - active
+      - address
+      - id
+      type: object
+    DecodedIncomingMessage_attachments_inner:
+      properties:
+        path:
+          description: Relative to message folder.
+          type: string
+        original_filename:
+          type: string
+        content_type:
+          type: string
+        size_bytes:
+          format: int64
+          minimum: 0
+          type: integer
+        origin:
+          description: "For normalized forwards: inner attachment, member addition,\
+            \ attached source EML, or unknown inline-forward origin."
+          enum:
+          - original
+          - forwarder
+          - forwarded_message
+          - unspecified
+          type: string
+      required:
+      - content_type
+      - original_filename
+      - path
+      - size_bytes
+      type: object
+    ApiError_error:
+      example:
+        code: code
+        message: message
+        details: ""
+        request_id: request_id
+        docs_url: https://openapi-generator.tech
+        timestamp: 2000-01-23T04:56:07.000+00:00
+        recoverable: true
+        next_action: next_action
+        browser_url: browser_url
+      properties:
+        code:
+          minLength: 1
+          type: string
+        message:
+          minLength: 1
+          type: string
+        details:
+          description: "Structured error details: an object or an array of field/message\
+            \ validation errors."
+        request_id:
+          type: string
+        docs_url:
+          format: uri
+          type: string
+        timestamp:
+          format: date-time
+          type: string
+        recoverable:
+          type: boolean
+        next_action:
+          type: string
+        browser_url:
+          type: string
+      required:
+      - code
+      - message
+      type: object
+    ApiError_not:
+      anyOf:
+      - required:
+        - data
+      - required:
+        - error_message
+    EmailSummary_files:
+      description: Included only with include_storage=true for file-browser integration.
+      example:
+        body_id: body_id
+        original_id: original_id
+        attachment_ids:
+        - attachment_ids
+        - attachment_ids
+      properties:
+        body_id:
+          nullable: true
+          type: string
+        original_id:
+          nullable: true
+          type: string
+        attachment_ids:
+          items:
+            type: string
+          type: array
+      required:
+      - attachment_ids
+      - body_id
+      - original_id
+      type: object
+    EmailReceivedEvent_data:
+      properties:
+        account_id:
+          type: string
+        mailbox_id:
+          type: string
+        email_id:
+          type: string
+        received_at:
+          format: date-time
+          type: string
+        attachment_count:
+          minimum: 0
+          type: integer
+      required:
+      - account_id
+      - attachment_count
+      - email_id
+      - mailbox_id
+      - received_at
+      type: object
+  securitySchemes:
+    bearerAuth:
+      scheme: bearer
+      type: http
+

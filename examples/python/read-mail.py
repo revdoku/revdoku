@@ -9,13 +9,13 @@ import requests
 
 headers = {"Authorization": f"Bearer {os.environ['REVDOKU_API_KEY']}"}
 account_id = os.getenv("REVDOKU_ACCOUNT_ID")
-bucket_id = os.environ["REVDOKU_BUCKET_ID"]
-if not re.fullmatch(r"bkt_[A-Za-z0-9]+", bucket_id):
-    raise ValueError("Invalid bucket ID")
+mailbox_id = os.environ["REVDOKU_BUCKET_ID"]
+if not re.fullmatch(r"bkt_[A-Za-z0-9]+", mailbox_id):
+    raise ValueError("Invalid mailbox ID")
 cursor = os.getenv("REVDOKU_CURSOR")
 for page in range(100):
     response = requests.get(
-        f"https://api.revdoku.com/v1/buckets/{bucket_id}/emails", headers=headers,
+        f"https://api.revdoku.com/v1/mailboxes/{mailbox_id}/emails", headers=headers,
         params={"account_id": account_id, "cursor": cursor}, timeout=30, allow_redirects=False,
     )
     result = response.json()
@@ -25,7 +25,7 @@ for page in range(100):
             break
         time.sleep(2 ** attempt)
         response = requests.get(
-            f"https://api.revdoku.com/v1/buckets/{bucket_id}/emails", headers=headers,
+            f"https://api.revdoku.com/v1/mailboxes/{mailbox_id}/emails", headers=headers,
             params={"account_id": account_id, "cursor": cursor}, timeout=30, allow_redirects=False,
         )
         result = response.json()
@@ -33,7 +33,7 @@ for page in range(100):
         raise RuntimeError(f"{result['error']['code']}: {result['error']['message']}")
     for summary in result["data"]["emails"]:
         response = requests.get(
-            f"https://api.revdoku.com/v1/buckets/{bucket_id}/emails/{quote(summary['id'], safe='')}",
+            f"https://api.revdoku.com/v1/mailboxes/{mailbox_id}/emails/{quote(summary['id'], safe='')}",
             headers=headers, params={"account_id": account_id}, timeout=30, allow_redirects=False,
         )
         detail = response.json()

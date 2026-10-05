@@ -1,0 +1,48 @@
+{
+  "name": "revdoku/api",
+  "description": "Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Direct API signup requires verification of the human operator email. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.",
+  "keywords": [
+    "openapitools",
+    "openapi-generator",
+    "openapi",
+    "php",
+    "sdk",
+    "rest",
+    "api"
+  ],
+  "homepage": "https://revdoku.com",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Revdoku",
+      "email": "support@revdoku.com"
+    }
+  ],
+  "require": {
+    "php": "^8.1",
+    "ext-curl": "*",
+    "ext-json": "*",
+    "ext-mbstring": "*",
+    "guzzlehttp/guzzle": "^7.3",
+    "guzzlehttp/psr7": "^1.7 || ^2.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^8.0 || ^9.0",
+    "friendsofphp/php-cs-fixer": "^3.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "Revdoku\\Api\\": "lib/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Revdoku\\Api\\Test\\": "test/"
+    }
+  },
+  "support": {
+    "source": "https://github.com/revdoku/revdoku-php",
+    "issues": "https://github.com/revdoku/revdoku-php/issues",
+    "email": "support@revdoku.com"
+  }
+}

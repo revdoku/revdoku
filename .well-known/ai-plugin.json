@@ -2,8 +2,8 @@
   "schema_version": "v1",
   "name_for_human": "Revdoku",
   "name_for_model": "revdoku",
-  "description_for_human": "Email inboxes and shared files for AI agents.",
-  "description_for_model": "Email inboxes with shared file storage for people and AI agents. Receive and read messages and attachments, and share files through authorized bucket access.  Use email resources to list messages with cursors, read decoded bodies, and download originals and attachments. File storage is an additional capability. Signup is browser-only. Connect through OAuth for hosted MCP or CLI browser sign-in; never ask users to paste credentials in chat. Storage and collaboration follow the Terms of Use. The OpenAPI document covers selected REST endpoints; see api.md for the complete API.",
+  "description_for_human": "Email mailboxes and shared files for AI agents.",
+  "description_for_model": "Email mailboxes with shared file storage for people and AI agents. Receive and read messages and attachments, and share files through authorized mailbox access.  Use email resources to list messages with cursors, read decoded bodies, and download originals and attachments. File storage is an additional capability. Signup is browser-only. Connect through OAuth for hosted MCP or CLI browser sign-in; never ask users to paste credentials in chat. Storage and collaboration follow the Terms of Use. The OpenAPI document covers selected REST endpoints; see api.md for the complete API.",
   "auth": {
     "type": "user_http",
     "authorization_type": "bearer"

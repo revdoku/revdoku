@@ -1,22 +1,23 @@
 # Revdoku API
 
-Revdoku provides **email inboxes for humans and AI agents**, with private file
-storage in each bucket. The REST API creates inboxes, lists and reads messages,
-and downloads attachments. Buckets also support uploaded files and version history.
+Revdoku provides **email mailboxes for humans and AI agents**, with private file
+storage in each mailbox. The REST API creates mailboxes, lists and reads messages,
+and downloads attachments. Mailboxes also support uploaded files and version history.
 
 ## Find what you need
 
 | Task | Section |
 | --- | --- |
 | Make your first API request | [Quick start](#email-api-quick-start) |
-| Build customer inboxes in your application | [SaaS inbox guide](https://github.com/revdoku/revdoku/blob/main/guides/saas-inboxes.md) |
+| Choose an SDK, n8n or Zapier | [Package directory and capability comparison](https://github.com/revdoku/revdoku/blob/main/guides/api-packages.md) |
+| Build customer mailboxes in your application | [SaaS mailbox guide](https://github.com/revdoku/revdoku/blob/main/guides/saas-mailboxes.md) |
 | Understand JSON and errors | [Response format](#response-format) |
 | Select an account | [Accounts](#accounts) |
 | Check quotas | [Account limits](#account-limits) |
 | Read email and attachments | [Received email operations](#received-email-operations) |
 | Webhooks and local live events | [Email events](#email-webhooks-and-live-subscriptions) |
-| Choose an email username | [Create a bucket](#create-a-bucket) |
-| Use extra addresses or your own domain | [Aliases](#inbox-aliases) · [Custom domains](#custom-email-domains) |
+| Choose an email username | [Create a mailbox](#create-a-mailbox) |
+| Use extra addresses or your own domain | [Aliases](#mailbox-aliases) · [Custom domains](#custom-email-domains) |
 | Upload a file | [Upload a file](#upload-a-file) |
 | Create a new owner's account through the API | [Direct API signup](#direct-api-signup) |
 
@@ -26,15 +27,15 @@ and downloads attachments. Buckets also support uploaded files and version histo
    or **Account → Access**. If you need an account, [browser signup](https://app.revdoku.com/users/sign_up)
    creates your first mailbox; [direct signup](#direct-api-signup) is also available.
 2. Keep the key on your backend. Replace `YOUR_API_KEY` below in your private application.
-3. List the existing buckets and choose an authorized inbox. A read-only key can
-   complete this read workflow; creating another inbox requires account-wide admin access.
+3. List the existing mailboxes and choose an authorized mailbox. A read-only key can
+   complete this read workflow; creating another mailbox requires account-wide admin access.
 
 ```http
-GET /v1/buckets
+GET /v1/mailboxes
 Authorization: Bearer YOUR_API_KEY
 ```
 
-The response contains `data.buckets`. Keep the chosen `id` for the requests below.
+The response contains `data.mailboxes`. Keep the chosen `id` for the requests below.
 For multiple accounts, first [list granted accounts](#accounts), then pass
 `account_id=acct_RETURNED_ID` on every GET and in each write body. Switching accounts
 in the dashboard does not change your credential's default.
@@ -50,13 +51,13 @@ in the dashboard does not change your credential's default.
 
 ### List messages
 
-Replace `bkt_example` with the chosen bucket ID. To send a test message, use the
+Replace `bkt_example` with the chosen mailbox ID. To send a test message, use the
 address saved during provisioning or displayed to an authorized writer in the
 dashboard; address discovery requires write access.
 Save the returned cursor even when the list is empty:
 
 ```http
-GET /v1/buckets/bkt_example/emails?limit=50
+GET /v1/mailboxes/bkt_example/emails?limit=50
 Authorization: Bearer YOUR_API_KEY
 ```
 
@@ -82,27 +83,27 @@ Authorization: Bearer YOUR_API_KEY
 
 | Task | Request |
 | --- | --- |
-| Read a returned message | `GET /v1/buckets/:bucket_id/emails/:email_id` |
-| Get a temporary attachment link | `GET /v1/buckets/:bucket_id/emails/:email_id/attachments/:attachment_id` |
+| Read a returned message | `GET /v1/mailboxes/:mailbox_id/emails/:email_id` |
+| Get a temporary attachment link | `GET /v1/mailboxes/:mailbox_id/emails/:email_id/attachments/:attachment_id` |
 
 See [received email operations](#received-email-operations),
 [OpenAPI](https://revdoku.com/openapi.json),
 [runnable JS/TypeScript examples](https://github.com/revdoku/revdoku/tree/main/examples), and the
-[SaaS inbox guide](https://github.com/revdoku/revdoku/blob/main/guides/saas-inboxes.md).
+[SaaS mailbox guide](https://github.com/revdoku/revdoku/blob/main/guides/saas-mailboxes.md).
 
-<a id="1-create-an-inbox"></a>
+<a id="1-create-an-mailbox"></a>
 
-### Create another inbox
+### Create another mailbox
 
-Use this only when you need another bucket. Browser and direct signup already
+Use this only when you need another mailbox. Browser and direct signup already
 create a first mailbox.
 
 ```http
-POST /v1/buckets
+POST /v1/mailboxes
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
-{ "bucket": {} }
+{ "mailbox": {} }
 ```
 
 201 Created (selected fields)
@@ -111,7 +112,7 @@ Content-Type: application/json
 {
   "success": true,
   "data": {
-    "bucket": {
+    "mailbox": {
       "id": "bkt_example",
       "title": "maple.river7k2xq9",
       "email": {
@@ -126,10 +127,10 @@ Content-Type: application/json
 ```
 
 Creation waits for receiving setup. After `201 Created`, use the returned address immediately.
-Keep the returned bucket ID for later requests. Creation consumes a separate UTC
-monthly allowance; deleting or archiving the bucket does not refund it. Read
+Keep the returned mailbox ID for later requests. Creation consumes a separate UTC
+monthly allowance; deleting or archiving the mailbox does not refund it. Read
 [creation usage](#account-limits) before a batch. On `EMAIL_NOT_READY`, preserve
-the created bucket ID. After a lost response, reconcile existing buckets; do not
+the created mailbox ID. After a lost response, reconcile existing mailboxes; do not
 automatically repeat the POST. See [creation results](#creation-result).
 
 AI-agent users can start with the Revdoku app's copied prompt or the
@@ -153,16 +154,16 @@ connection and its refresh credentials.
 | Field | Success | Failure |
 | --- | --- | --- |
 | `success` | `true` | `false` |
-| `data` | Named resources such as `bucket` or `buckets`. | Omitted. |
+| `data` | Named resources such as `mailbox` or `mailboxes`. | Omitted. |
 | `error` | Omitted. | Error code, message and optional details. |
 
-Success — HTTP `201 Created` (selected bucket fields):
+Success — HTTP `201 Created` (selected mailbox fields):
 
 ```json
 {
   "success": true,
   "data": {
-    "bucket": {
+    "mailbox": {
       "id": "bkt_example",
       "email": {
         "address": "assigned.address@revdokumail.com",
@@ -201,7 +202,7 @@ Failure — HTTP `401 Unauthorized` (core error fields):
 
 | Response | Body |
 | --- | --- |
-| Successful JSON request | `success: true` and `data`, containing named resources such as `bucket` or `buckets`. |
+| Successful JSON request | `success: true` and `data`, containing named resources such as `mailbox` or `mailboxes`. |
 | Failed request | `success: false` and `error`, with the appropriate HTTP error status. |
 | `204 No Content` | No body. |
 | File download | File bytes. |
@@ -267,19 +268,19 @@ An API key can access one or more accounts. Each request operates on one selecte
 | --- | --- | --- |
 | Account identity and permissions | `GET /v1/accounts/:id` | `account_get` |
 | Effective quotas | `GET /v1/account/limits` | `account_limits` |
-| Bucket details | `GET /v1/buckets/:id` | `bucket_get` |
-| Received messages | `GET /v1/buckets/:id/emails` | `bucket_email_list` |
-| Stored files | `GET /v1/buckets/:id/files` | `bucket_file_list` |
+| Mailbox details | `GET /v1/mailboxes/:id` | `mailbox_get` |
+| Received messages | `GET /v1/mailboxes/:id/emails` | `mailbox_email_list` |
+| Stored files | `GET /v1/mailboxes/:id/files` | `mailbox_file_list` |
 
-A bucket read includes its identity, current revision and summary counts.
+A mailbox read includes its identity, current revision and summary counts.
 Fetch file lists, messages, version history and account limits separately.
-Responses keep their named resources under `data`, such as `data.bucket` or
+Responses keep their named resources under `data`, such as `data.mailbox` or
 `data.files`. Related results of a write may share one response.
 
 ## Account limits
 
 Read quotas when choosing a plan or handling a quota error. They are not included
-in ordinary bucket responses.
+in ordinary mailbox responses.
 
 ```http
 GET /v1/account/limits
@@ -294,7 +295,7 @@ Authorization: Bearer YOUR_API_KEY
   "data": {
     "account_id": "acct_example",
     "limits": {
-      "max_buckets": 3,
+      "max_mailboxes": 3,
       "max_file_size_bytes": 10485760,
       "max_received_emails_per_month": 300
     }
@@ -304,9 +305,9 @@ Authorization: Bearer YOUR_API_KEY
 
 | Field in `limits` | What it limits |
 | --- | --- |
-| `max_buckets` | Active buckets in the billing group. Archived content still consumes storage. |
-| `max_bucket_creations_per_month` | New buckets per UTC calendar month. Deleting a bucket does not refund a creation. |
-| `max_files_per_bucket` | Current files in one bucket. |
+| `max_mailboxes` | Active mailboxes in the billing group. Archived content still consumes storage. |
+| `max_mailbox_creations_per_month` | New mailboxes per UTC calendar month. Deleting a mailbox does not refund a creation. |
+| `max_files_per_mailbox` | Current files in one mailbox. |
 | `max_current_files` | Current files across the billing group. |
 | `max_storage_bytes` | Total stored bytes. |
 | `max_file_size_bytes` | Bytes in one uploaded file. |
@@ -316,7 +317,7 @@ Authorization: Bearer YOUR_API_KEY
 | `max_received_emails_per_month` | Incoming messages per billing period. |
 | `max_received_email_bytes_per_month` | Incoming raw-message bytes per billing period, including MIME encoding. |
 | `max_received_email_message_bytes` | Bytes in one incoming message. |
-| `max_email_aliases_per_bucket` | Active aliases per inbox. |
+| `max_email_aliases_per_mailbox` | Active aliases per mailbox. |
 | `max_email_address_rotations_per_month` | Address replacements per UTC calendar month. |
 | `max_account_members` | Human members. |
 | `max_api_keys` | Normal API keys. |
@@ -331,24 +332,24 @@ per account. Received email files also consume storage/file allowances.
 
 ### Creation usage
 
-`data.usage.bucket_creations` is an optional object, separate from `data.limits`.
+`data.usage.mailbox_creations` is an optional object, separate from `data.limits`.
 It is returned to a full-account browser session or an unrestricted account-wide
-connection with admin permission (`bucket_admin` or `full_account_access`).
+connection with admin permission (`mailbox_admin` or `full_account_access`).
 The human membership must also cover the whole account. Read-only/write-only,
-selected-bucket, denied-bucket and bucket-scoped memberships do not receive this
+selected-mailbox, denied-mailbox and mailbox-scoped memberships do not receive this
 usage object; their existing limits response remains available.
 
-| Field in `usage.bucket_creations` | Meaning |
+| Field in `usage.mailbox_creations` | Meaning |
 | --- | --- |
 | `monthly_limit` | Shared billing-group allowance for this UTC calendar month. |
 | `used` | Committed creations this month. |
-| `remaining` | Creations left; deleting or archiving a bucket does not refund usage. |
+| `remaining` | Creations left; deleting or archiving a mailbox does not refund usage. |
 | `resets_at` | ISO 8601 UTC reset time. |
 
-Use this for planning, then handle `BUCKET_CREATION_LIMIT_REACHED` from the actual
+Use this for planning, then handle `MAILBOX_CREATION_LIMIT_REACHED` from the actual
 creation request. Concurrent callers can spend capacity after a preflight read.
 The dashboard shows creation usage in **Account → Subscription**. This allowance
-is separate from active bucket capacity.
+is separate from active mailbox capacity.
 
 | Interface | Read limits |
 | --- | --- |
@@ -356,39 +357,39 @@ is separate from active bucket capacity.
 | MCP | `account_limits`. |
 | CLI | `revdoku account limits`; optional `--account-id ID`. |
 
-## Storing files inside a bucket
+## Storing files inside a mailbox
 
-A bucket can also store uploaded files. Received emails and their attachments are
+A mailbox can also store uploaded files. Received emails and their attachments are
 stored as files inside its `_email/` folder.
 
 | Task | Endpoint | Purpose |
 | --- | --- | --- |
 | Upload a file | [Direct upload workflow](#upload-a-file) | Store documents, data, code or binary files. |
-| Read by path | `GET /v1/buckets/:id/files/by_path` | Read a file without looking up its ID first. |
-| Append text | `POST /v1/buckets/:id/files/append_text` | Append UTF-8 text to a file. |
-| List versions | `GET /v1/buckets/:id/versions` | Inspect retained bucket history. |
-| Restore a version | `POST /v1/buckets/:id/versions/restore` | Create a new latest version from a retained snapshot. |
+| Read by path | `GET /v1/mailboxes/:id/files/by_path` | Read a file without looking up its ID first. |
+| Append text | `POST /v1/mailboxes/:id/files/append_text` | Append UTF-8 text to a file. |
+| List versions | `GET /v1/mailboxes/:id/versions` | Inspect retained mailbox history. |
+| Restore a version | `POST /v1/mailboxes/:id/versions/restore` | Create a new latest version from a retained snapshot. |
 
 - Files retain their paths and formats. Storage and version limits apply.
-- For concurrent edits, supply `expected_bucket_revision_id`; reread and reconcile if the version has changed.
+- For concurrent edits, supply `expected_mailbox_revision_id`; reread and reconcile if the version has changed.
 - Text append does not parse or merge CSV/JSON for you.
 - Share `dashboard_url` with authorized members. The link itself does not grant access.
-- Bucket readers can read both uploaded files and stored emails.
+- Mailbox readers can read both uploaded files and stored emails.
 
 ## Received email operations
 
-Listing, reading, status updates and downloads require bucket **read** access and share the same permissions
+Listing, reading, status updates and downloads require mailbox **read** access and share the same permissions
 as stored files. Messages have stable `eml_` IDs; attachments have `df_` IDs.
 Renames retain message IDs, while copies receive new IDs. Use the email endpoints below for normal mail workflows. You do not need to parse the underlying files.
 
 | Method | Path | Result |
 | --- | --- | --- |
-| GET | `/v1/buckets/:bucket_id/emails` | `data.emails` and `data.pagination` |
-| GET | `/v1/buckets/:bucket_id/emails/:email_id` | `data.email`, including `body_text`, `body_status`, `attachments` |
-| PATCH | `/v1/buckets/:bucket_id/emails/:email_id` | Accepts `{"read":true}` or `{"read":false}`; returns `data.email` |
-| DELETE | `/v1/buckets/:bucket_id/emails/:email_id` | Requires bucket **admin** access. Deletes this email and its owned files/attachments; returns 204. |
-| GET | `/v1/buckets/:bucket_id/emails/:email_id/raw` | `data.download` for the original EML |
-| GET | `/v1/buckets/:bucket_id/emails/:email_id/attachments/:attachment_id` | `data.download` for a saved attachment belonging to this email |
+| GET | `/v1/mailboxes/:mailbox_id/emails` | `data.emails` and `data.pagination` |
+| GET | `/v1/mailboxes/:mailbox_id/emails/:email_id` | `data.email`, including `body_text`, `body_status`, `attachments` |
+| PATCH | `/v1/mailboxes/:mailbox_id/emails/:email_id` | Accepts `{"read":true}` or `{"read":false}`; returns `data.email` |
+| DELETE | `/v1/mailboxes/:mailbox_id/emails/:email_id` | Requires mailbox **admin** access. Deletes this email and its owned files/attachments; returns 204. |
+| GET | `/v1/mailboxes/:mailbox_id/emails/:email_id/raw` | `data.download` for the original EML |
+| GET | `/v1/mailboxes/:mailbox_id/emails/:email_id/attachments/:attachment_id` | `data.download` for a saved attachment belonging to this email |
 
 ### List query parameters
 
@@ -422,6 +423,9 @@ Renames retain message IDs, while copies receive new IDs. Use the email endpoint
 | `read_at` | List and detail | Time the message was marked read. |
 | `read_by` | List and detail | Person who marked it read, when known. |
 | `read_by_api_key` | List and detail | API connection that marked it read, when applicable. |
+| `forwarding` | List and detail | Present for recognized forwards from authenticated human members with mailbox access. Records the forwarding member, method and original date; original authorship is member-reported. |
+| `forwarding.note_text`, `forwarding.note_status` | Detail | Member’s separate note and its completeness; absent from lists. |
+| `attachments[].origin` | Detail | For member forwards: `original`, `forwarder`, `forwarded_message` (source EML), or `unspecified` for inline-forward attachments. |
 | `body_text` | Detail | Decoded message text, or `null` if unavailable. |
 | `body_status` | Detail | `complete`, `empty`, `truncated`, or `unavailable`. |
 | `attachments` | Detail | Saved attachment metadata; see below. |
@@ -437,14 +441,14 @@ Renames retain message IDs, while copies receive new IDs. Use the email endpoint
 4. Otherwise, wait before requesting the saved cursor again. Save the cursor even for an empty page.
 
 ```http
-GET /v1/buckets/bkt_example/emails?cursor=OPAQUE_CURSOR&limit=50
+GET /v1/mailboxes/bkt_example/emails?cursor=OPAQUE_CURSOR&limit=50
 Authorization: Bearer YOUR_API_KEY
 ```
 
 Replace `OPAQUE_CURSOR` with the previous response's `pagination.next_cursor`.
 Treat it as an opaque string: URL-encode it; do not construct or decode it.
 
-- Keep the account, bucket, order and filters unchanged when reusing a cursor.
+- Keep the account, mailbox, order and filters unchanged when reusing a cursor.
 - Delayed deliveries are returned in committed arrival order, even with an older receipt timestamp.
 - Cursors track arrivals. Read-status changes and edits do not replay a message.
 - Use the email ID to prevent duplicate downstream processing after retries.
@@ -490,8 +494,8 @@ Request the link for the selected attachment or original EML using the endpoints
 
 | Request | Effect |
 | --- | --- |
-| `DELETE /v1/buckets/:bucket_id/emails/:email_id` | Deletes the email and its owned message files and attachments together. Requires bucket-admin permission. |
-| `DELETE /v1/buckets/:bucket_id/files/:file_id` | Deletes an individual stored file. |
+| `DELETE /v1/mailboxes/:mailbox_id/emails/:email_id` | Deletes the email and its owned message files and attachments together. Requires mailbox-admin permission. |
+| `DELETE /v1/mailboxes/:mailbox_id/files/:file_id` | Deletes an individual stored file. |
 
 Successful deletion returns `204 No Content`. Repeating it returns `404`.
 Separately copied files remain independent.
@@ -501,9 +505,9 @@ Separately copied files remain independent.
 | HTTP status | Code or condition | Next step |
 | --- | --- | --- |
 | 401 | Unauthenticated | Supply a valid credential. |
-| 403 | Access denied | Check the credential's bucket permissions. |
+| 403 | Access denied | Check the credential's mailbox permissions. |
 | 403 | `CONTENT_SEARCH_DISABLED` | Content search is unavailable for this account; remove the search filters. |
-| 404 | Email or attachment absent | Check the bucket and resource IDs. |
+| 404 | Email or attachment absent | Check the mailbox and resource IDs. |
 | 409 | `EMAIL_CHANGED` | Read the current email state before retrying. |
 | 422 | `INVALID_EMAIL_ARGUMENT`, `INVALID_EMAIL_CURSOR` | Correct the arguments or start with a fresh cursor. |
 | 429 | Rate limit | Wait as directed by `Retry-After`. |
@@ -519,10 +523,10 @@ Read contents through the existing email API.
 
 | Endpoint | Permission | Result |
 | --- | --- | --- |
-| GET /v1/buckets/:bucket_id/email/webhook | Bucket admin | Endpoint, or webhook: null; excludes the signing secret. |
-| PUT /v1/buckets/:bucket_id/email/webhook | Bucket admin | Set one URL; returns the endpoint and signing secret. |
-| DELETE /v1/buckets/:bucket_id/email/webhook | Bucket admin | Disable delivery; 204 No Content. |
-| GET /v1/buckets/:bucket_id/email/subscription | Bucket read | Signed WebSocket ticket valid for 60 seconds. |
+| GET /v1/mailboxes/:mailbox_id/email/webhook | Mailbox admin | Endpoint, or webhook: null; excludes the signing secret. |
+| PUT /v1/mailboxes/:mailbox_id/email/webhook | Mailbox admin | Set one URL; returns the endpoint and signing secret. |
+| DELETE /v1/mailboxes/:mailbox_id/email/webhook | Mailbox admin | Disable delivery; 204 No Content. |
+| GET /v1/mailboxes/:mailbox_id/email/subscription | Mailbox read | Signed WebSocket ticket valid for 60 seconds. |
 
 Use your normal bearer API key. Select another granted account with account_id in
 the query for GET/DELETE, or in the JSON body for PUT. Endpoints must use public
@@ -543,7 +547,7 @@ and redirects are rejected. Invalid configuration returns INVALID_EMAIL_WEBHOOK 
    replacing the URL rotates it and cancels pending old-endpoint deliveries.
 3. Verify the exact request bytes before parsing JSON.
 4. Deduplicate the event ID, durably accept the event, and return any 2xx.
-5. Fetch /v1/buckets/:bucket_id/emails/:email_id with your own API key.
+5. Fetch /v1/mailboxes/:mailbox_id/emails/:email_id with your own API key.
 
 ~~~json
 {
@@ -552,7 +556,7 @@ and redirects are rejected. Invalid configuration returns INVALID_EMAIL_WEBHOOK 
   "created_at": "2026-10-01T12:00:00.000000Z",
   "data": {
     "account_id": "acct_example",
-    "bucket_id": "bkt_example",
+    "mailbox_id": "bkt_example",
     "email_id": "eml_example",
     "received_at": "2026-10-01T11:59:58.000000Z",
     "attachment_count": 1
@@ -565,7 +569,7 @@ and redirects are rejected. Invalid configuration returns INVALID_EMAIL_WEBHOOK 
 | id | Stable event ID for deduplication; unchanged on retries. |
 | type | email.received. |
 | created_at | UTC time when intake queued the event. |
-| data.account_id, data.bucket_id | Account and mailbox that saved the message. |
+| data.account_id, data.mailbox_id | Account and mailbox that saved the message. |
 | data.email_id | Stable email ID for the existing read endpoint. |
 | data.received_at | UTC email receipt time. |
 | data.attachment_count | Number of saved attachments. |
@@ -617,7 +621,7 @@ Delivery can repeat or arrive out of order; deduplicate by event ID.
 
 | Allowance | Effective value |
 | --- | --- |
-| Inboxes with a webhook | Existing active-bucket capacity; read `limits.max_buckets`. |
+| Mailboxes with a webhook | Existing active-mailbox capacity; read `limits.max_mailboxes`. |
 | Endpoints per mailbox | One. |
 | New email events | Follow accepted messages within incoming count, byte and storage limits. |
 | Delivery history | Read `limits.audit_retention_days`. |
@@ -637,7 +641,7 @@ Account administrators use **Analytics → Webhooks** in the dashboard.
 1. GET a subscription ticket with your read-authorized API key.
 2. Open the returned `websocket_url`, adding `email_subscription_token=TICKET`
    within 60 seconds, using the `actioncable-v1-json` subprotocol.
-3. Subscribe to EmailReceivedChannel with the returned account_id and bucket_id.
+3. Subscribe to EmailReceivedChannel with the returned account_id and mailbox_id.
    Wait for confirm_subscription.
 4. List messages with your saved ascending arrival cursor and process every page.
    Deduplicate email IDs against live events received during catch-up.
@@ -654,43 +658,43 @@ Runnable [JavaScript/TypeScript and Python examples](https://github.com/revdoku/
 | Handshakes | 120 per minute per source IP |
 | Client commands | 120 per minute per connection; 4 KiB maximum per command |
 
-Keep account, bucket and filters unchanged when reusing a cursor. Preserve `pagination.next_cursor` even after an empty page. WebSocket events are live hints; REST catch-up supplies messages received while disconnected.
+Keep account, mailbox and filters unchanged when reusing a cursor. Preserve `pagination.next_cursor` even after an empty page. WebSocket events are live hints; REST catch-up supplies messages received while disconnected.
 
-A receiver must remain running. Webhooks and WebSockets do not wake an idle AI chat. The CLI's `email-subscription` and MCP's `bucket_email_subscription` return connection details for that receiver. Webhook configuration is available through `webhook`, `webhook-set`, `webhook-delete` and the corresponding `bucket_email_webhook_get`, `bucket_email_webhook_set`, `bucket_email_webhook_delete` MCP tools.
+A receiver must remain running. Webhooks and WebSockets do not wake an idle AI chat. The CLI's `email-subscription` and MCP's `mailbox_email_subscription` return connection details for that receiver. Webhook configuration is available through `webhook`, `webhook-set`, `webhook-delete` and the corresponding `mailbox_email_webhook_get`, `mailbox_email_webhook_set`, `mailbox_email_webhook_delete` MCP tools.
 
 Ticket expiry limits connection establishment; an established subscription lasts
 until disconnect or access revocation. Credentials and membership are checked before
 each transmitted event. Treat the ticket as a temporary credential: it authorizes
 only its selected mailbox channel, never account notification streams.
 
-## Incoming email into a bucket
+## Incoming email into a mailbox
 
-The dashboard provides **Mailbox / Raw Files** tabs for each bucket.
+The dashboard provides **Mailbox / Raw Files** tabs for each mailbox.
 These are views of the same authorized files. List / Tiles stays inside
 Raw Files; the Mailbox badge counts unread messages, not attachments. Clients use
 the email resource below; original files remain accessible through the file API.
 
-Each bucket has its own incoming email address for receiving messages and
+Each mailbox has its own incoming email address for receiving messages and
 attachments alongside uploaded files. Anyone knowing the address can email it;
-reading messages requires authorized bucket access. Use only the returned address;
-choose a username when creating the bucket, or connect your own custom domain.
+reading messages requires authorized mailbox access. Use only the returned address;
+choose a username when creating the mailbox, or connect your own custom domain.
 
 | Operation | REST / MCP |
 | --- | --- |
-| Create an inbox | `POST /v1/buckets` / `bucket_create`; creation automatically returns `bucket.email` with address and receiving state. Template/copy creation assigns a separate address. |
-| Get address/state | `GET /v1/buckets/:id/email`, or bucket detail / `bucket_get` with `include_email=true`; requires upload/write access. |
-| Check for new mail | `GET /v1/buckets/:id/emails` / `bucket_email_list`; save `pagination.next_cursor`. |
-| Read a message | `GET /v1/buckets/:id/emails/:email_id` / `bucket_email_get`. |
-| Rotate address | `POST /v1/buckets/:id/email/rotate`; requires write access and explicit confirmation. |
+| Create an mailbox | `POST /v1/mailboxes` / `mailbox_create`; creation automatically returns `mailbox.email` with address and receiving state. Template/copy creation assigns a separate address. |
+| Get address/state | `GET /v1/mailboxes/:id/email`, or mailbox detail / `mailbox_get` with `include_email=true`; requires upload/write access. |
+| Check for new mail | `GET /v1/mailboxes/:id/emails` / `mailbox_email_list`; save `pagination.next_cursor`. |
+| Read a message | `GET /v1/mailboxes/:id/emails/:email_id` / `mailbox_email_get`. |
+| Rotate address | `POST /v1/mailboxes/:id/email/rotate`; requires write access and explicit confirmation. |
 
-For CLI use, `revdoku inbox --bucket-id ID` retrieves address/state, and
-`revdoku emails --bucket-id ID` lists messages; `revdoku email EMAIL_ID --bucket-id ID` reads one. For hosted agents,
+For CLI use, `revdoku mailbox --mailbox-id ID` retrieves address/state, and
+`revdoku emails --mailbox-id ID` lists messages; `revdoku email EMAIL_ID --mailbox-id ID` reads one. For hosted agents,
 see the [MCP mailbox walkthrough](https://github.com/revdoku/revdoku/blob/main/mcp.md).
 
 ### Receiving state
 
-`POST /v1/buckets` waits for receiving confirmation before returning success.
-Inspect an existing mailbox with `GET /v1/buckets/:id/email`.
+`POST /v1/mailboxes` waits for receiving confirmation before returning success.
+Inspect an existing mailbox with `GET /v1/mailboxes/:id/email`.
 
 | Field | Meaning |
 | --- | --- |
@@ -705,14 +709,14 @@ A mailbox may stop receiving if its quota is exhausted or receiving is paused.
 Saved messages remain readable. Limits are available separately at
 [`GET /v1/account/limits`](#account-limits).
 
-An owner/administrator manages per-bucket Pause/Resume in the browser, including
+An owner/administrator manages per-mailbox Pause/Resume in the browser, including
 cooldown and other holds. Those controls and detailed diagnostic logs are not
-API/MCP operations. Follow the [receiving runbook](https://github.com/revdoku/revdoku/blob/main/guides/saas-inboxes.md#when-receiving-stops)
+API/MCP operations. Follow the [receiving runbook](https://github.com/revdoku/revdoku/blob/main/guides/saas-mailboxes.md#when-receiving-stops)
 for an incident handoff. Mail rejected while paused must be resent.
 
 ### Activity fields
 
-These fields are also available on ordinary bucket reads.
+These fields are also available on ordinary mailbox reads.
 
 | Field | Meaning |
 | --- | --- |
@@ -733,9 +737,9 @@ Read the current mailbox settings before requesting a replacement.
 | `current_address` | Yes | Address returned by the latest mailbox settings request. |
 | `domain` | No | Keep the current domain, select an available platform or ready custom domain, or use `platform`. |
 | `username` | No | Choose a name on the selected domain; requires full-account administrator access. Omit for a generated name. |
-| `keep_old_as_alias` | No; default `false` | Retain the old primary for the same inbox; requires full-account administrator access and an available alias slot. |
+| `keep_old_as_alias` | No; default `false` | Retain the old primary for the same mailbox; requires full-account administrator access and an available alias slot. |
 
-- Check `max_email_address_rotations_per_month` in [account limits](#account-limits). Initial inbox creation does not use it.
+- Check `max_email_address_rotations_per_month` in [account limits](#account-limits). Initial mailbox creation does not use it.
 - After a lost response, reread the address before requesting another change.
 - Update third-party account/recovery settings before retiring an address.
 - Old addresses stop receiving unless retained as aliases. Platform names remain permanently reserved.
@@ -747,15 +751,15 @@ Read the current mailbox settings before requesting a replacement.
 | 409 | `EMAIL_ALIAS_LIMIT` | No alias slot is available. The existing address remains unchanged. |
 | 429 | `EMAIL_ROTATION_LIMIT` | The shared rotation allowance is exhausted or unavailable. |
 
-### Inbox aliases
+### Mailbox aliases
 
 Aliases are extra addresses created directly or retained during an address change. They deliver
-to the same inbox and share its sender restrictions, quotas, pause state and message
-history. Read the effective `max_email_aliases_per_bucket` from account limits;
+to the same mailbox and share its sender restrictions, quotas, pause state and message
+history. Read the effective `max_email_aliases_per_mailbox` from account limits;
 a zero allowance means aliases are unavailable.
 
 1. Read the current mailbox settings and account limits.
-2. Submit `POST /v1/buckets/:id/email/aliases` with `username` and optionally `domain`.
+2. Submit `POST /v1/mailboxes/:id/email/aliases` with `username` and optionally `domain`.
 3. Poll mailbox settings until `receiving_enabled` is true. The new address appears
    in `aliases`; the primary stays unchanged and no rotation allowance is spent.
 
@@ -770,14 +774,14 @@ rotation when the replacement activates.
 
 | Endpoint | Access | Result |
 | --- | --- | --- |
-| `GET /v1/buckets/:id/email` | Bucket write | Primary settings and `aliases`. |
-| `POST /v1/buckets/:id/email/aliases` | Full-account owner/administrator with bucket-admin access | `202` with updated mailbox settings; receiving registration continues in the background. |
-| `DELETE /v1/buckets/:id/email/aliases/:alias_id` | Full-account owner/administrator with bucket-admin access | Updated mailbox settings after removing one alias. |
+| `GET /v1/mailboxes/:id/email` | Mailbox write | Primary settings and `aliases`. |
+| `POST /v1/mailboxes/:id/email/aliases` | Full-account owner/administrator with mailbox-admin access | `202` with updated mailbox settings; receiving registration continues in the background. |
+| `DELETE /v1/mailboxes/:id/email/aliases/:alias_id` | Full-account owner/administrator with mailbox-admin access | Updated mailbox settings after removing one alias. |
 
 Removing an alias stops new and queued deliveries to it. Existing messages remain.
 A lower plan limit preserves alias records and enables only the oldest permitted
 addresses; a zero allowance disables them. Copies have no aliases. Platform aliases
-move with their inbox; remove custom-domain aliases before moving accounts.
+move with their mailbox; remove custom-domain aliases before moving accounts.
 One message delivered to the primary and an alias is saved once, while both
 provider receipts count toward incoming traffic.
 
@@ -795,11 +799,11 @@ credential. Re-enabling receiving preserves addresses and files.
 
 ### Allowed senders
 
-Account owners and administrators with bucket-admin permission can read the policy
-through `GET /v1/buckets/:id/email` and replace it with the request below.
+Account owners and administrators with mailbox-admin permission can read the policy
+through `GET /v1/mailboxes/:id/email` and replace it with the request below.
 
 ```http
-PATCH /v1/buckets/bkt_example/email/allowlist
+PATCH /v1/mailboxes/bkt_example/email/allowlist
 Content-Type: application/json
 
 {
@@ -822,7 +826,7 @@ Content-Type: application/json
 - Successful updates return `data.sender_allowlist`.
 - An enabled list needs at least one entry. Disabling preserves the supplied entries.
 - Restricted delivery requires authenticated sender evidence.
-- The policy stays encrypted and is omitted from ordinary bucket reads.
+- The policy stays encrypted and is omitted from ordinary mailbox reads.
 
 | Status | Error code | Meaning |
 | --- | --- | --- |
@@ -868,7 +872,7 @@ These endpoints require a browser session; API keys and MCP tools do not access 
 ### Custom email domains
 
 Built-in domains such as `revdokumail.com` work on every plan, including when
-explicitly supplied as `bucket.email.domain`. For custom domains:
+explicitly supplied as `mailbox.email.domain`. For custom domains:
 
 | Error code | Action |
 | --- | --- |
@@ -880,8 +884,8 @@ The latter two errors include `error.details.settings_url`. Mailbox creation
 does not automatically register a custom domain or fall back to another domain.
 
 Connect a domain in **Account Settings → Domains → Email**, or use these endpoints
-with a whole-account `bucket_admin` credential belonging to an account owner or administrator.
-Selected-bucket, read-only and write-only credentials cannot manage domain ownership.
+with a whole-account `mailbox_admin` credential belonging to an account owner or administrator.
+Selected-mailbox, read-only and write-only credentials cannot manage domain ownership.
 Existing `full_account_access` credentials continue to work.
 
 | Method | Path | Purpose |
@@ -905,10 +909,10 @@ Existing `full_account_access` credentials continue to work.
 
 | Your setup | Domain to connect | Example mailbox |
 | --- | --- | --- |
-| `yourdomain.com` already receives email through another provider | An unused subdomain, such as `inbox.yourdomain.com` | `support@inbox.yourdomain.com` |
+| `yourdomain.com` already receives email through another provider | An unused subdomain, such as `mailbox.yourdomain.com` | `support@mailbox.yourdomain.com` |
 | A domain dedicated to Revdoku email | The root domain, such as `yourdomain.com` | `support@yourdomain.com` |
 
-Using `inbox.yourdomain.com` keeps existing mailboxes at `yourdomain.com` with their
+Using `mailbox.yourdomain.com` keeps existing mailboxes at `yourdomain.com` with their
 current provider. Add DNS records only at the hostname shown in the setup instructions.
 
 | DNS check | Result |
@@ -927,8 +931,8 @@ change your DNS records. A successful check does not activate receiving.
 
 #### Use a connected domain
 
-Connecting a domain preserves existing addresses. Select it when creating an inbox,
-or use the address replacement endpoint for an existing inbox.
+Connecting a domain preserves existing addresses. Select it when creating an mailbox,
+or use the address replacement endpoint for an existing mailbox.
 
 | Replacement field | Purpose |
 | --- | --- |
@@ -957,10 +961,10 @@ names; their reserved-name rules still apply.
 | `customization.blocked_reason` | Why customization is unavailable. |
 | `customization.settings_url` | Dashboard settings link for account administrators. |
 
-- Custom-domain names remain reserved to their original account. That account may reuse a released name once no primary, alias or pending assignment holds it; archived inboxes retain their addresses.
+- Custom-domain names remain reserved to their original account. That account may reuse a released name once no primary, alias or pending assignment holds it; archived mailboxes retain their addresses.
 - Platform addresses cannot be reused, even after deletion.
 - A downgrade preserves assigned addresses but can block new domain setup or switching.
-- Switch to a platform address and remove custom-domain aliases before moving a bucket to another account. Copies get fresh platform addresses without aliases.
+- Switch to a platform address and remove custom-domain aliases before moving a mailbox to another account. Copies get fresh platform addresses without aliases.
 - Mail sent while receiving is paused is not automatically recovered.
 
 ### Email files in `_email/`
@@ -989,6 +993,7 @@ count toward file/storage quotas, while an incoming delivery is metered once.
 | `message.json` field | Meaning |
 | --- | --- |
 | `schema_version` | Stored format version; currently `1`. |
+| `forwarding` | Optional member-forwarding provenance and separate member note, with the same meaning as the email detail response. |
 | `subject` | Decoded subject, or `null`. |
 | `from` | Decoded From header, or `null`. |
 | `to` | Decoded To header, or `null`. |
@@ -1034,7 +1039,7 @@ pagination. Check `GET /v1/me` for permission to create another account.
 
 | Endpoint | Purpose | Access |
 | --- | --- | --- |
-| `GET /v1/status` | Current account and connection summary. | Authenticated connection, including bucket-scoped keys. |
+| `GET /v1/status` | Current account and connection summary. | Authenticated connection, including mailbox-scoped keys. |
 | `GET /v1/me` | Membership, owner and client-creation information. | Browser session or full-account API grant. |
 | `POST /v1/accounts` | Create a client/project account. | Parent-account owner with client-account creation enabled. |
 | `PATCH /v1/account/profile` | Update account display details. | Authorized browser session or full-account credential. |
@@ -1108,7 +1113,7 @@ X-Revdoku-Agent: codex
 X-Revdoku-Agent-Client: chatgpt
 X-Revdoku-Agent-Version: 1.0.0
 X-Revdoku-Agent-Run-Id: run_20260520_001
-X-Revdoku-Agent-Project: support-inbox
+X-Revdoku-Agent-Project: support-mailbox
 X-Revdoku-Agent-Task: check-new-messages
 ```
 
@@ -1158,13 +1163,13 @@ when they connect, so reconnect after an update to discover newly added tools.
 | Task | Interface |
 | --- | --- |
 | Read messages and attachments | Hosted MCP email tools. |
-| Read or write text files | `bucket_file_read` and `bucket_file_write`. |
+| Read or write text files | `mailbox_file_read` and `mailbox_file_write`. |
 | Upload local files, folders or binary files | CLI, or REST direct uploads. |
-| Read files by path | `GET /v1/buckets/:id/files/by_path`. |
-| List files | `bucket_file_list`, or `revdoku files`. |
+| Read files by path | `GET /v1/mailboxes/:id/files/by_path`. |
+| List files | `mailbox_file_list`, or `revdoku files`. |
 
 Hosted MCP cannot access your local filesystem. Uploads enforce file-type and
-content rules. Bucket responses provide authorized action metadata so tools can
+content rules. Mailbox responses provide authorized action metadata so tools can
 handle resource IDs without asking users to type them.
 
 ## Common Workflows
@@ -1238,7 +1243,7 @@ Content-Type: application/json
   "email": "person@example.com",
   "code": "123456",
   "label": "Codex on laptop",
-  "bucket_access": "all"
+  "mailbox_access": "all"
 }
 ```
 
@@ -1247,21 +1252,21 @@ server includes it. This fallback belongs in a private interactive client UI,
 not an AI chat: never ask the user to paste or repeat the verification code in
 chat. Do not print or log the key.
 
-### Create a Bucket
+### Create a Mailbox
 
-See the [first inbox example](#1-create-an-inbox). To generate a username,
-send `{"bucket": {}}`.
+See the [mailbox creation example](#create-another-mailbox). To generate a username,
+send `{"mailbox": {}}`.
 
 #### Optional creation fields
 
 | Field | Default | Purpose |
 | --- | --- | --- |
-| `bucket.email.username` | Generated name, such as `flaky.forest3v8x2p` | Choose the name before `@`. Available on all plans. |
-| `bucket.email.domain` | Platform domain | Built-in domain such as `revdokumail.com` (all plans), or a ready custom email domain owned by this account. |
-| `bucket.title` | Assigned username | Set a display title; it can be changed later. |
-| `bucket.description` | Empty | Add a bucket description. |
-| `bucket.tag_paths` | None | Apply user-chosen organizational labels. |
-| `bucket.metadata` | Empty object | Store your application's project/task metadata. |
+| `mailbox.email.username` | Generated name, such as `flaky.forest3v8x2p` | Choose the name before `@`. Available on all plans. |
+| `mailbox.email.domain` | Platform domain | Built-in domain such as `revdokumail.com` (all plans), or a ready custom email domain owned by this account. |
+| `mailbox.title` | Assigned username | Set a display title; it can be changed later. |
+| `mailbox.description` | Empty | Add a mailbox description. |
+| `mailbox.tag_paths` | None | Apply user-chosen organizational labels. |
+| `mailbox.metadata` | Empty object | Store your application's project/task metadata. |
 | `account_id` | Credential default | Select another granted account. |
 
 #### Username rules
@@ -1277,9 +1282,9 @@ send `{"bucket": {}}`.
 #### Creation result
 
 - Success means the receiving address has been confirmed; no readiness polling is required.
-- If confirmation cannot finish within 25 seconds, the API returns `503 EMAIL_NOT_READY` with the created `bucket_id` in `error.details`. Check that bucket before creating another.
+- If confirmation cannot finish within 25 seconds, the API returns `503 EMAIL_NOT_READY` with the created `mailbox_id` in `error.details`. Check that mailbox before creating another.
 - The same error reports receiving holds through `error.details.blocked_reason`.
-- `dashboard_url` opens the bucket for authorized human users; it does not grant access.
+- `dashboard_url` opens the mailbox for authorized human users; it does not grant access.
 - Browser signup already creates one starter mailbox.
 
 ### Upload a File
@@ -1288,7 +1293,7 @@ Upload a file in three steps:
 
 1. Ask Revdoku for an upload URL.
 2. Send the file bytes to that URL with `PUT`.
-3. Tell Revdoku to save the uploaded file in your bucket.
+3. Tell Revdoku to save the uploaded file in your mailbox.
 
 For runnable code that calculates the checksums, see the
 [JavaScript](https://github.com/revdoku/revdoku/blob/main/examples/javascript/upload-file.js),
@@ -1301,7 +1306,7 @@ Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
 {
-  "bucket_id": "bkt_...",
+  "mailbox_id": "bkt_...",
   "path": "index.html",
   "blob": {
     "filename": "index.html",
@@ -1309,32 +1314,32 @@ Content-Type: application/json
     "checksum": "BASE64_MD5",
     "content_type": "text/html",
     "sha256": "HEX_SHA256",
-    "purpose": "bucket_file"
+    "purpose": "mailbox_file"
   }
 }
 ```
 
 | Request field | Purpose |
 | --- | --- |
-| `bucket_id` | Destination bucket ID. |
-| `path` | Destination path inside the bucket. |
+| `mailbox_id` | Destination mailbox ID. |
+| `path` | Destination path inside the mailbox. |
 | `blob.filename` | Original filename. |
 | `blob.byte_size` | Number of bytes in the file. |
 | `blob.checksum` | Base64-encoded MD5 checksum required by the storage upload. |
 | `blob.content_type` | MIME type, such as `text/plain`. |
 | `blob.sha256` | SHA-256 checksum as hexadecimal text, used to verify file integrity. |
-| `blob.purpose` | Use `bucket_file`. |
+| `blob.purpose` | Use `mailbox_file`. |
 
 | Upload response field | Purpose |
 | --- | --- |
-| `data.signed_id` | Blob identifier to attach to the bucket after uploading. |
+| `data.signed_id` | Blob identifier to attach to the mailbox after uploading. |
 | `data.direct_upload.url` | Object-storage URL for the `PUT` request. |
 | `data.direct_upload.headers` | Exact headers to send with the uploaded bytes. |
 
 Upload the bytes without a Revdoku authorization header, then attach the blob:
 
 ```http
-POST /v1/buckets/bkt_.../files
+POST /v1/mailboxes/bkt_.../files
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
@@ -1348,7 +1353,7 @@ Uploading the same `path` creates a new version of that file.
 
 ### Upload Multiple Files
 
-Use the CLI for a local folder: `revdoku upload ./folder --bucket-id ID`.
+Use the CLI for a local folder: `revdoku upload ./folder --mailbox-id ID`.
 To implement folder uploads yourself:
 
 1. Open an upload session with the expected file count.
@@ -1365,7 +1370,7 @@ To implement folder uploads yourself:
 | `complete: false` | Cancel remaining work and release the lock. |
 
 ```http
-POST /v1/buckets/bkt_.../upload_sessions
+POST /v1/mailboxes/bkt_.../upload_sessions
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
@@ -1378,7 +1383,7 @@ Content-Type: application/json
 Then request descriptors for one subbatch:
 
 ```http
-POST /v1/buckets/bkt_.../upload_sessions/bus_.../uploads
+POST /v1/mailboxes/bkt_.../upload_sessions/bus_.../uploads
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
@@ -1401,7 +1406,7 @@ object-storage `PUT`. Do not send Revdoku authorization headers to object
 storage. After each successful descriptor subbatch, commit a bounded batch:
 
 ```http
-POST /v1/buckets/bkt_.../upload_sessions/bus_.../finalize_batch
+POST /v1/mailboxes/bkt_.../upload_sessions/bus_.../finalize_batch
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
@@ -1417,7 +1422,7 @@ canceling or interrupting the upload; it closes the session and releases the
 lock without committing any unfinalized staged uploads.
 
 ```http
-POST /v1/buckets/bkt_.../upload_sessions/bus_.../finalize
+POST /v1/mailboxes/bkt_.../upload_sessions/bus_.../finalize
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
@@ -1440,9 +1445,9 @@ Repeat finalization until the pending flag is no longer true.
 ## Direct API signup
 
 Use this flow to create a new owner's Revdoku account, with that human's
-authorization and email verification. To add an inbox for an application customer,
-use the [SaaS mapping](https://github.com/revdoku/revdoku/blob/main/guides/saas-inboxes.md#map-customers-and-choose-access).
-Successful verification creates an account, its first email inbox with cloud
+authorization and email verification. To add an mailbox for an application customer,
+use the [SaaS mapping](https://github.com/revdoku/revdoku/blob/main/guides/saas-mailboxes.md#map-customers-and-choose-access).
+Successful verification creates an account, its first email mailbox with cloud
 storage, and an API key. No existing API key is required.
 
 Base URL: `https://api.revdoku.com/v1`.
@@ -1450,7 +1455,7 @@ Base URL: `https://api.revdoku.com/v1`.
 | Method | Path | Purpose |
 | --- | --- | --- |
 | POST | `/v1/agent/signups` | Send a verification code to the human owner's email. |
-| POST | `/v1/agent/signups/verify` | Verify the code and create the account, first inbox, and API key. |
+| POST | `/v1/agent/signups/verify` | Verify the code and create the account, first mailbox, and API key. |
 | POST | `/v1/agent/signups/resend` | Resend the code after the returned waiting period. |
 
 Check `GET /v1/agent_auth/capabilities`: `data.signup.available` reports whether
@@ -1470,7 +1475,7 @@ The server records the current policy versions; your client does not send a vers
 | `human_operator_email` | Yes | The human owner's email, supplied by that person. Do not substitute an agent's mailbox. |
 | `accept_terms_and_policy` | Yes; `true` | The human agrees to the [Terms](https://revdoku.com/terms) and [acceptable use policy](https://revdoku.com/acceptable-use), and acknowledges the [privacy notice](https://revdoku.com/privacy). This is not consent to optional processing. |
 | `username` | No | Requested first mailbox username; generated if omitted. |
-| `permission_scope` | No | `bucket_read`, `bucket_write`, or `bucket_admin` (default). |
+| `permission_scope` | No | `mailbox_read`, `mailbox_write`, or `mailbox_admin` (default). |
 | `label` | No | A name for the API connection. |
 
 ```http
@@ -1527,12 +1532,12 @@ Content-Type: application/json
       "status": "completed"
     },
     "api_key": "RETURNED_ONCE_STORE_PRIVATELY",
-    "scope": "bucket_admin",
+    "scope": "mailbox_admin",
     "expires_at": "2027-09-30T12:00:00Z",
     "account": {
       "id": "acct_RETURNED_ID"
     },
-    "bucket": {
+    "mailbox": {
       "id": "bkt_RETURNED_ID",
       "title": "flaky.forest3v8x2p",
       "email": {
@@ -1609,7 +1614,7 @@ private email verification, and response fields.
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `POST` | `/v1/agent/signups` | Send the human owner a verification code; return a private signup token. |
-| `POST` | `/v1/agent/signups/verify` | Verify the code; create the account, first inbox, and API key. |
+| `POST` | `/v1/agent/signups/verify` | Verify the code; create the account, first mailbox, and API key. |
 | `POST` | `/v1/agent/signups/resend` | Resend the code using the same signup token after the waiting period. |
 
 ### Authentication Endpoints
@@ -1647,19 +1652,19 @@ Pending poll responses use standard device-flow errors:
 
 Successful device-code token responses include normal OAuth fields plus
 `revdoku_api_key`, a durable `revdoku_...` key for local REST API clients.
-The browser approval screen defaults to selected buckets and `bucket_read` when
-the client does not request a scope. Choose the buckets and permission on that
-screen. Selecting all existing buckets keeps a fixed selection; **All current and
-future buckets** is a separate choice. Read access supports message/file reads;
-provisioning new buckets requires account-wide `bucket_admin`.
+The browser approval screen defaults to selected mailboxes and `mailbox_read` when
+the client does not request a scope. Choose the mailboxes and permission on that
+screen. Selecting all existing mailboxes keeps a fixed selection; **All current and
+future mailboxes** is a separate choice. Read access supports message/file reads;
+provisioning new mailboxes requires account-wide `mailbox_admin`.
 
 #### Permission scopes
 
 | Scope | Meaning |
 | --- | --- |
-| `bucket_read` | List and read allowed bucket files only. |
-| `bucket_write` | Create and update allowed bucket files. |
-| `bucket_admin` | Create, update, and manage allowed buckets. |
+| `mailbox_read` | List and read allowed mailbox files only. |
+| `mailbox_write` | Create and update allowed mailbox files. |
+| `mailbox_admin` | Create, update, and manage allowed mailboxes. |
 
 | Input | Purpose |
 | --- | --- |
@@ -1668,10 +1673,10 @@ provisioning new buckets requires account-wide `bucket_admin`.
 | Email-code `scope` | Legacy alias for `permission_scope` on email-code key creation only. |
 
 OAuth/device requests and dashboard one-time connection prompts default to
-`bucket_read` when permission is omitted. Legacy email-code login, direct signup,
-and raw API-key creation retain their `bucket_admin` default; request an explicit
+`mailbox_read` when permission is omitted. Legacy email-code login, direct signup,
+and raw API-key creation retain their `mailbox_admin` default; request an explicit
 permission for those flows. Invalid values are rejected. Account → Access defaults
-new keys to selected buckets and read permission.
+new keys to selected mailboxes and read permission.
 
 #### POST /v1/agent_auth/request_code
 
@@ -1710,20 +1715,20 @@ Use browser device sign-in after verification fails; do not repeatedly submit co
   "email": "person@example.com",
   "code": "123456",
   "label": "Codex on laptop",
-  "permission_scope": "bucket_admin",
-  "bucket_access": "all"
+  "permission_scope": "mailbox_admin",
+  "mailbox_access": "all"
 }
 ```
 
-For selected-bucket access, use:
+For selected-mailbox access, use:
 
 ```json
 {
-  "bucket_access": "selected",
-  "bucket_ids": [
+  "mailbox_access": "selected",
+  "mailbox_ids": [
     "bkt_..."
   ],
-  "bucket_permissions": {
+  "mailbox_permissions": {
     "bkt_...": "write"
   }
 }
@@ -1745,68 +1750,68 @@ Common `redirect_path` values:
 
 | Path | Destination |
 | --- | --- |
-| `/buckets` | Bucket dashboard. |
+| `/mailboxes` | Mailbox dashboard. |
 | `/account/access` | Members, agents, and API keys. |
 
-### Bucket Endpoints
+### Mailbox Endpoints
 
-All files that make up a bucket remain downloadable from
+All files that make up a mailbox remain downloadable from
 Revdoku at any time.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/v1/buckets` | List active buckets by default. Use `?archived=true` to list archived buckets. |
-| `POST` | `/v1/buckets` | Create a bucket. |
-| `GET` | `/v1/buckets/:id` | Read a bucket. |
-| `PATCH` | `/v1/buckets/:id` | Update bucket metadata. |
-| `POST` | `/v1/buckets/:id/archive` | Archive a bucket. |
-| `POST` | `/v1/buckets/:id/unarchive` | Restore an archived normal bucket. |
-| `GET` | `/v1/buckets/:id/variables` | Read public variables and secret names (never secret values). |
-| `PATCH` | `/v1/buckets/:id/variables` | Replace variables and patch encrypted secrets. |
-| `GET` | `/v1/buckets/:id/versions` | List bucket version history. |
-| `GET` | `/v1/buckets/:id/versions/:version_id` | Read one historical bucket version. |
-| `POST` | `/v1/buckets/:id/versions/restore` | Restore a historical version as a new latest version. |
-| `DELETE` | `/v1/buckets/:id` | Permanently delete an archived bucket with confirmation. |
-| `GET` | `/v1/tags` | List reusable bucket labels. |
+| `GET` | `/v1/mailboxes` | List active mailboxes by default. Use `?archived=true` to list archived mailboxes. |
+| `POST` | `/v1/mailboxes` | Create a mailbox. |
+| `GET` | `/v1/mailboxes/:id` | Read a mailbox. |
+| `PATCH` | `/v1/mailboxes/:id` | Update mailbox metadata. |
+| `POST` | `/v1/mailboxes/:id/archive` | Archive a mailbox. |
+| `POST` | `/v1/mailboxes/:id/unarchive` | Restore an archived normal mailbox. |
+| `GET` | `/v1/mailboxes/:id/variables` | Read public variables and secret names (never secret values). |
+| `PATCH` | `/v1/mailboxes/:id/variables` | Replace variables and patch encrypted secrets. |
+| `GET` | `/v1/mailboxes/:id/versions` | List mailbox version history. |
+| `GET` | `/v1/mailboxes/:id/versions/:version_id` | Read one historical mailbox version. |
+| `POST` | `/v1/mailboxes/:id/versions/restore` | Restore a historical version as a new latest version. |
+| `DELETE` | `/v1/mailboxes/:id` | Permanently delete an archived mailbox with confirmation. |
+| `GET` | `/v1/tags` | List reusable mailbox labels. |
 
-#### GET /v1/buckets
+#### GET /v1/mailboxes
 
 ```http
-GET /v1/buckets
+GET /v1/mailboxes
 Authorization: Bearer YOUR_API_KEY
 ```
 
-By default, this returns active buckets. To list archived buckets, call:
+By default, this returns active mailboxes. To list archived mailboxes, call:
 
 ```http
-GET /v1/buckets?archived=true
+GET /v1/mailboxes?archived=true
 Authorization: Bearer YOUR_API_KEY
 ```
 
-Bucket list/detail responses include effective lifecycle action metadata:
+Mailbox list/detail responses include effective lifecycle action metadata:
 
 | Field | Meaning |
 | --- | --- |
 | `archive.allowed` | Whether the current principal can archive now. |
-| `unarchive.allowed` | Whether the current principal can restore an archived bucket now. |
+| `unarchive.allowed` | Whether the current principal can restore an archived mailbox now. |
 | `delete.allowed` | Whether the current principal can permanently delete now. |
-| `delete.confirmation` | Confirmation phrase returned by the API; clients should pass it exactly to DELETE after human confirmation, not ask users to type bucket ids. |
+| `delete.confirmation` | Confirmation phrase returned by the API; clients should pass it exactly to DELETE after human confirmation, not ask users to type mailbox ids. |
 
-Archived buckets are read-only until unarchived. Metadata edits, label changes,
-file changes, uploads and duplication return `BUCKET_ARCHIVED`. Reads, unarchive,
+Archived mailboxes are read-only until unarchived. Metadata edits, label changes,
+file changes, uploads and duplication return `MAILBOX_ARCHIVED`. Reads, unarchive,
 and eligible permanent deletion remain available. Copying files out is allowed
 with source read access and write access to an active target.
 
-#### POST /v1/buckets
+#### POST /v1/mailboxes
 
-Bucket tags are user-facing labels, not filesystem breadcrumbs. Use
+Mailbox tags are user-facing labels, not filesystem breadcrumbs. Use
 `tag_paths` only for explicit reusable labels such as `project`; store project,
 source, task, or local-folder context in `metadata`.
 
 ```json
 {
-  "bucket": {
-    "title": "Project files and inbox",
+  "mailbox": {
+    "title": "Project files and mailbox",
     "description": "Shared project files and incoming documents",
     "tag_paths": [
       "project"
@@ -1818,11 +1823,11 @@ source, task, or local-folder context in `metadata`.
 }
 ```
 
-#### PATCH /v1/buckets/:id
+#### PATCH /v1/mailboxes/:id
 
 ```json
 {
-  "bucket": {
+  "mailbox": {
     "description": "Updated purpose",
     "metadata": {
       "run": "revision-2"
@@ -1831,16 +1836,16 @@ source, task, or local-folder context in `metadata`.
 }
 ```
 
-#### Bucket locks
+#### Mailbox locks
 
-Use file locks for narrow edits to specific paths. Bucket-wide locks and bucket
+Use file locks for narrow edits to specific paths. Mailbox-wide locks and mailbox
 moves can reject incoming mail, including a queued message whose save rechecks the
-lock. For broad uploads or reorganizations while an inbox must keep receiving,
-use a separate working bucket. If you deliberately lock the inbox, coordinate
+lock. For broad uploads or reorganizations while an mailbox must keep receiving,
+use a separate working mailbox. If you deliberately lock the mailbox, coordinate
 the interruption and have senders resend rejected mail after receiving is ready.
 
 ```http
-POST /v1/buckets/bkt_.../lock
+POST /v1/mailboxes/bkt_.../lock
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
@@ -1851,15 +1856,15 @@ Content-Type: application/json
 ```
 
 ```http
-DELETE /v1/buckets/bkt_.../lock
+DELETE /v1/mailboxes/bkt_.../lock
 Authorization: Bearer YOUR_API_KEY
 ```
 
-Active bucket locks block writes, deletes, direct uploads,
-and file locks by other API keys. Revdoku checks the bucket lock before checking
-specific file locks. Conflicts return HTTP `423` with code `BUCKET_LOCKED`.
+Active mailbox locks block writes, deletes, direct uploads,
+and file locks by other API keys. Revdoku checks the mailbox lock before checking
+specific file locks. Conflicts return HTTP `423` with code `MAILBOX_LOCKED`.
 
-To lock selected paths, use `POST /v1/buckets/:id/files/lock`.
+To lock selected paths, use `POST /v1/mailboxes/:id/files/lock`.
 
 | Request field | Purpose |
 | --- | --- |
@@ -1867,7 +1872,7 @@ To lock selected paths, use `POST /v1/buckets/:id/files/lock`.
 | `message` | Explanation shown to other writers. |
 | `duration_seconds` | Optional lock duration. |
 
-Resolve a file's ID to unlock it with `DELETE /v1/buckets/:id/files/:file_id/lock`.
+Resolve a file's ID to unlock it with `DELETE /v1/mailboxes/:id/files/:file_id/lock`.
 
 #### File path operations
 
@@ -1875,28 +1880,28 @@ Move and organize existing files server-side; do not download and re-upload byte
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/v1/buckets/:id/files` | List files; supports `limit`, `offset`, `q`, `folder`, for ordinary files. Default/maximum page size is 100. |
-| `GET` | `/v1/buckets/:id/files/:file_id` | Read file metadata. |
-| `GET` | `/v1/buckets/:id/files/by_path?path=...` | Read/download a file by bucket-relative path. |
-| `POST` | `/v1/buckets/:id/files/:file_id/rename` | Rename or move within the same bucket without reuploading. |
-| `POST` | `/v1/buckets/:id/files/:file_id/copy` | Copy by blob reference, optionally across buckets. |
-| `POST` | `/v1/buckets/:id/files/:file_id/move` | Move by blob reference, optionally across buckets. |
-| `POST` | `/v1/buckets/:id/files/reorganize` | Apply multiple rename/copy/move/delete path operations atomically. |
-| `POST` | `/v1/buckets/:id/files/append_text` | Append bounded UTF-8 text to an existing text file. |
+| `GET` | `/v1/mailboxes/:id/files` | List files; supports `limit`, `offset`, `q`, `folder`, for ordinary files. Default/maximum page size is 100. |
+| `GET` | `/v1/mailboxes/:id/files/:file_id` | Read file metadata. |
+| `GET` | `/v1/mailboxes/:id/files/by_path?path=...` | Read/download a file by mailbox-relative path. |
+| `POST` | `/v1/mailboxes/:id/files/:file_id/rename` | Rename or move within the same mailbox without reuploading. |
+| `POST` | `/v1/mailboxes/:id/files/:file_id/copy` | Copy by blob reference, optionally across mailboxes. |
+| `POST` | `/v1/mailboxes/:id/files/:file_id/move` | Move by blob reference, optionally across mailboxes. |
+| `POST` | `/v1/mailboxes/:id/files/reorganize` | Apply multiple rename/copy/move/delete path operations atomically. |
+| `POST` | `/v1/mailboxes/:id/files/append_text` | Append bounded UTF-8 text to an existing text file. |
 
 #### Download a file by path
 
 | Query parameter | Required | Meaning |
 | --- | --- | --- |
-| `path` | Yes | Bucket-relative file path, such as `reports/summary.txt`. |
+| `path` | Yes | Mailbox-relative file path, such as `reports/summary.txt`. |
 | `content_url` | No | Set to `1` to receive JSON with a temporary download URL in `data.url`. Without it, the endpoint returns an HTTP 302 download redirect. |
 
 ```http
-GET /v1/buckets/bkt_example/files/by_path?path=reports/summary.txt&content_url=1
+GET /v1/mailboxes/bkt_example/files/by_path?path=reports/summary.txt&content_url=1
 ```
 
 Download from the returned URL without forwarding your Revdoku API key.
-Use `GET /v1/buckets/:id/files/:file_id` when you only need file metadata.
+Use `GET /v1/mailboxes/:id/files/:file_id` when you only need file metadata.
 
 #### Read metadata and file logs
 
@@ -1924,10 +1929,10 @@ mark a file read; content reads and explicit download requests do.
 Read receipts do not reserve a file or prove that an OTP was consumed. A later
 Mark unread action resets the current message's receipt.
 
-#### Bucket version history
+#### Mailbox version history
 
-`GET /v1/buckets/:id/versions` lists immutable bucket versions. Read one
-with `GET /v1/buckets/:id/versions/:version_id`. Restoring does not delete
+`GET /v1/mailboxes/:id/versions` lists immutable mailbox versions. Read one
+with `GET /v1/mailboxes/:id/versions/:version_id`. Restoring does not delete
 newer history; it creates a new latest version from the selected snapshot:
 
 ```json
@@ -1937,60 +1942,60 @@ newer history; it creates a new latest version from the selected snapshot:
 }
 ```
 
-Send that body to `POST /v1/buckets/:id/versions/restore`.
+Send that body to `POST /v1/mailboxes/:id/versions/restore`.
 
 #### Archive, unarchive, and permanent delete
 
-Honor `archive` and `delete` eligibility in bucket responses. If an operation
-is blocked, direct the user to the bucket dashboard to resolve it. Never delete
+Honor `archive` and `delete` eligibility in mailbox responses. If an operation
+is blocked, direct the user to the mailbox dashboard to resolve it. Never delete
 files to work around a blocked archive. Permanent deletion requires archiving first.
 
 ```http
-POST /v1/buckets/bkt_.../archive
+POST /v1/mailboxes/bkt_.../archive
 Authorization: Bearer YOUR_API_KEY
 ```
 
 ```http
-POST /v1/buckets/bkt_.../unarchive
+POST /v1/mailboxes/bkt_.../unarchive
 Authorization: Bearer YOUR_API_KEY
 ```
 
-Permanent delete requires an archived bucket plus the confirmation phrase
-returned by `GET /v1/buckets` or `GET /v1/buckets/:id` in
+Permanent delete requires an archived mailbox plus the confirmation phrase
+returned by `GET /v1/mailboxes` or `GET /v1/mailboxes/:id` in
 `delete.confirmation`.
 
 ```http
-DELETE /v1/buckets/bkt_...
+DELETE /v1/mailboxes/bkt_...
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
 {
-  "confirmation": "<delete.confirmation from bucket list/detail>"
+  "confirmation": "<delete.confirmation from mailbox list/detail>"
 }
 ```
 
-UI and agent clients should ask users to confirm by bucket title or natural
+UI and agent clients should ask users to confirm by mailbox title or natural
 language, then pass `delete.confirmation` internally.
 
-Permanent deletion is **not** a bulk operation. Buckets must be
-deleted one at a time via `DELETE /v1/buckets/:id` so each removal is
-confirmed individually. The `POST /v1/buckets/bulk` endpoint accepts
+Permanent deletion is **not** a bulk operation. Mailboxes must be
+deleted one at a time via `DELETE /v1/mailboxes/:id` so each removal is
+confirmed individually. The `POST /v1/mailboxes/bulk` endpoint accepts
 only `archive` and `unarchive` operations and rejects `delete`.
 
-Large bucket deletion runs in the background.
+Large mailbox deletion runs in the background.
 
 | Response field | Meaning |
 | --- | --- |
 | HTTP `202` | Deletion was accepted. |
-| `data.bucket.deletion_started` | Deletion has started. |
+| `data.mailbox.deletion_started` | Deletion has started. |
 | `data.delete_progress` | Current deletion progress. |
-| `lock.kind` | `bucket_delete` while deletion holds the bucket lock. |
+| `lock.kind` | `mailbox_delete` while deletion holds the mailbox lock. |
 | `phase` | Current deletion phase. |
 | `total_files` | Files involved. |
 | `total_versions` | Versions involved. |
 | `total_items` | Total items involved. |
 
-Poll bucket detail until it disappears or a notification reports completion.
+Poll mailbox detail until it disappears or a notification reports completion.
 A failed deletion releases the lock and sends a failure notification.
 
 ## Common Errors
@@ -2001,7 +2006,7 @@ the restriction.
 
 ### Rate Limits
 
-Upload-control endpoints such as direct-upload creation and bucket upload
+Upload-control endpoints such as direct-upload creation and mailbox upload
 sessions are account-throttled. On HTTP `429`, honor the `Retry-After` header
 or `error.details.retry_after` before retrying. Clients should use bounded
 exponential backoff with jitter and should not retry indefinitely.
@@ -2014,18 +2019,18 @@ Do not automatically repeat mailbox creation after losing its response.
 
 | HTTP | Code | Meaning |
 | --- | --- | --- |
-| `409` | `DATABASE_BUSY_RETRY` | Related bucket changes are still committing; retry after the advertised delay. |
-| `409` | `BUCKET_FILE_PATH_INDEX_BACKFILL_PENDING` | Existing bucket file path lookup keys are being prepared; retry after the advertised delay. |
+| `409` | `DATABASE_BUSY_RETRY` | Related mailbox changes are still committing; retry after the advertised delay. |
+| `409` | `MAILBOX_FILE_PATH_INDEX_BACKFILL_PENDING` | Existing mailbox file path lookup keys are being prepared; retry after the advertised delay. |
 | `429` | `RATE_LIMIT_EXCEEDED` | General account API rate limit exceeded. |
 | `429` | `UPLOAD_RATE_LIMIT_EXCEEDED` | Upload-control API rate limit exceeded. |
-| `429` | `BUCKET_CREATION_LIMIT_REACHED` | Monthly creation capacity exhausted; stop and report `error.details.resets_at`. |
+| `429` | `MAILBOX_CREATION_LIMIT_REACHED` | Monthly creation capacity exhausted; stop and report `error.details.resets_at`. |
 
-Monthly creations have a separate allowance from active buckets and address
-rotations. Deleting or archiving a bucket does not refund a creation.
+Monthly creations have a separate allowance from active mailboxes and address
+rotations. Deleting or archiving a mailbox does not refund a creation.
 
-Authorized callers can read [`data.usage.bucket_creations`](#creation-usage) from
+Authorized callers can read [`data.usage.mailbox_creations`](#creation-usage) from
 the dedicated account-limits endpoint. Full-account profiles retain
-`plan_contract.bucket_creation_usage` with the same calculation.
+`plan_contract.mailbox_creation_usage` with the same calculation.
 
 A quota error is not a short-lived throttle. Do not retry automatically until reset.
 
@@ -2036,22 +2041,22 @@ A quota error is not a short-lived throttle. Do not retry automatically until re
 | `401` | `UNAUTHORIZED` | Missing, invalid, or expired API key. |
 | `403` | `FORBIDDEN` | API key is valid but not allowed for this action. |
 
-### Bucket and File Errors
+### Mailbox and File Errors
 
 | HTTP | Code | Meaning |
 | --- | --- | --- |
-| `404` | `BUCKET_NOT_FOUND` | Bucket does not exist or is not visible to this key. |
+| `404` | `MAILBOX_NOT_FOUND` | Mailbox does not exist or is not visible to this key. |
 | `404` | `FILE_NOT_FOUND` | File does not exist or is not visible to this key. |
-| `403` | `BUCKET_DELETE_ADMIN_REQUIRED` | Only an account administrator can permanently delete this bucket, except for empty cleanup buckets created by the same user. |
-| `409` | `BUCKET_ALREADY_ARCHIVED` | Bucket is already archived. |
-| `409` | `BUCKET_NOT_ARCHIVED` | The operation requires an archived bucket; archive before permanent delete, or only unarchive an archived bucket. |
-| `422` | `BUCKET_DELETE_CONFIRMATION_REQUIRED` | Pass the `delete.confirmation` value returned by bucket list/detail with the delete request. |
-| `403` | `BUCKET_ARCHIVED` | Bucket is archived and cannot be edited until it is unarchived. |
-| `404` | `BUCKET_FILE_NOT_FOUND` | Bucket file path does not exist. |
-| `422` | `INVALID_BUCKET_ARGUMENT` | Bucket details accept no collection-expansion parameters. Request files or versions through their endpoints. |
+| `403` | `MAILBOX_DELETE_ADMIN_REQUIRED` | Only an account administrator can permanently delete this mailbox, except for empty cleanup mailboxes created by the same user. |
+| `409` | `MAILBOX_ALREADY_ARCHIVED` | Mailbox is already archived. |
+| `409` | `MAILBOX_NOT_ARCHIVED` | The operation requires an archived mailbox; archive before permanent delete, or only unarchive an archived mailbox. |
+| `422` | `MAILBOX_DELETE_CONFIRMATION_REQUIRED` | Pass the `delete.confirmation` value returned by mailbox list/detail with the delete request. |
+| `403` | `MAILBOX_ARCHIVED` | Mailbox is archived and cannot be edited until it is unarchived. |
+| `404` | `MAILBOX_FILE_NOT_FOUND` | Mailbox file path does not exist. |
+| `422` | `INVALID_MAILBOX_ARGUMENT` | Mailbox details accept no collection-expansion parameters. Request files or versions through their endpoints. |
 | `422` | `UNSUPPORTED_TEXT_APPEND_TYPE` | `append_text` was used on a non-text file. |
 | `422` | `INVALID_TEXT_ENCODING` | `append_text` content or the existing file is not valid UTF-8 text. |
-| `423` | `BUCKET_LOCKED` | Another key owns an active bucket lock. |
+| `423` | `MAILBOX_LOCKED` | Another key owns an active mailbox lock. |
 | `423` | `FILE_LOCKED` | Another key owns an active file lock. |
 
 ## Integration Guidelines

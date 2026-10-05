@@ -84,19 +84,19 @@ for target in codex claude-code cursor antigravity opencode grok-build hermes op
   require_text "$UNINSTALL_FILE" "$target"
 done
 require_text "$SKILL_FILE" 'scripts/revdoku.sh upload <path>'
-require_text "$SKILL_FILE" '`bucket_lock_files`'
-require_text "$SKILL_FILE" '`bucket_delete_permanently`'
+require_text "$SKILL_FILE" '`mailbox_lock_files`'
+require_text "$SKILL_FILE" '`mailbox_delete_permanently`'
 reject_text "$SKILL_FILE" 'github_sync'
 require_text "$SKILL_FILE" '`ACCOUNT_SUSPENDED`'
 require_text "$SKILL_FILE" 'support@revdoku.com'
-require_text "$API_FILE" '`GET` | `/v1/buckets/:id/versions`'
+require_text "$API_FILE" '`GET` | `/v1/mailboxes/:id/versions`'
 require_text "$API_FILE" 'https://api.revdoku.com/v1'
-require_text "$API_FILE" 'POST /v1/buckets'
+require_text "$API_FILE" 'POST /v1/mailboxes'
 require_text "$API_FILE" '201 Created'
 reject_text "$API_FILE" 'github_sync'
 require_text "$API_FILE" '`account.restriction`'
 for guidance in "$README_FILE" "$SKILL_FILE" "$API_FILE" "$SOURCE_CLIENT_DIR/docs.md" "$SOURCE_CLIENT_DIR/mcp.md" "$LLMS_INSTALL_FILE" "$CHANGELOG_FILE"; do
-  reject_text "$guidance" 'bucket_publish'
+  reject_text "$guidance" 'mailbox_publish'
   reject_text "$guidance" '/v1/publications'
   reject_text "$guidance" 'features.website_publishing'
   reject_text "$guidance" 'revdoku p '
@@ -147,7 +147,7 @@ reject_text "$README_FILE" "Claude's scheduled tasks"
 reject_text "$API_FILE" "Custom Website Names"
 reject_text "$API_FILE" 'dashboard will show `0 views`'
 reject_text "$API_FILE" "one live-site slot"
-reject_text "$API_FILE" "4k-file buckets"
+reject_text "$API_FILE" "4k-file mailboxes"
 for demo_file in "$README_FILE" "$SOURCE_CLIENT_DIR/docs.md"; do
   if grep -Eq '\]\(https://[^)]*\.localhost3000\.love/' "$demo_file"; then
     die "${demo_file#$DIST_ROOT/} links a live demo through the alternate publication domain"

@@ -1,0 +1,18 @@
+#
+# AUTO-GENERATED FILE, DO NOT MODIFY!
+#
+
+name: 'revdoku_api'
+version: '1.0.526'
+description: 'Generated Revdoku email mailbox and private file storage API client.'
+homepage: 'https://revdoku.com'
+repository: https://github.com/revdoku/revdoku-dart
+environment:
+  sdk: '>=2.17.0 <4.0.0'
+dependencies:
+  collection: '>=1.17.0 <2.0.0'
+  http: '>=0.13.0 <2.0.0'
+  intl: ^0.20.3
+  meta: '>=1.1.8 <2.0.0'
+dev_dependencies:
+  test: '>=1.21.6 <1.22.0'

@@ -26,7 +26,7 @@ class ReceiverTest(unittest.TestCase):
                 spec.loader.exec_module(receiver)
                 client = receiver.app.test_client()
                 body = json.dumps({'id': 'email.received:eml_fixture', 'type': 'email.received',
-                    'data': {'bucket_id': 'bkt_fixture', 'account_id': 'acct_fixture', 'email_id': 'eml_fixture'}}).encode()
+                    'data': {'mailbox_id': 'bkt_fixture', 'account_id': 'acct_fixture', 'email_id': 'eml_fixture'}}).encode()
                 timestamp = str(int(time.time()))
                 headers = {'X-Revdoku-Event-Id': 'email.received:eml_fixture', 'X-Revdoku-Timestamp': timestamp,
                     'X-Revdoku-Signature': 'v1=' + hmac.new(b'fixture-secret', timestamp.encode() + b'.' + body, hashlib.sha256).hexdigest()}

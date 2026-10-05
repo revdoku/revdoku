@@ -15,7 +15,7 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16384
 secret = os.environ['REVDOKU_WEBHOOK_SECRET']
 api_key = os.environ['REVDOKU_API_KEY']
-bucket_id = os.environ['REVDOKU_BUCKET_ID']
+mailbox_id = os.environ['REVDOKU_BUCKET_ID']
 account_id = os.environ.get('REVDOKU_ACCOUNT_ID')
 os.makedirs('.revdoku-examples', mode=0o700, exist_ok=True)
 lock = threading.Lock()
@@ -36,7 +36,7 @@ def webhook():
     try:
         event = json.loads(body)
         data = event['data']
-        if (event['type'] != 'email.received' or data['bucket_id'] != bucket_id
+        if (event['type'] != 'email.received' or data['mailbox_id'] != mailbox_id
                 or (account_id and data['account_id'] != account_id)
                 or event['id'] != request.headers.get('X-Revdoku-Event-Id')
                 or not re.fullmatch(r'eml_[A-Za-z0-9]+', data['email_id'])):
@@ -52,7 +52,7 @@ def webhook():
             if db.execute('SELECT 1 FROM processed WHERE id = ?', (event['id'],)).fetchone():
                 return '', 204
             response = requests.get(
-                f"https://api.revdoku.com/v1/buckets/{bucket_id}/emails/{data['email_id']}",
+                f"https://api.revdoku.com/v1/mailboxes/{mailbox_id}/emails/{data['email_id']}",
                 params={'account_id': data['account_id'], 'purpose': 'background'},
                 headers={'Authorization': f'Bearer {api_key}'}, timeout=8, allow_redirects=False)
             if response.status_code != 200:
