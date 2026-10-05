@@ -9,7 +9,7 @@ Future<void> main() async {
   try {
     final result = await DefaultApi(client).listMailboxes(accountId: account == null || account.isEmpty ? null : account);
     for (final mailbox in result!.data.mailboxes) {
-      print('${mailbox.id} ${mailbox.title}');
+      print('${mailbox.id} ${mailbox.email.address ?? mailbox.id}');
     }
   } finally {
     client.client.close();

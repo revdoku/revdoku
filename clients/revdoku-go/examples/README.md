@@ -129,7 +129,7 @@ For a recurring consumer, list in arrival order and persist `pagination.next_cur
 Use the versioned Git module from your application's module directory:
 
 ```sh
-go get github.com/revdoku/revdoku-go@v1.0.527
+go get github.com/revdoku/revdoku-go@v1.0.535
 ```
 
 Import it as `revdoku "github.com/revdoku/revdoku-go"`. Go resolves the public Git tag; there is no separate registry upload.

@@ -13,22 +13,12 @@ part of revdoku.api;
 class CreateMailboxRequestMailbox {
   /// Returns a new [CreateMailboxRequestMailbox] instance.
   CreateMailboxRequestMailbox({
-    this.title,
     this.description,
     this.metadata = const {},
     this.tagIds = const [],
     this.tagPaths = const [],
     this.email,
   });
-
-  /// Optional display title; defaults to the assigned username.
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  String? title;
 
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
@@ -54,7 +44,6 @@ class CreateMailboxRequestMailbox {
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is CreateMailboxRequestMailbox &&
-    other.title == title &&
     other.description == description &&
     _deepEquality.equals(other.metadata, metadata) &&
     _deepEquality.equals(other.tagIds, tagIds) &&
@@ -64,7 +53,6 @@ class CreateMailboxRequestMailbox {
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (title == null ? 0 : title!.hashCode) +
     (description == null ? 0 : description!.hashCode) +
     (metadata.hashCode) +
     (tagIds.hashCode) +
@@ -72,13 +60,10 @@ class CreateMailboxRequestMailbox {
     (email == null ? 0 : email!.hashCode);
 
   @override
-  String toString() => 'CreateMailboxRequestMailbox[title=$title, description=$description, metadata=$metadata, tagIds=$tagIds, tagPaths=$tagPaths, email=$email]';
+  String toString() => 'CreateMailboxRequestMailbox[description=$description, metadata=$metadata, tagIds=$tagIds, tagPaths=$tagPaths, email=$email]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-    if (this.title != null) {
-      json[r'title'] = this.title;
-    }
     if (this.description != null) {
       json[r'description'] = this.description;
     }
@@ -106,7 +91,6 @@ class CreateMailboxRequestMailbox {
       }());
 
       return CreateMailboxRequestMailbox(
-        title: mapValueOfType<String>(json, r'title'),
         description: mapValueOfType<String>(json, r'description'),
         metadata: mapCastOfType<String, Object?>(json, r'metadata') ?? const {},
         tagIds: json[r'tag_ids'] is Iterable

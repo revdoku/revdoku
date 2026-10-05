@@ -69,9 +69,9 @@ For a connected custom domain, set `REVDOKU_EMAIL_DOMAIN` before provisioning.
 | Timeout, broken connection or unreadable response | Retain an unknown outcome; reconcile existing mailboxes. Do not repeat the POST. |
 | Capacity/permission error | Resolve the returned condition before an explicitly chosen new attempt. |
 
-The example saves intent and a unique mailbox title before sending. After an
-unknown result, rerunning searches that title and requires an exact match; it
-never repeats the POST. Titles are reconciliation data, not retry keys. Missing
+The example saves intent and a unique email username before sending. After an
+unknown result, rerunning searches that username and requires an exact match; it
+never repeats the POST. The saved username identifies the intended address. It is not a retry key. Missing
 or multiple matches need human review; an empty list does not prove creation
 failed. A known mailbox ID is checked with GET. Structured 4xx rejection permits a
 later explicit new attempt. Use only confirmed addresses.

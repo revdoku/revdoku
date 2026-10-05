@@ -1,5 +1,17 @@
 # Revdoku Changelog
 
+## 1.0.535 — 2026-10-05
+
+### Improved
+
+- Identify mailboxes by their email address throughout the dashboard, API,
+  MCP, CLI, SDKs and integrations. Mailbox titles are no longer public fields.
+- Open a mailbox by selecting its address in mailbox lists. Use separate
+  controls to copy the address or compose an email.
+- Browse notification history in Analytics. Choose Short or Details in logs.
+- See connection icons, counts, action reasons and mailbox links in activity logs.
+- Open large mailboxes and Analytics faster. Simplify mailbox settings and menus.
+
 ## 1.0.519 — 2026-09-30
 
 ### Improved

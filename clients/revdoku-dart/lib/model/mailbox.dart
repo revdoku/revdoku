@@ -15,7 +15,6 @@ class Mailbox {
   Mailbox({
     required this.id,
     required this.accountId,
-    required this.title,
     this.description,
     this.metadata = const {},
     this.metadataVersion,
@@ -38,8 +37,6 @@ class Mailbox {
   String id;
 
   String accountId;
-
-  String title;
 
   String? description;
 
@@ -142,7 +139,6 @@ class Mailbox {
   bool operator ==(Object other) => identical(this, other) || other is Mailbox &&
     other.id == id &&
     other.accountId == accountId &&
-    other.title == title &&
     other.description == description &&
     _deepEquality.equals(other.metadata, metadata) &&
     other.metadataVersion == metadataVersion &&
@@ -166,7 +162,6 @@ class Mailbox {
     // ignore: unnecessary_parenthesis
     (id.hashCode) +
     (accountId.hashCode) +
-    (title.hashCode) +
     (description == null ? 0 : description!.hashCode) +
     (metadata.hashCode) +
     (metadataVersion == null ? 0 : metadataVersion!.hashCode) +
@@ -186,13 +181,12 @@ class Mailbox {
     (delete == null ? 0 : delete!.hashCode);
 
   @override
-  String toString() => 'Mailbox[id=$id, accountId=$accountId, title=$title, description=$description, metadata=$metadata, metadataVersion=$metadataVersion, email=$email, archived=$archived, archivedAt=$archivedAt, lock=$lock, storageBytes=$storageBytes, filesCount=$filesCount, createdAt=$createdAt, updatedAt=$updatedAt, dashboardUrl=$dashboardUrl, currentMailboxRevisionId=$currentMailboxRevisionId, currentMailboxRevisionNumber=$currentMailboxRevisionNumber, archive=$archive, unarchive=$unarchive, delete=$delete]';
+  String toString() => 'Mailbox[id=$id, accountId=$accountId, description=$description, metadata=$metadata, metadataVersion=$metadataVersion, email=$email, archived=$archived, archivedAt=$archivedAt, lock=$lock, storageBytes=$storageBytes, filesCount=$filesCount, createdAt=$createdAt, updatedAt=$updatedAt, dashboardUrl=$dashboardUrl, currentMailboxRevisionId=$currentMailboxRevisionId, currentMailboxRevisionNumber=$currentMailboxRevisionNumber, archive=$archive, unarchive=$unarchive, delete=$delete]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
       json[r'id'] = this.id;
       json[r'account_id'] = this.accountId;
-      json[r'title'] = this.title;
     if (this.description != null) {
       json[r'description'] = this.description;
     } else {
@@ -268,8 +262,6 @@ class Mailbox {
         assert(json[r'id'] != null, 'Required key "Mailbox[id]" has a null value in JSON.');
         assert(json.containsKey(r'account_id'), 'Required key "Mailbox[account_id]" is missing from JSON.');
         assert(json[r'account_id'] != null, 'Required key "Mailbox[account_id]" has a null value in JSON.');
-        assert(json.containsKey(r'title'), 'Required key "Mailbox[title]" is missing from JSON.');
-        assert(json[r'title'] != null, 'Required key "Mailbox[title]" has a null value in JSON.');
         assert(json.containsKey(r'email'), 'Required key "Mailbox[email]" is missing from JSON.');
         assert(json[r'email'] != null, 'Required key "Mailbox[email]" has a null value in JSON.');
         return true;
@@ -278,7 +270,6 @@ class Mailbox {
       return Mailbox(
         id: mapValueOfType<String>(json, r'id')!,
         accountId: mapValueOfType<String>(json, r'account_id')!,
-        title: mapValueOfType<String>(json, r'title')!,
         description: mapValueOfType<String>(json, r'description'),
         metadata: mapCastOfType<String, Object?>(json, r'metadata') ?? const {},
         metadataVersion: mapValueOfType<String>(json, r'metadata_version'),
@@ -345,7 +336,6 @@ class Mailbox {
   static const requiredKeys = <String>{
     'id',
     'account_id',
-    'title',
     'email',
   };
 }

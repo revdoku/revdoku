@@ -12,16 +12,13 @@ import AnyCodable
 
 public struct CreateMailboxRequestMailbox: Codable, JSONEncodable, Hashable {
 
-    /** Optional display title; defaults to the assigned username. */
-    public var title: String?
     public var description: String?
     public var metadata: [String: AnyCodable]?
     public var tagIds: [String]?
     public var tagPaths: [String]?
     public var email: CreateMailboxRequestMailboxEmail?
 
-    public init(title: String? = nil, description: String? = nil, metadata: [String: AnyCodable]? = nil, tagIds: [String]? = nil, tagPaths: [String]? = nil, email: CreateMailboxRequestMailboxEmail? = nil) {
-        self.title = title
+    public init(description: String? = nil, metadata: [String: AnyCodable]? = nil, tagIds: [String]? = nil, tagPaths: [String]? = nil, email: CreateMailboxRequestMailboxEmail? = nil) {
         self.description = description
         self.metadata = metadata
         self.tagIds = tagIds
@@ -30,7 +27,6 @@ public struct CreateMailboxRequestMailbox: Codable, JSONEncodable, Hashable {
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
-        case title
         case description
         case metadata
         case tagIds = "tag_ids"
@@ -42,7 +38,6 @@ public struct CreateMailboxRequestMailbox: Codable, JSONEncodable, Hashable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encodeIfPresent(title, forKey: .title)
         try container.encodeIfPresent(description, forKey: .description)
         try container.encodeIfPresent(metadata, forKey: .metadata)
         try container.encodeIfPresent(tagIds, forKey: .tagIds)

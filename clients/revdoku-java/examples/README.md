@@ -133,7 +133,7 @@ First run `mvn -DskipTests install` in this checkout to install the SDK into you
 <dependency>
   <groupId>com.revdoku</groupId>
   <artifactId>revdoku-api</artifactId>
-  <version>1.0.527</version>
+  <version>1.0.535</version>
 </dependency>
 ```
 

@@ -10,7 +10,7 @@ try
 {
     var result = await api.CreateMailboxAsync(new CreateMailboxRequest(
         accountId: string.IsNullOrEmpty(account) ? null : account,
-        mailbox: new CreateMailboxRequestMailbox(title: "Example mailbox")));
+        mailbox: new CreateMailboxRequestMailbox()));
     Console.WriteLine($"{result.Data.Mailbox.Id} {result.Data.Mailbox.Email.Address}");
 }
 catch (ApiException error)

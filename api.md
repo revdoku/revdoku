@@ -114,7 +114,6 @@ Content-Type: application/json
   "data": {
     "mailbox": {
       "id": "bkt_example",
-      "title": "maple.river7k2xq9",
       "email": {
         "username": "maple.river7k2xq9",
         "address": "maple.river7k2xq9@revdokumail.com",
@@ -1263,7 +1262,6 @@ send `{"mailbox": {}}`.
 | --- | --- | --- |
 | `mailbox.email.username` | Generated name, such as `flaky.forest3v8x2p` | Choose the name before `@`. Available on all plans. |
 | `mailbox.email.domain` | Platform domain | Built-in domain such as `revdokumail.com` (all plans), or a ready custom email domain owned by this account. |
-| `mailbox.title` | Assigned username | Set a display title; it can be changed later. |
 | `mailbox.description` | Empty | Add a mailbox description. |
 | `mailbox.tag_paths` | None | Apply user-chosen organizational labels. |
 | `mailbox.metadata` | Empty object | Store your application's project/task metadata. |
@@ -1539,7 +1537,6 @@ Content-Type: application/json
     },
     "mailbox": {
       "id": "bkt_RETURNED_ID",
-      "title": "flaky.forest3v8x2p",
       "email": {
         "address": "flaky.forest3v8x2p@revdokumail.com",
         "receiving_enabled": true,
@@ -1811,7 +1808,6 @@ source, task, or local-folder context in `metadata`.
 ```json
 {
   "mailbox": {
-    "title": "Project files and mailbox",
     "description": "Shared project files and incoming documents",
     "tag_paths": [
       "project"
@@ -1974,7 +1970,7 @@ Content-Type: application/json
 }
 ```
 
-UI and agent clients should ask users to confirm by mailbox title or natural
+UI and agent clients should ask users to confirm by mailbox email address or natural
 language, then pass `delete.confirmation` internally.
 
 Permanent deletion is **not** a bulk operation. Mailboxes must be

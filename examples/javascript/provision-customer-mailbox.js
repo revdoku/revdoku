@@ -36,27 +36,31 @@ try {
         throw new Error('Cannot access the configured account.');
     let mailbox = mailboxes.find(item => item.customer_id === customerId);
     if (mailbox && !mailbox.mailbox_id) {
-        // A previous POST may have committed. Reconcile its unique title; never repeat it.
+        // A previous POST may have committed. Reconcile its unique email username; never repeat it.
         const url = new URL('https://api.revdoku.com/v1/mailboxes');
         url.searchParams.set('account_id', accountId);
-        url.searchParams.set('q', mailbox.title);
+        url.searchParams.set('q', mailbox.username);
         const response = await fetch(url, { headers, redirect: 'error', signal: AbortSignal.timeout(30000) });
         const result = await response.json();
         if (!response.ok || !Array.isArray(result.data?.mailboxes))
             throw new Error('Could not reconcile creation. Check the dashboard; rerun to check again.');
-        const matches = result.data.mailboxes.filter((mailbox) => mailbox.title === mailbox.title);
+        const pending = mailbox;
+        const matches = result.data.mailboxes.filter((candidate) => {
+            const [username, domain] = (candidate.email?.address || '').split('@');
+            return username === pending.username && (!pending.domain || domain === pending.domain);
+        });
         if (matches.length !== 1 || !/^bkt_[A-Za-z0-9]+$/.test(matches[0].id))
             throw new Error('Creation is uncertain. Check the dashboard before creating another mailbox.');
         mailbox.mailbox_id = matches[0].id;
         await save();
     }
     if (!mailbox) {
-        mailbox = { customer_id: customerId, title: `Customer mailbox ${randomUUID()}` };
+        mailbox = { customer_id: customerId, username: `customer-${randomUUID()}`, domain: process.env.REVDOKU_EMAIL_DOMAIN?.trim().toLowerCase() };
         mailboxes.push(mailbox);
         await save(); // Record intent before the only POST. This is local state, not a server retry key.
         const response = await fetch('https://api.revdoku.com/v1/mailboxes', {
             method: 'POST', headers, redirect: 'error', signal: AbortSignal.timeout(30000),
-            body: JSON.stringify({ account_id: accountId, mailbox: { title: mailbox.title, email: { domain: process.env.REVDOKU_EMAIL_DOMAIN } } }),
+            body: JSON.stringify({ account_id: accountId, mailbox: { email: { username: mailbox.username, domain: mailbox.domain } } }),
         });
         const result = await response.json();
         const id = response.ok ? result.data?.mailbox?.id : result.error?.code === 'EMAIL_NOT_READY' ? result.error.details?.mailbox_id : undefined;

@@ -24,7 +24,6 @@ metadata:
       - {name: REVDOKU_DEFAULT_BUCKET_FILE, required: false, description: "Saved mailbox selection path."}
       - {name: REVDOKU_CLIENT_VERSION_FILE, required: false, description: "Version stamp path."}
       - {name: REVDOKU_BUCKET_ID, required: false, description: "Default mailbox; deletion needs explicit selection."}
-      - {name: REVDOKU_BUCKET_TITLE, required: false, description: "Upload title."}
       - {name: REVDOKU_BUCKET_DESCRIPTION, required: false, description: "Upload description."}
       - {name: REVDOKU_BUCKET_METADATA, required: false, description: "Upload JSON metadata."}
       - {name: REVDOKU_UPLOAD_MODE, required: false, description: "Upload mode; auto or direct."}
@@ -115,7 +114,7 @@ is separate from this [MIT-0 skill](LICENSE).
 ## Receive and read email
 
 `mailbox_create(username: "project.alerts")` returns a mailbox ready to receive; omit `username`
-to generate it. `title` is optional and defaults to the username. Taken or retired names return `EMAIL_ALREADY_EXISTS`;
+to generate it. Taken or retired names return `EMAIL_ALREADY_EXISTS`;
 common role names on platform domains are reserved. Do not silently replace a
 user's requested name after a conflict. CLI: `create --username NAME`.
 

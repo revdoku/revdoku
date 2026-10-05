@@ -7,7 +7,7 @@ targets:
     sources: [RevdokuAPI]
     info:
       path: ./Info.plist
-      version: 1.0.527
+      version: 1.0.535
     settings:
       APPLICATION_EXTENSION_API_ONLY: true
     scheme: {}

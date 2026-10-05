@@ -8,7 +8,7 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   title: Revdoku public agent API
-  version: 1.0.527
+  version: 1.0.535
 servers:
 - description: Revdoku application API
   url: https://api.revdoku.com
@@ -374,7 +374,6 @@ paths:
                       receiving_enabled: true
                       sending_enabled: false
                     account_id: acct_example
-                    title: acme-orders
               schema:
                 $ref: "#/components/schemas/createMailbox_201_response"
           description: Created mailbox with its confirmed receiving address.
@@ -2683,8 +2682,8 @@ components:
       - name
       type: object
     MailboxEmail:
-      description: Receiving address/state on creation and authorized opt-in reads.
-        Ordinary mailbox reads expose activity only; use the emails collection for
+      description: Authorized mailbox reads include the email address. Creation and
+        opt-in reads also include receiving settings; use the emails collection for
         a durable arrival cursor.
       example:
         address: address
@@ -3699,12 +3698,11 @@ components:
       - allowed
       type: object
     Mailbox:
-      description: Public mailbox details. Ordinary reads include email activity only;
-        creation and authorized include_email reads also include receiving addresses.
+      description: Public mailbox details. Write-authorized reads include email.address.
+        Creation and authorized include_email reads also include receiving settings.
       example:
         id: id
         account_id: account_id
-        title: title
         description: description
         metadata:
           key: ""
@@ -3798,8 +3796,6 @@ components:
           type: string
         account_id:
           type: string
-        title:
-          type: string
         description:
           nullable: true
           type: string
@@ -3853,7 +3849,6 @@ components:
       - account_id
       - email
       - id
-      - title
       type: object
     AccountPagination:
       example:
@@ -4445,7 +4440,6 @@ components:
         mailboxes:
         - id: id
           account_id: account_id
-          title: title
           description: description
           metadata:
             key: ""
@@ -4536,7 +4530,6 @@ components:
             confirmation: confirmation
         - id: id
           account_id: account_id
-          title: title
           description: description
           metadata:
             key: ""
@@ -4640,7 +4633,6 @@ components:
           mailboxes:
           - id: id
             account_id: account_id
-            title: title
             description: description
             metadata:
               key: ""
@@ -4731,7 +4723,6 @@ components:
               confirmation: confirmation
           - id: id
             account_id: account_id
-            title: title
             description: description
             metadata:
               key: ""
@@ -4849,9 +4840,6 @@ components:
       type: object
     createMailbox_request_mailbox:
       properties:
-        title:
-          description: Optional display title; defaults to the assigned username.
-          type: string
         description:
           type: string
         metadata:
@@ -4889,7 +4877,6 @@ components:
         mailbox:
           id: id
           account_id: account_id
-          title: title
           description: description
           metadata:
             key: ""
@@ -4990,7 +4977,6 @@ components:
           mailbox:
             id: id
             account_id: account_id
-            title: title
             description: description
             metadata:
               key: ""
@@ -6079,7 +6065,6 @@ components:
     verifyAgentSignup_201_response_data_mailbox:
       example:
         id: id
-        title: title
         email:
           address: address
           received_count: 0
@@ -6127,14 +6112,11 @@ components:
       properties:
         id:
           type: string
-        title:
-          type: string
         email:
           $ref: "#/components/schemas/MailboxEmail"
       required:
       - email
       - id
-      - title
       type: object
     verifyAgentSignup_201_response_data:
       example:
@@ -6147,7 +6129,6 @@ components:
           id: id
         mailbox:
           id: id
-          title: title
           email:
             address: address
             received_count: 0
@@ -6232,7 +6213,6 @@ components:
             id: id
           mailbox:
             id: id
-            title: title
             email:
               address: address
               received_count: 0

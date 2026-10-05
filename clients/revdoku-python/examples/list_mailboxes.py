@@ -7,4 +7,4 @@ if not key:
 with ApiClient(Configuration(access_token=key)) as client:
     result = DefaultApi(client).list_mailboxes(account_id=os.getenv("REVDOKU_ACCOUNT_ID") or None)
     for mailbox in result.data.mailboxes:
-        print(mailbox.id, mailbox.title)
+        print(mailbox.id, mailbox.email.address if mailbox.email else mailbox.id)

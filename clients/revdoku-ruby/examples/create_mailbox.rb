@@ -8,7 +8,7 @@ api = RevdokuApi::DefaultApi.new(RevdokuApi::ApiClient.new(config))
 begin
   result = api.create_mailbox(RevdokuApi::CreateMailboxRequest.new(
     account_id: ENV['REVDOKU_ACCOUNT_ID'].to_s.empty? ? nil : ENV['REVDOKU_ACCOUNT_ID'],
-    mailbox: RevdokuApi::CreateMailboxRequestMailbox.new(title: 'Example mailbox')
+    mailbox: RevdokuApi::CreateMailboxRequestMailbox.new
   ))
   puts "#{result.data.mailbox.id} #{result.data.mailbox.email.address}"
 rescue RevdokuApi::ApiError => error

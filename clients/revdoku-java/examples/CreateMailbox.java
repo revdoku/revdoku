@@ -13,7 +13,7 @@ public class CreateMailbox {
         try {
             var result = new DefaultApi(client).createMailbox(new CreateMailboxRequest()
                 .accountId(account == null || account.isEmpty() ? null : account)
-                .mailbox(new CreateMailboxRequestMailbox().title("Example mailbox")));
+                .mailbox(new CreateMailboxRequestMailbox()));
             System.out.println(result.getData().getMailbox().getId() + " " + result.getData().getMailbox().getEmail().getAddress());
         } catch (ApiException error) {
             System.err.println("HTTP " + error.getCode() + ": " + error.getResponseBody());

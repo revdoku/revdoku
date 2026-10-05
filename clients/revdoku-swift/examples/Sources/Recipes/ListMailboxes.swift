@@ -10,5 +10,5 @@ public func listMailboxes() async throws {
             else { continuation.resume(throwing: ExampleError.missingResponse) }
         }
     }
-    for mailbox in result.data.mailboxes { print(mailbox.id, mailbox.title) }
+    for mailbox in result.data.mailboxes { print(mailbox.id, mailbox.email.address ?? mailbox.id) }
 }

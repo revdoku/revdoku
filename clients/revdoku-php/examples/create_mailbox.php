@@ -12,7 +12,7 @@ $api = new DefaultApi(null, (new Configuration())->setAccessToken($key));
 try {
     $result = $api->createMailbox(new CreateMailboxRequest([
         'account_id' => getenv('REVDOKU_ACCOUNT_ID') ?: null,
-        'mailbox' => new CreateMailboxRequestMailbox(['title' => 'Example mailbox']),
+        'mailbox' => new CreateMailboxRequestMailbox(),
     ]));
     echo $result->getData()->getMailbox()->getId(), ' ', $result->getData()->getMailbox()->getEmail()->getAddress(), PHP_EOL;
 } catch (ApiException $error) {

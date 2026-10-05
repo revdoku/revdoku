@@ -66,7 +66,6 @@ Content-Type: application/json
   "data": {
     "mailbox": {
       "id": "bkt_example",
-      "title": "maple.river7k2xq9",
       "email": {
         "address": "maple.river7k2xq9@revdokumail.com",
         "receiving_enabled": true,
@@ -81,7 +80,6 @@ Content-Type: application/json
 | --- | --- |
 | Supply `mailbox.email.username` | Request that username. Unavailable names return an error. |
 | Send `{"mailbox": {}}` | Generate a username automatically. |
-| Omit `mailbox.title` | Use the username as the display title. |
 
 Creation waits for receiving confirmation. Use the returned address after a
 successful response. On `EMAIL_NOT_READY`, save the returned mailbox ID and inspect

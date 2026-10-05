@@ -25,6 +25,7 @@ func main() {
 		log.Fatal(err)
 	}
 	for _, mailbox := range result.Data.Mailboxes {
-		fmt.Println(mailbox.GetId(), mailbox.GetTitle())
+		email := mailbox.GetEmail()
+		fmt.Println(mailbox.GetId(), email.GetAddress())
 	}
 }

@@ -17,7 +17,6 @@ func main() {
 	config.AddDefaultHeader("Authorization", "Bearer "+key)
 	api := revdoku.NewAPIClient(config)
 	mailbox := revdoku.NewCreateMailboxRequestMailbox()
-	mailbox.SetTitle("Example mailbox")
 	body := revdoku.NewCreateMailboxRequest(*mailbox)
 	if account := os.Getenv("REVDOKU_ACCOUNT_ID"); account != "" {
 		body.SetAccountId(account)
