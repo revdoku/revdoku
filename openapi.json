@@ -3,7 +3,7 @@
   "info": {
     "title": "Revdoku public agent API",
     "version": "1.0.0",
-    "description": "Email inboxes for people and AI agents, with private file storage. Create inboxes, read messages and attachments, and store additional files. Direct API signup requires verification of the human operator email. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API."
+    "description": "Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Direct API signup requires verification of the human operator email. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API."
   },
   "servers": [
     {
@@ -113,7 +113,14 @@
         "security": [],
         "responses": {
           "200": {
-            "description": "Authentication capabilities"
+            "description": "Authentication capabilities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccess"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/ApiError"
@@ -206,7 +213,14 @@
             }
           },
           "403": {
-            "description": "Agency owner authorization required or account capacity reached"
+            "description": "Agency owner authorization required or account capacity reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/ApiError"
@@ -286,11 +300,11 @@
         }
       }
     },
-    "/v1/buckets/{id}/email": {
+    "/v1/mailboxes/{id}/email": {
       "get": {
-        "operationId": "getBucketEmailSettings",
-        "summary": "Read a bucket email address and limits",
-        "description": "Requires upload/write access. Anyone knowing the address can send; reading files requires bucket authorization. Original message.eml, decoded message.json, and attachments are stored together.",
+        "operationId": "getMailboxEmailSettings",
+        "summary": "Read a mailbox email address and limits",
+        "description": "Requires upload/write access. Anyone knowing the address can send; reading files requires mailbox authorization. Original message.eml, decoded message.json, and attachments are stored together.",
         "security": [
           {
             "bearerAuth": []
@@ -304,7 +318,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Authorized bucket prefix ID"
+            "description": "Authorized mailbox prefix ID"
           },
           {
             "name": "account_id",
@@ -325,14 +339,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Bucket email configuration",
+            "description": "Mailbox email configuration",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/BucketEmail"
+                      "$ref": "#/components/schemas/MailboxEmail"
                     },
                     "success": {
                       "type": "boolean",
@@ -362,10 +376,24 @@
             }
           },
           "403": {
-            "description": "Bucket upload access required"
+            "description": "Mailbox upload access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Bucket unavailable"
+            "description": "Mailbox unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/ApiError"
@@ -373,11 +401,11 @@
         }
       }
     },
-    "/v1/buckets/{id}/email/rotate": {
+    "/v1/mailboxes/{id}/email/rotate": {
       "post": {
-        "operationId": "rotateBucketEmailAddress",
-        "summary": "Replace a bucket email address after confirmation",
-        "description": "Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Optional username chooses a custom name and additionally requires a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived buckets retain addresses. Retired addresses do not forward. Assignment history survives bucket deletion. Optional keep_old_as_alias retains the old primary for the same inbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.",
+        "operationId": "rotateMailboxEmailAddress",
+        "summary": "Replace a mailbox email address after confirmation",
+        "description": "Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Optional username chooses a custom name and additionally requires a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.",
         "security": [
           {
             "bearerAuth": []
@@ -391,7 +419,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Authorized bucket prefix ID"
+            "description": "Authorized mailbox prefix ID"
           }
         ],
         "requestBody": {
@@ -432,7 +460,7 @@
                   "keep_old_as_alias": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Keep the old primary as an alias for this inbox after activation. Requires full-account administrator access and an available alias slot."
+                    "description": "Keep the old primary as an alias for this mailbox after activation. Requires full-account administrator access and an available alias slot."
                   }
                 }
               }
@@ -441,14 +469,14 @@
         },
         "responses": {
           "200": {
-            "description": "Bucket email configuration",
+            "description": "Mailbox email configuration",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/BucketEmail"
+                      "$ref": "#/components/schemas/MailboxEmail"
                     },
                     "success": {
                       "type": "boolean",
@@ -478,22 +506,64 @@
             }
           },
           "403": {
-            "description": "Write access required; custom names additionally require full-account owner/administrator access."
+            "description": "Write access required; custom names additionally require full-account owner/administrator access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Bucket unavailable"
+            "description": "Mailbox unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "409": {
-            "description": "Address changed, assignment pending/conflicting, custom name unavailable, custom domain unavailable, or named assignments disabled. Read the structured error code and reread state before retrying."
+            "description": "Address changed, assignment pending/conflicting, custom name unavailable, custom domain unavailable, or named assignments disabled. Read the structured error code and reread state before retrying.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "422": {
-            "description": "Confirmation/current address missing, or EMAIL_NAME_INVALID."
+            "description": "Confirmation/current address missing, or EMAIL_NAME_INVALID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "423": {
-            "description": "Account is read-only"
+            "description": "Account is read-only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "429": {
-            "description": "EMAIL_ROTATION_LIMIT; plan disallows rotation or monthly allowance is exhausted."
+            "description": "EMAIL_ROTATION_LIMIT; plan disallows rotation or monthly allowance is exhausted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "202": {
             "description": "Pending activation. The returned address is still the current address. Poll GET email.",
@@ -503,7 +573,7 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/BucketEmail"
+                      "$ref": "#/components/schemas/MailboxEmail"
                     },
                     "success": {
                       "type": "boolean",
@@ -538,16 +608,16 @@
         }
       }
     },
-    "/v1/buckets": {
+    "/v1/mailboxes": {
       "post": {
-        "operationId": "createBucket",
+        "operationId": "createMailbox",
         "summary": "Create a mailbox with a ready receiving address",
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "description": "Creates a mailbox with file storage and waits for receiving confirmation. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained bucket_id. Creation quotas apply.",
+        "description": "Creates a mailbox with file storage and waits for receiving confirmation. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id. Creation quotas apply.",
         "requestBody": {
           "required": true,
           "content": {
@@ -558,7 +628,7 @@
                   "account_id": {
                     "type": "string"
                   },
-                  "bucket": {
+                  "mailbox": {
                     "type": "object",
                     "properties": {
                       "title": {
@@ -607,7 +677,7 @@
                   }
                 },
                 "required": [
-                  "bucket"
+                  "mailbox"
                 ]
               }
             }
@@ -624,14 +694,14 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "bucket": {
+                        "mailbox": {
                           "type": "object",
                           "properties": {
                             "id": {
                               "type": "string"
                             },
                             "email": {
-                              "$ref": "#/components/schemas/BucketEmail"
+                              "$ref": "#/components/schemas/MailboxEmail"
                             }
                           }
                         }
@@ -664,7 +734,7 @@
                 "example": {
                   "success": true,
                   "data": {
-                    "bucket": {
+                    "mailbox": {
                       "id": "bkt_example",
                       "email": {
                         "address": "acme-orders@revdokumail.com",
@@ -687,14 +757,14 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "bucket": {
+                        "mailbox": {
                           "type": "object",
                           "properties": {
                             "id": {
                               "type": "string"
                             },
                             "email": {
-                              "$ref": "#/components/schemas/BucketEmail"
+                              "$ref": "#/components/schemas/MailboxEmail"
                             }
                           }
                         }
@@ -761,7 +831,7 @@
             "$ref": "#/components/responses/ApiError"
           },
           "503": {
-            "description": "EMAIL_NOT_READY: receiving could not be confirmed within 25 seconds. error.details.bucket_id identifies the retained mailbox; do not create a replacement blindly.",
+            "description": "EMAIL_NOT_READY: receiving could not be confirmed within 25 seconds. error.details.mailbox_id identifies the retained mailbox; do not create a replacement blindly.",
             "content": {
               "application/json": {
                 "schema": {
@@ -773,8 +843,8 @@
         }
       },
       "get": {
-        "operationId": "listBuckets",
-        "summary": "List accessible buckets",
+        "operationId": "listMailboxes",
+        "summary": "List accessible mailboxes",
         "security": [
           {
             "bearerAuth": []
@@ -815,7 +885,7 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "buckets": {
+                        "mailboxes": {
                           "type": "array",
                           "items": {
                             "type": "object",
@@ -835,7 +905,7 @@
                         }
                       },
                       "required": [
-                        "buckets"
+                        "mailboxes"
                       ]
                     }
                   },
@@ -867,10 +937,10 @@
         }
       }
     },
-    "/v1/buckets/{id}": {
+    "/v1/mailboxes/{id}": {
       "get": {
-        "operationId": "getBucket",
-        "summary": "Read bucket activity and optionally its incoming address",
+        "operationId": "getMailbox",
+        "summary": "Read mailbox activity and optionally its incoming address",
         "security": [
           {
             "bearerAuth": []
@@ -912,7 +982,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Bucket details including email address/receiving state when authorized.",
+            "description": "Mailbox details including email address/receiving state when authorized.",
             "content": {
               "application/json": {
                 "schema": {
@@ -921,14 +991,14 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "bucket": {
+                        "mailbox": {
                           "type": "object",
                           "properties": {
                             "id": {
                               "type": "string"
                             },
                             "email": {
-                              "$ref": "#/components/schemas/BucketEmail"
+                              "$ref": "#/components/schemas/MailboxEmail"
                             }
                           }
                         }
@@ -962,7 +1032,14 @@
             }
           },
           "403": {
-            "description": "Requested address requires upload/write access."
+            "description": "Requested address requires upload/write access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/ApiError"
@@ -971,7 +1048,7 @@
             "$ref": "#/components/responses/ApiError"
           }
         },
-        "description": "Read bucket details. List files, emails, versions and account limits through their separate endpoints."
+        "description": "Read mailbox details. List files, emails, versions and account limits through their separate endpoints."
       }
     },
     "/v1/account/email_domains": {
@@ -986,22 +1063,64 @@
         ],
         "responses": {
           "200": {
-            "description": "Current domain configuration or result"
+            "description": "Current domain configuration or result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccess"
+                }
+              }
+            }
           },
           "403": {
-            "description": "Account admin/full-account access or domain setup entitlement required"
+            "description": "Account admin/full-account access or domain setup entitlement required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "409": {
-            "description": "Domain is still in use"
+            "description": "Domain is still in use",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "422": {
-            "description": "Invalid hostname, DNS conflict, or missing confirmation"
+            "description": "Invalid hostname, DNS conflict, or missing confirmation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "429": {
-            "description": "Setup rate limit; follow Retry-After"
+            "description": "Setup rate limit; follow Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "503": {
-            "description": "Temporary provider/DNS error; details.retryable is true"
+            "description": "Temporary provider/DNS error; details.retryable is true",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/ApiError"
@@ -1038,22 +1157,64 @@
         ],
         "responses": {
           "403": {
-            "description": "Account admin/full-account access or domain setup entitlement required"
+            "description": "Account admin/full-account access or domain setup entitlement required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "409": {
-            "description": "Domain is still in use"
+            "description": "Domain is still in use",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "422": {
-            "description": "Invalid hostname, DNS conflict, or missing confirmation"
+            "description": "Invalid hostname, DNS conflict, or missing confirmation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "429": {
-            "description": "Setup rate limit; follow Retry-After"
+            "description": "Setup rate limit; follow Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "503": {
-            "description": "Temporary provider/DNS error; details.retryable is true"
+            "description": "Temporary provider/DNS error; details.retryable is true",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "201": {
-            "description": "Exact domain claim created; add returned ownership TXT and verify."
+            "description": "Exact domain claim created; add returned ownership TXT and verify.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccess"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/ApiError"
@@ -1071,7 +1232,7 @@
                 "properties": {
                   "hostname": {
                     "type": "string",
-                    "description": "Dedicated root or unused subdomain, such as inbox.example.com. Subdomain recommended when root mail already exists."
+                    "description": "Dedicated root or unused subdomain, such as mailbox.example.com. Subdomain recommended when root mail already exists."
                   },
                   "account_id": {
                     "type": "string"
@@ -1098,22 +1259,64 @@
         ],
         "responses": {
           "200": {
-            "description": "Current domain configuration or result"
+            "description": "Current domain configuration or result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccess"
+                }
+              }
+            }
           },
           "403": {
-            "description": "Account admin/full-account access or domain setup entitlement required"
+            "description": "Account admin/full-account access or domain setup entitlement required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "409": {
-            "description": "Domain is still in use"
+            "description": "Domain is still in use",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "422": {
-            "description": "Invalid hostname, DNS conflict, or missing confirmation"
+            "description": "Invalid hostname, DNS conflict, or missing confirmation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "429": {
-            "description": "Setup rate limit; follow Retry-After"
+            "description": "Setup rate limit; follow Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "503": {
-            "description": "Temporary provider/DNS error; details.retryable is true"
+            "description": "Temporary provider/DNS error; details.retryable is true",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/ApiError"
@@ -1158,22 +1361,64 @@
         ],
         "responses": {
           "403": {
-            "description": "Account admin/full-account access or domain setup entitlement required"
+            "description": "Account admin/full-account access or domain setup entitlement required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "409": {
-            "description": "Domain is still in use"
+            "description": "Domain is still in use",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "422": {
-            "description": "Invalid hostname, DNS conflict, or missing confirmation"
+            "description": "Invalid hostname, DNS conflict, or missing confirmation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "429": {
-            "description": "Setup rate limit; follow Retry-After"
+            "description": "Setup rate limit; follow Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "503": {
-            "description": "Temporary provider/DNS error; details.retryable is true"
+            "description": "Temporary provider/DNS error; details.retryable is true",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "202": {
-            "description": "Verification/removal queued; poll the resource"
+            "description": "Verification/removal queued; poll the resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccess"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/ApiError"
@@ -1233,22 +1478,64 @@
         ],
         "responses": {
           "403": {
-            "description": "Account admin/full-account access or domain setup entitlement required"
+            "description": "Account admin/full-account access or domain setup entitlement required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "409": {
-            "description": "Domain is still in use"
+            "description": "Domain is still in use",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "422": {
-            "description": "Invalid hostname, DNS conflict, or missing confirmation"
+            "description": "Invalid hostname, DNS conflict, or missing confirmation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "429": {
-            "description": "Setup rate limit; follow Retry-After"
+            "description": "Setup rate limit; follow Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "503": {
-            "description": "Temporary provider/DNS error; details.retryable is true"
+            "description": "Temporary provider/DNS error; details.retryable is true",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "202": {
-            "description": "Verification/removal queued; poll the resource"
+            "description": "Verification/removal queued; poll the resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccess"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/ApiError"
@@ -1289,7 +1576,7 @@
       "post": {
         "operationId": "checkEmailHostname",
         "summary": "Check a domain hostname and existing DNS routing",
-        "description": "Requires full-account owner/administrator access. Checks the exact hostname for conflicting MX or CNAME records without creating a claim or changing DNS. If the root already receives email elsewhere, use an unused subdomain such as inbox.yourdomain.com. Cookie-authenticated requests require CSRF.",
+        "description": "Requires full-account owner/administrator access. Checks the exact hostname for conflicting MX or CNAME records without creating a claim or changing DNS. If the root already receives email elsewhere, use an unused subdomain such as mailbox.yourdomain.com. Cookie-authenticated requests require CSRF.",
         "security": [
           {
             "bearerAuth": []
@@ -1297,22 +1584,64 @@
         ],
         "responses": {
           "200": {
-            "description": "Current domain configuration or result"
+            "description": "Current domain configuration or result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccess"
+                }
+              }
+            }
           },
           "403": {
-            "description": "Account admin/full-account access or domain setup entitlement required"
+            "description": "Account admin/full-account access or domain setup entitlement required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "409": {
-            "description": "Domain is still in use"
+            "description": "Domain is still in use",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "422": {
-            "description": "Invalid hostname, DNS conflict, or missing confirmation"
+            "description": "Invalid hostname, DNS conflict, or missing confirmation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "429": {
-            "description": "Setup rate limit; follow Retry-After"
+            "description": "Setup rate limit; follow Retry-After",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "503": {
-            "description": "Temporary provider/DNS error; details.retryable is true"
+            "description": "Temporary provider/DNS error; details.retryable is true",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/ApiError"
@@ -1330,7 +1659,7 @@
                 "properties": {
                   "hostname": {
                     "type": "string",
-                    "description": "Dedicated root or unused subdomain, such as inbox.example.com. Subdomain recommended when root mail already exists."
+                    "description": "Dedicated root or unused subdomain, such as mailbox.example.com. Subdomain recommended when root mail already exists."
                   },
                   "account_id": {
                     "type": "string"
@@ -1345,9 +1674,9 @@
         }
       }
     },
-    "/v1/buckets/{id}/files": {
+    "/v1/mailboxes/{id}/files": {
       "get": {
-        "operationId": "listBucketFiles",
+        "operationId": "listMailboxFiles",
         "summary": "List files or related email without marking read",
         "security": [
           {
@@ -1461,7 +1790,14 @@
             }
           },
           "404": {
-            "description": "Bucket or email unavailable to this caller."
+            "description": "Mailbox or email unavailable to this caller.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/ApiError"
@@ -1469,11 +1805,11 @@
         }
       }
     },
-    "/v1/buckets/{bucket_id}/emails": {
+    "/v1/mailboxes/{mailbox_id}/emails": {
       "get": {
         "operationId": "listEmails",
         "summary": "List received emails",
-        "description": "Requires bucket read permission. Ascending arrival order supports incremental polling: retain next_cursor even after an empty page. Reuse account, bucket and filters. Late receipt timestamps are included. Descending order browses history. Edits/read changes/restorations do not replay earlier arrivals. Listing does not mark read.",
+        "description": "Requires mailbox read permission. Ascending arrival order supports incremental polling: retain next_cursor even after an empty page. Reuse account, mailbox and filters. Late receipt timestamps are included. Descending order browses history. Edits/read changes/restorations do not replay earlier arrivals. Listing does not mark read.",
         "security": [
           {
             "bearerAuth": []
@@ -1481,7 +1817,7 @@
         ],
         "parameters": [
           {
-            "name": "bucket_id",
+            "name": "mailbox_id",
             "in": "path",
             "required": true,
             "schema": {
@@ -1668,15 +2004,14 @@
           "default": {
             "$ref": "#/components/responses/ApiError"
           }
-        },
-        "x-controller": "api/v1/bucket_emails"
+        }
       }
     },
-    "/v1/buckets/{bucket_id}/emails/{email_id}": {
+    "/v1/mailboxes/{mailbox_id}/emails/{email_id}": {
       "get": {
         "operationId": "getEmail",
         "summary": "Read a received email",
-        "description": "Requires bucket read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.",
+        "description": "Requires mailbox read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.",
         "security": [
           {
             "bearerAuth": []
@@ -1684,7 +2019,7 @@
         ],
         "parameters": [
           {
-            "name": "bucket_id",
+            "name": "mailbox_id",
             "in": "path",
             "required": true,
             "schema": {
@@ -1789,13 +2124,12 @@
           "default": {
             "$ref": "#/components/responses/ApiError"
           }
-        },
-        "x-controller": "api/v1/bucket_emails"
+        }
       },
       "patch": {
         "operationId": "updateEmail",
         "summary": "Mark a received email read or unread",
-        "description": "Requires bucket read permission, including for locked/read-only content. Only read status can change. Receipt and audit event commit atomically. Repeated state changes are idempotent.",
+        "description": "Requires mailbox read permission, including for locked/read-only content. Only read status can change. Receipt and audit event commit atomically. Repeated state changes are idempotent.",
         "security": [
           {
             "bearerAuth": []
@@ -1803,7 +2137,7 @@
         ],
         "parameters": [
           {
-            "name": "bucket_id",
+            "name": "mailbox_id",
             "in": "path",
             "required": true,
             "schema": {
@@ -1893,7 +2227,6 @@
             "$ref": "#/components/responses/ApiError"
           }
         },
-        "x-controller": "api/v1/bucket_emails",
         "requestBody": {
           "required": true,
           "content": {
@@ -1922,7 +2255,7 @@
       "delete": {
         "operationId": "deleteEmail",
         "summary": "Delete one received email",
-        "description": "Requires bucket-admin permission. Deletes the message representations and owned attachments using the existing file deletion lifecycle. Separately copied files are unaffected. No email trash or restore operation. A repeated delete returns 404.",
+        "description": "Requires mailbox-admin permission. Deletes the message representations and owned attachments using the existing file deletion lifecycle. Separately copied files are unaffected. No email trash or restore operation. A repeated delete returns 404.",
         "security": [
           {
             "bearerAuth": []
@@ -1930,7 +2263,7 @@
         ],
         "parameters": [
           {
-            "name": "bucket_id",
+            "name": "mailbox_id",
             "in": "path",
             "required": true,
             "schema": {
@@ -1957,23 +2290,43 @@
             "description": "Email and owned files deleted"
           },
           "403": {
-            "description": "Insufficient permission"
+            "description": "Insufficient permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Email not found"
+            "description": "Email not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "423": {
-            "description": "Account, bucket, or email file cannot be changed"
+            "description": "Account, mailbox, or email file cannot be changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           }
-        },
-        "x-controller": "api/v1/bucket_emails"
+        }
       }
     },
-    "/v1/buckets/{bucket_id}/emails/{email_id}/raw": {
+    "/v1/mailboxes/{mailbox_id}/emails/{email_id}/raw": {
       "get": {
         "operationId": "downloadEmailOriginal",
         "summary": "Get the original EML download",
-        "description": "Requires bucket read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.",
+        "description": "Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.",
         "security": [
           {
             "bearerAuth": []
@@ -1981,7 +2334,7 @@
         ],
         "parameters": [
           {
-            "name": "bucket_id",
+            "name": "mailbox_id",
             "in": "path",
             "required": true,
             "schema": {
@@ -2085,15 +2438,14 @@
           "default": {
             "$ref": "#/components/responses/ApiError"
           }
-        },
-        "x-controller": "api/v1/bucket_emails"
+        }
       }
     },
-    "/v1/buckets/{bucket_id}/emails/{email_id}/attachments/{attachment_id}": {
+    "/v1/mailboxes/{mailbox_id}/emails/{email_id}/attachments/{attachment_id}": {
       "get": {
         "operationId": "downloadEmailAttachment",
         "summary": "Get an email attachment download",
-        "description": "Requires bucket read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.",
+        "description": "Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.",
         "security": [
           {
             "bearerAuth": []
@@ -2101,7 +2453,7 @@
         ],
         "parameters": [
           {
-            "name": "bucket_id",
+            "name": "mailbox_id",
             "in": "path",
             "required": true,
             "schema": {
@@ -2213,15 +2565,14 @@
           "default": {
             "$ref": "#/components/responses/ApiError"
           }
-        },
-        "x-controller": "api/v1/bucket_emails"
+        }
       }
     },
-    "/v1/buckets/{id}/email/allowlist": {
+    "/v1/mailboxes/{id}/email/allowlist": {
       "patch": {
-        "operationId": "updateBucketEmailAllowlist",
-        "summary": "Replace the allowed senders for a bucket",
-        "description": "Requires account owner/administrator and bucket-admin permission. Read sender_allowlist.version from GET /buckets/{id}/email first. Entries match exact authenticated From addresses or domains, with no wildcards or implicit subdomains. A stale or missing version returns EMAIL_ALLOWLIST_CHANGED; invalid entries return EMAIL_ALLOWLIST_INVALID. Disabled policies retain the supplied entries. Locks and read-only account state apply.",
+        "operationId": "updateMailboxEmailAllowlist",
+        "summary": "Replace the allowed senders for a mailbox",
+        "description": "Requires account owner/administrator and mailbox-admin permission. Read sender_allowlist.version from GET /mailboxes/{id}/email first. Entries match exact authenticated From addresses or domains, with no wildcards or implicit subdomains. A stale or missing version returns EMAIL_ALLOWLIST_CHANGED; invalid entries return EMAIL_ALLOWLIST_INVALID. Disabled policies retain the supplied entries. Locks and read-only account state apply.",
         "security": [
           {
             "bearerAuth": []
@@ -2235,7 +2586,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Authorized bucket prefix ID"
+            "description": "Authorized mailbox prefix ID"
           },
           {
             "name": "account_id",
@@ -2350,26 +2701,59 @@
             }
           },
           "403": {
-            "description": "Account administrator and bucket-admin permission required"
+            "description": "Account administrator and mailbox-admin permission required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Bucket not found"
+            "description": "Mailbox not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "409": {
-            "description": "EMAIL_ALLOWLIST_CHANGED"
+            "description": "EMAIL_ALLOWLIST_CHANGED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "422": {
-            "description": "EMAIL_ALLOWLIST_INVALID"
+            "description": "EMAIL_ALLOWLIST_INVALID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "423": {
-            "description": "Account or bucket locked"
+            "description": "Account or mailbox locked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/ApiError"
           }
-        },
-        "x-controller": "api/v1/buckets",
-        "x-action": "update_email_allowlist"
+        }
       }
     },
     "/v1/accounts/{id}": {
@@ -2457,11 +2841,11 @@
                   "permission_scope": {
                     "type": "string",
                     "enum": [
-                      "bucket_read",
-                      "bucket_write",
-                      "bucket_admin"
+                      "mailbox_read",
+                      "mailbox_write",
+                      "mailbox_admin"
                     ],
-                    "default": "bucket_admin"
+                    "default": "mailbox_admin"
                   },
                   "accept_terms_and_policy": {
                     "type": "boolean",
@@ -2607,9 +2991,9 @@
                         "scope": {
                           "type": "string",
                           "enum": [
-                            "bucket_read",
-                            "bucket_write",
-                            "bucket_admin"
+                            "mailbox_read",
+                            "mailbox_write",
+                            "mailbox_admin"
                           ]
                         },
                         "expires_at": {
@@ -2627,7 +3011,7 @@
                             "id"
                           ]
                         },
-                        "bucket": {
+                        "mailbox": {
                           "type": "object",
                           "properties": {
                             "id": {
@@ -2637,7 +3021,7 @@
                               "type": "string"
                             },
                             "email": {
-                              "$ref": "#/components/schemas/BucketEmail"
+                              "$ref": "#/components/schemas/MailboxEmail"
                             }
                           },
                           "required": [
@@ -2653,7 +3037,7 @@
                         "scope",
                         "expires_at",
                         "account",
-                        "bucket"
+                        "mailbox"
                       ]
                     }
                   },
@@ -2688,14 +3072,14 @@
                             "account_id": {
                               "type": "string"
                             },
-                            "bucket_id": {
+                            "mailbox_id": {
                               "type": "string"
                             }
                           },
                           "required": [
                             "status",
                             "account_id",
-                            "bucket_id"
+                            "mailbox_id"
                           ]
                         },
                         "recovery_url": {
@@ -2833,7 +3217,7 @@
       "get": {
         "operationId": "getAccountLimits",
         "summary": "Read effective mailbox and file storage limits",
-        "description": "For the selected account. Uses the same plan and overrides as enforcement. Limits are not repeated in bucket responses. Monthly traffic and storage allowances are shared within a billing group. Zero means none; null means no cap for that field.",
+        "description": "For the selected account. Uses the same plan and overrides as enforcement. Limits are not repeated in mailbox responses. Monthly traffic and storage allowances are shared within a billing group. Zero means none; null means no cap for that field.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AccountId"
@@ -2871,7 +3255,7 @@
                           "type": "object",
                           "description": "Present only for full-account administrator credentials and full-account browser sessions.",
                           "properties": {
-                            "bucket_creations": {
+                            "mailbox_creations": {
                               "type": "object",
                               "required": [
                                 "used",
@@ -2913,20 +3297,19 @@
         }
       }
     },
-    "/v1/buckets/{bucket_id}/email/webhook": {
+    "/v1/mailboxes/{mailbox_id}/email/webhook": {
       "get": {
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-controller": "api/v1/bucket_email_webhooks",
         "operationId": "getEmailWebhook",
         "summary": "Read a mailbox webhook endpoint",
-        "description": "Requires bucket admin permission. Returns null when disabled; never includes the signing secret.",
+        "description": "Requires mailbox admin permission. Returns null when disabled; never includes the signing secret.",
         "parameters": [
           {
-            "name": "bucket_id",
+            "name": "mailbox_id",
             "in": "path",
             "required": true,
             "schema": {
@@ -3026,13 +3409,12 @@
             "bearerAuth": []
           }
         ],
-        "x-controller": "api/v1/bucket_email_webhooks",
         "operationId": "setEmailWebhook",
         "summary": "Configure one received-email webhook per mailbox",
-        "description": "Requires bucket admin permission. Public HTTPS, including explicit ports such as 8443. Generates an encrypted signing secret, returned here. Same-URL updates retain it; replacing the URL rotates it and cancels pending old-version deliveries. Events are signed and retried up to eight attempts on transient failure; duplicates are possible. Worker-crash recovery is bounded to 24 hours from event creation. Exhausted and permanent failures require operator review.",
+        "description": "Requires mailbox admin permission. Public HTTPS, including explicit ports such as 8443. Generates an encrypted signing secret, returned here. Same-URL updates retain it; replacing the URL rotates it and cancels pending old-version deliveries. Events are signed and retried up to eight attempts on transient failure; duplicates are possible. Worker-crash recovery is bounded to 24 hours from event creation. Exhausted and permanent failures require operator review.",
         "parameters": [
           {
-            "name": "bucket_id",
+            "name": "mailbox_id",
             "in": "path",
             "required": true,
             "schema": {
@@ -3158,13 +3540,12 @@
             "bearerAuth": []
           }
         ],
-        "x-controller": "api/v1/bucket_email_webhooks",
         "operationId": "deleteEmailWebhook",
         "summary": "Disable a mailbox webhook",
-        "description": "Requires bucket admin permission. Cancels queued attempts; a request already in flight may finish.",
+        "description": "Requires mailbox admin permission. Cancels queued attempts; a request already in flight may finish.",
         "parameters": [
           {
-            "name": "bucket_id",
+            "name": "mailbox_id",
             "in": "path",
             "required": true,
             "schema": {
@@ -3200,20 +3581,19 @@
         }
       }
     },
-    "/v1/buckets/{bucket_id}/email/subscription": {
+    "/v1/mailboxes/{mailbox_id}/email/subscription": {
       "get": {
         "operationId": "getEmailSubscription",
         "summary": "Get a short-lived Action Cable ticket for local email monitoring",
-        "description": "Requires bucket read permission. Connect to the returned websocket_url with email_subscription_token=TICKET using actioncable-v1-json within 60 seconds. Subscribe to EmailReceivedChannel with the returned account_id/bucket_id. Frames contain EmailReceivedEvent in message. Live only: after confirmation and on reconnect, catch up using existing ascending email arrival cursors.",
+        "description": "Requires mailbox read permission. Connect to the returned websocket_url with email_subscription_token=TICKET using actioncable-v1-json within 60 seconds. Subscribe to EmailReceivedChannel with the returned account_id/mailbox_id. Frames contain EmailReceivedEvent in message. Live only: after confirmation and on reconnect, catch up using existing ascending email arrival cursors.",
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "x-controller": "api/v1/bucket_email_subscriptions",
         "parameters": [
           {
-            "name": "bucket_id",
+            "name": "mailbox_id",
             "in": "path",
             "required": true,
             "schema": {
@@ -3249,7 +3629,7 @@
                             "expires_in",
                             "channel",
                             "account_id",
-                            "bucket_id",
+                            "mailbox_id",
                             "websocket_url"
                           ],
                           "properties": {
@@ -3267,7 +3647,7 @@
                             "account_id": {
                               "type": "string"
                             },
-                            "bucket_id": {
+                            "mailbox_id": {
                               "type": "string"
                             },
                             "websocket_url": {
@@ -3323,11 +3703,11 @@
         }
       }
     },
-    "/v1/buckets/{id}/email/aliases/{alias_id}": {
+    "/v1/mailboxes/{id}/email/aliases/{alias_id}": {
       "delete": {
-        "operationId": "deleteBucketEmailAlias",
+        "operationId": "deleteMailboxEmailAlias",
         "summary": "Remove one email alias",
-        "description": "Requires a full-account owner/administrator with bucket-admin access. Immediately revokes this alias, including queued deliveries. Retains existing messages and the permanent address reservation. Returns updated mailbox settings.",
+        "description": "Requires a full-account owner/administrator with mailbox-admin access. Immediately revokes this alias, including queued deliveries. Retains existing messages and the permanent address reservation. Returns updated mailbox settings.",
         "security": [
           {
             "bearerAuth": []
@@ -3341,7 +3721,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Authorized bucket prefix ID"
+            "description": "Authorized mailbox prefix ID"
           },
           {
             "name": "alias_id",
@@ -3355,14 +3735,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Bucket email configuration",
+            "description": "Mailbox email configuration",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/BucketEmail"
+                      "$ref": "#/components/schemas/MailboxEmail"
                     },
                     "success": {
                       "type": "boolean",
@@ -3392,16 +3772,44 @@
             }
           },
           "403": {
-            "description": "Full-account owner/administrator with bucket-admin access required."
+            "description": "Full-account owner/administrator with mailbox-admin access required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Bucket or alias unavailable."
+            "description": "Mailbox or alias unavailable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "409": {
-            "description": "Bucket locked or unavailable for changes."
+            "description": "Mailbox locked or unavailable for changes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "423": {
-            "description": "Account is read-only"
+            "description": "Account is read-only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/ApiError"
@@ -3409,11 +3817,11 @@
         }
       }
     },
-    "/v1/buckets/{id}/email/aliases": {
+    "/v1/mailboxes/{id}/email/aliases": {
       "post": {
-        "operationId": "createBucketEmailAlias",
-        "summary": "Add an email alias to an inbox",
-        "description": "Requires a full-account owner/administrator with bucket-admin access and an available alias slot. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.",
+        "operationId": "createMailboxEmailAlias",
+        "summary": "Add an email alias to an mailbox",
+        "description": "Requires a full-account owner/administrator with mailbox-admin access and an available alias slot. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.",
         "security": [
           {
             "bearerAuth": []
@@ -3427,7 +3835,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "Authorized bucket prefix ID"
+            "description": "Authorized mailbox prefix ID"
           }
         ],
         "requestBody": {
@@ -3464,7 +3872,7 @@
                   "type": "object",
                   "properties": {
                     "data": {
-                      "$ref": "#/components/schemas/BucketEmail"
+                      "$ref": "#/components/schemas/MailboxEmail"
                     },
                     "success": {
                       "type": "boolean",
@@ -3494,13 +3902,34 @@
             }
           },
           "403": {
-            "description": "Full-account owner/administrator with bucket-admin access required."
+            "description": "Full-account owner/administrator with mailbox-admin access required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "409": {
-            "description": "Alias limit, address conflict, domain unavailable, or another address change pending."
+            "description": "Alias limit, address conflict, domain unavailable, or another address change pending.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           },
           "422": {
-            "description": "Invalid username or domain."
+            "description": "Invalid username or domain.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           }
         }
       }
@@ -3581,19 +4010,19 @@
               "scope": {
                 "type": "string"
               },
-              "bucket_access": {
+              "mailbox_access": {
                 "type": "string"
               },
-              "can_create_buckets": {
+              "can_create_mailboxes": {
                 "type": "boolean"
               }
             }
           }
         }
       },
-      "BucketEmail": {
+      "MailboxEmail": {
         "type": "object",
-        "description": "Receiving address/state on creation and authorized opt-in reads. Ordinary bucket reads expose activity only; use the emails collection for a durable arrival cursor.",
+        "description": "Receiving address/state on creation and authorized opt-in reads. Ordinary mailbox reads expose activity only; use the emails collection for a durable arrival cursor.",
         "properties": {
           "address": {
             "type": [
@@ -3706,7 +4135,7 @@
           },
           "sender_allowlist": {
             "$ref": "#/components/schemas/EmailSenderAllowlist",
-            "description": "Returned only by dedicated email settings reads to account administrators with bucket-admin permission; omitted from ordinary bucket serialization."
+            "description": "Returned only by dedicated email settings reads to account administrators with mailbox-admin permission; omitted from ordinary mailbox serialization."
           },
           "username": {
             "type": [
@@ -3737,14 +4166,14 @@
                 },
                 "active": {
                   "type": "boolean",
-                  "description": "Within the current alias allowance. Inbox receiving holds still apply."
+                  "description": "Within the current alias allowance. Mailbox receiving holds still apply."
                 }
               }
             }
           }
         }
       },
-      "BucketEmailActivity": {
+      "MailboxEmailActivity": {
         "type": "object",
         "properties": {
           "received_count": {
@@ -3882,7 +4311,7 @@
               "null"
             ],
             "pattern": "^thr_[0-9a-f]{64}$",
-            "description": "thr_ plus SHA-256 of thread_anchor_message_id. Best-effort header-derived grouping hint, not authoritative conversation membership or an access grant. Missing ancestry or reused IDs can split/merge hints. Scope lookups to accessible buckets."
+            "description": "thr_ plus SHA-256 of thread_anchor_message_id. Best-effort header-derived grouping hint, not authoritative conversation membership or an access grant. Missing ancestry or reused IDs can split/merge hints. Scope lookups to accessible mailboxes."
           },
           "thread_id_source": {
             "type": [
@@ -3952,10 +4381,24 @@
                 },
                 "size_bytes": {
                   "type": "integer",
-                  "minimum": 0
+                  "minimum": 0,
+                  "format": "int64"
+                },
+                "origin": {
+                  "type": "string",
+                  "enum": [
+                    "original",
+                    "forwarder",
+                    "forwarded_message",
+                    "unspecified"
+                  ],
+                  "description": "For normalized forwards: inner attachment, member addition, attached source EML, or unknown inline-forward origin."
                 }
               }
             }
+          },
+          "forwarding": {
+            "$ref": "#/components/schemas/EmailForwardingContent"
           }
         }
       },
@@ -4157,7 +4600,7 @@
               "null"
             ],
             "pattern": "^thr_[0-9a-f]{64}$",
-            "description": "thr_ plus SHA-256 of thread_anchor_message_id. Best-effort header-derived grouping hint, not authoritative conversation membership or an access grant. Missing ancestry or reused IDs can split/merge hints. Scope lookups to accessible buckets."
+            "description": "thr_ plus SHA-256 of thread_anchor_message_id. Best-effort header-derived grouping hint, not authoritative conversation membership or an access grant. Missing ancestry or reused IDs can split/merge hints. Scope lookups to accessible mailboxes."
           },
           "delivered_to": {
             "type": "string"
@@ -4251,6 +4694,9 @@
               "attachment_ids"
             ],
             "description": "Included only with include_storage=true for file-browser integration."
+          },
+          "forwarding": {
+            "$ref": "#/components/schemas/EmailForwarding"
           }
         },
         "required": [
@@ -4282,11 +4728,22 @@
           },
           "size_bytes": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "format": "int64"
           },
           "version_id": {
             "type": "string",
             "description": "Present only with include_storage=true."
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "original",
+              "forwarder",
+              "forwarded_message",
+              "unspecified"
+            ],
+            "description": "For normalized forwards: inner attachment, member addition, attached source EML, or unknown inline-forward origin."
           }
         },
         "required": [
@@ -4324,6 +4781,9 @@
                 "items": {
                   "$ref": "#/components/schemas/EmailAttachment"
                 }
+              },
+              "forwarding": {
+                "$ref": "#/components/schemas/EmailForwardingContent"
               }
             },
             "required": [
@@ -4362,7 +4822,8 @@
           },
           "size_bytes": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "format": "int64"
           }
         },
         "required": [
@@ -4466,9 +4927,9 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "max_buckets",
-          "max_bucket_creations_per_month",
-          "max_files_per_bucket",
+          "max_mailboxes",
+          "max_mailbox_creations_per_month",
+          "max_files_per_mailbox",
           "max_current_files",
           "max_storage_bytes",
           "max_file_size_bytes",
@@ -4484,24 +4945,24 @@
           "max_agent_connections",
           "api_rate_limit_requests_per_minute",
           "audit_retention_days",
-          "max_email_aliases_per_bucket"
+          "max_email_aliases_per_mailbox"
         ],
         "properties": {
-          "max_buckets": {
+          "max_mailboxes": {
             "type": [
               "integer",
               "null"
             ],
             "minimum": 0
           },
-          "max_bucket_creations_per_month": {
+          "max_mailbox_creations_per_month": {
             "type": [
               "integer",
               "null"
             ],
             "minimum": 0
           },
-          "max_files_per_bucket": {
+          "max_files_per_mailbox": {
             "type": [
               "integer",
               "null"
@@ -4520,21 +4981,24 @@
               "integer",
               "null"
             ],
-            "minimum": 0
+            "minimum": 0,
+            "format": "int64"
           },
           "max_file_size_bytes": {
             "type": [
               "integer",
               "null"
             ],
-            "minimum": 0
+            "minimum": 0,
+            "format": "int64"
           },
           "max_pdf_size_bytes": {
             "type": [
               "integer",
               "null"
             ],
-            "minimum": 0
+            "minimum": 0,
+            "format": "int64"
           },
           "max_file_versions_per_file": {
             "type": [
@@ -4562,14 +5026,16 @@
               "integer",
               "null"
             ],
-            "minimum": 0
+            "minimum": 0,
+            "format": "int64"
           },
           "max_received_email_message_bytes": {
             "type": [
               "integer",
               "null"
             ],
-            "minimum": 0
+            "minimum": 0,
+            "format": "int64"
           },
           "max_email_address_rotations_per_month": {
             "type": [
@@ -4613,10 +5079,10 @@
             ],
             "minimum": 0
           },
-          "max_email_aliases_per_bucket": {
+          "max_email_aliases_per_mailbox": {
             "type": "integer",
             "minimum": 0,
-            "description": "Active retained email addresses per inbox; Free always has zero."
+            "description": "Active retained email addresses per mailbox; Free always has zero."
           }
         }
       },
@@ -4645,7 +5111,7 @@
             "type": "object",
             "required": [
               "account_id",
-              "bucket_id",
+              "mailbox_id",
               "email_id",
               "received_at",
               "attachment_count"
@@ -4654,7 +5120,7 @@
               "account_id": {
                 "type": "string"
               },
-              "bucket_id": {
+              "mailbox_id": {
                 "type": "string"
               },
               "email_id": {
@@ -4671,6 +5137,99 @@
             }
           }
         }
+      },
+      "ApiSuccess": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Endpoint-specific result fields. See the endpoint documentation for the domain or authentication-capability fields."
+          }
+        }
+      },
+      "EmailForwarding": {
+        "type": "object",
+        "description": "Server-recorded member forwarding provenance. The original author is reported by the member, not independently authenticated. Absent for ordinary or unrecognized mail.",
+        "required": [
+          "attribution",
+          "method",
+          "parser_version",
+          "member_id",
+          "member_email",
+          "intake_account_id"
+        ],
+        "properties": {
+          "method": {
+            "type": "string"
+          },
+          "member_id": {
+            "type": "string"
+          },
+          "member_email": {
+            "type": "string"
+          },
+          "intake_account_id": {
+            "type": "string"
+          },
+          "outer_from": {
+            "type": "string"
+          },
+          "outer_subject": {
+            "type": "string"
+          },
+          "outer_message_id": {
+            "type": "string"
+          },
+          "original_date_raw": {
+            "type": "string"
+          },
+          "original_sent_at": {
+            "type": "string"
+          },
+          "attribution": {
+            "type": "string",
+            "const": "member_forwarded"
+          },
+          "parser_version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Parser implementation used at intake; does not change the forwarding response shape."
+          }
+        }
+      },
+      "EmailForwardingContent": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EmailForwarding"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "note_text": {
+                "type": "string",
+                "description": "Separate member note, bounded to 64 KiB. Never part of the original body."
+              },
+              "note_status": {
+                "type": "string",
+                "enum": [
+                  "complete",
+                  "empty",
+                  "truncated",
+                  "unavailable"
+                ]
+              }
+            }
+          }
+        ]
       }
     },
     "responses": {

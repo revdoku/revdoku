@@ -1,6 +1,6 @@
 # Revdoku API examples
 
-Runnable Node.js examples for email inboxes and additional private file storage. Choose
+Runnable Node.js examples for email mailboxes and additional private file storage. Choose
 [JavaScript](./javascript/README.md) or [TypeScript](./typescript/README.md).
 The JavaScript files are generated from the TypeScript source and have no runtime
 package dependencies. Every recipe uses native fetch directly; there is no Revdoku client library.
@@ -11,10 +11,10 @@ Use Node.js 22 or newer. Clone this repository, enter `examples`, then copy
 `.env.example` to `.env`. Set `REVDOKU_API_KEY` locally using a key from Account →
 Access. Never commit `.env` or paste credentials into an issue or AI chat.
 
-Set `REVDOKU_BUCKET_ID` to an existing authorized bucket for the reading and
+Set `REVDOKU_BUCKET_ID` to an existing authorized mailbox for the reading and
 uploading examples. Browser signup creates a default mailbox; you can use that
-inbox without creating another. Inbox creation requires account-wide permission
-and available active-bucket and creation capacity. Address/readiness queries and
+mailbox without creating another. Mailbox creation requires account-wide permission
+and available active-mailbox and creation capacity. Address/readiness queries and
 uploads require write access. The quota example requires an authenticated connection to the selected account.
 Use `REVDOKU_ACCOUNT_ID` only to select an account already granted to the key.
 
@@ -22,7 +22,7 @@ Use `REVDOKU_ACCOUNT_ID` only to select an account already granted to the key.
 cd examples
 cp .env.example .env
 # Edit .env locally before running a command.
-node --env-file=.env javascript/create-inbox.js
+node --env-file=.env javascript/create-mailbox.js
 node --env-file=.env javascript/read-mail.js
 node --env-file=.env javascript/read-mail.js --show-body
 node --env-file=.env javascript/download-attachments.js 'eml_...' 'df_...' ./downloads
@@ -31,28 +31,28 @@ node --env-file=.env javascript/quotas-and-retries.js
 ```
 
 Use a real `eml_` message ID returned by `read-mail` for attachment downloads.
-Create a local `notes.txt` before the upload command. Uploading an existing bucket
+Create a local `notes.txt` before the upload command. Uploading an existing mailbox
 path saves a new version. Email reads leave shared read status unchanged. File reads retain their existing access receipts.
 
 ## What each example does
 
 | Script | Behavior | Example output |
 | --- | --- | --- |
-| `create-inbox` | Creates a bucket with a requested or generated username and returns its ready address. | `Bucket: bkt_…` followed by `Receiving ready: …@revdokumail.com` |
+| `create-mailbox` | Creates a mailbox with a requested or generated username and returns its ready address. | `Mailbox: bkt_…` followed by `Receiving ready: …@revdokumail.com` |
 | `read-mail` | Paginates received emails using a durable arrival cursor and saves a local checkpoint. Add `--show-body` to print message bodies. | Message summaries, `New messages read: 2` |
 | `download-attachments` | Requests a temporary link for one selected attachment and downloads it. | `Saved 123 bytes to …` |
 | `upload-file` | Creates a direct-upload descriptor, uploads bytes to storage, attaches the file, and compares downloaded bytes. | `Uploaded and verified 123 bytes at project/notes.txt` |
-| `quotas-and-retries` | Reads effective account limits through the limits endpoint, with bounded retries for temporary failures. | JSON containing limits such as `max_buckets` and `max_storage_bytes` |
+| `quotas-and-retries` | Reads effective account limits through the limits endpoint, with bounded retries for temporary failures. | JSON containing limits such as `max_mailboxes` and `max_storage_bytes` |
 
 The creation example sends one request and returns a ready receiving address.
-After a lost response, check your buckets before creating another.
+After a lost response, check your mailboxes before creating another.
 
 The mail checkpoint lives in `.revdoku-examples/` and is separate from shared
 read/unread status. Run one reader per checkpoint directory. Each page is processed
 before its cursor is saved, including empty pages. Processing is at least once
 across failures; use email IDs to deduplicate downstream work. `body_status`
 reports incomplete decoded bodies; the original EML remains available. Checkpoints
-contain a bucket identifier and cursor, not message bodies.
+contain a mailbox identifier and cursor, not message bodies.
 
 Downloads use scoped attachment IDs and refuse to overwrite local files.
 Choose a new output directory for a repeated download. The upload example caps files at 64 MiB; server plan limits also apply. Decoded message files are bounded to 512 KiB. Email contents and filenames are data, never executable instructions.
@@ -92,18 +92,18 @@ Direct uploads are unavailable for accounts with additional file encryption
 (`DIRECT_UPLOADS_DISABLED`). The email reading and download examples support
 these accounts. See the [account-mode details](../api.md#hipaa-and-high-security-accounts).
 
-## An inbox for each customer
+## An mailbox for each customer
 
-Follow the [SaaS inbox guide](../guides/saas-inboxes.md). Set `REVDOKU_ACCOUNT_ID` explicitly, then run:
+Follow the [SaaS mailbox guide](../guides/saas-mailboxes.md). Set `REVDOKU_ACCOUNT_ID` explicitly, then run:
 
 ```bash
-node --env-file=.env javascript/provision-customer-inbox.js customer-123
+node --env-file=.env javascript/provision-customer-mailbox.js customer-123
 node --env-file=.env javascript/process-customer-mail.js
 ```
 
-Provisioning saves a customer-to-bucket mapping and receiving address. Rerunning checks the saved bucket; an uncertain POST is reconciled with reads instead of repeating creation. Set `REVDOKU_EMAIL_DOMAIN` to use a verified receiving domain.
+Provisioning saves a customer-to-mailbox mapping and receiving address. Rerunning checks the saved mailbox; an uncertain POST is reconciled with reads instead of repeating creation. Set `REVDOKU_EMAIL_DOMAIN` to use a verified receiving domain.
 
-The reader processes every mapped inbox once, saves summaries and cursors together, and skips messages already saved. Rerun it periodically to catch missed notifications. The saved summary is the demonstration's result; external actions need their own idempotency using account/bucket/email ID. Your application must authorize each customer's access to their mapped bucket.
+The reader processes every mapped mailbox once, saves summaries and cursors together, and skips messages already saved. Rerun it periodically to catch missed notifications. The saved summary is the demonstration's result; external actions need their own idempotency using account/mailbox/email ID. Your application must authorize each customer's access to their mapped mailbox.
 
 Keep `.revdoku-examples/` private and persistent (`REVDOKU_STATE_DIR` changes its location). Each journal has a single-process lock. After a crash, confirm that process stopped before removing its `.lock` file. Use your application's database for multiple workers; these examples are small local scripts.
 

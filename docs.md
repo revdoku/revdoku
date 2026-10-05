@@ -1,6 +1,6 @@
 # Revdoku documentation
 
-Revdoku provides email inboxes with private file storage inside each bucket.
+Revdoku provides email mailboxes with private file storage inside each mailbox.
 Use the REST API, CLI, MCP, or dashboard to create mailboxes and read messages.
 
 ## Choose how to connect
@@ -11,23 +11,23 @@ Use the REST API, CLI, MCP, or dashboard to create mailboxes and read messages.
 | CLI | Terminal use and uploading local files or folders | [CLI installation and commands](https://github.com/revdoku/revdoku/tree/main/cli) |
 | Hosted MCP | AI clients with remote MCP support | [MCP guide](https://revdoku.com/mcp.md) |
 | Skill | Local coding agents using the bundled CLI | [Skill installation](https://github.com/revdoku/revdoku#local-ai-apps) |
-| Dashboard | Reading mail, managing access, account settings, and activity logs | [Open Revdoku](https://app.revdoku.com/buckets) |
+| Dashboard | Reading mail, managing access, account settings, and activity logs | [Open Revdoku](https://app.revdoku.com/mailboxes) |
 
 ## API quick start
 
 1. [Create an account](https://app.revdoku.com/users/sign_up) or sign in. Browser signup creates your first mailbox automatically.
 2. Create an API key from **Connect via API** or **Account → Access**.
-3. Keep the key on your backend and list your existing buckets:
+3. Keep the key on your backend and list your existing mailboxes:
 
 ```http
-GET /v1/buckets
+GET /v1/mailboxes
 Authorization: Bearer YOUR_API_KEY
 ```
 
-Choose an authorized bucket from `data.buckets`, then [read its messages](#receive-and-read-email).
+Choose an authorized mailbox from `data.mailboxes`, then [read its messages](#receive-and-read-email).
 A read-only key is enough; address discovery needs write access. To give each
-application customer an inbox, follow the
-[SaaS inbox guide](https://github.com/revdoku/revdoku/blob/main/guides/saas-inboxes.md).
+application customer an mailbox, follow the
+[SaaS mailbox guide](https://github.com/revdoku/revdoku/blob/main/guides/saas-mailboxes.md).
 
 | Setting | Value |
 | --- | --- |
@@ -47,15 +47,15 @@ Both send a small `email.received` event after the email and attachments are sto
 
 ## Create another mailbox
 
-Create a bucket only when another inbox is needed. This requires account-wide
-admin access and consumes both active-bucket capacity and monthly creation capacity.
+Create a mailbox only when another mailbox is needed. This requires account-wide
+admin access and consumes both active-mailbox capacity and monthly creation capacity.
 
 ```http
-POST /v1/buckets
+POST /v1/mailboxes
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
-{ "bucket": {} }
+{ "mailbox": {} }
 ```
 
 201 Created (selected fields)
@@ -64,7 +64,7 @@ Content-Type: application/json
 {
   "success": true,
   "data": {
-    "bucket": {
+    "mailbox": {
       "id": "bkt_example",
       "title": "maple.river7k2xq9",
       "email": {
@@ -79,13 +79,13 @@ Content-Type: application/json
 
 | Choice | Behavior |
 | --- | --- |
-| Supply `bucket.email.username` | Request that username. Unavailable names return an error. |
-| Send `{"bucket": {}}` | Generate a username automatically. |
-| Omit `bucket.title` | Use the username as the display title. |
+| Supply `mailbox.email.username` | Request that username. Unavailable names return an error. |
+| Send `{"mailbox": {}}` | Generate a username automatically. |
+| Omit `mailbox.title` | Use the username as the display title. |
 
 Creation waits for receiving confirmation. Use the returned address after a
-successful response. On `EMAIL_NOT_READY`, save the returned bucket ID and inspect
-that existing bucket. After a lost response, reconcile existing buckets before
+successful response. On `EMAIL_NOT_READY`, save the returned mailbox ID and inspect
+that existing mailbox. After a lost response, reconcile existing mailboxes before
 any further creation. See [creation errors](https://revdoku.com/api.md#creation-result).
 
 Runnable examples use standard HTTP clients:
@@ -96,22 +96,22 @@ Runnable examples use standard HTTP clients:
 ## Receive and read email
 
 Send mail to the complete address returned by Revdoku. Anyone knowing the address
-can send to it; reading saved mail requires bucket access.
+can send to it; reading saved mail requires mailbox access.
 
 | Task | REST | CLI | MCP |
 | --- | --- | --- | --- |
-| Inspect an existing receiving address (write access) | `GET /v1/buckets/:id/email` | `revdoku inbox --bucket-id ID` | `bucket_get` with `include_email: true` |
-| List received messages | `GET /v1/buckets/:id/emails` | `revdoku emails --bucket-id ID` | `bucket_email_list` |
-| Read one message | `GET /v1/buckets/:id/emails/:email_id` | `revdoku email EMAIL_ID --bucket-id ID` | `bucket_email_get` |
-| Mark read/unread | `PATCH /v1/buckets/:id/emails/:email_id` | `revdoku email-status EMAIL_ID --read true --bucket-id ID` | `bucket_email_update` |
-| Download an attachment | [Attachment endpoint](https://revdoku.com/api.md#attachments-and-download-links) | `revdoku email-download EMAIL_ID --attachment-id ID --bucket-id ID` | `bucket_email_download` |
-| Delete one message | `DELETE /v1/buckets/:id/emails/:email_id` | `revdoku email-delete EMAIL_ID --confirm-delete EMAIL_ID --bucket-id ID` | `bucket_email_delete` |
+| Inspect an existing receiving address (write access) | `GET /v1/mailboxes/:id/email` | `revdoku mailbox --mailbox-id ID` | `mailbox_get` with `include_email: true` |
+| List received messages | `GET /v1/mailboxes/:id/emails` | `revdoku emails --mailbox-id ID` | `mailbox_email_list` |
+| Read one message | `GET /v1/mailboxes/:id/emails/:email_id` | `revdoku email EMAIL_ID --mailbox-id ID` | `mailbox_email_get` |
+| Mark read/unread | `PATCH /v1/mailboxes/:id/emails/:email_id` | `revdoku email-status EMAIL_ID --read true --mailbox-id ID` | `mailbox_email_update` |
+| Download an attachment | [Attachment endpoint](https://revdoku.com/api.md#attachments-and-download-links) | `revdoku email-download EMAIL_ID --attachment-id ID --mailbox-id ID` | `mailbox_email_download` |
+| Delete one message | `DELETE /v1/mailboxes/:id/emails/:email_id` | `revdoku email-delete EMAIL_ID --confirm-delete EMAIL_ID --mailbox-id ID` | `mailbox_email_delete` |
 
 ### Poll for arrivals
 
 1. List messages and process the returned page.
 2. Save `pagination.next_cursor`, including when the page is empty.
-3. Pass that cursor on the next request using the same account, bucket and filters.
+3. Pass that cursor on the next request using the same account, mailbox and filters.
 4. Use a delay and a deadline when waiting for new mail.
 
 ### Message and attachment behavior
@@ -125,9 +125,9 @@ can send to it; reading saved mail requires bucket access.
 | Read permissions | Include stored login and recovery messages. Choose collaborators accordingly. |
 | Receiving paused | Existing mail remains readable. Check the dashboard before asking someone to send again. |
 
-## Storing files inside a bucket
+## Storing files inside a mailbox
 
-A bucket can also store documents, data, source files, images and other supported
+A mailbox can also store documents, data, source files, images and other supported
 files. Received email is stored as files inside `_email/`.
 
 | Email file | Contents |
@@ -145,11 +145,11 @@ older messages may use `_email/in/`.
 | Task | CLI command | API reference |
 | --- | --- | --- |
 | Upload files or a folder | `revdoku upload ./project-files` | [Uploads](https://revdoku.com/api.md#upload-a-file) |
-| List files | `revdoku files --bucket-id ID` | [File operations](https://revdoku.com/api.md#file-path-operations) |
-| Read a file | `revdoku read notes.txt --bucket-id ID` | [File operations](https://revdoku.com/api.md#file-path-operations) |
-| Append text | `revdoku append notes.txt --bucket-id ID --content-file additions.txt` | [File operations](https://revdoku.com/api.md#file-path-operations) |
-| View history | `revdoku versions --bucket-id ID` | [Version history](https://revdoku.com/api.md#bucket-version-history) |
-| Restore a version | `revdoku restore VERSION_ID --bucket-id ID` | [Version history](https://revdoku.com/api.md#bucket-version-history) |
+| List files | `revdoku files --mailbox-id ID` | [File operations](https://revdoku.com/api.md#file-path-operations) |
+| Read a file | `revdoku read notes.txt --mailbox-id ID` | [File operations](https://revdoku.com/api.md#file-path-operations) |
+| Append text | `revdoku append notes.txt --mailbox-id ID --content-file additions.txt` | [File operations](https://revdoku.com/api.md#file-path-operations) |
+| View history | `revdoku versions --mailbox-id ID` | [Version history](https://revdoku.com/api.md#mailbox-version-history) |
+| Restore a version | `revdoku restore VERSION_ID --mailbox-id ID` | [Version history](https://revdoku.com/api.md#mailbox-version-history) |
 
 - CLI and REST uploads support binary files. Hosted MCP file writes support text.
 - Hosted MCP cannot read local folders; use the CLI to upload them.
@@ -168,12 +168,12 @@ older messages may use `_email/in/`.
 | CLI | `revdoku account limits` |
 | MCP | `account_limits` |
 
-The response groups effective quotas under `limits`. Bucket responses describe
+The response groups effective quotas under `limits`. Mailbox responses describe
 the mailbox; they do not repeat account quotas. See [limit fields](https://revdoku.com/api.md#account-limits).
 Full-account browser sessions and unrestricted admin connections also receive
-optional `usage.bucket_creations` with used, remaining, monthly limit and UTC
-reset time. Selected-bucket/read-only connections retain their normal limits
-response. Deleting or archiving buckets does not refund creation capacity.
+optional `usage.mailbox_creations` with used, remaining, monthly limit and UTC
+reset time. Selected-mailbox/read-only connections retain their normal limits
+response. Deleting or archiving mailboxes does not refund creation capacity.
 
 ## Multiple accounts
 
@@ -191,15 +191,15 @@ request when working across accounts.
 ## Share access and coordinate edits
 
 1. Invite people through **Account → Access** and choose their role.
-2. Authorize each AI connection separately for its intended account or buckets.
-3. Share the bucket's `dashboard_url` with authorized people. The URL does not grant access.
+2. Authorize each AI connection separately for its intended account or mailboxes.
+3. Share the mailbox's `dashboard_url` with authorized people. The URL does not grant access.
 
 | Edit control | Purpose |
 | --- | --- |
 | File lock | Coordinate edits to specific files; release your lock afterward. |
-| Bucket lock | Blocks incoming mail, including queued saves. Prefer file locks and revision checks while an inbox receives mail. |
-| `expected_bucket_revision_id` | Detect that another writer changed the bucket since your last read. |
-| `BUCKET_REVISION_CONFLICT` | Reread current content and reconcile before retrying the edit. |
+| Mailbox lock | Blocks incoming mail, including queued saves. Prefer file locks and revision checks while an mailbox receives mail. |
+| `expected_mailbox_revision_id` | Detect that another writer changed the mailbox since your last read. |
+| `MAILBOX_REVISION_CONFLICT` | Reread current content and reconcile before retrying the edit. |
 | `reason` | Optional explanation saved in activity/history. Maximum 2,000 characters; omit secrets and file contents. |
 
 ## Custom email domains
@@ -208,8 +208,8 @@ Connect a domain in **Account Settings → Domains → Email** using an administ
 account. The page shows availability and DNS requirements.
 
 - If `yourdomain.com` already receives email elsewhere, connect an unused subdomain
-  such as `inbox.yourdomain.com`. Your Revdoku address will use that subdomain, for
-  example `support@inbox.yourdomain.com`; existing root-domain mailboxes stay unchanged.
+  such as `mailbox.yourdomain.com`. Your Revdoku address will use that subdomain, for
+  example `support@mailbox.yourdomain.com`; existing root-domain mailboxes stay unchanged.
 - Setup checks existing MX/CNAME records and rejects conflicts. Keep your existing
   provider's records and choose an unused hostname.
 - Connecting a domain does not change existing mailbox addresses.

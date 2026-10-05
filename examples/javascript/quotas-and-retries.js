@@ -27,4 +27,4 @@ for (let attempt = 0; attempt < 4; attempt++) {
         throw new Error('Rate limited. Retry later.');
     await delay(Math.max(0, milliseconds));
 }
-// Retry read requests only. After an uncertain creation result, check your buckets.
+// Retry read requests only. After an uncertain creation result, check your mailboxes.

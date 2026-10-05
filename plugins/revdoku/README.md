@@ -1,8 +1,8 @@
 # Revdoku skill and MCP plugin
 
-Cloud file storage and incoming email for people and AI agents. Each bucket has
+Cloud file storage and incoming email for people and AI agents. Each mailbox has
 an email address and holds messages, attachments and other files. Authorized
-members and agents can read and manage shared bucket data, including versions.
+members and agents can read and manage shared mailbox data, including versions.
 Email is receive-only.
 
 This package contains the portable Revdoku skill, its bundled local CLI, and the
@@ -20,7 +20,7 @@ Revdoku credentials locally under the host's tool policy.
 
 Ask to summarize recent mail, inspect attachments, store selected local files,
 write text or restore a file version. Access must cover the intended account and
-bucket. Connecting does not authorize unrelated writes, account creation or
+mailbox. Connecting does not authorize unrelated writes, account creation or
 permanent deletion. Dashboard links do not grant access by themselves.
 
 - [Documentation](https://revdoku.com/api.md)

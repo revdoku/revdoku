@@ -6,11 +6,11 @@ const apiKey = process.env.REVDOKU_API_KEY;
 if (!apiKey) throw new Error('Set REVDOKU_API_KEY in your local .env file.');
 const accountId = process.env.REVDOKU_ACCOUNT_ID;
 const headers = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
-const bucketId = process.env.REVDOKU_BUCKET_ID;
-if (!bucketId || !/^bkt_[A-Za-z0-9]+$/.test(bucketId)) throw new Error('Set REVDOKU_BUCKET_ID.');
+const mailboxId = process.env.REVDOKU_BUCKET_ID;
+if (!mailboxId || !/^bkt_[A-Za-z0-9]+$/.test(mailboxId)) throw new Error('Set REVDOKU_BUCKET_ID.');
 
 const local = process.argv[2];
-if (!local) throw new Error('Usage: upload-file.js LOCAL_FILE [BUCKET_PATH]');
+if (!local) throw new Error('Usage: upload-file.js LOCAL_FILE [MAILBOX_PATH]');
 const path = process.argv[3] ?? basename(local);
 if (path.startsWith('/') || path.split('/').some(p => p === '..' || !p) || path.includes('\\')) throw new Error('Use a relative file path.');
 const info = await stat(local);
@@ -18,9 +18,9 @@ if (!info.isFile() || info.size > 64 * 1024 * 1024) throw new Error('Choose a fi
 const bytes = await readFile(local);
 const descriptor = await fetch('https://api.revdoku.com/v1/direct_uploads', {
   method: 'POST', headers, redirect: 'error', signal: AbortSignal.timeout(30000),
-  body: JSON.stringify({ account_id: accountId, bucket_id: bucketId, path,
+  body: JSON.stringify({ account_id: accountId, mailbox_id: mailboxId, path,
     blob: { filename: basename(path), byte_size: bytes.length, content_type: 'application/octet-stream',
-      purpose: 'bucket_file', checksum: createHash('md5').update(bytes).digest('base64'),
+      purpose: 'mailbox_file', checksum: createHash('md5').update(bytes).digest('base64'),
       sha256: createHash('sha256').update(bytes).digest('hex') } }),
 });
 const result = await descriptor.json();
@@ -33,14 +33,14 @@ const put = await fetch(uploadUrl, { method: 'PUT', headers: upload.headers, bod
   redirect: 'error', signal: AbortSignal.timeout(60000) })
   .catch(() => { throw new Error('Storage upload failed.'); });
 if (!put.ok) throw new Error(`Upload HTTP ${put.status}`);
-const attach = await fetch(`https://api.revdoku.com/v1/buckets/${bucketId}/files`, {
+const attach = await fetch(`https://api.revdoku.com/v1/mailboxes/${mailboxId}/files`, {
   method: 'POST', headers, redirect: 'error', signal: AbortSignal.timeout(30000),
   body: JSON.stringify({ account_id: accountId, path, signed_blob_id: result.data.signed_id }),
 });
 const attached = await attach.json();
 if (!attach.ok) throw new Error(`${attached.error.code}: ${attached.error.message}`);
 // Check the existing file if a write response is lost before repeating it.
-const fileUrl = new URL(`https://api.revdoku.com/v1/buckets/${bucketId}/files/by_path`);
+const fileUrl = new URL(`https://api.revdoku.com/v1/mailboxes/${mailboxId}/files/by_path`);
 fileUrl.searchParams.set('path', path);
 fileUrl.searchParams.set('content_url', '1');
 if (accountId) fileUrl.searchParams.set('account_id', accountId);

@@ -1,0 +1,15 @@
+name: RevdokuAPI
+targets:
+  RevdokuAPI:
+    type: framework
+    platform: iOS
+    deploymentTarget: "11.0"
+    sources: [RevdokuAPI]
+    info:
+      path: ./Info.plist
+      version: 1.0.526
+    settings:
+      APPLICATION_EXTENSION_API_ONLY: true
+    scheme: {}
+    dependencies:
+    - carthage: AnyCodable

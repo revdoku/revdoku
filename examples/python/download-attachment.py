@@ -9,11 +9,11 @@ import requests
 if len(sys.argv) != 4:
     raise SystemExit("Usage: download-attachment.py EMAIL_ID ATTACHMENT_ID OUTPUT_PATH")
 email_id, attachment_id, output = sys.argv[1:]
-bucket_id = os.environ["REVDOKU_BUCKET_ID"]
-if not re.fullmatch(r"bkt_[A-Za-z0-9]+", bucket_id):
-    raise ValueError("Invalid bucket ID")
+mailbox_id = os.environ["REVDOKU_BUCKET_ID"]
+if not re.fullmatch(r"bkt_[A-Za-z0-9]+", mailbox_id):
+    raise ValueError("Invalid mailbox ID")
 response = requests.get(
-    f"https://api.revdoku.com/v1/buckets/{bucket_id}/emails/{quote(email_id, safe='')}/attachments/{quote(attachment_id, safe='')}",
+    f"https://api.revdoku.com/v1/mailboxes/{mailbox_id}/emails/{quote(email_id, safe='')}/attachments/{quote(attachment_id, safe='')}",
     headers={"Authorization": f"Bearer {os.environ['REVDOKU_API_KEY']}"},
     params={"account_id": os.getenv("REVDOKU_ACCOUNT_ID")}, timeout=30, allow_redirects=False,
 )

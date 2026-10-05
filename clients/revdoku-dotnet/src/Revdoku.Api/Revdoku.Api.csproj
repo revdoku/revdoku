@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo><!-- setting GenerateAssemblyInfo to false causes this bug https://github.com/dotnet/project-system/issues/3934 -->
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>Revdoku.Api</AssemblyName>
+    <PackageId>Revdoku.Api</PackageId>
+    <OutputType>Library</OutputType>
+    <Authors>Revdoku</Authors>
+    <Company>Revdoku</Company>
+    <AssemblyTitle>Revdoku API</AssemblyTitle>
+    <Description>Revdoku email mailboxes and private file storage.</Description>
+    
+    <RootNamespace>Revdoku.Api</RootNamespace>
+    <Version>1.0.526</Version>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Revdoku.Api.xml</DocumentationFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/revdoku/revdoku-dotnet.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    
+    <Nullable>annotations</Nullable>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JsonSubTypes" Version="2.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Polly" Version="8.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+</Project>

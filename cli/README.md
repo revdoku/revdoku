@@ -54,19 +54,19 @@ revdoku accounts
 revdoku account get acct_...
 revdoku ls
 revdoku create --username acme-orders
-revdoku inbox --bucket-id bkt_...
-revdoku files --bucket-id bkt_...
-revdoku emails --bucket-id bkt_...
-revdoku email eml_... --bucket-id bkt_...
-revdoku email-status eml_... --bucket-id bkt_... --read false
-revdoku email-download eml_... --bucket-id bkt_... --attachment-id df_... --output attachment.pdf
+revdoku mailbox --mailbox-id bkt_...
+revdoku files --mailbox-id bkt_...
+revdoku emails --mailbox-id bkt_...
+revdoku email eml_... --mailbox-id bkt_...
+revdoku email-status eml_... --mailbox-id bkt_... --read false
+revdoku email-download eml_... --mailbox-id bkt_... --attachment-id df_... --output attachment.pdf
 # Delete only after confirming the email ID:
-revdoku email-delete eml_... --bucket-id bkt_... --confirm-delete eml_...
-revdoku upload ./project-files --bucket-id bkt_...
+revdoku email-delete eml_... --mailbox-id bkt_... --confirm-delete eml_...
+revdoku upload ./project-files --mailbox-id bkt_...
 ```
 
 Use returned email and attachment IDs for message operations; use paths for file operations.
-`inbox` reports the receiving address, readiness, and message activity. Revdoku
+`mailbox` reports the receiving address, readiness, and message activity. Revdoku
 receives email and attachments.
 
 CLI signup and sign-in use browser OAuth. Separate [direct API signup](../api.md#direct-api-signup)
@@ -76,7 +76,7 @@ For automation, set `REVDOKU_API_KEY` through your secret manager or environment
 Use `--account-id acct_...` when selecting another authorized account. Credentials
 and selection state otherwise live under `~/.revdoku/`; keep them private.
 
-Uploading without an existing bucket binding can create a bucket and consume
+Uploading without an existing mailbox binding can create a mailbox and consume
 creation capacity. `revdoku create` creates an empty mailbox. Omit `--username` to
 generate a name, or select an exact available name. Generic names are reserved on
 platform email domains. Creation returns when receiving is ready.
@@ -87,7 +87,7 @@ quota errors, and confirmation requirements. For AI integration, use the
 
 ## Uninstall
 
-Remove the executable from the directory you selected. Your remote buckets and
+Remove the executable from the directory you selected. Your remote mailboxes and
 files remain. Remove `~/.revdoku/` separately only if you also want to remove
 saved local credentials and preferences.
 
@@ -104,10 +104,10 @@ Returns effective mailbox and file quotas under `data.limits`.
 
 | Command | Purpose |
 | --- | --- |
-| `revdoku webhook --bucket-id ID` | Read the configured endpoint |
-| `revdoku webhook-set --bucket-id ID --webhook-url HTTPS_URL` | Set one signed webhook; save the returned secret privately |
+| `revdoku webhook --mailbox-id ID` | Read the configured endpoint |
+| `revdoku webhook-set --mailbox-id ID --webhook-url HTTPS_URL` | Set one signed webhook; save the returned secret privately |
 | Add `--rotate-secret` | Replace the signing secret and cancel pending deliveries |
-| `revdoku webhook-delete --bucket-id ID --confirm-delete ID` | Disable deliveries |
-| `revdoku email-subscription --bucket-id ID` | Get a WebSocket URL and short-lived ticket |
+| `revdoku webhook-delete --mailbox-id ID --confirm-delete ID` | Disable deliveries |
+| `revdoku email-subscription --mailbox-id ID` | Get a WebSocket URL and short-lived ticket |
 
 Use `--account-id ID` to select an authorized account. A running receiver is required. See the [examples](../examples/README.md) for signature verification and WebSocket reconnect/catch-up. Human administrators can inspect delivery attempts and retry failures in **Analytics → Webhooks**.

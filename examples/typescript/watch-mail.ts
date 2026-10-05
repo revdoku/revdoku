@@ -2,9 +2,9 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const apiKey = process.env.REVDOKU_API_KEY;
-const bucketId = process.env.REVDOKU_BUCKET_ID;
+const mailboxId = process.env.REVDOKU_BUCKET_ID;
 const accountId = process.env.REVDOKU_ACCOUNT_ID;
-if (!apiKey || !bucketId || !/^bkt_[A-Za-z0-9]+$/.test(bucketId)) throw new Error('Set REVDOKU_API_KEY and REVDOKU_BUCKET_ID.');
+if (!apiKey || !mailboxId || !/^bkt_[A-Za-z0-9]+$/.test(mailboxId)) throw new Error('Set REVDOKU_API_KEY and REVDOKU_BUCKET_ID.');
 if (accountId && !/^acct_[A-Za-z0-9]+$/.test(accountId)) throw new Error('Invalid account ID.');
 let stopped = false;
 let socket: WebSocket | undefined;
@@ -13,7 +13,7 @@ let backoff = 1000;
 let catchup = Promise.resolve();
 while (!stopped) {
   try {
-    const ticketUrl = new URL(`https://api.revdoku.com/v1/buckets/${bucketId}/email/subscription`);
+    const ticketUrl = new URL(`https://api.revdoku.com/v1/mailboxes/${mailboxId}/email/subscription`);
     if (accountId) ticketUrl.searchParams.set('account_id', accountId);
     const response = await fetch(ticketUrl, { headers: { Authorization: `Bearer ${apiKey}` }, redirect: 'error', signal: AbortSignal.timeout(30000) });
     const result = await response.json();
@@ -28,7 +28,7 @@ while (!stopped) {
     url.searchParams.set('email_subscription_token', subscription.token);
     const ws = new WebSocket(url, 'actioncable-v1-json');
     socket = ws;
-    const identifier = JSON.stringify({ channel: subscription.channel, account_id: subscription.account_id, bucket_id: subscription.bucket_id });
+    const identifier = JSON.stringify({ channel: subscription.channel, account_id: subscription.account_id, mailbox_id: subscription.mailbox_id });
     let lastMessage = Date.now();
     let pending = false;
     let reading = false;

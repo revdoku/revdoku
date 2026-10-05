@@ -1,8 +1,8 @@
 # Revdoku for Claude
 
-Email inboxes with shared file storage for people and AI agents. Receive and read
+Email mailboxes with shared file storage for people and AI agents. Receive and read
 messages and attachments, manage stored text files and versions, and collaborate
-through authorized bucket access.
+through authorized mailbox access.
 
 This plugin includes the Revdoku skill and hosted MCP connector at
 `https://mcp.revdoku.com`. It runs no local programs and downloads no executable
@@ -13,7 +13,7 @@ read environment credentials or install the Revdoku CLI.
 
 In Claude, add the plugin, open its Connectors tab, and add/connect Revdoku.
 Sign in or create a Revdoku account in the browser, then authorize the appropriate
-account and bucket access. Installing the plugin alone does not connect the service.
+account and mailbox access. Installing the plugin alone does not connect the service.
 
 For Claude Code, the self-hosted marketplace is also available:
 
@@ -28,14 +28,14 @@ This marketplace installation is independent of Anthropic's directory review.
 
 ## Use
 
-- “Summarize the latest messages in my project inbox.”
-- “Collect invoice details from this bucket's email attachments.”
-- “Store this text in my project bucket.”
+- “Summarize the latest messages in my project mailbox.”
+- “Collect invoice details from this mailbox's email attachments.”
+- “Store this text in my project mailbox.”
 - “Show the earlier versions of this file.”
 
 The connector reads and changes authorized cloud data, including email contents,
 attachments, filenames, account metadata and version history. Requests and selected
-content go to Revdoku over HTTPS. Revdoku stores bucket content and action records
+content go to Revdoku over HTTPS. Revdoku stores mailbox content and action records
 under its [Privacy Policy](https://revdoku.com/privacy/). The plugin communicates
 through its declared Revdoku connector and has no separate telemetry service.
 

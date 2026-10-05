@@ -3,9 +3,9 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { mkdir, access, writeFile } from 'node:fs/promises';
 const secret = process.env.REVDOKU_WEBHOOK_SECRET;
 const apiKey = process.env.REVDOKU_API_KEY;
-const bucketId = process.env.REVDOKU_BUCKET_ID;
+const mailboxId = process.env.REVDOKU_BUCKET_ID;
 const accountId = process.env.REVDOKU_ACCOUNT_ID;
-if (!secret || !apiKey || !bucketId)
+if (!secret || !apiKey || !mailboxId)
     throw new Error('Set REVDOKU_WEBHOOK_SECRET, REVDOKU_API_KEY and REVDOKU_BUCKET_ID.');
 await mkdir('.revdoku-examples/webhooks', { recursive: true, mode: 0o700 });
 const processing = new Set();
@@ -41,7 +41,7 @@ const server = createServer(async (request, response) => {
             return;
         }
         const event = JSON.parse(body.toString('utf8'));
-        if (event.type !== 'email.received' || event.data?.bucket_id !== bucketId || (accountId && event.data?.account_id !== accountId) ||
+        if (event.type !== 'email.received' || event.data?.mailbox_id !== mailboxId || (accountId && event.data?.account_id !== accountId) ||
             event.id !== request.headers['x-revdoku-event-id'] || !/^eml_[A-Za-z0-9]+$/.test(event.data?.email_id)) {
             response.writeHead(400).end();
             return;
@@ -63,7 +63,7 @@ const server = createServer(async (request, response) => {
         }
         processing.add(eventId);
         claimed = true;
-        const url = new URL(`https://api.revdoku.com/v1/buckets/${encodeURIComponent(bucketId)}/emails/${encodeURIComponent(event.data.email_id)}`);
+        const url = new URL(`https://api.revdoku.com/v1/mailboxes/${encodeURIComponent(mailboxId)}/emails/${encodeURIComponent(event.data.email_id)}`);
         url.searchParams.set('account_id', event.data.account_id);
         url.searchParams.set('purpose', 'background');
         const emailResponse = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` }, redirect: 'error', signal: AbortSignal.timeout(8000) });

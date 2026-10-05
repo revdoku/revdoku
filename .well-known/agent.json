@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Create and manage email inboxes for AI agents, with cloud storage for emails, attachments, and files.",
+  "description": "Create and manage email mailboxes for AI agents, with cloud storage for emails, attachments, and files.",
   "homepage": "https://revdoku.com/",
   "docs": "https://revdoku.com/docs",
   "pricing": "https://app.revdoku.com/pricing",
@@ -12,7 +12,7 @@
       "documentation": "https://revdoku.com/api.md#direct-api-signup",
       "capabilities": "https://api.revdoku.com/v1/agent_auth/capabilities",
       "endpoint": "https://api.revdoku.com/v1/agent/signups",
-      "requires": "Human owner authorization and private email verification; creates the account, first inbox, and API key."
+      "requires": "Human owner authorization and private email verification; creates the account, first mailbox, and API key."
     }
   },
   "mcp": {
@@ -38,11 +38,11 @@
     "source": "https://github.com/revdoku/revdoku/tree/main/skills/revdoku"
   },
   "capabilities": [
-    "Create and manage email inboxes for AI agents",
-    "Receive email and attachments at each bucket's incoming address",
+    "Create and manage email mailboxes for AI agents",
+    "Receive email and attachments at each mailbox's incoming address",
     "List messages with polling cursors, read decoded email, and download originals and attachments with email tools",
-    "Store documents, data, and source files in private cloud buckets",
-    "Share bucket files with authorized people and AI connections",
+    "Store documents, data, and source files in private cloud mailboxes",
+    "Share mailbox files with authorized people and AI connections",
     "Read, write, and append shared files; coordinate edits with locks and revision checks",
     "Inspect versions and change history; restore earlier files",
     "Sign up through REST or MCP with human authorization and private email verification, or use browser signup"

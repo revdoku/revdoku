@@ -20,33 +20,33 @@ globalThis.fetch = async (input, options = {}) => {
     if (url.pathname === '/v1/accounts/acct_fixture') return ok({ account: { id: 'acct_fixture' } });
     if ((options.method ?? 'GET') === 'GET') assert.equal(url.searchParams.get('account_id'), 'acct_fixture');
     else assert.equal(body.account_id, 'acct_fixture');
-    if (process.env.FIXTURE_CUSTOMERS && (url.pathname === '/v1/buckets' || /^\/v1\/buckets\/bkt_\d+$/.test(url.pathname))) {
-      let buckets = [];
-      try { buckets = JSON.parse(readFileSync('.fixture-buckets.json', 'utf8')); }
+    if (process.env.FIXTURE_CUSTOMERS && (url.pathname === '/v1/mailboxes' || /^\/v1\/mailboxes\/bkt_\d+$/.test(url.pathname))) {
+      let mailboxes = [];
+      try { mailboxes = JSON.parse(readFileSync('.fixture-mailboxes.json', 'utf8')); }
       catch (error) { if (error.code !== 'ENOENT') throw error; }
       if (options.method === 'POST') {
         assert.equal(body.idempotency_key, undefined);
-        const bucket = { id: `bkt_${buckets.length + 1}`, title: body.bucket.title,
-          email: { address: `fixture${buckets.length + 1}@revdokumail.com`, receiving_enabled: true } };
-        buckets.push(bucket);
-        writeFileSync('.fixture-buckets.json', JSON.stringify(buckets));
+        const mailbox = { id: `bkt_${mailboxes.length + 1}`, title: body.mailbox.title,
+          email: { address: `fixture${mailboxes.length + 1}@revdokumail.com`, receiving_enabled: true } };
+        mailboxes.push(mailbox);
+        writeFileSync('.fixture-mailboxes.json', JSON.stringify(mailboxes));
         if (process.env.FIXTURE_CREATE === 'lost') throw new TypeError('Connection dropped after commit');
-        if (process.env.FIXTURE_CREATE === 'not_ready') return Response.json({ error: { code: 'EMAIL_NOT_READY', details: { bucket_id: bucket.id } } }, { status: 503 });
-        return ok({ bucket });
+        if (process.env.FIXTURE_CREATE === 'not_ready') return Response.json({ error: { code: 'EMAIL_NOT_READY', details: { mailbox_id: mailbox.id } } }, { status: 503 });
+        return ok({ mailbox });
       }
-      if (url.pathname === '/v1/buckets') return ok({ buckets: buckets.filter(bucket => bucket.title === url.searchParams.get('q')) });
-      const bucket = buckets.find(bucket => bucket.id === url.pathname.split('/').at(-1));
-      assert.ok(bucket);
-      if (process.env.FIXTURE_CREATE === 'not_ready') bucket.email = { ...bucket.email, receiving_enabled: false, blocked_reason: 'routing_pending' };
-      return ok({ bucket });
+      if (url.pathname === '/v1/mailboxes') return ok({ mailboxes: mailboxes.filter(mailbox => mailbox.title === url.searchParams.get('q')) });
+      const mailbox = mailboxes.find(mailbox => mailbox.id === url.pathname.split('/').at(-1));
+      assert.ok(mailbox);
+      if (process.env.FIXTURE_CREATE === 'not_ready') mailbox.email = { ...mailbox.email, receiving_enabled: false, blocked_reason: 'routing_pending' };
+      return ok({ mailbox });
     }
-    if (url.pathname === '/v1/buckets') {
+    if (url.pathname === '/v1/mailboxes') {
       assert.equal(body.idempotency_key, undefined);
-      return ok({ bucket: { id: 'bkt_fixture', title: body.bucket.title, email: { address: 'fixture@revdokumail.com', receiving_enabled: true, sending_enabled: false }, dashboard_url: 'https://app.revdoku.com/buckets/bkt_fixture' } });
+      return ok({ mailbox: { id: 'bkt_fixture', title: body.mailbox.title, email: { address: 'fixture@revdokumail.com', receiving_enabled: true, sending_enabled: false }, dashboard_url: 'https://app.revdoku.com/mailboxes/bkt_fixture' } });
     }
     if (url.pathname.endsWith('/email/subscription')) return ok({ subscription: {
       token: 'offline-ticket', websocket_url: 'wss://app.revdoku.com/cable', channel: 'EmailReceivedChannel',
-      account_id: 'acct_fixture', bucket_id: 'bkt_fixture'
+      account_id: 'acct_fixture', mailbox_id: 'bkt_fixture'
     } });
     if (url.pathname.endsWith('/emails')) {
       emailListAttempts++;
@@ -86,12 +86,12 @@ globalThis.fetch = async (input, options = {}) => {
         pagination: { has_more: offset === 0, next_offset: offset === 0 ? 1 : null } });
     }
     if (url.pathname === '/v1/direct_uploads') {
-      assert.equal(body.blob.purpose, 'bucket_file'); assert.equal(body.bucket_id, 'bkt_fixture');
+      assert.equal(body.blob.purpose, 'mailbox_file'); assert.equal(body.mailbox_id, 'bkt_fixture');
       return ok({ signed_id: 'fixture-signed-id', direct_upload: { url: 'https://storage.example/upload', headers: { 'Content-Type': body.blob.content_type } } });
     }
     if (url.pathname === '/v1/account/limits') {
-      if (process.env.FIXTURE_QUOTA) return Response.json({ error: { code: 'BUCKET_CREATION_LIMIT_REACHED', message: 'Monthly creation limit reached', details: { resets_at: '2026-10-01T00:00:00Z' } } }, { status: 429 });
-      return ok({ account_id: 'acct_fixture', limits: { max_buckets: 25, api_rate_limit_requests_per_minute: 120 } });
+      if (process.env.FIXTURE_QUOTA) return Response.json({ error: { code: 'MAILBOX_CREATION_LIMIT_REACHED', message: 'Monthly creation limit reached', details: { resets_at: '2026-10-01T00:00:00Z' } } }, { status: 429 });
+      return ok({ account_id: 'acct_fixture', limits: { max_mailboxes: 25, api_rate_limit_requests_per_minute: 120 } });
     }
   } else if (url.origin === 'https://storage.example') {
     assert.equal(headers.get('Authorization'), null); assert.equal(headers.get('Cookie'), null);
