@@ -49,7 +49,129 @@
                         },
                         "features": {
                           "type": "object",
-                          "properties": {}
+                          "properties": {
+                            "email_domains": {
+                              "type": "boolean"
+                            }
+                          },
+                          "additionalProperties": true
+                        },
+                        "connected": {
+                          "type": "boolean"
+                        },
+                        "server_version": {
+                          "type": "string"
+                        },
+                        "client_version": {
+                          "type": "string"
+                        },
+                        "connection": {
+                          "type": "object",
+                          "properties": {
+                            "api_key_id": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "label": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "token_type": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "scope": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "expires_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "last_used_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "mailbox_access": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "mailbox_ids": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "denied_mailbox_ids": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "mailbox_permissions": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "string"
+                              }
+                            },
+                            "permissions": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "boolean"
+                              }
+                            },
+                            "agent": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "additionalProperties": true
+                            },
+                            "transport": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "renewal": {
+                              "type": "object",
+                              "properties": {
+                                "recommended": {
+                                  "type": "boolean"
+                                },
+                                "next_action": {
+                                  "type": "string"
+                                },
+                                "browser_url": {
+                                  "type": "string",
+                                  "format": "uri"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "limits": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": true
                         }
                       }
                     },
@@ -242,7 +364,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 500
+              "maximum": 100,
+              "default": 100
             }
           },
           {
@@ -285,9 +408,14 @@
                           ]
                         },
                         "pagination": {
-                          "type": "object"
+                          "$ref": "#/components/schemas/AccountPagination"
                         }
-                      }
+                      },
+                      "required": [
+                        "accounts",
+                        "default_account_id",
+                        "pagination"
+                      ]
                     }
                   }
                 }
@@ -695,17 +823,12 @@
                       "type": "object",
                       "properties": {
                         "mailbox": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "email": {
-                              "$ref": "#/components/schemas/MailboxEmail"
-                            }
-                          }
+                          "$ref": "#/components/schemas/Mailbox"
                         }
-                      }
+                      },
+                      "required": [
+                        "mailbox"
+                      ]
                     },
                     "success": {
                       "type": "boolean",
@@ -740,7 +863,9 @@
                         "address": "acme-orders@revdokumail.com",
                         "receiving_enabled": true,
                         "sending_enabled": false
-                      }
+                      },
+                      "account_id": "acct_example",
+                      "title": "acme-orders"
                     }
                   }
                 }
@@ -758,17 +883,12 @@
                       "type": "object",
                       "properties": {
                         "mailbox": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "email": {
-                              "$ref": "#/components/schemas/MailboxEmail"
-                            }
-                          }
+                          "$ref": "#/components/schemas/Mailbox"
                         }
-                      }
+                      },
+                      "required": [
+                        "mailbox"
+                      ]
                     },
                     "success": {
                       "type": "boolean",
@@ -888,19 +1008,7 @@
                         "mailboxes": {
                           "type": "array",
                           "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "string"
-                              },
-                              "title": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "id",
-                              "title"
-                            ]
+                            "$ref": "#/components/schemas/Mailbox"
                           }
                         }
                       },
@@ -992,17 +1100,12 @@
                       "type": "object",
                       "properties": {
                         "mailbox": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "email": {
-                              "$ref": "#/components/schemas/MailboxEmail"
-                            }
-                          }
+                          "$ref": "#/components/schemas/Mailbox"
                         }
-                      }
+                      },
+                      "required": [
+                        "mailbox"
+                      ]
                     },
                     "success": {
                       "type": "boolean",
@@ -2154,6 +2257,15 @@
           },
           {
             "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "name": "include_storage",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Include the related file identifiers in the updated email response."
           }
         ],
         "responses": {
@@ -2812,7 +2924,7 @@
     "/v1/agent/signups": {
       "post": {
         "operationId": "startAgentSignup",
-        "summary": "Start signup with the human operator\u2019s email",
+        "summary": "Start signup with the human operator’s email",
         "description": "Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.",
         "security": [],
         "requestBody": {
@@ -2923,7 +3035,7 @@
     "/v1/agent/signups/verify": {
       "post": {
         "operationId": "verifyAgentSignup",
-        "summary": "Verify the human\u2019s code and create the first mailbox",
+        "summary": "Verify the human’s code and create the first mailbox",
         "description": "Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.",
         "security": [],
         "requestBody": {
@@ -3131,7 +3243,7 @@
     "/v1/agent/signups/resend": {
       "post": {
         "operationId": "resendAgentSignupCode",
-        "summary": "Resend the human operator\u2019s verification code",
+        "summary": "Resend the human operator’s verification code",
         "description": "Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.",
         "security": [],
         "requestBody": {
@@ -3731,6 +3843,12 @@
               "type": "string"
             },
             "description": "Alias ID from mailbox settings"
+          },
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/Reason"
           }
         ],
         "responses": {
@@ -3820,7 +3938,7 @@
     "/v1/mailboxes/{id}/email/aliases": {
       "post": {
         "operationId": "createMailboxEmailAlias",
-        "summary": "Add an email alias to an mailbox",
+        "summary": "Add an email alias to a mailbox",
         "description": "Requires a full-account owner/administrator with mailbox-admin access and an available alias slot. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.",
         "security": [
           {
@@ -3836,6 +3954,12 @@
               "type": "string"
             },
             "description": "Authorized mailbox prefix ID"
+          },
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/Reason"
           }
         ],
         "requestBody": {
@@ -4032,7 +4156,8 @@
           },
           "received_count": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "format": "int64"
           },
           "last_received_at": {
             "type": [
@@ -4399,6 +4524,20 @@
           },
           "forwarding": {
             "$ref": "#/components/schemas/EmailForwardingContent"
+          },
+          "cc": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Decoded Cc header; use the corresponding parsed address array for individual addresses."
+          },
+          "reply_to": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Decoded Reply-To header; use the corresponding parsed address array for individual addresses."
           }
         }
       },
@@ -4686,6 +4825,10 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "directory": {
+                "type": "string",
+                "description": "Storage folder containing this email, without a trailing slash."
               }
             },
             "required": [
@@ -4697,6 +4840,20 @@
           },
           "forwarding": {
             "$ref": "#/components/schemas/EmailForwarding"
+          },
+          "cc": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Decoded Cc header; use the corresponding parsed address array for individual addresses."
+          },
+          "reply_to": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Decoded Reply-To header; use the corresponding parsed address array for individual addresses."
           }
         },
         "required": [
@@ -5229,6 +5386,207 @@
               }
             }
           }
+        ]
+      },
+      "MailboxAction": {
+        "type": "object",
+        "properties": {
+          "allowed": {
+            "type": "boolean"
+          },
+          "blocked_reason": {
+            "type": "string"
+          },
+          "required_action": {
+            "type": "string"
+          },
+          "confirmation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "allowed"
+        ]
+      },
+      "Mailbox": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "account_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "metadata_version": {
+            "type": "string"
+          },
+          "email": {
+            "$ref": "#/components/schemas/MailboxEmail"
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "archived_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "lock": {
+            "type": "object",
+            "properties": {
+              "locked": {
+                "type": "boolean"
+              },
+              "locked_until": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "mailbox_upload_session_id": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "progress": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "locked_by": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              },
+              "locked_by_api_key": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  },
+                  "token_type": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "additionalProperties": true,
+            "required": [
+              "locked"
+            ]
+          },
+          "storage_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "files_count": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "created_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "dashboard_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "current_mailbox_revision_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "current_mailbox_revision_number": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "archive": {
+            "$ref": "#/components/schemas/MailboxAction"
+          },
+          "unarchive": {
+            "$ref": "#/components/schemas/MailboxAction"
+          },
+          "delete": {
+            "$ref": "#/components/schemas/MailboxAction"
+          }
+        },
+        "description": "Public mailbox details. Ordinary reads include email activity only; creation and authorized include_email reads also include receiving addresses.",
+        "required": [
+          "id",
+          "account_id",
+          "title",
+          "email"
+        ]
+      },
+      "AccountPagination": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "next_offset": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "has_more",
+          "next_offset"
         ]
       }
     },

@@ -62,18 +62,12 @@ class MailboxEmailAssignmentError {
     final json = <String, dynamic>{};
     if (this.code != null) {
       json[r'code'] = this.code;
-    } else {
-      json[r'code'] = null;
     }
     if (this.message != null) {
       json[r'message'] = this.message;
-    } else {
-      json[r'message'] = null;
     }
     if (this.retryable != null) {
       json[r'retryable'] = this.retryable;
-    } else {
-      json[r'retryable'] = null;
     }
     return json;
   }

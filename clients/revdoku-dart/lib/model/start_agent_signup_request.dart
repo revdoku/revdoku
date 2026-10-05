@@ -70,13 +70,9 @@ class StartAgentSignupRequest {
       json[r'human_operator_email'] = this.humanOperatorEmail;
     if (this.username != null) {
       json[r'username'] = this.username;
-    } else {
-      json[r'username'] = null;
     }
     if (this.label != null) {
       json[r'label'] = this.label;
-    } else {
-      json[r'label'] = null;
     }
       json[r'permission_scope'] = this.permissionScope;
       json[r'accept_terms_and_policy'] = this.acceptTermsAndPolicy;

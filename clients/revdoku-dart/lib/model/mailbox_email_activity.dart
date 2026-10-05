@@ -52,8 +52,6 @@ class MailboxEmailActivity {
     final json = <String, dynamic>{};
     if (this.receivedCount != null) {
       json[r'received_count'] = this.receivedCount;
-    } else {
-      json[r'received_count'] = null;
     }
     if (this.lastReceivedAt != null) {
       json[r'last_received_at'] = this.lastReceivedAt!.toUtc().toIso8601String();

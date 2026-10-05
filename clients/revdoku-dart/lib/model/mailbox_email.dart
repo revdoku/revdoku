@@ -140,8 +140,6 @@ class MailboxEmail {
     }
     if (this.receivedCount != null) {
       json[r'received_count'] = this.receivedCount;
-    } else {
-      json[r'received_count'] = null;
     }
     if (this.lastReceivedAt != null) {
       json[r'last_received_at'] = this.lastReceivedAt!.toUtc().toIso8601String();
@@ -161,23 +159,15 @@ class MailboxEmail {
       json[r'available_domains'] = this.availableDomains;
     if (this.assignment != null) {
       json[r'assignment'] = this.assignment;
-    } else {
-      json[r'assignment'] = null;
     }
     if (this.customization != null) {
       json[r'customization'] = this.customization;
-    } else {
-      json[r'customization'] = null;
     }
     if (this.receivingEnabled != null) {
       json[r'receiving_enabled'] = this.receivingEnabled;
-    } else {
-      json[r'receiving_enabled'] = null;
     }
     if (this.senderAllowlist != null) {
       json[r'sender_allowlist'] = this.senderAllowlist;
-    } else {
-      json[r'sender_allowlist'] = null;
     }
     if (this.username != null) {
       json[r'username'] = this.username;
@@ -186,8 +176,6 @@ class MailboxEmail {
     }
     if (this.sendingEnabled != null) {
       json[r'sending_enabled'] = this.sendingEnabled;
-    } else {
-      json[r'sending_enabled'] = null;
     }
       json[r'aliases'] = this.aliases;
     return json;

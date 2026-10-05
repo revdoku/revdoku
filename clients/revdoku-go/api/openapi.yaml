@@ -8,7 +8,7 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   title: Revdoku public agent API
-  version: 1.0.526
+  version: 1.0.527
 servers:
 - description: Revdoku application API
   url: https://api.revdoku.com
@@ -82,7 +82,8 @@ paths:
         name: limit
         required: false
         schema:
-          maximum: 500
+          default: 100
+          maximum: 100
           minimum: 1
           type: integer
         style: form
@@ -372,6 +373,8 @@ paths:
                       address: acme-orders@revdokumail.com
                       receiving_enabled: true
                       sending_enabled: false
+                    account_id: acct_example
+                    title: acme-orders
               schema:
                 $ref: "#/components/schemas/createMailbox_201_response"
           description: Created mailbox with its confirmed receiving address.
@@ -1397,6 +1400,15 @@ paths:
         required: false
         schema:
           type: string
+        style: form
+      - description: Include the related file identifiers in the updated email response.
+        explode: true
+        in: query
+        name: include_storage
+        required: false
+        schema:
+          default: false
+          type: boolean
         style: form
       requestBody:
         content:
@@ -2450,6 +2462,22 @@ paths:
         schema:
           type: string
         style: simple
+      - description: Select another granted account; otherwise use the credential
+          default.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: reason
+        required: false
+        schema:
+          $ref: "#/components/schemas/ActionReason"
+        style: form
       responses:
         "200":
           content:
@@ -2510,6 +2538,22 @@ paths:
         schema:
           type: string
         style: simple
+      - description: Select another granted account; otherwise use the credential
+          default.
+        explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: reason
+        required: false
+        schema:
+          $ref: "#/components/schemas/ActionReason"
+        style: form
       requestBody:
         content:
           application/json:
@@ -2545,7 +2589,7 @@ paths:
           description: Invalid username or domain.
       security:
       - bearerAuth: []
-      summary: Add an email alias to an mailbox
+      summary: Add an email alias to a mailbox
 components:
   parameters:
     AccountId:
@@ -2691,6 +2735,7 @@ components:
           nullable: true
           type: string
         received_count:
+          format: int64
           minimum: 0
           type: integer
         last_received_at:
@@ -2873,6 +2918,16 @@ components:
           type: array
         forwarding:
           $ref: "#/components/schemas/EmailForwardingContent"
+        cc:
+          description: Decoded Cc header; use the corresponding parsed address array
+            for individual addresses.
+          nullable: true
+          type: string
+        reply_to:
+          description: Decoded Reply-To header; use the corresponding parsed address
+            array for individual addresses.
+          nullable: true
+          type: string
       required:
       - attachments
       - body_status
@@ -2987,6 +3042,7 @@ components:
           attachment_ids:
           - attachment_ids
           - attachment_ids
+          directory: directory
         forwarding:
           method: method
           member_id: member_id
@@ -2999,6 +3055,8 @@ components:
           original_sent_at: original_sent_at
           attribution: member_forwarded
           parser_version: 1
+        cc: cc
+        reply_to: reply_to
       properties:
         schema_version:
           enum:
@@ -3110,6 +3168,16 @@ components:
           $ref: "#/components/schemas/EmailSummary_files"
         forwarding:
           $ref: "#/components/schemas/EmailForwarding"
+        cc:
+          description: Decoded Cc header; use the corresponding parsed address array
+            for individual addresses.
+          nullable: true
+          type: string
+        reply_to:
+          description: Decoded Reply-To header; use the corresponding parsed address
+            array for individual addresses.
+          nullable: true
+          type: string
       required:
       - attachment_count
       - conversation_id
@@ -3236,9 +3304,12 @@ components:
           attachment_ids:
           - attachment_ids
           - attachment_ids
+          directory: directory
         forwarding:
           note_text: note_text
           note_status: complete
+        cc: cc
+        reply_to: reply_to
         body_text: body_text
         attachments:
         - id: id
@@ -3609,6 +3680,305 @@ components:
       example:
         note_text: note_text
         note_status: complete
+    MailboxAction:
+      example:
+        allowed: true
+        blocked_reason: blocked_reason
+        required_action: required_action
+        confirmation: confirmation
+      properties:
+        allowed:
+          type: boolean
+        blocked_reason:
+          type: string
+        required_action:
+          type: string
+        confirmation:
+          type: string
+      required:
+      - allowed
+      type: object
+    Mailbox:
+      description: Public mailbox details. Ordinary reads include email activity only;
+        creation and authorized include_email reads also include receiving addresses.
+      example:
+        id: id
+        account_id: account_id
+        title: title
+        description: description
+        metadata:
+          key: ""
+        metadata_version: metadata_version
+        email:
+          address: address
+          received_count: 0
+          last_received_at: 2000-01-23T04:56:07.000+00:00
+          last_received_path: last_received_path
+          blocked_reason: blocked_reason
+          available_domains:
+          - hostname: hostname
+            kind: platform
+          - hostname: hostname
+            kind: platform
+          assignment:
+            id: id
+            status: pending
+            hostname: hostname
+            error:
+              code: code
+              message: message
+              retryable: true
+          customization:
+            allowed: true
+            blocked_reason: blocked_reason
+            settings_url: settings_url
+          receiving_enabled: true
+          sender_allowlist:
+            enabled: true
+            entries:
+            - entries
+            - entries
+            - entries
+            - entries
+            - entries
+            version: version
+            max_entries: 6
+            editable: true
+          username: username
+          sending_enabled: true
+          aliases:
+          - id: id
+            address: address
+            active: true
+          - id: id
+            address: address
+            active: true
+        archived: true
+        archived_at: 2000-01-23T04:56:07.000+00:00
+        lock:
+          locked: true
+          locked_until: 2000-01-23T04:56:07.000+00:00
+          kind: kind
+          mailbox_upload_session_id: mailbox_upload_session_id
+          message: message
+          progress:
+            key: ""
+          locked_by:
+            id: id
+            email: email
+            name: name
+          locked_by_api_key:
+            id: id
+            label: label
+            token_type: token_type
+        storage_bytes: 0
+        files_count: 0
+        created_at: 2000-01-23T04:56:07.000+00:00
+        updated_at: 2000-01-23T04:56:07.000+00:00
+        dashboard_url: https://openapi-generator.tech
+        current_mailbox_revision_id: current_mailbox_revision_id
+        current_mailbox_revision_number: 0
+        archive:
+          allowed: true
+          blocked_reason: blocked_reason
+          required_action: required_action
+          confirmation: confirmation
+        unarchive:
+          allowed: true
+          blocked_reason: blocked_reason
+          required_action: required_action
+          confirmation: confirmation
+        delete:
+          allowed: true
+          blocked_reason: blocked_reason
+          required_action: required_action
+          confirmation: confirmation
+      properties:
+        id:
+          type: string
+        account_id:
+          type: string
+        title:
+          type: string
+        description:
+          nullable: true
+          type: string
+        metadata:
+          additionalProperties: true
+          type: object
+        metadata_version:
+          type: string
+        email:
+          $ref: "#/components/schemas/MailboxEmail"
+        archived:
+          type: boolean
+        archived_at:
+          format: date-time
+          nullable: true
+          type: string
+        lock:
+          $ref: "#/components/schemas/Mailbox_lock"
+        storage_bytes:
+          format: int64
+          minimum: 0
+          type: integer
+        files_count:
+          format: int64
+          minimum: 0
+          type: integer
+        created_at:
+          format: date-time
+          nullable: true
+          type: string
+        updated_at:
+          format: date-time
+          nullable: true
+          type: string
+        dashboard_url:
+          format: uri
+          type: string
+        current_mailbox_revision_id:
+          nullable: true
+          type: string
+        current_mailbox_revision_number:
+          minimum: 0
+          type: integer
+        archive:
+          $ref: "#/components/schemas/MailboxAction"
+        unarchive:
+          $ref: "#/components/schemas/MailboxAction"
+        delete:
+          $ref: "#/components/schemas/MailboxAction"
+      required:
+      - account_id
+      - email
+      - id
+      - title
+      type: object
+    AccountPagination:
+      example:
+        limit: 8
+        offset: 0
+        has_more: true
+        next_offset: 0
+      properties:
+        limit:
+          maximum: 100
+          minimum: 1
+          type: integer
+        offset:
+          minimum: 0
+          type: integer
+        has_more:
+          type: boolean
+        next_offset:
+          minimum: 0
+          nullable: true
+          type: integer
+      required:
+      - has_more
+      - limit
+      - next_offset
+      - offset
+      type: object
+    getRevdokuStatus_200_response_data_features:
+      additionalProperties: true
+      example:
+        email_domains: true
+      properties:
+        email_domains:
+          type: boolean
+      type: object
+    getRevdokuStatus_200_response_data_connection_renewal:
+      example:
+        recommended: true
+        next_action: next_action
+        browser_url: https://openapi-generator.tech
+      properties:
+        recommended:
+          type: boolean
+        next_action:
+          type: string
+        browser_url:
+          format: uri
+          type: string
+      type: object
+    getRevdokuStatus_200_response_data_connection:
+      example:
+        api_key_id: api_key_id
+        label: label
+        token_type: token_type
+        scope: scope
+        expires_at: 2000-01-23T04:56:07.000+00:00
+        last_used_at: 2000-01-23T04:56:07.000+00:00
+        mailbox_access: mailbox_access
+        mailbox_ids:
+        - mailbox_ids
+        - mailbox_ids
+        denied_mailbox_ids:
+        - denied_mailbox_ids
+        - denied_mailbox_ids
+        mailbox_permissions:
+          key: mailbox_permissions
+        permissions:
+          key: true
+        agent:
+          key: ""
+        transport: transport
+        renewal:
+          recommended: true
+          next_action: next_action
+          browser_url: https://openapi-generator.tech
+      properties:
+        api_key_id:
+          nullable: true
+          type: string
+        label:
+          nullable: true
+          type: string
+        token_type:
+          nullable: true
+          type: string
+        scope:
+          nullable: true
+          type: string
+        expires_at:
+          format: date-time
+          nullable: true
+          type: string
+        last_used_at:
+          format: date-time
+          nullable: true
+          type: string
+        mailbox_access:
+          nullable: true
+          type: string
+        mailbox_ids:
+          items:
+            type: string
+          type: array
+        denied_mailbox_ids:
+          items:
+            type: string
+          type: array
+        mailbox_permissions:
+          additionalProperties:
+            type: string
+          type: object
+        permissions:
+          additionalProperties:
+            type: boolean
+          type: object
+        agent:
+          additionalProperties: true
+          nullable: true
+          type: object
+        transport:
+          nullable: true
+          type: string
+        renewal:
+          $ref: "#/components/schemas/getRevdokuStatus_200_response_data_connection_renewal"
+      type: object
     getRevdokuStatus_200_response_data:
       example:
         account:
@@ -3653,7 +4023,38 @@ components:
             scope: scope
             mailbox_access: mailbox_access
             can_create_mailboxes: true
-        features: "{}"
+        features:
+          email_domains: true
+        connected: true
+        server_version: server_version
+        client_version: client_version
+        connection:
+          api_key_id: api_key_id
+          label: label
+          token_type: token_type
+          scope: scope
+          expires_at: 2000-01-23T04:56:07.000+00:00
+          last_used_at: 2000-01-23T04:56:07.000+00:00
+          mailbox_access: mailbox_access
+          mailbox_ids:
+          - mailbox_ids
+          - mailbox_ids
+          denied_mailbox_ids:
+          - denied_mailbox_ids
+          - denied_mailbox_ids
+          mailbox_permissions:
+            key: mailbox_permissions
+          permissions:
+            key: true
+          agent:
+            key: ""
+          transport: transport
+          renewal:
+            recommended: true
+            next_action: next_action
+            browser_url: https://openapi-generator.tech
+        limits:
+          key: ""
       properties:
         account:
           $ref: "#/components/schemas/AccountIdentity"
@@ -3665,7 +4066,18 @@ components:
             $ref: "#/components/schemas/AccountIdentity"
           type: array
         features:
-          properties: {}
+          $ref: "#/components/schemas/getRevdokuStatus_200_response_data_features"
+        connected:
+          type: boolean
+        server_version:
+          type: string
+        client_version:
+          type: string
+        connection:
+          $ref: "#/components/schemas/getRevdokuStatus_200_response_data_connection"
+        limits:
+          additionalProperties: true
+          nullable: true
           type: object
       type: object
     getRevdokuStatus_200_response_not:
@@ -3719,7 +4131,38 @@ components:
               scope: scope
               mailbox_access: mailbox_access
               can_create_mailboxes: true
-          features: "{}"
+          features:
+            email_domains: true
+          connected: true
+          server_version: server_version
+          client_version: client_version
+          connection:
+            api_key_id: api_key_id
+            label: label
+            token_type: token_type
+            scope: scope
+            expires_at: 2000-01-23T04:56:07.000+00:00
+            last_used_at: 2000-01-23T04:56:07.000+00:00
+            mailbox_access: mailbox_access
+            mailbox_ids:
+            - mailbox_ids
+            - mailbox_ids
+            denied_mailbox_ids:
+            - denied_mailbox_ids
+            - denied_mailbox_ids
+            mailbox_permissions:
+              key: mailbox_permissions
+            permissions:
+              key: true
+            agent:
+              key: ""
+            transport: transport
+            renewal:
+              recommended: true
+              next_action: next_action
+              browser_url: https://openapi-generator.tech
+          limits:
+            key: ""
         success: true
       not:
         $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
@@ -3762,7 +4205,11 @@ components:
             mailbox_access: mailbox_access
             can_create_mailboxes: true
         default_account_id: default_account_id
-        pagination: "{}"
+        pagination:
+          limit: 8
+          offset: 0
+          has_more: true
+          next_offset: 0
       properties:
         accounts:
           items:
@@ -3772,7 +4219,11 @@ components:
           nullable: true
           type: string
         pagination:
-          type: object
+          $ref: "#/components/schemas/AccountPagination"
+      required:
+      - accounts
+      - default_account_id
+      - pagination
       type: object
     listAccounts_200_response:
       example:
@@ -3806,7 +4257,11 @@ components:
               mailbox_access: mailbox_access
               can_create_mailboxes: true
           default_account_id: default_account_id
-          pagination: "{}"
+          pagination:
+            limit: 8
+            offset: 0
+            has_more: true
+            next_offset: 0
       properties:
         success:
           type: boolean
@@ -3985,30 +4440,195 @@ components:
       - confirm
       - current_address
       type: object
-    listMailboxes_200_response_data_mailboxes_inner:
-      example:
-        id: id
-        title: title
-      properties:
-        id:
-          type: string
-        title:
-          type: string
-      required:
-      - id
-      - title
-      type: object
     listMailboxes_200_response_data:
       example:
         mailboxes:
         - id: id
+          account_id: account_id
           title: title
+          description: description
+          metadata:
+            key: ""
+          metadata_version: metadata_version
+          email:
+            address: address
+            received_count: 0
+            last_received_at: 2000-01-23T04:56:07.000+00:00
+            last_received_path: last_received_path
+            blocked_reason: blocked_reason
+            available_domains:
+            - hostname: hostname
+              kind: platform
+            - hostname: hostname
+              kind: platform
+            assignment:
+              id: id
+              status: pending
+              hostname: hostname
+              error:
+                code: code
+                message: message
+                retryable: true
+            customization:
+              allowed: true
+              blocked_reason: blocked_reason
+              settings_url: settings_url
+            receiving_enabled: true
+            sender_allowlist:
+              enabled: true
+              entries:
+              - entries
+              - entries
+              - entries
+              - entries
+              - entries
+              version: version
+              max_entries: 6
+              editable: true
+            username: username
+            sending_enabled: true
+            aliases:
+            - id: id
+              address: address
+              active: true
+            - id: id
+              address: address
+              active: true
+          archived: true
+          archived_at: 2000-01-23T04:56:07.000+00:00
+          lock:
+            locked: true
+            locked_until: 2000-01-23T04:56:07.000+00:00
+            kind: kind
+            mailbox_upload_session_id: mailbox_upload_session_id
+            message: message
+            progress:
+              key: ""
+            locked_by:
+              id: id
+              email: email
+              name: name
+            locked_by_api_key:
+              id: id
+              label: label
+              token_type: token_type
+          storage_bytes: 0
+          files_count: 0
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          dashboard_url: https://openapi-generator.tech
+          current_mailbox_revision_id: current_mailbox_revision_id
+          current_mailbox_revision_number: 0
+          archive:
+            allowed: true
+            blocked_reason: blocked_reason
+            required_action: required_action
+            confirmation: confirmation
+          unarchive:
+            allowed: true
+            blocked_reason: blocked_reason
+            required_action: required_action
+            confirmation: confirmation
+          delete:
+            allowed: true
+            blocked_reason: blocked_reason
+            required_action: required_action
+            confirmation: confirmation
         - id: id
+          account_id: account_id
           title: title
+          description: description
+          metadata:
+            key: ""
+          metadata_version: metadata_version
+          email:
+            address: address
+            received_count: 0
+            last_received_at: 2000-01-23T04:56:07.000+00:00
+            last_received_path: last_received_path
+            blocked_reason: blocked_reason
+            available_domains:
+            - hostname: hostname
+              kind: platform
+            - hostname: hostname
+              kind: platform
+            assignment:
+              id: id
+              status: pending
+              hostname: hostname
+              error:
+                code: code
+                message: message
+                retryable: true
+            customization:
+              allowed: true
+              blocked_reason: blocked_reason
+              settings_url: settings_url
+            receiving_enabled: true
+            sender_allowlist:
+              enabled: true
+              entries:
+              - entries
+              - entries
+              - entries
+              - entries
+              - entries
+              version: version
+              max_entries: 6
+              editable: true
+            username: username
+            sending_enabled: true
+            aliases:
+            - id: id
+              address: address
+              active: true
+            - id: id
+              address: address
+              active: true
+          archived: true
+          archived_at: 2000-01-23T04:56:07.000+00:00
+          lock:
+            locked: true
+            locked_until: 2000-01-23T04:56:07.000+00:00
+            kind: kind
+            mailbox_upload_session_id: mailbox_upload_session_id
+            message: message
+            progress:
+              key: ""
+            locked_by:
+              id: id
+              email: email
+              name: name
+            locked_by_api_key:
+              id: id
+              label: label
+              token_type: token_type
+          storage_bytes: 0
+          files_count: 0
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          dashboard_url: https://openapi-generator.tech
+          current_mailbox_revision_id: current_mailbox_revision_id
+          current_mailbox_revision_number: 0
+          archive:
+            allowed: true
+            blocked_reason: blocked_reason
+            required_action: required_action
+            confirmation: confirmation
+          unarchive:
+            allowed: true
+            blocked_reason: blocked_reason
+            required_action: required_action
+            confirmation: confirmation
+          delete:
+            allowed: true
+            blocked_reason: blocked_reason
+            required_action: required_action
+            confirmation: confirmation
       properties:
         mailboxes:
           items:
-            $ref: "#/components/schemas/listMailboxes_200_response_data_mailboxes_inner"
+            $ref: "#/components/schemas/Mailbox"
           type: array
       required:
       - mailboxes
@@ -4019,9 +4639,187 @@ components:
         data:
           mailboxes:
           - id: id
+            account_id: account_id
             title: title
+            description: description
+            metadata:
+              key: ""
+            metadata_version: metadata_version
+            email:
+              address: address
+              received_count: 0
+              last_received_at: 2000-01-23T04:56:07.000+00:00
+              last_received_path: last_received_path
+              blocked_reason: blocked_reason
+              available_domains:
+              - hostname: hostname
+                kind: platform
+              - hostname: hostname
+                kind: platform
+              assignment:
+                id: id
+                status: pending
+                hostname: hostname
+                error:
+                  code: code
+                  message: message
+                  retryable: true
+              customization:
+                allowed: true
+                blocked_reason: blocked_reason
+                settings_url: settings_url
+              receiving_enabled: true
+              sender_allowlist:
+                enabled: true
+                entries:
+                - entries
+                - entries
+                - entries
+                - entries
+                - entries
+                version: version
+                max_entries: 6
+                editable: true
+              username: username
+              sending_enabled: true
+              aliases:
+              - id: id
+                address: address
+                active: true
+              - id: id
+                address: address
+                active: true
+            archived: true
+            archived_at: 2000-01-23T04:56:07.000+00:00
+            lock:
+              locked: true
+              locked_until: 2000-01-23T04:56:07.000+00:00
+              kind: kind
+              mailbox_upload_session_id: mailbox_upload_session_id
+              message: message
+              progress:
+                key: ""
+              locked_by:
+                id: id
+                email: email
+                name: name
+              locked_by_api_key:
+                id: id
+                label: label
+                token_type: token_type
+            storage_bytes: 0
+            files_count: 0
+            created_at: 2000-01-23T04:56:07.000+00:00
+            updated_at: 2000-01-23T04:56:07.000+00:00
+            dashboard_url: https://openapi-generator.tech
+            current_mailbox_revision_id: current_mailbox_revision_id
+            current_mailbox_revision_number: 0
+            archive:
+              allowed: true
+              blocked_reason: blocked_reason
+              required_action: required_action
+              confirmation: confirmation
+            unarchive:
+              allowed: true
+              blocked_reason: blocked_reason
+              required_action: required_action
+              confirmation: confirmation
+            delete:
+              allowed: true
+              blocked_reason: blocked_reason
+              required_action: required_action
+              confirmation: confirmation
           - id: id
+            account_id: account_id
             title: title
+            description: description
+            metadata:
+              key: ""
+            metadata_version: metadata_version
+            email:
+              address: address
+              received_count: 0
+              last_received_at: 2000-01-23T04:56:07.000+00:00
+              last_received_path: last_received_path
+              blocked_reason: blocked_reason
+              available_domains:
+              - hostname: hostname
+                kind: platform
+              - hostname: hostname
+                kind: platform
+              assignment:
+                id: id
+                status: pending
+                hostname: hostname
+                error:
+                  code: code
+                  message: message
+                  retryable: true
+              customization:
+                allowed: true
+                blocked_reason: blocked_reason
+                settings_url: settings_url
+              receiving_enabled: true
+              sender_allowlist:
+                enabled: true
+                entries:
+                - entries
+                - entries
+                - entries
+                - entries
+                - entries
+                version: version
+                max_entries: 6
+                editable: true
+              username: username
+              sending_enabled: true
+              aliases:
+              - id: id
+                address: address
+                active: true
+              - id: id
+                address: address
+                active: true
+            archived: true
+            archived_at: 2000-01-23T04:56:07.000+00:00
+            lock:
+              locked: true
+              locked_until: 2000-01-23T04:56:07.000+00:00
+              kind: kind
+              mailbox_upload_session_id: mailbox_upload_session_id
+              message: message
+              progress:
+                key: ""
+              locked_by:
+                id: id
+                email: email
+                name: name
+              locked_by_api_key:
+                id: id
+                label: label
+                token_type: token_type
+            storage_bytes: 0
+            files_count: 0
+            created_at: 2000-01-23T04:56:07.000+00:00
+            updated_at: 2000-01-23T04:56:07.000+00:00
+            dashboard_url: https://openapi-generator.tech
+            current_mailbox_revision_id: current_mailbox_revision_id
+            current_mailbox_revision_number: 0
+            archive:
+              allowed: true
+              blocked_reason: blocked_reason
+              required_action: required_action
+              confirmation: confirmation
+            unarchive:
+              allowed: true
+              blocked_reason: blocked_reason
+              required_action: required_action
+              confirmation: confirmation
+            delete:
+              allowed: true
+              blocked_reason: blocked_reason
+              required_action: required_action
+              confirmation: confirmation
       not:
         $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
       properties:
@@ -4086,63 +4884,16 @@ components:
       required:
       - mailbox
       type: object
-    createMailbox_201_response_data_mailbox:
-      example:
-        id: id
-        email:
-          address: address
-          received_count: 0
-          last_received_at: 2000-01-23T04:56:07.000+00:00
-          last_received_path: last_received_path
-          blocked_reason: blocked_reason
-          available_domains:
-          - hostname: hostname
-            kind: platform
-          - hostname: hostname
-            kind: platform
-          assignment:
-            id: id
-            status: pending
-            hostname: hostname
-            error:
-              code: code
-              message: message
-              retryable: true
-          customization:
-            allowed: true
-            blocked_reason: blocked_reason
-            settings_url: settings_url
-          receiving_enabled: true
-          sender_allowlist:
-            enabled: true
-            entries:
-            - entries
-            - entries
-            - entries
-            - entries
-            - entries
-            version: version
-            max_entries: 6
-            editable: true
-          username: username
-          sending_enabled: true
-          aliases:
-          - id: id
-            address: address
-            active: true
-          - id: id
-            address: address
-            active: true
-      properties:
-        id:
-          type: string
-        email:
-          $ref: "#/components/schemas/MailboxEmail"
-      type: object
     createMailbox_201_response_data:
       example:
         mailbox:
           id: id
+          account_id: account_id
+          title: title
+          description: description
+          metadata:
+            key: ""
+          metadata_version: metadata_version
           email:
             address: address
             received_count: 0
@@ -4187,15 +4938,63 @@ components:
             - id: id
               address: address
               active: true
+          archived: true
+          archived_at: 2000-01-23T04:56:07.000+00:00
+          lock:
+            locked: true
+            locked_until: 2000-01-23T04:56:07.000+00:00
+            kind: kind
+            mailbox_upload_session_id: mailbox_upload_session_id
+            message: message
+            progress:
+              key: ""
+            locked_by:
+              id: id
+              email: email
+              name: name
+            locked_by_api_key:
+              id: id
+              label: label
+              token_type: token_type
+          storage_bytes: 0
+          files_count: 0
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          dashboard_url: https://openapi-generator.tech
+          current_mailbox_revision_id: current_mailbox_revision_id
+          current_mailbox_revision_number: 0
+          archive:
+            allowed: true
+            blocked_reason: blocked_reason
+            required_action: required_action
+            confirmation: confirmation
+          unarchive:
+            allowed: true
+            blocked_reason: blocked_reason
+            required_action: required_action
+            confirmation: confirmation
+          delete:
+            allowed: true
+            blocked_reason: blocked_reason
+            required_action: required_action
+            confirmation: confirmation
       properties:
         mailbox:
-          $ref: "#/components/schemas/createMailbox_201_response_data_mailbox"
+          $ref: "#/components/schemas/Mailbox"
+      required:
+      - mailbox
       type: object
     createMailbox_201_response:
       example:
         data:
           mailbox:
             id: id
+            account_id: account_id
+            title: title
+            description: description
+            metadata:
+              key: ""
+            metadata_version: metadata_version
             email:
               address: address
               received_count: 0
@@ -4240,6 +5039,46 @@ components:
               - id: id
                 address: address
                 active: true
+            archived: true
+            archived_at: 2000-01-23T04:56:07.000+00:00
+            lock:
+              locked: true
+              locked_until: 2000-01-23T04:56:07.000+00:00
+              kind: kind
+              mailbox_upload_session_id: mailbox_upload_session_id
+              message: message
+              progress:
+                key: ""
+              locked_by:
+                id: id
+                email: email
+                name: name
+              locked_by_api_key:
+                id: id
+                label: label
+                token_type: token_type
+            storage_bytes: 0
+            files_count: 0
+            created_at: 2000-01-23T04:56:07.000+00:00
+            updated_at: 2000-01-23T04:56:07.000+00:00
+            dashboard_url: https://openapi-generator.tech
+            current_mailbox_revision_id: current_mailbox_revision_id
+            current_mailbox_revision_number: 0
+            archive:
+              allowed: true
+              blocked_reason: blocked_reason
+              required_action: required_action
+              confirmation: confirmation
+            unarchive:
+              allowed: true
+              blocked_reason: blocked_reason
+              required_action: required_action
+              confirmation: confirmation
+            delete:
+              allowed: true
+              blocked_reason: blocked_reason
+              required_action: required_action
+              confirmation: confirmation
         success: true
       not:
         $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
@@ -4405,6 +5244,7 @@ components:
             attachment_ids:
             - attachment_ids
             - attachment_ids
+            directory: directory
           forwarding:
             method: method
             member_id: member_id
@@ -4417,6 +5257,8 @@ components:
             original_sent_at: original_sent_at
             attribution: member_forwarded
             parser_version: 1
+          cc: cc
+          reply_to: reply_to
         - schema_version: 0
           subject: subject
           from: from
@@ -4468,6 +5310,7 @@ components:
             attachment_ids:
             - attachment_ids
             - attachment_ids
+            directory: directory
           forwarding:
             method: method
             member_id: member_id
@@ -4480,6 +5323,8 @@ components:
             original_sent_at: original_sent_at
             attribution: member_forwarded
             parser_version: 1
+          cc: cc
+          reply_to: reply_to
         pagination:
           limit: 56
           has_more: true
@@ -4551,6 +5396,7 @@ components:
               attachment_ids:
               - attachment_ids
               - attachment_ids
+              directory: directory
             forwarding:
               method: method
               member_id: member_id
@@ -4563,6 +5409,8 @@ components:
               original_sent_at: original_sent_at
               attribution: member_forwarded
               parser_version: 1
+            cc: cc
+            reply_to: reply_to
           - schema_version: 0
             subject: subject
             from: from
@@ -4614,6 +5462,7 @@ components:
               attachment_ids:
               - attachment_ids
               - attachment_ids
+              directory: directory
             forwarding:
               method: method
               member_id: member_id
@@ -4626,6 +5475,8 @@ components:
               original_sent_at: original_sent_at
               attribution: member_forwarded
               parser_version: 1
+            cc: cc
+            reply_to: reply_to
           pagination:
             limit: 56
             has_more: true
@@ -4695,9 +5546,12 @@ components:
             attachment_ids:
             - attachment_ids
             - attachment_ids
+            directory: directory
           forwarding:
             note_text: note_text
             note_status: complete
+          cc: cc
+          reply_to: reply_to
           body_text: body_text
           attachments:
           - id: id
@@ -4774,9 +5628,12 @@ components:
               attachment_ids:
               - attachment_ids
               - attachment_ids
+              directory: directory
             forwarding:
               note_text: note_text
               note_status: complete
+            cc: cc
+            reply_to: reply_to
             body_text: body_text
             attachments:
             - id: id
@@ -4872,6 +5729,7 @@ components:
             attachment_ids:
             - attachment_ids
             - attachment_ids
+            directory: directory
           forwarding:
             method: method
             member_id: member_id
@@ -4884,6 +5742,8 @@ components:
             original_sent_at: original_sent_at
             attribution: member_forwarded
             parser_version: 1
+          cc: cc
+          reply_to: reply_to
       properties:
         email:
           $ref: "#/components/schemas/EmailSummary"
@@ -4946,6 +5806,7 @@ components:
               attachment_ids:
               - attachment_ids
               - attachment_ids
+              directory: directory
             forwarding:
               method: method
               member_id: member_id
@@ -4958,6 +5819,8 @@ components:
               original_sent_at: original_sent_at
               attribution: member_forwarded
               parser_version: 1
+            cc: cc
+            reply_to: reply_to
       not:
         $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
       properties:
@@ -6001,6 +6864,7 @@ components:
         attachment_ids:
         - attachment_ids
         - attachment_ids
+        directory: directory
       properties:
         body_id:
           nullable: true
@@ -6012,6 +6876,9 @@ components:
           items:
             type: string
           type: array
+        directory:
+          description: "Storage folder containing this email, without a trailing slash."
+          type: string
       required:
       - attachment_ids
       - body_id
@@ -6037,6 +6904,72 @@ components:
       - email_id
       - mailbox_id
       - received_at
+      type: object
+    Mailbox_lock_locked_by:
+      example:
+        id: id
+        email: email
+        name: name
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+      type: object
+    Mailbox_lock_locked_by_api_key:
+      example:
+        id: id
+        label: label
+        token_type: token_type
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        token_type:
+          type: string
+      type: object
+    Mailbox_lock:
+      additionalProperties: true
+      example:
+        locked: true
+        locked_until: 2000-01-23T04:56:07.000+00:00
+        kind: kind
+        mailbox_upload_session_id: mailbox_upload_session_id
+        message: message
+        progress:
+          key: ""
+        locked_by:
+          id: id
+          email: email
+          name: name
+        locked_by_api_key:
+          id: id
+          label: label
+          token_type: token_type
+      properties:
+        locked:
+          type: boolean
+        locked_until:
+          format: date-time
+          type: string
+        kind:
+          type: string
+        mailbox_upload_session_id:
+          type: string
+        message:
+          type: string
+        progress:
+          additionalProperties: true
+          type: object
+        locked_by:
+          $ref: "#/components/schemas/Mailbox_lock_locked_by"
+        locked_by_api_key:
+          $ref: "#/components/schemas/Mailbox_lock_locked_by_api_key"
+      required:
+      - locked
       type: object
   securitySchemes:
     bearerAuth:

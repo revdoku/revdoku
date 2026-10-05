@@ -45,13 +45,9 @@ class MailboxEmailAvailableDomainsInner {
     final json = <String, dynamic>{};
     if (this.hostname != null) {
       json[r'hostname'] = this.hostname;
-    } else {
-      json[r'hostname'] = null;
     }
     if (this.kind != null) {
       json[r'kind'] = this.kind;
-    } else {
-      json[r'kind'] = null;
     }
     return json;
   }

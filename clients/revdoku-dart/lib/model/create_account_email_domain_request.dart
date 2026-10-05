@@ -53,8 +53,6 @@ class CreateAccountEmailDomainRequest {
       json[r'hostname'] = this.hostname;
     if (this.accountId != null) {
       json[r'account_id'] = this.accountId;
-    } else {
-      json[r'account_id'] = null;
     }
     if (this.reason != null) {
       json[r'reason'] = this.reason;

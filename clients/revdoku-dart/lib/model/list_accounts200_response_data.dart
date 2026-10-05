@@ -14,21 +14,15 @@ class ListAccounts200ResponseData {
   /// Returns a new [ListAccounts200ResponseData] instance.
   ListAccounts200ResponseData({
     this.accounts = const [],
-    this.defaultAccountId,
-    this.pagination,
+    required this.defaultAccountId,
+    required this.pagination,
   });
 
   List<AccountIdentity> accounts;
 
   String? defaultAccountId;
 
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  Object? pagination;
+  AccountPagination pagination;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is ListAccounts200ResponseData &&
@@ -41,7 +35,7 @@ class ListAccounts200ResponseData {
     // ignore: unnecessary_parenthesis
     (accounts.hashCode) +
     (defaultAccountId == null ? 0 : defaultAccountId!.hashCode) +
-    (pagination == null ? 0 : pagination!.hashCode);
+    (pagination.hashCode);
 
   @override
   String toString() => 'ListAccounts200ResponseData[accounts=$accounts, defaultAccountId=$defaultAccountId, pagination=$pagination]';
@@ -54,11 +48,7 @@ class ListAccounts200ResponseData {
     } else {
       json[r'default_account_id'] = null;
     }
-    if (this.pagination != null) {
       json[r'pagination'] = this.pagination;
-    } else {
-      json[r'pagination'] = null;
-    }
     return json;
   }
 
@@ -73,13 +63,18 @@ class ListAccounts200ResponseData {
       // Note 1: the values aren't checked for validity beyond being non-null.
       // Note 2: this code is stripped in release mode!
       assert(() {
+        assert(json.containsKey(r'accounts'), 'Required key "ListAccounts200ResponseData[accounts]" is missing from JSON.');
+        assert(json[r'accounts'] != null, 'Required key "ListAccounts200ResponseData[accounts]" has a null value in JSON.');
+        assert(json.containsKey(r'default_account_id'), 'Required key "ListAccounts200ResponseData[default_account_id]" is missing from JSON.');
+        assert(json.containsKey(r'pagination'), 'Required key "ListAccounts200ResponseData[pagination]" is missing from JSON.');
+        assert(json[r'pagination'] != null, 'Required key "ListAccounts200ResponseData[pagination]" has a null value in JSON.');
         return true;
       }());
 
       return ListAccounts200ResponseData(
         accounts: AccountIdentity.listFromJson(json[r'accounts']),
         defaultAccountId: mapValueOfType<String>(json, r'default_account_id'),
-        pagination: mapValueOfType<Object>(json, r'pagination'),
+        pagination: AccountPagination.fromJson(json[r'pagination'])!,
       );
     }
     return null;
@@ -127,6 +122,9 @@ class ListAccounts200ResponseData {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
+    'accounts',
+    'default_account_id',
+    'pagination',
   };
 }
 

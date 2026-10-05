@@ -55,7 +55,7 @@ The [first request](../QUICKSTART.md) checks the connection. The SDK already use
 
 ## Receive and download
 
-1. **Choose an mailbox.** Reuse the starter mailbox: run the **List mailboxes** request in [QUICKSTART.md](../QUICKSTART.md) and copy its `id`. Use the dashboard's receiving address, or ask a mailbox writer for it. If you need a separate mailbox and have account-wide admin access, run **Create mailbox** from the command table above once. It prints a mailbox ID and ready address, for example:
+1. **Choose a mailbox.** Reuse the starter mailbox: run the **List mailboxes** request in [QUICKSTART.md](../QUICKSTART.md) and copy its `id`. Use the dashboard's receiving address, or ask a mailbox writer for it. If you need a separate mailbox and have account-wide admin access, run **Create mailbox** from the command table above once. It prints a mailbox ID and ready address, for example:
 
    ```text
    bkt_RETURNED_ID example@revdokumail.com
@@ -129,7 +129,7 @@ For a recurring consumer, list in arrival order and persist `pagination.next_cur
 Use the versioned Git module from your application's module directory:
 
 ```sh
-go get github.com/revdoku/revdoku-go@v1.0.526
+go get github.com/revdoku/revdoku-go@v1.0.527
 ```
 
 Import it as `revdoku "github.com/revdoku/revdoku-go"`. Go resolves the public Git tag; there is no separate registry upload.

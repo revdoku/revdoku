@@ -29,13 +29,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             return Err(error.into());
         }
     };
-    let mailbox = result.data.mailbox.ok_or("Missing mailbox")?;
+    let mailbox = result.data.mailbox;
     let address = mailbox
         .email
-        .ok_or("Missing email")?
         .address
         .flatten()
         .ok_or("Missing email address")?;
-    println!("{} {}", mailbox.id.ok_or("Missing mailbox ID")?, address);
+    println!("{} {}", mailbox.id, address);
     Ok(())
 }

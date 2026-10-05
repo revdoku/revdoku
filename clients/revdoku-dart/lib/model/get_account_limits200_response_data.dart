@@ -52,8 +52,6 @@ class GetAccountLimits200ResponseData {
       json[r'limits'] = this.limits;
     if (this.usage != null) {
       json[r'usage'] = this.usage;
-    } else {
-      json[r'usage'] = null;
     }
     return json;
   }

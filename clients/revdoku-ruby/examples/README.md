@@ -18,7 +18,7 @@ Requires Ruby 3.1 or newer. From the cloned package directory:
 
 ```sh
 gem build revdoku_api.gemspec
-gem install --user-install ./revdoku_api-1.0.526.gem
+gem install --user-install ./revdoku_api-1.0.527.gem
 ```
 
 ### Run an example
@@ -56,7 +56,7 @@ The [first request](../QUICKSTART.md) checks the connection. The SDK already use
 
 ## Receive and download
 
-1. **Choose an mailbox.** Reuse the starter mailbox: run the **List mailboxes** request in [QUICKSTART.md](../QUICKSTART.md) and copy its `id`. Use the dashboard's receiving address, or ask a mailbox writer for it. If you need a separate mailbox and have account-wide admin access, run **Create mailbox** from the command table above once. It prints a mailbox ID and ready address, for example:
+1. **Choose a mailbox.** Reuse the starter mailbox: run the **List mailboxes** request in [QUICKSTART.md](../QUICKSTART.md) and copy its `id`. Use the dashboard's receiving address, or ask a mailbox writer for it. If you need a separate mailbox and have account-wide admin access, run **Create mailbox** from the command table above once. It prints a mailbox ID and ready address, for example:
 
    ```text
    bkt_RETURNED_ID example@revdokumail.com

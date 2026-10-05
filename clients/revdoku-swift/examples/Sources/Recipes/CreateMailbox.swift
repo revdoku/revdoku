@@ -13,11 +13,9 @@ public func createMailbox() async throws {
                 else { continuation.resume(throwing: ExampleError.missingResponse) }
             }
         }
-        guard let mailbox = result.data.mailbox, let id = mailbox.id, let email = mailbox.email else {
-            throw ExampleError.missingResponse
-        }
-        guard let address = email.address else { throw ExampleError.missingResponse }
-        print(id, address)
+        let mailbox = result.data.mailbox
+        guard let address = mailbox.email.address else { throw ExampleError.missingResponse }
+        print(mailbox.id, address)
     } catch {
         if case let ErrorResponse.error(status, data, response, _) = error {
             let body = data.map { String(decoding: $0, as: UTF8.self) } ?? ""

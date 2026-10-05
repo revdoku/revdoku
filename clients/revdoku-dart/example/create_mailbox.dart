@@ -14,7 +14,7 @@ Future<void> main() async {
         mailbox: CreateMailboxRequestMailbox(title: 'Example mailbox'),
       ),
     );
-    print('${result!.data.mailbox!.id} ${result.data.mailbox!.email!.address}');
+    print('${result!.data.mailbox.id} ${result.data.mailbox.email.address}');
   } on ApiException catch (error) {
     stderr.writeln('HTTP ${error.code}: ${error.message}');
     stderr.writeln('Creation was not confirmed. Check existing mailboxes before another creation attempt.');

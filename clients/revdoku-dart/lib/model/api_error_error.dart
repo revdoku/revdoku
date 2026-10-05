@@ -118,33 +118,21 @@ class ApiErrorError {
     }
     if (this.requestId != null) {
       json[r'request_id'] = this.requestId;
-    } else {
-      json[r'request_id'] = null;
     }
     if (this.docsUrl != null) {
       json[r'docs_url'] = this.docsUrl;
-    } else {
-      json[r'docs_url'] = null;
     }
     if (this.timestamp != null) {
       json[r'timestamp'] = this.timestamp!.toUtc().toIso8601String();
-    } else {
-      json[r'timestamp'] = null;
     }
     if (this.recoverable != null) {
       json[r'recoverable'] = this.recoverable;
-    } else {
-      json[r'recoverable'] = null;
     }
     if (this.nextAction != null) {
       json[r'next_action'] = this.nextAction;
-    } else {
-      json[r'next_action'] = null;
     }
     if (this.browserUrl != null) {
       json[r'browser_url'] = this.browserUrl;
-    } else {
-      json[r'browser_url'] = null;
     }
     return json;
   }

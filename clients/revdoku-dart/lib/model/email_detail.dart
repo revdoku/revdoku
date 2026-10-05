@@ -40,6 +40,8 @@ class EmailDetail {
     required this.readByApiKey,
     this.files,
     this.forwarding,
+    this.cc,
+    this.replyTo,
     required this.bodyText,
     this.attachments = const [],
   });
@@ -146,6 +148,12 @@ class EmailDetail {
   ///
   EmailForwardingContent? forwarding;
 
+  /// Decoded Cc header; use the corresponding parsed address array for individual addresses.
+  String? cc;
+
+  /// Decoded Reply-To header; use the corresponding parsed address array for individual addresses.
+  String? replyTo;
+
   String? bodyText;
 
   List<EmailAttachment> attachments;
@@ -179,6 +187,8 @@ class EmailDetail {
     other.readByApiKey == readByApiKey &&
     other.files == files &&
     other.forwarding == forwarding &&
+    other.cc == cc &&
+    other.replyTo == replyTo &&
     other.bodyText == bodyText &&
     _deepEquality.equals(other.attachments, attachments);
 
@@ -212,18 +222,18 @@ class EmailDetail {
     (readByApiKey == null ? 0 : readByApiKey!.hashCode) +
     (files == null ? 0 : files!.hashCode) +
     (forwarding == null ? 0 : forwarding!.hashCode) +
+    (cc == null ? 0 : cc!.hashCode) +
+    (replyTo == null ? 0 : replyTo!.hashCode) +
     (bodyText == null ? 0 : bodyText!.hashCode) +
     (attachments.hashCode);
 
   @override
-  String toString() => 'EmailDetail[schemaVersion=$schemaVersion, subject=$subject, from=$from, to=$to, fromAddresses=$fromAddresses, toAddresses=$toAddresses, ccAddresses=$ccAddresses, replyToAddresses=$replyToAddresses, messageId=$messageId, inReplyTo=$inReplyTo, references=$references, threadId=$threadId, deliveredTo=$deliveredTo, receivedAt=$receivedAt, bodyStatus=$bodyStatus, omittedAttachmentCount=$omittedAttachmentCount, id=$id, conversationId=$conversationId, fileId=$fileId, versionId=$versionId, attachmentCount=$attachmentCount, read=$read, readAt=$readAt, readBy=$readBy, readByApiKey=$readByApiKey, files=$files, forwarding=$forwarding, bodyText=$bodyText, attachments=$attachments]';
+  String toString() => 'EmailDetail[schemaVersion=$schemaVersion, subject=$subject, from=$from, to=$to, fromAddresses=$fromAddresses, toAddresses=$toAddresses, ccAddresses=$ccAddresses, replyToAddresses=$replyToAddresses, messageId=$messageId, inReplyTo=$inReplyTo, references=$references, threadId=$threadId, deliveredTo=$deliveredTo, receivedAt=$receivedAt, bodyStatus=$bodyStatus, omittedAttachmentCount=$omittedAttachmentCount, id=$id, conversationId=$conversationId, fileId=$fileId, versionId=$versionId, attachmentCount=$attachmentCount, read=$read, readAt=$readAt, readBy=$readBy, readByApiKey=$readByApiKey, files=$files, forwarding=$forwarding, cc=$cc, replyTo=$replyTo, bodyText=$bodyText, attachments=$attachments]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
     if (this.schemaVersion != null) {
       json[r'schema_version'] = this.schemaVersion;
-    } else {
-      json[r'schema_version'] = null;
     }
     if (this.subject != null) {
       json[r'subject'] = this.subject;
@@ -258,27 +268,19 @@ class EmailDetail {
     }
     if (this.deliveredTo != null) {
       json[r'delivered_to'] = this.deliveredTo;
-    } else {
-      json[r'delivered_to'] = null;
     }
       json[r'received_at'] = this.receivedAt.toUtc().toIso8601String();
       json[r'body_status'] = this.bodyStatus;
     if (this.omittedAttachmentCount != null) {
       json[r'omitted_attachment_count'] = this.omittedAttachmentCount;
-    } else {
-      json[r'omitted_attachment_count'] = null;
     }
       json[r'id'] = this.id;
       json[r'conversation_id'] = this.conversationId;
     if (this.fileId != null) {
       json[r'file_id'] = this.fileId;
-    } else {
-      json[r'file_id'] = null;
     }
     if (this.versionId != null) {
       json[r'version_id'] = this.versionId;
-    } else {
-      json[r'version_id'] = null;
     }
       json[r'attachment_count'] = this.attachmentCount;
       json[r'read'] = this.read;
@@ -299,13 +301,19 @@ class EmailDetail {
     }
     if (this.files != null) {
       json[r'files'] = this.files;
-    } else {
-      json[r'files'] = null;
     }
     if (this.forwarding != null) {
       json[r'forwarding'] = this.forwarding;
+    }
+    if (this.cc != null) {
+      json[r'cc'] = this.cc;
     } else {
-      json[r'forwarding'] = null;
+      json[r'cc'] = null;
+    }
+    if (this.replyTo != null) {
+      json[r'reply_to'] = this.replyTo;
+    } else {
+      json[r'reply_to'] = null;
     }
     if (this.bodyText != null) {
       json[r'body_text'] = this.bodyText;
@@ -380,6 +388,8 @@ class EmailDetail {
         readByApiKey: mapValueOfType<Object>(json, r'read_by_api_key'),
         files: EmailSummaryFiles.fromJson(json[r'files']),
         forwarding: EmailForwardingContent.fromJson(json[r'forwarding']),
+        cc: mapValueOfType<String>(json, r'cc'),
+        replyTo: mapValueOfType<String>(json, r'reply_to'),
         bodyText: mapValueOfType<String>(json, r'body_text'),
         attachments: EmailAttachment.listFromJson(json[r'attachments']),
       );

@@ -59,8 +59,6 @@ class RemoveAccountEmailDomainRequest {
       json[r'confirm'] = this.confirm;
     if (this.accountId != null) {
       json[r'account_id'] = this.accountId;
-    } else {
-      json[r'account_id'] = null;
     }
     if (this.reason != null) {
       json[r'reason'] = this.reason;

@@ -191,6 +191,8 @@ class ApiClient {
           return AccountIdentityPermissions.fromJson(value);
         case 'AccountLimits':
           return AccountLimits.fromJson(value);
+        case 'AccountPagination':
+          return AccountPagination.fromJson(value);
         case 'ApiError':
           return ApiError.fromJson(value);
         case 'ApiErrorError':
@@ -209,8 +211,6 @@ class ApiClient {
           return CreateMailbox201Response.fromJson(value);
         case 'CreateMailbox201ResponseData':
           return CreateMailbox201ResponseData.fromJson(value);
-        case 'CreateMailbox201ResponseDataMailbox':
-          return CreateMailbox201ResponseDataMailbox.fromJson(value);
         case 'CreateMailboxEmailAliasRequest':
           return CreateMailboxEmailAliasRequest.fromJson(value);
         case 'CreateMailboxRequest':
@@ -285,6 +285,12 @@ class ApiClient {
           return GetRevdokuStatus200Response.fromJson(value);
         case 'GetRevdokuStatus200ResponseData':
           return GetRevdokuStatus200ResponseData.fromJson(value);
+        case 'GetRevdokuStatus200ResponseDataConnection':
+          return GetRevdokuStatus200ResponseDataConnection.fromJson(value);
+        case 'GetRevdokuStatus200ResponseDataConnectionRenewal':
+          return GetRevdokuStatus200ResponseDataConnectionRenewal.fromJson(value);
+        case 'GetRevdokuStatus200ResponseDataFeatures':
+          return GetRevdokuStatus200ResponseDataFeatures.fromJson(value);
         case 'ListAccounts200Response':
           return ListAccounts200Response.fromJson(value);
         case 'ListAccounts200ResponseData':
@@ -301,8 +307,10 @@ class ApiClient {
           return ListMailboxes200Response.fromJson(value);
         case 'ListMailboxes200ResponseData':
           return ListMailboxes200ResponseData.fromJson(value);
-        case 'ListMailboxes200ResponseDataMailboxesInner':
-          return ListMailboxes200ResponseDataMailboxesInner.fromJson(value);
+        case 'Mailbox':
+          return Mailbox.fromJson(value);
+        case 'MailboxAction':
+          return MailboxAction.fromJson(value);
         case 'MailboxEmail':
           return MailboxEmail.fromJson(value);
         case 'MailboxEmailActivity':
@@ -317,6 +325,12 @@ class ApiClient {
           return MailboxEmailAvailableDomainsInner.fromJson(value);
         case 'MailboxEmailCustomization':
           return MailboxEmailCustomization.fromJson(value);
+        case 'MailboxLock':
+          return MailboxLock.fromJson(value);
+        case 'MailboxLockLockedBy':
+          return MailboxLockLockedBy.fromJson(value);
+        case 'MailboxLockLockedByApiKey':
+          return MailboxLockLockedByApiKey.fromJson(value);
         case 'RemoveAccountEmailDomainRequest':
           return RemoveAccountEmailDomainRequest.fromJson(value);
         case 'ResendAgentSignupCodeRequest':

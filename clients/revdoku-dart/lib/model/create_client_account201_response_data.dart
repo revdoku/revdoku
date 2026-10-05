@@ -40,8 +40,6 @@ class CreateClientAccount201ResponseData {
     final json = <String, dynamic>{};
     if (this.account != null) {
       json[r'account'] = this.account;
-    } else {
-      json[r'account'] = null;
     }
     return json;
   }

@@ -5,7 +5,7 @@
     <artifactId>revdoku-api</artifactId>
     <packaging>jar</packaging>
     <name>revdoku-api</name>
-    <version>1.0.526</version>
+    <version>1.0.527</version>
     <url>https://revdoku.com</url>
     <description>Revdoku email mailbox and private file storage API</description>
     <scm>

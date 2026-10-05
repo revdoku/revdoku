@@ -121,28 +121,18 @@ class EmailForwarding {
       json[r'intake_account_id'] = this.intakeAccountId;
     if (this.outerFrom != null) {
       json[r'outer_from'] = this.outerFrom;
-    } else {
-      json[r'outer_from'] = null;
     }
     if (this.outerSubject != null) {
       json[r'outer_subject'] = this.outerSubject;
-    } else {
-      json[r'outer_subject'] = null;
     }
     if (this.outerMessageId != null) {
       json[r'outer_message_id'] = this.outerMessageId;
-    } else {
-      json[r'outer_message_id'] = null;
     }
     if (this.originalDateRaw != null) {
       json[r'original_date_raw'] = this.originalDateRaw;
-    } else {
-      json[r'original_date_raw'] = null;
     }
     if (this.originalSentAt != null) {
       json[r'original_sent_at'] = this.originalSentAt;
-    } else {
-      json[r'original_sent_at'] = null;
     }
       json[r'attribution'] = this.attribution;
       json[r'parser_version'] = this.parserVersion;

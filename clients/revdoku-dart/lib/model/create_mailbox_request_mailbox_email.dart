@@ -53,13 +53,9 @@ class CreateMailboxRequestMailboxEmail {
     final json = <String, dynamic>{};
     if (this.username != null) {
       json[r'username'] = this.username;
-    } else {
-      json[r'username'] = null;
     }
     if (this.domain != null) {
       json[r'domain'] = this.domain;
-    } else {
-      json[r'domain'] = null;
     }
     return json;
   }

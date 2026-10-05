@@ -51,8 +51,6 @@ class CreateMailboxRequest {
     final json = <String, dynamic>{};
     if (this.accountId != null) {
       json[r'account_id'] = this.accountId;
-    } else {
-      json[r'account_id'] = null;
     }
       json[r'mailbox'] = this.mailbox;
     if (this.reason != null) {

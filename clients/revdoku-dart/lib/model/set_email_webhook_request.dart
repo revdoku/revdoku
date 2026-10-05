@@ -52,8 +52,6 @@ class SetEmailWebhookRequest {
       json[r'webhook_url'] = this.webhookUrl;
     if (this.accountId != null) {
       json[r'account_id'] = this.accountId;
-    } else {
-      json[r'account_id'] = null;
     }
       json[r'rotate_secret'] = this.rotateSecret;
     return json;

@@ -13,9 +13,9 @@ import AnyCodable
 /** Receiving address/state on creation and authorized opt-in reads. Ordinary mailbox reads expose activity only; use the emails collection for a durable arrival cursor. */
 public struct MailboxEmail: Codable, JSONEncodable, Hashable {
 
-    public static let receivedCountRule = NumericRule<Int>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
+    public static let receivedCountRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
     public var address: String?
-    public var receivedCount: Int?
+    public var receivedCount: Int64?
     public var lastReceivedAt: Date?
     /** Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion. */
     public var lastReceivedPath: String?
@@ -32,7 +32,7 @@ public struct MailboxEmail: Codable, JSONEncodable, Hashable {
     public var sendingEnabled: Bool?
     public var aliases: [MailboxEmailAliasesInner]?
 
-    public init(address: String? = nil, receivedCount: Int? = nil, lastReceivedAt: Date? = nil, lastReceivedPath: String? = nil, blockedReason: String? = nil, availableDomains: [MailboxEmailAvailableDomainsInner]? = nil, assignment: MailboxEmailAssignment? = nil, customization: MailboxEmailCustomization? = nil, receivingEnabled: Bool? = nil, senderAllowlist: EmailSenderAllowlist? = nil, username: String? = nil, sendingEnabled: Bool? = nil, aliases: [MailboxEmailAliasesInner]? = nil) {
+    public init(address: String? = nil, receivedCount: Int64? = nil, lastReceivedAt: Date? = nil, lastReceivedPath: String? = nil, blockedReason: String? = nil, availableDomains: [MailboxEmailAvailableDomainsInner]? = nil, assignment: MailboxEmailAssignment? = nil, customization: MailboxEmailCustomization? = nil, receivingEnabled: Bool? = nil, senderAllowlist: EmailSenderAllowlist? = nil, username: String? = nil, sendingEnabled: Bool? = nil, aliases: [MailboxEmailAliasesInner]? = nil) {
         self.address = address
         self.receivedCount = receivedCount
         self.lastReceivedAt = lastReceivedAt

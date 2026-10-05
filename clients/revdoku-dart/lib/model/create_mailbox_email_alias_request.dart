@@ -48,8 +48,6 @@ class CreateMailboxEmailAliasRequest {
       json[r'username'] = this.username;
     if (this.domain != null) {
       json[r'domain'] = this.domain;
-    } else {
-      json[r'domain'] = null;
     }
     return json;
   }

@@ -51,13 +51,9 @@ class AccountIdentityAgencyAccount {
     final json = <String, dynamic>{};
     if (this.id != null) {
       json[r'id'] = this.id;
-    } else {
-      json[r'id'] = null;
     }
     if (this.name != null) {
       json[r'name'] = this.name;
-    } else {
-      json[r'name'] = null;
     }
     return json;
   }

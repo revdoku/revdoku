@@ -38,7 +38,7 @@ class CreateMailboxRequestMailbox {
   ///
   String? description;
 
-  Map<String, Object> metadata;
+  Map<String, Object?> metadata;
 
   List<String> tagIds;
 
@@ -78,21 +78,15 @@ class CreateMailboxRequestMailbox {
     final json = <String, dynamic>{};
     if (this.title != null) {
       json[r'title'] = this.title;
-    } else {
-      json[r'title'] = null;
     }
     if (this.description != null) {
       json[r'description'] = this.description;
-    } else {
-      json[r'description'] = null;
     }
       json[r'metadata'] = this.metadata;
       json[r'tag_ids'] = this.tagIds;
       json[r'tag_paths'] = this.tagPaths;
     if (this.email != null) {
       json[r'email'] = this.email;
-    } else {
-      json[r'email'] = null;
     }
     return json;
   }
@@ -114,7 +108,7 @@ class CreateMailboxRequestMailbox {
       return CreateMailboxRequestMailbox(
         title: mapValueOfType<String>(json, r'title'),
         description: mapValueOfType<String>(json, r'description'),
-        metadata: mapCastOfType<String, Object>(json, r'metadata') ?? const {},
+        metadata: mapCastOfType<String, Object?>(json, r'metadata') ?? const {},
         tagIds: json[r'tag_ids'] is Iterable
             ? (json[r'tag_ids'] as Iterable).cast<String>().toList(growable: false)
             : const [],

@@ -16,6 +16,7 @@ class EmailSummaryFiles {
     required this.bodyId,
     required this.originalId,
     this.attachmentIds = const [],
+    this.directory,
   });
 
   String? bodyId;
@@ -24,21 +25,32 @@ class EmailSummaryFiles {
 
   List<String> attachmentIds;
 
+  /// Storage folder containing this email, without a trailing slash.
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  String? directory;
+
   @override
   bool operator ==(Object other) => identical(this, other) || other is EmailSummaryFiles &&
     other.bodyId == bodyId &&
     other.originalId == originalId &&
-    _deepEquality.equals(other.attachmentIds, attachmentIds);
+    _deepEquality.equals(other.attachmentIds, attachmentIds) &&
+    other.directory == directory;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
     (bodyId == null ? 0 : bodyId!.hashCode) +
     (originalId == null ? 0 : originalId!.hashCode) +
-    (attachmentIds.hashCode);
+    (attachmentIds.hashCode) +
+    (directory == null ? 0 : directory!.hashCode);
 
   @override
-  String toString() => 'EmailSummaryFiles[bodyId=$bodyId, originalId=$originalId, attachmentIds=$attachmentIds]';
+  String toString() => 'EmailSummaryFiles[bodyId=$bodyId, originalId=$originalId, attachmentIds=$attachmentIds, directory=$directory]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -53,6 +65,9 @@ class EmailSummaryFiles {
       json[r'original_id'] = null;
     }
       json[r'attachment_ids'] = this.attachmentIds;
+    if (this.directory != null) {
+      json[r'directory'] = this.directory;
+    }
     return json;
   }
 
@@ -80,6 +95,7 @@ class EmailSummaryFiles {
         attachmentIds: json[r'attachment_ids'] is Iterable
             ? (json[r'attachment_ids'] as Iterable).cast<String>().toList(growable: false)
             : const [],
+        directory: mapValueOfType<String>(json, r'directory'),
       );
     }
     return null;

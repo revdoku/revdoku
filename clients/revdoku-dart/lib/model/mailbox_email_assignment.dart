@@ -67,23 +67,15 @@ class MailboxEmailAssignment {
     final json = <String, dynamic>{};
     if (this.id != null) {
       json[r'id'] = this.id;
-    } else {
-      json[r'id'] = null;
     }
     if (this.status != null) {
       json[r'status'] = this.status;
-    } else {
-      json[r'status'] = null;
     }
     if (this.hostname != null) {
       json[r'hostname'] = this.hostname;
-    } else {
-      json[r'hostname'] = null;
     }
     if (this.error != null) {
       json[r'error'] = this.error;
-    } else {
-      json[r'error'] = null;
     }
     return json;
   }

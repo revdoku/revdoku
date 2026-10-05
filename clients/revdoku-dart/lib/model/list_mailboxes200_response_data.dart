@@ -16,7 +16,7 @@ class ListMailboxes200ResponseData {
     this.mailboxes = const [],
   });
 
-  List<ListMailboxes200ResponseDataMailboxesInner> mailboxes;
+  List<Mailbox> mailboxes;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is ListMailboxes200ResponseData &&
@@ -53,7 +53,7 @@ class ListMailboxes200ResponseData {
       }());
 
       return ListMailboxes200ResponseData(
-        mailboxes: ListMailboxes200ResponseDataMailboxesInner.listFromJson(json[r'mailboxes']),
+        mailboxes: Mailbox.listFromJson(json[r'mailboxes']),
       );
     }
     return null;

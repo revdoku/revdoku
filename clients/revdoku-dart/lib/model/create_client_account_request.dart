@@ -66,13 +66,9 @@ class CreateClientAccountRequest {
       json[r'name'] = this.name;
     if (this.accountId != null) {
       json[r'account_id'] = this.accountId;
-    } else {
-      json[r'account_id'] = null;
     }
     if (this.clientName != null) {
       json[r'client_name'] = this.clientName;
-    } else {
-      json[r'client_name'] = null;
     }
     if (this.reason != null) {
       json[r'reason'] = this.reason;
