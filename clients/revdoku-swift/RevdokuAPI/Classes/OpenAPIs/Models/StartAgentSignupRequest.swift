@@ -26,7 +26,7 @@ public struct StartAgentSignupRequest: Codable, JSONEncodable, Hashable {
     public var username: String?
     public var label: String?
     public var permissionScope: PermissionScope? = .mailboxAdmin
-    /** The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. */
+    /** The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization. */
     public var acceptTermsAndPolicy: Bool
 
     public init(humanOperatorEmail: String, username: String? = nil, label: String? = nil, permissionScope: PermissionScope? = .mailboxAdmin, acceptTermsAndPolicy: Bool) {

@@ -784,7 +784,7 @@ open class DefaultAPI {
     /**
      Discover Revdoku agent authentication flows
      - GET /v1/agent_auth/capabilities
-     - Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+     - Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
      - returns: RequestBuilder<ApiSuccess> 
      */
     open class func getAgentAuthCapabilitiesWithRequestBuilder() -> RequestBuilder<ApiSuccess> {
@@ -1173,6 +1173,48 @@ open class DefaultAPI {
         let localVariableRequestBuilder: RequestBuilder<GetRevdokuStatus200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Read the current signup policies
+     
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func getSignupPolicies(apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: SignupPoliciesResponse?, _ error: Error?) -> Void)) -> RequestTask {
+        return getSignupPoliciesWithRequestBuilder().execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Read the current signup policies
+     - GET /v1/agent_auth/policies
+     - Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+     - returns: RequestBuilder<SignupPoliciesResponse> 
+     */
+    open class func getSignupPoliciesWithRequestBuilder() -> RequestBuilder<SignupPoliciesResponse> {
+        let localVariablePath = "/v1/agent_auth/policies"
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters: [String: Any]? = nil
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            :
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<SignupPoliciesResponse>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: false)
     }
 
     /**

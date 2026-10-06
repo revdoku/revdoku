@@ -112,6 +112,10 @@ __all__ = [
     "SetEmailWebhook200ResponseDataWebhook",
     "SetEmailWebhookRequest",
     "SignupChallenge",
+    "SignupPoliciesResponse",
+    "SignupPoliciesResponseData",
+    "SignupPoliciesResponseDataPolicies",
+    "SignupPolicyDocument",
     "StartAgentSignup202Response",
     "StartAgentSignup202ResponseData",
     "StartAgentSignupRequest",
@@ -233,6 +237,10 @@ from revdoku_api.models.set_email_webhook200_response_data import SetEmailWebhoo
 from revdoku_api.models.set_email_webhook200_response_data_webhook import SetEmailWebhook200ResponseDataWebhook as SetEmailWebhook200ResponseDataWebhook
 from revdoku_api.models.set_email_webhook_request import SetEmailWebhookRequest as SetEmailWebhookRequest
 from revdoku_api.models.signup_challenge import SignupChallenge as SignupChallenge
+from revdoku_api.models.signup_policies_response import SignupPoliciesResponse as SignupPoliciesResponse
+from revdoku_api.models.signup_policies_response_data import SignupPoliciesResponseData as SignupPoliciesResponseData
+from revdoku_api.models.signup_policies_response_data_policies import SignupPoliciesResponseDataPolicies as SignupPoliciesResponseDataPolicies
+from revdoku_api.models.signup_policy_document import SignupPolicyDocument as SignupPolicyDocument
 from revdoku_api.models.start_agent_signup202_response import StartAgentSignup202Response as StartAgentSignup202Response
 from revdoku_api.models.start_agent_signup202_response_data import StartAgentSignup202ResponseData as StartAgentSignup202ResponseData
 from revdoku_api.models.start_agent_signup_request import StartAgentSignupRequest as StartAgentSignupRequest

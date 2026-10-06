@@ -914,7 +914,7 @@ class DefaultApi {
 
   /// Discover Revdoku agent authentication flows
   ///
-  /// Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+  /// Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
   ///
   /// Note: This method returns the HTTP [Response].
   Future<Response> getAgentAuthCapabilitiesWithHttpInfo({ Future<void>? abortTrigger, }) async {
@@ -945,7 +945,7 @@ class DefaultApi {
 
   /// Discover Revdoku agent authentication flows
   ///
-  /// Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+  /// Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
   Future<ApiSuccess?> getAgentAuthCapabilities({ Future<void>? abortTrigger, }) async {
     final response = await getAgentAuthCapabilitiesWithHttpInfo(abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
@@ -1415,6 +1415,55 @@ class DefaultApi {
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
       return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetRevdokuStatus200Response',) as GetRevdokuStatus200Response;
+    
+    }
+    return null;
+  }
+
+  /// Read the current signup policies
+  ///
+  /// Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  Future<Response> getSignupPoliciesWithHttpInfo({ Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/agent_auth/policies';
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Read the current signup policies
+  ///
+  /// Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+  Future<SignupPoliciesResponse?> getSignupPolicies({ Future<void>? abortTrigger, }) async {
+    final response = await getSignupPoliciesWithHttpInfo(abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'SignupPoliciesResponse',) as SignupPoliciesResponse;
     
     }
     return null;

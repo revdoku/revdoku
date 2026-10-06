@@ -340,7 +340,7 @@ namespace Revdoku.Api.Api
         /// Discover Revdoku agent authentication flows
         /// </summary>
         /// <remarks>
-        /// Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+        /// Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <returns>ApiSuccess</returns>
@@ -350,7 +350,7 @@ namespace Revdoku.Api.Api
         /// Discover Revdoku agent authentication flows
         /// </summary>
         /// <remarks>
-        /// Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+        /// Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <returns>ApiResponse of ApiSuccess</returns>
@@ -504,6 +504,25 @@ namespace Revdoku.Api.Api
         /// <param name="reason"> (optional)</param>
         /// <returns>ApiResponse of GetRevdokuStatus200Response</returns>
         ApiResponse<GetRevdokuStatus200Response> GetRevdokuStatusWithHttpInfo(string? accountId = default, string? reason = default);
+        /// <summary>
+        /// Read the current signup policies
+        /// </summary>
+        /// <remarks>
+        /// Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+        /// </remarks>
+        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <returns>SignupPoliciesResponse</returns>
+        SignupPoliciesResponse GetSignupPolicies();
+
+        /// <summary>
+        /// Read the current signup policies
+        /// </summary>
+        /// <remarks>
+        /// Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+        /// </remarks>
+        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <returns>ApiResponse of SignupPoliciesResponse</returns>
+        ApiResponse<SignupPoliciesResponse> GetSignupPoliciesWithHttpInfo();
         /// <summary>
         /// List account email domains, DNS records, receiving state and usage
         /// </summary>
@@ -1209,7 +1228,7 @@ namespace Revdoku.Api.Api
         /// Discover Revdoku agent authentication flows
         /// </summary>
         /// <remarks>
-        /// Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+        /// Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
@@ -1220,7 +1239,7 @@ namespace Revdoku.Api.Api
         /// Discover Revdoku agent authentication flows
         /// </summary>
         /// <remarks>
-        /// Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+        /// Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
@@ -1390,6 +1409,27 @@ namespace Revdoku.Api.Api
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns>Task of ApiResponse (GetRevdokuStatus200Response)</returns>
         System.Threading.Tasks.Task<ApiResponse<GetRevdokuStatus200Response>> GetRevdokuStatusWithHttpInfoAsync(string? accountId = default, string? reason = default, System.Threading.CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Read the current signup policies
+        /// </summary>
+        /// <remarks>
+        /// Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+        /// </remarks>
+        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns>Task of SignupPoliciesResponse</returns>
+        System.Threading.Tasks.Task<SignupPoliciesResponse> GetSignupPoliciesAsync(System.Threading.CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Read the current signup policies
+        /// </summary>
+        /// <remarks>
+        /// Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+        /// </remarks>
+        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns>Task of ApiResponse (SignupPoliciesResponse)</returns>
+        System.Threading.Tasks.Task<ApiResponse<SignupPoliciesResponse>> GetSignupPoliciesWithHttpInfoAsync(System.Threading.CancellationToken cancellationToken = default);
         /// <summary>
         /// List account email domains, DNS records, receiving state and usage
         /// </summary>
@@ -3903,7 +3943,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Discover Revdoku agent authentication flows Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+        /// Discover Revdoku agent authentication flows Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <returns>ApiSuccess</returns>
@@ -3914,7 +3954,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Discover Revdoku agent authentication flows Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+        /// Discover Revdoku agent authentication flows Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <returns>ApiResponse of ApiSuccess</returns>
@@ -3951,7 +3991,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Discover Revdoku agent authentication flows Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+        /// Discover Revdoku agent authentication flows Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
@@ -3963,7 +4003,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Discover Revdoku agent authentication flows Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+        /// Discover Revdoku agent authentication flows Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
@@ -4915,6 +4955,107 @@ namespace Revdoku.Api.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("GetRevdokuStatus", localVarResponse);
+                if (_exception != null) throw _exception;
+            }
+
+            return localVarResponse;
+        }
+
+        /// <summary>
+        /// Read the current signup policies Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+        /// </summary>
+        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <returns>SignupPoliciesResponse</returns>
+        public SignupPoliciesResponse GetSignupPolicies()
+        {
+            Revdoku.Api.Client.ApiResponse<SignupPoliciesResponse> localVarResponse = GetSignupPoliciesWithHttpInfo();
+            return localVarResponse.Data;
+        }
+
+        /// <summary>
+        /// Read the current signup policies Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+        /// </summary>
+        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <returns>ApiResponse of SignupPoliciesResponse</returns>
+        public Revdoku.Api.Client.ApiResponse<SignupPoliciesResponse> GetSignupPoliciesWithHttpInfo()
+        {
+            Revdoku.Api.Client.RequestOptions localVarRequestOptions = new Revdoku.Api.Client.RequestOptions();
+
+            string[] _contentTypes = new string[] {
+            };
+
+            // to determine the Accept header
+            string[] _accepts = new string[] {
+                "application/json"
+            };
+
+            var localVarContentType = Revdoku.Api.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
+            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+
+            var localVarAccept = Revdoku.Api.Client.ClientUtils.SelectHeaderAccept(_accepts);
+            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+
+
+
+            // make the HTTP request
+            var localVarResponse = this.Client.Get<SignupPoliciesResponse>("/v1/agent_auth/policies", localVarRequestOptions, this.Configuration);
+
+            if (this.ExceptionFactory != null)
+            {
+                Exception _exception = this.ExceptionFactory("GetSignupPolicies", localVarResponse);
+                if (_exception != null) throw _exception;
+            }
+
+            return localVarResponse;
+        }
+
+        /// <summary>
+        /// Read the current signup policies Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+        /// </summary>
+        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns>Task of SignupPoliciesResponse</returns>
+        public async System.Threading.Tasks.Task<SignupPoliciesResponse> GetSignupPoliciesAsync(System.Threading.CancellationToken cancellationToken = default)
+        {
+            Revdoku.Api.Client.ApiResponse<SignupPoliciesResponse> localVarResponse = await GetSignupPoliciesWithHttpInfoAsync(cancellationToken).ConfigureAwait(false);
+            return localVarResponse.Data;
+        }
+
+        /// <summary>
+        /// Read the current signup policies Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+        /// </summary>
+        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
+        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
+        /// <returns>Task of ApiResponse (SignupPoliciesResponse)</returns>
+        public async System.Threading.Tasks.Task<Revdoku.Api.Client.ApiResponse<SignupPoliciesResponse>> GetSignupPoliciesWithHttpInfoAsync(System.Threading.CancellationToken cancellationToken = default)
+        {
+
+            Revdoku.Api.Client.RequestOptions localVarRequestOptions = new Revdoku.Api.Client.RequestOptions();
+
+            string[] _contentTypes = new string[] {
+            };
+
+            // to determine the Accept header
+            string[] _accepts = new string[] {
+                "application/json"
+            };
+
+
+            var localVarContentType = Revdoku.Api.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
+            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
+
+            var localVarAccept = Revdoku.Api.Client.ClientUtils.SelectHeaderAccept(_accepts);
+            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
+
+
+
+            // make the HTTP request
+
+            var localVarResponse = await this.AsynchronousClient.GetAsync<SignupPoliciesResponse>("/v1/agent_auth/policies", localVarRequestOptions, this.Configuration, cancellationToken).ConfigureAwait(false);
+
+            if (this.ExceptionFactory != null)
+            {
+                Exception _exception = this.ExceptionFactory("GetSignupPolicies", localVarResponse);
                 if (_exception != null) throw _exception;
             }
 

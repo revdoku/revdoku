@@ -23,7 +23,7 @@ pub struct StartAgentSignupRequest {
     pub label: Option<String>,
     #[serde(rename = "permission_scope", skip_serializing_if = "Option::is_none")]
     pub permission_scope: Option<PermissionScope>,
-    /// The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing.
+    /// The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization.
     #[serde(rename = "accept_terms_and_policy")]
     pub accept_terms_and_policy: bool,
 }

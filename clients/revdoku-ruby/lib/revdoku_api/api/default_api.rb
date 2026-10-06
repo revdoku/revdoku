@@ -970,7 +970,7 @@ module RevdokuApi
     end
 
     # Discover Revdoku agent authentication flows
-    # Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+    # Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
     # @param [Hash] opts the optional parameters
     # @return [ApiSuccess]
     def get_agent_auth_capabilities(opts = {})
@@ -979,7 +979,7 @@ module RevdokuApi
     end
 
     # Discover Revdoku agent authentication flows
-    # Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+    # Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
     # @param [Hash] opts the optional parameters
     # @return [Array<(ApiSuccess, Integer, Hash)>] ApiSuccess data, response status code and response headers
     def get_agent_auth_capabilities_with_http_info(opts = {})
@@ -1457,6 +1457,63 @@ module RevdokuApi
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
       if @api_client.config.debugging
         @api_client.config.logger.debug "API called: DefaultApi#get_revdoku_status\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Read the current signup policies
+    # Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+    # @param [Hash] opts the optional parameters
+    # @return [SignupPoliciesResponse]
+    def get_signup_policies(opts = {})
+      data, _status_code, _headers = get_signup_policies_with_http_info(opts)
+      data
+    end
+
+    # Read the current signup policies
+    # Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(SignupPoliciesResponse, Integer, Hash)>] SignupPoliciesResponse data, response status code and response headers
+    def get_signup_policies_with_http_info(opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.get_signup_policies ...'
+      end
+      # resource path
+      local_var_path = '/v1/agent_auth/policies'
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'SignupPoliciesResponse'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || []
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.get_signup_policies",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#get_signup_policies\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end

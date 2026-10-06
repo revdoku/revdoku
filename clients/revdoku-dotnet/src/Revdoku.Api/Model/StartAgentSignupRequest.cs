@@ -78,7 +78,7 @@ namespace Revdoku.Api.Model
         /// <param name="username">Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option..</param>
         /// <param name="label">label.</param>
         /// <param name="permissionScope">permissionScope (default to PermissionScopeEnum.MailboxAdmin).</param>
-        /// <param name="acceptTermsAndPolicy">The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. (required).</param>
+        /// <param name="acceptTermsAndPolicy">The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization. (required).</param>
         public StartAgentSignupRequest(string humanOperatorEmail = default, string username = default, string label = default, PermissionScopeEnum? permissionScope = PermissionScopeEnum.MailboxAdmin, bool acceptTermsAndPolicy = default)
         {
             // to ensure "humanOperatorEmail" is required (not null)
@@ -115,9 +115,9 @@ namespace Revdoku.Api.Model
         public string Label { get; set; }
 
         /// <summary>
-        /// The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing.
+        /// The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization.
         /// </summary>
-        /// <value>The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing.</value>
+        /// <value>The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization.</value>
         [DataMember(Name = "accept_terms_and_policy", IsRequired = true, EmitDefaultValue = true)]
         public bool AcceptTermsAndPolicy { get; set; }
 
