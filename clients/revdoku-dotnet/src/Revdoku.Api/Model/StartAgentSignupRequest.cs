@@ -75,7 +75,7 @@ namespace Revdoku.Api.Model
         /// Initializes a new instance of the <see cref="StartAgentSignupRequest" /> class.
         /// </summary>
         /// <param name="humanOperatorEmail">Email supplied by the human who owns and authorizes this account. Do not use an AI agent mailbox or invent this value. Verification proves control of the address. (required).</param>
-        /// <param name="username">Optional exact name for the first mailbox. Omit to generate a name. Platform reserved and retired name rules apply..</param>
+        /// <param name="username">Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option..</param>
         /// <param name="label">label.</param>
         /// <param name="permissionScope">permissionScope (default to PermissionScopeEnum.MailboxAdmin).</param>
         /// <param name="acceptTermsAndPolicy">The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. (required).</param>
@@ -102,9 +102,9 @@ namespace Revdoku.Api.Model
         public string HumanOperatorEmail { get; set; }
 
         /// <summary>
-        /// Optional exact name for the first mailbox. Omit to generate a name. Platform reserved and retired name rules apply.
+        /// Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
         /// </summary>
-        /// <value>Optional exact name for the first mailbox. Omit to generate a name. Platform reserved and retired name rules apply.</value>
+        /// <value>Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.</value>
         [DataMember(Name = "username", EmitDefaultValue = false)]
         public string Username { get; set; }
 

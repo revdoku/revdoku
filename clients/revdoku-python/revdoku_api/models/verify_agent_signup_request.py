@@ -29,7 +29,7 @@ class VerifyAgentSignupRequest(BaseModel):
     VerifyAgentSignupRequest
     """ # noqa: E501
     code: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Required until the challenge is verified; collect privately, never in chat.")
-    username: Optional[Annotated[str, Field(min_length=1, strict=True, max_length=64)]] = Field(default=None, description="Optional exact name for the first mailbox. Omit to generate a name. Platform reserved and retired name rules apply.")
+    username: Optional[Annotated[str, Field(min_length=1, strict=True, max_length=64)]] = Field(default=None, description="Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.")
     signup_token: Annotated[str, Field(strict=True)] = Field(description="Private signup token returned by the first request. Send only in the JSON body; never log it or show it in chat.")
     additional_properties: Dict[str, Any] = {}
     __properties: ClassVar[List[str]] = ["code", "username", "signup_token"]

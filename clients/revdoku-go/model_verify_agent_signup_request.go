@@ -22,7 +22,7 @@ var _ MappedNullable = &VerifyAgentSignupRequest{}
 type VerifyAgentSignupRequest struct {
 	// Required until the challenge is verified; collect privately, never in chat.
 	Code *string `json:"code,omitempty" validate:"regexp=^[0-9]{6}$"`
-	// Optional exact name for the first mailbox. Omit to generate a name. Platform reserved and retired name rules apply.
+	// Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
 	Username *string `json:"username,omitempty"`
 	// Private signup token returned by the first request. Send only in the JSON body; never log it or show it in chat.
 	SignupToken string `json:"signup_token" validate:"regexp=^[A-Za-z0-9_-]{43}$"`

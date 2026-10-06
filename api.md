@@ -735,7 +735,7 @@ Read the current mailbox settings before requesting a replacement.
 | `confirm` | Yes; `true` | Confirm changing the current address. |
 | `current_address` | Yes | Address returned by the latest mailbox settings request. |
 | `domain` | No | Keep the current domain, select an available platform or ready custom domain, or use `platform`. |
-| `username` | No | Choose a name on the selected domain; requires full-account administrator access. Omit for a generated name. |
+| `username` | No | Choose a name on the selected domain; requires a paid plan and full-account administrator access. Omit for a generated name. |
 | `keep_old_as_alias` | No; default `false` | Retain the old primary for the same mailbox; requires full-account administrator access and an available alias slot. |
 
 - Check `max_email_address_rotations_per_month` in [account limits](#account-limits). Initial mailbox creation does not use it.
@@ -745,6 +745,7 @@ Read the current mailbox settings before requesting a replacement.
 
 | Status | Error code | Meaning |
 | --- | --- | --- |
+| 403 | `EMAIL_NAMES_UPGRADE_REQUIRED` | Upgrade to change the assigned address or add aliases. `error.details.upgrade_url` links to Pricing. |
 | 409 | `EMAIL_ADDRESS_CHANGED` | The supplied current address is stale. |
 | 409 | `EMAIL_ROTATION_UNAVAILABLE` | This mailbox cannot rotate its address. |
 | 409 | `EMAIL_ALIAS_LIMIT` | No alias slot is available. The existing address remains unchanged. |
@@ -1260,7 +1261,7 @@ send `{"mailbox": {}}`.
 
 | Field | Default | Purpose |
 | --- | --- | --- |
-| `mailbox.email.username` | Generated name, such as `flaky.forest3v8x2p` | Choose the name before `@`. Available on all plans. |
+| `mailbox.email.username` | Generated name, such as `flaky.forest.k7m2x9q4v8nc` | Free: choose a prefix; the server adds a permanent 12-character random suffix. Paid: choose the exact name before `@`. |
 | `mailbox.email.domain` | Platform domain | Built-in domain such as `revdokumail.com` (all plans), or a ready custom email domain owned by this account. |
 | `mailbox.description` | Empty | Add a mailbox description. |
 | `mailbox.tag_paths` | None | Apply user-chosen organizational labels. |
@@ -1273,8 +1274,10 @@ send `{"mailbox": {}}`.
 | --- | --- |
 | Characters | ASCII letters, digits, dots, hyphens and underscores. Uppercase is normalized to lowercase. |
 | Omitted username | Generate a name. |
+| Free username | Convert separators to dots and append 12 random lowercase letters/digits. `acme-orders` becomes `acme.orders.k7m2x9q4v8nc@revdokumail.com`, for example. Long prefixes are shortened to 51 characters. Always use the returned address. |
+| Free address changes or aliases | Require an upgrade. Existing addresses remain unchanged when plans change. |
 | Empty or `null` username | `422 EMAIL_NAME_INVALID`. |
-| Reserved platform name, such as `support`, `abuse`, `sale`, `sales` or `contact` | `422 EMAIL_NAME_RESERVED`. Role names are allowed on your own custom domain. |
+| Reserved platform name, such as `support`, `acme-support`, `abuse`, `sale`, `sales` or `contact` | `422 EMAIL_NAME_RESERVED`. The message identifies the reserved word and explains how to use your own verified custom domain. Free receives an upgrade link; paid accounts receive domain settings. A paid plan does not bypass shared-domain restrictions. |
 | Occupied or retired platform address | `409 EMAIL_ALREADY_EXISTS`. Deletion and rotation do not release platform names. |
 
 #### Creation result
@@ -1472,7 +1475,7 @@ The server records the current policy versions; your client does not send a vers
 | --- | --- | --- |
 | `human_operator_email` | Yes | The human owner's email, supplied by that person. Do not substitute an agent's mailbox. |
 | `accept_terms_and_policy` | Yes; `true` | The human agrees to the [Terms](https://revdoku.com/terms) and [acceptable use policy](https://revdoku.com/acceptable-use), and acknowledges the [privacy notice](https://revdoku.com/privacy). This is not consent to optional processing. |
-| `username` | No | Requested first mailbox username; generated if omitted. |
+| `username` | No | Prefix for the first Free mailbox, with a 12-character random suffix added; generated if omitted. |
 | `permission_scope` | No | `mailbox_read`, `mailbox_write`, or `mailbox_admin` (default). |
 | `label` | No | A name for the API connection. |
 

@@ -78,7 +78,7 @@ Content-Type: application/json
 
 | Choice | Behavior |
 | --- | --- |
-| Supply `mailbox.email.username` | Request that username. Unavailable names return an error. |
+| Supply `mailbox.email.username` | Free adds a permanent 12-character random suffix to a dot-separated prefix. An exact username requires a paid plan. Reserved shared-domain words return an explanation and custom-domain guidance. |
 | Send `{"mailbox": {}}` | Generate a username automatically. |
 
 Creation waits for receiving confirmation. Use the returned address after a

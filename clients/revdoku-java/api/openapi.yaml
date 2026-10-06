@@ -224,8 +224,9 @@ paths:
         \ email endpoint until assignment.status is active or failed. The old address\
         \ remains current until successful commit, which charges once. Read /v1/account/limits\
         \ for the rotation allowance; do not hard-code plan allowances. Never use\
-        \ or synthesize a pending address. Optional username chooses a custom name\
-        \ and additionally requires a full-account owner/administrator, an available\
+        \ or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED\
+        \ with an upgrade_url. Optional username chooses a custom name and additionally\
+        \ requires a paid plan and a full-account owner/administrator, an available\
         \ platform domain or a ready customer-owned domain (with deployment support\
         \ for custom domains). Blank/null names are invalid. Unchanged saves cost\
         \ no rotation. Named addresses may be reused only in their original account\
@@ -367,8 +368,10 @@ paths:
       - application/json
     post:
       description: "Creates a mailbox with file storage and waits for receiving confirmation.\
-        \ Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY\
-        \ includes the retained mailbox_id. Creation quotas apply."
+        \ On Free, email.username is a prefix with a permanent 12-character random\
+        \ suffix. An exact name requires a paid plan. Omit email.username for a generated\
+        \ name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id.\
+        \ Creation quotas apply."
       operationId: createMailbox
       requestBody:
         content:
@@ -2602,10 +2605,11 @@ paths:
       - application/json
   /v1/mailboxes/{id}/email/aliases:
     post:
-      description: "Requires a full-account owner/administrator with mailbox-admin\
-        \ access and an available alias slot. Accepts a username on an available platform\
-        \ domain or a ready domain owned by this account. Leaves the primary address\
-        \ unchanged and does not consume a rotation. Returns 202 while receiving registration\
+      description: "Requires a paid plan, a full-account owner/administrator with\
+        \ mailbox-admin access and an available alias slot. Free returns EMAIL_NAMES_UPGRADE_REQUIRED\
+        \ with an upgrade_url. Accepts a username on an available platform domain\
+        \ or a ready domain owned by this account. Leaves the primary address unchanged\
+        \ and does not consume a rotation. Returns 202 while receiving registration\
         \ is pending; read mailbox settings until receiving_enabled is true. After\
         \ an uncertain response, read existing aliases before retrying."
       operationId: createMailboxEmailAlias
@@ -4910,9 +4914,12 @@ components:
       additionalProperties: false
       properties:
         username:
-          description: Name before @. Normalized to lowercase. Omit to generate; blank/null
-            is invalid. Reserved platform names return EMAIL_NAME_RESERVED; occupied
-            or retired names return EMAIL_ALREADY_EXISTS.
+          description: "Free: a prefix normalized to dots, shortened to 51 characters,\
+            \ with a permanent 12-character random lowercase letter/digit suffix added.\
+            \ Paid: the exact name before @, normalized to lowercase. Omit to generate;\
+            \ blank/null is invalid. Reserved shared-domain words return EMAIL_NAME_RESERVED\
+            \ with the reserved word and custom-domain guidance; occupied or retired\
+            \ exact names return EMAIL_ALREADY_EXISTS."
           maxLength: 64
           minLength: 1
           type: string
@@ -6051,8 +6058,9 @@ components:
           maxLength: 254
           type: string
         username:
-          description: Optional exact name for the first mailbox. Omit to generate
-            a name. Platform reserved and retired name rules apply.
+          description: Optional prefix for the first Free mailbox. The server adds
+            a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word
+            rules apply; errors explain the verified custom-domain option.
           maxLength: 64
           minLength: 1
           type: string
@@ -6113,8 +6121,9 @@ components:
           pattern: "^[0-9]{6}$"
           type: string
         username:
-          description: Optional exact name for the first mailbox. Omit to generate
-            a name. Platform reserved and retired name rules apply.
+          description: Optional prefix for the first Free mailbox. The server adds
+            a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word
+            rules apply; errors explain the verified custom-domain option.
           maxLength: 64
           minLength: 1
           type: string

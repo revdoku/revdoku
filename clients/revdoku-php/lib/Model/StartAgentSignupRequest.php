@@ -409,7 +409,7 @@ class StartAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeria
     /**
      * Sets username
      *
-     * @param string|null $username Optional exact name for the first mailbox. Omit to generate a name. Platform reserved and retired name rules apply.
+     * @param string|null $username Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
      *
      * @return self
      */
