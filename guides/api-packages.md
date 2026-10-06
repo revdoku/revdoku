@@ -1,6 +1,6 @@
 # Revdoku API packages and integrations
 
-Choose a language SDK for backend code, n8n or Zapier for automation, the CLI for terminal work, or hosted MCP for an AI connection. All use the same Revdoku accounts and mailboxes. A mailbox is an mailbox with a receiving address and private file storage.
+Choose a language SDK for backend code, n8n or Zapier for automation, the CLI for terminal work, or hosted MCP for an AI connection. All use the same Revdoku accounts and mailboxes. Each mailbox has a receiving address and private file storage.
 
 ## Install a package
 
@@ -36,13 +36,14 @@ The language SDKs are generated from [OpenAPI](https://revdoku.com/openapi.json)
 | Delete one email | Yes | Yes | Yes |
 | Download original email or attachment | Returns a temporary link | Returns binary data | Returns a file reference |
 | List stored files | Yes | Yes | Find Mailbox File search |
-| Upload files | Use direct HTTP | Yes | Yes |
-| Read/download/delete other stored files | Use direct HTTP | Yes | Find Mailbox File / Delete Mailbox File; use direct HTTP for other operations |
+| Upload files | Prepare and save through the SDK; npm also has `uploadFile` | Yes | Yes |
+| Read file metadata | Yes | Yes | Find Mailbox File |
+| Download/delete other stored files | Use direct HTTP | Yes | Delete Mailbox File; use direct HTTP for other operations |
 | Mailbox aliases, sender restrictions and custom domains | Yes, where covered by OpenAPI | Use direct HTTP | Use direct HTTP |
 | Configure email webhooks and get live-subscription tickets | Yes; the receiver/WebSocket loop is application code | New Email uses polling | New Email uses polling |
 | Mailbox history | Use direct HTTP | Use direct HTTP | List Mailbox Versions / Get Mailbox Version |
 
-To upload through your application, follow the existing [three-step HTTP upload workflow](https://revdoku.com/api.md#upload-a-file) and [runnable upload example](../examples/typescript/upload-file.ts). The SDK has no upload helper. Keep Revdoku credentials on API requests; send only the returned storage headers to the temporary upload URL. This preserves the same account and mailbox permissions used by the integrations.
+For Node.js, use `Revdoku.uploadFile` to calculate checksums and upload bytes. Other SDKs expose `prepareFileUpload` and `saveUploadedFile`; send the bytes to the returned storage URL between these calls. Use only its returned headers, without the API key. See the [upload workflow](https://revdoku.com/api.md#upload-a-file).
 
 ## Make a first working integration
 
@@ -57,7 +58,7 @@ To upload through your application, follow the existing [three-step HTTP upload 
 | ID | Use |
 | --- | --- |
 | `acct_...` | Account containing the mailbox |
-| `bkt_...` | Mailbox/mailbox ID |
+| `bkt_...` | Mailbox ID |
 | `eml_...` | Revdoku email ID for read/download/update operations |
 | Attachment `df_...` | One entry's `id` from the email's `attachments` array |
 | `message_id` | Sender's Message-ID header; it is not the Revdoku email ID |
@@ -91,7 +92,7 @@ Reading or downloading does not mark email read. Read status is shared with dash
 
 | Surface | Result | Next step |
 | --- | --- | --- |
-| Language SDK download method | `data.download` with a URL, expiry and metadata | Fetch that URL with an ordinary HTTP client without the API token; the shipped attachment example does both steps |
+| Generated SDK download-URL method | `data.download` with a URL, expiry and metadata | Fetch that URL with an ordinary HTTP client without the API token; the shipped attachment example does both steps |
 | n8n Download Attachment | Binary field `data` by default | Select that binary field on the next upload/storage node |
 | Zapier Download Email File | `file`, a Zapier file reference | Map it into the next action's file input; the integration obtains a fresh URL when needed |
 | CLI `email-download ... --output PATH` | Saved local file | Open or process that path |

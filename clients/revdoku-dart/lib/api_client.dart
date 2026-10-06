@@ -197,8 +197,6 @@ class ApiClient {
           return ApiError.fromJson(value);
         case 'ApiErrorError':
           return ApiErrorError.fromJson(value);
-        case 'ApiSuccess':
-          return ApiSuccess.fromJson(value);
         case 'CreateAccountEmailDomainRequest':
           return CreateAccountEmailDomainRequest.fromJson(value);
         case 'CreateClientAccount201Response':
@@ -215,24 +213,34 @@ class ApiClient {
           return CreateMailboxEmailAliasRequest.fromJson(value);
         case 'CreateMailboxRequest':
           return CreateMailboxRequest.fromJson(value);
-        case 'CreateMailboxRequestMailbox':
-          return CreateMailboxRequestMailbox.fromJson(value);
-        case 'CreateMailboxRequestMailboxEmail':
-          return CreateMailboxRequestMailboxEmail.fromJson(value);
         case 'DecodedEmailAddress':
           return DecodedEmailAddress.fromJson(value);
         case 'DecodedIncomingMessage':
           return DecodedIncomingMessage.fromJson(value);
         case 'DecodedIncomingMessageAttachmentsInner':
           return DecodedIncomingMessageAttachmentsInner.fromJson(value);
-        case 'DownloadEmailOriginal200Response':
-          return DownloadEmailOriginal200Response.fromJson(value);
-        case 'DownloadEmailOriginal200ResponseData':
-          return DownloadEmailOriginal200ResponseData.fromJson(value);
+        case 'DnsRecord':
+          return DnsRecord.fromJson(value);
         case 'EmailAttachment':
           return EmailAttachment.fromJson(value);
         case 'EmailDetail':
           return EmailDetail.fromJson(value);
+        case 'EmailDomain':
+          return EmailDomain.fromJson(value);
+        case 'EmailDomainAssignedMailboxesInner':
+          return EmailDomainAssignedMailboxesInner.fromJson(value);
+        case 'EmailDomainCheck':
+          return EmailDomainCheck.fromJson(value);
+        case 'EmailDomainCheckResponse':
+          return EmailDomainCheckResponse.fromJson(value);
+        case 'EmailDomainError':
+          return EmailDomainError.fromJson(value);
+        case 'EmailDomainList':
+          return EmailDomainList.fromJson(value);
+        case 'EmailDomainListResponse':
+          return EmailDomainListResponse.fromJson(value);
+        case 'EmailDomainResponse':
+          return EmailDomainResponse.fromJson(value);
         case 'EmailDownload':
           return EmailDownload.fromJson(value);
         case 'EmailForwarding':
@@ -251,8 +259,20 @@ class ApiClient {
           return EmailSummary.fromJson(value);
         case 'EmailSummaryFiles':
           return EmailSummaryFiles.fromJson(value);
+        case 'EmailUsage':
+          return EmailUsage.fromJson(value);
+        case 'FileActor':
+          return FileActor.fromJson(value);
+        case 'FileKey':
+          return FileKey.fromJson(value);
         case 'FilePagination':
           return FilePagination.fromJson(value);
+        case 'FileUploadSkip':
+          return FileUploadSkip.fromJson(value);
+        case 'FileVersion':
+          return FileVersion.fromJson(value);
+        case 'FileVersionReason':
+          return FileVersionReason.fromJson(value);
         case 'GetAccount200Response':
           return GetAccount200Response.fromJson(value);
         case 'GetAccountLimits200Response':
@@ -267,6 +287,10 @@ class ApiClient {
           return GetEmail200Response.fromJson(value);
         case 'GetEmail200ResponseData':
           return GetEmail200ResponseData.fromJson(value);
+        case 'GetEmailOriginalDownloadUrl200Response':
+          return GetEmailOriginalDownloadUrl200Response.fromJson(value);
+        case 'GetEmailOriginalDownloadUrl200ResponseData':
+          return GetEmailOriginalDownloadUrl200ResponseData.fromJson(value);
         case 'GetEmailSubscription200Response':
           return GetEmailSubscription200Response.fromJson(value);
         case 'GetEmailSubscription200ResponseData':
@@ -311,6 +335,8 @@ class ApiClient {
           return Mailbox.fromJson(value);
         case 'MailboxAction':
           return MailboxAction.fromJson(value);
+        case 'MailboxCreateOptions':
+          return MailboxCreateOptions.fromJson(value);
         case 'MailboxEmail':
           return MailboxEmail.fromJson(value);
         case 'MailboxEmailActivity':
@@ -325,18 +351,38 @@ class ApiClient {
           return MailboxEmailAvailableDomainsInner.fromJson(value);
         case 'MailboxEmailCustomization':
           return MailboxEmailCustomization.fromJson(value);
+        case 'MailboxEmailOptions':
+          return MailboxEmailOptions.fromJson(value);
+        case 'MailboxFile':
+          return MailboxFile.fromJson(value);
+        case 'MailboxFileResponse':
+          return MailboxFileResponse.fromJson(value);
+        case 'MailboxFileResponseData':
+          return MailboxFileResponseData.fromJson(value);
         case 'MailboxLock':
           return MailboxLock.fromJson(value);
         case 'MailboxLockLockedBy':
           return MailboxLockLockedBy.fromJson(value);
         case 'MailboxLockLockedByApiKey':
           return MailboxLockLockedByApiKey.fromJson(value);
+        case 'PrepareFileUploadRequest':
+          return PrepareFileUploadRequest.fromJson(value);
+        case 'PreparedFileUpload':
+          return PreparedFileUpload.fromJson(value);
+        case 'PreparedFileUploadResponse':
+          return PreparedFileUploadResponse.fromJson(value);
         case 'RemoveAccountEmailDomainRequest':
           return RemoveAccountEmailDomainRequest.fromJson(value);
         case 'ResendAgentSignupCodeRequest':
           return ResendAgentSignupCodeRequest.fromJson(value);
         case 'RotateMailboxEmailAddressRequest':
           return RotateMailboxEmailAddressRequest.fromJson(value);
+        case 'SaveUploadedFileRequest':
+          return SaveUploadedFileRequest.fromJson(value);
+        case 'SavedFile':
+          return SavedFile.fromJson(value);
+        case 'SavedFileResponse':
+          return SavedFileResponse.fromJson(value);
         case 'SetEmailWebhook200Response':
           return SetEmailWebhook200Response.fromJson(value);
         case 'SetEmailWebhook200ResponseData':
@@ -345,14 +391,26 @@ class ApiClient {
           return SetEmailWebhook200ResponseDataWebhook.fromJson(value);
         case 'SetEmailWebhookRequest':
           return SetEmailWebhookRequest.fromJson(value);
+        case 'SignupAccount':
+          return SignupAccount.fromJson(value);
         case 'SignupChallenge':
           return SignupChallenge.fromJson(value);
+        case 'SignupMailbox':
+          return SignupMailbox.fromJson(value);
+        case 'SignupResponse':
+          return SignupResponse.fromJson(value);
+        case 'SignupResult':
+          return SignupResult.fromJson(value);
+        case 'SignupStatus':
+          return SignupStatus.fromJson(value);
         case 'StartAgentSignup202Response':
           return StartAgentSignup202Response.fromJson(value);
         case 'StartAgentSignup202ResponseData':
           return StartAgentSignup202ResponseData.fromJson(value);
         case 'StartAgentSignupRequest':
           return StartAgentSignupRequest.fromJson(value);
+        case 'StorageUpload':
+          return StorageUpload.fromJson(value);
         case 'UpdateEmail200Response':
           return UpdateEmail200Response.fromJson(value);
         case 'UpdateEmail200ResponseData':
@@ -367,24 +425,10 @@ class ApiClient {
           return UpdateMailboxEmailAllowlistRequest.fromJson(value);
         case 'UpdateMailboxEmailAllowlistRequestSenderAllowlist':
           return UpdateMailboxEmailAllowlistRequestSenderAllowlist.fromJson(value);
+        case 'UploadBlob':
+          return UploadBlob.fromJson(value);
         case 'VerifyAccountEmailDomainRequest':
           return VerifyAccountEmailDomainRequest.fromJson(value);
-        case 'VerifyAgentSignup200Response':
-          return VerifyAgentSignup200Response.fromJson(value);
-        case 'VerifyAgentSignup200ResponseData':
-          return VerifyAgentSignup200ResponseData.fromJson(value);
-        case 'VerifyAgentSignup200ResponseDataSignup':
-          return VerifyAgentSignup200ResponseDataSignup.fromJson(value);
-        case 'VerifyAgentSignup201Response':
-          return VerifyAgentSignup201Response.fromJson(value);
-        case 'VerifyAgentSignup201ResponseData':
-          return VerifyAgentSignup201ResponseData.fromJson(value);
-        case 'VerifyAgentSignup201ResponseDataAccount':
-          return VerifyAgentSignup201ResponseDataAccount.fromJson(value);
-        case 'VerifyAgentSignup201ResponseDataMailbox':
-          return VerifyAgentSignup201ResponseDataMailbox.fromJson(value);
-        case 'VerifyAgentSignup201ResponseDataSignup':
-          return VerifyAgentSignup201ResponseDataSignup.fromJson(value);
         case 'VerifyAgentSignupRequest':
           return VerifyAgentSignupRequest.fromJson(value);
         default:

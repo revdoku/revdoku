@@ -17,7 +17,7 @@ class ListMailboxFiles200ResponseData {
     required this.pagination,
   });
 
-  List<Object> files;
+  List<MailboxFile> files;
 
   FilePagination pagination;
 
@@ -61,9 +61,7 @@ class ListMailboxFiles200ResponseData {
       }());
 
       return ListMailboxFiles200ResponseData(
-        files: json[r'files'] is Iterable
-            ? (json[r'files'] as Iterable).cast<Object>().toList(growable: false)
-            : const [],
+        files: MailboxFile.listFromJson(json[r'files']),
         pagination: FilePagination.fromJson(json[r'pagination'])!,
       );
     }

@@ -1,6 +1,6 @@
 # com.revdoku:revdoku-api
 
-Email mailboxes with private file storage. Generated API client, version 1.0.535.
+Email mailboxes with private file storage. Generated API client, version 2.0.0.
 Source installation works now; a GitHub repository does not imply availability in a package registry.
 
 ## Start
@@ -9,8 +9,10 @@ Source installation works now; a GitHub repository does not imply availability i
 2. [List your mailboxes](QUICKSTART.md) with a read request.
 3. [Receive your first email and save an attachment](examples/README.md#receive-and-download).
 
-Covers the operations in [OpenAPI](https://revdoku.com/openapi.json), including email, mailbox settings and listing files. File uploads and other storage operations use the [HTTP examples](https://github.com/revdoku/revdoku/tree/main/examples).
+Covers the operations in [OpenAPI](https://revdoku.com/openapi.json), including email, mailbox settings, file metadata and direct uploads. Other storage operations use the [HTTP examples](https://github.com/revdoku/revdoku/tree/main/examples).
 [Package directory and capability comparison](https://github.com/revdoku/revdoku/blob/main/guides/api-packages.md) · [Complete REST reference](https://revdoku.com/api.md)
+
+[Upgrade from v1](MIGRATION.md).
 
 ## Contribute
 

@@ -13,7 +13,7 @@ with ApiClient(Configuration(access_token=key)) as client:
         page = api.list_mailbox_files(mailbox, account_id=os.getenv("REVDOKU_ACCOUNT_ID") or None,
                                      limit=100, offset=offset).data
         for file in page.files:
-            print(json.dumps(file, ensure_ascii=False))
+            print(json.dumps(client.sanitize_for_serialization(file), ensure_ascii=False))
         if not page.pagination.has_more:
             break
         next_offset = page.pagination.next_offset

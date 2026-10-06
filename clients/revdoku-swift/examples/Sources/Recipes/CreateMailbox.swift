@@ -6,7 +6,7 @@ public func createMailbox() async throws {
     do {
         let result: CreateMailbox201Response = try await withCheckedThrowingContinuation { continuation in
             DefaultAPI.createMailbox(createMailboxRequest: CreateMailboxRequest(
-                accountId: accountID(), mailbox: CreateMailboxRequestMailbox()
+                accountId: accountID(), mailbox: MailboxCreateOptions()
             )) { result, error in
                 if let error = error { continuation.resume(throwing: error) }
                 else if let result = result { continuation.resume(returning: result) }

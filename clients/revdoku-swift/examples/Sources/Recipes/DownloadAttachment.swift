@@ -14,8 +14,8 @@ public func downloadAttachment() async throws {
     let email = try requiredEnvironment("REVDOKU_EMAIL_ID")
     let attachment = try requiredEnvironment("REVDOKU_ATTACHMENT_ID")
     let output = try requiredEnvironment("REVDOKU_DOWNLOAD_PATH")
-    let response: DownloadEmailOriginal200Response = try await withCheckedThrowingContinuation { continuation in
-        DefaultAPI.downloadEmailAttachment(mailboxId: mailbox, emailId: email, attachmentId: attachment, accountId: accountID()) { result, error in
+    let response: GetEmailOriginalDownloadUrl200Response = try await withCheckedThrowingContinuation { continuation in
+        DefaultAPI.getEmailAttachmentDownloadUrl(mailboxId: mailbox, emailId: email, attachmentId: attachment, accountId: accountID()) { result, error in
             if let error = error { continuation.resume(throwing: error) }
             else if let result = result { continuation.resume(returning: result) }
             else { continuation.resume(throwing: ExampleError.missingResponse) }

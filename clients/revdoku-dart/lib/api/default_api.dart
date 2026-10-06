@@ -58,7 +58,7 @@ class DefaultApi {
   /// Parameters:
   ///
   /// * [CreateAccountEmailDomainRequest] createAccountEmailDomainRequest (required):
-  Future<ApiSuccess?> checkEmailHostname(CreateAccountEmailDomainRequest createAccountEmailDomainRequest, { Future<void>? abortTrigger, }) async {
+  Future<EmailDomainCheckResponse?> checkEmailHostname(CreateAccountEmailDomainRequest createAccountEmailDomainRequest, { Future<void>? abortTrigger, }) async {
     final response = await checkEmailHostnameWithHttpInfo(createAccountEmailDomainRequest, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
@@ -67,7 +67,7 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ApiSuccess',) as ApiSuccess;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'EmailDomainCheckResponse',) as EmailDomainCheckResponse;
     
     }
     return null;
@@ -115,7 +115,7 @@ class DefaultApi {
   /// Parameters:
   ///
   /// * [CreateAccountEmailDomainRequest] createAccountEmailDomainRequest (required):
-  Future<ApiSuccess?> createAccountEmailDomain(CreateAccountEmailDomainRequest createAccountEmailDomainRequest, { Future<void>? abortTrigger, }) async {
+  Future<EmailDomainListResponse?> createAccountEmailDomain(CreateAccountEmailDomainRequest createAccountEmailDomainRequest, { Future<void>? abortTrigger, }) async {
     final response = await createAccountEmailDomainWithHttpInfo(createAccountEmailDomainRequest, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
@@ -124,7 +124,7 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ApiSuccess',) as ApiSuccess;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'EmailDomainListResponse',) as EmailDomainListResponse;
     
     }
     return null;
@@ -537,189 +537,6 @@ class DefaultApi {
     return null;
   }
 
-  /// Get an email attachment download
-  ///
-  /// Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
-  ///
-  /// Note: This method returns the HTTP [Response].
-  ///
-  /// Parameters:
-  ///
-  /// * [String] mailboxId (required):
-  ///
-  /// * [String] emailId (required):
-  ///
-  /// * [String] attachmentId (required):
-  ///
-  /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  ///
-  /// * [String] purpose:
-  ///   Background reads do not change read status.
-  ///
-  /// * [String] reason:
-  Future<Response> downloadEmailAttachmentWithHttpInfo(String mailboxId, String emailId, String attachmentId, { String? accountId, String? purpose, String? reason, Future<void>? abortTrigger, }) async {
-    // ignore: prefer_const_declarations
-    final path = r'/v1/mailboxes/{mailbox_id}/emails/{email_id}/attachments/{attachment_id}'
-      .replaceAll('{mailbox_id}', mailboxId)
-      .replaceAll('{email_id}', emailId)
-      .replaceAll('{attachment_id}', attachmentId);
-
-    // ignore: prefer_final_locals
-    Object? postBody;
-
-    final queryParams = <QueryParam>[];
-    final headerParams = <String, String>{};
-    final formParams = <String, String>{};
-
-    if (accountId != null) {
-      queryParams.addAll(_queryParams('', 'account_id', accountId));
-    }
-    if (purpose != null) {
-      queryParams.addAll(_queryParams('', 'purpose', purpose));
-    }
-    if (reason != null) {
-      queryParams.addAll(_queryParams('', 'reason', reason));
-    }
-
-    const contentTypes = <String>[];
-
-
-    return apiClient.invokeAPI(
-      path,
-      'GET',
-      queryParams,
-      postBody,
-      headerParams,
-      formParams,
-      contentTypes.isEmpty ? null : contentTypes.first,
-      abortTrigger: abortTrigger,
-    );
-  }
-
-  /// Get an email attachment download
-  ///
-  /// Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
-  ///
-  /// Parameters:
-  ///
-  /// * [String] mailboxId (required):
-  ///
-  /// * [String] emailId (required):
-  ///
-  /// * [String] attachmentId (required):
-  ///
-  /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  ///
-  /// * [String] purpose:
-  ///   Background reads do not change read status.
-  ///
-  /// * [String] reason:
-  Future<DownloadEmailOriginal200Response?> downloadEmailAttachment(String mailboxId, String emailId, String attachmentId, { String? accountId, String? purpose, String? reason, Future<void>? abortTrigger, }) async {
-    final response = await downloadEmailAttachmentWithHttpInfo(mailboxId, emailId, attachmentId, accountId: accountId, purpose: purpose, reason: reason, abortTrigger: abortTrigger,);
-    if (response.statusCode >= HttpStatus.badRequest) {
-      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
-    }
-    // When a remote server returns no body with a status of 204, we shall not decode it.
-    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
-    // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'DownloadEmailOriginal200Response',) as DownloadEmailOriginal200Response;
-    
-    }
-    return null;
-  }
-
-  /// Get the original EML download
-  ///
-  /// Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
-  ///
-  /// Note: This method returns the HTTP [Response].
-  ///
-  /// Parameters:
-  ///
-  /// * [String] mailboxId (required):
-  ///
-  /// * [String] emailId (required):
-  ///
-  /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  ///
-  /// * [String] purpose:
-  ///   Background reads do not change read status.
-  ///
-  /// * [String] reason:
-  Future<Response> downloadEmailOriginalWithHttpInfo(String mailboxId, String emailId, { String? accountId, String? purpose, String? reason, Future<void>? abortTrigger, }) async {
-    // ignore: prefer_const_declarations
-    final path = r'/v1/mailboxes/{mailbox_id}/emails/{email_id}/raw'
-      .replaceAll('{mailbox_id}', mailboxId)
-      .replaceAll('{email_id}', emailId);
-
-    // ignore: prefer_final_locals
-    Object? postBody;
-
-    final queryParams = <QueryParam>[];
-    final headerParams = <String, String>{};
-    final formParams = <String, String>{};
-
-    if (accountId != null) {
-      queryParams.addAll(_queryParams('', 'account_id', accountId));
-    }
-    if (purpose != null) {
-      queryParams.addAll(_queryParams('', 'purpose', purpose));
-    }
-    if (reason != null) {
-      queryParams.addAll(_queryParams('', 'reason', reason));
-    }
-
-    const contentTypes = <String>[];
-
-
-    return apiClient.invokeAPI(
-      path,
-      'GET',
-      queryParams,
-      postBody,
-      headerParams,
-      formParams,
-      contentTypes.isEmpty ? null : contentTypes.first,
-      abortTrigger: abortTrigger,
-    );
-  }
-
-  /// Get the original EML download
-  ///
-  /// Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
-  ///
-  /// Parameters:
-  ///
-  /// * [String] mailboxId (required):
-  ///
-  /// * [String] emailId (required):
-  ///
-  /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  ///
-  /// * [String] purpose:
-  ///   Background reads do not change read status.
-  ///
-  /// * [String] reason:
-  Future<DownloadEmailOriginal200Response?> downloadEmailOriginal(String mailboxId, String emailId, { String? accountId, String? purpose, String? reason, Future<void>? abortTrigger, }) async {
-    final response = await downloadEmailOriginalWithHttpInfo(mailboxId, emailId, accountId: accountId, purpose: purpose, reason: reason, abortTrigger: abortTrigger,);
-    if (response.statusCode >= HttpStatus.badRequest) {
-      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
-    }
-    // When a remote server returns no body with a status of 204, we shall not decode it.
-    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
-    // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'DownloadEmailOriginal200Response',) as DownloadEmailOriginal200Response;
-    
-    }
-    return null;
-  }
-
   /// Read one granted account
   ///
   /// Note: This method returns the HTTP [Response].
@@ -834,7 +651,7 @@ class DefaultApi {
   ///   Explicit granted account for this call; omission uses the credential account.
   ///
   /// * [String] reason:
-  Future<ApiSuccess?> getAccountEmailDomain(String id, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+  Future<EmailDomainResponse?> getAccountEmailDomain(String id, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
     final response = await getAccountEmailDomainWithHttpInfo(id, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
@@ -843,7 +660,7 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ApiSuccess',) as ApiSuccess;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'EmailDomainResponse',) as EmailDomainResponse;
     
     }
     return null;
@@ -1005,6 +822,189 @@ class DefaultApi {
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
       return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetEmail200Response',) as GetEmail200Response;
+    
+    }
+    return null;
+  }
+
+  /// Get an email attachment download
+  ///
+  /// Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] emailId (required):
+  ///
+  /// * [String] attachmentId (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account; otherwise use the credential default.
+  ///
+  /// * [String] purpose:
+  ///   Background reads do not change read status.
+  ///
+  /// * [String] reason:
+  Future<Response> getEmailAttachmentDownloadUrlWithHttpInfo(String mailboxId, String emailId, String attachmentId, { String? accountId, String? purpose, String? reason, Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/emails/{email_id}/attachments/{attachment_id}'
+      .replaceAll('{mailbox_id}', mailboxId)
+      .replaceAll('{email_id}', emailId)
+      .replaceAll('{attachment_id}', attachmentId);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    if (accountId != null) {
+      queryParams.addAll(_queryParams('', 'account_id', accountId));
+    }
+    if (purpose != null) {
+      queryParams.addAll(_queryParams('', 'purpose', purpose));
+    }
+    if (reason != null) {
+      queryParams.addAll(_queryParams('', 'reason', reason));
+    }
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Get an email attachment download
+  ///
+  /// Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] emailId (required):
+  ///
+  /// * [String] attachmentId (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account; otherwise use the credential default.
+  ///
+  /// * [String] purpose:
+  ///   Background reads do not change read status.
+  ///
+  /// * [String] reason:
+  Future<GetEmailOriginalDownloadUrl200Response?> getEmailAttachmentDownloadUrl(String mailboxId, String emailId, String attachmentId, { String? accountId, String? purpose, String? reason, Future<void>? abortTrigger, }) async {
+    final response = await getEmailAttachmentDownloadUrlWithHttpInfo(mailboxId, emailId, attachmentId, accountId: accountId, purpose: purpose, reason: reason, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetEmailOriginalDownloadUrl200Response',) as GetEmailOriginalDownloadUrl200Response;
+    
+    }
+    return null;
+  }
+
+  /// Get the original EML download
+  ///
+  /// Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] emailId (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account; otherwise use the credential default.
+  ///
+  /// * [String] purpose:
+  ///   Background reads do not change read status.
+  ///
+  /// * [String] reason:
+  Future<Response> getEmailOriginalDownloadUrlWithHttpInfo(String mailboxId, String emailId, { String? accountId, String? purpose, String? reason, Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/emails/{email_id}/raw'
+      .replaceAll('{mailbox_id}', mailboxId)
+      .replaceAll('{email_id}', emailId);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    if (accountId != null) {
+      queryParams.addAll(_queryParams('', 'account_id', accountId));
+    }
+    if (purpose != null) {
+      queryParams.addAll(_queryParams('', 'purpose', purpose));
+    }
+    if (reason != null) {
+      queryParams.addAll(_queryParams('', 'reason', reason));
+    }
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Get the original EML download
+  ///
+  /// Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] emailId (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account; otherwise use the credential default.
+  ///
+  /// * [String] purpose:
+  ///   Background reads do not change read status.
+  ///
+  /// * [String] reason:
+  Future<GetEmailOriginalDownloadUrl200Response?> getEmailOriginalDownloadUrl(String mailboxId, String emailId, { String? accountId, String? purpose, String? reason, Future<void>? abortTrigger, }) async {
+    final response = await getEmailOriginalDownloadUrlWithHttpInfo(mailboxId, emailId, accountId: accountId, purpose: purpose, reason: reason, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetEmailOriginalDownloadUrl200Response',) as GetEmailOriginalDownloadUrl200Response;
     
     }
     return null;
@@ -1305,6 +1305,73 @@ class DefaultApi {
     return null;
   }
 
+  /// Read stored file metadata
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] id (required):
+  ///
+  /// * [String] fileId (required):
+  ///
+  /// * [String] accountId:
+  Future<Response> getMailboxFileWithHttpInfo(String id, String fileId, { String? accountId, Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{id}/files/{file_id}'
+      .replaceAll('{id}', id)
+      .replaceAll('{file_id}', fileId);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    if (accountId != null) {
+      queryParams.addAll(_queryParams('', 'account_id', accountId));
+    }
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Read stored file metadata
+  ///
+  /// Parameters:
+  ///
+  /// * [String] id (required):
+  ///
+  /// * [String] fileId (required):
+  ///
+  /// * [String] accountId:
+  Future<MailboxFileResponse?> getMailboxFile(String id, String fileId, { String? accountId, Future<void>? abortTrigger, }) async {
+    final response = await getMailboxFileWithHttpInfo(id, fileId, accountId: accountId, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'MailboxFileResponse',) as MailboxFileResponse;
+    
+    }
+    return null;
+  }
+
   /// Read current account identity and granted accounts
   ///
   /// Note: This method returns the HTTP [Response].
@@ -1426,7 +1493,7 @@ class DefaultApi {
   ///   Explicit granted account for this call; omission uses the credential account.
   ///
   /// * [String] reason:
-  Future<ApiSuccess?> listAccountEmailDomains({ String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+  Future<EmailDomainListResponse?> listAccountEmailDomains({ String? accountId, String? reason, Future<void>? abortTrigger, }) async {
     final response = await listAccountEmailDomainsWithHttpInfo(accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
@@ -1435,7 +1502,7 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ApiSuccess',) as ApiSuccess;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'EmailDomainListResponse',) as EmailDomainListResponse;
     
     }
     return null;
@@ -1846,6 +1913,59 @@ class DefaultApi {
     return null;
   }
 
+  /// Prepare a single file upload
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [PrepareFileUploadRequest] prepareFileUploadRequest (required):
+  Future<Response> prepareFileUploadWithHttpInfo(PrepareFileUploadRequest prepareFileUploadRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/direct_uploads';
+
+    // ignore: prefer_final_locals
+    Object? postBody = prepareFileUploadRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Prepare a single file upload
+  ///
+  /// Parameters:
+  ///
+  /// * [PrepareFileUploadRequest] prepareFileUploadRequest (required):
+  Future<PreparedFileUploadResponse?> prepareFileUpload(PrepareFileUploadRequest prepareFileUploadRequest, { Future<void>? abortTrigger, }) async {
+    final response = await prepareFileUploadWithHttpInfo(prepareFileUploadRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'PreparedFileUploadResponse',) as PreparedFileUploadResponse;
+    
+    }
+    return null;
+  }
+
   /// Remove unused receiving domain after confirmation
   ///
   /// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
@@ -1893,7 +2013,7 @@ class DefaultApi {
   /// * [String] id (required):
   ///
   /// * [RemoveAccountEmailDomainRequest] removeAccountEmailDomainRequest (required):
-  Future<ApiSuccess?> removeAccountEmailDomain(String id, RemoveAccountEmailDomainRequest removeAccountEmailDomainRequest, { Future<void>? abortTrigger, }) async {
+  Future<EmailDomainListResponse?> removeAccountEmailDomain(String id, RemoveAccountEmailDomainRequest removeAccountEmailDomainRequest, { Future<void>? abortTrigger, }) async {
     final response = await removeAccountEmailDomainWithHttpInfo(id, removeAccountEmailDomainRequest, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
@@ -1902,7 +2022,7 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ApiSuccess',) as ApiSuccess;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'EmailDomainListResponse',) as EmailDomainListResponse;
     
     }
     return null;
@@ -2024,6 +2144,64 @@ class DefaultApi {
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
       return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetMailboxEmailSettings200Response',) as GetMailboxEmailSettings200Response;
+    
+    }
+    return null;
+  }
+
+  /// Save an uploaded file or a new version
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] id (required):
+  ///
+  /// * [SaveUploadedFileRequest] saveUploadedFileRequest (required):
+  Future<Response> saveUploadedFileWithHttpInfo(String id, SaveUploadedFileRequest saveUploadedFileRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{id}/files'
+      .replaceAll('{id}', id);
+
+    // ignore: prefer_final_locals
+    Object? postBody = saveUploadedFileRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Save an uploaded file or a new version
+  ///
+  /// Parameters:
+  ///
+  /// * [String] id (required):
+  ///
+  /// * [SaveUploadedFileRequest] saveUploadedFileRequest (required):
+  Future<SavedFileResponse?> saveUploadedFile(String id, SaveUploadedFileRequest saveUploadedFileRequest, { Future<void>? abortTrigger, }) async {
+    final response = await saveUploadedFileWithHttpInfo(id, saveUploadedFileRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'SavedFileResponse',) as SavedFileResponse;
     
     }
     return null;
@@ -2362,7 +2540,7 @@ class DefaultApi {
   /// * [String] id (required):
   ///
   /// * [VerifyAccountEmailDomainRequest] verifyAccountEmailDomainRequest:
-  Future<ApiSuccess?> verifyAccountEmailDomain(String id, { VerifyAccountEmailDomainRequest? verifyAccountEmailDomainRequest, Future<void>? abortTrigger, }) async {
+  Future<EmailDomainListResponse?> verifyAccountEmailDomain(String id, { VerifyAccountEmailDomainRequest? verifyAccountEmailDomainRequest, Future<void>? abortTrigger, }) async {
     final response = await verifyAccountEmailDomainWithHttpInfo(id, verifyAccountEmailDomainRequest: verifyAccountEmailDomainRequest, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
@@ -2371,7 +2549,7 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ApiSuccess',) as ApiSuccess;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'EmailDomainListResponse',) as EmailDomainListResponse;
     
     }
     return null;
@@ -2419,7 +2597,7 @@ class DefaultApi {
   /// Parameters:
   ///
   /// * [VerifyAgentSignupRequest] verifyAgentSignupRequest (required):
-  Future<VerifyAgentSignup200Response?> verifyAgentSignup(VerifyAgentSignupRequest verifyAgentSignupRequest, { Future<void>? abortTrigger, }) async {
+  Future<SignupResponse?> verifyAgentSignup(VerifyAgentSignupRequest verifyAgentSignupRequest, { Future<void>? abortTrigger, }) async {
     final response = await verifyAgentSignupWithHttpInfo(verifyAgentSignupRequest, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
@@ -2428,7 +2606,7 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'VerifyAgentSignup200Response',) as VerifyAgentSignup200Response;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'SignupResponse',) as SignupResponse;
     
     }
     return null;

@@ -14,11 +14,11 @@ public struct CreateMailboxRequest: Codable, JSONEncodable, Hashable {
 
     public static let reasonRule = StringRule(minLength: nil, maxLength: 2000, pattern: nil)
     public var accountId: String?
-    public var mailbox: CreateMailboxRequestMailbox
+    public var mailbox: MailboxCreateOptions
     /** Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. */
     public var reason: String?
 
-    public init(accountId: String? = nil, mailbox: CreateMailboxRequestMailbox, reason: String? = nil) {
+    public init(accountId: String? = nil, mailbox: MailboxCreateOptions, reason: String? = nil) {
         self.accountId = accountId
         self.mailbox = mailbox
         self.reason = reason

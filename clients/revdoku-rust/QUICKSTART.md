@@ -1,4 +1,14 @@
-[Install and configure this SDK](examples/README.md#install-from-source) before running the request below.
+# Quickstart
+
+Clone [the SDK repository](https://github.com/revdoku/revdoku-rust) and enter its directory.
+
+Requires a current stable Rust toolchain. From the cloned package directory:
+
+```sh
+cargo build --manifest-path examples/Cargo.toml
+```
+
+Set `REVDOKU_API_KEY` in your environment.
 
 ## List mailboxes
 
@@ -11,7 +21,7 @@ cargo run --manifest-path examples/Cargo.toml --bin list_mailboxes
 This makes one read request and prints each visible mailbox's ID and email address:
 
 ```text
-bkt_RETURNED_ID My Mailbox
+bkt_RETURNED_ID example@revdokumail.com
 ```
 
 [Runnable source](examples/src/bin/list_mailboxes.rs). Reuse one of these mailboxes for the email walkthrough; this request does not create a mailbox or consume creation capacity.

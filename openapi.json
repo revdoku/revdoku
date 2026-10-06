@@ -734,44 +734,7 @@
                     "type": "string"
                   },
                   "mailbox": {
-                    "type": "object",
-                    "properties": {
-                      "description": {
-                        "type": "string"
-                      },
-                      "metadata": {
-                        "type": "object",
-                        "additionalProperties": true
-                      },
-                      "tag_ids": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "tag_paths": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "email": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "properties": {
-                          "username": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 64,
-                            "description": "Free: a prefix normalized to dots, shortened to 51 characters, with a permanent 12-character random lowercase letter/digit suffix added. Paid: the exact name before @, normalized to lowercase. Omit to generate; blank/null is invalid. Reserved shared-domain words return EMAIL_NAME_RESERVED with the reserved word and custom-domain guidance; occupied or retired exact names return EMAIL_ALREADY_EXISTS."
-                          },
-                          "domain": {
-                            "type": "string",
-                            "description": "Built-in domain such as revdokumail.com on any plan, or a ready custom email domain owned by the selected account on an eligible plan. Omit for the default platform domain."
-                          }
-                        }
-                      }
-                    }
+                    "$ref": "#/components/schemas/MailboxCreateOptions"
                   },
                   "reason": {
                     "$ref": "#/components/schemas/ActionReason"
@@ -1142,7 +1105,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiSuccess"
+                  "$ref": "#/components/schemas/EmailDomainListResponse"
                 }
               }
             }
@@ -1286,7 +1249,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiSuccess"
+                  "$ref": "#/components/schemas/EmailDomainListResponse"
                 }
               }
             }
@@ -1338,7 +1301,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiSuccess"
+                  "$ref": "#/components/schemas/EmailDomainResponse"
                 }
               }
             }
@@ -1490,7 +1453,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiSuccess"
+                  "$ref": "#/components/schemas/EmailDomainListResponse"
                 }
               }
             }
@@ -1607,7 +1570,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiSuccess"
+                  "$ref": "#/components/schemas/EmailDomainListResponse"
                 }
               }
             }
@@ -1663,7 +1626,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiSuccess"
+                  "$ref": "#/components/schemas/EmailDomainCheckResponse"
                 }
               }
             }
@@ -1829,7 +1792,7 @@
                         "files": {
                           "type": "array",
                           "items": {
-                            "type": "object"
+                            "$ref": "#/components/schemas/MailboxFile"
                           }
                         },
                         "pagination": {
@@ -1876,6 +1839,60 @@
           },
           "default": {
             "$ref": "#/components/responses/ApiError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "saveUploadedFile",
+        "summary": "Save an uploaded file or a new version",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Save an uploaded file or a new version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedFileResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "200": {
+            "description": "File already exists with identical content. Returns the existing file and version with created=false and duplicate=true.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedFileResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveUploadedFileRequest"
+              }
+            }
           }
         }
       }
@@ -2408,7 +2425,7 @@
     },
     "/v1/mailboxes/{mailbox_id}/emails/{email_id}/raw": {
       "get": {
-        "operationId": "downloadEmailOriginal",
+        "operationId": "getEmailOriginalDownloadUrl",
         "summary": "Get the original EML download",
         "description": "Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.",
         "security": [
@@ -2527,7 +2544,7 @@
     },
     "/v1/mailboxes/{mailbox_id}/emails/{email_id}/attachments/{attachment_id}": {
       "get": {
-        "operationId": "downloadEmailAttachment",
+        "operationId": "getEmailAttachmentDownloadUrl",
         "summary": "Get an email attachment download",
         "description": "Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.",
         "security": [
@@ -2992,7 +3009,7 @@
     "/v1/agent/signups/verify": {
       "post": {
         "operationId": "verifyAgentSignup",
-        "summary": "Verify the human’s code and create the first mailbox",
+        "summary": "Verify the human\u2019s code and create the first mailbox",
         "description": "Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.",
         "security": [],
         "requestBody": {
@@ -3027,84 +3044,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "signup": {
-                          "type": "object",
-                          "properties": {
-                            "status": {
-                              "type": "string",
-                              "const": "completed"
-                            }
-                          },
-                          "required": [
-                            "status"
-                          ]
-                        },
-                        "api_key": {
-                          "type": "string",
-                          "description": "Returned once; store privately. Never write to logs or chat."
-                        },
-                        "scope": {
-                          "type": "string",
-                          "enum": [
-                            "mailbox_read",
-                            "mailbox_write",
-                            "mailbox_admin"
-                          ]
-                        },
-                        "expires_at": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "account": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            }
-                          },
-                          "required": [
-                            "id"
-                          ]
-                        },
-                        "mailbox": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string"
-                            },
-                            "email": {
-                              "$ref": "#/components/schemas/MailboxEmail"
-                            }
-                          },
-                          "required": [
-                            "id",
-                            "email"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "signup",
-                        "api_key",
-                        "scope",
-                        "expires_at",
-                        "account",
-                        "mailbox"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ]
+                  "$ref": "#/components/schemas/SignupResponse"
                 }
               }
             }
@@ -3114,49 +3054,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "signup": {
-                          "type": "object",
-                          "properties": {
-                            "status": {
-                              "const": "completed"
-                            },
-                            "account_id": {
-                              "type": "string"
-                            },
-                            "mailbox_id": {
-                              "type": "string"
-                            }
-                          },
-                          "required": [
-                            "status",
-                            "account_id",
-                            "mailbox_id"
-                          ]
-                        },
-                        "recovery_url": {
-                          "type": "string",
-                          "format": "uri"
-                        }
-                      },
-                      "required": [
-                        "signup",
-                        "recovery_url"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "success",
-                    "data"
-                  ]
+                  "$ref": "#/components/schemas/SignupResponse"
                 }
               }
             }
@@ -3191,7 +3089,7 @@
     "/v1/agent/signups/resend": {
       "post": {
         "operationId": "resendAgentSignupCode",
-        "summary": "Resend the human operator’s verification code",
+        "summary": "Resend the human operator\u2019s verification code",
         "description": "Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.",
         "security": [],
         "requestBody": {
@@ -4004,6 +3902,103 @@
             }
           }
         }
+      }
+    },
+    "/v1/direct_uploads": {
+      "post": {
+        "operationId": "prepareFileUpload",
+        "summary": "Prepare a single file upload",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Prepare a single file upload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreparedFileUploadResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/ApiError"
+          },
+          "200": {
+            "description": "Identical content already exists. No upload is needed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreparedFileUploadResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrepareFileUploadRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/mailboxes/{id}/files/{file_id}": {
+      "get": {
+        "operationId": "getMailboxFile",
+        "summary": "Read stored file metadata",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Read stored file metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MailboxFileResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/ApiError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
       }
     }
   },
@@ -5243,24 +5238,6 @@
           }
         }
       },
-      "ApiSuccess": {
-        "type": "object",
-        "required": [
-          "success",
-          "data"
-        ],
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "const": true
-          },
-          "data": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "Endpoint-specific result fields. See the endpoint documentation for the domain or authentication-capability fields."
-          }
-        }
-      },
       "EmailForwarding": {
         "type": "object",
         "description": "Server-recorded member forwarding provenance. The original author is reported by the member, not independently authenticated. Absent for ordinary or unrecognized mail.",
@@ -5532,6 +5509,980 @@
           "has_more",
           "next_offset"
         ]
+      },
+      "SignupStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed"
+            ]
+          },
+          "account_id": {
+            "type": "string"
+          },
+          "mailbox_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "SignupResult": {
+        "type": "object",
+        "properties": {
+          "signup": {
+            "$ref": "#/components/schemas/SignupStatus"
+          },
+          "api_key": {
+            "type": "string",
+            "description": "Returned once; store privately. Never write to logs or chat."
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "mailbox_admin"
+            ]
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "account": {
+            "$ref": "#/components/schemas/SignupAccount"
+          },
+          "mailbox": {
+            "$ref": "#/components/schemas/SignupMailbox"
+          },
+          "recovery_url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "signup"
+        ],
+        "description": "First verification returns api_key, account and mailbox. Repeated verification returns completed IDs and recovery_url without the key."
+      },
+      "SignupAccount": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "SignupMailbox": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "$ref": "#/components/schemas/MailboxEmail"
+          }
+        },
+        "required": [
+          "id",
+          "email"
+        ]
+      },
+      "SignupResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/SignupResult"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "MailboxEmailOptions": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "username": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "description": "Free: a prefix normalized to dots, shortened to 51 characters, with a permanent 12-character random lowercase letter/digit suffix added. Paid: the exact name before @, normalized to lowercase. Omit to generate; blank/null is invalid. Reserved shared-domain words return EMAIL_NAME_RESERVED with the reserved word and custom-domain guidance; occupied or retired exact names return EMAIL_ALREADY_EXISTS."
+          },
+          "domain": {
+            "type": "string",
+            "description": "Built-in domain such as revdokumail.com on any plan, or a ready custom email domain owned by the selected account on an eligible plan. Omit for the default platform domain."
+          }
+        }
+      },
+      "MailboxCreateOptions": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "tag_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tag_paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "email": {
+            "$ref": "#/components/schemas/MailboxEmailOptions"
+          }
+        }
+      },
+      "FileActor": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "FileKey": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "token_type": {
+            "type": "string"
+          }
+        }
+      },
+      "FileVersion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "file_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "mime_type": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta_key": {
+            "type": "string"
+          },
+          "created_by_system": {
+            "type": "string"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "has_text": {
+            "type": "boolean"
+          },
+          "normalization_required": {
+            "type": "boolean"
+          },
+          "meta_ready": {
+            "type": "boolean"
+          },
+          "version_number": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "byte_size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "meta_created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/FileActor"
+          },
+          "updated_by": {
+            "$ref": "#/components/schemas/FileActor"
+          },
+          "created_by_agent": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "updated_by_agent": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "created_by_api_key": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "updated_by_api_key": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "read": {
+            "type": "boolean"
+          },
+          "read_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "read_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FileActor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "read_by_api_key": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FileKey"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "MailboxFile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "mailbox_id": {
+            "type": "string"
+          },
+          "basename": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "created_by_system": {
+            "type": "string"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "version_reasons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FileVersionReason"
+            }
+          },
+          "lock": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "current_file_version": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FileVersion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_by": {
+            "$ref": "#/components/schemas/FileActor"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deleted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by_agent": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "updated_by_agent": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "created_by_api_key": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "updated_by_api_key": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "read": {
+            "type": "boolean"
+          },
+          "read_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "read_by": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FileActor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "read_by_api_key": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FileKey"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "path"
+        ]
+      },
+      "EmailDomain": {
+        "type": "object",
+        "properties": {
+          "suggested_subdomain": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "root_guidance": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pause_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "hostname": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "guidance": {
+            "type": "string"
+          },
+          "receiving": {
+            "type": "boolean"
+          },
+          "root_domain": {
+            "type": "boolean"
+          },
+          "paused_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "last_checked_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "ownership_verified_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "setup_expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "ready_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "required_dns_records": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DnsRecord"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assigned_mailboxes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "email": {
+                  "$ref": "#/components/schemas/MailboxEmail"
+                }
+              }
+            }
+          }
+        },
+        "required": [
+          "id",
+          "hostname",
+          "status"
+        ]
+      },
+      "EmailDomainList": {
+        "type": "object",
+        "properties": {
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailDomain"
+            }
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "configured": {
+            "type": "boolean"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/EmailUsage"
+          },
+          "guidance": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "domains"
+        ]
+      },
+      "EmailDomainCheck": {
+        "type": "object",
+        "properties": {
+          "hostname": {
+            "type": "string"
+          },
+          "root_domain": {
+            "type": "boolean"
+          },
+          "suggested_subdomain": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "root_guidance": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "hostname",
+          "root_domain"
+        ]
+      },
+      "EmailDomainListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/EmailDomainList"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "EmailDomainResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/EmailDomain"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "EmailDomainCheckResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/EmailDomainCheck"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "UploadBlob": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "byte_size": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "checksum": {
+            "type": "string"
+          },
+          "content_type": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "mailbox_file"
+            ]
+          }
+        },
+        "required": [
+          "filename",
+          "byte_size",
+          "checksum",
+          "content_type",
+          "sha256",
+          "purpose"
+        ]
+      },
+      "PrepareFileUploadRequest": {
+        "type": "object",
+        "properties": {
+          "mailbox_id": {
+            "type": "string"
+          },
+          "account_id": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "blob": {
+            "$ref": "#/components/schemas/UploadBlob"
+          }
+        },
+        "required": [
+          "mailbox_id",
+          "path",
+          "blob"
+        ]
+      },
+      "StorageUpload": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "url",
+          "headers"
+        ]
+      },
+      "PreparedFileUpload": {
+        "type": "object",
+        "properties": {
+          "signed_id": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "byte_size": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "checksum": {
+            "type": "string"
+          },
+          "content_type": {
+            "type": "string"
+          },
+          "service_name": {
+            "type": "string"
+          },
+          "direct_upload": {
+            "$ref": "#/components/schemas/StorageUpload"
+          },
+          "file": {
+            "$ref": "#/components/schemas/MailboxFile"
+          },
+          "version": {
+            "$ref": "#/components/schemas/FileVersion"
+          },
+          "skipped": {
+            "type": "boolean"
+          },
+          "duplicate": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "description": "A new upload returns signed_id and direct_upload. Identical content returns skipped=true, duplicate=true, file and version without a storage upload."
+      },
+      "PreparedFileUploadResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/PreparedFileUpload"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "SaveUploadedFileRequest": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "signed_blob_id": {
+            "type": "string"
+          },
+          "account_id": {
+            "type": "string"
+          },
+          "expected_mailbox_revision_id": {
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ActionReason"
+          }
+        },
+        "required": [
+          "path",
+          "signed_blob_id"
+        ]
+      },
+      "SavedFile": {
+        "type": "object",
+        "properties": {
+          "file": {
+            "$ref": "#/components/schemas/MailboxFile"
+          },
+          "version": {
+            "$ref": "#/components/schemas/FileVersion"
+          },
+          "created": {
+            "type": "boolean"
+          },
+          "skipped": {
+            "$ref": "#/components/schemas/FileUploadSkip"
+          },
+          "duplicate": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "file",
+          "version",
+          "created"
+        ]
+      },
+      "SavedFileResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/SavedFile"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "MailboxFileResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "const": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "file": {
+                "$ref": "#/components/schemas/MailboxFile"
+              }
+            },
+            "required": [
+              "file"
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ]
+      },
+      "DnsRecord": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "zone": {
+            "type": "string"
+          },
+          "relative_name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "value",
+          "purpose",
+          "zone",
+          "relative_name"
+        ]
+      },
+      "EmailUsage": {
+        "type": "object",
+        "properties": {
+          "used": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "monthly_limit": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "remaining": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "bytes_used": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "monthly_bytes_limit": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "bytes_remaining": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "max_message_bytes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "resets_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paused": {
+            "type": "boolean"
+          },
+          "pause_reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "FileVersionReason": {
+        "type": "object",
+        "properties": {
+          "version_id": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "created_by_id": {
+            "type": "string"
+          },
+          "version_number": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FileUploadSkip": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "input_index": {
+            "type": "integer"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
       }
     },
     "responses": {

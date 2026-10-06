@@ -7,7 +7,7 @@ var values = names.Select(name => Environment.GetEnvironmentVariable(name)).ToAr
 if (values.Any(string.IsNullOrEmpty)) throw new Exception("Set all required environment variables");
 var account = Environment.GetEnvironmentVariable("REVDOKU_ACCOUNT_ID");
 var api = new DefaultApi(new Configuration { AccessToken = values[0] });
-var download = (await api.DownloadEmailAttachmentAsync(values[1]!, values[2]!, values[3]!,
+var download = (await api.GetEmailAttachmentDownloadUrlAsync(values[1]!, values[2]!, values[3]!,
     accountId: string.IsNullOrEmpty(account) ? null : account)).Data.Download;
 var url = new Uri(download.Url);
 if (download.Authentication != EmailDownload.AuthenticationEnum.None || url.Scheme != "https" || url.UserInfo.Length > 0)

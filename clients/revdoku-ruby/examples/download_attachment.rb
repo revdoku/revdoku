@@ -7,7 +7,7 @@ raise 'Set all required environment variables' if [key, mailbox, email, attachme
 config = RevdokuApi::Configuration.new
 config.access_token = key
 api = RevdokuApi::DefaultApi.new(RevdokuApi::ApiClient.new(config))
-download = api.download_email_attachment(mailbox, email, attachment,
+download = api.get_email_attachment_download_url(mailbox, email, attachment,
   account_id: ENV['REVDOKU_ACCOUNT_ID'].to_s.empty? ? nil : ENV['REVDOKU_ACCOUNT_ID']).data.download
 url = URI(download.url)
 raise 'Expected an HTTPS download without API authentication' unless download.authentication == 'none' && url.is_a?(URI::HTTPS) && url.host && !url.userinfo

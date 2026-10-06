@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         bearer_access_token: Some(values[0].clone()),
         ..Configuration::default()
     };
-    let download = default_api::download_email_attachment(
+    let download = default_api::get_email_attachment_download_url(
         &config,
         &values[1],
         &values[2],

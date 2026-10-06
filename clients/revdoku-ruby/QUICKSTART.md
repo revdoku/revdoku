@@ -1,4 +1,15 @@
-[Install and configure this SDK](examples/README.md#install-from-source) before running the request below.
+# Quickstart
+
+Clone [the SDK repository](https://github.com/revdoku/revdoku-ruby) and enter its directory.
+
+Requires Ruby 3.1 or newer. From the cloned package directory:
+
+```sh
+gem build revdoku_api.gemspec
+gem install --user-install ./revdoku_api-{{VERSION}}.gem
+```
+
+Set `REVDOKU_API_KEY` in your environment.
 
 ## List mailboxes
 
@@ -11,7 +22,7 @@ ruby examples/list_mailboxes.rb
 This makes one read request and prints each visible mailbox's ID and email address:
 
 ```text
-bkt_RETURNED_ID My Mailbox
+bkt_RETURNED_ID example@revdokumail.com
 ```
 
 [Runnable source](examples/list_mailboxes.rb). Reuse one of these mailboxes for the email walkthrough; this request does not create a mailbox or consume creation capacity.

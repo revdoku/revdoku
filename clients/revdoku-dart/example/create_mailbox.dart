@@ -11,7 +11,7 @@ Future<void> main() async {
     final result = await DefaultApi(client).createMailbox(
       CreateMailboxRequest(
         accountId: account == null || account.isEmpty ? null : account,
-        mailbox: CreateMailboxRequestMailbox(),
+        mailbox: MailboxCreateOptions(),
       ),
     );
     print('${result!.data.mailbox.id} ${result.data.mailbox.email.address}');

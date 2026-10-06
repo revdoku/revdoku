@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	revdoku "github.com/revdoku/revdoku-go"
+	revdoku "github.com/revdoku/revdoku-go/v2"
 	"io"
 	"log"
 	"net/http"
@@ -22,7 +22,7 @@ func main() {
 	config := revdoku.NewConfiguration()
 	config.AddDefaultHeader("Authorization", "Bearer "+os.Getenv("REVDOKU_API_KEY"))
 	api := revdoku.NewAPIClient(config)
-	request := api.DefaultAPI.DownloadEmailAttachment(context.Background(), os.Getenv("REVDOKU_BUCKET_ID"), os.Getenv("REVDOKU_EMAIL_ID"), os.Getenv("REVDOKU_ATTACHMENT_ID"))
+	request := api.DefaultAPI.GetEmailAttachmentDownloadUrl(context.Background(), os.Getenv("REVDOKU_BUCKET_ID"), os.Getenv("REVDOKU_EMAIL_ID"), os.Getenv("REVDOKU_ATTACHMENT_ID"))
 	if account := os.Getenv("REVDOKU_ACCOUNT_ID"); account != "" {
 		request = request.AccountId(account)
 	}

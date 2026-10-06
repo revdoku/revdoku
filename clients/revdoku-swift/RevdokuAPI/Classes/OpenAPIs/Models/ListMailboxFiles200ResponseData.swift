@@ -12,10 +12,10 @@ import AnyCodable
 
 public struct ListMailboxFiles200ResponseData: Codable, JSONEncodable, Hashable {
 
-    public var files: [AnyCodable]
+    public var files: [MailboxFile]
     public var pagination: FilePagination
 
-    public init(files: [AnyCodable], pagination: FilePagination) {
+    public init(files: [MailboxFile], pagination: FilePagination) {
         self.files = files
         self.pagination = pagination
     }

@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	revdoku "github.com/revdoku/revdoku-go"
+	revdoku "github.com/revdoku/revdoku-go/v2"
 	"log"
 	"os"
 )
@@ -16,7 +16,7 @@ func main() {
 	config := revdoku.NewConfiguration()
 	config.AddDefaultHeader("Authorization", "Bearer "+key)
 	api := revdoku.NewAPIClient(config)
-	mailbox := revdoku.NewCreateMailboxRequestMailbox()
+	mailbox := revdoku.NewMailboxCreateOptions()
 	body := revdoku.NewCreateMailboxRequest(*mailbox)
 	if account := os.Getenv("REVDOKU_ACCOUNT_ID"); account != "" {
 		body.SetAccountId(account)

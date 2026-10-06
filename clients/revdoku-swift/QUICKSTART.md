@@ -1,4 +1,14 @@
-[Install and configure this SDK](examples/README.md#install-from-source) before running the request below.
+# Quickstart
+
+Clone [the SDK repository](https://github.com/revdoku/revdoku-swift) and enter its directory.
+
+Requires Swift 5.7 or newer on macOS 12 or newer for these command-line examples. From the cloned package directory:
+
+```sh
+swift build --package-path examples
+```
+
+Set `REVDOKU_API_KEY` in your environment.
 
 ## List mailboxes
 
@@ -11,7 +21,7 @@ swift run --package-path examples RevdokuExamples list-mailboxes
 This makes one read request and prints each visible mailbox's ID and email address:
 
 ```text
-bkt_RETURNED_ID My Mailbox
+bkt_RETURNED_ID example@revdokumail.com
 ```
 
 [Runnable source](examples/Sources/Recipes/ListMailboxes.swift). Reuse one of these mailboxes for the email walkthrough; this request does not create a mailbox or consume creation capacity.

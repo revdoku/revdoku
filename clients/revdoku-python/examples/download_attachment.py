@@ -9,7 +9,7 @@ key, mailbox, email, attachment, output = [os.environ[name] for name in (
 if not all((key, mailbox, email, attachment, output)):
     raise ValueError("Set all required environment variables")
 with ApiClient(Configuration(access_token=key)) as client:
-    download = DefaultApi(client).download_email_attachment(
+    download = DefaultApi(client).get_email_attachment_download_url(
         mailbox, email, attachment, account_id=os.getenv("REVDOKU_ACCOUNT_ID") or None).data.download
 url = urlsplit(str(download.url))
 if download.authentication != "none" or url.scheme != "https" or not url.hostname or url.username or url.password:

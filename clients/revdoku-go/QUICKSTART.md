@@ -1,4 +1,14 @@
-[Install and configure this SDK](examples/README.md#install-from-source) before running the request below.
+# Quickstart
+
+Clone [the SDK repository](https://github.com/revdoku/revdoku-go) and enter its directory.
+
+Requires Go 1.25 or newer for the verified toolchain. From the cloned package directory:
+
+```sh
+go mod download
+```
+
+Set `REVDOKU_API_KEY` in your environment.
 
 ## List mailboxes
 
@@ -11,7 +21,7 @@ go run ./examples/list_mailboxes
 This makes one read request and prints each visible mailbox's ID and email address:
 
 ```text
-bkt_RETURNED_ID My Mailbox
+bkt_RETURNED_ID example@revdokumail.com
 ```
 
 [Runnable source](examples/list_mailboxes/main.go). Reuse one of these mailboxes for the email walkthrough; this request does not create a mailbox or consume creation capacity.
