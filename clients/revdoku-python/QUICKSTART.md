@@ -1,4 +1,16 @@
-[Install and configure this SDK](examples/README.md#install-from-source) before running the request below.
+# Quickstart
+
+Clone [the SDK repository](https://github.com/revdoku/revdoku-python) and enter its directory.
+
+Requires Python 3.10 or newer. From the cloned package directory:
+
+```sh
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install .
+```
+
+Set `REVDOKU_API_KEY` in your environment.
 
 ## List mailboxes
 
@@ -11,7 +23,7 @@ python examples/list_mailboxes.py
 This makes one read request and prints each visible mailbox's ID and email address:
 
 ```text
-bkt_RETURNED_ID My Mailbox
+bkt_RETURNED_ID example@revdokumail.com
 ```
 
 [Runnable source](examples/list_mailboxes.py). Reuse one of these mailboxes for the email walkthrough; this request does not create a mailbox or consume creation capacity.

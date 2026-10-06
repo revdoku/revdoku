@@ -1,6 +1,6 @@
 use revdoku_api::{
     apis::{configuration::Configuration, default_api},
-    models::{CreateMailboxRequest, CreateMailboxRequestMailbox},
+    models::{CreateMailboxRequest, MailboxCreateOptions},
 };
 
 #[tokio::main]
@@ -13,7 +13,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         bearer_access_token: Some(key),
         ..Configuration::default()
     };
-    let mailbox = CreateMailboxRequestMailbox::new();
+    let mailbox = MailboxCreateOptions::new();
     let mut body = CreateMailboxRequest::new(mailbox);
     body.account_id = std::env::var("REVDOKU_ACCOUNT_ID")
         .ok()

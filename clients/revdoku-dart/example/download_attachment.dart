@@ -19,7 +19,7 @@ Future<void> main() async {
   );
   late EmailDownload download;
   try {
-    download = (await DefaultApi(client).downloadEmailAttachment(
+    download = (await DefaultApi(client).getEmailAttachmentDownloadUrl(
       env['REVDOKU_BUCKET_ID']!,
       env['REVDOKU_EMAIL_ID']!,
       env['REVDOKU_ATTACHMENT_ID']!,

@@ -1,4 +1,14 @@
-[Install and configure this SDK](examples/README.md#install-from-source) before running the request below.
+# Quickstart
+
+Clone [the SDK repository](https://github.com/revdoku/revdoku-php) and enter its directory.
+
+Requires PHP 8.3 or newer, Composer, and the cURL, JSON and mbstring extensions. From the cloned package directory:
+
+```sh
+composer install --no-dev --no-interaction
+```
+
+Set `REVDOKU_API_KEY` in your environment.
 
 ## List mailboxes
 
@@ -11,7 +21,7 @@ php examples/list_mailboxes.php
 This makes one read request and prints each visible mailbox's ID and email address:
 
 ```text
-bkt_RETURNED_ID My Mailbox
+bkt_RETURNED_ID example@revdokumail.com
 ```
 
 [Runnable source](examples/list_mailboxes.php). Reuse one of these mailboxes for the email walkthrough; this request does not create a mailbox or consume creation capacity.

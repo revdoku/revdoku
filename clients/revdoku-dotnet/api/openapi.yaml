@@ -8,7 +8,7 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   title: Revdoku public agent API
-  version: 1.0.535
+  version: 2.0.0
 servers:
 - description: Revdoku application API
   url: https://api.revdoku.com
@@ -517,7 +517,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiSuccess"
+                $ref: "#/components/schemas/EmailDomainListResponse"
           description: Current domain configuration or result
         "403":
           content:
@@ -607,7 +607,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiSuccess"
+                $ref: "#/components/schemas/EmailDomainListResponse"
           description: Exact domain claim created; add returned ownership TXT and
             verify.
         default:
@@ -676,7 +676,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiSuccess"
+                $ref: "#/components/schemas/EmailDomainListResponse"
           description: Verification/removal queued; poll the resource
         default:
           content:
@@ -722,7 +722,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiSuccess"
+                $ref: "#/components/schemas/EmailDomainResponse"
           description: Current domain configuration or result
         "403":
           content:
@@ -821,7 +821,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiSuccess"
+                $ref: "#/components/schemas/EmailDomainListResponse"
           description: Verification/removal queued; poll the resource
         default:
           content:
@@ -852,7 +852,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ApiSuccess"
+                $ref: "#/components/schemas/EmailDomainCheckResponse"
           description: Current domain configuration or result
         "403":
           content:
@@ -977,6 +977,46 @@ paths:
       security:
       - bearerAuth: []
       summary: List files or related email without marking read
+    post:
+      operationId: saveUploadedFile
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveUploadedFileRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedFileResponse"
+          description: Save an uploaded file or a new version
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedFileResponse"
+          description: File already exists with identical content. Returns the existing
+            file and version with created=false and duplicate=true.
+      security:
+      - bearerAuth: []
+      summary: Save an uploaded file or a new version
   /v1/mailboxes/{mailbox_id}/emails:
     get:
       description: "Requires mailbox read permission. Ascending arrival order supports\
@@ -1470,7 +1510,7 @@ paths:
         \ files use signed storage URLs; protected files use a scoped signed API URL\
         \ that rechecks access before decrypting. Downloads do not change shared read\
         \ status. No attachment extraction or analysis is performed."
-      operationId: downloadEmailOriginal
+      operationId: getEmailOriginalDownloadUrl
       parameters:
       - explode: false
         in: path
@@ -1519,7 +1559,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/downloadEmailOriginal_200_response"
+                $ref: "#/components/schemas/getEmailOriginalDownloadUrl_200_response"
             application/octet-stream:
               schema:
                 format: binary
@@ -1599,7 +1639,7 @@ paths:
         \ files use signed storage URLs; protected files use a scoped signed API URL\
         \ that rechecks access before decrypting. Downloads do not change shared read\
         \ status. No attachment extraction or analysis is performed."
-      operationId: downloadEmailAttachment
+      operationId: getEmailAttachmentDownloadUrl
       parameters:
       - explode: false
         in: path
@@ -1655,7 +1695,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/downloadEmailOriginal_200_response"
+                $ref: "#/components/schemas/getEmailOriginalDownloadUrl_200_response"
             application/octet-stream:
               schema:
                 format: binary
@@ -1940,13 +1980,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/verifyAgentSignup_201_response"
+                $ref: "#/components/schemas/SignupResponse"
           description: Created user/account/mailbox and one scoped connection
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/verifyAgentSignup_200_response"
+                $ref: "#/components/schemas/SignupResponse"
           description: Already completed; no key replay
         "403":
           content:
@@ -2562,6 +2602,80 @@ paths:
       security:
       - bearerAuth: []
       summary: Add an email alias to a mailbox
+  /v1/direct_uploads:
+    post:
+      operationId: prepareFileUpload
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrepareFileUploadRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreparedFileUploadResponse"
+          description: Prepare a single file upload
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreparedFileUploadResponse"
+          description: Identical content already exists. No upload is needed.
+      security:
+      - bearerAuth: []
+      summary: Prepare a single file upload
+  /v1/mailboxes/{id}/files/{file_id}:
+    get:
+      operationId: getMailboxFile
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: file_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - explode: true
+        in: query
+        name: account_id
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailboxFileResponse"
+          description: Read stored file metadata
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security:
+      - bearerAuth: []
+      summary: Read stored file metadata
 components:
   parameters:
     AccountId:
@@ -2931,8 +3045,6 @@ components:
           recoverable: true
           next_action: next_action
           browser_url: browser_url
-      not:
-        $ref: "#/components/schemas/ApiError_not"
       properties:
         success:
           type: boolean
@@ -3335,12 +3447,12 @@ components:
       type: object
     FilePagination:
       example:
-        limit: 0
-        offset: 6
-        count: 1
+        limit: 6
+        offset: 1
+        count: 5
         total: 5
         has_more: true
-        next_offset: 5
+        next_offset: 2
       properties:
         limit:
           type: integer
@@ -3563,23 +3675,6 @@ components:
       - data
       - id
       - type
-      type: object
-    ApiSuccess:
-      example:
-        success: true
-        data:
-          key: ""
-      properties:
-        success:
-          type: boolean
-        data:
-          additionalProperties: true
-          description: Endpoint-specific result fields. See the endpoint documentation
-            for the domain or authentication-capability fields.
-          type: object
-      required:
-      - data
-      - success
       type: object
     EmailForwarding:
       description: "Server-recorded member forwarding provenance. The original author\
@@ -3849,6 +3944,2158 @@ components:
       - next_offset
       - offset
       type: object
+    SignupStatus:
+      example:
+        status: completed
+        account_id: account_id
+        mailbox_id: mailbox_id
+      properties:
+        status:
+          enum:
+          - completed
+          type: string
+        account_id:
+          type: string
+        mailbox_id:
+          type: string
+      required:
+      - status
+      type: object
+    SignupResult:
+      description: "First verification returns api_key, account and mailbox. Repeated\
+        \ verification returns completed IDs and recovery_url without the key."
+      example:
+        signup:
+          status: completed
+          account_id: account_id
+          mailbox_id: mailbox_id
+        api_key: api_key
+        scope: mailbox_admin
+        expires_at: 2000-01-23T04:56:07.000+00:00
+        account:
+          id: id
+        mailbox:
+          id: id
+          email:
+            address: address
+            received_count: 0
+            last_received_at: 2000-01-23T04:56:07.000+00:00
+            last_received_path: last_received_path
+            blocked_reason: blocked_reason
+            available_domains:
+            - hostname: hostname
+              kind: platform
+            - hostname: hostname
+              kind: platform
+            assignment:
+              id: id
+              status: pending
+              hostname: hostname
+              error:
+                code: code
+                message: message
+                retryable: true
+            customization:
+              allowed: true
+              blocked_reason: blocked_reason
+              settings_url: settings_url
+            receiving_enabled: true
+            sender_allowlist:
+              enabled: true
+              entries:
+              - entries
+              - entries
+              - entries
+              - entries
+              - entries
+              version: version
+              max_entries: 6
+              editable: true
+            username: username
+            sending_enabled: true
+            aliases:
+            - id: id
+              address: address
+              active: true
+            - id: id
+              address: address
+              active: true
+        recovery_url: https://openapi-generator.tech
+      properties:
+        signup:
+          $ref: "#/components/schemas/SignupStatus"
+        api_key:
+          description: Returned once; store privately. Never write to logs or chat.
+          type: string
+        scope:
+          enum:
+          - mailbox_admin
+          type: string
+        expires_at:
+          format: date-time
+          type: string
+        account:
+          $ref: "#/components/schemas/SignupAccount"
+        mailbox:
+          $ref: "#/components/schemas/SignupMailbox"
+        recovery_url:
+          format: uri
+          type: string
+      required:
+      - signup
+      type: object
+    SignupAccount:
+      example:
+        id: id
+      properties:
+        id:
+          type: string
+      required:
+      - id
+      type: object
+    SignupMailbox:
+      example:
+        id: id
+        email:
+          address: address
+          received_count: 0
+          last_received_at: 2000-01-23T04:56:07.000+00:00
+          last_received_path: last_received_path
+          blocked_reason: blocked_reason
+          available_domains:
+          - hostname: hostname
+            kind: platform
+          - hostname: hostname
+            kind: platform
+          assignment:
+            id: id
+            status: pending
+            hostname: hostname
+            error:
+              code: code
+              message: message
+              retryable: true
+          customization:
+            allowed: true
+            blocked_reason: blocked_reason
+            settings_url: settings_url
+          receiving_enabled: true
+          sender_allowlist:
+            enabled: true
+            entries:
+            - entries
+            - entries
+            - entries
+            - entries
+            - entries
+            version: version
+            max_entries: 6
+            editable: true
+          username: username
+          sending_enabled: true
+          aliases:
+          - id: id
+            address: address
+            active: true
+          - id: id
+            address: address
+            active: true
+      properties:
+        id:
+          type: string
+        email:
+          $ref: "#/components/schemas/MailboxEmail"
+      required:
+      - email
+      - id
+      type: object
+    SignupResponse:
+      example:
+        success: true
+        data:
+          signup:
+            status: completed
+            account_id: account_id
+            mailbox_id: mailbox_id
+          api_key: api_key
+          scope: mailbox_admin
+          expires_at: 2000-01-23T04:56:07.000+00:00
+          account:
+            id: id
+          mailbox:
+            id: id
+            email:
+              address: address
+              received_count: 0
+              last_received_at: 2000-01-23T04:56:07.000+00:00
+              last_received_path: last_received_path
+              blocked_reason: blocked_reason
+              available_domains:
+              - hostname: hostname
+                kind: platform
+              - hostname: hostname
+                kind: platform
+              assignment:
+                id: id
+                status: pending
+                hostname: hostname
+                error:
+                  code: code
+                  message: message
+                  retryable: true
+              customization:
+                allowed: true
+                blocked_reason: blocked_reason
+                settings_url: settings_url
+              receiving_enabled: true
+              sender_allowlist:
+                enabled: true
+                entries:
+                - entries
+                - entries
+                - entries
+                - entries
+                - entries
+                version: version
+                max_entries: 6
+                editable: true
+              username: username
+              sending_enabled: true
+              aliases:
+              - id: id
+                address: address
+                active: true
+              - id: id
+                address: address
+                active: true
+          recovery_url: https://openapi-generator.tech
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/SignupResult"
+      required:
+      - data
+      - success
+      type: object
+    MailboxEmailOptions:
+      additionalProperties: false
+      properties:
+        username:
+          description: "Free: a prefix normalized to dots, shortened to 51 characters,\
+            \ with a permanent 12-character random lowercase letter/digit suffix added.\
+            \ Paid: the exact name before @, normalized to lowercase. Omit to generate;\
+            \ blank/null is invalid. Reserved shared-domain words return EMAIL_NAME_RESERVED\
+            \ with the reserved word and custom-domain guidance; occupied or retired\
+            \ exact names return EMAIL_ALREADY_EXISTS."
+          maxLength: 64
+          minLength: 1
+          type: string
+        domain:
+          description: "Built-in domain such as revdokumail.com on any plan, or a\
+            \ ready custom email domain owned by the selected account on an eligible\
+            \ plan. Omit for the default platform domain."
+          type: string
+      type: object
+    MailboxCreateOptions:
+      properties:
+        description:
+          type: string
+        metadata:
+          additionalProperties: true
+          type: object
+        tag_ids:
+          items:
+            type: string
+          type: array
+        tag_paths:
+          items:
+            type: string
+          type: array
+        email:
+          $ref: "#/components/schemas/MailboxEmailOptions"
+      type: object
+    FileActor:
+      example:
+        id: id
+        name: name
+        email: email
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+      type: object
+    FileKey:
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        token_type:
+          type: string
+      type: object
+    FileVersion:
+      example:
+        id: id
+        file_id: file_id
+        name: name
+        mime_type: mime_type
+        sha256: sha256
+        reason: reason
+        meta_key: meta_key
+        created_by_system: created_by_system
+        deleted: true
+        ready: true
+        has_text: true
+        normalization_required: true
+        meta_ready: true
+        version_number: 0
+        byte_size: 6
+        created_at: 2000-01-23T04:56:07.000+00:00
+        meta_created_at: 2000-01-23T04:56:07.000+00:00
+        created_by:
+          id: id
+          name: name
+          email: email
+        updated_by:
+          id: id
+          name: name
+          email: email
+        created_by_agent:
+          key: ""
+        updated_by_agent:
+          key: ""
+        created_by_api_key:
+          key: ""
+        updated_by_api_key:
+          key: ""
+        read: true
+        read_at: 2000-01-23T04:56:07.000+00:00
+        read_by: ""
+        read_by_api_key: ""
+      properties:
+        id:
+          type: string
+        file_id:
+          type: string
+        name:
+          type: string
+        mime_type:
+          type: string
+        sha256:
+          type: string
+        reason:
+          nullable: true
+          type: string
+        meta_key:
+          type: string
+        created_by_system:
+          type: string
+        deleted:
+          type: boolean
+        ready:
+          type: boolean
+        has_text:
+          type: boolean
+        normalization_required:
+          type: boolean
+        meta_ready:
+          type: boolean
+        version_number:
+          format: int64
+          type: integer
+        byte_size:
+          format: int64
+          type: integer
+        created_at:
+          format: date-time
+          type: string
+        meta_created_at:
+          format: date-time
+          type: string
+        created_by:
+          $ref: "#/components/schemas/FileActor"
+        updated_by:
+          $ref: "#/components/schemas/FileActor"
+        created_by_agent:
+          additionalProperties: true
+          type: object
+        updated_by_agent:
+          additionalProperties: true
+          type: object
+        created_by_api_key:
+          additionalProperties: true
+          type: object
+        updated_by_api_key:
+          additionalProperties: true
+          type: object
+        read:
+          type: boolean
+        read_at:
+          format: date-time
+          nullable: true
+          type: string
+        read_by:
+          allOf:
+          - $ref: "#/components/schemas/FileActor"
+          nullable: true
+        read_by_api_key:
+          allOf:
+          - $ref: "#/components/schemas/FileKey"
+          nullable: true
+      type: object
+    MailboxFile:
+      example:
+        id: id
+        mailbox_id: mailbox_id
+        basename: basename
+        path: path
+        role: role
+        created_by_system: created_by_system
+        deleted: true
+        metadata:
+          key: ""
+        version_reasons:
+        - version_id: version_id
+          reason: reason
+          created_by_id: created_by_id
+          version_number: 0
+          created_at: 2000-01-23T04:56:07.000+00:00
+        - version_id: version_id
+          reason: reason
+          created_by_id: created_by_id
+          version_number: 0
+          created_at: 2000-01-23T04:56:07.000+00:00
+        lock:
+          key: ""
+        current_file_version: ""
+        created_by:
+          id: id
+          name: name
+          email: email
+        created_at: 2000-01-23T04:56:07.000+00:00
+        updated_at: 2000-01-23T04:56:07.000+00:00
+        deleted_at: 2000-01-23T04:56:07.000+00:00
+        created_by_agent:
+          key: ""
+        updated_by_agent:
+          key: ""
+        created_by_api_key:
+          key: ""
+        updated_by_api_key:
+          key: ""
+        read: true
+        read_at: 2000-01-23T04:56:07.000+00:00
+        read_by: ""
+        read_by_api_key: ""
+      properties:
+        id:
+          type: string
+        mailbox_id:
+          type: string
+        basename:
+          type: string
+        path:
+          type: string
+        role:
+          type: string
+        created_by_system:
+          type: string
+        deleted:
+          type: boolean
+        metadata:
+          additionalProperties: true
+          type: object
+        version_reasons:
+          items:
+            $ref: "#/components/schemas/FileVersionReason"
+          type: array
+        lock:
+          additionalProperties: true
+          type: object
+        current_file_version:
+          allOf:
+          - $ref: "#/components/schemas/FileVersion"
+          nullable: true
+        created_by:
+          $ref: "#/components/schemas/FileActor"
+        created_at:
+          format: date-time
+          type: string
+        updated_at:
+          format: date-time
+          type: string
+        deleted_at:
+          format: date-time
+          type: string
+        created_by_agent:
+          additionalProperties: true
+          type: object
+        updated_by_agent:
+          additionalProperties: true
+          type: object
+        created_by_api_key:
+          additionalProperties: true
+          type: object
+        updated_by_api_key:
+          additionalProperties: true
+          type: object
+        read:
+          type: boolean
+        read_at:
+          format: date-time
+          nullable: true
+          type: string
+        read_by:
+          allOf:
+          - $ref: "#/components/schemas/FileActor"
+          nullable: true
+        read_by_api_key:
+          allOf:
+          - $ref: "#/components/schemas/FileKey"
+          nullable: true
+      required:
+      - id
+      - path
+      type: object
+    EmailDomain:
+      example:
+        suggested_subdomain: suggested_subdomain
+        root_guidance: root_guidance
+        pause_reason: pause_reason
+        id: id
+        hostname: hostname
+        status: status
+        guidance: guidance
+        receiving: true
+        root_domain: true
+        paused_at: 2000-01-23T04:56:07.000+00:00
+        last_checked_at: 2000-01-23T04:56:07.000+00:00
+        ownership_verified_at: 2000-01-23T04:56:07.000+00:00
+        setup_expires_at: 2000-01-23T04:56:07.000+00:00
+        ready_at: 2000-01-23T04:56:07.000+00:00
+        required_dns_records:
+        - type: type
+          name: name
+          value: value
+          purpose: purpose
+          zone: zone
+          relative_name: relative_name
+        - type: type
+          name: name
+          value: value
+          purpose: purpose
+          zone: zone
+          relative_name: relative_name
+        error:
+          code: code
+          message: message
+          retryable: true
+        assigned_mailboxes:
+        - id: id
+          email:
+            address: address
+            received_count: 0
+            last_received_at: 2000-01-23T04:56:07.000+00:00
+            last_received_path: last_received_path
+            blocked_reason: blocked_reason
+            available_domains:
+            - hostname: hostname
+              kind: platform
+            - hostname: hostname
+              kind: platform
+            assignment:
+              id: id
+              status: pending
+              hostname: hostname
+              error:
+                code: code
+                message: message
+                retryable: true
+            customization:
+              allowed: true
+              blocked_reason: blocked_reason
+              settings_url: settings_url
+            receiving_enabled: true
+            sender_allowlist:
+              enabled: true
+              entries:
+              - entries
+              - entries
+              - entries
+              - entries
+              - entries
+              version: version
+              max_entries: 6
+              editable: true
+            username: username
+            sending_enabled: true
+            aliases:
+            - id: id
+              address: address
+              active: true
+            - id: id
+              address: address
+              active: true
+        - id: id
+          email:
+            address: address
+            received_count: 0
+            last_received_at: 2000-01-23T04:56:07.000+00:00
+            last_received_path: last_received_path
+            blocked_reason: blocked_reason
+            available_domains:
+            - hostname: hostname
+              kind: platform
+            - hostname: hostname
+              kind: platform
+            assignment:
+              id: id
+              status: pending
+              hostname: hostname
+              error:
+                code: code
+                message: message
+                retryable: true
+            customization:
+              allowed: true
+              blocked_reason: blocked_reason
+              settings_url: settings_url
+            receiving_enabled: true
+            sender_allowlist:
+              enabled: true
+              entries:
+              - entries
+              - entries
+              - entries
+              - entries
+              - entries
+              version: version
+              max_entries: 6
+              editable: true
+            username: username
+            sending_enabled: true
+            aliases:
+            - id: id
+              address: address
+              active: true
+            - id: id
+              address: address
+              active: true
+      properties:
+        suggested_subdomain:
+          nullable: true
+          type: string
+        root_guidance:
+          nullable: true
+          type: string
+        pause_reason:
+          nullable: true
+          type: string
+        id:
+          type: string
+        hostname:
+          type: string
+        status:
+          type: string
+        guidance:
+          type: string
+        receiving:
+          type: boolean
+        root_domain:
+          type: boolean
+        paused_at:
+          format: date-time
+          nullable: true
+          type: string
+        last_checked_at:
+          format: date-time
+          nullable: true
+          type: string
+        ownership_verified_at:
+          format: date-time
+          nullable: true
+          type: string
+        setup_expires_at:
+          format: date-time
+          nullable: true
+          type: string
+        ready_at:
+          format: date-time
+          nullable: true
+          type: string
+        required_dns_records:
+          items:
+            $ref: "#/components/schemas/DnsRecord"
+          type: array
+        error:
+          $ref: "#/components/schemas/EmailDomain_error"
+        assigned_mailboxes:
+          items:
+            $ref: "#/components/schemas/EmailDomain_assigned_mailboxes_inner"
+          type: array
+      required:
+      - hostname
+      - id
+      - status
+      type: object
+    EmailDomainList:
+      example:
+        domains:
+        - suggested_subdomain: suggested_subdomain
+          root_guidance: root_guidance
+          pause_reason: pause_reason
+          id: id
+          hostname: hostname
+          status: status
+          guidance: guidance
+          receiving: true
+          root_domain: true
+          paused_at: 2000-01-23T04:56:07.000+00:00
+          last_checked_at: 2000-01-23T04:56:07.000+00:00
+          ownership_verified_at: 2000-01-23T04:56:07.000+00:00
+          setup_expires_at: 2000-01-23T04:56:07.000+00:00
+          ready_at: 2000-01-23T04:56:07.000+00:00
+          required_dns_records:
+          - type: type
+            name: name
+            value: value
+            purpose: purpose
+            zone: zone
+            relative_name: relative_name
+          - type: type
+            name: name
+            value: value
+            purpose: purpose
+            zone: zone
+            relative_name: relative_name
+          error:
+            code: code
+            message: message
+            retryable: true
+          assigned_mailboxes:
+          - id: id
+            email:
+              address: address
+              received_count: 0
+              last_received_at: 2000-01-23T04:56:07.000+00:00
+              last_received_path: last_received_path
+              blocked_reason: blocked_reason
+              available_domains:
+              - hostname: hostname
+                kind: platform
+              - hostname: hostname
+                kind: platform
+              assignment:
+                id: id
+                status: pending
+                hostname: hostname
+                error:
+                  code: code
+                  message: message
+                  retryable: true
+              customization:
+                allowed: true
+                blocked_reason: blocked_reason
+                settings_url: settings_url
+              receiving_enabled: true
+              sender_allowlist:
+                enabled: true
+                entries:
+                - entries
+                - entries
+                - entries
+                - entries
+                - entries
+                version: version
+                max_entries: 6
+                editable: true
+              username: username
+              sending_enabled: true
+              aliases:
+              - id: id
+                address: address
+                active: true
+              - id: id
+                address: address
+                active: true
+          - id: id
+            email:
+              address: address
+              received_count: 0
+              last_received_at: 2000-01-23T04:56:07.000+00:00
+              last_received_path: last_received_path
+              blocked_reason: blocked_reason
+              available_domains:
+              - hostname: hostname
+                kind: platform
+              - hostname: hostname
+                kind: platform
+              assignment:
+                id: id
+                status: pending
+                hostname: hostname
+                error:
+                  code: code
+                  message: message
+                  retryable: true
+              customization:
+                allowed: true
+                blocked_reason: blocked_reason
+                settings_url: settings_url
+              receiving_enabled: true
+              sender_allowlist:
+                enabled: true
+                entries:
+                - entries
+                - entries
+                - entries
+                - entries
+                - entries
+                version: version
+                max_entries: 6
+                editable: true
+              username: username
+              sending_enabled: true
+              aliases:
+              - id: id
+                address: address
+                active: true
+              - id: id
+                address: address
+                active: true
+        - suggested_subdomain: suggested_subdomain
+          root_guidance: root_guidance
+          pause_reason: pause_reason
+          id: id
+          hostname: hostname
+          status: status
+          guidance: guidance
+          receiving: true
+          root_domain: true
+          paused_at: 2000-01-23T04:56:07.000+00:00
+          last_checked_at: 2000-01-23T04:56:07.000+00:00
+          ownership_verified_at: 2000-01-23T04:56:07.000+00:00
+          setup_expires_at: 2000-01-23T04:56:07.000+00:00
+          ready_at: 2000-01-23T04:56:07.000+00:00
+          required_dns_records:
+          - type: type
+            name: name
+            value: value
+            purpose: purpose
+            zone: zone
+            relative_name: relative_name
+          - type: type
+            name: name
+            value: value
+            purpose: purpose
+            zone: zone
+            relative_name: relative_name
+          error:
+            code: code
+            message: message
+            retryable: true
+          assigned_mailboxes:
+          - id: id
+            email:
+              address: address
+              received_count: 0
+              last_received_at: 2000-01-23T04:56:07.000+00:00
+              last_received_path: last_received_path
+              blocked_reason: blocked_reason
+              available_domains:
+              - hostname: hostname
+                kind: platform
+              - hostname: hostname
+                kind: platform
+              assignment:
+                id: id
+                status: pending
+                hostname: hostname
+                error:
+                  code: code
+                  message: message
+                  retryable: true
+              customization:
+                allowed: true
+                blocked_reason: blocked_reason
+                settings_url: settings_url
+              receiving_enabled: true
+              sender_allowlist:
+                enabled: true
+                entries:
+                - entries
+                - entries
+                - entries
+                - entries
+                - entries
+                version: version
+                max_entries: 6
+                editable: true
+              username: username
+              sending_enabled: true
+              aliases:
+              - id: id
+                address: address
+                active: true
+              - id: id
+                address: address
+                active: true
+          - id: id
+            email:
+              address: address
+              received_count: 0
+              last_received_at: 2000-01-23T04:56:07.000+00:00
+              last_received_path: last_received_path
+              blocked_reason: blocked_reason
+              available_domains:
+              - hostname: hostname
+                kind: platform
+              - hostname: hostname
+                kind: platform
+              assignment:
+                id: id
+                status: pending
+                hostname: hostname
+                error:
+                  code: code
+                  message: message
+                  retryable: true
+              customization:
+                allowed: true
+                blocked_reason: blocked_reason
+                settings_url: settings_url
+              receiving_enabled: true
+              sender_allowlist:
+                enabled: true
+                entries:
+                - entries
+                - entries
+                - entries
+                - entries
+                - entries
+                version: version
+                max_entries: 6
+                editable: true
+              username: username
+              sending_enabled: true
+              aliases:
+              - id: id
+                address: address
+                active: true
+              - id: id
+                address: address
+                active: true
+        enabled: true
+        configured: true
+        limit: 0
+        usage:
+          used: 6
+          monthly_limit: 1
+          remaining: 5
+          bytes_used: 5
+          monthly_bytes_limit: 2
+          bytes_remaining: 7
+          max_message_bytes: 9
+          resets_at: 2000-01-23T04:56:07.000+00:00
+          paused: true
+          pause_reason: pause_reason
+        guidance: guidance
+      properties:
+        domains:
+          items:
+            $ref: "#/components/schemas/EmailDomain"
+          type: array
+        enabled:
+          type: boolean
+        configured:
+          type: boolean
+        limit:
+          type: integer
+        usage:
+          $ref: "#/components/schemas/EmailUsage"
+        guidance:
+          type: string
+      required:
+      - domains
+      type: object
+    EmailDomainCheck:
+      example:
+        hostname: hostname
+        root_domain: true
+        suggested_subdomain: suggested_subdomain
+        root_guidance: root_guidance
+      properties:
+        hostname:
+          type: string
+        root_domain:
+          type: boolean
+        suggested_subdomain:
+          nullable: true
+          type: string
+        root_guidance:
+          type: string
+      required:
+      - hostname
+      - root_domain
+      type: object
+    EmailDomainListResponse:
+      example:
+        success: true
+        data:
+          domains:
+          - suggested_subdomain: suggested_subdomain
+            root_guidance: root_guidance
+            pause_reason: pause_reason
+            id: id
+            hostname: hostname
+            status: status
+            guidance: guidance
+            receiving: true
+            root_domain: true
+            paused_at: 2000-01-23T04:56:07.000+00:00
+            last_checked_at: 2000-01-23T04:56:07.000+00:00
+            ownership_verified_at: 2000-01-23T04:56:07.000+00:00
+            setup_expires_at: 2000-01-23T04:56:07.000+00:00
+            ready_at: 2000-01-23T04:56:07.000+00:00
+            required_dns_records:
+            - type: type
+              name: name
+              value: value
+              purpose: purpose
+              zone: zone
+              relative_name: relative_name
+            - type: type
+              name: name
+              value: value
+              purpose: purpose
+              zone: zone
+              relative_name: relative_name
+            error:
+              code: code
+              message: message
+              retryable: true
+            assigned_mailboxes:
+            - id: id
+              email:
+                address: address
+                received_count: 0
+                last_received_at: 2000-01-23T04:56:07.000+00:00
+                last_received_path: last_received_path
+                blocked_reason: blocked_reason
+                available_domains:
+                - hostname: hostname
+                  kind: platform
+                - hostname: hostname
+                  kind: platform
+                assignment:
+                  id: id
+                  status: pending
+                  hostname: hostname
+                  error:
+                    code: code
+                    message: message
+                    retryable: true
+                customization:
+                  allowed: true
+                  blocked_reason: blocked_reason
+                  settings_url: settings_url
+                receiving_enabled: true
+                sender_allowlist:
+                  enabled: true
+                  entries:
+                  - entries
+                  - entries
+                  - entries
+                  - entries
+                  - entries
+                  version: version
+                  max_entries: 6
+                  editable: true
+                username: username
+                sending_enabled: true
+                aliases:
+                - id: id
+                  address: address
+                  active: true
+                - id: id
+                  address: address
+                  active: true
+            - id: id
+              email:
+                address: address
+                received_count: 0
+                last_received_at: 2000-01-23T04:56:07.000+00:00
+                last_received_path: last_received_path
+                blocked_reason: blocked_reason
+                available_domains:
+                - hostname: hostname
+                  kind: platform
+                - hostname: hostname
+                  kind: platform
+                assignment:
+                  id: id
+                  status: pending
+                  hostname: hostname
+                  error:
+                    code: code
+                    message: message
+                    retryable: true
+                customization:
+                  allowed: true
+                  blocked_reason: blocked_reason
+                  settings_url: settings_url
+                receiving_enabled: true
+                sender_allowlist:
+                  enabled: true
+                  entries:
+                  - entries
+                  - entries
+                  - entries
+                  - entries
+                  - entries
+                  version: version
+                  max_entries: 6
+                  editable: true
+                username: username
+                sending_enabled: true
+                aliases:
+                - id: id
+                  address: address
+                  active: true
+                - id: id
+                  address: address
+                  active: true
+          - suggested_subdomain: suggested_subdomain
+            root_guidance: root_guidance
+            pause_reason: pause_reason
+            id: id
+            hostname: hostname
+            status: status
+            guidance: guidance
+            receiving: true
+            root_domain: true
+            paused_at: 2000-01-23T04:56:07.000+00:00
+            last_checked_at: 2000-01-23T04:56:07.000+00:00
+            ownership_verified_at: 2000-01-23T04:56:07.000+00:00
+            setup_expires_at: 2000-01-23T04:56:07.000+00:00
+            ready_at: 2000-01-23T04:56:07.000+00:00
+            required_dns_records:
+            - type: type
+              name: name
+              value: value
+              purpose: purpose
+              zone: zone
+              relative_name: relative_name
+            - type: type
+              name: name
+              value: value
+              purpose: purpose
+              zone: zone
+              relative_name: relative_name
+            error:
+              code: code
+              message: message
+              retryable: true
+            assigned_mailboxes:
+            - id: id
+              email:
+                address: address
+                received_count: 0
+                last_received_at: 2000-01-23T04:56:07.000+00:00
+                last_received_path: last_received_path
+                blocked_reason: blocked_reason
+                available_domains:
+                - hostname: hostname
+                  kind: platform
+                - hostname: hostname
+                  kind: platform
+                assignment:
+                  id: id
+                  status: pending
+                  hostname: hostname
+                  error:
+                    code: code
+                    message: message
+                    retryable: true
+                customization:
+                  allowed: true
+                  blocked_reason: blocked_reason
+                  settings_url: settings_url
+                receiving_enabled: true
+                sender_allowlist:
+                  enabled: true
+                  entries:
+                  - entries
+                  - entries
+                  - entries
+                  - entries
+                  - entries
+                  version: version
+                  max_entries: 6
+                  editable: true
+                username: username
+                sending_enabled: true
+                aliases:
+                - id: id
+                  address: address
+                  active: true
+                - id: id
+                  address: address
+                  active: true
+            - id: id
+              email:
+                address: address
+                received_count: 0
+                last_received_at: 2000-01-23T04:56:07.000+00:00
+                last_received_path: last_received_path
+                blocked_reason: blocked_reason
+                available_domains:
+                - hostname: hostname
+                  kind: platform
+                - hostname: hostname
+                  kind: platform
+                assignment:
+                  id: id
+                  status: pending
+                  hostname: hostname
+                  error:
+                    code: code
+                    message: message
+                    retryable: true
+                customization:
+                  allowed: true
+                  blocked_reason: blocked_reason
+                  settings_url: settings_url
+                receiving_enabled: true
+                sender_allowlist:
+                  enabled: true
+                  entries:
+                  - entries
+                  - entries
+                  - entries
+                  - entries
+                  - entries
+                  version: version
+                  max_entries: 6
+                  editable: true
+                username: username
+                sending_enabled: true
+                aliases:
+                - id: id
+                  address: address
+                  active: true
+                - id: id
+                  address: address
+                  active: true
+          enabled: true
+          configured: true
+          limit: 0
+          usage:
+            used: 6
+            monthly_limit: 1
+            remaining: 5
+            bytes_used: 5
+            monthly_bytes_limit: 2
+            bytes_remaining: 7
+            max_message_bytes: 9
+            resets_at: 2000-01-23T04:56:07.000+00:00
+            paused: true
+            pause_reason: pause_reason
+          guidance: guidance
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/EmailDomainList"
+      required:
+      - data
+      - success
+      type: object
+    EmailDomainResponse:
+      example:
+        success: true
+        data:
+          suggested_subdomain: suggested_subdomain
+          root_guidance: root_guidance
+          pause_reason: pause_reason
+          id: id
+          hostname: hostname
+          status: status
+          guidance: guidance
+          receiving: true
+          root_domain: true
+          paused_at: 2000-01-23T04:56:07.000+00:00
+          last_checked_at: 2000-01-23T04:56:07.000+00:00
+          ownership_verified_at: 2000-01-23T04:56:07.000+00:00
+          setup_expires_at: 2000-01-23T04:56:07.000+00:00
+          ready_at: 2000-01-23T04:56:07.000+00:00
+          required_dns_records:
+          - type: type
+            name: name
+            value: value
+            purpose: purpose
+            zone: zone
+            relative_name: relative_name
+          - type: type
+            name: name
+            value: value
+            purpose: purpose
+            zone: zone
+            relative_name: relative_name
+          error:
+            code: code
+            message: message
+            retryable: true
+          assigned_mailboxes:
+          - id: id
+            email:
+              address: address
+              received_count: 0
+              last_received_at: 2000-01-23T04:56:07.000+00:00
+              last_received_path: last_received_path
+              blocked_reason: blocked_reason
+              available_domains:
+              - hostname: hostname
+                kind: platform
+              - hostname: hostname
+                kind: platform
+              assignment:
+                id: id
+                status: pending
+                hostname: hostname
+                error:
+                  code: code
+                  message: message
+                  retryable: true
+              customization:
+                allowed: true
+                blocked_reason: blocked_reason
+                settings_url: settings_url
+              receiving_enabled: true
+              sender_allowlist:
+                enabled: true
+                entries:
+                - entries
+                - entries
+                - entries
+                - entries
+                - entries
+                version: version
+                max_entries: 6
+                editable: true
+              username: username
+              sending_enabled: true
+              aliases:
+              - id: id
+                address: address
+                active: true
+              - id: id
+                address: address
+                active: true
+          - id: id
+            email:
+              address: address
+              received_count: 0
+              last_received_at: 2000-01-23T04:56:07.000+00:00
+              last_received_path: last_received_path
+              blocked_reason: blocked_reason
+              available_domains:
+              - hostname: hostname
+                kind: platform
+              - hostname: hostname
+                kind: platform
+              assignment:
+                id: id
+                status: pending
+                hostname: hostname
+                error:
+                  code: code
+                  message: message
+                  retryable: true
+              customization:
+                allowed: true
+                blocked_reason: blocked_reason
+                settings_url: settings_url
+              receiving_enabled: true
+              sender_allowlist:
+                enabled: true
+                entries:
+                - entries
+                - entries
+                - entries
+                - entries
+                - entries
+                version: version
+                max_entries: 6
+                editable: true
+              username: username
+              sending_enabled: true
+              aliases:
+              - id: id
+                address: address
+                active: true
+              - id: id
+                address: address
+                active: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/EmailDomain"
+      required:
+      - data
+      - success
+      type: object
+    EmailDomainCheckResponse:
+      example:
+        success: true
+        data:
+          hostname: hostname
+          root_domain: true
+          suggested_subdomain: suggested_subdomain
+          root_guidance: root_guidance
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/EmailDomainCheck"
+      required:
+      - data
+      - success
+      type: object
+    UploadBlob:
+      example:
+        filename: filename
+        byte_size: 0
+        checksum: checksum
+        content_type: content_type
+        sha256: sha256
+        purpose: mailbox_file
+      properties:
+        filename:
+          type: string
+        byte_size:
+          format: int64
+          minimum: 0
+          type: integer
+        checksum:
+          type: string
+        content_type:
+          type: string
+        sha256:
+          type: string
+        purpose:
+          enum:
+          - mailbox_file
+          type: string
+      required:
+      - byte_size
+      - checksum
+      - content_type
+      - filename
+      - purpose
+      - sha256
+      type: object
+    PrepareFileUploadRequest:
+      example:
+        mailbox_id: mailbox_id
+        account_id: account_id
+        path: path
+        blob:
+          filename: filename
+          byte_size: 0
+          checksum: checksum
+          content_type: content_type
+          sha256: sha256
+          purpose: mailbox_file
+      properties:
+        mailbox_id:
+          type: string
+        account_id:
+          type: string
+        path:
+          type: string
+        blob:
+          $ref: "#/components/schemas/UploadBlob"
+      required:
+      - blob
+      - mailbox_id
+      - path
+      type: object
+    StorageUpload:
+      example:
+        url: https://openapi-generator.tech
+        headers:
+          key: headers
+      properties:
+        url:
+          format: uri
+          type: string
+        headers:
+          additionalProperties:
+            type: string
+          type: object
+      required:
+      - headers
+      - url
+      type: object
+    PreparedFileUpload:
+      description: "A new upload returns signed_id and direct_upload. Identical content\
+        \ returns skipped=true, duplicate=true, file and version without a storage\
+        \ upload."
+      example:
+        signed_id: signed_id
+        filename: filename
+        byte_size: 0
+        checksum: checksum
+        content_type: content_type
+        service_name: service_name
+        direct_upload:
+          url: https://openapi-generator.tech
+          headers:
+            key: headers
+        file:
+          id: id
+          mailbox_id: mailbox_id
+          basename: basename
+          path: path
+          role: role
+          created_by_system: created_by_system
+          deleted: true
+          metadata:
+            key: ""
+          version_reasons:
+          - version_id: version_id
+            reason: reason
+            created_by_id: created_by_id
+            version_number: 0
+            created_at: 2000-01-23T04:56:07.000+00:00
+          - version_id: version_id
+            reason: reason
+            created_by_id: created_by_id
+            version_number: 0
+            created_at: 2000-01-23T04:56:07.000+00:00
+          lock:
+            key: ""
+          current_file_version: ""
+          created_by:
+            id: id
+            name: name
+            email: email
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+          created_by_agent:
+            key: ""
+          updated_by_agent:
+            key: ""
+          created_by_api_key:
+            key: ""
+          updated_by_api_key:
+            key: ""
+          read: true
+          read_at: 2000-01-23T04:56:07.000+00:00
+          read_by: ""
+          read_by_api_key: ""
+        version:
+          id: id
+          file_id: file_id
+          name: name
+          mime_type: mime_type
+          sha256: sha256
+          reason: reason
+          meta_key: meta_key
+          created_by_system: created_by_system
+          deleted: true
+          ready: true
+          has_text: true
+          normalization_required: true
+          meta_ready: true
+          version_number: 0
+          byte_size: 6
+          created_at: 2000-01-23T04:56:07.000+00:00
+          meta_created_at: 2000-01-23T04:56:07.000+00:00
+          created_by:
+            id: id
+            name: name
+            email: email
+          updated_by:
+            id: id
+            name: name
+            email: email
+          created_by_agent:
+            key: ""
+          updated_by_agent:
+            key: ""
+          created_by_api_key:
+            key: ""
+          updated_by_api_key:
+            key: ""
+          read: true
+          read_at: 2000-01-23T04:56:07.000+00:00
+          read_by: ""
+          read_by_api_key: ""
+        skipped: true
+        duplicate: true
+        reason: reason
+        details:
+          key: ""
+      properties:
+        signed_id:
+          type: string
+        filename:
+          type: string
+        byte_size:
+          format: int64
+          type: integer
+        checksum:
+          type: string
+        content_type:
+          type: string
+        service_name:
+          type: string
+        direct_upload:
+          $ref: "#/components/schemas/StorageUpload"
+        file:
+          $ref: "#/components/schemas/MailboxFile"
+        version:
+          $ref: "#/components/schemas/FileVersion"
+        skipped:
+          type: boolean
+        duplicate:
+          type: boolean
+        reason:
+          type: string
+        details:
+          additionalProperties: true
+          type: object
+      type: object
+    PreparedFileUploadResponse:
+      example:
+        success: true
+        data:
+          signed_id: signed_id
+          filename: filename
+          byte_size: 0
+          checksum: checksum
+          content_type: content_type
+          service_name: service_name
+          direct_upload:
+            url: https://openapi-generator.tech
+            headers:
+              key: headers
+          file:
+            id: id
+            mailbox_id: mailbox_id
+            basename: basename
+            path: path
+            role: role
+            created_by_system: created_by_system
+            deleted: true
+            metadata:
+              key: ""
+            version_reasons:
+            - version_id: version_id
+              reason: reason
+              created_by_id: created_by_id
+              version_number: 0
+              created_at: 2000-01-23T04:56:07.000+00:00
+            - version_id: version_id
+              reason: reason
+              created_by_id: created_by_id
+              version_number: 0
+              created_at: 2000-01-23T04:56:07.000+00:00
+            lock:
+              key: ""
+            current_file_version: ""
+            created_by:
+              id: id
+              name: name
+              email: email
+            created_at: 2000-01-23T04:56:07.000+00:00
+            updated_at: 2000-01-23T04:56:07.000+00:00
+            deleted_at: 2000-01-23T04:56:07.000+00:00
+            created_by_agent:
+              key: ""
+            updated_by_agent:
+              key: ""
+            created_by_api_key:
+              key: ""
+            updated_by_api_key:
+              key: ""
+            read: true
+            read_at: 2000-01-23T04:56:07.000+00:00
+            read_by: ""
+            read_by_api_key: ""
+          version:
+            id: id
+            file_id: file_id
+            name: name
+            mime_type: mime_type
+            sha256: sha256
+            reason: reason
+            meta_key: meta_key
+            created_by_system: created_by_system
+            deleted: true
+            ready: true
+            has_text: true
+            normalization_required: true
+            meta_ready: true
+            version_number: 0
+            byte_size: 6
+            created_at: 2000-01-23T04:56:07.000+00:00
+            meta_created_at: 2000-01-23T04:56:07.000+00:00
+            created_by:
+              id: id
+              name: name
+              email: email
+            updated_by:
+              id: id
+              name: name
+              email: email
+            created_by_agent:
+              key: ""
+            updated_by_agent:
+              key: ""
+            created_by_api_key:
+              key: ""
+            updated_by_api_key:
+              key: ""
+            read: true
+            read_at: 2000-01-23T04:56:07.000+00:00
+            read_by: ""
+            read_by_api_key: ""
+          skipped: true
+          duplicate: true
+          reason: reason
+          details:
+            key: ""
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/PreparedFileUpload"
+      required:
+      - data
+      - success
+      type: object
+    SaveUploadedFileRequest:
+      example:
+        path: path
+        signed_blob_id: signed_blob_id
+        account_id: account_id
+        expected_mailbox_revision_id: expected_mailbox_revision_id
+        reason: reason
+      properties:
+        path:
+          type: string
+        signed_blob_id:
+          type: string
+        account_id:
+          type: string
+        expected_mailbox_revision_id:
+          type: string
+        reason:
+          description: "Optional purpose for this action. AI agents should explain\
+            \ intentional reads and changes when known; omit when unknown. Do not\
+            \ include secrets, file contents, or transcripts."
+          maxLength: 2000
+          nullable: true
+          type: string
+      required:
+      - path
+      - signed_blob_id
+      type: object
+    SavedFile:
+      example:
+        file:
+          id: id
+          mailbox_id: mailbox_id
+          basename: basename
+          path: path
+          role: role
+          created_by_system: created_by_system
+          deleted: true
+          metadata:
+            key: ""
+          version_reasons:
+          - version_id: version_id
+            reason: reason
+            created_by_id: created_by_id
+            version_number: 0
+            created_at: 2000-01-23T04:56:07.000+00:00
+          - version_id: version_id
+            reason: reason
+            created_by_id: created_by_id
+            version_number: 0
+            created_at: 2000-01-23T04:56:07.000+00:00
+          lock:
+            key: ""
+          current_file_version: ""
+          created_by:
+            id: id
+            name: name
+            email: email
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+          created_by_agent:
+            key: ""
+          updated_by_agent:
+            key: ""
+          created_by_api_key:
+            key: ""
+          updated_by_api_key:
+            key: ""
+          read: true
+          read_at: 2000-01-23T04:56:07.000+00:00
+          read_by: ""
+          read_by_api_key: ""
+        version:
+          id: id
+          file_id: file_id
+          name: name
+          mime_type: mime_type
+          sha256: sha256
+          reason: reason
+          meta_key: meta_key
+          created_by_system: created_by_system
+          deleted: true
+          ready: true
+          has_text: true
+          normalization_required: true
+          meta_ready: true
+          version_number: 0
+          byte_size: 6
+          created_at: 2000-01-23T04:56:07.000+00:00
+          meta_created_at: 2000-01-23T04:56:07.000+00:00
+          created_by:
+            id: id
+            name: name
+            email: email
+          updated_by:
+            id: id
+            name: name
+            email: email
+          created_by_agent:
+            key: ""
+          updated_by_agent:
+            key: ""
+          created_by_api_key:
+            key: ""
+          updated_by_api_key:
+            key: ""
+          read: true
+          read_at: 2000-01-23T04:56:07.000+00:00
+          read_by: ""
+          read_by_api_key: ""
+        created: true
+        skipped:
+          path: path
+          name: name
+          reason: reason
+          code: code
+          input_index: 1
+          details:
+            key: ""
+        duplicate: true
+      properties:
+        file:
+          $ref: "#/components/schemas/MailboxFile"
+        version:
+          $ref: "#/components/schemas/FileVersion"
+        created:
+          type: boolean
+        skipped:
+          $ref: "#/components/schemas/FileUploadSkip"
+        duplicate:
+          type: boolean
+      required:
+      - created
+      - file
+      - version
+      type: object
+    SavedFileResponse:
+      example:
+        success: true
+        data:
+          file:
+            id: id
+            mailbox_id: mailbox_id
+            basename: basename
+            path: path
+            role: role
+            created_by_system: created_by_system
+            deleted: true
+            metadata:
+              key: ""
+            version_reasons:
+            - version_id: version_id
+              reason: reason
+              created_by_id: created_by_id
+              version_number: 0
+              created_at: 2000-01-23T04:56:07.000+00:00
+            - version_id: version_id
+              reason: reason
+              created_by_id: created_by_id
+              version_number: 0
+              created_at: 2000-01-23T04:56:07.000+00:00
+            lock:
+              key: ""
+            current_file_version: ""
+            created_by:
+              id: id
+              name: name
+              email: email
+            created_at: 2000-01-23T04:56:07.000+00:00
+            updated_at: 2000-01-23T04:56:07.000+00:00
+            deleted_at: 2000-01-23T04:56:07.000+00:00
+            created_by_agent:
+              key: ""
+            updated_by_agent:
+              key: ""
+            created_by_api_key:
+              key: ""
+            updated_by_api_key:
+              key: ""
+            read: true
+            read_at: 2000-01-23T04:56:07.000+00:00
+            read_by: ""
+            read_by_api_key: ""
+          version:
+            id: id
+            file_id: file_id
+            name: name
+            mime_type: mime_type
+            sha256: sha256
+            reason: reason
+            meta_key: meta_key
+            created_by_system: created_by_system
+            deleted: true
+            ready: true
+            has_text: true
+            normalization_required: true
+            meta_ready: true
+            version_number: 0
+            byte_size: 6
+            created_at: 2000-01-23T04:56:07.000+00:00
+            meta_created_at: 2000-01-23T04:56:07.000+00:00
+            created_by:
+              id: id
+              name: name
+              email: email
+            updated_by:
+              id: id
+              name: name
+              email: email
+            created_by_agent:
+              key: ""
+            updated_by_agent:
+              key: ""
+            created_by_api_key:
+              key: ""
+            updated_by_api_key:
+              key: ""
+            read: true
+            read_at: 2000-01-23T04:56:07.000+00:00
+            read_by: ""
+            read_by_api_key: ""
+          created: true
+          skipped:
+            path: path
+            name: name
+            reason: reason
+            code: code
+            input_index: 1
+            details:
+              key: ""
+          duplicate: true
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/SavedFile"
+      required:
+      - data
+      - success
+      type: object
+    MailboxFileResponse:
+      example:
+        success: true
+        data:
+          file:
+            id: id
+            mailbox_id: mailbox_id
+            basename: basename
+            path: path
+            role: role
+            created_by_system: created_by_system
+            deleted: true
+            metadata:
+              key: ""
+            version_reasons:
+            - version_id: version_id
+              reason: reason
+              created_by_id: created_by_id
+              version_number: 0
+              created_at: 2000-01-23T04:56:07.000+00:00
+            - version_id: version_id
+              reason: reason
+              created_by_id: created_by_id
+              version_number: 0
+              created_at: 2000-01-23T04:56:07.000+00:00
+            lock:
+              key: ""
+            current_file_version: ""
+            created_by:
+              id: id
+              name: name
+              email: email
+            created_at: 2000-01-23T04:56:07.000+00:00
+            updated_at: 2000-01-23T04:56:07.000+00:00
+            deleted_at: 2000-01-23T04:56:07.000+00:00
+            created_by_agent:
+              key: ""
+            updated_by_agent:
+              key: ""
+            created_by_api_key:
+              key: ""
+            updated_by_api_key:
+              key: ""
+            read: true
+            read_at: 2000-01-23T04:56:07.000+00:00
+            read_by: ""
+            read_by_api_key: ""
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/MailboxFileResponse_data"
+      required:
+      - data
+      - success
+      type: object
+    DnsRecord:
+      example:
+        type: type
+        name: name
+        value: value
+        purpose: purpose
+        zone: zone
+        relative_name: relative_name
+      properties:
+        type:
+          type: string
+        name:
+          type: string
+        value:
+          type: string
+        purpose:
+          type: string
+        zone:
+          type: string
+        relative_name:
+          type: string
+      required:
+      - name
+      - purpose
+      - relative_name
+      - type
+      - value
+      - zone
+      type: object
+    EmailUsage:
+      example:
+        used: 6
+        monthly_limit: 1
+        remaining: 5
+        bytes_used: 5
+        monthly_bytes_limit: 2
+        bytes_remaining: 7
+        max_message_bytes: 9
+        resets_at: 2000-01-23T04:56:07.000+00:00
+        paused: true
+        pause_reason: pause_reason
+      properties:
+        used:
+          format: int64
+          type: integer
+        monthly_limit:
+          format: int64
+          type: integer
+        remaining:
+          format: int64
+          type: integer
+        bytes_used:
+          format: int64
+          type: integer
+        monthly_bytes_limit:
+          format: int64
+          type: integer
+        bytes_remaining:
+          format: int64
+          type: integer
+        max_message_bytes:
+          format: int64
+          type: integer
+        resets_at:
+          format: date-time
+          type: string
+        paused:
+          type: boolean
+        pause_reason:
+          nullable: true
+          type: string
+      type: object
+    FileVersionReason:
+      example:
+        version_id: version_id
+        reason: reason
+        created_by_id: created_by_id
+        version_number: 0
+        created_at: 2000-01-23T04:56:07.000+00:00
+      properties:
+        version_id:
+          type: string
+        reason:
+          type: string
+        created_by_id:
+          type: string
+        version_number:
+          format: int64
+          type: integer
+        created_at:
+          format: date-time
+          type: string
+      type: object
+    FileUploadSkip:
+      example:
+        path: path
+        name: name
+        reason: reason
+        code: code
+        input_index: 1
+        details:
+          key: ""
+      properties:
+        path:
+          type: string
+        name:
+          type: string
+        reason:
+          type: string
+        code:
+          type: string
+        input_index:
+          type: integer
+        details:
+          additionalProperties: true
+          type: object
+      type: object
     getRevdokuStatus_200_response_data_features:
       additionalProperties: true
       example:
@@ -4048,12 +6295,6 @@ components:
           nullable: true
           type: object
       type: object
-    getRevdokuStatus_200_response_not:
-      anyOf:
-      - required:
-        - error
-      - required:
-        - error_message
     getRevdokuStatus_200_response:
       example:
         data:
@@ -4132,8 +6373,6 @@ components:
           limits:
             key: ""
         success: true
-      not:
-        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
       properties:
         data:
           $ref: "#/components/schemas/getRevdokuStatus_200_response_data"
@@ -4302,8 +6541,6 @@ components:
               mailbox_access: mailbox_access
               can_create_mailboxes: true
         success: true
-      not:
-        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
       properties:
         data:
           $ref: "#/components/schemas/createClientAccount_201_response_data"
@@ -4360,8 +6597,6 @@ components:
             address: address
             active: true
         success: true
-      not:
-        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
       properties:
         data:
           $ref: "#/components/schemas/MailboxEmail"
@@ -4784,8 +7019,6 @@ components:
               blocked_reason: blocked_reason
               required_action: required_action
               confirmation: confirmation
-      not:
-        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
       properties:
         success:
           type: boolean
@@ -4795,49 +7028,12 @@ components:
       - data
       - success
       type: object
-    createMailbox_request_mailbox_email:
-      additionalProperties: false
-      properties:
-        username:
-          description: "Free: a prefix normalized to dots, shortened to 51 characters,\
-            \ with a permanent 12-character random lowercase letter/digit suffix added.\
-            \ Paid: the exact name before @, normalized to lowercase. Omit to generate;\
-            \ blank/null is invalid. Reserved shared-domain words return EMAIL_NAME_RESERVED\
-            \ with the reserved word and custom-domain guidance; occupied or retired\
-            \ exact names return EMAIL_ALREADY_EXISTS."
-          maxLength: 64
-          minLength: 1
-          type: string
-        domain:
-          description: "Built-in domain such as revdokumail.com on any plan, or a\
-            \ ready custom email domain owned by the selected account on an eligible\
-            \ plan. Omit for the default platform domain."
-          type: string
-      type: object
-    createMailbox_request_mailbox:
-      properties:
-        description:
-          type: string
-        metadata:
-          additionalProperties: true
-          type: object
-        tag_ids:
-          items:
-            type: string
-          type: array
-        tag_paths:
-          items:
-            type: string
-          type: array
-        email:
-          $ref: "#/components/schemas/createMailbox_request_mailbox_email"
-      type: object
     createMailbox_request:
       properties:
         account_id:
           type: string
         mailbox:
-          $ref: "#/components/schemas/createMailbox_request_mailbox"
+          $ref: "#/components/schemas/MailboxCreateOptions"
         reason:
           description: "Optional purpose for this action. AI agents should explain\
             \ intentional reads and changes when known; omit when unknown. Do not\
@@ -5042,8 +7238,6 @@ components:
               required_action: required_action
               confirmation: confirmation
         success: true
-      not:
-        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
       properties:
         data:
           $ref: "#/components/schemas/createMailbox_201_response_data"
@@ -5107,19 +7301,101 @@ components:
     listMailboxFiles_200_response_data:
       example:
         files:
-        - "{}"
-        - "{}"
+        - id: id
+          mailbox_id: mailbox_id
+          basename: basename
+          path: path
+          role: role
+          created_by_system: created_by_system
+          deleted: true
+          metadata:
+            key: ""
+          version_reasons:
+          - version_id: version_id
+            reason: reason
+            created_by_id: created_by_id
+            version_number: 0
+            created_at: 2000-01-23T04:56:07.000+00:00
+          - version_id: version_id
+            reason: reason
+            created_by_id: created_by_id
+            version_number: 0
+            created_at: 2000-01-23T04:56:07.000+00:00
+          lock:
+            key: ""
+          current_file_version: ""
+          created_by:
+            id: id
+            name: name
+            email: email
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+          created_by_agent:
+            key: ""
+          updated_by_agent:
+            key: ""
+          created_by_api_key:
+            key: ""
+          updated_by_api_key:
+            key: ""
+          read: true
+          read_at: 2000-01-23T04:56:07.000+00:00
+          read_by: ""
+          read_by_api_key: ""
+        - id: id
+          mailbox_id: mailbox_id
+          basename: basename
+          path: path
+          role: role
+          created_by_system: created_by_system
+          deleted: true
+          metadata:
+            key: ""
+          version_reasons:
+          - version_id: version_id
+            reason: reason
+            created_by_id: created_by_id
+            version_number: 0
+            created_at: 2000-01-23T04:56:07.000+00:00
+          - version_id: version_id
+            reason: reason
+            created_by_id: created_by_id
+            version_number: 0
+            created_at: 2000-01-23T04:56:07.000+00:00
+          lock:
+            key: ""
+          current_file_version: ""
+          created_by:
+            id: id
+            name: name
+            email: email
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+          created_by_agent:
+            key: ""
+          updated_by_agent:
+            key: ""
+          created_by_api_key:
+            key: ""
+          updated_by_api_key:
+            key: ""
+          read: true
+          read_at: 2000-01-23T04:56:07.000+00:00
+          read_by: ""
+          read_by_api_key: ""
         pagination:
-          limit: 0
-          offset: 6
-          count: 1
+          limit: 6
+          offset: 1
+          count: 5
           total: 5
           has_more: true
-          next_offset: 5
+          next_offset: 2
       properties:
         files:
           items:
-            type: object
+            $ref: "#/components/schemas/MailboxFile"
           type: array
         pagination:
           $ref: "#/components/schemas/FilePagination"
@@ -5132,17 +7408,97 @@ components:
         success: true
         data:
           files:
-          - "{}"
-          - "{}"
+          - id: id
+            mailbox_id: mailbox_id
+            basename: basename
+            path: path
+            role: role
+            created_by_system: created_by_system
+            deleted: true
+            metadata:
+              key: ""
+            version_reasons:
+            - version_id: version_id
+              reason: reason
+              created_by_id: created_by_id
+              version_number: 0
+              created_at: 2000-01-23T04:56:07.000+00:00
+            - version_id: version_id
+              reason: reason
+              created_by_id: created_by_id
+              version_number: 0
+              created_at: 2000-01-23T04:56:07.000+00:00
+            lock:
+              key: ""
+            current_file_version: ""
+            created_by:
+              id: id
+              name: name
+              email: email
+            created_at: 2000-01-23T04:56:07.000+00:00
+            updated_at: 2000-01-23T04:56:07.000+00:00
+            deleted_at: 2000-01-23T04:56:07.000+00:00
+            created_by_agent:
+              key: ""
+            updated_by_agent:
+              key: ""
+            created_by_api_key:
+              key: ""
+            updated_by_api_key:
+              key: ""
+            read: true
+            read_at: 2000-01-23T04:56:07.000+00:00
+            read_by: ""
+            read_by_api_key: ""
+          - id: id
+            mailbox_id: mailbox_id
+            basename: basename
+            path: path
+            role: role
+            created_by_system: created_by_system
+            deleted: true
+            metadata:
+              key: ""
+            version_reasons:
+            - version_id: version_id
+              reason: reason
+              created_by_id: created_by_id
+              version_number: 0
+              created_at: 2000-01-23T04:56:07.000+00:00
+            - version_id: version_id
+              reason: reason
+              created_by_id: created_by_id
+              version_number: 0
+              created_at: 2000-01-23T04:56:07.000+00:00
+            lock:
+              key: ""
+            current_file_version: ""
+            created_by:
+              id: id
+              name: name
+              email: email
+            created_at: 2000-01-23T04:56:07.000+00:00
+            updated_at: 2000-01-23T04:56:07.000+00:00
+            deleted_at: 2000-01-23T04:56:07.000+00:00
+            created_by_agent:
+              key: ""
+            updated_by_agent:
+              key: ""
+            created_by_api_key:
+              key: ""
+            updated_by_api_key:
+              key: ""
+            read: true
+            read_at: 2000-01-23T04:56:07.000+00:00
+            read_by: ""
+            read_by_api_key: ""
           pagination:
-            limit: 0
-            offset: 6
-            count: 1
+            limit: 6
+            offset: 1
+            count: 5
             total: 5
             has_more: true
-            next_offset: 5
-      not:
-        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
+            next_offset: 2
       properties:
         success:
           type: boolean
@@ -5443,8 +7799,6 @@ components:
             limit: 56
             has_more: true
             next_cursor: next_cursor
-      not:
-        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
       properties:
         success:
           type: boolean
@@ -5610,8 +7964,6 @@ components:
               size_bytes: 0
               version_id: version_id
               origin: original
-      not:
-        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
       properties:
         success:
           type: boolean
@@ -5783,8 +8135,6 @@ components:
               parser_version: 1
             cc: cc
             reply_to: reply_to
-      not:
-        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
       properties:
         success:
           type: boolean
@@ -5794,7 +8144,7 @@ components:
       - data
       - success
       type: object
-    downloadEmailOriginal_200_response_data:
+    getEmailOriginalDownloadUrl_200_response_data:
       example:
         download:
           url: https://openapi-generator.tech
@@ -5809,7 +8159,7 @@ components:
       required:
       - download
       type: object
-    downloadEmailOriginal_200_response:
+    getEmailOriginalDownloadUrl_200_response:
       example:
         success: true
         data:
@@ -5820,13 +8170,11 @@ components:
             content_type: content_type
             expires_in: 0
             size_bytes: 0
-      not:
-        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
       properties:
         success:
           type: boolean
         data:
-          $ref: "#/components/schemas/downloadEmailOriginal_200_response_data"
+          $ref: "#/components/schemas/getEmailOriginalDownloadUrl_200_response_data"
       required:
       - data
       - success
@@ -5895,8 +8243,6 @@ components:
             max_entries: 6
             editable: true
         success: true
-      not:
-        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
       properties:
         data:
           $ref: "#/components/schemas/updateMailboxEmailAllowlist_200_response_data"
@@ -5992,284 +8338,6 @@ components:
       required:
       - code
       - signup_token
-      type: object
-    verifyAgentSignup_201_response_data_signup:
-      example:
-        status: completed
-      properties:
-        status:
-          enum:
-          - completed
-          type: string
-      required:
-      - status
-      type: object
-    verifyAgentSignup_201_response_data_account:
-      example:
-        id: id
-      properties:
-        id:
-          type: string
-      required:
-      - id
-      type: object
-    verifyAgentSignup_201_response_data_mailbox:
-      example:
-        id: id
-        email:
-          address: address
-          received_count: 0
-          last_received_at: 2000-01-23T04:56:07.000+00:00
-          last_received_path: last_received_path
-          blocked_reason: blocked_reason
-          available_domains:
-          - hostname: hostname
-            kind: platform
-          - hostname: hostname
-            kind: platform
-          assignment:
-            id: id
-            status: pending
-            hostname: hostname
-            error:
-              code: code
-              message: message
-              retryable: true
-          customization:
-            allowed: true
-            blocked_reason: blocked_reason
-            settings_url: settings_url
-          receiving_enabled: true
-          sender_allowlist:
-            enabled: true
-            entries:
-            - entries
-            - entries
-            - entries
-            - entries
-            - entries
-            version: version
-            max_entries: 6
-            editable: true
-          username: username
-          sending_enabled: true
-          aliases:
-          - id: id
-            address: address
-            active: true
-          - id: id
-            address: address
-            active: true
-      properties:
-        id:
-          type: string
-        email:
-          $ref: "#/components/schemas/MailboxEmail"
-      required:
-      - email
-      - id
-      type: object
-    verifyAgentSignup_201_response_data:
-      example:
-        signup:
-          status: completed
-        api_key: api_key
-        scope: mailbox_read
-        expires_at: 2000-01-23T04:56:07.000+00:00
-        account:
-          id: id
-        mailbox:
-          id: id
-          email:
-            address: address
-            received_count: 0
-            last_received_at: 2000-01-23T04:56:07.000+00:00
-            last_received_path: last_received_path
-            blocked_reason: blocked_reason
-            available_domains:
-            - hostname: hostname
-              kind: platform
-            - hostname: hostname
-              kind: platform
-            assignment:
-              id: id
-              status: pending
-              hostname: hostname
-              error:
-                code: code
-                message: message
-                retryable: true
-            customization:
-              allowed: true
-              blocked_reason: blocked_reason
-              settings_url: settings_url
-            receiving_enabled: true
-            sender_allowlist:
-              enabled: true
-              entries:
-              - entries
-              - entries
-              - entries
-              - entries
-              - entries
-              version: version
-              max_entries: 6
-              editable: true
-            username: username
-            sending_enabled: true
-            aliases:
-            - id: id
-              address: address
-              active: true
-            - id: id
-              address: address
-              active: true
-      properties:
-        signup:
-          $ref: "#/components/schemas/verifyAgentSignup_201_response_data_signup"
-        api_key:
-          description: Returned once; store privately. Never write to logs or chat.
-          type: string
-        scope:
-          enum:
-          - mailbox_read
-          - mailbox_write
-          - mailbox_admin
-          type: string
-        expires_at:
-          format: date-time
-          type: string
-        account:
-          $ref: "#/components/schemas/verifyAgentSignup_201_response_data_account"
-        mailbox:
-          $ref: "#/components/schemas/verifyAgentSignup_201_response_data_mailbox"
-      required:
-      - account
-      - api_key
-      - expires_at
-      - mailbox
-      - scope
-      - signup
-      type: object
-    verifyAgentSignup_201_response:
-      example:
-        success: true
-        data:
-          signup:
-            status: completed
-          api_key: api_key
-          scope: mailbox_read
-          expires_at: 2000-01-23T04:56:07.000+00:00
-          account:
-            id: id
-          mailbox:
-            id: id
-            email:
-              address: address
-              received_count: 0
-              last_received_at: 2000-01-23T04:56:07.000+00:00
-              last_received_path: last_received_path
-              blocked_reason: blocked_reason
-              available_domains:
-              - hostname: hostname
-                kind: platform
-              - hostname: hostname
-                kind: platform
-              assignment:
-                id: id
-                status: pending
-                hostname: hostname
-                error:
-                  code: code
-                  message: message
-                  retryable: true
-              customization:
-                allowed: true
-                blocked_reason: blocked_reason
-                settings_url: settings_url
-              receiving_enabled: true
-              sender_allowlist:
-                enabled: true
-                entries:
-                - entries
-                - entries
-                - entries
-                - entries
-                - entries
-                version: version
-                max_entries: 6
-                editable: true
-              username: username
-              sending_enabled: true
-              aliases:
-              - id: id
-                address: address
-                active: true
-              - id: id
-                address: address
-                active: true
-      properties:
-        success:
-          type: boolean
-        data:
-          $ref: "#/components/schemas/verifyAgentSignup_201_response_data"
-      required:
-      - data
-      - success
-      type: object
-    verifyAgentSignup_200_response_data_signup:
-      example:
-        status: completed
-        account_id: account_id
-        mailbox_id: mailbox_id
-      properties:
-        status:
-          enum:
-          - completed
-          type: string
-        account_id:
-          type: string
-        mailbox_id:
-          type: string
-      required:
-      - account_id
-      - mailbox_id
-      - status
-      type: object
-    verifyAgentSignup_200_response_data:
-      example:
-        signup:
-          status: completed
-          account_id: account_id
-          mailbox_id: mailbox_id
-        recovery_url: https://openapi-generator.tech
-      properties:
-        signup:
-          $ref: "#/components/schemas/verifyAgentSignup_200_response_data_signup"
-        recovery_url:
-          format: uri
-          type: string
-      required:
-      - recovery_url
-      - signup
-      type: object
-    verifyAgentSignup_200_response:
-      example:
-        success: true
-        data:
-          signup:
-            status: completed
-            account_id: account_id
-            mailbox_id: mailbox_id
-          recovery_url: https://openapi-generator.tech
-      properties:
-        success:
-          type: boolean
-        data:
-          $ref: "#/components/schemas/verifyAgentSignup_200_response_data"
-      required:
-      - data
-      - success
       type: object
     resendAgentSignupCode_request:
       properties:
@@ -6434,8 +8502,6 @@ components:
           webhook:
             url: https://openapi-generator.tech
             event: email.received
-      not:
-        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
       properties:
         success:
           type: boolean
@@ -6501,8 +8567,6 @@ components:
             url: https://openapi-generator.tech
             event: email.received
             signing_secret: signing_secret
-      not:
-        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
       properties:
         success:
           type: boolean
@@ -6574,8 +8638,6 @@ components:
             account_id: account_id
             mailbox_id: mailbox_id
             websocket_url: https://openapi-generator.tech
-      not:
-        $ref: "#/components/schemas/getRevdokuStatus_200_response_not"
       properties:
         success:
           type: boolean
@@ -6781,12 +8843,6 @@ components:
       - code
       - message
       type: object
-    ApiError_not:
-      anyOf:
-      - required:
-        - data
-      - required:
-        - error_message
     EmailSummary_files:
       description: Included only with include_storage=true for file-browser integration.
       example:
@@ -6901,6 +8957,124 @@ components:
           $ref: "#/components/schemas/Mailbox_lock_locked_by_api_key"
       required:
       - locked
+      type: object
+    EmailDomain_error:
+      example:
+        code: code
+        message: message
+        retryable: true
+      nullable: true
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        retryable:
+          type: boolean
+      type: object
+    EmailDomain_assigned_mailboxes_inner:
+      example:
+        id: id
+        email:
+          address: address
+          received_count: 0
+          last_received_at: 2000-01-23T04:56:07.000+00:00
+          last_received_path: last_received_path
+          blocked_reason: blocked_reason
+          available_domains:
+          - hostname: hostname
+            kind: platform
+          - hostname: hostname
+            kind: platform
+          assignment:
+            id: id
+            status: pending
+            hostname: hostname
+            error:
+              code: code
+              message: message
+              retryable: true
+          customization:
+            allowed: true
+            blocked_reason: blocked_reason
+            settings_url: settings_url
+          receiving_enabled: true
+          sender_allowlist:
+            enabled: true
+            entries:
+            - entries
+            - entries
+            - entries
+            - entries
+            - entries
+            version: version
+            max_entries: 6
+            editable: true
+          username: username
+          sending_enabled: true
+          aliases:
+          - id: id
+            address: address
+            active: true
+          - id: id
+            address: address
+            active: true
+      properties:
+        id:
+          type: string
+        email:
+          $ref: "#/components/schemas/MailboxEmail"
+      type: object
+    MailboxFileResponse_data:
+      example:
+        file:
+          id: id
+          mailbox_id: mailbox_id
+          basename: basename
+          path: path
+          role: role
+          created_by_system: created_by_system
+          deleted: true
+          metadata:
+            key: ""
+          version_reasons:
+          - version_id: version_id
+            reason: reason
+            created_by_id: created_by_id
+            version_number: 0
+            created_at: 2000-01-23T04:56:07.000+00:00
+          - version_id: version_id
+            reason: reason
+            created_by_id: created_by_id
+            version_number: 0
+            created_at: 2000-01-23T04:56:07.000+00:00
+          lock:
+            key: ""
+          current_file_version: ""
+          created_by:
+            id: id
+            name: name
+            email: email
+          created_at: 2000-01-23T04:56:07.000+00:00
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          deleted_at: 2000-01-23T04:56:07.000+00:00
+          created_by_agent:
+            key: ""
+          updated_by_agent:
+            key: ""
+          created_by_api_key:
+            key: ""
+          updated_by_api_key:
+            key: ""
+          read: true
+          read_at: 2000-01-23T04:56:07.000+00:00
+          read_by: ""
+          read_by_api_key: ""
+      properties:
+        file:
+          $ref: "#/components/schemas/MailboxFile"
+      required:
+      - file
       type: object
   securitySchemes:
     bearerAuth:

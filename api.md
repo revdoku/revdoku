@@ -23,6 +23,8 @@ and downloads attachments. Mailboxes also support uploaded files and version his
 
 ## Email API quick start
 
+For Node.js, start with the [npm SDK](https://github.com/revdoku/revdoku-typescript).
+
 1. Sign in to your existing account and create a backend key from **Connect via API**
    or **Account → Access**. If you need an account, [browser signup](https://app.revdoku.com/users/sign_up)
    creates your first mailbox; [direct signup](#direct-api-signup) is also available.
@@ -35,10 +37,8 @@ GET /v1/mailboxes
 Authorization: Bearer YOUR_API_KEY
 ```
 
-The response contains `data.mailboxes`. Keep the chosen `id` for the requests below.
-For multiple accounts, first [list granted accounts](#accounts), then pass
-`account_id=acct_RETURNED_ID` on every GET and in each write body. Switching accounts
-in the dashboard does not change your credential's default.
+The response contains `data.mailboxes`. Keep one mailbox `id` for the requests below.
+Requests use the key’s default account. See [Accounts](#accounts) to select another.
 
 | Setting | Value |
 | --- | --- |
@@ -51,10 +51,7 @@ in the dashboard does not change your credential's default.
 
 ### List messages
 
-Replace `bkt_example` with the chosen mailbox ID. To send a test message, use the
-address saved during provisioning or displayed to an authorized writer in the
-dashboard; address discovery requires write access.
-Save the returned cursor even when the list is empty:
+Replace `bkt_example` with the chosen mailbox ID:
 
 ```http
 GET /v1/mailboxes/bkt_example/emails?limit=50
@@ -376,12 +373,8 @@ per account. Received email files also consume storage/file allowances.
 
 ### Creation usage
 
-`data.usage.mailbox_creations` is an optional object, separate from `data.limits`.
-It is returned to a full-account browser session or an unrestricted account-wide
-connection with admin permission (`mailbox_admin` or `full_account_access`).
-The human membership must also cover the whole account. Read-only/write-only,
-selected-mailbox, denied-mailbox and mailbox-scoped memberships do not receive this
-usage object; their existing limits response remains available.
+`data.usage.mailbox_creations` is returned to administrators with unrestricted
+account-wide access. It is separate from `data.limits`.
 
 | Field in `usage.mailbox_creations` | Meaning |
 | --- | --- |
@@ -390,15 +383,9 @@ usage object; their existing limits response remains available.
 | `remaining` | Creations left; deleting or archiving a mailbox does not refund usage. |
 | `resets_at` | ISO 8601 UTC reset time. |
 
-Use this for planning, then handle `MAILBOX_CREATION_LIMIT_REACHED` from the actual
-creation request. Concurrent callers can spend capacity after a preflight read.
-The dashboard shows creation usage in **Account → Subscription**. This allowance
-is separate from active mailbox capacity.
-
-| Interface | Read limits |
-| --- | --- |
-| REST | `GET /v1/account/limits`; optional `account_id` query selects a granted account. |
-
+This read is optional. Handle `MAILBOX_CREATION_LIMIT_REACHED` on creation because
+concurrent requests can spend capacity after a usage check. Deletion does not
+refund creations.
 
 ## Storing files inside a mailbox
 
@@ -559,159 +546,26 @@ Separately copied files remain independent.
 
 ## Email webhooks and live subscriptions
 
-Hosted applications receive signed HTTP webhooks. Local projects open an outbound
-WebSocket through Rails Action Cable; no public domain or tunnel is required.
-Both deliver the same event after the complete email and attachments are saved.
-Read contents through the existing email API.
+Use signed HTTPS webhooks for hosted applications or a WebSocket subscription for
+local applications. Both notify you after an email and its attachments are saved.
+Fetch the message through the email API.
 
-| Endpoint | Permission | Result |
+| Method | Path | Result |
 | --- | --- | --- |
-| GET /v1/mailboxes/:mailbox_id/email/webhook | Mailbox admin | Endpoint, or webhook: null; excludes the signing secret. |
-| PUT /v1/mailboxes/:mailbox_id/email/webhook | Mailbox admin | Set one URL; returns the endpoint and signing secret. |
-| DELETE /v1/mailboxes/:mailbox_id/email/webhook | Mailbox admin | Disable delivery; 204 No Content. |
-| GET /v1/mailboxes/:mailbox_id/email/subscription | Mailbox read | Signed WebSocket ticket valid for 60 seconds. |
+| GET / PUT / DELETE | `/v1/mailboxes/:mailbox_id/email/webhook` | Read, configure, or remove one webhook. Requires mailbox admin. |
+| GET | `/v1/mailboxes/:mailbox_id/email/subscription` | Get a temporary WebSocket ticket. Requires mailbox read. |
 
-Use your normal bearer API key. Select another granted account with account_id in
-the query for GET/DELETE, or in the JSON body for PUT. Endpoints must use public
-HTTPS, including explicit ports such as 8443, with no URL user/password or fragment. Local/private addresses
-and redirects are rejected. Invalid configuration returns INVALID_EMAIL_WEBHOOK (422).
+Verify webhook signatures and deduplicate event IDs. Use a saved arrival cursor
+to catch up after disconnects. See [Email events](https://github.com/revdoku/revdoku/blob/main/guides/email-events.md)
+for setup, payloads, signatures, delivery rules, and runnable examples.
 
-| PUT field | Meaning |
-| --- | --- |
-| webhook_url | Required public HTTPS receiver URL, up to 2048 bytes. |
-| rotate_secret | Optional boolean, default false. Replace the secret even when the URL is unchanged; pending deliveries are canceled. |
-| account_id | Optional explicitly granted account; defaults to the credential's account. |
+<a id="incoming-email-into-a-mailbox"></a>
 
-### Hosted application workflow
+## Mailbox receiving settings
 
-1. Implement an HTTPS POST receiver.
-2. PUT {"webhook_url":"https://example.org/email-events"} to configure it. Securely save
-   data.webhook.signing_secret. Repeating PUT with the same URL retains the secret;
-   replacing the URL rotates it and cancels pending old-endpoint deliveries.
-3. Verify the exact request bytes before parsing JSON.
-4. Deduplicate the event ID, durably accept the event, and return any 2xx.
-5. Fetch /v1/mailboxes/:mailbox_id/emails/:email_id with your own API key.
-
-~~~json
-{
-  "id": "email.received:eml_example",
-  "type": "email.received",
-  "created_at": "2026-10-01T12:00:00.000000Z",
-  "data": {
-    "account_id": "acct_example",
-    "mailbox_id": "bkt_example",
-    "email_id": "eml_example",
-    "received_at": "2026-10-01T11:59:58.000000Z",
-    "attachment_count": 1
-  }
-}
-~~~
-
-| Field | Meaning |
-| --- | --- |
-| id | Stable event ID for deduplication; unchanged on retries. |
-| type | email.received. |
-| created_at | UTC time when intake queued the event. |
-| data.account_id, data.mailbox_id | Account and mailbox that saved the message. |
-| data.email_id | Stable email ID for the existing read endpoint. |
-| data.received_at | UTC email receipt time. |
-| data.attachment_count | Number of saved attachments. |
-
-Events contain no subjects, senders, bodies, download links or API credentials.
-Only new accepted deliveries emit them. Edits, copies, backfills and read changes
-do not. Configuring a webhook does not replay history. Copies and account moves
-clear the webhook; configure the destination explicitly.
-
-| Header | Meaning |
-| --- | --- |
-| X-Revdoku-Event-Id | Event id. |
-| X-Revdoku-Timestamp | Unix seconds for this delivery attempt. |
-| X-Revdoku-Signature | v1= followed by lowercase HMAC-SHA256 hex. |
-
-Sign timestamp + "." + raw_body. Reject timestamps outside a five-minute window
-and compare signatures in constant time. A Rails receiver can use:
-
-~~~ruby
-timestamp = request.headers["X-Revdoku-Timestamp"].to_s
-body = request.raw_post
-provided = request.headers["X-Revdoku-Signature"].to_s.delete_prefix("v1=")
-fresh = timestamp.match?(/\A\d+\z/) && (Time.current.to_i - timestamp.to_i).abs <= 300
-expected = OpenSSL::HMAC.hexdigest("SHA256", ENV.fetch("REVDOKU_WEBHOOK_SECRET"), "#{timestamp}.#{body}")
-return head :unauthorized unless fresh && ActiveSupport::SecurityUtils.secure_compare(expected, provided)
-event = JSON.parse(body)
-# Persist/deduplicate event["id"] and queue application work before returning 2xx.
-head :no_content
-~~~
-
-Use your application's normal webhook CSRF exemption. Verify signatures before accepting requests.
-
-| Delivery rule | Behavior |
-| --- | --- |
-| Automatic attempts | Up to 8 total for network failures, HTTP 408, 429 and 5xx |
-| Retry delay | Polynomial backoff; valid `Retry-After` on 429/503 is bounded to 1–3,600 seconds |
-| Other failures | Other non-2xx responses, redirects, private destinations, or responses over 64 KiB stop delivery |
-| Timeout | 15 seconds total per request; acknowledge promptly after durable acceptance |
-| Disable / replace / rotate | Cancels pending attempts; an in-flight request may finish |
-| Retry identity | Same event ID, fresh timestamp and signature; no additional incoming-email charge |
-
-Delivery can repeat or arrive out of order; deduplicate by event ID.
-
-### Plans and delivery history
-
-| Allowance | Effective value |
-| --- | --- |
-| Mailboxes with a webhook | Existing active-mailbox capacity; read `limits.max_mailboxes`. |
-| Endpoints per mailbox | One. |
-| New email events | Follow accepted messages within incoming count, byte and storage limits. |
-| Delivery history | Read `limits.audit_retention_days`. |
-
-Webhook capacity follows the account's existing mailbox and incoming-email limits, including overrides and shared billing. There is no separate webhook event allowance.
-
-Delivery history is available in **Analytics → Webhooks**.
-
-### Local project workflow
-
-1. GET a subscription ticket with your read-authorized API key.
-2. Open the returned `websocket_url`, adding `email_subscription_token=TICKET`
-   within 60 seconds, using the `actioncable-v1-json` subprotocol.
-3. Subscribe to EmailReceivedChannel with the returned account_id and mailbox_id.
-   Wait for confirm_subscription.
-4. List messages with your saved ascending arrival cursor and process every page.
-   Deduplicate email IDs against live events received during catch-up.
-5. Handle each live event's message and fetch its email through REST.
-6. On a temporary disconnect, get a fresh ticket, reconnect, and repeat cursor catch-up. Stop if the server rejects the subscription or sends `reconnect: false`.
-
-Runnable [JavaScript/TypeScript and Python examples](https://github.com/revdoku/revdoku/tree/main/examples) cover signed receivers and reconnects. The Node `watch-mail.js` example waits for subscription confirmation, catches up with a saved cursor, detects stale connections, and requests a fresh ticket on reconnect.
-
-| Client guard | Limit |
-| --- | --- |
-| Duplicate mailbox subscriptions | One per connection |
-| Mailbox subscriptions | 32 per connection; tickets authorize one mailbox |
-| Connections | 32 per credential per web process |
-| Handshakes | 120 per minute per source IP |
-| Client commands | 120 per minute per connection; 4 KiB maximum per command |
-
-Keep account, mailbox and filters unchanged when reusing a cursor. Preserve `pagination.next_cursor` even after an empty page. WebSocket events are live hints; REST catch-up supplies messages received while disconnected.
-
-Ticket expiry limits connection establishment; an established subscription lasts
-until disconnect or access revocation. Credentials and membership are checked before
-each transmitted event. Treat the ticket as a temporary credential: it authorizes
-only its selected mailbox channel, never account notification streams.
-
-## Incoming email into a mailbox
-
-Each mailbox has its own incoming email address for receiving messages and
-attachments alongside uploaded files. Anyone knowing the address can email it;
-reading messages requires authorized mailbox access. Use only the returned address;
-choose a username when creating the mailbox, or connect your own custom domain.
-
-| Operation | REST |
-| --- | --- |
-| Create a mailbox | `POST /v1/mailboxes`; creation automatically returns `mailbox.email` with address and receiving state. Template/copy creation assigns a separate address. |
-| Get address/state | `GET /v1/mailboxes/:id/email`, or mailbox detail with `include_email=true`; requires upload/write access. |
-| Check for new mail | `GET /v1/mailboxes/:id/emails`; save `pagination.next_cursor`. |
-| Read a message | `GET /v1/mailboxes/:id/emails/:email_id`. |
-| Rotate address | `POST /v1/mailboxes/:id/email/rotate`; requires write access and explicit confirmation. |
+Read receiving settings with `GET /v1/mailboxes/:id/email`, or request
+`include_email=true` on mailbox detail. Detailed settings require write access.
+Use the [email endpoints](#received-email-operations) to list and read messages.
 
 ### Receiving state
 
@@ -860,101 +714,20 @@ Content-Type: application/json
 
 ### Custom email domains
 
-Built-in domains such as `revdokumail.com` work on every plan, including when
-explicitly supplied as `mailbox.email.domain`. For custom domains:
-
-| Error code | Action |
-| --- | --- |
-| `EMAIL_DOMAINS_UPGRADE_REQUIRED` | Upgrade at [Pricing](https://app.revdoku.com/pricing); `error.details.upgrade_url` contains this link. |
-| `EMAIL_DOMAIN_NOT_REGISTERED` | Add and verify the domain in [Account Settings → Domains](https://app.revdoku.com/account/domains) first. |
-| `EMAIL_DOMAIN_NOT_READY` | Complete verification or resolve receiving restrictions for the registered domain. |
-
-The latter two errors include `error.details.settings_url`. Mailbox creation
-does not automatically register a custom domain or fall back to another domain.
-
-Connect a domain in **Account Settings → Domains → Email**, or use these endpoints
-with a whole-account `mailbox_admin` credential belonging to an account owner or administrator.
-Selected-mailbox, read-only and write-only credentials cannot manage domain ownership.
-Existing `full_account_access` credentials continue to work.
+Connect a domain in Account Settings → Domains → Email, or use these endpoints
+with an account-wide administrator credential.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/v1/account/email_domains` | List account email domains. |
-| POST | `/v1/account/email_domains/check` | Check a hostname for DNS conflicts before connecting it. |
-| POST | `/v1/account/email_domains` | Start connecting a domain. |
+| GET / POST | `/v1/account/email_domains` | List domains or connect `hostname`. |
+| POST | `/v1/account/email_domains/check` | Check a hostname for DNS conflicts. |
 | GET | `/v1/account/email_domains/:id` | Read DNS requirements and receiving state. |
 | POST | `/v1/account/email_domains/:id/verify` | Check ownership and provider setup. |
-| DELETE | `/v1/account/email_domains/:id` | Remove a domain after its mailbox assignments have been removed. |
+| DELETE | `/v1/account/email_domains/:id` | Remove an unused domain; send `hostname` and `confirm: true`. |
 
-| Field or requirement | Purpose |
-| --- | --- |
-| `customization.allowed` | Whether this caller can customize the mailbox domain. |
-| `customization.blocked_reason` | Why customization is unavailable. |
-| `hostname` | Exact domain hostname; also required to confirm deletion. |
-| `confirm: true` | Explicit confirmation for deletion. |
-| `retryable` | Whether a reported setup error can be retried. |
-
-#### Choose a domain
-
-| Your setup | Domain to connect | Example mailbox |
-| --- | --- | --- |
-| `yourdomain.com` already receives email through another provider | An unused subdomain, such as `mailbox.yourdomain.com` | `support@mailbox.yourdomain.com` |
-| A domain dedicated to Revdoku email | The root domain, such as `yourdomain.com` | `support@yourdomain.com` |
-
-Using `mailbox.yourdomain.com` keeps existing mailboxes at `yourdomain.com` with their
-current provider. Add DNS records only at the hostname shown in the setup instructions.
-
-| DNS check | Result |
-| --- | --- |
-| Another provider's MX records at the chosen hostname | HTTP 422, `EMAIL_DNS_CONFLICT`. Keep those records and choose an unused subdomain. |
-| Revdoku and another provider's MX records together, or a CNAME | HTTP 422, `EMAIL_DNS_CONFLICT`. MX priority cannot split individual mailboxes between providers. |
-| DNS lookup temporarily unavailable | HTTP 503, `EMAIL_DNS_TEMPORARY`; retry the check later. |
-| Null MX (the hostname currently accepts no mail) | Setup can start; replace the null MX with the required receiving MX before activation. |
-
-Checks run before connecting and again during verification. Revdoku does not
-change your DNS records. A successful check does not activate receiving.
-
-- DNS ownership instructions are visible only to full-account administrators.
-- Unverified claims expire after seven days.
-- Cookie-authenticated writes require CSRF protection.
-
-#### Use a connected domain
-
-Connecting a domain preserves existing addresses. Select it when creating a mailbox,
-or use the address replacement endpoint for an existing mailbox.
-
-| Replacement field | Purpose |
-| --- | --- |
-| `domain` | Exact ready domain, such as `mail.example.com`; use `platform` for the platform domain. |
-| `username` | Optional chosen name, such as `my-agent`. Omit for a generated name. |
-| `current_address` | Current address being replaced. |
-| `confirm` | Must be `true`. |
-
-Custom names require account-administrator access and deployment support.
-[Username rules](#username-rules) also apply. Platform domains also accept chosen
-names; their reserved-name rules still apply.
-
-| Replacement result | Behavior |
-| --- | --- |
-| `202`, assignment `pending` | Setup is running. Read the mailbox settings to check progress. The old address remains current. |
-| Assignment `active` | The new primary is assigned and one rotation is charged. Check `receiving_enabled` before using it. |
-| Assignment `failed` | The old address and rotation allowance are preserved. |
-
-| Mailbox settings field | Meaning |
-| --- | --- |
-| `domain` | Domain of the current address. |
-| `custom_domain` | Whether the address uses a customer-owned domain. |
-| `available_domains` | Domains available for this account. |
-| `assignment` | Replacement status and any error. A pending candidate is never a usable address. |
-| `customization.allowed` | Whether this caller can customize the domain. |
-| `customization.blocked_reason` | Why customization is unavailable. |
-| `customization.settings_url` | Dashboard settings link for account administrators. |
-
-- Custom-domain names remain reserved to their original account. That account may reuse a released name once no primary, alias or pending assignment holds it; archived mailboxes retain their addresses.
-- Platform addresses cannot be reused, even after deletion.
-- A downgrade preserves assigned addresses but can block new domain setup or switching.
-- Switch to a platform address and remove custom-domain aliases before moving a mailbox to another account. Copies get fresh platform addresses without aliases.
-- Mail sent while receiving is paused is not automatically recovered.
+Select the verified domain with `mailbox.email.domain` when creating a mailbox.
+See [Custom email domains](https://github.com/revdoku/revdoku/blob/main/guides/custom-email-domains.md)
+for DNS setup, permissions, errors, and address migration.
 
 ## Account and request options
 

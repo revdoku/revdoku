@@ -1,4 +1,14 @@
-[Install and configure this SDK](example/README.md#install-from-source) before running the request below.
+# Quickstart
+
+Clone [the SDK repository](https://github.com/revdoku/revdoku-dart) and enter its directory.
+
+Requires a current stable Dart SDK. From the cloned package directory:
+
+```sh
+dart pub get
+```
+
+Set `REVDOKU_API_KEY` in your environment.
 
 ## List mailboxes
 
@@ -11,7 +21,7 @@ dart run example/list_mailboxes.dart
 This makes one read request and prints each visible mailbox's ID and email address:
 
 ```text
-bkt_RETURNED_ID My Mailbox
+bkt_RETURNED_ID example@revdokumail.com
 ```
 
 [Runnable source](example/list_mailboxes.dart). Reuse one of these mailboxes for the email walkthrough; this request does not create a mailbox or consume creation capacity.

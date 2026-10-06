@@ -1,6 +1,6 @@
 import os
 import sys
-from revdoku_api import ApiClient, Configuration, DefaultApi, CreateMailboxRequest, CreateMailboxRequestMailbox
+from revdoku_api import ApiClient, Configuration, DefaultApi, CreateMailboxRequest, MailboxCreateOptions
 from revdoku_api.exceptions import ApiException
 
 key = os.environ["REVDOKU_API_KEY"]
@@ -10,7 +10,7 @@ try:
     with ApiClient(Configuration(access_token=key)) as client:
         result = DefaultApi(client).create_mailbox(CreateMailboxRequest(
             account_id=os.getenv("REVDOKU_ACCOUNT_ID") or None,
-            mailbox=CreateMailboxRequestMailbox(),
+            mailbox=MailboxCreateOptions(),
         ))
         print(result.data.mailbox.id, result.data.mailbox.email.address)
 except ApiException as error:

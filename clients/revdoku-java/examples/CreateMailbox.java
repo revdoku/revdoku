@@ -2,7 +2,7 @@ import com.revdoku.api.ApiClient;
 import com.revdoku.api.ApiException;
 import com.revdoku.api.endpoints.DefaultApi;
 import com.revdoku.api.model.CreateMailboxRequest;
-import com.revdoku.api.model.CreateMailboxRequestMailbox;
+import com.revdoku.api.model.MailboxCreateOptions;
 
 public class CreateMailbox {
     public static void main(String[] args) throws Exception {
@@ -13,7 +13,7 @@ public class CreateMailbox {
         try {
             var result = new DefaultApi(client).createMailbox(new CreateMailboxRequest()
                 .accountId(account == null || account.isEmpty() ? null : account)
-                .mailbox(new CreateMailboxRequestMailbox()));
+                .mailbox(new MailboxCreateOptions()));
             System.out.println(result.getData().getMailbox().getId() + " " + result.getData().getMailbox().getEmail().getAddress());
         } catch (ApiException error) {
             System.err.println("HTTP " + error.getCode() + ": " + error.getResponseBody());

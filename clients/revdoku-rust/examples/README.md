@@ -47,7 +47,8 @@ Run only the command for your current walkthrough step, from the package directo
 | Task | Access needed |
 | --- | --- |
 | List/read emails, download attachments, list files | Read access to that mailbox |
-| Discover its receiving address through the API, mark email read, upload files | Write access to that mailbox |
+| Mark email read | Read access to that mailbox |
+| Read detailed receiving settings or upload files | Write access to that mailbox |
 | Create another mailbox | Account-wide admin permission; a key limited to selected mailboxes cannot create mailboxes |
 | Delete an email | Admin access to that mailbox |
 
@@ -84,7 +85,7 @@ The [first request](../QUICKSTART.md) checks the connection. The SDK already use
    ```
 
    Run **Download attachment**. It prints the saved path; open that file to verify its contents. If the path already exists, choose another path. The example refuses to overwrite files.
-5. **Run List files** to see the mailbox's stored files, including the original email and attachments. It follows every file page.
+5. **Run List files** to see the mailbox’s stored files. It follows every file page.
 
 ## Understand the results
 

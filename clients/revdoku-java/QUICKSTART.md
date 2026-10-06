@@ -1,4 +1,15 @@
-[Install and configure this SDK](examples/README.md#install-from-source) before running the request below.
+# Quickstart
+
+Clone [the SDK repository](https://github.com/revdoku/revdoku-java) and enter its directory.
+
+Requires JDK 11 or newer and Maven. From the cloned package directory:
+
+```sh
+mvn -q -DskipTests package dependency:build-classpath -Dmdep.outputFile=examples/classpath.txt
+javac -cp "target/classes:$(cat examples/classpath.txt)" examples/*.java
+```
+
+Set `REVDOKU_API_KEY` in your environment.
 
 ## List mailboxes
 
@@ -11,7 +22,7 @@ java -cp "examples:target/classes:$(cat examples/classpath.txt)" ListMailboxes
 This makes one read request and prints each visible mailbox's ID and email address:
 
 ```text
-bkt_RETURNED_ID My Mailbox
+bkt_RETURNED_ID example@revdokumail.com
 ```
 
 [Runnable source](examples/ListMailboxes.java). Reuse one of these mailboxes for the email walkthrough; this request does not create a mailbox or consume creation capacity.

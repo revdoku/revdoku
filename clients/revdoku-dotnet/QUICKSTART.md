@@ -1,4 +1,18 @@
-[Install and configure this SDK](examples/README.md#install-from-source) before running the request below.
+# Quickstart
+
+Clone [the SDK repository](https://github.com/revdoku/revdoku-dotnet) and enter its directory.
+
+Requires the .NET 8 SDK. From the cloned package directory:
+
+```sh
+dotnet build examples/ListMailboxes
+dotnet build examples/CreateMailbox
+dotnet build examples/ReadEmails
+dotnet build examples/DownloadAttachment
+dotnet build examples/ListFiles
+```
+
+Set `REVDOKU_API_KEY` in your environment.
 
 ## List mailboxes
 
@@ -11,7 +25,7 @@ dotnet run --project examples/ListMailboxes
 This makes one read request and prints each visible mailbox's ID and email address:
 
 ```text
-bkt_RETURNED_ID My Mailbox
+bkt_RETURNED_ID example@revdokumail.com
 ```
 
 [Runnable source](examples/ListMailboxes/Program.cs). Reuse one of these mailboxes for the email walkthrough; this request does not create a mailbox or consume creation capacity.

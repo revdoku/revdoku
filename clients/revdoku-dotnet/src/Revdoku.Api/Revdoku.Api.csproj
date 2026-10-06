@@ -12,7 +12,7 @@
     <Description>Revdoku email mailboxes and private file storage.</Description>
     
     <RootNamespace>Revdoku.Api</RootNamespace>
-    <Version>1.0.535</Version>
+    <Version>2.0.0</Version>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Revdoku.Api.xml</DocumentationFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/revdoku/revdoku-dotnet.git</RepositoryUrl>

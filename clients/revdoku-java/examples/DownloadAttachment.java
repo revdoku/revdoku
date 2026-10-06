@@ -17,7 +17,7 @@ public class DownloadAttachment {
         String key = System.getenv("REVDOKU_API_KEY");
         String account = System.getenv("REVDOKU_ACCOUNT_ID");
         var client = new ApiClient().setRequestInterceptor(request -> request.header("Authorization", "Bearer " + key));
-        var download = new DefaultApi(client).downloadEmailAttachment(System.getenv("REVDOKU_BUCKET_ID"),
+        var download = new DefaultApi(client).getEmailAttachmentDownloadUrl(System.getenv("REVDOKU_BUCKET_ID"),
             System.getenv("REVDOKU_EMAIL_ID"), System.getenv("REVDOKU_ATTACHMENT_ID"),
             account == null || account.isEmpty() ? null : account, null, null).getData().getDownload();
         var url = URI.create(download.getUrl().toString());

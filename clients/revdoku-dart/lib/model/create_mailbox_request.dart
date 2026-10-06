@@ -26,7 +26,7 @@ class CreateMailboxRequest {
   ///
   String? accountId;
 
-  CreateMailboxRequestMailbox mailbox;
+  MailboxCreateOptions mailbox;
 
   /// Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
   String? reason;
@@ -79,7 +79,7 @@ class CreateMailboxRequest {
 
       return CreateMailboxRequest(
         accountId: mapValueOfType<String>(json, r'account_id'),
-        mailbox: CreateMailboxRequestMailbox.fromJson(json[r'mailbox'])!,
+        mailbox: MailboxCreateOptions.fromJson(json[r'mailbox'])!,
         reason: mapValueOfType<String>(json, r'reason'),
       );
     }

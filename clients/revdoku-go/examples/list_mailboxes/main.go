@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	revdoku "github.com/revdoku/revdoku-go"
+	revdoku "github.com/revdoku/revdoku-go/v2"
 	"log"
 	"os"
 )
