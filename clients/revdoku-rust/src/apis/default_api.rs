@@ -170,14 +170,6 @@ pub enum GetAccountLimitsError {
     UnknownValue(serde_json::Value),
 }
 
-/// struct for typed errors of method [`get_agent_auth_capabilities`]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum GetAgentAuthCapabilitiesError {
-    DefaultResponse(models::ApiError),
-    UnknownValue(serde_json::Value),
-}
-
 /// struct for typed errors of method [`get_email`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -243,14 +235,6 @@ pub enum GetMailboxEmailSettingsError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum GetRevdokuStatusError {
-    DefaultResponse(models::ApiError),
-    UnknownValue(serde_json::Value),
-}
-
-/// struct for typed errors of method [`get_signup_policies`]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum GetSignupPoliciesError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
@@ -1002,41 +986,6 @@ pub async fn get_account_limits(configuration: &configuration::Configuration, ac
     }
 }
 
-/// Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-pub async fn get_agent_auth_capabilities(configuration: &configuration::Configuration, ) -> Result<models::ApiSuccess, Error<GetAgentAuthCapabilitiesError>> {
-
-    let uri_str = format!("{}/v1/agent_auth/capabilities", configuration.base_path);
-    let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
-
-    if let Some(ref user_agent) = configuration.user_agent {
-        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
-    }
-
-    let req = req_builder.build()?;
-    let resp = configuration.client.execute(req).await?;
-
-    let status = resp.status();
-    let content_type = resp
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("application/octet-stream");
-    let content_type = super::ContentType::from(content_type);
-
-    if !status.is_client_error() && !status.is_server_error() {
-        let content = resp.text().await?;
-        match content_type {
-            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::ApiSuccess`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::ApiSuccess`")))),
-        }
-    } else {
-        let content = resp.text().await?;
-        let entity: Option<GetAgentAuthCapabilitiesError> = serde_json::from_str(&content).ok();
-        Err(Error::ResponseError(ResponseContent { status, content, entity }))
-    }
-}
-
 /// Requires mailbox read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.
 pub async fn get_email(configuration: &configuration::Configuration, mailbox_id: &str, email_id: &str, account_id: Option<&str>, purpose: Option<&str>, reason: Option<&str>, include_storage: Option<bool>) -> Result<models::GetEmail200Response, Error<GetEmailError>> {
     // add a prefix to parameters to efficiently prevent name collisions
@@ -1324,41 +1273,6 @@ pub async fn get_revdoku_status(configuration: &configuration::Configuration, ac
     } else {
         let content = resp.text().await?;
         let entity: Option<GetRevdokuStatusError> = serde_json::from_str(&content).ok();
-        Err(Error::ResponseError(ResponseContent { status, content, entity }))
-    }
-}
-
-/// Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-pub async fn get_signup_policies(configuration: &configuration::Configuration, ) -> Result<models::SignupPoliciesResponse, Error<GetSignupPoliciesError>> {
-
-    let uri_str = format!("{}/v1/agent_auth/policies", configuration.base_path);
-    let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
-
-    if let Some(ref user_agent) = configuration.user_agent {
-        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
-    }
-
-    let req = req_builder.build()?;
-    let resp = configuration.client.execute(req).await?;
-
-    let status = resp.status();
-    let content_type = resp
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("application/octet-stream");
-    let content_type = super::ContentType::from(content_type);
-
-    if !status.is_client_error() && !status.is_server_error() {
-        let content = resp.text().await?;
-        match content_type {
-            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::SignupPoliciesResponse`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::SignupPoliciesResponse`")))),
-        }
-    } else {
-        let content = resp.text().await?;
-        let entity: Option<GetSignupPoliciesError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent { status, content, entity }))
     }
 }
@@ -1699,7 +1613,7 @@ pub async fn remove_account_email_domain(configuration: &configuration::Configur
     }
 }
 
-/// Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+/// Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
 pub async fn resend_agent_signup_code(configuration: &configuration::Configuration, resend_agent_signup_code_request: models::ResendAgentSignupCodeRequest) -> Result<models::StartAgentSignup202Response, Error<ResendAgentSignupCodeError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_body_resend_agent_signup_code_request = resend_agent_signup_code_request;
@@ -1821,7 +1735,7 @@ pub async fn set_email_webhook(configuration: &configuration::Configuration, mai
     }
 }
 
-/// Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+/// Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
 pub async fn start_agent_signup(configuration: &configuration::Configuration, start_agent_signup_request: models::StartAgentSignupRequest) -> Result<models::StartAgentSignup202Response, Error<StartAgentSignupError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_body_start_agent_signup_request = start_agent_signup_request;
@@ -2002,7 +1916,7 @@ pub async fn verify_account_email_domain(configuration: &configuration::Configur
     }
 }
 
-/// Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+/// Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
 pub async fn verify_agent_signup(configuration: &configuration::Configuration, verify_agent_signup_request: models::VerifyAgentSignupRequest) -> Result<models::VerifyAgentSignup200Response, Error<VerifyAgentSignupError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_body_verify_agent_signup_request = verify_agent_signup_request;

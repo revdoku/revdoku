@@ -13,46 +13,20 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StartAgentSignupRequest {
-    /// Email supplied by the human who owns and authorizes this account. Do not use an AI agent mailbox or invent this value. Verification proves control of the address.
-    #[serde(rename = "human_operator_email")]
-    pub human_operator_email: String,
-    /// Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
-    #[serde(rename = "username", skip_serializing_if = "Option::is_none")]
-    pub username: Option<String>,
-    #[serde(rename = "label", skip_serializing_if = "Option::is_none")]
-    pub label: Option<String>,
-    #[serde(rename = "permission_scope", skip_serializing_if = "Option::is_none")]
-    pub permission_scope: Option<PermissionScope>,
-    /// The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization.
+    /// Email address for the new account.
+    #[serde(rename = "email")]
+    pub email: String,
+    /// Agree to the Terms (https://revdoku.com/terms) and Acceptable Use Policy (https://revdoku.com/acceptable-use), and acknowledge the Privacy Policy (https://revdoku.com/privacy).
     #[serde(rename = "accept_terms_and_policy")]
     pub accept_terms_and_policy: bool,
 }
 
 impl StartAgentSignupRequest {
-    pub fn new(human_operator_email: String, accept_terms_and_policy: bool) -> StartAgentSignupRequest {
+    pub fn new(email: String, accept_terms_and_policy: bool) -> StartAgentSignupRequest {
         StartAgentSignupRequest {
-            human_operator_email,
-            username: None,
-            label: None,
-            permission_scope: None,
+            email,
             accept_terms_and_policy,
         }
-    }
-}
-/// 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub enum PermissionScope {
-    #[serde(rename = "mailbox_read")]
-    MailboxRead,
-    #[serde(rename = "mailbox_write")]
-    MailboxWrite,
-    #[serde(rename = "mailbox_admin")]
-    MailboxAdmin,
-}
-
-impl Default for PermissionScope {
-    fn default() -> PermissionScope {
-        Self::MailboxRead
     }
 }
 

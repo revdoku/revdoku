@@ -24,7 +24,6 @@ Connect Revdoku so you can create and manage email mailboxes for my AI agents, r
 1. If you already have an authorized connection, verify it and continue the task.
 2. If you need an account and your private API client can handle human authorization
    and email verification, follow [API signup](https://revdoku.com/api.md#direct-api-signup).
-   Check `https://api.revdoku.com/v1/agent_auth/capabilities` for `data.signup.available`.
    No existing API key is needed. Use the human owner's supplied email, with their
    authorization for `accept_terms_and_policy: true` (Terms/AUP acceptance and
    privacy acknowledgment). Collect

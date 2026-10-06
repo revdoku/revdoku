@@ -43,7 +43,6 @@ from revdoku_api.models.resend_agent_signup_code_request import ResendAgentSignu
 from revdoku_api.models.rotate_mailbox_email_address_request import RotateMailboxEmailAddressRequest
 from revdoku_api.models.set_email_webhook200_response import SetEmailWebhook200Response
 from revdoku_api.models.set_email_webhook_request import SetEmailWebhookRequest
-from revdoku_api.models.signup_policies_response import SignupPoliciesResponse
 from revdoku_api.models.start_agent_signup202_response import StartAgentSignup202Response
 from revdoku_api.models.start_agent_signup_request import StartAgentSignupRequest
 from revdoku_api.models.update_email200_response import UpdateEmail200Response
@@ -4068,254 +4067,6 @@ class DefaultApi:
 
 
     @validate_call
-    def get_agent_auth_capabilities(
-        self,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[
-                Annotated[StrictFloat, Field(gt=0)],
-                Annotated[StrictFloat, Field(gt=0)]
-            ]
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiSuccess:
-        """Discover Revdoku agent authentication flows
-
-        Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :type _request_timeout: int, tuple(int, int), optional
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the
-                              authentication in the spec for a single request.
-        :type _request_auth: dict, optional
-        :param _content_type: force content-type for the request.
-        :type _content_type: str, Optional
-        :param _headers: set to override the headers for a single
-                         request; this effectively ignores the headers
-                         in the spec for a single request.
-        :type _headers: dict, optional
-        :param _host_index: set to override the host_index for a single
-                            request; this effectively ignores the host_index
-                            in the spec for a single request.
-        :type _host_index: int, optional
-        :return: Returns the result object.
-        """ # noqa: E501
-
-        _param = self._get_agent_auth_capabilities_serialize(
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index
-        )
-
-        _response_types_map: Dict[str, Optional[str]] = {
-            '200': "ApiSuccess",
-            'default': "ApiError",
-        }
-        response_data = self.api_client.call_api(
-            *_param,
-            _request_timeout=_request_timeout
-        )
-        response_data.read()
-        return self.api_client.response_deserialize(
-            response_data=response_data,
-            response_types_map=_response_types_map,
-        ).data
-
-
-    @validate_call
-    def get_agent_auth_capabilities_with_http_info(
-        self,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[
-                Annotated[StrictFloat, Field(gt=0)],
-                Annotated[StrictFloat, Field(gt=0)]
-            ]
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[ApiSuccess]:
-        """Discover Revdoku agent authentication flows
-
-        Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :type _request_timeout: int, tuple(int, int), optional
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the
-                              authentication in the spec for a single request.
-        :type _request_auth: dict, optional
-        :param _content_type: force content-type for the request.
-        :type _content_type: str, Optional
-        :param _headers: set to override the headers for a single
-                         request; this effectively ignores the headers
-                         in the spec for a single request.
-        :type _headers: dict, optional
-        :param _host_index: set to override the host_index for a single
-                            request; this effectively ignores the host_index
-                            in the spec for a single request.
-        :type _host_index: int, optional
-        :return: Returns the result object.
-        """ # noqa: E501
-
-        _param = self._get_agent_auth_capabilities_serialize(
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index
-        )
-
-        _response_types_map: Dict[str, Optional[str]] = {
-            '200': "ApiSuccess",
-            'default': "ApiError",
-        }
-        response_data = self.api_client.call_api(
-            *_param,
-            _request_timeout=_request_timeout
-        )
-        response_data.read()
-        return self.api_client.response_deserialize(
-            response_data=response_data,
-            response_types_map=_response_types_map,
-        )
-
-
-    @validate_call
-    def get_agent_auth_capabilities_without_preload_content(
-        self,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[
-                Annotated[StrictFloat, Field(gt=0)],
-                Annotated[StrictFloat, Field(gt=0)]
-            ]
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> RESTResponseType:
-        """Discover Revdoku agent authentication flows
-
-        Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :type _request_timeout: int, tuple(int, int), optional
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the
-                              authentication in the spec for a single request.
-        :type _request_auth: dict, optional
-        :param _content_type: force content-type for the request.
-        :type _content_type: str, Optional
-        :param _headers: set to override the headers for a single
-                         request; this effectively ignores the headers
-                         in the spec for a single request.
-        :type _headers: dict, optional
-        :param _host_index: set to override the host_index for a single
-                            request; this effectively ignores the host_index
-                            in the spec for a single request.
-        :type _host_index: int, optional
-        :return: Returns the result object.
-        """ # noqa: E501
-
-        _param = self._get_agent_auth_capabilities_serialize(
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index
-        )
-
-        _response_types_map: Dict[str, Optional[str]] = {
-            '200': "ApiSuccess",
-            'default': "ApiError",
-        }
-        response_data = self.api_client.call_api(
-            *_param,
-            _request_timeout=_request_timeout
-        )
-        return response_data.response
-
-
-    def _get_agent_auth_capabilities_serialize(
-        self,
-        _request_auth,
-        _content_type,
-        _headers,
-        _host_index,
-    ) -> RequestSerialized:
-
-        _host = None
-
-        _collection_formats: Dict[str, str] = {
-        }
-
-        _path_params: Dict[str, str] = {}
-        _query_params: List[Tuple[str, str]] = []
-        _header_params: Dict[str, Optional[str]] = _headers or {}
-        _form_params: List[Tuple[str, str]] = []
-        _files: Dict[
-            str, Union[str, bytes, List[str], List[bytes], List[Tuple[str, bytes]]]
-        ] = {}
-        _body_params: Optional[bytes] = None
-
-        # process the path parameters
-        # process the query parameters
-        # process the header parameters
-        # process the form parameters
-        # process the body parameter
-
-
-        # set the HTTP header `Accept`
-        if 'Accept' not in _header_params:
-            _header_params['Accept'] = self.api_client.select_header_accept(
-                [
-                    'application/json'
-                ]
-            )
-
-
-        # authentication setting
-        _auth_settings: List[str] = [
-        ]
-
-        return self.api_client.param_serialize(
-            method='GET',
-            resource_path='/v1/agent_auth/capabilities',
-            path_params=_path_params,
-            query_params=_query_params,
-            header_params=_header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            auth_settings=_auth_settings,
-            collection_formats=_collection_formats,
-            _host=_host,
-            _request_auth=_request_auth
-        )
-
-
-
-
-    @validate_call
     def get_email(
         self,
         mailbox_id: StrictStr,
@@ -6165,254 +5916,6 @@ class DefaultApi:
         return self.api_client.param_serialize(
             method='GET',
             resource_path='/v1/status',
-            path_params=_path_params,
-            query_params=_query_params,
-            header_params=_header_params,
-            body=_body_params,
-            post_params=_form_params,
-            files=_files,
-            auth_settings=_auth_settings,
-            collection_formats=_collection_formats,
-            _host=_host,
-            _request_auth=_request_auth
-        )
-
-
-
-
-    @validate_call
-    def get_signup_policies(
-        self,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[
-                Annotated[StrictFloat, Field(gt=0)],
-                Annotated[StrictFloat, Field(gt=0)]
-            ]
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> SignupPoliciesResponse:
-        """Read the current signup policies
-
-        Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :type _request_timeout: int, tuple(int, int), optional
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the
-                              authentication in the spec for a single request.
-        :type _request_auth: dict, optional
-        :param _content_type: force content-type for the request.
-        :type _content_type: str, Optional
-        :param _headers: set to override the headers for a single
-                         request; this effectively ignores the headers
-                         in the spec for a single request.
-        :type _headers: dict, optional
-        :param _host_index: set to override the host_index for a single
-                            request; this effectively ignores the host_index
-                            in the spec for a single request.
-        :type _host_index: int, optional
-        :return: Returns the result object.
-        """ # noqa: E501
-
-        _param = self._get_signup_policies_serialize(
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index
-        )
-
-        _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SignupPoliciesResponse",
-            'default': "ApiError",
-        }
-        response_data = self.api_client.call_api(
-            *_param,
-            _request_timeout=_request_timeout
-        )
-        response_data.read()
-        return self.api_client.response_deserialize(
-            response_data=response_data,
-            response_types_map=_response_types_map,
-        ).data
-
-
-    @validate_call
-    def get_signup_policies_with_http_info(
-        self,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[
-                Annotated[StrictFloat, Field(gt=0)],
-                Annotated[StrictFloat, Field(gt=0)]
-            ]
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> ApiResponse[SignupPoliciesResponse]:
-        """Read the current signup policies
-
-        Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :type _request_timeout: int, tuple(int, int), optional
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the
-                              authentication in the spec for a single request.
-        :type _request_auth: dict, optional
-        :param _content_type: force content-type for the request.
-        :type _content_type: str, Optional
-        :param _headers: set to override the headers for a single
-                         request; this effectively ignores the headers
-                         in the spec for a single request.
-        :type _headers: dict, optional
-        :param _host_index: set to override the host_index for a single
-                            request; this effectively ignores the host_index
-                            in the spec for a single request.
-        :type _host_index: int, optional
-        :return: Returns the result object.
-        """ # noqa: E501
-
-        _param = self._get_signup_policies_serialize(
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index
-        )
-
-        _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SignupPoliciesResponse",
-            'default': "ApiError",
-        }
-        response_data = self.api_client.call_api(
-            *_param,
-            _request_timeout=_request_timeout
-        )
-        response_data.read()
-        return self.api_client.response_deserialize(
-            response_data=response_data,
-            response_types_map=_response_types_map,
-        )
-
-
-    @validate_call
-    def get_signup_policies_without_preload_content(
-        self,
-        _request_timeout: Union[
-            None,
-            Annotated[StrictFloat, Field(gt=0)],
-            Tuple[
-                Annotated[StrictFloat, Field(gt=0)],
-                Annotated[StrictFloat, Field(gt=0)]
-            ]
-        ] = None,
-        _request_auth: Optional[Dict[StrictStr, Any]] = None,
-        _content_type: Optional[StrictStr] = None,
-        _headers: Optional[Dict[StrictStr, Any]] = None,
-        _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
-    ) -> RESTResponseType:
-        """Read the current signup policies
-
-        Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-
-        :param _request_timeout: timeout setting for this request. If one
-                                 number provided, it will be total request
-                                 timeout. It can also be a pair (tuple) of
-                                 (connection, read) timeouts.
-        :type _request_timeout: int, tuple(int, int), optional
-        :param _request_auth: set to override the auth_settings for an a single
-                              request; this effectively ignores the
-                              authentication in the spec for a single request.
-        :type _request_auth: dict, optional
-        :param _content_type: force content-type for the request.
-        :type _content_type: str, Optional
-        :param _headers: set to override the headers for a single
-                         request; this effectively ignores the headers
-                         in the spec for a single request.
-        :type _headers: dict, optional
-        :param _host_index: set to override the host_index for a single
-                            request; this effectively ignores the host_index
-                            in the spec for a single request.
-        :type _host_index: int, optional
-        :return: Returns the result object.
-        """ # noqa: E501
-
-        _param = self._get_signup_policies_serialize(
-            _request_auth=_request_auth,
-            _content_type=_content_type,
-            _headers=_headers,
-            _host_index=_host_index
-        )
-
-        _response_types_map: Dict[str, Optional[str]] = {
-            '200': "SignupPoliciesResponse",
-            'default': "ApiError",
-        }
-        response_data = self.api_client.call_api(
-            *_param,
-            _request_timeout=_request_timeout
-        )
-        return response_data.response
-
-
-    def _get_signup_policies_serialize(
-        self,
-        _request_auth,
-        _content_type,
-        _headers,
-        _host_index,
-    ) -> RequestSerialized:
-
-        _host = None
-
-        _collection_formats: Dict[str, str] = {
-        }
-
-        _path_params: Dict[str, str] = {}
-        _query_params: List[Tuple[str, str]] = []
-        _header_params: Dict[str, Optional[str]] = _headers or {}
-        _form_params: List[Tuple[str, str]] = []
-        _files: Dict[
-            str, Union[str, bytes, List[str], List[bytes], List[Tuple[str, bytes]]]
-        ] = {}
-        _body_params: Optional[bytes] = None
-
-        # process the path parameters
-        # process the query parameters
-        # process the header parameters
-        # process the form parameters
-        # process the body parameter
-
-
-        # set the HTTP header `Accept`
-        if 'Accept' not in _header_params:
-            _header_params['Accept'] = self.api_client.select_header_accept(
-                [
-                    'application/json'
-                ]
-            )
-
-
-        # authentication setting
-        _auth_settings: List[str] = [
-        ]
-
-        return self.api_client.param_serialize(
-            method='GET',
-            resource_path='/v1/agent_auth/policies',
             path_params=_path_params,
             query_params=_query_params,
             header_params=_header_params,
@@ -8502,7 +8005,7 @@ class DefaultApi:
     ) -> StartAgentSignup202Response:
         """Resend the human operator’s verification code
 
-        Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+        Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
 
         :param resend_agent_signup_code_request: (required)
         :type resend_agent_signup_code_request: ResendAgentSignupCodeRequest
@@ -8577,7 +8080,7 @@ class DefaultApi:
     ) -> ApiResponse[StartAgentSignup202Response]:
         """Resend the human operator’s verification code
 
-        Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+        Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
 
         :param resend_agent_signup_code_request: (required)
         :type resend_agent_signup_code_request: ResendAgentSignupCodeRequest
@@ -8652,7 +8155,7 @@ class DefaultApi:
     ) -> RESTResponseType:
         """Resend the human operator’s verification code
 
-        Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+        Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
 
         :param resend_agent_signup_code_request: (required)
         :type resend_agent_signup_code_request: ResendAgentSignupCodeRequest
@@ -9417,9 +8920,9 @@ class DefaultApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> StartAgentSignup202Response:
-        """Start signup with the human operator’s email
+        """Start signup
 
-        Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+        Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
 
         :param start_agent_signup_request: (required)
         :type start_agent_signup_request: StartAgentSignupRequest
@@ -9492,9 +8995,9 @@ class DefaultApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> ApiResponse[StartAgentSignup202Response]:
-        """Start signup with the human operator’s email
+        """Start signup
 
-        Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+        Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
 
         :param start_agent_signup_request: (required)
         :type start_agent_signup_request: StartAgentSignupRequest
@@ -9567,9 +9070,9 @@ class DefaultApi:
         _headers: Optional[Dict[StrictStr, Any]] = None,
         _host_index: Annotated[StrictInt, Field(ge=0, le=0)] = 0,
     ) -> RESTResponseType:
-        """Start signup with the human operator’s email
+        """Start signup
 
-        Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+        Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
 
         :param start_agent_signup_request: (required)
         :type start_agent_signup_request: StartAgentSignupRequest
@@ -10726,7 +10229,7 @@ class DefaultApi:
     ) -> VerifyAgentSignup200Response:
         """Verify the human’s code and create the first mailbox
 
-        Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+        Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
 
         :param verify_agent_signup_request: (required)
         :type verify_agent_signup_request: VerifyAgentSignupRequest
@@ -10802,7 +10305,7 @@ class DefaultApi:
     ) -> ApiResponse[VerifyAgentSignup200Response]:
         """Verify the human’s code and create the first mailbox
 
-        Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+        Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
 
         :param verify_agent_signup_request: (required)
         :type verify_agent_signup_request: VerifyAgentSignupRequest
@@ -10878,7 +10381,7 @@ class DefaultApi:
     ) -> RESTResponseType:
         """Verify the human’s code and create the first mailbox
 
-        Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+        Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
 
         :param verify_agent_signup_request: (required)
         :type verify_agent_signup_request: VerifyAgentSignupRequest

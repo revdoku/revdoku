@@ -58,7 +58,6 @@ class VerifyAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeri
      */
     protected static $openAPITypes = [
         'code' => 'string',
-        'username' => 'string',
         'signup_token' => 'string'
     ];
 
@@ -71,7 +70,6 @@ class VerifyAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeri
      */
     protected static $openAPIFormats = [
         'code' => null,
-        'username' => null,
         'signup_token' => null
     ];
 
@@ -82,7 +80,6 @@ class VerifyAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeri
      */
     protected static array $openAPINullables = [
         'code' => false,
-        'username' => false,
         'signup_token' => false
     ];
 
@@ -173,7 +170,6 @@ class VerifyAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeri
      */
     protected static $attributeMap = [
         'code' => 'code',
-        'username' => 'username',
         'signup_token' => 'signup_token'
     ];
 
@@ -184,7 +180,6 @@ class VerifyAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeri
      */
     protected static $setters = [
         'code' => 'setCode',
-        'username' => 'setUsername',
         'signup_token' => 'setSignupToken'
     ];
 
@@ -195,7 +190,6 @@ class VerifyAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeri
      */
     protected static $getters = [
         'code' => 'getCode',
-        'username' => 'getUsername',
         'signup_token' => 'getSignupToken'
     ];
 
@@ -257,7 +251,6 @@ class VerifyAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeri
     public function __construct(?array $data = null)
     {
         $this->setIfExists('code', $data ?? [], null);
-        $this->setIfExists('username', $data ?? [], null);
         $this->setIfExists('signup_token', $data ?? [], null);
     }
 
@@ -288,16 +281,11 @@ class VerifyAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeri
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['code']) && !preg_match("/^[0-9]{6}$/", $this->container['code'])) {
+        if ($this->container['code'] === null) {
+            $invalidProperties[] = "'code' can't be null";
+        }
+        if (!preg_match("/^[0-9]{6}$/", $this->container['code'])) {
             $invalidProperties[] = "invalid value for 'code', must be conform to the pattern /^[0-9]{6}$/.";
-        }
-
-        if (!is_null($this->container['username']) && (mb_strlen($this->container['username']) > 64)) {
-            $invalidProperties[] = "invalid value for 'username', the character length must be smaller than or equal to 64.";
-        }
-
-        if (!is_null($this->container['username']) && (mb_strlen($this->container['username']) < 1)) {
-            $invalidProperties[] = "invalid value for 'username', the character length must be bigger than or equal to 1.";
         }
 
         if ($this->container['signup_token'] === null) {
@@ -325,7 +313,7 @@ class VerifyAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeri
     /**
      * Gets code
      *
-     * @return string|null
+     * @return string
      */
     public function getCode()
     {
@@ -335,7 +323,7 @@ class VerifyAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeri
     /**
      * Sets code
      *
-     * @param string|null $code Required until the challenge is verified; collect privately, never in chat.
+     * @param string $code Six-digit email verification code.
      *
      * @return self
      */
@@ -350,40 +338,6 @@ class VerifyAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeri
         }
 
         $this->container['code'] = $code;
-
-        return $this;
-    }
-
-    /**
-     * Gets username
-     *
-     * @return string|null
-     */
-    public function getUsername()
-    {
-        return $this->container['username'];
-    }
-
-    /**
-     * Sets username
-     *
-     * @param string|null $username Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
-     *
-     * @return self
-     */
-    public function setUsername($username)
-    {
-        if (is_null($username)) {
-            throw new \InvalidArgumentException('non-nullable username cannot be null');
-        }
-        if ((mb_strlen($username) > 64)) {
-            throw new \InvalidArgumentException('invalid length for $username when calling VerifyAgentSignupRequest., must be smaller than or equal to 64.');
-        }
-        if ((mb_strlen($username) < 1)) {
-            throw new \InvalidArgumentException('invalid length for $username when calling VerifyAgentSignupRequest., must be bigger than or equal to 1.');
-        }
-
-        $this->container['username'] = $username;
 
         return $this;
     }

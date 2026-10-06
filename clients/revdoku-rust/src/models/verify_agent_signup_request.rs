@@ -13,22 +13,18 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VerifyAgentSignupRequest {
-    /// Required until the challenge is verified; collect privately, never in chat.
-    #[serde(rename = "code", skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    /// Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
-    #[serde(rename = "username", skip_serializing_if = "Option::is_none")]
-    pub username: Option<String>,
+    /// Six-digit email verification code.
+    #[serde(rename = "code")]
+    pub code: String,
     /// Private signup token returned by the first request. Send only in the JSON body; never log it or show it in chat.
     #[serde(rename = "signup_token")]
     pub signup_token: String,
 }
 
 impl VerifyAgentSignupRequest {
-    pub fn new(signup_token: String) -> VerifyAgentSignupRequest {
+    pub fn new(code: String, signup_token: String) -> VerifyAgentSignupRequest {
         VerifyAgentSignupRequest {
-            code: None,
-            username: None,
+            code,
             signup_token,
         }
     }

@@ -139,11 +139,6 @@ import {
     SetEmailWebhookRequestToJSON,
 } from '../models/SetEmailWebhookRequest';
 import {
-    type SignupPoliciesResponse,
-    SignupPoliciesResponseFromJSON,
-    SignupPoliciesResponseToJSON,
-} from '../models/SignupPoliciesResponse';
-import {
     type StartAgentSignup202Response,
     StartAgentSignup202ResponseFromJSON,
     StartAgentSignup202ResponseToJSON,
@@ -1514,45 +1509,6 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Creates request options for getAgentAuthCapabilities without sending the request
-     */
-    async getAgentAuthCapabilitiesRequestOpts(): Promise<runtime.RequestOpts> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-
-        let urlPath = `/v1/agent_auth/capabilities`;
-
-        return {
-            path: urlPath,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        };
-    }
-
-    /**
-     * Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-     * Discover Revdoku agent authentication flows
-     */
-    async getAgentAuthCapabilitiesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ApiSuccess>> {
-        const requestOptions = await this.getAgentAuthCapabilitiesRequestOpts();
-        const response = await this.request(requestOptions, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => ApiSuccessFromJSON(jsonValue));
-    }
-
-    /**
-     * Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-     * Discover Revdoku agent authentication flows
-     */
-    async getAgentAuthCapabilities(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ApiSuccess> {
-        const response = await this.getAgentAuthCapabilitiesRaw(initOverrides);
-        return await response.value();
-    }
-
-    /**
      * Creates request options for getEmail without sending the request
      */
     async getEmailRequestOpts(requestParameters: GetEmailRequest): Promise<runtime.RequestOpts> {
@@ -1929,45 +1885,6 @@ export class DefaultApi extends runtime.BaseAPI {
      */
     async getRevdokuStatus(requestParameters: GetRevdokuStatusRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GetRevdokuStatus200Response> {
         const response = await this.getRevdokuStatusRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Creates request options for getSignupPolicies without sending the request
-     */
-    async getSignupPoliciesRequestOpts(): Promise<runtime.RequestOpts> {
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-
-        let urlPath = `/v1/agent_auth/policies`;
-
-        return {
-            path: urlPath,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        };
-    }
-
-    /**
-     * Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-     * Read the current signup policies
-     */
-    async getSignupPoliciesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SignupPoliciesResponse>> {
-        const requestOptions = await this.getSignupPoliciesRequestOpts();
-        const response = await this.request(requestOptions, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => SignupPoliciesResponseFromJSON(jsonValue));
-    }
-
-    /**
-     * Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-     * Read the current signup policies
-     */
-    async getSignupPolicies(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SignupPoliciesResponse> {
-        const response = await this.getSignupPoliciesRaw(initOverrides);
         return await response.value();
     }
 
@@ -2411,7 +2328,7 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+     * Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
      * Resend the human operator’s verification code
      */
     async resendAgentSignupCodeRaw(requestParameters: ResendAgentSignupCodeOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<StartAgentSignup202Response>> {
@@ -2422,7 +2339,7 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+     * Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
      * Resend the human operator’s verification code
      */
     async resendAgentSignupCode(requestParameters: ResendAgentSignupCodeOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<StartAgentSignup202Response> {
@@ -2590,8 +2507,8 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
-     * Start signup with the human operator’s email
+     * Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
+     * Start signup
      */
     async startAgentSignupRaw(requestParameters: StartAgentSignupOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<StartAgentSignup202Response>> {
         const requestOptions = await this.startAgentSignupRequestOpts(requestParameters);
@@ -2601,8 +2518,8 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
-     * Start signup with the human operator’s email
+     * Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
+     * Start signup
      */
     async startAgentSignup(requestParameters: StartAgentSignupOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<StartAgentSignup202Response> {
         const response = await this.startAgentSignupRaw(requestParameters, initOverrides);
@@ -2851,7 +2768,7 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+     * Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
      * Verify the human’s code and create the first mailbox
      */
     async verifyAgentSignupRaw(requestParameters: VerifyAgentSignupOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<VerifyAgentSignup200Response>> {
@@ -2862,7 +2779,7 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+     * Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
      * Verify the human’s code and create the first mailbox
      */
     async verifyAgentSignup(requestParameters: VerifyAgentSignupOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<VerifyAgentSignup200Response> {

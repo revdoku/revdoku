@@ -15,48 +15,16 @@ require 'time'
 
 module RevdokuApi
   class StartAgentSignupRequest < ApiModelBase
-    # Email supplied by the human who owns and authorizes this account. Do not use an AI agent mailbox or invent this value. Verification proves control of the address.
-    attr_accessor :human_operator_email
+    # Email address for the new account.
+    attr_accessor :email
 
-    # Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
-    attr_accessor :username
-
-    attr_accessor :label
-
-    attr_accessor :permission_scope
-
-    # The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization.
+    # Agree to the Terms (https://revdoku.com/terms) and Acceptable Use Policy (https://revdoku.com/acceptable-use), and acknowledge the Privacy Policy (https://revdoku.com/privacy).
     attr_accessor :accept_terms_and_policy
-
-    class EnumAttributeValidator
-      attr_reader :datatype
-      attr_reader :allowable_values
-
-      def initialize(datatype, allowable_values)
-        @allowable_values = allowable_values.map do |value|
-          case datatype.to_s
-          when /Integer/i
-            value.to_i
-          when /Float/i
-            value.to_f
-          else
-            value
-          end
-        end
-      end
-
-      def valid?(value)
-        !value || allowable_values.include?(value)
-      end
-    end
 
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
-        :'human_operator_email' => :'human_operator_email',
-        :'username' => :'username',
-        :'label' => :'label',
-        :'permission_scope' => :'permission_scope',
+        :'email' => :'email',
         :'accept_terms_and_policy' => :'accept_terms_and_policy'
       }
     end
@@ -74,10 +42,7 @@ module RevdokuApi
     # Attribute type mapping.
     def self.openapi_types
       {
-        :'human_operator_email' => :'String',
-        :'username' => :'String',
-        :'label' => :'String',
-        :'permission_scope' => :'String',
+        :'email' => :'String',
         :'accept_terms_and_policy' => :'Boolean'
       }
     end
@@ -104,24 +69,10 @@ module RevdokuApi
         h[k.to_sym] = v
       }
 
-      if attributes.key?(:'human_operator_email')
-        self.human_operator_email = attributes[:'human_operator_email']
+      if attributes.key?(:'email')
+        self.email = attributes[:'email']
       else
-        self.human_operator_email = nil
-      end
-
-      if attributes.key?(:'username')
-        self.username = attributes[:'username']
-      end
-
-      if attributes.key?(:'label')
-        self.label = attributes[:'label']
-      end
-
-      if attributes.key?(:'permission_scope')
-        self.permission_scope = attributes[:'permission_scope']
-      else
-        self.permission_scope = 'mailbox_admin'
+        self.email = nil
       end
 
       if attributes.key?(:'accept_terms_and_policy')
@@ -136,24 +87,12 @@ module RevdokuApi
     def list_invalid_properties
       warn '[DEPRECATED] the `list_invalid_properties` method is obsolete'
       invalid_properties = Array.new
-      if @human_operator_email.nil?
-        invalid_properties.push('invalid value for "human_operator_email", human_operator_email cannot be nil.')
+      if @email.nil?
+        invalid_properties.push('invalid value for "email", email cannot be nil.')
       end
 
-      if @human_operator_email.to_s.length > 254
-        invalid_properties.push('invalid value for "human_operator_email", the character length must be smaller than or equal to 254.')
-      end
-
-      if !@username.nil? && @username.to_s.length > 64
-        invalid_properties.push('invalid value for "username", the character length must be smaller than or equal to 64.')
-      end
-
-      if !@username.nil? && @username.to_s.length < 1
-        invalid_properties.push('invalid value for "username", the character length must be greater than or equal to 1.')
-      end
-
-      if !@label.nil? && @label.to_s.length > 100
-        invalid_properties.push('invalid value for "label", the character length must be smaller than or equal to 100.')
+      if @email.to_s.length > 254
+        invalid_properties.push('invalid value for "email", the character length must be smaller than or equal to 254.')
       end
 
       if @accept_terms_and_policy.nil?
@@ -167,71 +106,24 @@ module RevdokuApi
     # @return true if the model is valid
     def valid?
       warn '[DEPRECATED] the `valid?` method is obsolete'
-      return false if @human_operator_email.nil?
-      return false if @human_operator_email.to_s.length > 254
-      return false if !@username.nil? && @username.to_s.length > 64
-      return false if !@username.nil? && @username.to_s.length < 1
-      return false if !@label.nil? && @label.to_s.length > 100
-      permission_scope_validator = EnumAttributeValidator.new('String', ["mailbox_read", "mailbox_write", "mailbox_admin"])
-      return false unless permission_scope_validator.valid?(@permission_scope)
+      return false if @email.nil?
+      return false if @email.to_s.length > 254
       return false if @accept_terms_and_policy.nil?
       true
     end
 
     # Custom attribute writer method with validation
-    # @param [Object] human_operator_email Value to be assigned
-    def human_operator_email=(human_operator_email)
-      if human_operator_email.nil?
-        fail ArgumentError, 'human_operator_email cannot be nil'
+    # @param [Object] email Value to be assigned
+    def email=(email)
+      if email.nil?
+        fail ArgumentError, 'email cannot be nil'
       end
 
-      if human_operator_email.to_s.length > 254
-        fail ArgumentError, 'invalid value for "human_operator_email", the character length must be smaller than or equal to 254.'
+      if email.to_s.length > 254
+        fail ArgumentError, 'invalid value for "email", the character length must be smaller than or equal to 254.'
       end
 
-      @human_operator_email = human_operator_email
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] username Value to be assigned
-    def username=(username)
-      if username.nil?
-        fail ArgumentError, 'username cannot be nil'
-      end
-
-      if username.to_s.length > 64
-        fail ArgumentError, 'invalid value for "username", the character length must be smaller than or equal to 64.'
-      end
-
-      if username.to_s.length < 1
-        fail ArgumentError, 'invalid value for "username", the character length must be greater than or equal to 1.'
-      end
-
-      @username = username
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] label Value to be assigned
-    def label=(label)
-      if label.nil?
-        fail ArgumentError, 'label cannot be nil'
-      end
-
-      if label.to_s.length > 100
-        fail ArgumentError, 'invalid value for "label", the character length must be smaller than or equal to 100.'
-      end
-
-      @label = label
-    end
-
-    # Custom attribute writer method checking allowed values (enum).
-    # @param [Object] permission_scope Object to be assigned
-    def permission_scope=(permission_scope)
-      validator = EnumAttributeValidator.new('String', ["mailbox_read", "mailbox_write", "mailbox_admin"])
-      unless validator.valid?(permission_scope)
-        fail ArgumentError, "invalid value for \"permission_scope\", must be one of #{validator.allowable_values}."
-      end
-      @permission_scope = permission_scope
+      @email = email
     end
 
     # Custom attribute writer method with validation
@@ -249,10 +141,7 @@ module RevdokuApi
     def ==(o)
       return true if self.equal?(o)
       self.class == o.class &&
-          human_operator_email == o.human_operator_email &&
-          username == o.username &&
-          label == o.label &&
-          permission_scope == o.permission_scope &&
+          email == o.email &&
           accept_terms_and_policy == o.accept_terms_and_policy
     end
 
@@ -265,7 +154,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [human_operator_email, username, label, permission_scope, accept_terms_and_policy].hash
+      [email, accept_terms_and_policy].hash
     end
 
     # Builds the object from hash

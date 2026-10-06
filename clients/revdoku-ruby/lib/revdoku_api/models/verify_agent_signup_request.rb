@@ -15,11 +15,8 @@ require 'time'
 
 module RevdokuApi
   class VerifyAgentSignupRequest < ApiModelBase
-    # Required until the challenge is verified; collect privately, never in chat.
+    # Six-digit email verification code.
     attr_accessor :code
-
-    # Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
-    attr_accessor :username
 
     # Private signup token returned by the first request. Send only in the JSON body; never log it or show it in chat.
     attr_accessor :signup_token
@@ -28,7 +25,6 @@ module RevdokuApi
     def self.attribute_map
       {
         :'code' => :'code',
-        :'username' => :'username',
         :'signup_token' => :'signup_token'
       }
     end
@@ -47,7 +43,6 @@ module RevdokuApi
     def self.openapi_types
       {
         :'code' => :'String',
-        :'username' => :'String',
         :'signup_token' => :'String'
       }
     end
@@ -76,10 +71,8 @@ module RevdokuApi
 
       if attributes.key?(:'code')
         self.code = attributes[:'code']
-      end
-
-      if attributes.key?(:'username')
-        self.username = attributes[:'username']
+      else
+        self.code = nil
       end
 
       if attributes.key?(:'signup_token')
@@ -94,17 +87,13 @@ module RevdokuApi
     def list_invalid_properties
       warn '[DEPRECATED] the `list_invalid_properties` method is obsolete'
       invalid_properties = Array.new
+      if @code.nil?
+        invalid_properties.push('invalid value for "code", code cannot be nil.')
+      end
+
       pattern = Regexp.new(/^[0-9]{6}$/)
-      if !@code.nil? && @code !~ pattern
+      if @code !~ pattern
         invalid_properties.push("invalid value for \"code\", must conform to the pattern #{pattern}.")
-      end
-
-      if !@username.nil? && @username.to_s.length > 64
-        invalid_properties.push('invalid value for "username", the character length must be smaller than or equal to 64.')
-      end
-
-      if !@username.nil? && @username.to_s.length < 1
-        invalid_properties.push('invalid value for "username", the character length must be greater than or equal to 1.')
       end
 
       if @signup_token.nil?
@@ -123,9 +112,8 @@ module RevdokuApi
     # @return true if the model is valid
     def valid?
       warn '[DEPRECATED] the `valid?` method is obsolete'
-      return false if !@code.nil? && @code !~ Regexp.new(/^[0-9]{6}$/)
-      return false if !@username.nil? && @username.to_s.length > 64
-      return false if !@username.nil? && @username.to_s.length < 1
+      return false if @code.nil?
+      return false if @code !~ Regexp.new(/^[0-9]{6}$/)
       return false if @signup_token.nil?
       return false if @signup_token !~ Regexp.new(/^[A-Za-z0-9_-]{43}$/)
       true
@@ -144,24 +132,6 @@ module RevdokuApi
       end
 
       @code = code
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] username Value to be assigned
-    def username=(username)
-      if username.nil?
-        fail ArgumentError, 'username cannot be nil'
-      end
-
-      if username.to_s.length > 64
-        fail ArgumentError, 'invalid value for "username", the character length must be smaller than or equal to 64.'
-      end
-
-      if username.to_s.length < 1
-        fail ArgumentError, 'invalid value for "username", the character length must be greater than or equal to 1.'
-      end
-
-      @username = username
     end
 
     # Custom attribute writer method with validation
@@ -185,7 +155,6 @@ module RevdokuApi
       return true if self.equal?(o)
       self.class == o.class &&
           code == o.code &&
-          username == o.username &&
           signup_token == o.signup_token
     end
 
@@ -198,7 +167,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [code, username, signup_token].hash
+      [code, signup_token].hash
     end
 
     # Builds the object from hash

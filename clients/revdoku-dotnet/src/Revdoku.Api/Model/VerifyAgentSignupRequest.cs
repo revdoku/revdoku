@@ -43,35 +43,31 @@ namespace Revdoku.Api.Model
         /// <summary>
         /// Initializes a new instance of the <see cref="VerifyAgentSignupRequest" /> class.
         /// </summary>
-        /// <param name="code">Required until the challenge is verified; collect privately, never in chat..</param>
-        /// <param name="username">Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option..</param>
+        /// <param name="code">Six-digit email verification code. (required).</param>
         /// <param name="signupToken">Private signup token returned by the first request. Send only in the JSON body; never log it or show it in chat. (required).</param>
-        public VerifyAgentSignupRequest(string code = default, string username = default, string signupToken = default)
+        public VerifyAgentSignupRequest(string code = default, string signupToken = default)
         {
+            // to ensure "code" is required (not null)
+            if (code == null)
+            {
+                throw new ArgumentNullException("code is a required property for VerifyAgentSignupRequest and cannot be null");
+            }
+            this.Code = code;
             // to ensure "signupToken" is required (not null)
             if (signupToken == null)
             {
                 throw new ArgumentNullException("signupToken is a required property for VerifyAgentSignupRequest and cannot be null");
             }
             this.SignupToken = signupToken;
-            this.Code = code;
-            this.Username = username;
             this.AdditionalProperties = new Dictionary<string, object>();
         }
 
         /// <summary>
-        /// Required until the challenge is verified; collect privately, never in chat.
+        /// Six-digit email verification code.
         /// </summary>
-        /// <value>Required until the challenge is verified; collect privately, never in chat.</value>
-        [DataMember(Name = "code", EmitDefaultValue = false)]
+        /// <value>Six-digit email verification code.</value>
+        [DataMember(Name = "code", IsRequired = true, EmitDefaultValue = true)]
         public string Code { get; set; }
-
-        /// <summary>
-        /// Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
-        /// </summary>
-        /// <value>Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.</value>
-        [DataMember(Name = "username", EmitDefaultValue = false)]
-        public string Username { get; set; }
 
         /// <summary>
         /// Private signup token returned by the first request. Send only in the JSON body; never log it or show it in chat.
@@ -95,7 +91,6 @@ namespace Revdoku.Api.Model
             StringBuilder sb = new StringBuilder();
             sb.Append("class VerifyAgentSignupRequest {\n");
             sb.Append("  Code: ").Append(Code).Append("\n");
-            sb.Append("  Username: ").Append(Username).Append("\n");
             sb.Append("  SignupToken: ").Append(SignupToken).Append("\n");
             sb.Append("  AdditionalProperties: ").Append(AdditionalProperties).Append("\n");
             sb.Append("}\n");
@@ -125,18 +120,6 @@ namespace Revdoku.Api.Model
                 {
                     yield return new System.ComponentModel.DataAnnotations.ValidationResult("Invalid value for Code, must match a pattern of " + regexCode, new [] { "Code" });
                 }
-            }
-
-            // Username (string) maxLength
-            if (this.Username != null && this.Username.Length > 64)
-            {
-                yield return new ValidationResult("Invalid value for Username, length must be less than 64.", new [] { "Username" });
-            }
-
-            // Username (string) minLength
-            if (this.Username != null && this.Username.Length < 1)
-            {
-                yield return new ValidationResult("Invalid value for Username, length must be greater than 1.", new [] { "Username" });
             }
 
             if (this.SignupToken != null) {

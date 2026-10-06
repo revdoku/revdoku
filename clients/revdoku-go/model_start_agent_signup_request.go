@@ -20,13 +20,9 @@ var _ MappedNullable = &StartAgentSignupRequest{}
 
 // StartAgentSignupRequest struct for StartAgentSignupRequest
 type StartAgentSignupRequest struct {
-	// Email supplied by the human who owns and authorizes this account. Do not use an AI agent mailbox or invent this value. Verification proves control of the address.
-	HumanOperatorEmail string `json:"human_operator_email"`
-	// Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
-	Username *string `json:"username,omitempty"`
-	Label *string `json:"label,omitempty"`
-	PermissionScope *string `json:"permission_scope,omitempty"`
-	// The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization.
+	// Email address for the new account.
+	Email string `json:"email"`
+	// Agree to the Terms (https://revdoku.com/terms) and Acceptable Use Policy (https://revdoku.com/acceptable-use), and acknowledge the Privacy Policy (https://revdoku.com/privacy).
 	AcceptTermsAndPolicy bool `json:"accept_terms_and_policy"`
 	AdditionalProperties map[string]interface{}
 }
@@ -37,11 +33,9 @@ type _StartAgentSignupRequest StartAgentSignupRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewStartAgentSignupRequest(humanOperatorEmail string, acceptTermsAndPolicy bool) *StartAgentSignupRequest {
+func NewStartAgentSignupRequest(email string, acceptTermsAndPolicy bool) *StartAgentSignupRequest {
 	this := StartAgentSignupRequest{}
-	this.HumanOperatorEmail = humanOperatorEmail
-	var permissionScope string = "mailbox_admin"
-	this.PermissionScope = &permissionScope
+	this.Email = email
 	this.AcceptTermsAndPolicy = acceptTermsAndPolicy
 	return &this
 }
@@ -51,129 +45,31 @@ func NewStartAgentSignupRequest(humanOperatorEmail string, acceptTermsAndPolicy 
 // but it doesn't guarantee that properties required by API are set
 func NewStartAgentSignupRequestWithDefaults() *StartAgentSignupRequest {
 	this := StartAgentSignupRequest{}
-	var permissionScope string = "mailbox_admin"
-	this.PermissionScope = &permissionScope
 	return &this
 }
 
-// GetHumanOperatorEmail returns the HumanOperatorEmail field value
-func (o *StartAgentSignupRequest) GetHumanOperatorEmail() string {
+// GetEmail returns the Email field value
+func (o *StartAgentSignupRequest) GetEmail() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.HumanOperatorEmail
+	return o.Email
 }
 
-// GetHumanOperatorEmailOk returns a tuple with the HumanOperatorEmail field value
+// GetEmailOk returns a tuple with the Email field value
 // and a boolean to check if the value has been set.
-func (o *StartAgentSignupRequest) GetHumanOperatorEmailOk() (*string, bool) {
+func (o *StartAgentSignupRequest) GetEmailOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.HumanOperatorEmail, true
+	return &o.Email, true
 }
 
-// SetHumanOperatorEmail sets field value
-func (o *StartAgentSignupRequest) SetHumanOperatorEmail(v string) {
-	o.HumanOperatorEmail = v
-}
-
-// GetUsername returns the Username field value if set, zero value otherwise.
-func (o *StartAgentSignupRequest) GetUsername() string {
-	if o == nil || IsNil(o.Username) {
-		var ret string
-		return ret
-	}
-	return *o.Username
-}
-
-// GetUsernameOk returns a tuple with the Username field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *StartAgentSignupRequest) GetUsernameOk() (*string, bool) {
-	if o == nil || IsNil(o.Username) {
-		return nil, false
-	}
-	return o.Username, true
-}
-
-// HasUsername returns a boolean if a field has been set.
-func (o *StartAgentSignupRequest) HasUsername() bool {
-	if o != nil && !IsNil(o.Username) {
-		return true
-	}
-
-	return false
-}
-
-// SetUsername gets a reference to the given string and assigns it to the Username field.
-func (o *StartAgentSignupRequest) SetUsername(v string) {
-	o.Username = &v
-}
-
-// GetLabel returns the Label field value if set, zero value otherwise.
-func (o *StartAgentSignupRequest) GetLabel() string {
-	if o == nil || IsNil(o.Label) {
-		var ret string
-		return ret
-	}
-	return *o.Label
-}
-
-// GetLabelOk returns a tuple with the Label field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *StartAgentSignupRequest) GetLabelOk() (*string, bool) {
-	if o == nil || IsNil(o.Label) {
-		return nil, false
-	}
-	return o.Label, true
-}
-
-// HasLabel returns a boolean if a field has been set.
-func (o *StartAgentSignupRequest) HasLabel() bool {
-	if o != nil && !IsNil(o.Label) {
-		return true
-	}
-
-	return false
-}
-
-// SetLabel gets a reference to the given string and assigns it to the Label field.
-func (o *StartAgentSignupRequest) SetLabel(v string) {
-	o.Label = &v
-}
-
-// GetPermissionScope returns the PermissionScope field value if set, zero value otherwise.
-func (o *StartAgentSignupRequest) GetPermissionScope() string {
-	if o == nil || IsNil(o.PermissionScope) {
-		var ret string
-		return ret
-	}
-	return *o.PermissionScope
-}
-
-// GetPermissionScopeOk returns a tuple with the PermissionScope field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *StartAgentSignupRequest) GetPermissionScopeOk() (*string, bool) {
-	if o == nil || IsNil(o.PermissionScope) {
-		return nil, false
-	}
-	return o.PermissionScope, true
-}
-
-// HasPermissionScope returns a boolean if a field has been set.
-func (o *StartAgentSignupRequest) HasPermissionScope() bool {
-	if o != nil && !IsNil(o.PermissionScope) {
-		return true
-	}
-
-	return false
-}
-
-// SetPermissionScope gets a reference to the given string and assigns it to the PermissionScope field.
-func (o *StartAgentSignupRequest) SetPermissionScope(v string) {
-	o.PermissionScope = &v
+// SetEmail sets field value
+func (o *StartAgentSignupRequest) SetEmail(v string) {
+	o.Email = v
 }
 
 // GetAcceptTermsAndPolicy returns the AcceptTermsAndPolicy field value
@@ -210,16 +106,7 @@ func (o StartAgentSignupRequest) MarshalJSON() ([]byte, error) {
 
 func (o StartAgentSignupRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["human_operator_email"] = o.HumanOperatorEmail
-	if !IsNil(o.Username) {
-		toSerialize["username"] = o.Username
-	}
-	if !IsNil(o.Label) {
-		toSerialize["label"] = o.Label
-	}
-	if !IsNil(o.PermissionScope) {
-		toSerialize["permission_scope"] = o.PermissionScope
-	}
+	toSerialize["email"] = o.Email
 	toSerialize["accept_terms_and_policy"] = o.AcceptTermsAndPolicy
 
 	for key, value := range o.AdditionalProperties {
@@ -234,7 +121,7 @@ func (o *StartAgentSignupRequest) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"human_operator_email",
+		"email",
 		"accept_terms_and_policy",
 	}
 
@@ -265,10 +152,7 @@ func (o *StartAgentSignupRequest) UnmarshalJSON(data []byte) (err error) {
 	additionalProperties := make(map[string]interface{})
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "human_operator_email")
-		delete(additionalProperties, "username")
-		delete(additionalProperties, "label")
-		delete(additionalProperties, "permission_scope")
+		delete(additionalProperties, "email")
 		delete(additionalProperties, "accept_terms_and_policy")
 		o.AdditionalProperties = additionalProperties
 	}

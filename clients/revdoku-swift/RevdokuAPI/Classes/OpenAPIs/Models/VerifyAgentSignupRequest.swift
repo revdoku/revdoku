@@ -13,24 +13,19 @@ import AnyCodable
 public struct VerifyAgentSignupRequest: Codable, JSONEncodable, Hashable {
 
     public static let codeRule = StringRule(minLength: nil, maxLength: nil, pattern: "/^[0-9]{6}$/")
-    public static let usernameRule = StringRule(minLength: 1, maxLength: 64, pattern: nil)
     public static let signupTokenRule = StringRule(minLength: nil, maxLength: nil, pattern: "/^[A-Za-z0-9_-]{43}$/")
-    /** Required until the challenge is verified; collect privately, never in chat. */
-    public var code: String?
-    /** Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option. */
-    public var username: String?
+    /** Six-digit email verification code. */
+    public var code: String
     /** Private signup token returned by the first request. Send only in the JSON body; never log it or show it in chat. */
     public var signupToken: String
 
-    public init(code: String? = nil, username: String? = nil, signupToken: String) {
+    public init(code: String, signupToken: String) {
         self.code = code
-        self.username = username
         self.signupToken = signupToken
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case code
-        case username
         case signupToken = "signup_token"
     }
 
@@ -38,8 +33,7 @@ public struct VerifyAgentSignupRequest: Codable, JSONEncodable, Hashable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encodeIfPresent(code, forKey: .code)
-        try container.encodeIfPresent(username, forKey: .username)
+        try container.encode(code, forKey: .code)
         try container.encode(signupToken, forKey: .signupToken)
     }
 }

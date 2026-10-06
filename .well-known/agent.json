@@ -10,7 +10,6 @@
     "openapi": "https://revdoku.com/openapi.json",
     "signup": {
       "documentation": "https://revdoku.com/api.md#direct-api-signup",
-      "capabilities": "https://api.revdoku.com/v1/agent_auth/capabilities",
       "endpoint": "https://api.revdoku.com/v1/agent/signups",
       "requires": "Human owner authorization and private email verification; creates the account, first mailbox, and API key."
     }
@@ -27,7 +26,7 @@
     "authentication_required": false,
     "signup": {
       "tools": ["revdoku_signup", "revdoku_signup_verify", "revdoku_signup_resend"],
-      "required": ["human_operator_email", "accept_terms_and_policy"],
+      "required": ["email", "accept_terms_and_policy"],
       "documentation": "https://revdoku.com/mcp.md#direct-mcp-signup",
       "private_verification_required": true
     }

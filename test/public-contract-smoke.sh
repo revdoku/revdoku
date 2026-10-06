@@ -135,7 +135,7 @@ for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
   reject_text "$file" "https://docs.revdoku.site/"
 done
 
-require_text "$API_FILE" "message.json"
+require_text "$API_FILE" "body_status"
 require_text "$API_FILE" "last_received_path"
 require_text "$API_FILE" "include_email=true"
 require_text "$SKILL_FILE" "body_status"

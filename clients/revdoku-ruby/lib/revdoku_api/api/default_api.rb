@@ -969,63 +969,6 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Discover Revdoku agent authentication flows
-    # Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-    # @param [Hash] opts the optional parameters
-    # @return [ApiSuccess]
-    def get_agent_auth_capabilities(opts = {})
-      data, _status_code, _headers = get_agent_auth_capabilities_with_http_info(opts)
-      data
-    end
-
-    # Discover Revdoku agent authentication flows
-    # Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-    # @param [Hash] opts the optional parameters
-    # @return [Array<(ApiSuccess, Integer, Hash)>] ApiSuccess data, response status code and response headers
-    def get_agent_auth_capabilities_with_http_info(opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.get_agent_auth_capabilities ...'
-      end
-      # resource path
-      local_var_path = '/v1/agent_auth/capabilities'
-
-      # query parameters
-      query_params = opts[:query_params] || {}
-
-      # header parameters
-      header_params = opts[:header_params] || {}
-      # HTTP header 'Accept' (if needed)
-      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
-
-      # form parameters
-      form_params = opts[:form_params] || {}
-
-      # http body (model)
-      post_body = opts[:debug_body]
-
-      # return_type
-      return_type = opts[:debug_return_type] || 'ApiSuccess'
-
-      # auth_names
-      auth_names = opts[:debug_auth_names] || []
-
-      new_options = opts.merge(
-        :operation => :"DefaultApi.get_agent_auth_capabilities",
-        :header_params => header_params,
-        :query_params => query_params,
-        :form_params => form_params,
-        :body => post_body,
-        :auth_names => auth_names,
-        :return_type => return_type
-      )
-
-      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#get_agent_auth_capabilities\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
-      return data, status_code, headers
-    end
-
     # Read a received email
     # Requires mailbox read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.
     # @param mailbox_id [String] 
@@ -1457,63 +1400,6 @@ module RevdokuApi
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
       if @api_client.config.debugging
         @api_client.config.logger.debug "API called: DefaultApi#get_revdoku_status\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
-      return data, status_code, headers
-    end
-
-    # Read the current signup policies
-    # Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-    # @param [Hash] opts the optional parameters
-    # @return [SignupPoliciesResponse]
-    def get_signup_policies(opts = {})
-      data, _status_code, _headers = get_signup_policies_with_http_info(opts)
-      data
-    end
-
-    # Read the current signup policies
-    # Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-    # @param [Hash] opts the optional parameters
-    # @return [Array<(SignupPoliciesResponse, Integer, Hash)>] SignupPoliciesResponse data, response status code and response headers
-    def get_signup_policies_with_http_info(opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.get_signup_policies ...'
-      end
-      # resource path
-      local_var_path = '/v1/agent_auth/policies'
-
-      # query parameters
-      query_params = opts[:query_params] || {}
-
-      # header parameters
-      header_params = opts[:header_params] || {}
-      # HTTP header 'Accept' (if needed)
-      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
-
-      # form parameters
-      form_params = opts[:form_params] || {}
-
-      # http body (model)
-      post_body = opts[:debug_body]
-
-      # return_type
-      return_type = opts[:debug_return_type] || 'SignupPoliciesResponse'
-
-      # auth_names
-      auth_names = opts[:debug_auth_names] || []
-
-      new_options = opts.merge(
-        :operation => :"DefaultApi.get_signup_policies",
-        :header_params => header_params,
-        :query_params => query_params,
-        :form_params => form_params,
-        :body => post_body,
-        :auth_names => auth_names,
-        :return_type => return_type
-      )
-
-      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#get_signup_policies\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end
@@ -1999,7 +1885,7 @@ module RevdokuApi
     end
 
     # Resend the human operator’s verification code
-    # Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+    # Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
     # @param resend_agent_signup_code_request [ResendAgentSignupCodeRequest] 
     # @param [Hash] opts the optional parameters
     # @return [StartAgentSignup202Response]
@@ -2009,7 +1895,7 @@ module RevdokuApi
     end
 
     # Resend the human operator’s verification code
-    # Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+    # Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
     # @param resend_agent_signup_code_request [ResendAgentSignupCodeRequest] 
     # @param [Hash] opts the optional parameters
     # @return [Array<(StartAgentSignup202Response, Integer, Hash)>] StartAgentSignup202Response data, response status code and response headers
@@ -2214,8 +2100,8 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Start signup with the human operator’s email
-    # Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+    # Start signup
+    # Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
     # @param start_agent_signup_request [StartAgentSignupRequest] 
     # @param [Hash] opts the optional parameters
     # @return [StartAgentSignup202Response]
@@ -2224,8 +2110,8 @@ module RevdokuApi
       data
     end
 
-    # Start signup with the human operator’s email
-    # Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+    # Start signup
+    # Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
     # @param start_agent_signup_request [StartAgentSignupRequest] 
     # @param [Hash] opts the optional parameters
     # @return [Array<(StartAgentSignup202Response, Integer, Hash)>] StartAgentSignup202Response data, response status code and response headers
@@ -2523,7 +2409,7 @@ module RevdokuApi
     end
 
     # Verify the human’s code and create the first mailbox
-    # Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+    # Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
     # @param verify_agent_signup_request [VerifyAgentSignupRequest] 
     # @param [Hash] opts the optional parameters
     # @return [VerifyAgentSignup200Response]
@@ -2533,7 +2419,7 @@ module RevdokuApi
     end
 
     # Verify the human’s code and create the first mailbox
-    # Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+    # Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
     # @param verify_agent_signup_request [VerifyAgentSignupRequest] 
     # @param [Hash] opts the optional parameters
     # @return [Array<(VerifyAgentSignup200Response, Integer, Hash)>] VerifyAgentSignup200Response data, response status code and response headers

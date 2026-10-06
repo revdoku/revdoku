@@ -764,48 +764,6 @@ open class DefaultAPI {
     }
 
     /**
-     Discover Revdoku agent authentication flows
-     
-     - parameter apiResponseQueue: The queue on which api response is dispatched.
-     - parameter completion: completion handler to receive the data and the error objects
-     */
-    @discardableResult
-    open class func getAgentAuthCapabilities(apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: ApiSuccess?, _ error: Error?) -> Void)) -> RequestTask {
-        return getAgentAuthCapabilitiesWithRequestBuilder().execute(apiResponseQueue) { result in
-            switch result {
-            case let .success(response):
-                completion(response.body, nil)
-            case let .failure(error):
-                completion(nil, error)
-            }
-        }
-    }
-
-    /**
-     Discover Revdoku agent authentication flows
-     - GET /v1/agent_auth/capabilities
-     - Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-     - returns: RequestBuilder<ApiSuccess> 
-     */
-    open class func getAgentAuthCapabilitiesWithRequestBuilder() -> RequestBuilder<ApiSuccess> {
-        let localVariablePath = "/v1/agent_auth/capabilities"
-        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
-        let localVariableParameters: [String: Any]? = nil
-
-        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
-
-        let localVariableNillableHeaders: [String: Any?] = [
-            :
-        ]
-
-        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
-
-        let localVariableRequestBuilder: RequestBuilder<ApiSuccess>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
-
-        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: false)
-    }
-
-    /**
      * enum for parameter purpose
      */
     public enum Purpose_getEmail: String, CaseIterable {
@@ -1173,48 +1131,6 @@ open class DefaultAPI {
         let localVariableRequestBuilder: RequestBuilder<GetRevdokuStatus200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
-    }
-
-    /**
-     Read the current signup policies
-     
-     - parameter apiResponseQueue: The queue on which api response is dispatched.
-     - parameter completion: completion handler to receive the data and the error objects
-     */
-    @discardableResult
-    open class func getSignupPolicies(apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: SignupPoliciesResponse?, _ error: Error?) -> Void)) -> RequestTask {
-        return getSignupPoliciesWithRequestBuilder().execute(apiResponseQueue) { result in
-            switch result {
-            case let .success(response):
-                completion(response.body, nil)
-            case let .failure(error):
-                completion(nil, error)
-            }
-        }
-    }
-
-    /**
-     Read the current signup policies
-     - GET /v1/agent_auth/policies
-     - Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-     - returns: RequestBuilder<SignupPoliciesResponse> 
-     */
-    open class func getSignupPoliciesWithRequestBuilder() -> RequestBuilder<SignupPoliciesResponse> {
-        let localVariablePath = "/v1/agent_auth/policies"
-        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
-        let localVariableParameters: [String: Any]? = nil
-
-        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
-
-        let localVariableNillableHeaders: [String: Any?] = [
-            :
-        ]
-
-        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
-
-        let localVariableRequestBuilder: RequestBuilder<SignupPoliciesResponse>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
-
-        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: false)
     }
 
     /**
@@ -1626,7 +1542,7 @@ open class DefaultAPI {
     /**
      Resend the human operator’s verification code
      - POST /v1/agent/signups/resend
-     - Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+     - Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
      - parameter resendAgentSignupCodeRequest: (body)  
      - returns: RequestBuilder<StartAgentSignup202Response> 
      */
@@ -1753,7 +1669,7 @@ open class DefaultAPI {
     }
 
     /**
-     Start signup with the human operator’s email
+     Start signup
      
      - parameter startAgentSignupRequest: (body)  
      - parameter apiResponseQueue: The queue on which api response is dispatched.
@@ -1772,9 +1688,9 @@ open class DefaultAPI {
     }
 
     /**
-     Start signup with the human operator’s email
+     Start signup
      - POST /v1/agent/signups
-     - Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+     - Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
      - parameter startAgentSignupRequest: (body)  
      - returns: RequestBuilder<StartAgentSignup202Response> 
      */
@@ -1999,7 +1915,7 @@ open class DefaultAPI {
     /**
      Verify the human’s code and create the first mailbox
      - POST /v1/agent/signups/verify
-     - Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+     - Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
      - parameter verifyAgentSignupRequest: (body)  
      - returns: RequestBuilder<VerifyAgentSignup200Response> 
      */

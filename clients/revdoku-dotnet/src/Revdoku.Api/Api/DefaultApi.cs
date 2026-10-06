@@ -337,25 +337,6 @@ namespace Revdoku.Api.Api
         /// <returns>ApiResponse of GetAccountLimits200Response</returns>
         ApiResponse<GetAccountLimits200Response> GetAccountLimitsWithHttpInfo(string? accountId = default);
         /// <summary>
-        /// Discover Revdoku agent authentication flows
-        /// </summary>
-        /// <remarks>
-        /// Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-        /// </remarks>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <returns>ApiSuccess</returns>
-        ApiSuccess GetAgentAuthCapabilities();
-
-        /// <summary>
-        /// Discover Revdoku agent authentication flows
-        /// </summary>
-        /// <remarks>
-        /// Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-        /// </remarks>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <returns>ApiResponse of ApiSuccess</returns>
-        ApiResponse<ApiSuccess> GetAgentAuthCapabilitiesWithHttpInfo();
-        /// <summary>
         /// Read a received email
         /// </summary>
         /// <remarks>
@@ -504,25 +485,6 @@ namespace Revdoku.Api.Api
         /// <param name="reason"> (optional)</param>
         /// <returns>ApiResponse of GetRevdokuStatus200Response</returns>
         ApiResponse<GetRevdokuStatus200Response> GetRevdokuStatusWithHttpInfo(string? accountId = default, string? reason = default);
-        /// <summary>
-        /// Read the current signup policies
-        /// </summary>
-        /// <remarks>
-        /// Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-        /// </remarks>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <returns>SignupPoliciesResponse</returns>
-        SignupPoliciesResponse GetSignupPolicies();
-
-        /// <summary>
-        /// Read the current signup policies
-        /// </summary>
-        /// <remarks>
-        /// Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-        /// </remarks>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <returns>ApiResponse of SignupPoliciesResponse</returns>
-        ApiResponse<SignupPoliciesResponse> GetSignupPoliciesWithHttpInfo();
         /// <summary>
         /// List account email domains, DNS records, receiving state and usage
         /// </summary>
@@ -690,7 +652,7 @@ namespace Revdoku.Api.Api
         /// Resend the human operator’s verification code
         /// </summary>
         /// <remarks>
-        /// Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+        /// Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="resendAgentSignupCodeRequest"></param>
@@ -701,7 +663,7 @@ namespace Revdoku.Api.Api
         /// Resend the human operator’s verification code
         /// </summary>
         /// <remarks>
-        /// Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+        /// Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="resendAgentSignupCodeRequest"></param>
@@ -754,10 +716,10 @@ namespace Revdoku.Api.Api
         /// <returns>ApiResponse of SetEmailWebhook200Response</returns>
         ApiResponse<SetEmailWebhook200Response> SetEmailWebhookWithHttpInfo(string mailboxId, SetEmailWebhookRequest setEmailWebhookRequest);
         /// <summary>
-        /// Start signup with the human operator’s email
+        /// Start signup
         /// </summary>
         /// <remarks>
-        /// Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+        /// Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="startAgentSignupRequest"></param>
@@ -765,10 +727,10 @@ namespace Revdoku.Api.Api
         StartAgentSignup202Response StartAgentSignup(StartAgentSignupRequest startAgentSignupRequest);
 
         /// <summary>
-        /// Start signup with the human operator’s email
+        /// Start signup
         /// </summary>
         /// <remarks>
-        /// Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+        /// Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="startAgentSignupRequest"></param>
@@ -857,7 +819,7 @@ namespace Revdoku.Api.Api
         /// Verify the human’s code and create the first mailbox
         /// </summary>
         /// <remarks>
-        /// Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+        /// Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="verifyAgentSignupRequest"></param>
@@ -868,7 +830,7 @@ namespace Revdoku.Api.Api
         /// Verify the human’s code and create the first mailbox
         /// </summary>
         /// <remarks>
-        /// Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+        /// Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="verifyAgentSignupRequest"></param>
@@ -1225,27 +1187,6 @@ namespace Revdoku.Api.Api
         /// <returns>Task of ApiResponse (GetAccountLimits200Response)</returns>
         System.Threading.Tasks.Task<ApiResponse<GetAccountLimits200Response>> GetAccountLimitsWithHttpInfoAsync(string? accountId = default, System.Threading.CancellationToken cancellationToken = default);
         /// <summary>
-        /// Discover Revdoku agent authentication flows
-        /// </summary>
-        /// <remarks>
-        /// Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-        /// </remarks>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
-        /// <returns>Task of ApiSuccess</returns>
-        System.Threading.Tasks.Task<ApiSuccess> GetAgentAuthCapabilitiesAsync(System.Threading.CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Discover Revdoku agent authentication flows
-        /// </summary>
-        /// <remarks>
-        /// Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-        /// </remarks>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
-        /// <returns>Task of ApiResponse (ApiSuccess)</returns>
-        System.Threading.Tasks.Task<ApiResponse<ApiSuccess>> GetAgentAuthCapabilitiesWithHttpInfoAsync(System.Threading.CancellationToken cancellationToken = default);
-        /// <summary>
         /// Read a received email
         /// </summary>
         /// <remarks>
@@ -1409,27 +1350,6 @@ namespace Revdoku.Api.Api
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns>Task of ApiResponse (GetRevdokuStatus200Response)</returns>
         System.Threading.Tasks.Task<ApiResponse<GetRevdokuStatus200Response>> GetRevdokuStatusWithHttpInfoAsync(string? accountId = default, string? reason = default, System.Threading.CancellationToken cancellationToken = default);
-        /// <summary>
-        /// Read the current signup policies
-        /// </summary>
-        /// <remarks>
-        /// Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-        /// </remarks>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
-        /// <returns>Task of SignupPoliciesResponse</returns>
-        System.Threading.Tasks.Task<SignupPoliciesResponse> GetSignupPoliciesAsync(System.Threading.CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Read the current signup policies
-        /// </summary>
-        /// <remarks>
-        /// Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-        /// </remarks>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
-        /// <returns>Task of ApiResponse (SignupPoliciesResponse)</returns>
-        System.Threading.Tasks.Task<ApiResponse<SignupPoliciesResponse>> GetSignupPoliciesWithHttpInfoAsync(System.Threading.CancellationToken cancellationToken = default);
         /// <summary>
         /// List account email domains, DNS records, receiving state and usage
         /// </summary>
@@ -1618,7 +1538,7 @@ namespace Revdoku.Api.Api
         /// Resend the human operator’s verification code
         /// </summary>
         /// <remarks>
-        /// Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+        /// Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="resendAgentSignupCodeRequest"></param>
@@ -1630,7 +1550,7 @@ namespace Revdoku.Api.Api
         /// Resend the human operator’s verification code
         /// </summary>
         /// <remarks>
-        /// Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+        /// Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="resendAgentSignupCodeRequest"></param>
@@ -1688,10 +1608,10 @@ namespace Revdoku.Api.Api
         /// <returns>Task of ApiResponse (SetEmailWebhook200Response)</returns>
         System.Threading.Tasks.Task<ApiResponse<SetEmailWebhook200Response>> SetEmailWebhookWithHttpInfoAsync(string mailboxId, SetEmailWebhookRequest setEmailWebhookRequest, System.Threading.CancellationToken cancellationToken = default);
         /// <summary>
-        /// Start signup with the human operator’s email
+        /// Start signup
         /// </summary>
         /// <remarks>
-        /// Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+        /// Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="startAgentSignupRequest"></param>
@@ -1700,10 +1620,10 @@ namespace Revdoku.Api.Api
         System.Threading.Tasks.Task<StartAgentSignup202Response> StartAgentSignupAsync(StartAgentSignupRequest startAgentSignupRequest, System.Threading.CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Start signup with the human operator’s email
+        /// Start signup
         /// </summary>
         /// <remarks>
-        /// Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+        /// Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="startAgentSignupRequest"></param>
@@ -1799,7 +1719,7 @@ namespace Revdoku.Api.Api
         /// Verify the human’s code and create the first mailbox
         /// </summary>
         /// <remarks>
-        /// Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+        /// Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="verifyAgentSignupRequest"></param>
@@ -1811,7 +1731,7 @@ namespace Revdoku.Api.Api
         /// Verify the human’s code and create the first mailbox
         /// </summary>
         /// <remarks>
-        /// Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+        /// Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="verifyAgentSignupRequest"></param>
@@ -3943,107 +3863,6 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Discover Revdoku agent authentication flows Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-        /// </summary>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <returns>ApiSuccess</returns>
-        public ApiSuccess GetAgentAuthCapabilities()
-        {
-            Revdoku.Api.Client.ApiResponse<ApiSuccess> localVarResponse = GetAgentAuthCapabilitiesWithHttpInfo();
-            return localVarResponse.Data;
-        }
-
-        /// <summary>
-        /// Discover Revdoku agent authentication flows Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-        /// </summary>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <returns>ApiResponse of ApiSuccess</returns>
-        public Revdoku.Api.Client.ApiResponse<ApiSuccess> GetAgentAuthCapabilitiesWithHttpInfo()
-        {
-            Revdoku.Api.Client.RequestOptions localVarRequestOptions = new Revdoku.Api.Client.RequestOptions();
-
-            string[] _contentTypes = new string[] {
-            };
-
-            // to determine the Accept header
-            string[] _accepts = new string[] {
-                "application/json"
-            };
-
-            var localVarContentType = Revdoku.Api.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
-
-            var localVarAccept = Revdoku.Api.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
-
-
-
-            // make the HTTP request
-            var localVarResponse = this.Client.Get<ApiSuccess>("/v1/agent_auth/capabilities", localVarRequestOptions, this.Configuration);
-
-            if (this.ExceptionFactory != null)
-            {
-                Exception _exception = this.ExceptionFactory("GetAgentAuthCapabilities", localVarResponse);
-                if (_exception != null) throw _exception;
-            }
-
-            return localVarResponse;
-        }
-
-        /// <summary>
-        /// Discover Revdoku agent authentication flows Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-        /// </summary>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
-        /// <returns>Task of ApiSuccess</returns>
-        public async System.Threading.Tasks.Task<ApiSuccess> GetAgentAuthCapabilitiesAsync(System.Threading.CancellationToken cancellationToken = default)
-        {
-            Revdoku.Api.Client.ApiResponse<ApiSuccess> localVarResponse = await GetAgentAuthCapabilitiesWithHttpInfoAsync(cancellationToken).ConfigureAwait(false);
-            return localVarResponse.Data;
-        }
-
-        /// <summary>
-        /// Discover Revdoku agent authentication flows Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-        /// </summary>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
-        /// <returns>Task of ApiResponse (ApiSuccess)</returns>
-        public async System.Threading.Tasks.Task<Revdoku.Api.Client.ApiResponse<ApiSuccess>> GetAgentAuthCapabilitiesWithHttpInfoAsync(System.Threading.CancellationToken cancellationToken = default)
-        {
-
-            Revdoku.Api.Client.RequestOptions localVarRequestOptions = new Revdoku.Api.Client.RequestOptions();
-
-            string[] _contentTypes = new string[] {
-            };
-
-            // to determine the Accept header
-            string[] _accepts = new string[] {
-                "application/json"
-            };
-
-
-            var localVarContentType = Revdoku.Api.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
-
-            var localVarAccept = Revdoku.Api.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
-
-
-
-            // make the HTTP request
-
-            var localVarResponse = await this.AsynchronousClient.GetAsync<ApiSuccess>("/v1/agent_auth/capabilities", localVarRequestOptions, this.Configuration, cancellationToken).ConfigureAwait(false);
-
-            if (this.ExceptionFactory != null)
-            {
-                Exception _exception = this.ExceptionFactory("GetAgentAuthCapabilities", localVarResponse);
-                if (_exception != null) throw _exception;
-            }
-
-            return localVarResponse;
-        }
-
-        /// <summary>
         /// Read a received email Requires mailbox read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
@@ -4955,107 +4774,6 @@ namespace Revdoku.Api.Api
             if (this.ExceptionFactory != null)
             {
                 Exception _exception = this.ExceptionFactory("GetRevdokuStatus", localVarResponse);
-                if (_exception != null) throw _exception;
-            }
-
-            return localVarResponse;
-        }
-
-        /// <summary>
-        /// Read the current signup policies Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-        /// </summary>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <returns>SignupPoliciesResponse</returns>
-        public SignupPoliciesResponse GetSignupPolicies()
-        {
-            Revdoku.Api.Client.ApiResponse<SignupPoliciesResponse> localVarResponse = GetSignupPoliciesWithHttpInfo();
-            return localVarResponse.Data;
-        }
-
-        /// <summary>
-        /// Read the current signup policies Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-        /// </summary>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <returns>ApiResponse of SignupPoliciesResponse</returns>
-        public Revdoku.Api.Client.ApiResponse<SignupPoliciesResponse> GetSignupPoliciesWithHttpInfo()
-        {
-            Revdoku.Api.Client.RequestOptions localVarRequestOptions = new Revdoku.Api.Client.RequestOptions();
-
-            string[] _contentTypes = new string[] {
-            };
-
-            // to determine the Accept header
-            string[] _accepts = new string[] {
-                "application/json"
-            };
-
-            var localVarContentType = Revdoku.Api.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
-
-            var localVarAccept = Revdoku.Api.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
-
-
-
-            // make the HTTP request
-            var localVarResponse = this.Client.Get<SignupPoliciesResponse>("/v1/agent_auth/policies", localVarRequestOptions, this.Configuration);
-
-            if (this.ExceptionFactory != null)
-            {
-                Exception _exception = this.ExceptionFactory("GetSignupPolicies", localVarResponse);
-                if (_exception != null) throw _exception;
-            }
-
-            return localVarResponse;
-        }
-
-        /// <summary>
-        /// Read the current signup policies Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-        /// </summary>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
-        /// <returns>Task of SignupPoliciesResponse</returns>
-        public async System.Threading.Tasks.Task<SignupPoliciesResponse> GetSignupPoliciesAsync(System.Threading.CancellationToken cancellationToken = default)
-        {
-            Revdoku.Api.Client.ApiResponse<SignupPoliciesResponse> localVarResponse = await GetSignupPoliciesWithHttpInfoAsync(cancellationToken).ConfigureAwait(false);
-            return localVarResponse.Data;
-        }
-
-        /// <summary>
-        /// Read the current signup policies Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-        /// </summary>
-        /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
-        /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
-        /// <returns>Task of ApiResponse (SignupPoliciesResponse)</returns>
-        public async System.Threading.Tasks.Task<Revdoku.Api.Client.ApiResponse<SignupPoliciesResponse>> GetSignupPoliciesWithHttpInfoAsync(System.Threading.CancellationToken cancellationToken = default)
-        {
-
-            Revdoku.Api.Client.RequestOptions localVarRequestOptions = new Revdoku.Api.Client.RequestOptions();
-
-            string[] _contentTypes = new string[] {
-            };
-
-            // to determine the Accept header
-            string[] _accepts = new string[] {
-                "application/json"
-            };
-
-
-            var localVarContentType = Revdoku.Api.Client.ClientUtils.SelectHeaderContentType(_contentTypes);
-            if (localVarContentType != null) localVarRequestOptions.HeaderParameters.Add("Content-Type", localVarContentType);
-
-            var localVarAccept = Revdoku.Api.Client.ClientUtils.SelectHeaderAccept(_accepts);
-            if (localVarAccept != null) localVarRequestOptions.HeaderParameters.Add("Accept", localVarAccept);
-
-
-
-            // make the HTTP request
-
-            var localVarResponse = await this.AsynchronousClient.GetAsync<SignupPoliciesResponse>("/v1/agent_auth/policies", localVarRequestOptions, this.Configuration, cancellationToken).ConfigureAwait(false);
-
-            if (this.ExceptionFactory != null)
-            {
-                Exception _exception = this.ExceptionFactory("GetSignupPolicies", localVarResponse);
                 if (_exception != null) throw _exception;
             }
 
@@ -6099,7 +5817,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Resend the human operator’s verification code Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+        /// Resend the human operator’s verification code Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="resendAgentSignupCodeRequest"></param>
@@ -6111,7 +5829,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Resend the human operator’s verification code Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+        /// Resend the human operator’s verification code Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="resendAgentSignupCodeRequest"></param>
@@ -6155,7 +5873,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Resend the human operator’s verification code Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+        /// Resend the human operator’s verification code Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="resendAgentSignupCodeRequest"></param>
@@ -6168,7 +5886,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Resend the human operator’s verification code Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+        /// Resend the human operator’s verification code Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="resendAgentSignupCodeRequest"></param>
@@ -6502,7 +6220,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Start signup with the human operator’s email Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+        /// Start signup Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="startAgentSignupRequest"></param>
@@ -6514,7 +6232,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Start signup with the human operator’s email Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+        /// Start signup Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="startAgentSignupRequest"></param>
@@ -6558,7 +6276,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Start signup with the human operator’s email Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+        /// Start signup Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="startAgentSignupRequest"></param>
@@ -6571,7 +6289,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Start signup with the human operator’s email Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+        /// Start signup Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="startAgentSignupRequest"></param>
@@ -7102,7 +6820,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Verify the human’s code and create the first mailbox Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+        /// Verify the human’s code and create the first mailbox Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="verifyAgentSignupRequest"></param>
@@ -7114,7 +6832,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Verify the human’s code and create the first mailbox Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+        /// Verify the human’s code and create the first mailbox Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="verifyAgentSignupRequest"></param>
@@ -7158,7 +6876,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Verify the human’s code and create the first mailbox Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+        /// Verify the human’s code and create the first mailbox Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="verifyAgentSignupRequest"></param>
@@ -7171,7 +6889,7 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// Verify the human’s code and create the first mailbox Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+        /// Verify the human’s code and create the first mailbox Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="verifyAgentSignupRequest"></param>
