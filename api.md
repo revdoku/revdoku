@@ -91,9 +91,70 @@ See [received email operations](#received-email-operations),
 [runnable JS/TypeScript examples](https://github.com/revdoku/revdoku/tree/main/examples), and the
 [SaaS mailbox guide](https://github.com/revdoku/revdoku/blob/main/guides/saas-mailboxes.md).
 
-<a id="1-create-an-mailbox"></a>
+## Direct API signup
 
-### Create another mailbox
+Create an account, its first mailbox, and an API key. No existing API key is required.
+The starter mailbox address is generated from your email. To choose a custom
+username later, sign in and [create another mailbox](#create-another-mailbox).
+
+By signing up, you agree to the [Terms of Use](https://revdoku.com/terms) and
+[Acceptable Use Policy](https://revdoku.com/acceptable-use) and acknowledge the
+[Privacy Policy](https://revdoku.com/privacy).
+
+1. Request a verification code:
+
+   ```http
+   POST /v1/agent/signups
+   Content-Type: application/json
+
+   { "email": "person@example.com", "accept_terms_and_policy": true }
+   ```
+
+   | Field | Required | Meaning |
+   | --- | --- | --- |
+   | `email` | Yes | Your account email address. |
+   | `accept_terms_and_policy` | Yes | Must be boolean `true`. |
+
+   The `202 Accepted` response contains `data.signup.signup_token` plus
+   `data.signup.expires_in` and `data.signup.resend_after` in seconds. Keep the
+   token for the next request.
+
+2. Verify the emailed code:
+
+   ```http
+   POST /v1/agent/signups/verify
+   Content-Type: application/json
+
+   { "signup_token": "TOKEN_FROM_STEP_1", "code": "123456" }
+   ```
+
+   `201 Created` returns:
+
+   | Field | Meaning |
+   | --- | --- |
+   | `data.api_key` | Your API key; save it securely. Returned only once. |
+   | `data.account.id` | New account ID. |
+   | `data.mailbox.id` | Starter mailbox ID. |
+   | `data.mailbox.email` | Generated address and receiving state. |
+   | `data.scope` | `mailbox_admin`, covering this account's mailboxes. |
+   | `data.expires_at` | API key expiration time. |
+
+To resend, POST `{ "signup_token": "TOKEN_FROM_STEP_1" }` to
+`/v1/agent/signups/resend` after `resend_after` seconds. Resending replaces the
+code without extending the signup expiry. On `429`, honor `Retry-After`.
+
+| Result | Action |
+| --- | --- |
+| `INVALID_CODE` | Check the emailed code. |
+| `INVALID_SIGNUP_TOKEN` | Start again; the signup token is invalid or expired. |
+| `SIGN_IN_REQUIRED` | The account exists; [sign in](https://app.revdoku.com/users/sign_in). |
+| Verification response lost | Sign in and create a key in Account → Access. Repeating verification does not return the key again. |
+| Receiving is temporarily unavailable | Keep the returned key and mailbox ID; check the mailbox's receiving state later. |
+
+<a id="1-create-an-mailbox"></a>
+<a id="create-a-mailbox"></a>
+
+## Create another mailbox
 
 Use this only when you need another mailbox. Browser and direct signup already
 create a first mailbox.
@@ -103,7 +164,14 @@ POST /v1/mailboxes
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
-{ "mailbox": {} }
+{
+  "mailbox": {
+    "email": {
+      "username": "acme-orders",
+      "domain": "revdokumail.com"
+    }
+  }
+}
 ```
 
 201 Created (selected fields)
@@ -115,8 +183,8 @@ Content-Type: application/json
     "mailbox": {
       "id": "bkt_example",
       "email": {
-        "username": "maple.river7k2xq9",
-        "address": "maple.river7k2xq9@revdokumail.com",
+        "username": "acme.orders.k7m2x9q4v8nc",
+        "address": "acme.orders.k7m2x9q4v8nc@revdokumail.com",
         "receiving_enabled": true,
         "sending_enabled": false
       }
@@ -125,28 +193,41 @@ Content-Type: application/json
 }
 ```
 
-Creation waits for receiving setup. After `201 Created`, use the returned address immediately.
-Keep the returned mailbox ID for later requests. Creation consumes a separate UTC
-monthly allowance; deleting or archiving the mailbox does not refund it. Read
-[creation usage](#account-limits) before a batch. On `EMAIL_NOT_READY`, preserve
-the created mailbox ID. After a lost response, reconcile existing mailboxes; do not
-automatically repeat the POST. See [creation results](#creation-result).
+Both `username` and `domain` are optional. Omit them to generate an address on the
+platform domain. A custom domain must be verified, owned by this account, and
+available on its plan. Always use the returned address.
 
-AI-agent users can start with the Revdoku app's copied prompt or the
-Revdoku skill. Use the local CLI when the agent has shell and filesystem access,
-or hosted MCP otherwise. Use this HTTP API for custom clients, CI jobs, backend workers,
-or direct integrations.
+After a lost response, check existing mailboxes before creating another.
 
-Direct private clients can use [API signup](#direct-api-signup) when discovery
-reports it available. CLI and hosted MCP users sign up at
-<https://app.revdoku.com/users/sign_up> and connect with browser OAuth.
+#### Creation fields
 
-Hosted MCP and CLI device login use revocable agent connections. Reusable API
-keys are for custom clients and automation when that capability is available to
-the account.
-Only a Revdoku account owner or administrator can authorize an AI connection.
-Removing that membership or reducing it to collaborator access invalidates the
-connection and its refresh credentials.
+| Field | Default | Purpose |
+| --- | --- | --- |
+| `mailbox.email.username` | Generated name, such as `flaky.forest.k7m2x9q4v8nc` | Free: choose a prefix; the server adds a permanent 12-character random suffix. Paid: choose the exact name before `@`. |
+| `mailbox.email.domain` | Platform domain | Built-in domain such as `revdokumail.com` (all plans), or a ready custom email domain owned by this account. |
+| `mailbox.description` | Empty | Add a mailbox description. |
+| `mailbox.tag_paths` | None | Apply user-chosen organizational labels. |
+| `mailbox.metadata` | Empty object | Store your application's project/task metadata. |
+| `account_id` | Credential default | Select another granted account. |
+
+#### Username rules
+
+| Rule | Behavior |
+| --- | --- |
+| Characters | ASCII letters, digits, dots, hyphens and underscores. Uppercase is normalized to lowercase. |
+| Omitted username | Generate a name. |
+| Free username | Convert separators to dots and append 12 random lowercase letters/digits. `acme-orders` becomes `acme.orders.k7m2x9q4v8nc@revdokumail.com`, for example. Long prefixes are shortened to 51 characters. Always use the returned address. |
+| Free address changes or aliases | Require an upgrade. Existing addresses remain unchanged when plans change. |
+| Empty or `null` username | `422 EMAIL_NAME_INVALID`. |
+| Reserved platform name, such as `support`, `acme-support`, `abuse`, `sale`, `sales` or `contact` | `422 EMAIL_NAME_RESERVED`. The message identifies the reserved word and explains how to use your own verified custom domain. Free receives an upgrade link; paid accounts receive domain settings. A paid plan does not bypass shared-domain restrictions. |
+| Occupied or retired platform address | `409 EMAIL_ALREADY_EXISTS`. Deletion and rotation do not release platform names. |
+
+#### Creation result
+
+- Success means the receiving address has been confirmed; no readiness polling is required.
+- If confirmation cannot finish within 25 seconds, the API returns `503 EMAIL_NOT_READY` with the created `mailbox_id` in `error.details`. Check that mailbox before creating another.
+- The same error reports receiving holds through `error.details.blocked_reason`.
+- `dashboard_url` opens the mailbox for authorized human users; it does not grant access.
 
 ## Response format
 
@@ -155,24 +236,6 @@ connection and its refresh credentials.
 | `success` | `true` | `false` |
 | `data` | Named resources such as `mailbox` or `mailboxes`. | Omitted. |
 | `error` | Omitted. | Error code, message and optional details. |
-
-Success — HTTP `201 Created` (selected mailbox fields):
-
-```json
-{
-  "success": true,
-  "data": {
-    "mailbox": {
-      "id": "bkt_example",
-      "email": {
-        "address": "assigned.address@revdokumail.com",
-        "receiving_enabled": true,
-        "sending_enabled": false
-      }
-    }
-  }
-}
-```
 
 Failure — HTTP `401 Unauthorized` (core error fields):
 
@@ -197,15 +260,20 @@ Failure — HTTP `401 Unauthorized` (core error fields):
 | `error.details` | No | Error-specific information, or a list of validation errors with `field` and `message`. |
 | `error.docs_url` | No | Documentation relevant to the error. |
 
-### HTTP behavior
+File downloads return bytes; `204 No Content` has no body.
 
-| Response | Body |
+## Authentication
+
+Send your API key as `Authorization: Bearer YOUR_API_KEY`. Keep it on your backend.
+
+| Permission | Access |
 | --- | --- |
-| Successful JSON request | `success: true` and `data`, containing named resources such as `mailbox` or `mailboxes`. |
-| Failed request | `success: false` and `error`, with the appropriate HTTP error status. |
-| `204 No Content` | No body. |
-| File download | File bytes. |
-| OAuth or MCP request | The response format defined by that protocol. |
+| `mailbox_read` | Read permitted email and files. |
+| `mailbox_write` | Read and write permitted files. |
+| `mailbox_admin` | Manage permitted mailboxes; account-wide access is required to create one. |
+
+For browser authorization and existing-account sign-in flows, see
+[Authentication](https://github.com/revdoku/revdoku/blob/main/guides/authentication.md). For AI connectors, see the [MCP guide](https://revdoku.com/mcp.md).
 
 ## Accounts
 
@@ -252,29 +320,6 @@ An API key can access one or more accounts. Each request operates on one selecte
 | `pagination.offset` | Starting position of this page. |
 | `pagination.has_more` | Whether another page exists. |
 | `pagination.next_offset` | Offset to pass for the next page, or `null`. |
-
-### MCP and CLI
-
-| Task | MCP | CLI |
-| --- | --- | --- |
-| List granted accounts | `account_list` | `revdoku accounts` |
-| Read an account | `account_get(account_id: ID)` | `revdoku account get ID` |
-| Select an account for an operation | `account_id: ID` | `--account-id ID` |
-
-## Read one resource at a time
-
-| Resource | REST request | MCP tool |
-| --- | --- | --- |
-| Account identity and permissions | `GET /v1/accounts/:id` | `account_get` |
-| Effective quotas | `GET /v1/account/limits` | `account_limits` |
-| Mailbox details | `GET /v1/mailboxes/:id` | `mailbox_get` |
-| Received messages | `GET /v1/mailboxes/:id/emails` | `mailbox_email_list` |
-| Stored files | `GET /v1/mailboxes/:id/files` | `mailbox_file_list` |
-
-A mailbox read includes its identity, current revision and summary counts.
-Fetch file lists, messages, version history and account limits separately.
-Responses keep their named resources under `data`, such as `data.mailbox` or
-`data.files`. Related results of a write may share one response.
 
 ## Account limits
 
@@ -353,8 +398,7 @@ is separate from active mailbox capacity.
 | Interface | Read limits |
 | --- | --- |
 | REST | `GET /v1/account/limits`; optional `account_id` query selects a granted account. |
-| MCP | `account_limits`. |
-| CLI | `revdoku account limits`; optional `--account-id ID`. |
+
 
 ## Storing files inside a mailbox
 
@@ -607,13 +651,9 @@ Use your application's normal webhook CSRF exemption. Verify signatures before a
 | Retry delay | Polynomial backoff; valid `Retry-After` on 429/503 is bounded to 1–3,600 seconds |
 | Other failures | Other non-2xx responses, redirects, private destinations, or responses over 64 KiB stop delivery |
 | Timeout | 15 seconds total per request; acknowledge promptly after durable acceptance |
-| Fairness | One delivery at a time per billing account; retries share this limit |
 | Disable / replace / rotate | Cancels pending attempts; an in-flight request may finish |
-| Manual retry | Dashboard administrators may make up to 3 additional attempts, limited to 10 requests/minute per billing account |
 | Retry identity | Same event ID, fresh timestamp and signature; no additional incoming-email charge |
 
-Email storage, delivery history and notification enqueueing commit together.
-Worker interruptions are recovered every five minutes within 24 hours of the event.
 Delivery can repeat or arrive out of order; deduplicate by event ID.
 
 ### Plans and delivery history
@@ -627,13 +667,7 @@ Delivery can repeat or arrive out of order; deduplicate by event ID.
 
 Webhook capacity follows the account's existing mailbox and incoming-email limits, including overrides and shared billing. There is no separate webhook event allowance.
 
-Account administrators use **Analytics → Webhooks** in the dashboard.
-
-- Filter by mailbox, date and delivery status.
-- Inspect HTTP status, attempt times and the next automatic retry.
-- Retry failed deliveries while the account is writable and the same webhook is active.
-- `Delivered` means the endpoint returned HTTP 2xx.
-- History contains operational metadata. Email contents and receiver response bodies are excluded; endpoint paths and queries are redacted.
+Delivery history is available in **Analytics → Webhooks**.
 
 ### Local project workflow
 
@@ -659,8 +693,6 @@ Runnable [JavaScript/TypeScript and Python examples](https://github.com/revdoku/
 
 Keep account, mailbox and filters unchanged when reusing a cursor. Preserve `pagination.next_cursor` even after an empty page. WebSocket events are live hints; REST catch-up supplies messages received while disconnected.
 
-A receiver must remain running. Webhooks and WebSockets do not wake an idle AI chat. The CLI's `email-subscription` and MCP's `mailbox_email_subscription` return connection details for that receiver. Webhook configuration is available through `webhook`, `webhook-set`, `webhook-delete` and the corresponding `mailbox_email_webhook_get`, `mailbox_email_webhook_set`, `mailbox_email_webhook_delete` MCP tools.
-
 Ticket expiry limits connection establishment; an established subscription lasts
 until disconnect or access revocation. Credentials and membership are checked before
 each transmitted event. Treat the ticket as a temporary credential: it authorizes
@@ -668,27 +700,18 @@ only its selected mailbox channel, never account notification streams.
 
 ## Incoming email into a mailbox
 
-The dashboard provides **Mailbox / Raw Files** tabs for each mailbox.
-These are views of the same authorized files. List / Tiles stays inside
-Raw Files; the Mailbox badge counts unread messages, not attachments. Clients use
-the email resource below; original files remain accessible through the file API.
-
 Each mailbox has its own incoming email address for receiving messages and
 attachments alongside uploaded files. Anyone knowing the address can email it;
 reading messages requires authorized mailbox access. Use only the returned address;
 choose a username when creating the mailbox, or connect your own custom domain.
 
-| Operation | REST / MCP |
+| Operation | REST |
 | --- | --- |
-| Create an mailbox | `POST /v1/mailboxes` / `mailbox_create`; creation automatically returns `mailbox.email` with address and receiving state. Template/copy creation assigns a separate address. |
-| Get address/state | `GET /v1/mailboxes/:id/email`, or mailbox detail / `mailbox_get` with `include_email=true`; requires upload/write access. |
-| Check for new mail | `GET /v1/mailboxes/:id/emails` / `mailbox_email_list`; save `pagination.next_cursor`. |
-| Read a message | `GET /v1/mailboxes/:id/emails/:email_id` / `mailbox_email_get`. |
+| Create a mailbox | `POST /v1/mailboxes`; creation automatically returns `mailbox.email` with address and receiving state. Template/copy creation assigns a separate address. |
+| Get address/state | `GET /v1/mailboxes/:id/email`, or mailbox detail with `include_email=true`; requires upload/write access. |
+| Check for new mail | `GET /v1/mailboxes/:id/emails`; save `pagination.next_cursor`. |
+| Read a message | `GET /v1/mailboxes/:id/emails/:email_id`. |
 | Rotate address | `POST /v1/mailboxes/:id/email/rotate`; requires write access and explicit confirmation. |
-
-For CLI use, `revdoku mailbox --mailbox-id ID` retrieves address/state, and
-`revdoku emails --mailbox-id ID` lists messages; `revdoku email EMAIL_ID --mailbox-id ID` reads one. For hosted agents,
-see the [MCP mailbox walkthrough](https://github.com/revdoku/revdoku/blob/main/mcp.md).
 
 ### Receiving state
 
@@ -833,40 +856,6 @@ Content-Type: application/json
 | 409 | `EMAIL_ALLOWLIST_CHANGED` | Missing or stale policy version; read the latest policy. |
 | 422 | `EMAIL_ALLOWLIST_INVALID` | Invalid policy entries or settings. |
 
-### Admin notification schedules
-
-Manage notification emails in **Account Settings → Notifications**. Preferences
-belong to the signed-in person within the selected account.
-
-| Setting | Behavior |
-| --- | --- |
-| `none` | No activity email; in-app bell notices remain. |
-| `immediately` | Send activity email as it occurs, within the monthly allowance. |
-| `daily` | Default. Send an activity summary at 08:00 in the person's timezone. |
-| `weekly` | Send an activity summary on Monday at 08:00. |
-
-Only accounts with activity send summaries. Security/account alerts are independent.
-
-| Browser endpoint | Purpose |
-| --- | --- |
-| `GET /v1/account/notification_settings` | Read the current person's preferences. |
-| `PATCH /v1/account/notification_settings` | Change the current person's preferences. Requires `expected_account_id` and the page's CSRF token. |
-
-These endpoints require a browser session; API keys and MCP tools do not access them.
-
-| Field | Meaning |
-| --- | --- |
-| `activity_frequency` | Requested setting; the only editable preference in this endpoint. |
-| `activity_delivery_frequency` | Effective delivery schedule. Falls back to `daily` when the immediate-email allowance is exhausted. |
-| `activity_frequency_editable` | Whether this person can change the schedule. |
-| `account_id` | Account these preferences apply to. |
-| `time_zone` | Timezone used to schedule summaries. |
-
-- Immediate activity email has a separate billing-group monthly allowance.
-- Each recipient/send attempt counts, including failed attempts.
-- Exhaustion leaves the requested preference unchanged and uses daily delivery until reset or a limit increase.
-- Activity notifications do not consume the incoming-email allowance.
-
 <a id="custom-receiving-domains"></a>
 
 ### Custom email domains
@@ -931,7 +920,7 @@ change your DNS records. A successful check does not activate receiving.
 
 #### Use a connected domain
 
-Connecting a domain preserves existing addresses. Select it when creating an mailbox,
+Connecting a domain preserves existing addresses. Select it when creating a mailbox,
 or use the address replacement endpoint for an existing mailbox.
 
 | Replacement field | Purpose |
@@ -966,65 +955,6 @@ names; their reserved-name rules still apply.
 - A downgrade preserves assigned addresses but can block new domain setup or switching.
 - Switch to a platform address and remove custom-domain aliases before moving a mailbox to another account. Copies get fresh platform addresses without aliases.
 - Mail sent while receiving is paused is not automatically recovered.
-
-### Email files in `_email/`
-
-Use the email endpoints for ordinary message workflows. The underlying files remain
-available through the file API:
-
-```text
-_email/inbox/<sender>/<subject-group>/<delivery>/
-  message.eml
-  message.json
-  message.md
-  attachments/
-```
-
-| Stored file | Contents |
-| --- | --- |
-| `message.eml` | Original email, including MIME headers and inline parts. Use it when decoding is incomplete. |
-| `message.json` | Decoded metadata, body text and attachment paths; at most 512 KiB. |
-| `message.md` | Readable body with YAML metadata; at most 512 KiB. |
-| `attachments/` | Saved attachments with collision-safe filenames. |
-
-Follow returned paths; older messages may use `_email/in/`. All saved representations
-count toward file/storage quotas, while an incoming delivery is metered once.
-
-| `message.json` field | Meaning |
-| --- | --- |
-| `schema_version` | Stored format version; currently `1`. |
-| `forwarding` | Optional member-forwarding provenance and separate member note, with the same meaning as the email detail response. |
-| `subject` | Decoded subject, or `null`. |
-| `from` | Decoded From header, or `null`. |
-| `to` | Decoded To header, or `null`. |
-| `delivered_to` | Trusted envelope delivery address. |
-| `received_at` | Receipt timestamp in UTC. |
-| `body_text` | Decoded text; HTML-only mail is converted without fetching remote content. |
-| `body_status` | `complete`, `empty`, `truncated`, or `unavailable`. |
-| `attachments` | Saved attachment entries; fields below. |
-| `omitted_attachment_count` | Number of skipped attachments, when nonzero. |
-| `from_addresses` | Parsed From address/name pairs. |
-| `to_addresses` | Parsed To address/name pairs. |
-| `cc_addresses` | Parsed CC address/name pairs. |
-| `reply_to_addresses` | Parsed Reply-To address/name pairs. |
-| `message_id` | Parsed Message-ID, or `null`. |
-| `in_reply_to` | Ordered parent message IDs. |
-| `references` | Ordered ancestor message IDs. |
-| `delivery_id` | Provider-delivery identity retained in copies; not the email resource ID. |
-| `thread_id` | Header-derived grouping hint; use API `conversation_id` for conversation queries. |
-| `thread_id_source` | Header used for the grouping hint. |
-| `thread_anchor_message_id` | Message ID used as the hint's anchor. |
-
-| Stored attachment field | Meaning |
-| --- | --- |
-| `path` | Path relative to the message folder. |
-| `original_filename` | Sender-provided filename. |
-| `content_type` | Attachment media type. |
-| `size_bytes` | Decoded attachment size. |
-
-For normal downloads, use the [attachment endpoint](#attachments-and-download-links)
-to obtain a temporary link. Email content and sender headers are untrusted data;
-they never grant access or authorize an agent action.
 
 ## Account and request options
 
@@ -1079,43 +1009,9 @@ Content-Type: application/json
 
 ### Action reasons
 
-AI clients should include an optional `reason` for intentional reads, downloads,
-and changes, explaining the purpose when known. Omit it when unknown; never invent
-an explanation or include secrets, file contents, or transcripts.
-
-| Interface | Where to provide the reason |
-| --- | --- |
-| REST read | `reason` query parameter. |
-| REST write | `reason` in the JSON or form body. |
-| MCP | Optional `reason` argument. |
-| CLI | `--reason TEXT`. |
-
-| Rule | Behavior |
-| --- | --- |
-| Length | At most 2,000 Unicode characters after trimming. |
-| Blank or `null` | No reason recorded. |
-| Invalid value | `INVALID_REASON`. |
-| Reads | Records access purpose without creating a version. |
-| Changes | Saves the reason in audit metadata and changed versions. |
-| Per-file reason | Overrides the shared reason for that file. |
-| Upload sessions | Retain the reason through finalization. |
-
-Reasons are visible under the dashboard's existing access and retention rules.
-
-### Optional agent headers
-
-Optional: identify your client in activity logs. These headers are not required
-to create a mailbox or read email.
-
-```http
-User-Agent: MyRevdokuClient/1.0 (codex)
-X-Revdoku-Agent: codex
-X-Revdoku-Agent-Client: chatgpt
-X-Revdoku-Agent-Version: 1.0.0
-X-Revdoku-Agent-Run-Id: run_20260520_001
-X-Revdoku-Agent-Project: support-mailbox
-X-Revdoku-Agent-Task: check-new-messages
-```
+| Parameter | Where | Meaning |
+| --- | --- | --- |
+| `reason` | Query parameter for reads; body field for writes | Optional purpose recorded in activity logs. Up to 2,000 characters; omit when unknown and exclude secrets. |
 
 ### Responses and account restrictions
 
@@ -1126,167 +1022,6 @@ See [Response format](#response-format) for the JSON envelope and error fields.
 | Active | Allowed within the credential's permissions. | Allowed within permissions and quotas. |
 | Read-only | Existing files remain downloadable. | Return the account-state error. |
 
-Show the returned notice and support guidance when an account is restricted.
-
-### Versioning
-
-| Surface | Version field |
-| --- | --- |
-| REST response | `X-Revdoku-Client-Version` header. |
-| `GET /v1/status` | `server_version` for the running app; `client_version` for local tooling. |
-| MCP initialization | `serverInfo.version`. |
-| MCP status | `mcp.server_version`. |
-
-Reconnect MCP clients to refresh their tool list. Rerun the official installer to
-update the local CLI.
-
-## Hosted MCP for cloud AI clients
-
-Cloud agents that support custom remote MCP connectors connect to Revdoku through
-the production remote MCP endpoint:
-
-```text
-https://mcp.revdoku.com
-```
-
-Follow <https://revdoku.com/connect/> for the current client-specific setup.
-Add the URL as a remote MCP/custom connector when the client and account support
-write-capable MCP tools. If write tools are unavailable, use the dashboard or
-local CLI. The connector uses Revdoku OAuth
-discovery, authorization-code PKCE, `offline_access` refresh support, and Bearer
-tokens. Users approve the exact Revdoku account shown on the consent screen and
-can revoke the connection later from `/account/access`.
-
-Hosted MCP is stateless Streamable HTTP. Clients discover tools with `tools/list`
-when they connect, so reconnect after an update to discover newly added tools.
-
-| Task | Interface |
-| --- | --- |
-| Read messages and attachments | Hosted MCP email tools. |
-| Read or write text files | `mailbox_file_read` and `mailbox_file_write`. |
-| Upload local files, folders or binary files | CLI, or REST direct uploads. |
-| Read files by path | `GET /v1/mailboxes/:id/files/by_path`. |
-| List files | `mailbox_file_list`, or `revdoku files`. |
-
-Hosted MCP cannot access your local filesystem. Uploads enforce file-type and
-content rules. Mailbox responses provide authorized action metadata so tools can
-handle resource IDs without asking users to type them.
-
-## Common Workflows
-
-### Connect an Agent
-
-For ChatGPT, Claude, or another remote MCP client, connect:
-
-```text
-https://mcp.revdoku.com
-```
-
-Agents and clients can discover supported auth methods at
-`GET /v1/agent_auth/capabilities`. The preferred local flow is OAuth device
-authorization. Remote MCP clients use Revdoku OAuth authorization code flow.
-
-Local CLI/device-code flow:
-
-```http
-POST /oauth/register
-Content-Type: application/json
-
-{
-  "client_name": "Codex on laptop",
-  "redirect_uris": [],
-  "grant_types": [
-    "urn:ietf:params:oauth:grant-type:device_code",
-    "refresh_token"
-  ],
-  "response_types": [],
-  "token_endpoint_auth_method": "none"
-}
-
-POST /oauth/device_authorization
-Content-Type: application/json
-
-{
-  "client_id": "mcp_client_...",
-  "scope": "revdoku:mcp",
-  "resource": "https://mcp.revdoku.com"
-}
-```
-
-1. Open the returned browser link and show the Connection ID to the human.
-2. The human checks the same ID in Revdoku and selects **Confirm Connection**.
-3. Poll the token endpoint until approval or expiry.
-4. Store the returned credential privately. Permissions can be reduced in **Account → Access**.
-
-| Field | Purpose |
-| --- | --- |
-| `verification_uri_complete` | Browser approval link. |
-| `user_code` | Connection ID for visual confirmation; never request it in chat. |
-| `device_code` | Private code used while polling the token endpoint. |
-| `interval` | Minimum delay between polls. |
-| `revdoku_api_key` | Revdoku extension returned after approval for local REST tooling. |
-
-Legacy fallback email-code flow:
-
-```http
-POST /v1/agent_auth/request_code
-Content-Type: application/json
-
-{
-  "email": "person@example.com"
-}
-
-POST /v1/agent_auth/verify_code
-Content-Type: application/json
-
-{
-  "email": "person@example.com",
-  "code": "123456",
-  "label": "Codex on laptop",
-  "mailbox_access": "all"
-}
-```
-
-Store the returned `data.api_key` securely. Follow `data.guidance` when the
-server includes it. This fallback belongs in a private interactive client UI,
-not an AI chat: never ask the user to paste or repeat the verification code in
-chat. Do not print or log the key.
-
-### Create a Mailbox
-
-See the [mailbox creation example](#create-another-mailbox). To generate a username,
-send `{"mailbox": {}}`.
-
-#### Optional creation fields
-
-| Field | Default | Purpose |
-| --- | --- | --- |
-| `mailbox.email.username` | Generated name, such as `flaky.forest.k7m2x9q4v8nc` | Free: choose a prefix; the server adds a permanent 12-character random suffix. Paid: choose the exact name before `@`. |
-| `mailbox.email.domain` | Platform domain | Built-in domain such as `revdokumail.com` (all plans), or a ready custom email domain owned by this account. |
-| `mailbox.description` | Empty | Add a mailbox description. |
-| `mailbox.tag_paths` | None | Apply user-chosen organizational labels. |
-| `mailbox.metadata` | Empty object | Store your application's project/task metadata. |
-| `account_id` | Credential default | Select another granted account. |
-
-#### Username rules
-
-| Rule | Behavior |
-| --- | --- |
-| Characters | ASCII letters, digits, dots, hyphens and underscores. Uppercase is normalized to lowercase. |
-| Omitted username | Generate a name. |
-| Free username | Convert separators to dots and append 12 random lowercase letters/digits. `acme-orders` becomes `acme.orders.k7m2x9q4v8nc@revdokumail.com`, for example. Long prefixes are shortened to 51 characters. Always use the returned address. |
-| Free address changes or aliases | Require an upgrade. Existing addresses remain unchanged when plans change. |
-| Empty or `null` username | `422 EMAIL_NAME_INVALID`. |
-| Reserved platform name, such as `support`, `acme-support`, `abuse`, `sale`, `sales` or `contact` | `422 EMAIL_NAME_RESERVED`. The message identifies the reserved word and explains how to use your own verified custom domain. Free receives an upgrade link; paid accounts receive domain settings. A paid plan does not bypass shared-domain restrictions. |
-| Occupied or retired platform address | `409 EMAIL_ALREADY_EXISTS`. Deletion and rotation do not release platform names. |
-
-#### Creation result
-
-- Success means the receiving address has been confirmed; no readiness polling is required.
-- If confirmation cannot finish within 25 seconds, the API returns `503 EMAIL_NOT_READY` with the created `mailbox_id` in `error.details`. Check that mailbox before creating another.
-- The same error reports receiving holds through `error.details.blocked_reason`.
-- `dashboard_url` opens the mailbox for authorized human users; it does not grant access.
-- Browser signup already creates one starter mailbox.
 
 ### Upload a File
 
@@ -1352,424 +1087,9 @@ Content-Type: application/json
 
 Uploading the same `path` creates a new version of that file.
 
-### Upload Multiple Files
-
-Use the CLI for a local folder: `revdoku upload ./folder --mailbox-id ID`.
-To implement folder uploads yourself:
-
-1. Open an upload session with the expected file count.
-2. Request upload URLs for a small batch of files.
-3. Upload each file, then finalize that batch.
-4. Repeat until all files are uploaded.
-5. Complete the session.
-
-| Option or event | Behavior |
-| --- | --- |
-| `delete_missing: true` | Full-folder sync: remove omitted destination files only when the entire session completes. Omit for ordinary uploads. |
-| Connection interrupted | Already finalized files remain saved. |
-| Session expires | Unfinished uploads are abandoned and the write lock is released. |
-| `complete: false` | Cancel remaining work and release the lock. |
-
-```http
-POST /v1/mailboxes/bkt_.../upload_sessions
-Authorization: Bearer YOUR_API_KEY
-Content-Type: application/json
-
-{
-  "delete_missing": true,
-  "expected_file_count": 123
-}
-```
-
-Then request descriptors for one subbatch:
-
-```http
-POST /v1/mailboxes/bkt_.../upload_sessions/bus_.../uploads
-Authorization: Bearer YOUR_API_KEY
-Content-Type: application/json
-
-{
-  "files": [
-    {
-      "path": "index.html",
-      "name": "index.html",
-      "byte_size": 1234,
-      "checksum": "BASE64_MD5",
-      "content_type": "text/html",
-      "sha256": "HEX_SHA256"
-    }
-  ]
-}
-```
-
-Use `data.uploads[].upload.url` and `data.uploads[].upload.headers` for the
-object-storage `PUT`. Do not send Revdoku authorization headers to object
-storage. After each successful descriptor subbatch, commit a bounded batch:
-
-```http
-POST /v1/mailboxes/bkt_.../upload_sessions/bus_.../finalize_batch
-Authorization: Bearer YOUR_API_KEY
-Content-Type: application/json
-
-{
-  "limit": 12
-}
-```
-
-Repeat descriptor and finalize subbatches until all selected files are uploaded.
-
-Close the session when all uploads are done. Use `complete:false` only when
-canceling or interrupting the upload; it closes the session and releases the
-lock without committing any unfinalized staged uploads.
-
-```http
-POST /v1/mailboxes/bkt_.../upload_sessions/bus_.../finalize
-Authorization: Bearer YOUR_API_KEY
-Content-Type: application/json
-
-{
-  "complete": true
-}
-```
-
-For large sessions, finalization can take several requests.
-
-| Finalize result | Meaning |
-| --- | --- |
-| HTTP `202` | More files remain to be finalized. |
-| `data.finalize_pending` | `true` while work remains. |
-| `data.remaining_files_count` | Files still waiting for finalization. |
-| `Retry-After` header | Delay before calling the same finalize endpoint again. |
-
-Repeat finalization until the pending flag is no longer true.
-
-## Direct API signup
-
-Use this flow to create a new owner's Revdoku account, with that human's
-authorization and email verification. To add an mailbox for an application customer,
-use the [SaaS mapping](https://github.com/revdoku/revdoku/blob/main/guides/saas-mailboxes.md#map-customers-and-choose-access).
-Successful verification creates an account, its first email mailbox with cloud
-storage, and an API key. No existing API key is required.
-
-Base URL: `https://api.revdoku.com/v1`.
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| POST | `/v1/agent/signups` | Send a verification code to the human owner's email. |
-| POST | `/v1/agent/signups/verify` | Verify the code and create the account, first mailbox, and API key. |
-| POST | `/v1/agent/signups/resend` | Resend the code after the returned waiting period. |
-
-Check `GET /v1/agent_auth/capabilities`: `data.signup.available` reports whether
-API signup is enabled. If unavailable, use [browser signup](https://app.revdoku.com/users/sign_up).
-Existing users use [browser sign-in](https://app.revdoku.com/users/sign_in).
-MCP offers the same flow through [signup tools](mcp.md#direct-mcp-signup).
-Clients must handle owner authorization and verification privately. CLI sign-in
-and hosted MCP account access use browser OAuth.
-
-### 1. Request a code
-
-The human operator must provide their email and authorize the acknowledgments.
-The server records the current policy versions; your client does not send a version.
-
-Read all three policy documents without website access through
-[`GET /v1/agent_auth/policies`](https://api.revdoku.com/v1/agent_auth/policies).
-This unauthenticated read returns `data.policies.terms`, `data.policies.acceptable_use`,
-and `data.policies.privacy`. It works even when signup is disabled. Discovery exposes
-this endpoint as `data.signup.policies_url`.
-
-| Document field | Meaning |
-| --- | --- |
-| `url` | Canonical public URL. |
-| `version` | Packaged policy version. |
-| `sha256` | SHA-256 of the UTF-8 Markdown text. |
-| `text` | Complete policy text in Markdown. |
-
-Reading is optional and does not record acceptance. The human owner must still
-authorize `accept_terms_and_policy: true`. A client that cannot read the documents
-must refer acceptance to its human owner. No policy version or hash is required
-in the signup request.
-
-| Field | Required | Purpose |
-| --- | --- | --- |
-| `human_operator_email` | Yes | The human owner's email, supplied by that person. Do not substitute an agent's mailbox. |
-| `accept_terms_and_policy` | Yes; `true` | The human agrees to the [Terms](https://revdoku.com/terms) and [acceptable use policy](https://revdoku.com/acceptable-use), and acknowledges the [privacy notice](https://revdoku.com/privacy). This is not consent to optional processing. |
-| `username` | No | Prefix for the first Free mailbox, with a 12-character random suffix added; generated if omitted. |
-| `permission_scope` | No | `mailbox_read`, `mailbox_write`, or `mailbox_admin` (default). |
-| `label` | No | A name for the API connection. |
-
-```http
-POST /v1/agent/signups
-Host: api.revdoku.com
-Content-Type: application/json
-
-{
-  "human_operator_email": "owner@customer.example",
-  "accept_terms_and_policy": true
-}
-
-202 Accepted
-{
-  "success": true,
-  "data": {
-    "signup": {
-      "signup_token": "RETURNED_SIGNUP_TOKEN",
-      "expires_in": 600,
-      "resend_after": 60
-    }
-  }
-}
-```
-
-No account or mailbox is created until the email code is verified.
-
-| Returned field | Use |
-| --- | --- |
-| `signup_token` | Save privately; include it when verifying or resending. It identifies and protects this signup attempt. |
-| `expires_in` | Seconds left to finish signup. |
-| `resend_after` | Seconds to wait before requesting another code. |
-
-### 2. Verify the code
-
-Collect the code in your private application interface. Do not put the token or
-code in URLs, logs, command-line arguments, or AI chat.
-
-```http
-POST /v1/agent/signups/verify
-Host: api.revdoku.com
-Content-Type: application/json
-
-{
-  "signup_token": "RETURNED_SIGNUP_TOKEN",
-  "code": "123456"
-}
-
-201 Created
-{
-  "success": true,
-  "data": {
-    "signup": {
-      "status": "completed"
-    },
-    "api_key": "RETURNED_ONCE_STORE_PRIVATELY",
-    "scope": "mailbox_admin",
-    "expires_at": "2027-09-30T12:00:00Z",
-    "account": {
-      "id": "acct_RETURNED_ID"
-    },
-    "mailbox": {
-      "id": "bkt_RETURNED_ID",
-      "email": {
-        "address": "flaky.forest3v8x2p@revdokumail.com",
-        "receiving_enabled": true,
-        "sending_enabled": false
-      }
-    }
-  }
-}
-```
-
-The example shows selected fields. Signup creates your account, API key and first
-mailbox together, then waits for receiving confirmation. If the provider is
-unavailable, signup still returns your API key, with `receiving_enabled: false`
-and a `blocked_reason`. Check `email.receiving_enabled` before using the address;
-reuse the returned mailbox rather than creating another account.
-
-| Result | Next step |
-| --- | --- |
-| `api_key` returned | Store it privately now; it is returned once. Use it as the bearer token. This signup credential counts as one AI agent connection; no second key is needed. |
-| Username error | Resubmit verification with the same token and a corrected `username`; no new code is needed after successful proof. |
-| `SIGN_IN_REQUIRED` | The human already has an account. Use browser sign-in. |
-| HTTP `200` with completed IDs but no key | This signup already completed. Sign in and manage API keys under Account → Access. |
-| `INVALID_SIGNUP_TOKEN` | The token is invalid or expired. Start again with the human's authorization. |
-
-### Resend a code
-
-Wait the returned `resend_after` seconds, then:
-
-```http
-POST /v1/agent/signups/resend
-Host: api.revdoku.com
-Content-Type: application/json
-
-{
-  "signup_token": "RETURNED_SIGNUP_TOKEN"
-}
-```
-
-HTTP `200 OK` returns the same signup structure with the remaining timers. The
-previous code stops working. Resending does not extend the expiry or reset attempts.
-
-### Signup limits
-
-| Limit | Allowance |
-| --- | --- |
-| Start/resend per IP | 5 per 15 minutes, shared with browser signup and legacy code requests. |
-| Verification per IP | 10 per 15 minutes. |
-| Attempts per challenge | 5. |
-| Verification per canonical human email | 10 per 15 minutes. |
-| API email sends | 60-second cooldown; 3 per 30 minutes. |
-| Shared browser/API/sign-in email sends | 3 per canonical email per 5 minutes. |
-| Global signup requests | 300 per minute. |
-| Global signup emails | 100 per hour. |
-| Request body | At most 8 KiB of uncompressed JSON. |
-
-- Invalid challenges and fake credentials still count toward limits.
-- Throttles return HTTP 429 with `Retry-After`.
-- Error codes: `RATE_LIMIT_EXCEEDED`, `SIGNUP_RATE_LIMITED`, or `SIGNUP_ATTEMPTS_EXCEEDED`.
-- Limits may be tightened to protect availability.
-
-Signup responses use `Cache-Control: no-store`. Availability is reported by
-`GET /v1/agent_auth/capabilities` in `data.signup.available`.
-CLI and MCP use browser OAuth; they do not collect signup codes in chat.
+For folders and upload sessions, see [Bulk file uploads](https://github.com/revdoku/revdoku/blob/main/guides/bulk-uploads.md).
 
 ## API Reference
-
-### Signup endpoints — no API key required
-
-Start with the [signup workflow](#direct-api-signup) for owner authorization,
-private email verification, and response fields.
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `POST` | `/v1/agent/signups` | Send the human owner a verification code; return a private signup token. |
-| `POST` | `/v1/agent/signups/verify` | Verify the code; create the account, first mailbox, and API key. |
-| `POST` | `/v1/agent/signups/resend` | Resend the code using the same signup token after the waiting period. |
-
-### Authentication Endpoints
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `GET` | `/v1/agent_auth/capabilities` | Machine-readable agent auth manifest. |
-| `GET` | `/v1/agent_auth/status` | API-key status alias for agents; same connection payload as `/v1/status`. |
-| `POST` | `/v1/agent_auth/request_code` | Request an email verification code without revealing whether the email has a Revdoku account. Existing-user sign-in only; use browser signup or the separate API signup flow for a new identity. |
-| `POST` | `/v1/agent_auth/verify_code` | Verify the email code and create an API key when the code is valid. |
-| `POST` | `/v1/agent_auth/browser_login_link` | Return a stable dashboard URL (legacy endpoint name; normal sign-in is required). |
-| `POST` | `/oauth/device_authorization` | Start OAuth device authorization for local CLI/agent clients. |
-| `GET` / `POST` | `/oauth/device` | Browser page where the user enters/approves a device code. |
-| `POST` | `/oauth/token` | Exchange OAuth authorization codes, device codes, or refresh tokens. |
-
-#### OAuth Device Authorization
-
-Local agents should prefer OAuth device authorization over email-code login. The
-client registers with grant type
-`urn:ietf:params:oauth:grant-type:device_code`, calls
-`POST /oauth/device_authorization`, shows the returned `verification_uri_complete`
-and presents `user_code` as a **Connection ID**, then polls `POST /oauth/token`.
-Tell the user `Connection ID is <ID>` and ask only that they make sure the same
-ID appears in the top-right of Revdoku before selecting **Confirm Connection**.
-Do not ask them to type, paste, or repeat it.
-
-Pending poll responses use standard device-flow errors:
-
-| Error | Meaning |
-| --- | --- |
-| `authorization_pending` | User has not approved yet; wait `interval` seconds and poll again. |
-| `slow_down` | Increase the polling interval. |
-| `access_denied` | User denied the browser prompt. |
-| `expired_token` | Device code expired; start again. |
-
-Successful device-code token responses include normal OAuth fields plus
-`revdoku_api_key`, a durable `revdoku_...` key for local REST API clients.
-The browser approval screen defaults to selected mailboxes and `mailbox_read` when
-the client does not request a scope. Choose the mailboxes and permission on that
-screen. Selecting all existing mailboxes keeps a fixed selection; **All current and
-future mailboxes** is a separate choice. Read access supports message/file reads;
-provisioning new mailboxes requires account-wide `mailbox_admin`.
-
-#### Permission scopes
-
-| Scope | Meaning |
-| --- | --- |
-| `mailbox_read` | List and read allowed mailbox files only. |
-| `mailbox_write` | Create and update allowed mailbox files. |
-| `mailbox_admin` | Create, update, and manage allowed mailboxes. |
-
-| Input | Purpose |
-| --- | --- |
-| `permission_scope` | Choose one of the permissions above; bound to consent. |
-| OAuth `scope` | Protocol scope: `revdoku:mcp`, optionally `offline_access`. |
-| Email-code `scope` | Legacy alias for `permission_scope` on email-code key creation only. |
-
-OAuth/device requests and dashboard one-time connection prompts default to
-`mailbox_read` when permission is omitted. Legacy email-code login, direct signup,
-and raw API-key creation retain their `mailbox_admin` default; request an explicit
-permission for those flows. Invalid values are rejected. Account → Access defaults
-new keys to selected mailboxes and read permission.
-
-#### POST /v1/agent_auth/request_code
-
-The request returns the same success shape for every syntactically valid email.
-It does not reveal whether an account exists, is locked, or has two-factor authentication.
-
-| Response field | Purpose |
-| --- | --- |
-| `fallback_url` | Browser sign-in link if no code arrives or email-code verification fails. |
-| `hint` | Explanation of the fallback. |
-
-Use browser sign-in when required. Never ask for passwords, TOTP codes or backup
-codes through an AI chat.
-
-```json
-{
-  "email": "person@example.com"
-}
-```
-
-#### POST /v1/agent_auth/verify_code
-
-Verify a privately entered email code for an eligible account.
-
-| Result | Behavior |
-| --- | --- |
-| Success | Returns a Revdoku API key. Store it privately. |
-| `INVALID_CODE` | Verification failed; also covers locked accounts or accounts requiring two-factor authentication. |
-| `error.details.fallback_url` | Browser sign-in link. |
-| `error.details.hint` | Recovery explanation. |
-
-Use browser device sign-in after verification fails; do not repeatedly submit codes.
-
-```json
-{
-  "email": "person@example.com",
-  "code": "123456",
-  "label": "Codex on laptop",
-  "permission_scope": "mailbox_admin",
-  "mailbox_access": "all"
-}
-```
-
-For selected-mailbox access, use:
-
-```json
-{
-  "mailbox_access": "selected",
-  "mailbox_ids": [
-    "bkt_..."
-  ],
-  "mailbox_permissions": {
-    "bkt_...": "write"
-  }
-}
-```
-
-#### POST /v1/agent_auth/browser_login_link
-
-Requires `Authorization`. This compatibility endpoint returns a stable internal
-dashboard URL and never exchanges an API key for a browser session. The user
-signs in normally if the browser has no active Revdoku session.
-
-```json
-{
-  "redirect_path": "/account/access"
-}
-```
-
-Common `redirect_path` values:
-
-| Path | Destination |
-| --- | --- |
-| `/mailboxes` | Mailbox dashboard. |
-| `/account/access` | Members, agents, and API keys. |
 
 ### Mailbox Endpoints
 
@@ -1819,26 +1139,6 @@ Archived mailboxes are read-only until unarchived. Metadata edits, label changes
 file changes, uploads and duplication return `MAILBOX_ARCHIVED`. Reads, unarchive,
 and eligible permanent deletion remain available. Copying files out is allowed
 with source read access and write access to an active target.
-
-#### POST /v1/mailboxes
-
-Mailbox tags are user-facing labels, not filesystem breadcrumbs. Use
-`tag_paths` only for explicit reusable labels such as `project`; store project,
-source, task, or local-folder context in `metadata`.
-
-```json
-{
-  "mailbox": {
-    "description": "Shared project files and incoming documents",
-    "tag_paths": [
-      "project"
-    ],
-    "metadata": {
-      "project": "client-documents"
-    }
-  }
-}
-```
 
 #### PATCH /v1/mailboxes/:id
 
@@ -2017,9 +1317,8 @@ A failed deletion releases the lock and sends a failure notification.
 
 ## Common Errors
 
-When `account.restriction` reports a suspension, relay the returned notice and
-support guidance. Stored files remain downloadable. Do not infer reasons or evade
-the restriction.
+When `account.restriction` reports a restriction, writes return the account-state
+error; stored files remain downloadable.
 
 ### Rate Limits
 
@@ -2075,18 +1374,6 @@ A quota error is not a short-lived throttle. Do not retry automatically until re
 | `422` | `INVALID_TEXT_ENCODING` | `append_text` content or the existing file is not valid UTF-8 text. |
 | `423` | `MAILBOX_LOCKED` | Another key owns an active mailbox lock. |
 | `423` | `FILE_LOCKED` | Another key owns an active file lock. |
-
-## Integration Guidelines
-
-### Surface Account Limits Clearly
-
-When a limit is reached, explain the returned reason and direct the user to
-Revdoku to review account capacity. Do not remove existing data without explicit
-authorization.
-
-### Do Not Leak Secrets
-
-Never print, paste, commit, or log `revdoku_...` API keys or direct-upload URLs.
 
 ## HIPAA and high-security accounts
 

@@ -57,10 +57,7 @@ class StartAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeria
      * @var string[]
      */
     protected static $openAPITypes = [
-        'human_operator_email' => 'string',
-        'username' => 'string',
-        'label' => 'string',
-        'permission_scope' => 'string',
+        'email' => 'string',
         'accept_terms_and_policy' => 'bool'
     ];
 
@@ -72,10 +69,7 @@ class StartAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeria
      * @psalm-var array<string, string|null>
      */
     protected static $openAPIFormats = [
-        'human_operator_email' => 'email',
-        'username' => null,
-        'label' => null,
-        'permission_scope' => null,
+        'email' => 'email',
         'accept_terms_and_policy' => null
     ];
 
@@ -85,10 +79,7 @@ class StartAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeria
      * @var boolean[]
      */
     protected static array $openAPINullables = [
-        'human_operator_email' => false,
-        'username' => false,
-        'label' => false,
-        'permission_scope' => false,
+        'email' => false,
         'accept_terms_and_policy' => false
     ];
 
@@ -178,10 +169,7 @@ class StartAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeria
      * @var string[]
      */
     protected static $attributeMap = [
-        'human_operator_email' => 'human_operator_email',
-        'username' => 'username',
-        'label' => 'label',
-        'permission_scope' => 'permission_scope',
+        'email' => 'email',
         'accept_terms_and_policy' => 'accept_terms_and_policy'
     ];
 
@@ -191,10 +179,7 @@ class StartAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeria
      * @var string[]
      */
     protected static $setters = [
-        'human_operator_email' => 'setHumanOperatorEmail',
-        'username' => 'setUsername',
-        'label' => 'setLabel',
-        'permission_scope' => 'setPermissionScope',
+        'email' => 'setEmail',
         'accept_terms_and_policy' => 'setAcceptTermsAndPolicy'
     ];
 
@@ -204,10 +189,7 @@ class StartAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeria
      * @var string[]
      */
     protected static $getters = [
-        'human_operator_email' => 'getHumanOperatorEmail',
-        'username' => 'getUsername',
-        'label' => 'getLabel',
-        'permission_scope' => 'getPermissionScope',
+        'email' => 'getEmail',
         'accept_terms_and_policy' => 'getAcceptTermsAndPolicy'
     ];
 
@@ -252,23 +234,6 @@ class StartAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeria
         return self::$openAPIModelName;
     }
 
-    public const PERMISSION_SCOPE_MAILBOX_READ = 'mailbox_read';
-    public const PERMISSION_SCOPE_MAILBOX_WRITE = 'mailbox_write';
-    public const PERMISSION_SCOPE_MAILBOX_ADMIN = 'mailbox_admin';
-
-    /**
-     * Gets allowable values of the enum
-     *
-     * @return string[]
-     */
-    public function getPermissionScopeAllowableValues()
-    {
-        return [
-            self::PERMISSION_SCOPE_MAILBOX_READ,
-            self::PERMISSION_SCOPE_MAILBOX_WRITE,
-            self::PERMISSION_SCOPE_MAILBOX_ADMIN,
-        ];
-    }
 
     /**
      * Associative array for storing property values
@@ -285,10 +250,7 @@ class StartAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeria
      */
     public function __construct(?array $data = null)
     {
-        $this->setIfExists('human_operator_email', $data ?? [], null);
-        $this->setIfExists('username', $data ?? [], null);
-        $this->setIfExists('label', $data ?? [], null);
-        $this->setIfExists('permission_scope', $data ?? [], 'mailbox_admin');
+        $this->setIfExists('email', $data ?? [], null);
         $this->setIfExists('accept_terms_and_policy', $data ?? [], null);
     }
 
@@ -319,32 +281,11 @@ class StartAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeria
     {
         $invalidProperties = [];
 
-        if ($this->container['human_operator_email'] === null) {
-            $invalidProperties[] = "'human_operator_email' can't be null";
+        if ($this->container['email'] === null) {
+            $invalidProperties[] = "'email' can't be null";
         }
-        if ((mb_strlen($this->container['human_operator_email']) > 254)) {
-            $invalidProperties[] = "invalid value for 'human_operator_email', the character length must be smaller than or equal to 254.";
-        }
-
-        if (!is_null($this->container['username']) && (mb_strlen($this->container['username']) > 64)) {
-            $invalidProperties[] = "invalid value for 'username', the character length must be smaller than or equal to 64.";
-        }
-
-        if (!is_null($this->container['username']) && (mb_strlen($this->container['username']) < 1)) {
-            $invalidProperties[] = "invalid value for 'username', the character length must be bigger than or equal to 1.";
-        }
-
-        if (!is_null($this->container['label']) && (mb_strlen($this->container['label']) > 100)) {
-            $invalidProperties[] = "invalid value for 'label', the character length must be smaller than or equal to 100.";
-        }
-
-        $allowedValues = $this->getPermissionScopeAllowableValues();
-        if (!is_null($this->container['permission_scope']) && !in_array($this->container['permission_scope'], $allowedValues, true)) {
-            $invalidProperties[] = sprintf(
-                "invalid value '%s' for 'permission_scope', must be one of '%s'",
-                $this->container['permission_scope'],
-                implode("', '", $allowedValues)
-            );
+        if ((mb_strlen($this->container['email']) > 254)) {
+            $invalidProperties[] = "invalid value for 'email', the character length must be smaller than or equal to 254.";
         }
 
         if ($this->container['accept_terms_and_policy'] === null) {
@@ -366,134 +307,32 @@ class StartAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeria
 
 
     /**
-     * Gets human_operator_email
+     * Gets email
      *
      * @return string
      */
-    public function getHumanOperatorEmail()
+    public function getEmail()
     {
-        return $this->container['human_operator_email'];
+        return $this->container['email'];
     }
 
     /**
-     * Sets human_operator_email
+     * Sets email
      *
-     * @param string $human_operator_email Email supplied by the human who owns and authorizes this account. Do not use an AI agent mailbox or invent this value. Verification proves control of the address.
+     * @param string $email Email address for the new account.
      *
      * @return self
      */
-    public function setHumanOperatorEmail($human_operator_email)
+    public function setEmail($email)
     {
-        if (is_null($human_operator_email)) {
-            throw new \InvalidArgumentException('non-nullable human_operator_email cannot be null');
+        if (is_null($email)) {
+            throw new \InvalidArgumentException('non-nullable email cannot be null');
         }
-        if ((mb_strlen($human_operator_email) > 254)) {
-            throw new \InvalidArgumentException('invalid length for $human_operator_email when calling StartAgentSignupRequest., must be smaller than or equal to 254.');
-        }
-
-        $this->container['human_operator_email'] = $human_operator_email;
-
-        return $this;
-    }
-
-    /**
-     * Gets username
-     *
-     * @return string|null
-     */
-    public function getUsername()
-    {
-        return $this->container['username'];
-    }
-
-    /**
-     * Sets username
-     *
-     * @param string|null $username Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
-     *
-     * @return self
-     */
-    public function setUsername($username)
-    {
-        if (is_null($username)) {
-            throw new \InvalidArgumentException('non-nullable username cannot be null');
-        }
-        if ((mb_strlen($username) > 64)) {
-            throw new \InvalidArgumentException('invalid length for $username when calling StartAgentSignupRequest., must be smaller than or equal to 64.');
-        }
-        if ((mb_strlen($username) < 1)) {
-            throw new \InvalidArgumentException('invalid length for $username when calling StartAgentSignupRequest., must be bigger than or equal to 1.');
+        if ((mb_strlen($email) > 254)) {
+            throw new \InvalidArgumentException('invalid length for $email when calling StartAgentSignupRequest., must be smaller than or equal to 254.');
         }
 
-        $this->container['username'] = $username;
-
-        return $this;
-    }
-
-    /**
-     * Gets label
-     *
-     * @return string|null
-     */
-    public function getLabel()
-    {
-        return $this->container['label'];
-    }
-
-    /**
-     * Sets label
-     *
-     * @param string|null $label label
-     *
-     * @return self
-     */
-    public function setLabel($label)
-    {
-        if (is_null($label)) {
-            throw new \InvalidArgumentException('non-nullable label cannot be null');
-        }
-        if ((mb_strlen($label) > 100)) {
-            throw new \InvalidArgumentException('invalid length for $label when calling StartAgentSignupRequest., must be smaller than or equal to 100.');
-        }
-
-        $this->container['label'] = $label;
-
-        return $this;
-    }
-
-    /**
-     * Gets permission_scope
-     *
-     * @return string|null
-     */
-    public function getPermissionScope()
-    {
-        return $this->container['permission_scope'];
-    }
-
-    /**
-     * Sets permission_scope
-     *
-     * @param string|null $permission_scope permission_scope
-     *
-     * @return self
-     */
-    public function setPermissionScope($permission_scope)
-    {
-        if (is_null($permission_scope)) {
-            throw new \InvalidArgumentException('non-nullable permission_scope cannot be null');
-        }
-        $allowedValues = $this->getPermissionScopeAllowableValues();
-        if (!in_array($permission_scope, $allowedValues, true)) {
-            throw new \InvalidArgumentException(
-                sprintf(
-                    "Invalid value '%s' for 'permission_scope', must be one of '%s'",
-                    $permission_scope,
-                    implode("', '", $allowedValues)
-                )
-            );
-        }
-        $this->container['permission_scope'] = $permission_scope;
+        $this->container['email'] = $email;
 
         return $this;
     }
@@ -511,7 +350,7 @@ class StartAgentSignupRequest implements ModelInterface, ArrayAccess, \JsonSeria
     /**
      * Sets accept_terms_and_policy
      *
-     * @param bool $accept_terms_and_policy The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization.
+     * @param bool $accept_terms_and_policy Agree to the Terms (https://revdoku.com/terms) and Acceptable Use Policy (https://revdoku.com/acceptable-use), and acknowledge the Privacy Policy (https://revdoku.com/privacy).
      *
      * @return self
      */

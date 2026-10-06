@@ -20,44 +20,20 @@ import { mapValues } from '../runtime';
  */
 export interface StartAgentSignupRequest {
     /**
-     * Email supplied by the human who owns and authorizes this account. Do not use an AI agent mailbox or invent this value. Verification proves control of the address.
+     * Email address for the new account.
      */
-    humanOperatorEmail: string;
+    email: string;
     /**
-     * Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
-     */
-    username?: string;
-    /**
-     * 
-     */
-    label?: string;
-    /**
-     * 
-     */
-    permissionScope?: StartAgentSignupRequestPermissionScopeEnum;
-    /**
-     * The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization.
+     * Agree to the Terms (https://revdoku.com/terms) and Acceptable Use Policy (https://revdoku.com/acceptable-use), and acknowledge the Privacy Policy (https://revdoku.com/privacy).
      */
     acceptTermsAndPolicy: boolean;
 }
-
-
-/**
- * @export
- */
-export const StartAgentSignupRequestPermissionScopeEnum = {
-    MailboxRead: 'mailbox_read',
-    MailboxWrite: 'mailbox_write',
-    MailboxAdmin: 'mailbox_admin',
-} as const;
-export type StartAgentSignupRequestPermissionScopeEnum = typeof StartAgentSignupRequestPermissionScopeEnum[keyof typeof StartAgentSignupRequestPermissionScopeEnum];
-
 
 /**
  * Check if a given object implements the StartAgentSignupRequest interface.
  */
 export function instanceOfStartAgentSignupRequest(value: object): value is StartAgentSignupRequest {
-    if ((!('humanOperatorEmail' in (value as Record<string, any>)) && !('human_operator_email' in (value as Record<string, any>))) || ((value as Record<string, any>)['humanOperatorEmail'] === undefined && (value as Record<string, any>)['human_operator_email'] === undefined)) return false;
+    if (!('email' in value) || value['email'] === undefined) return false;
     if ((!('acceptTermsAndPolicy' in (value as Record<string, any>)) && !('accept_terms_and_policy' in (value as Record<string, any>))) || ((value as Record<string, any>)['acceptTermsAndPolicy'] === undefined && (value as Record<string, any>)['accept_terms_and_policy'] === undefined)) return false;
     return true;
 }
@@ -72,10 +48,7 @@ export function StartAgentSignupRequestFromJSONTyped(json: any, ignoreDiscrimina
     }
     return {
         
-        'humanOperatorEmail': json['human_operator_email'],
-        'username': json['username'] == null ? undefined : json['username'],
-        'label': json['label'] == null ? undefined : json['label'],
-        'permissionScope': json['permission_scope'] == null ? undefined : json['permission_scope'],
+        'email': json['email'],
         'acceptTermsAndPolicy': json['accept_terms_and_policy'],
     };
 }
@@ -91,10 +64,7 @@ export function StartAgentSignupRequestToJSONTyped(value?: StartAgentSignupReque
 
     return {
         
-        'human_operator_email': value['humanOperatorEmail'],
-        'username': value['username'],
-        'label': value['label'],
-        'permission_scope': value['permissionScope'],
+        'email': value['email'],
         'accept_terms_and_policy': value['acceptTermsAndPolicy'],
     };
 }

@@ -51,28 +51,6 @@ paths:
       security:
       - bearerAuth: []
       summary: Read current account identity and granted accounts
-  /v1/agent_auth/capabilities:
-    get:
-      description: "Reports available sign-in flows and signup availability, policy\
-        \ document URLs and policies_url for the API policy read, required human_operator_email\
-        \ and allowed scopes. Never creates an account."
-      operationId: getAgentAuthCapabilities
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiSuccess"
-          description: Authentication capabilities
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiError"
-          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
-            \ includes Retry-After: 5."
-      security: []
-      summary: Discover Revdoku agent authentication flows
   /v1/accounts:
     get:
       operationId: listAccounts
@@ -1866,18 +1844,15 @@ paths:
       summary: Read one granted account
   /v1/agent/signups:
     post:
-      description: "Available only when data.signup.available is true in discovery.\
-        \ Requests use uncompressed JSON at most 8 KiB. IP/global request limits run\
-        \ before challenge lookup; canonical-email send limits are shared with browser\
-        \ and legacy sign-in. Returns a private signup_token and emails an OTP. Creates\
-        \ no user, account, mailbox, API key or address reservation before proof.\
-        \ MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify\
-        \ and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use\
-        \ browser OAuth."
+      description: "Send an email verification code. No API key is required. Verify\
+        \ the code to create the account, starter mailbox and API key."
       operationId: startAgentSignup
       requestBody:
         content:
           application/json:
+            example:
+              email: person@example.com
+              accept_terms_and_policy: true
             schema:
               $ref: "#/components/schemas/startAgentSignup_request"
         required: true
@@ -1946,16 +1921,13 @@ paths:
           description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
             \ includes Retry-After: 5."
       security: []
-      summary: Start signup with the human operator’s email
+      summary: Start signup
   /v1/agent/signups/verify:
     post:
-      description: "Requires the signup_token and privately entered OTP. Five attempts\
-        \ per challenge, ten per IP/canonical email per 15 minutes; challenge expires\
-        \ after ten minutes. Existing identities must use normal sign-in after proof,\
-        \ preserving 2FA and suspension. A name conflict can be corrected using username\
-        \ in the same verified session without another OTP. No-store. A successful\
-        \ replay returns completed IDs without the key; recover through normal sign-in\
-        \ and connection management."
+      description: "Verify the emailed code to create the account, an automatically\
+        \ named starter mailbox and an account-wide mailbox_admin API key. Save the\
+        \ key securely; it is returned only once. Repeated verification returns completion\
+        \ details without another key."
       operationId: verifyAgentSignup
       requestBody:
         content:
@@ -2036,11 +2008,8 @@ paths:
       summary: Verify the human’s code and create the first mailbox
   /v1/agent/signups/resend:
     post:
-      description: "Requires signup_token. Replaces the old code without resetting\
-        \ attempts or the ten-minute expiry. Enforces the 60-second canonical-email\
-        \ cooldown, three API-signup sends per 30 minutes, shared three sends per\
-        \ five minutes, and global hourly send cap. Return 429 with Retry-After when\
-        \ limited; never automatically restart the flow to bypass a limit."
+      description: "Resend the email code after resend_after seconds. Replaces the\
+        \ old code without extending signup expiry. On HTTP 429, honor Retry-After."
       operationId: resendAgentSignupCode
       requestBody:
         content:
@@ -2593,29 +2562,6 @@ paths:
       security:
       - bearerAuth: []
       summary: Add an email alias to a mailbox
-  /v1/agent_auth/policies:
-    get:
-      description: "Returns the packaged Terms, service acceptable use policy and\
-        \ Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes.\
-        \ No authentication or website access is required. Reading does not record\
-        \ acceptance or authorize signup. Cache-Control: no-store."
-      operationId: getSignupPolicies
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SignupPoliciesResponse"
-          description: Current policy documents
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiError"
-          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
-            \ includes Retry-After: 5."
-      security: []
-      summary: Read the current signup policies
 components:
   parameters:
     AccountId:
@@ -3902,62 +3848,6 @@ components:
       - limit
       - next_offset
       - offset
-      type: object
-    SignupPolicyDocument:
-      example:
-        url: https://openapi-generator.tech
-        version: version
-        sha256: sha256
-        text: text
-      properties:
-        url:
-          description: Canonical public URL.
-          format: uri
-          type: string
-        version:
-          description: Version of the packaged policy.
-          type: string
-        sha256:
-          description: SHA-256 of the UTF-8 Markdown text.
-          pattern: "^[0-9a-f]{64}$"
-          type: string
-        text:
-          description: Complete packaged policy in Markdown.
-          type: string
-      required:
-      - sha256
-      - text
-      - url
-      - version
-      type: object
-    SignupPoliciesResponse:
-      example:
-        success: true
-        data:
-          policies:
-            terms:
-              url: https://openapi-generator.tech
-              version: version
-              sha256: sha256
-              text: text
-            acceptable_use:
-              url: https://openapi-generator.tech
-              version: version
-              sha256: sha256
-              text: text
-            privacy:
-              url: https://openapi-generator.tech
-              version: version
-              sha256: sha256
-              text: text
-      properties:
-        success:
-          type: boolean
-        data:
-          $ref: "#/components/schemas/SignupPoliciesResponse_data"
-      required:
-      - data
-      - success
       type: object
     getRevdokuStatus_200_response_data_features:
       additionalProperties: true
@@ -6045,41 +5935,19 @@ components:
       type: object
     startAgentSignup_request:
       properties:
-        human_operator_email:
-          description: Email supplied by the human who owns and authorizes this account.
-            Do not use an AI agent mailbox or invent this value. Verification proves
-            control of the address.
+        email:
+          description: Email address for the new account.
           format: email
           maxLength: 254
           type: string
-        username:
-          description: Optional prefix for the first Free mailbox. The server adds
-            a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word
-            rules apply; errors explain the verified custom-domain option.
-          maxLength: 64
-          minLength: 1
-          type: string
-        label:
-          maxLength: 100
-          type: string
-        permission_scope:
-          default: mailbox_admin
-          enum:
-          - mailbox_read
-          - mailbox_write
-          - mailbox_admin
-          type: string
         accept_terms_and_policy:
-          description: "The human agrees to the current Terms (https://revdoku.com/terms)\
-            \ and service acceptable use policy (https://revdoku.com/acceptable-use),\
-            \ and acknowledges the privacy notice (https://revdoku.com/privacy). This\
-            \ is not consent to optional processing. Read the current documents at\
-            \ GET /v1/agent_auth/policies without website access. Reading does not\
-            \ replace the human owner’s authorization."
+          description: "Agree to the Terms (https://revdoku.com/terms) and Acceptable\
+            \ Use Policy (https://revdoku.com/acceptable-use), and acknowledge the\
+            \ Privacy Policy (https://revdoku.com/privacy)."
           type: boolean
       required:
       - accept_terms_and_policy
-      - human_operator_email
+      - email
       type: object
     startAgentSignup_202_response_data:
       example:
@@ -6113,16 +5981,8 @@ components:
     verifyAgentSignup_request:
       properties:
         code:
-          description: "Required until the challenge is verified; collect privately,\
-            \ never in chat."
+          description: Six-digit email verification code.
           pattern: "^[0-9]{6}$"
-          type: string
-        username:
-          description: Optional prefix for the first Free mailbox. The server adds
-            a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word
-            rules apply; errors explain the verified custom-domain option.
-          maxLength: 64
-          minLength: 1
           type: string
         signup_token:
           description: Private signup token returned by the first request. Send only
@@ -6130,6 +5990,7 @@ components:
           pattern: "^[A-Za-z0-9_-]{43}$"
           type: string
       required:
+      - code
       - signup_token
       type: object
     verifyAgentSignup_201_response_data_signup:
@@ -7040,59 +6901,6 @@ components:
           $ref: "#/components/schemas/Mailbox_lock_locked_by_api_key"
       required:
       - locked
-      type: object
-    SignupPoliciesResponse_data_policies:
-      example:
-        terms:
-          url: https://openapi-generator.tech
-          version: version
-          sha256: sha256
-          text: text
-        acceptable_use:
-          url: https://openapi-generator.tech
-          version: version
-          sha256: sha256
-          text: text
-        privacy:
-          url: https://openapi-generator.tech
-          version: version
-          sha256: sha256
-          text: text
-      properties:
-        terms:
-          $ref: "#/components/schemas/SignupPolicyDocument"
-        acceptable_use:
-          $ref: "#/components/schemas/SignupPolicyDocument"
-        privacy:
-          $ref: "#/components/schemas/SignupPolicyDocument"
-      required:
-      - acceptable_use
-      - privacy
-      - terms
-      type: object
-    SignupPoliciesResponse_data:
-      example:
-        policies:
-          terms:
-            url: https://openapi-generator.tech
-            version: version
-            sha256: sha256
-            text: text
-          acceptable_use:
-            url: https://openapi-generator.tech
-            version: version
-            sha256: sha256
-            text: text
-          privacy:
-            url: https://openapi-generator.tech
-            version: version
-            sha256: sha256
-            text: text
-      properties:
-        policies:
-          $ref: "#/components/schemas/SignupPoliciesResponse_data_policies"
-      required:
-      - policies
       type: object
   securitySchemes:
     bearerAuth:

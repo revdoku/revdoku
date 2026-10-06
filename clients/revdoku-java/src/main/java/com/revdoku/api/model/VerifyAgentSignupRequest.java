@@ -30,18 +30,13 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  */
 @JsonPropertyOrder({
   VerifyAgentSignupRequest.JSON_PROPERTY_CODE,
-  VerifyAgentSignupRequest.JSON_PROPERTY_USERNAME,
   VerifyAgentSignupRequest.JSON_PROPERTY_SIGNUP_TOKEN
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class VerifyAgentSignupRequest {
   public static final String JSON_PROPERTY_CODE = "code";
-  @javax.annotation.Nullable
+  @javax.annotation.Nonnull
   private String code;
-
-  public static final String JSON_PROPERTY_USERNAME = "username";
-  @javax.annotation.Nullable
-  private String username;
 
   public static final String JSON_PROPERTY_SIGNUP_TOKEN = "signup_token";
   @javax.annotation.Nonnull
@@ -50,51 +45,27 @@ public class VerifyAgentSignupRequest {
   public VerifyAgentSignupRequest() { 
   }
 
-  public VerifyAgentSignupRequest code(@javax.annotation.Nullable String code) {
+  public VerifyAgentSignupRequest code(@javax.annotation.Nonnull String code) {
     this.code = code;
     return this;
   }
 
   /**
-   * Required until the challenge is verified; collect privately, never in chat.
+   * Six-digit email verification code.
    * @return code
    */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_CODE, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_CODE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public String getCode() {
     return code;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_CODE, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setCode(@javax.annotation.Nullable String code) {
+  @JsonProperty(value = JSON_PROPERTY_CODE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setCode(@javax.annotation.Nonnull String code) {
     this.code = code;
-  }
-
-
-  public VerifyAgentSignupRequest username(@javax.annotation.Nullable String username) {
-    this.username = username;
-    return this;
-  }
-
-  /**
-   * Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
-   * @return username
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_USERNAME, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public String getUsername() {
-    return username;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_USERNAME, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setUsername(@javax.annotation.Nullable String username) {
-    this.username = username;
   }
 
 
@@ -135,13 +106,12 @@ public class VerifyAgentSignupRequest {
     }
     VerifyAgentSignupRequest verifyAgentSignupRequest = (VerifyAgentSignupRequest) o;
     return Objects.equals(this.code, verifyAgentSignupRequest.code) &&
-        Objects.equals(this.username, verifyAgentSignupRequest.username) &&
         Objects.equals(this.signupToken, verifyAgentSignupRequest.signupToken);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(code, username, signupToken);
+    return Objects.hash(code, signupToken);
   }
 
   @Override
@@ -149,7 +119,6 @@ public class VerifyAgentSignupRequest {
     StringBuilder sb = new StringBuilder();
     sb.append("class VerifyAgentSignupRequest {\n");
     sb.append("    code: ").append(toIndentedString(code)).append("\n");
-    sb.append("    username: ").append(toIndentedString(username)).append("\n");
     sb.append("    signupToken: ").append(toIndentedString(signupToken)).append("\n");
     sb.append("}");
     return sb.toString();

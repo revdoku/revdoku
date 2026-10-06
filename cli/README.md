@@ -70,7 +70,7 @@ Use returned email and attachment IDs for message operations; use paths for file
 receives email and attachments.
 
 CLI signup and sign-in use browser OAuth. Separate [direct API signup](../api.md#direct-api-signup)
-requires the human owner’s `human_operator_email` and private OTP entry when enabled.
+requires the human owner’s `email` and private OTP entry when enabled.
 
 For automation, set `REVDOKU_API_KEY` through your secret manager or environment.
 Use `--account-id acct_...` when selecting another authorized account. Credentials

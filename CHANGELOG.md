@@ -1,5 +1,15 @@
 # Revdoku Changelog
 
+## 1.0.540 — 2026-10-06
+
+### Improved
+
+- Simplify web and API signup. Generate the first mailbox address from the verified email automatically.
+- Shorten the API guide and show optional usernames and domains when creating another mailbox.
+
+- API and MCP signup now use `email` and `accept_terms_and_policy` only. Signup username, permission and label options were removed.
+- Remove the signup capability and policy-read endpoints. Request a verification code directly to start signup.
+
 ## 1.0.538 — 2026-10-06
 
 ### Improved

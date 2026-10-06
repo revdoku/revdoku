@@ -20,10 +20,8 @@ var _ MappedNullable = &VerifyAgentSignupRequest{}
 
 // VerifyAgentSignupRequest struct for VerifyAgentSignupRequest
 type VerifyAgentSignupRequest struct {
-	// Required until the challenge is verified; collect privately, never in chat.
-	Code *string `json:"code,omitempty" validate:"regexp=^[0-9]{6}$"`
-	// Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
-	Username *string `json:"username,omitempty"`
+	// Six-digit email verification code.
+	Code string `json:"code" validate:"regexp=^[0-9]{6}$"`
 	// Private signup token returned by the first request. Send only in the JSON body; never log it or show it in chat.
 	SignupToken string `json:"signup_token" validate:"regexp=^[A-Za-z0-9_-]{43}$"`
 	AdditionalProperties map[string]interface{}
@@ -35,8 +33,9 @@ type _VerifyAgentSignupRequest VerifyAgentSignupRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewVerifyAgentSignupRequest(signupToken string) *VerifyAgentSignupRequest {
+func NewVerifyAgentSignupRequest(code string, signupToken string) *VerifyAgentSignupRequest {
 	this := VerifyAgentSignupRequest{}
+	this.Code = code
 	this.SignupToken = signupToken
 	return &this
 }
@@ -49,68 +48,28 @@ func NewVerifyAgentSignupRequestWithDefaults() *VerifyAgentSignupRequest {
 	return &this
 }
 
-// GetCode returns the Code field value if set, zero value otherwise.
+// GetCode returns the Code field value
 func (o *VerifyAgentSignupRequest) GetCode() string {
-	if o == nil || IsNil(o.Code) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.Code
+
+	return o.Code
 }
 
-// GetCodeOk returns a tuple with the Code field value if set, nil otherwise
+// GetCodeOk returns a tuple with the Code field value
 // and a boolean to check if the value has been set.
 func (o *VerifyAgentSignupRequest) GetCodeOk() (*string, bool) {
-	if o == nil || IsNil(o.Code) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Code, true
+	return &o.Code, true
 }
 
-// HasCode returns a boolean if a field has been set.
-func (o *VerifyAgentSignupRequest) HasCode() bool {
-	if o != nil && !IsNil(o.Code) {
-		return true
-	}
-
-	return false
-}
-
-// SetCode gets a reference to the given string and assigns it to the Code field.
+// SetCode sets field value
 func (o *VerifyAgentSignupRequest) SetCode(v string) {
-	o.Code = &v
-}
-
-// GetUsername returns the Username field value if set, zero value otherwise.
-func (o *VerifyAgentSignupRequest) GetUsername() string {
-	if o == nil || IsNil(o.Username) {
-		var ret string
-		return ret
-	}
-	return *o.Username
-}
-
-// GetUsernameOk returns a tuple with the Username field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *VerifyAgentSignupRequest) GetUsernameOk() (*string, bool) {
-	if o == nil || IsNil(o.Username) {
-		return nil, false
-	}
-	return o.Username, true
-}
-
-// HasUsername returns a boolean if a field has been set.
-func (o *VerifyAgentSignupRequest) HasUsername() bool {
-	if o != nil && !IsNil(o.Username) {
-		return true
-	}
-
-	return false
-}
-
-// SetUsername gets a reference to the given string and assigns it to the Username field.
-func (o *VerifyAgentSignupRequest) SetUsername(v string) {
-	o.Username = &v
+	o.Code = v
 }
 
 // GetSignupToken returns the SignupToken field value
@@ -147,12 +106,7 @@ func (o VerifyAgentSignupRequest) MarshalJSON() ([]byte, error) {
 
 func (o VerifyAgentSignupRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Code) {
-		toSerialize["code"] = o.Code
-	}
-	if !IsNil(o.Username) {
-		toSerialize["username"] = o.Username
-	}
+	toSerialize["code"] = o.Code
 	toSerialize["signup_token"] = o.SignupToken
 
 	for key, value := range o.AdditionalProperties {
@@ -167,6 +121,7 @@ func (o *VerifyAgentSignupRequest) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
+		"code",
 		"signup_token",
 	}
 
@@ -198,7 +153,6 @@ func (o *VerifyAgentSignupRequest) UnmarshalJSON(data []byte) (err error) {
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "code")
-		delete(additionalProperties, "username")
 		delete(additionalProperties, "signup_token")
 		o.AdditionalProperties = additionalProperties
 	}

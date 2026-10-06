@@ -12,36 +12,19 @@ import AnyCodable
 
 public struct StartAgentSignupRequest: Codable, JSONEncodable, Hashable {
 
-    public enum PermissionScope: String, Codable, CaseIterable {
-        case mailboxRead = "mailbox_read"
-        case mailboxWrite = "mailbox_write"
-        case mailboxAdmin = "mailbox_admin"
-    }
-    public static let humanOperatorEmailRule = StringRule(minLength: nil, maxLength: 254, pattern: nil)
-    public static let usernameRule = StringRule(minLength: 1, maxLength: 64, pattern: nil)
-    public static let labelRule = StringRule(minLength: nil, maxLength: 100, pattern: nil)
-    /** Email supplied by the human who owns and authorizes this account. Do not use an AI agent mailbox or invent this value. Verification proves control of the address. */
-    public var humanOperatorEmail: String
-    /** Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option. */
-    public var username: String?
-    public var label: String?
-    public var permissionScope: PermissionScope? = .mailboxAdmin
-    /** The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization. */
+    public static let emailRule = StringRule(minLength: nil, maxLength: 254, pattern: nil)
+    /** Email address for the new account. */
+    public var email: String
+    /** Agree to the Terms (https://revdoku.com/terms) and Acceptable Use Policy (https://revdoku.com/acceptable-use), and acknowledge the Privacy Policy (https://revdoku.com/privacy). */
     public var acceptTermsAndPolicy: Bool
 
-    public init(humanOperatorEmail: String, username: String? = nil, label: String? = nil, permissionScope: PermissionScope? = .mailboxAdmin, acceptTermsAndPolicy: Bool) {
-        self.humanOperatorEmail = humanOperatorEmail
-        self.username = username
-        self.label = label
-        self.permissionScope = permissionScope
+    public init(email: String, acceptTermsAndPolicy: Bool) {
+        self.email = email
         self.acceptTermsAndPolicy = acceptTermsAndPolicy
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
-        case humanOperatorEmail = "human_operator_email"
-        case username
-        case label
-        case permissionScope = "permission_scope"
+        case email
         case acceptTermsAndPolicy = "accept_terms_and_policy"
     }
 
@@ -49,10 +32,7 @@ public struct StartAgentSignupRequest: Codable, JSONEncodable, Hashable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(humanOperatorEmail, forKey: .humanOperatorEmail)
-        try container.encodeIfPresent(username, forKey: .username)
-        try container.encodeIfPresent(label, forKey: .label)
-        try container.encodeIfPresent(permissionScope, forKey: .permissionScope)
+        try container.encode(email, forKey: .email)
         try container.encode(acceptTermsAndPolicy, forKey: .acceptTermsAndPolicy)
     }
 }

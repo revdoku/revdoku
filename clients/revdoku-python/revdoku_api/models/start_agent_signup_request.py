@@ -17,8 +17,8 @@ import pprint
 import re  # noqa: F401
 import json
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr, field_validator
-from typing import Any, ClassVar, Dict, List, Optional
+from pydantic import BaseModel, ConfigDict, Field, StrictBool
+from typing import Any, ClassVar, Dict, List
 from typing_extensions import Annotated
 from typing import Optional, Set
 from typing_extensions import Self
@@ -28,23 +28,10 @@ class StartAgentSignupRequest(BaseModel):
     """
     StartAgentSignupRequest
     """ # noqa: E501
-    human_operator_email: Annotated[str, Field(strict=True, max_length=254)] = Field(description="Email supplied by the human who owns and authorizes this account. Do not use an AI agent mailbox or invent this value. Verification proves control of the address.")
-    username: Optional[Annotated[str, Field(min_length=1, strict=True, max_length=64)]] = Field(default=None, description="Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.")
-    label: Optional[Annotated[str, Field(strict=True, max_length=100)]] = None
-    permission_scope: Optional[StrictStr] = 'mailbox_admin'
-    accept_terms_and_policy: StrictBool = Field(description="The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization.")
+    email: Annotated[str, Field(strict=True, max_length=254)] = Field(description="Email address for the new account.")
+    accept_terms_and_policy: StrictBool = Field(description="Agree to the Terms (https://revdoku.com/terms) and Acceptable Use Policy (https://revdoku.com/acceptable-use), and acknowledge the Privacy Policy (https://revdoku.com/privacy).")
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["human_operator_email", "username", "label", "permission_scope", "accept_terms_and_policy"]
-
-    @field_validator('permission_scope')
-    def permission_scope_validate_enum(cls, value):
-        """Validates the enum"""
-        if value is None:
-            return value
-
-        if value not in set(['mailbox_read', 'mailbox_write', 'mailbox_admin']):
-            raise ValueError("must be one of enum values ('mailbox_read', 'mailbox_write', 'mailbox_admin')")
-        return value
+    __properties: ClassVar[List[str]] = ["email", "accept_terms_and_policy"]
 
     model_config = ConfigDict(
         validate_by_name=True,
@@ -104,10 +91,7 @@ class StartAgentSignupRequest(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "human_operator_email": obj.get("human_operator_email"),
-            "username": obj.get("username"),
-            "label": obj.get("label"),
-            "permission_scope": obj.get("permission_scope") if obj.get("permission_scope") is not None else 'mailbox_admin',
+            "email": obj.get("email"),
             "accept_terms_and_policy": obj.get("accept_terms_and_policy")
         })
         # store additional fields in additional_properties

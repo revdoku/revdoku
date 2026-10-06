@@ -45,7 +45,6 @@ import com.revdoku.api.model.ResendAgentSignupCodeRequest;
 import com.revdoku.api.model.RotateMailboxEmailAddressRequest;
 import com.revdoku.api.model.SetEmailWebhook200Response;
 import com.revdoku.api.model.SetEmailWebhookRequest;
-import com.revdoku.api.model.SignupPoliciesResponse;
 import com.revdoku.api.model.StartAgentSignup202Response;
 import com.revdoku.api.model.StartAgentSignupRequest;
 import com.revdoku.api.model.UpdateEmail200Response;
@@ -1976,115 +1975,6 @@ public class DefaultApi {
   }
 
   /**
-   * Discover Revdoku agent authentication flows
-   * Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-   * @return ApiSuccess
-   * @throws ApiException if fails to make API call
-   */
-  public ApiSuccess getAgentAuthCapabilities() throws ApiException {
-    return getAgentAuthCapabilities(null);
-  }
-
-  /**
-   * Discover Revdoku agent authentication flows
-   * Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-   * @param headers Optional headers to include in the request
-   * @return ApiSuccess
-   * @throws ApiException if fails to make API call
-   */
-  public ApiSuccess getAgentAuthCapabilities(Map<String, String> headers) throws ApiException {
-    ApiResponse<ApiSuccess> localVarResponse = getAgentAuthCapabilitiesWithHttpInfo(headers);
-    return localVarResponse.getData();
-  }
-
-  /**
-   * Discover Revdoku agent authentication flows
-   * Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-   * @return ApiResponse&lt;ApiSuccess&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<ApiSuccess> getAgentAuthCapabilitiesWithHttpInfo() throws ApiException {
-    return getAgentAuthCapabilitiesWithHttpInfo(null);
-  }
-
-  /**
-   * Discover Revdoku agent authentication flows
-   * Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
-   * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;ApiSuccess&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<ApiSuccess> getAgentAuthCapabilitiesWithHttpInfo(Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = getAgentAuthCapabilitiesRequestBuilder(headers);
-    try {
-      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
-          localVarRequestBuilder.build(),
-          HttpResponse.BodyHandlers.ofInputStream());
-      if (memberVarResponseInterceptor != null) {
-        memberVarResponseInterceptor.accept(localVarResponse);
-      }
-      InputStream localVarResponseBody = null;
-      try {
-        if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("getAgentAuthCapabilities", localVarResponse);
-        }
-        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
-        if (localVarResponseBody == null) {
-          return new ApiResponse<ApiSuccess>(
-              localVarResponse.statusCode(),
-              localVarResponse.headers().map(),
-              null
-          );
-        }
-
-        
-        
-        String responseBody = new String(localVarResponseBody.readAllBytes());
-        ApiSuccess responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<ApiSuccess>() {});
-        
-
-        return new ApiResponse<ApiSuccess>(
-            localVarResponse.statusCode(),
-            localVarResponse.headers().map(),
-            responseValue
-        );
-      } finally {
-        if (localVarResponseBody != null) {
-          localVarResponseBody.close();
-        }
-      }
-    } catch (IOException e) {
-      throw new ApiException(e);
-    }
-    catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new ApiException(e);
-    }
-  }
-
-  private HttpRequest.Builder getAgentAuthCapabilitiesRequestBuilder(Map<String, String> headers) throws ApiException {
-
-    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-    String localVarPath = "/v1/agent_auth/capabilities";
-
-    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-    localVarRequestBuilder.header("Accept", "application/json");
-
-    localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
-    if (memberVarReadTimeout != null) {
-      localVarRequestBuilder.timeout(memberVarReadTimeout);
-    }
-    // Add custom headers if provided
-    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
-    if (memberVarInterceptor != null) {
-      memberVarInterceptor.accept(localVarRequestBuilder);
-    }
-    return localVarRequestBuilder;
-  }
-
-  /**
    * Read a received email
    * Requires mailbox read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.
    * @param mailboxId  (required)
@@ -2933,115 +2823,6 @@ public class DefaultApi {
     } else {
       localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
     }
-
-    localVarRequestBuilder.header("Accept", "application/json");
-
-    localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
-    if (memberVarReadTimeout != null) {
-      localVarRequestBuilder.timeout(memberVarReadTimeout);
-    }
-    // Add custom headers if provided
-    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
-    if (memberVarInterceptor != null) {
-      memberVarInterceptor.accept(localVarRequestBuilder);
-    }
-    return localVarRequestBuilder;
-  }
-
-  /**
-   * Read the current signup policies
-   * Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-   * @return SignupPoliciesResponse
-   * @throws ApiException if fails to make API call
-   */
-  public SignupPoliciesResponse getSignupPolicies() throws ApiException {
-    return getSignupPolicies(null);
-  }
-
-  /**
-   * Read the current signup policies
-   * Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-   * @param headers Optional headers to include in the request
-   * @return SignupPoliciesResponse
-   * @throws ApiException if fails to make API call
-   */
-  public SignupPoliciesResponse getSignupPolicies(Map<String, String> headers) throws ApiException {
-    ApiResponse<SignupPoliciesResponse> localVarResponse = getSignupPoliciesWithHttpInfo(headers);
-    return localVarResponse.getData();
-  }
-
-  /**
-   * Read the current signup policies
-   * Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-   * @return ApiResponse&lt;SignupPoliciesResponse&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<SignupPoliciesResponse> getSignupPoliciesWithHttpInfo() throws ApiException {
-    return getSignupPoliciesWithHttpInfo(null);
-  }
-
-  /**
-   * Read the current signup policies
-   * Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
-   * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;SignupPoliciesResponse&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<SignupPoliciesResponse> getSignupPoliciesWithHttpInfo(Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = getSignupPoliciesRequestBuilder(headers);
-    try {
-      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
-          localVarRequestBuilder.build(),
-          HttpResponse.BodyHandlers.ofInputStream());
-      if (memberVarResponseInterceptor != null) {
-        memberVarResponseInterceptor.accept(localVarResponse);
-      }
-      InputStream localVarResponseBody = null;
-      try {
-        if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("getSignupPolicies", localVarResponse);
-        }
-        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
-        if (localVarResponseBody == null) {
-          return new ApiResponse<SignupPoliciesResponse>(
-              localVarResponse.statusCode(),
-              localVarResponse.headers().map(),
-              null
-          );
-        }
-
-        
-        
-        String responseBody = new String(localVarResponseBody.readAllBytes());
-        SignupPoliciesResponse responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<SignupPoliciesResponse>() {});
-        
-
-        return new ApiResponse<SignupPoliciesResponse>(
-            localVarResponse.statusCode(),
-            localVarResponse.headers().map(),
-            responseValue
-        );
-      } finally {
-        if (localVarResponseBody != null) {
-          localVarResponseBody.close();
-        }
-      }
-    } catch (IOException e) {
-      throw new ApiException(e);
-    }
-    catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new ApiException(e);
-    }
-  }
-
-  private HttpRequest.Builder getSignupPoliciesRequestBuilder(Map<String, String> headers) throws ApiException {
-
-    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-    String localVarPath = "/v1/agent_auth/policies";
-
-    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
 
     localVarRequestBuilder.header("Accept", "application/json");
 
@@ -3969,7 +3750,7 @@ public class DefaultApi {
 
   /**
    * Resend the human operator’s verification code
-   * Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+   * Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
    * @param resendAgentSignupCodeRequest  (required)
    * @return StartAgentSignup202Response
    * @throws ApiException if fails to make API call
@@ -3980,7 +3761,7 @@ public class DefaultApi {
 
   /**
    * Resend the human operator’s verification code
-   * Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+   * Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
    * @param resendAgentSignupCodeRequest  (required)
    * @param headers Optional headers to include in the request
    * @return StartAgentSignup202Response
@@ -3993,7 +3774,7 @@ public class DefaultApi {
 
   /**
    * Resend the human operator’s verification code
-   * Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+   * Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
    * @param resendAgentSignupCodeRequest  (required)
    * @return ApiResponse&lt;StartAgentSignup202Response&gt;
    * @throws ApiException if fails to make API call
@@ -4004,7 +3785,7 @@ public class DefaultApi {
 
   /**
    * Resend the human operator’s verification code
-   * Requires signup_token. Replaces the old code without resetting attempts or the ten-minute expiry. Enforces the 60-second canonical-email cooldown, three API-signup sends per 30 minutes, shared three sends per five minutes, and global hourly send cap. Return 429 with Retry-After when limited; never automatically restart the flow to bypass a limit.
+   * Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
    * @param resendAgentSignupCodeRequest  (required)
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;StartAgentSignup202Response&gt;
@@ -4355,8 +4136,8 @@ public class DefaultApi {
   }
 
   /**
-   * Start signup with the human operator’s email
-   * Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+   * Start signup
+   * Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
    * @param startAgentSignupRequest  (required)
    * @return StartAgentSignup202Response
    * @throws ApiException if fails to make API call
@@ -4366,8 +4147,8 @@ public class DefaultApi {
   }
 
   /**
-   * Start signup with the human operator’s email
-   * Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+   * Start signup
+   * Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
    * @param startAgentSignupRequest  (required)
    * @param headers Optional headers to include in the request
    * @return StartAgentSignup202Response
@@ -4379,8 +4160,8 @@ public class DefaultApi {
   }
 
   /**
-   * Start signup with the human operator’s email
-   * Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+   * Start signup
+   * Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
    * @param startAgentSignupRequest  (required)
    * @return ApiResponse&lt;StartAgentSignup202Response&gt;
    * @throws ApiException if fails to make API call
@@ -4390,8 +4171,8 @@ public class DefaultApi {
   }
 
   /**
-   * Start signup with the human operator’s email
-   * Available only when data.signup.available is true in discovery. Requests use uncompressed JSON at most 8 KiB. IP/global request limits run before challenge lookup; canonical-email send limits are shared with browser and legacy sign-in. Returns a private signup_token and emails an OTP. Creates no user, account, mailbox, API key or address reservation before proof. MCP exposes the same signup flow through revdoku_signup, revdoku_signup_verify and revdoku_signup_resend. CLI sign-in and hosted MCP account tools use browser OAuth.
+   * Start signup
+   * Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
    * @param startAgentSignupRequest  (required)
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;StartAgentSignup202Response&gt;
@@ -4930,7 +4711,7 @@ public class DefaultApi {
 
   /**
    * Verify the human’s code and create the first mailbox
-   * Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+   * Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
    * @param verifyAgentSignupRequest  (required)
    * @return VerifyAgentSignup200Response
    * @throws ApiException if fails to make API call
@@ -4941,7 +4722,7 @@ public class DefaultApi {
 
   /**
    * Verify the human’s code and create the first mailbox
-   * Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+   * Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
    * @param verifyAgentSignupRequest  (required)
    * @param headers Optional headers to include in the request
    * @return VerifyAgentSignup200Response
@@ -4954,7 +4735,7 @@ public class DefaultApi {
 
   /**
    * Verify the human’s code and create the first mailbox
-   * Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+   * Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
    * @param verifyAgentSignupRequest  (required)
    * @return ApiResponse&lt;VerifyAgentSignup200Response&gt;
    * @throws ApiException if fails to make API call
@@ -4965,7 +4746,7 @@ public class DefaultApi {
 
   /**
    * Verify the human’s code and create the first mailbox
-   * Requires the signup_token and privately entered OTP. Five attempts per challenge, ten per IP/canonical email per 15 minutes; challenge expires after ten minutes. Existing identities must use normal sign-in after proof, preserving 2FA and suspension. A name conflict can be corrected using username in the same verified session without another OTP. No-store. A successful replay returns completed IDs without the key; recover through normal sign-in and connection management.
+   * Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
    * @param verifyAgentSignupRequest  (required)
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;VerifyAgentSignup200Response&gt;

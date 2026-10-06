@@ -8,7 +8,7 @@
   "supports_a2a_rpc": false,
   "authentication": {
     "account_tools": "OAuth 2.0 sign-in for existing accounts",
-    "signup": "Public MCP signup tools require human_operator_email, accept_terms_and_policy=true and private email verification; see https://revdoku.com/mcp.md#direct-mcp-signup"
+    "signup": "Public MCP signup tools require email, accept_terms_and_policy=true and private email verification; see https://revdoku.com/mcp.md#direct-mcp-signup"
   },
   "skills": [
     {

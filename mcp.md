@@ -158,9 +158,7 @@ Receiving diagnostics and audit logs are viewed by humans in the dashboard. Tool
 
 ## Direct MCP signup
 
-Read the current Terms, service AUP and Privacy Policy as Markdown through the
-unauthenticated [API policy read](https://api.revdoku.com/v1/agent_auth/policies).
-Reading does not replace the human owner’s authorization.
+The starter mailbox address is generated automatically from the account email.
 
 New users can create an account through MCP without an existing connection when
 API signup is enabled. The tools use the same verification and policy records as
@@ -170,22 +168,19 @@ storage for verification codes, signup tokens and API keys; otherwise use
 
 | Tool | Required arguments | Result |
 | --- | --- | --- |
-| `revdoku_signup` | `human_operator_email`, `accept_terms_and_policy: true` | Private `signup_token`, `expires_in`, `resend_after`; sends an email code. |
+| `revdoku_signup` | `email`, `accept_terms_and_policy: true` | Private `signup_token`, `expires_in`, `resend_after`; sends an email code. |
 | `revdoku_signup_verify` | `signup_token`, `code` | Creates the account, first mailbox and scoped API key after email proof. |
 | `revdoku_signup_resend` | `signup_token` | Resends after the cooldown; retains the original expiry. |
 
 | Signup field | Meaning |
 | --- | --- |
-| `human_operator_email` | Email supplied by the human owner. Never substitute an agent mailbox. |
+| `email` | Email supplied by the human owner. Never substitute an agent mailbox. |
 | `accept_terms_and_policy` | Must be boolean `true`, authorized by the human: agreement to the [Terms](https://revdoku.com/terms) and [AUP](https://revdoku.com/acceptable-use), and acknowledgment of the [privacy notice](https://revdoku.com/privacy). This is not consent to optional processing. |
-| `username` | Optional prefix for the first Free mailbox; a 12-character random suffix is added. Generated if omitted. May also be supplied to verification to correct a rejected name. |
-| `permission_scope` | Optional `mailbox_read`, `mailbox_write` or `mailbox_admin` (default), authorized by the human. |
-| `label` | Optional connection name. |
 
 1. Call `revdoku_signup` with the human's authorization:
 
    ```json
-   {"human_operator_email":"owner@customer.example","accept_terms_and_policy":true}
+   {"email":"owner@customer.example","accept_terms_and_policy":true}
    ```
 
 2. Collect the emailed code through private application input and call

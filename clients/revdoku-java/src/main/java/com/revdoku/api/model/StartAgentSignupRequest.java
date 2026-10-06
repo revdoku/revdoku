@@ -29,66 +29,14 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * StartAgentSignupRequest
  */
 @JsonPropertyOrder({
-  StartAgentSignupRequest.JSON_PROPERTY_HUMAN_OPERATOR_EMAIL,
-  StartAgentSignupRequest.JSON_PROPERTY_USERNAME,
-  StartAgentSignupRequest.JSON_PROPERTY_LABEL,
-  StartAgentSignupRequest.JSON_PROPERTY_PERMISSION_SCOPE,
+  StartAgentSignupRequest.JSON_PROPERTY_EMAIL,
   StartAgentSignupRequest.JSON_PROPERTY_ACCEPT_TERMS_AND_POLICY
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class StartAgentSignupRequest {
-  public static final String JSON_PROPERTY_HUMAN_OPERATOR_EMAIL = "human_operator_email";
+  public static final String JSON_PROPERTY_EMAIL = "email";
   @javax.annotation.Nonnull
-  private String humanOperatorEmail;
-
-  public static final String JSON_PROPERTY_USERNAME = "username";
-  @javax.annotation.Nullable
-  private String username;
-
-  public static final String JSON_PROPERTY_LABEL = "label";
-  @javax.annotation.Nullable
-  private String label;
-
-  /**
-   * Gets or Sets permissionScope
-   */
-  public enum PermissionScopeEnum {
-    MAILBOX_READ(String.valueOf("mailbox_read")),
-    
-    MAILBOX_WRITE(String.valueOf("mailbox_write")),
-    
-    MAILBOX_ADMIN(String.valueOf("mailbox_admin"));
-
-    private String value;
-
-    PermissionScopeEnum(String value) {
-      this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-      return value;
-    }
-
-    @Override
-    public String toString() {
-      return String.valueOf(value);
-    }
-
-    @JsonCreator
-    public static PermissionScopeEnum fromValue(String value) {
-      for (PermissionScopeEnum b : PermissionScopeEnum.values()) {
-        if (b.value.equals(value)) {
-          return b;
-        }
-      }
-      throw new IllegalArgumentException("Unexpected value '" + value + "'");
-    }
-  }
-
-  public static final String JSON_PROPERTY_PERMISSION_SCOPE = "permission_scope";
-  @javax.annotation.Nullable
-  private PermissionScopeEnum permissionScope = PermissionScopeEnum.MAILBOX_ADMIN;
+  private String email;
 
   public static final String JSON_PROPERTY_ACCEPT_TERMS_AND_POLICY = "accept_terms_and_policy";
   @javax.annotation.Nonnull
@@ -97,99 +45,27 @@ public class StartAgentSignupRequest {
   public StartAgentSignupRequest() { 
   }
 
-  public StartAgentSignupRequest humanOperatorEmail(@javax.annotation.Nonnull String humanOperatorEmail) {
-    this.humanOperatorEmail = humanOperatorEmail;
+  public StartAgentSignupRequest email(@javax.annotation.Nonnull String email) {
+    this.email = email;
     return this;
   }
 
   /**
-   * Email supplied by the human who owns and authorizes this account. Do not use an AI agent mailbox or invent this value. Verification proves control of the address.
-   * @return humanOperatorEmail
+   * Email address for the new account.
+   * @return email
    */
   @javax.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_HUMAN_OPERATOR_EMAIL, required = true)
+  @JsonProperty(value = JSON_PROPERTY_EMAIL, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public String getHumanOperatorEmail() {
-    return humanOperatorEmail;
+  public String getEmail() {
+    return email;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_HUMAN_OPERATOR_EMAIL, required = true)
+  @JsonProperty(value = JSON_PROPERTY_EMAIL, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setHumanOperatorEmail(@javax.annotation.Nonnull String humanOperatorEmail) {
-    this.humanOperatorEmail = humanOperatorEmail;
-  }
-
-
-  public StartAgentSignupRequest username(@javax.annotation.Nullable String username) {
-    this.username = username;
-    return this;
-  }
-
-  /**
-   * Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
-   * @return username
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_USERNAME, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public String getUsername() {
-    return username;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_USERNAME, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setUsername(@javax.annotation.Nullable String username) {
-    this.username = username;
-  }
-
-
-  public StartAgentSignupRequest label(@javax.annotation.Nullable String label) {
-    this.label = label;
-    return this;
-  }
-
-  /**
-   * Get label
-   * @return label
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_LABEL, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public String getLabel() {
-    return label;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_LABEL, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setLabel(@javax.annotation.Nullable String label) {
-    this.label = label;
-  }
-
-
-  public StartAgentSignupRequest permissionScope(@javax.annotation.Nullable PermissionScopeEnum permissionScope) {
-    this.permissionScope = permissionScope;
-    return this;
-  }
-
-  /**
-   * Get permissionScope
-   * @return permissionScope
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_PERMISSION_SCOPE, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public PermissionScopeEnum getPermissionScope() {
-    return permissionScope;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_PERMISSION_SCOPE, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setPermissionScope(@javax.annotation.Nullable PermissionScopeEnum permissionScope) {
-    this.permissionScope = permissionScope;
+  public void setEmail(@javax.annotation.Nonnull String email) {
+    this.email = email;
   }
 
 
@@ -199,7 +75,7 @@ public class StartAgentSignupRequest {
   }
 
   /**
-   * The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization.
+   * Agree to the Terms (https://revdoku.com/terms) and Acceptable Use Policy (https://revdoku.com/acceptable-use), and acknowledge the Privacy Policy (https://revdoku.com/privacy).
    * @return acceptTermsAndPolicy
    */
   @javax.annotation.Nonnull
@@ -229,26 +105,20 @@ public class StartAgentSignupRequest {
       return false;
     }
     StartAgentSignupRequest startAgentSignupRequest = (StartAgentSignupRequest) o;
-    return Objects.equals(this.humanOperatorEmail, startAgentSignupRequest.humanOperatorEmail) &&
-        Objects.equals(this.username, startAgentSignupRequest.username) &&
-        Objects.equals(this.label, startAgentSignupRequest.label) &&
-        Objects.equals(this.permissionScope, startAgentSignupRequest.permissionScope) &&
+    return Objects.equals(this.email, startAgentSignupRequest.email) &&
         Objects.equals(this.acceptTermsAndPolicy, startAgentSignupRequest.acceptTermsAndPolicy);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(humanOperatorEmail, username, label, permissionScope, acceptTermsAndPolicy);
+    return Objects.hash(email, acceptTermsAndPolicy);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class StartAgentSignupRequest {\n");
-    sb.append("    humanOperatorEmail: ").append(toIndentedString(humanOperatorEmail)).append("\n");
-    sb.append("    username: ").append(toIndentedString(username)).append("\n");
-    sb.append("    label: ").append(toIndentedString(label)).append("\n");
-    sb.append("    permissionScope: ").append(toIndentedString(permissionScope)).append("\n");
+    sb.append("    email: ").append(toIndentedString(email)).append("\n");
     sb.append("    acceptTermsAndPolicy: ").append(toIndentedString(acceptTermsAndPolicy)).append("\n");
     sb.append("}");
     return sb.toString();

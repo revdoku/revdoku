@@ -33,37 +33,6 @@ namespace Revdoku.Api.Model
     public partial class StartAgentSignupRequest : IValidatableObject
     {
         /// <summary>
-        /// Defines PermissionScope
-        /// </summary>
-        [JsonConverter(typeof(StringEnumConverter))]
-        public enum PermissionScopeEnum
-        {
-            /// <summary>
-            /// Enum MailboxRead for value: mailbox_read
-            /// </summary>
-            [EnumMember(Value = "mailbox_read")]
-            MailboxRead = 1,
-
-            /// <summary>
-            /// Enum MailboxWrite for value: mailbox_write
-            /// </summary>
-            [EnumMember(Value = "mailbox_write")]
-            MailboxWrite = 2,
-
-            /// <summary>
-            /// Enum MailboxAdmin for value: mailbox_admin
-            /// </summary>
-            [EnumMember(Value = "mailbox_admin")]
-            MailboxAdmin = 3
-        }
-
-
-        /// <summary>
-        /// Gets or Sets PermissionScope
-        /// </summary>
-        [DataMember(Name = "permission_scope", EmitDefaultValue = false)]
-        public PermissionScopeEnum? PermissionScope { get; set; }
-        /// <summary>
         /// Initializes a new instance of the <see cref="StartAgentSignupRequest" /> class.
         /// </summary>
         [JsonConstructorAttribute]
@@ -74,50 +43,31 @@ namespace Revdoku.Api.Model
         /// <summary>
         /// Initializes a new instance of the <see cref="StartAgentSignupRequest" /> class.
         /// </summary>
-        /// <param name="humanOperatorEmail">Email supplied by the human who owns and authorizes this account. Do not use an AI agent mailbox or invent this value. Verification proves control of the address. (required).</param>
-        /// <param name="username">Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option..</param>
-        /// <param name="label">label.</param>
-        /// <param name="permissionScope">permissionScope (default to PermissionScopeEnum.MailboxAdmin).</param>
-        /// <param name="acceptTermsAndPolicy">The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization. (required).</param>
-        public StartAgentSignupRequest(string humanOperatorEmail = default, string username = default, string label = default, PermissionScopeEnum? permissionScope = PermissionScopeEnum.MailboxAdmin, bool acceptTermsAndPolicy = default)
+        /// <param name="email">Email address for the new account. (required).</param>
+        /// <param name="acceptTermsAndPolicy">Agree to the Terms (https://revdoku.com/terms) and Acceptable Use Policy (https://revdoku.com/acceptable-use), and acknowledge the Privacy Policy (https://revdoku.com/privacy). (required).</param>
+        public StartAgentSignupRequest(string email = default, bool acceptTermsAndPolicy = default)
         {
-            // to ensure "humanOperatorEmail" is required (not null)
-            if (humanOperatorEmail == null)
+            // to ensure "email" is required (not null)
+            if (email == null)
             {
-                throw new ArgumentNullException("humanOperatorEmail is a required property for StartAgentSignupRequest and cannot be null");
+                throw new ArgumentNullException("email is a required property for StartAgentSignupRequest and cannot be null");
             }
-            this.HumanOperatorEmail = humanOperatorEmail;
+            this.Email = email;
             this.AcceptTermsAndPolicy = acceptTermsAndPolicy;
-            this.Username = username;
-            this.Label = label;
-            this.PermissionScope = permissionScope;
             this.AdditionalProperties = new Dictionary<string, object>();
         }
 
         /// <summary>
-        /// Email supplied by the human who owns and authorizes this account. Do not use an AI agent mailbox or invent this value. Verification proves control of the address.
+        /// Email address for the new account.
         /// </summary>
-        /// <value>Email supplied by the human who owns and authorizes this account. Do not use an AI agent mailbox or invent this value. Verification proves control of the address.</value>
-        [DataMember(Name = "human_operator_email", IsRequired = true, EmitDefaultValue = true)]
-        public string HumanOperatorEmail { get; set; }
+        /// <value>Email address for the new account.</value>
+        [DataMember(Name = "email", IsRequired = true, EmitDefaultValue = true)]
+        public string Email { get; set; }
 
         /// <summary>
-        /// Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
+        /// Agree to the Terms (https://revdoku.com/terms) and Acceptable Use Policy (https://revdoku.com/acceptable-use), and acknowledge the Privacy Policy (https://revdoku.com/privacy).
         /// </summary>
-        /// <value>Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.</value>
-        [DataMember(Name = "username", EmitDefaultValue = false)]
-        public string Username { get; set; }
-
-        /// <summary>
-        /// Gets or Sets Label
-        /// </summary>
-        [DataMember(Name = "label", EmitDefaultValue = false)]
-        public string Label { get; set; }
-
-        /// <summary>
-        /// The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization.
-        /// </summary>
-        /// <value>The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization.</value>
+        /// <value>Agree to the Terms (https://revdoku.com/terms) and Acceptable Use Policy (https://revdoku.com/acceptable-use), and acknowledge the Privacy Policy (https://revdoku.com/privacy).</value>
         [DataMember(Name = "accept_terms_and_policy", IsRequired = true, EmitDefaultValue = true)]
         public bool AcceptTermsAndPolicy { get; set; }
 
@@ -135,10 +85,7 @@ namespace Revdoku.Api.Model
         {
             StringBuilder sb = new StringBuilder();
             sb.Append("class StartAgentSignupRequest {\n");
-            sb.Append("  HumanOperatorEmail: ").Append(HumanOperatorEmail).Append("\n");
-            sb.Append("  Username: ").Append(Username).Append("\n");
-            sb.Append("  Label: ").Append(Label).Append("\n");
-            sb.Append("  PermissionScope: ").Append(PermissionScope).Append("\n");
+            sb.Append("  Email: ").Append(Email).Append("\n");
             sb.Append("  AcceptTermsAndPolicy: ").Append(AcceptTermsAndPolicy).Append("\n");
             sb.Append("  AdditionalProperties: ").Append(AdditionalProperties).Append("\n");
             sb.Append("}\n");
@@ -161,28 +108,10 @@ namespace Revdoku.Api.Model
         /// <returns>Validation Result</returns>
         IEnumerable<ValidationResult> IValidatableObject.Validate(ValidationContext validationContext)
         {
-            // HumanOperatorEmail (string) maxLength
-            if (this.HumanOperatorEmail != null && this.HumanOperatorEmail.Length > 254)
+            // Email (string) maxLength
+            if (this.Email != null && this.Email.Length > 254)
             {
-                yield return new ValidationResult("Invalid value for HumanOperatorEmail, length must be less than 254.", new [] { "HumanOperatorEmail" });
-            }
-
-            // Username (string) maxLength
-            if (this.Username != null && this.Username.Length > 64)
-            {
-                yield return new ValidationResult("Invalid value for Username, length must be less than 64.", new [] { "Username" });
-            }
-
-            // Username (string) minLength
-            if (this.Username != null && this.Username.Length < 1)
-            {
-                yield return new ValidationResult("Invalid value for Username, length must be greater than 1.", new [] { "Username" });
-            }
-
-            // Label (string) maxLength
-            if (this.Label != null && this.Label.Length > 100)
-            {
-                yield return new ValidationResult("Invalid value for Label, length must be less than 100.", new [] { "Label" });
+                yield return new ValidationResult("Invalid value for Email, length must be less than 254.", new [] { "Email" });
             }
 
             yield break;

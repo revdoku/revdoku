@@ -18,7 +18,7 @@ import re  # noqa: F401
 import json
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from typing import Any, ClassVar, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List
 from typing_extensions import Annotated
 from typing import Optional, Set
 from typing_extensions import Self
@@ -28,18 +28,14 @@ class VerifyAgentSignupRequest(BaseModel):
     """
     VerifyAgentSignupRequest
     """ # noqa: E501
-    code: Optional[Annotated[str, Field(strict=True)]] = Field(default=None, description="Required until the challenge is verified; collect privately, never in chat.")
-    username: Optional[Annotated[str, Field(min_length=1, strict=True, max_length=64)]] = Field(default=None, description="Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.")
+    code: Annotated[str, Field(strict=True)] = Field(description="Six-digit email verification code.")
     signup_token: Annotated[str, Field(strict=True)] = Field(description="Private signup token returned by the first request. Send only in the JSON body; never log it or show it in chat.")
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["code", "username", "signup_token"]
+    __properties: ClassVar[List[str]] = ["code", "signup_token"]
 
     @field_validator('code', mode="before")
     def code_validate_regular_expression(cls, value):
         """Validates the regular expression"""
-        if value is None:
-            return value
-
         if isinstance(value, str) and not re.match(r"^[0-9]{6}$", value):
             raise ValueError(r"must validate the regular expression /^[0-9]{6}$/")
         return value
@@ -110,7 +106,6 @@ class VerifyAgentSignupRequest(BaseModel):
 
         _obj = cls.model_validate({
             "code": obj.get("code"),
-            "username": obj.get("username"),
             "signup_token": obj.get("signup_token")
         })
         # store additional fields in additional_properties

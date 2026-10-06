@@ -13,28 +13,12 @@ part of revdoku.api;
 class VerifyAgentSignupRequest {
   /// Returns a new [VerifyAgentSignupRequest] instance.
   VerifyAgentSignupRequest({
-    this.code,
-    this.username,
+    required this.code,
     required this.signupToken,
   });
 
-  /// Required until the challenge is verified; collect privately, never in chat.
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  String? code;
-
-  /// Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  String? username;
+  /// Six-digit email verification code.
+  String code;
 
   /// Private signup token returned by the first request. Send only in the JSON body; never log it or show it in chat.
   String signupToken;
@@ -42,27 +26,20 @@ class VerifyAgentSignupRequest {
   @override
   bool operator ==(Object other) => identical(this, other) || other is VerifyAgentSignupRequest &&
     other.code == code &&
-    other.username == username &&
     other.signupToken == signupToken;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (code == null ? 0 : code!.hashCode) +
-    (username == null ? 0 : username!.hashCode) +
+    (code.hashCode) +
     (signupToken.hashCode);
 
   @override
-  String toString() => 'VerifyAgentSignupRequest[code=$code, username=$username, signupToken=$signupToken]';
+  String toString() => 'VerifyAgentSignupRequest[code=$code, signupToken=$signupToken]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-    if (this.code != null) {
       json[r'code'] = this.code;
-    }
-    if (this.username != null) {
-      json[r'username'] = this.username;
-    }
       json[r'signup_token'] = this.signupToken;
     return json;
   }
@@ -78,14 +55,15 @@ class VerifyAgentSignupRequest {
       // Note 1: the values aren't checked for validity beyond being non-null.
       // Note 2: this code is stripped in release mode!
       assert(() {
+        assert(json.containsKey(r'code'), 'Required key "VerifyAgentSignupRequest[code]" is missing from JSON.');
+        assert(json[r'code'] != null, 'Required key "VerifyAgentSignupRequest[code]" has a null value in JSON.');
         assert(json.containsKey(r'signup_token'), 'Required key "VerifyAgentSignupRequest[signup_token]" is missing from JSON.');
         assert(json[r'signup_token'] != null, 'Required key "VerifyAgentSignupRequest[signup_token]" has a null value in JSON.');
         return true;
       }());
 
       return VerifyAgentSignupRequest(
-        code: mapValueOfType<String>(json, r'code'),
-        username: mapValueOfType<String>(json, r'username'),
+        code: mapValueOfType<String>(json, r'code')!,
         signupToken: mapValueOfType<String>(json, r'signup_token')!,
       );
     }
@@ -134,6 +112,7 @@ class VerifyAgentSignupRequest {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
+    'code',
     'signup_token',
   };
 }
