@@ -24,7 +24,7 @@ export interface StartAgentSignupRequest {
      */
     humanOperatorEmail: string;
     /**
-     * Optional exact name for the first mailbox. Omit to generate a name. Platform reserved and retired name rules apply.
+     * Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
      */
     username?: string;
     /**

@@ -23,7 +23,7 @@ class StartAgentSignupRequest {
   /// Email supplied by the human who owns and authorizes this account. Do not use an AI agent mailbox or invent this value. Verification proves control of the address.
   String humanOperatorEmail;
 
-  /// Optional exact name for the first mailbox. Omit to generate a name. Platform reserved and retired name rules apply.
+  /// Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated

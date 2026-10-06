@@ -78,8 +78,10 @@ and selection state otherwise live under `~/.revdoku/`; keep them private.
 
 Uploading without an existing mailbox binding can create a mailbox and consume
 creation capacity. `revdoku create` creates an empty mailbox. Omit `--username` to
-generate a name, or select an exact available name. Generic names are reserved on
-platform email domains. Creation returns when receiving is ready.
+generate a name. Free adds a permanent 12-character random suffix to the requested
+prefix. An exact available name requires a paid plan. Reserved shared-domain words
+return an explanation and guidance for using your own verified domain.
+Creation returns when receiving is ready. Use the returned address.
 
 See [the API reference](../api.md) and `revdoku --help` for commands, scopes,
 quota errors, and confirmation requirements. For AI integration, use the

@@ -113,10 +113,12 @@ is separate from this [MIT-0 skill](LICENSE).
 
 ## Receive and read email
 
-`mailbox_create(username: "project.alerts")` returns a mailbox ready to receive; omit `username`
-to generate it. Taken or retired names return `EMAIL_ALREADY_EXISTS`;
-common role names on platform domains are reserved. Do not silently replace a
-user's requested name after a conflict. CLI: `create --username NAME`.
+`mailbox_create(username: "project.alerts")` returns a ready mailbox.
+Free adds a permanent random suffix. An exact name requires a paid plan.
+Omit `username` to generate one. Use the returned address.
+Reserved shared-domain names return `EMAIL_NAME_RESERVED` on every plan.
+Show its explanation and custom-domain guidance. Do not silently replace rejected names.
+CLI: `create --username NAME`.
 
 Creation returns `email`. For an existing mailbox, use `mailbox_get(include_email: true)`
 with write access or CLI `mailbox --mailbox-id ID`. Use the exact address only after

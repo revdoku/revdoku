@@ -29,7 +29,7 @@ class StartAgentSignupRequest(BaseModel):
     StartAgentSignupRequest
     """ # noqa: E501
     human_operator_email: Annotated[str, Field(strict=True, max_length=254)] = Field(description="Email supplied by the human who owns and authorizes this account. Do not use an AI agent mailbox or invent this value. Verification proves control of the address.")
-    username: Optional[Annotated[str, Field(min_length=1, strict=True, max_length=64)]] = Field(default=None, description="Optional exact name for the first mailbox. Omit to generate a name. Platform reserved and retired name rules apply.")
+    username: Optional[Annotated[str, Field(min_length=1, strict=True, max_length=64)]] = Field(default=None, description="Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.")
     label: Optional[Annotated[str, Field(strict=True, max_length=100)]] = None
     permission_scope: Optional[StrictStr] = 'mailbox_admin'
     accept_terms_and_policy: StrictBool = Field(description="The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing.")

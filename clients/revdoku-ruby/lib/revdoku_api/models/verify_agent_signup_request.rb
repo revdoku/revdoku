@@ -18,7 +18,7 @@ module RevdokuApi
     # Required until the challenge is verified; collect privately, never in chat.
     attr_accessor :code
 
-    # Optional exact name for the first mailbox. Omit to generate a name. Platform reserved and retired name rules apply.
+    # Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
     attr_accessor :username
 
     # Private signup token returned by the first request. Send only in the JSON body; never log it or show it in chat.

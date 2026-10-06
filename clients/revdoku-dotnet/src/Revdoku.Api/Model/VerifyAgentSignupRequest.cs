@@ -44,7 +44,7 @@ namespace Revdoku.Api.Model
         /// Initializes a new instance of the <see cref="VerifyAgentSignupRequest" /> class.
         /// </summary>
         /// <param name="code">Required until the challenge is verified; collect privately, never in chat..</param>
-        /// <param name="username">Optional exact name for the first mailbox. Omit to generate a name. Platform reserved and retired name rules apply..</param>
+        /// <param name="username">Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option..</param>
         /// <param name="signupToken">Private signup token returned by the first request. Send only in the JSON body; never log it or show it in chat. (required).</param>
         public VerifyAgentSignupRequest(string code = default, string username = default, string signupToken = default)
         {
@@ -67,9 +67,9 @@ namespace Revdoku.Api.Model
         public string Code { get; set; }
 
         /// <summary>
-        /// Optional exact name for the first mailbox. Omit to generate a name. Platform reserved and retired name rules apply.
+        /// Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.
         /// </summary>
-        /// <value>Optional exact name for the first mailbox. Omit to generate a name. Platform reserved and retired name rules apply.</value>
+        /// <value>Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.</value>
         [DataMember(Name = "username", EmitDefaultValue = false)]
         public string Username { get; set; }
 

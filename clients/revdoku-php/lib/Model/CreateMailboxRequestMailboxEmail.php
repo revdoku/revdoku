@@ -317,7 +317,7 @@ class CreateMailboxRequestMailboxEmail implements ModelInterface, ArrayAccess, \
     /**
      * Sets username
      *
-     * @param string|null $username Name before @. Normalized to lowercase. Omit to generate; blank/null is invalid. Reserved platform names return EMAIL_NAME_RESERVED; occupied or retired names return EMAIL_ALREADY_EXISTS.
+     * @param string|null $username Free: a prefix normalized to dots, shortened to 51 characters, with a permanent 12-character random lowercase letter/digit suffix added. Paid: the exact name before @, normalized to lowercase. Omit to generate; blank/null is invalid. Reserved shared-domain words return EMAIL_NAME_RESERVED with the reserved word and custom-domain guidance; occupied or retired exact names return EMAIL_ALREADY_EXISTS.
      *
      * @return self
      */

@@ -17,7 +17,7 @@ class CreateMailboxRequestMailboxEmail {
     this.domain,
   });
 
-  /// Name before @. Normalized to lowercase. Omit to generate; blank/null is invalid. Reserved platform names return EMAIL_NAME_RESERVED; occupied or retired names return EMAIL_ALREADY_EXISTS.
+  /// Free: a prefix normalized to dots, shortened to 51 characters, with a permanent 12-character random lowercase letter/digit suffix added. Paid: the exact name before @, normalized to lowercase. Omit to generate; blank/null is invalid. Reserved shared-domain words return EMAIL_NAME_RESERVED with the reserved word and custom-domain guidance; occupied or retired exact names return EMAIL_ALREADY_EXISTS.
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated

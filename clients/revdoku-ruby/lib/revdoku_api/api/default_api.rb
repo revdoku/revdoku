@@ -222,7 +222,7 @@ module RevdokuApi
     end
 
     # Create a mailbox with a ready receiving address
-    # Creates a mailbox with file storage and waits for receiving confirmation. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id. Creation quotas apply.
+    # Creates a mailbox with file storage and waits for receiving confirmation. On Free, email.username is a prefix with a permanent 12-character random suffix. An exact name requires a paid plan. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id. Creation quotas apply.
     # @param create_mailbox_request [CreateMailboxRequest] 
     # @param [Hash] opts the optional parameters
     # @return [CreateMailbox201Response]
@@ -232,7 +232,7 @@ module RevdokuApi
     end
 
     # Create a mailbox with a ready receiving address
-    # Creates a mailbox with file storage and waits for receiving confirmation. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id. Creation quotas apply.
+    # Creates a mailbox with file storage and waits for receiving confirmation. On Free, email.username is a prefix with a permanent 12-character random suffix. An exact name requires a paid plan. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id. Creation quotas apply.
     # @param create_mailbox_request [CreateMailboxRequest] 
     # @param [Hash] opts the optional parameters
     # @return [Array<(CreateMailbox201Response, Integer, Hash)>] CreateMailbox201Response data, response status code and response headers
@@ -290,7 +290,7 @@ module RevdokuApi
     end
 
     # Add an email alias to a mailbox
-    # Requires a full-account owner/administrator with mailbox-admin access and an available alias slot. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
+    # Requires a paid plan, a full-account owner/administrator with mailbox-admin access and an available alias slot. Free returns EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
     # @param id [String] Authorized mailbox prefix ID
     # @param create_mailbox_email_alias_request [CreateMailboxEmailAliasRequest] 
     # @param [Hash] opts the optional parameters
@@ -303,7 +303,7 @@ module RevdokuApi
     end
 
     # Add an email alias to a mailbox
-    # Requires a full-account owner/administrator with mailbox-admin access and an available alias slot. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
+    # Requires a paid plan, a full-account owner/administrator with mailbox-admin access and an available alias slot. Free returns EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
     # @param id [String] Authorized mailbox prefix ID
     # @param create_mailbox_email_alias_request [CreateMailboxEmailAliasRequest] 
     # @param [Hash] opts the optional parameters
@@ -2010,7 +2010,7 @@ module RevdokuApi
     end
 
     # Replace a mailbox email address after confirmation
-    # Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Optional username chooses a custom name and additionally requires a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
+    # Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
     # @param id [String] Authorized mailbox prefix ID
     # @param rotate_mailbox_email_address_request [RotateMailboxEmailAddressRequest] 
     # @param [Hash] opts the optional parameters
@@ -2021,7 +2021,7 @@ module RevdokuApi
     end
 
     # Replace a mailbox email address after confirmation
-    # Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Optional username chooses a custom name and additionally requires a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
+    # Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
     # @param id [String] Authorized mailbox prefix ID
     # @param rotate_mailbox_email_address_request [RotateMailboxEmailAddressRequest] 
     # @param [Hash] opts the optional parameters

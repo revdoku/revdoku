@@ -15,7 +15,7 @@ require 'time'
 
 module RevdokuApi
   class CreateMailboxRequestMailboxEmail < ApiModelBase
-    # Name before @. Normalized to lowercase. Omit to generate; blank/null is invalid. Reserved platform names return EMAIL_NAME_RESERVED; occupied or retired names return EMAIL_ALREADY_EXISTS.
+    # Free: a prefix normalized to dots, shortened to 51 characters, with a permanent 12-character random lowercase letter/digit suffix added. Paid: the exact name before @, normalized to lowercase. Omit to generate; blank/null is invalid. Reserved shared-domain words return EMAIL_NAME_RESERVED with the reserved word and custom-domain guidance; occupied or retired exact names return EMAIL_ALREADY_EXISTS.
     attr_accessor :username
 
     # Built-in domain such as revdokumail.com on any plan, or a ready custom email domain owned by the selected account on an eligible plan. Omit for the default platform domain.

@@ -17,7 +17,7 @@ public struct VerifyAgentSignupRequest: Codable, JSONEncodable, Hashable {
     public static let signupTokenRule = StringRule(minLength: nil, maxLength: nil, pattern: "/^[A-Za-z0-9_-]{43}$/")
     /** Required until the challenge is verified; collect privately, never in chat. */
     public var code: String?
-    /** Optional exact name for the first mailbox. Omit to generate a name. Platform reserved and retired name rules apply. */
+    /** Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option. */
     public var username: String?
     /** Private signup token returned by the first request. Send only in the JSON body; never log it or show it in chat. */
     public var signupToken: String

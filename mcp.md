@@ -174,7 +174,7 @@ storage for verification codes, signup tokens and API keys; otherwise use
 | --- | --- |
 | `human_operator_email` | Email supplied by the human owner. Never substitute an agent mailbox. |
 | `accept_terms_and_policy` | Must be boolean `true`, authorized by the human: agreement to the [Terms](https://revdoku.com/terms) and [AUP](https://revdoku.com/acceptable-use), and acknowledgment of the [privacy notice](https://revdoku.com/privacy). This is not consent to optional processing. |
-| `username` | Optional first mailbox username; generated if omitted. May also be supplied to verification to correct a rejected name. |
+| `username` | Optional prefix for the first Free mailbox; a 12-character random suffix is added. Generated if omitted. May also be supplied to verification to correct a rejected name. |
 | `permission_scope` | Optional `mailbox_read`, `mailbox_write` or `mailbox_admin` (default), authorized by the human. |
 | `label` | Optional connection name. |
 

@@ -1,5 +1,29 @@
 # Revdoku Changelog
 
+## 1.0.538 — 2026-10-06
+
+### Improved
+
+- New Free mailbox addresses use a readable prefix and a 12-character random
+  suffix. An exact name requires a paid plan. Existing addresses stay unchanged.
+- Explain reserved email names and link to custom-domain or upgrade settings.
+- Open archived mailboxes from the bottom of the mailbox sidebar.
+- Remove the automatic-source marker from label management.
+
+### Fixed
+
+- Keep account switching available in client accounts so people can return to
+  their agency account and its mailboxes.
+- Align notification email content with its footer and wrap long addresses on
+  mobile screens.
+- Identify deleted mailboxes in notification emails and show their deletion time once.
+- Use readable yellow error text in dark mode.
+- Put the read-status envelope beside the sender so subjects use the full message-list width.
+- Keep Select mode in the mailbox directory and return Back to the originating view.
+- Hide the test-email link after a mailbox receives its first email.
+- Follow the browser system theme by default and preserve saved theme choices.
+- Complete AI connection-code exchanges without a mailbox-identity serialization error.
+
 ## 1.0.535 — 2026-10-05
 
 ### Improved
