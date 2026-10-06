@@ -139,6 +139,11 @@ import {
     SetEmailWebhookRequestToJSON,
 } from '../models/SetEmailWebhookRequest';
 import {
+    type SignupPoliciesResponse,
+    SignupPoliciesResponseFromJSON,
+    SignupPoliciesResponseToJSON,
+} from '../models/SignupPoliciesResponse';
+import {
     type StartAgentSignup202Response,
     StartAgentSignup202ResponseFromJSON,
     StartAgentSignup202ResponseToJSON,
@@ -1528,7 +1533,7 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+     * Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
      * Discover Revdoku agent authentication flows
      */
     async getAgentAuthCapabilitiesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ApiSuccess>> {
@@ -1539,7 +1544,7 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+     * Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
      * Discover Revdoku agent authentication flows
      */
     async getAgentAuthCapabilities(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ApiSuccess> {
@@ -1924,6 +1929,45 @@ export class DefaultApi extends runtime.BaseAPI {
      */
     async getRevdokuStatus(requestParameters: GetRevdokuStatusRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<GetRevdokuStatus200Response> {
         const response = await this.getRevdokuStatusRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Creates request options for getSignupPolicies without sending the request
+     */
+    async getSignupPoliciesRequestOpts(): Promise<runtime.RequestOpts> {
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+
+        let urlPath = `/v1/agent_auth/policies`;
+
+        return {
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        };
+    }
+
+    /**
+     * Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+     * Read the current signup policies
+     */
+    async getSignupPoliciesRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SignupPoliciesResponse>> {
+        const requestOptions = await this.getSignupPoliciesRequestOpts();
+        const response = await this.request(requestOptions, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => SignupPoliciesResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+     * Read the current signup policies
+     */
+    async getSignupPolicies(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SignupPoliciesResponse> {
+        const response = await this.getSignupPoliciesRaw(initOverrides);
         return await response.value();
     }
 

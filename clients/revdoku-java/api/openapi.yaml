@@ -55,9 +55,9 @@ paths:
       - application/json
   /v1/agent_auth/capabilities:
     get:
-      description: "Reports available sign-in flows and signup availability, current\
-        \ consent version, required human_operator_email and allowed scopes. Never\
-        \ creates an account."
+      description: "Reports available sign-in flows and signup availability, policy\
+        \ document URLs and policies_url for the API policy read, required human_operator_email\
+        \ and allowed scopes. Never creates an account."
       operationId: getAgentAuthCapabilities
       responses:
         "200":
@@ -2677,6 +2677,31 @@ paths:
       x-content-type: application/json
       x-accepts:
       - application/json
+  /v1/agent_auth/policies:
+    get:
+      description: "Returns the packaged Terms, service acceptable use policy and\
+        \ Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes.\
+        \ No authentication or website access is required. Reading does not record\
+        \ acceptance or authorize signup. Cache-Control: no-store."
+      operationId: getSignupPolicies
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignupPoliciesResponse"
+          description: Current policy documents
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+          description: "Request failed; see error.code and error.details. A 503 EMAIL_INDEX_BUILDING\
+            \ includes Retry-After: 5."
+      security: []
+      summary: Read the current signup policies
+      x-accepts:
+      - application/json
 components:
   parameters:
     AccountId:
@@ -3963,6 +3988,62 @@ components:
       - limit
       - next_offset
       - offset
+      type: object
+    SignupPolicyDocument:
+      example:
+        url: https://openapi-generator.tech
+        version: version
+        sha256: sha256
+        text: text
+      properties:
+        url:
+          description: Canonical public URL.
+          format: uri
+          type: string
+        version:
+          description: Version of the packaged policy.
+          type: string
+        sha256:
+          description: SHA-256 of the UTF-8 Markdown text.
+          pattern: "^[0-9a-f]{64}$"
+          type: string
+        text:
+          description: Complete packaged policy in Markdown.
+          type: string
+      required:
+      - sha256
+      - text
+      - url
+      - version
+      type: object
+    SignupPoliciesResponse:
+      example:
+        success: true
+        data:
+          policies:
+            terms:
+              url: https://openapi-generator.tech
+              version: version
+              sha256: sha256
+              text: text
+            acceptable_use:
+              url: https://openapi-generator.tech
+              version: version
+              sha256: sha256
+              text: text
+            privacy:
+              url: https://openapi-generator.tech
+              version: version
+              sha256: sha256
+              text: text
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/SignupPoliciesResponse_data"
+      required:
+      - data
+      - success
       type: object
     getRevdokuStatus_200_response_data_features:
       additionalProperties: true
@@ -6078,7 +6159,9 @@ components:
           description: "The human agrees to the current Terms (https://revdoku.com/terms)\
             \ and service acceptable use policy (https://revdoku.com/acceptable-use),\
             \ and acknowledges the privacy notice (https://revdoku.com/privacy). This\
-            \ is not consent to optional processing."
+            \ is not consent to optional processing. Read the current documents at\
+            \ GET /v1/agent_auth/policies without website access. Reading does not\
+            \ replace the human owner’s authorization."
           type: boolean
       required:
       - accept_terms_and_policy
@@ -7043,6 +7126,59 @@ components:
           $ref: "#/components/schemas/Mailbox_lock_locked_by_api_key"
       required:
       - locked
+      type: object
+    SignupPoliciesResponse_data_policies:
+      example:
+        terms:
+          url: https://openapi-generator.tech
+          version: version
+          sha256: sha256
+          text: text
+        acceptable_use:
+          url: https://openapi-generator.tech
+          version: version
+          sha256: sha256
+          text: text
+        privacy:
+          url: https://openapi-generator.tech
+          version: version
+          sha256: sha256
+          text: text
+      properties:
+        terms:
+          $ref: "#/components/schemas/SignupPolicyDocument"
+        acceptable_use:
+          $ref: "#/components/schemas/SignupPolicyDocument"
+        privacy:
+          $ref: "#/components/schemas/SignupPolicyDocument"
+      required:
+      - acceptable_use
+      - privacy
+      - terms
+      type: object
+    SignupPoliciesResponse_data:
+      example:
+        policies:
+          terms:
+            url: https://openapi-generator.tech
+            version: version
+            sha256: sha256
+            text: text
+          acceptable_use:
+            url: https://openapi-generator.tech
+            version: version
+            sha256: sha256
+            text: text
+          privacy:
+            url: https://openapi-generator.tech
+            version: version
+            sha256: sha256
+            text: text
+      properties:
+        policies:
+          $ref: "#/components/schemas/SignupPoliciesResponse_data_policies"
+      required:
+      - policies
       type: object
   securitySchemes:
     bearerAuth:

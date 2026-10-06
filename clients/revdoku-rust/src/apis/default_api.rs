@@ -247,6 +247,14 @@ pub enum GetRevdokuStatusError {
     UnknownValue(serde_json::Value),
 }
 
+/// struct for typed errors of method [`get_signup_policies`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum GetSignupPoliciesError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
 /// struct for typed errors of method [`list_account_email_domains`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -994,7 +1002,7 @@ pub async fn get_account_limits(configuration: &configuration::Configuration, ac
     }
 }
 
-/// Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+/// Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
 pub async fn get_agent_auth_capabilities(configuration: &configuration::Configuration, ) -> Result<models::ApiSuccess, Error<GetAgentAuthCapabilitiesError>> {
 
     let uri_str = format!("{}/v1/agent_auth/capabilities", configuration.base_path);
@@ -1316,6 +1324,41 @@ pub async fn get_revdoku_status(configuration: &configuration::Configuration, ac
     } else {
         let content = resp.text().await?;
         let entity: Option<GetRevdokuStatusError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+pub async fn get_signup_policies(configuration: &configuration::Configuration, ) -> Result<models::SignupPoliciesResponse, Error<GetSignupPoliciesError>> {
+
+    let uri_str = format!("{}/v1/agent_auth/policies", configuration.base_path);
+    let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::SignupPoliciesResponse`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::SignupPoliciesResponse`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<GetSignupPoliciesError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent { status, content, entity }))
     }
 }

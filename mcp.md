@@ -158,6 +158,10 @@ Receiving diagnostics and audit logs are viewed by humans in the dashboard. Tool
 
 ## Direct MCP signup
 
+Read the current Terms, service AUP and Privacy Policy as Markdown through the
+unauthenticated [API policy read](https://api.revdoku.com/v1/agent_auth/policies).
+Reading does not replace the human owner’s authorization.
+
 New users can create an account through MCP without an existing connection when
 API signup is enabled. The tools use the same verification and policy records as
 [REST signup](https://revdoku.com/api.md#direct-api-signup). Clients must support private input and

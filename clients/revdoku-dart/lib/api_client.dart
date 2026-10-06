@@ -347,6 +347,14 @@ class ApiClient {
           return SetEmailWebhookRequest.fromJson(value);
         case 'SignupChallenge':
           return SignupChallenge.fromJson(value);
+        case 'SignupPoliciesResponse':
+          return SignupPoliciesResponse.fromJson(value);
+        case 'SignupPoliciesResponseData':
+          return SignupPoliciesResponseData.fromJson(value);
+        case 'SignupPoliciesResponseDataPolicies':
+          return SignupPoliciesResponseDataPolicies.fromJson(value);
+        case 'SignupPolicyDocument':
+          return SignupPolicyDocument.fromJson(value);
         case 'StartAgentSignup202Response':
           return StartAgentSignup202Response.fromJson(value);
         case 'StartAgentSignup202ResponseData':

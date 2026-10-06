@@ -1471,6 +1471,24 @@ and hosted MCP account access use browser OAuth.
 The human operator must provide their email and authorize the acknowledgments.
 The server records the current policy versions; your client does not send a version.
 
+Read all three policy documents without website access through
+[`GET /v1/agent_auth/policies`](https://api.revdoku.com/v1/agent_auth/policies).
+This unauthenticated read returns `data.policies.terms`, `data.policies.acceptable_use`,
+and `data.policies.privacy`. It works even when signup is disabled. Discovery exposes
+this endpoint as `data.signup.policies_url`.
+
+| Document field | Meaning |
+| --- | --- |
+| `url` | Canonical public URL. |
+| `version` | Packaged policy version. |
+| `sha256` | SHA-256 of the UTF-8 Markdown text. |
+| `text` | Complete policy text in Markdown. |
+
+Reading is optional and does not record acceptance. The human owner must still
+authorize `accept_terms_and_policy: true`. A client that cannot read the documents
+must refer acceptance to its human owner. No policy version or hash is required
+in the signup request.
+
 | Field | Required | Purpose |
 | --- | --- | --- |
 | `human_operator_email` | Yes | The human owner's email, supplied by that person. Do not substitute an agent's mailbox. |

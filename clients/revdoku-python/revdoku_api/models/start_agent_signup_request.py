@@ -32,7 +32,7 @@ class StartAgentSignupRequest(BaseModel):
     username: Optional[Annotated[str, Field(min_length=1, strict=True, max_length=64)]] = Field(default=None, description="Optional prefix for the first Free mailbox. The server adds a 12-character random suffix. Omit to generate a name. Shared-domain reserved-word rules apply; errors explain the verified custom-domain option.")
     label: Optional[Annotated[str, Field(strict=True, max_length=100)]] = None
     permission_scope: Optional[StrictStr] = 'mailbox_admin'
-    accept_terms_and_policy: StrictBool = Field(description="The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing.")
+    accept_terms_and_policy: StrictBool = Field(description="The human agrees to the current Terms (https://revdoku.com/terms) and service acceptable use policy (https://revdoku.com/acceptable-use), and acknowledges the privacy notice (https://revdoku.com/privacy). This is not consent to optional processing. Read the current documents at GET /v1/agent_auth/policies without website access. Reading does not replace the human owner’s authorization.")
     additional_properties: Dict[str, Any] = {}
     __properties: ClassVar[List[str]] = ["human_operator_email", "username", "label", "permission_scope", "accept_terms_and_policy"]
 

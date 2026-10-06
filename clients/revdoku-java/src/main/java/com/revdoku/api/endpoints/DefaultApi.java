@@ -45,6 +45,7 @@ import com.revdoku.api.model.ResendAgentSignupCodeRequest;
 import com.revdoku.api.model.RotateMailboxEmailAddressRequest;
 import com.revdoku.api.model.SetEmailWebhook200Response;
 import com.revdoku.api.model.SetEmailWebhookRequest;
+import com.revdoku.api.model.SignupPoliciesResponse;
 import com.revdoku.api.model.StartAgentSignup202Response;
 import com.revdoku.api.model.StartAgentSignupRequest;
 import com.revdoku.api.model.UpdateEmail200Response;
@@ -1976,7 +1977,7 @@ public class DefaultApi {
 
   /**
    * Discover Revdoku agent authentication flows
-   * Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+   * Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
    * @return ApiSuccess
    * @throws ApiException if fails to make API call
    */
@@ -1986,7 +1987,7 @@ public class DefaultApi {
 
   /**
    * Discover Revdoku agent authentication flows
-   * Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+   * Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
    * @param headers Optional headers to include in the request
    * @return ApiSuccess
    * @throws ApiException if fails to make API call
@@ -1998,7 +1999,7 @@ public class DefaultApi {
 
   /**
    * Discover Revdoku agent authentication flows
-   * Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+   * Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
    * @return ApiResponse&lt;ApiSuccess&gt;
    * @throws ApiException if fails to make API call
    */
@@ -2008,7 +2009,7 @@ public class DefaultApi {
 
   /**
    * Discover Revdoku agent authentication flows
-   * Reports available sign-in flows and signup availability, current consent version, required human_operator_email and allowed scopes. Never creates an account.
+   * Reports available sign-in flows and signup availability, policy document URLs and policies_url for the API policy read, required human_operator_email and allowed scopes. Never creates an account.
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;ApiSuccess&gt;
    * @throws ApiException if fails to make API call
@@ -2932,6 +2933,115 @@ public class DefaultApi {
     } else {
       localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
     }
+
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Read the current signup policies
+   * Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+   * @return SignupPoliciesResponse
+   * @throws ApiException if fails to make API call
+   */
+  public SignupPoliciesResponse getSignupPolicies() throws ApiException {
+    return getSignupPolicies(null);
+  }
+
+  /**
+   * Read the current signup policies
+   * Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+   * @param headers Optional headers to include in the request
+   * @return SignupPoliciesResponse
+   * @throws ApiException if fails to make API call
+   */
+  public SignupPoliciesResponse getSignupPolicies(Map<String, String> headers) throws ApiException {
+    ApiResponse<SignupPoliciesResponse> localVarResponse = getSignupPoliciesWithHttpInfo(headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Read the current signup policies
+   * Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+   * @return ApiResponse&lt;SignupPoliciesResponse&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<SignupPoliciesResponse> getSignupPoliciesWithHttpInfo() throws ApiException {
+    return getSignupPoliciesWithHttpInfo(null);
+  }
+
+  /**
+   * Read the current signup policies
+   * Returns the packaged Terms, service acceptable use policy and Privacy Policy as Markdown, with versions, canonical URLs and SHA-256 hashes. No authentication or website access is required. Reading does not record acceptance or authorize signup. Cache-Control: no-store.
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;SignupPoliciesResponse&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<SignupPoliciesResponse> getSignupPoliciesWithHttpInfo(Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = getSignupPoliciesRequestBuilder(headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("getSignupPolicies", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<SignupPoliciesResponse>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        SignupPoliciesResponse responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<SignupPoliciesResponse>() {});
+        
+
+        return new ApiResponse<SignupPoliciesResponse>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder getSignupPoliciesRequestBuilder(Map<String, String> headers) throws ApiException {
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/agent_auth/policies";
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
 
     localVarRequestBuilder.header("Accept", "application/json");
 
