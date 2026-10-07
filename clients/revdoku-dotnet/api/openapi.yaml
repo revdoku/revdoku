@@ -8,7 +8,7 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   title: Revdoku public agent API
-  version: 2.0.0
+  version: 2.0.1
 servers:
 - description: Revdoku application API
   url: https://api.revdoku.com
