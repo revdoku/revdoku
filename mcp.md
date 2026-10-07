@@ -46,6 +46,16 @@ Select the intended account before reading or changing its contents.
 
 ## Receive and read email
 
+If the user has a task, continue it after connection.
+Otherwise, help them [choose a first email workflow](https://revdoku.com/docs.md#first-email-workflow): newsletters, receipts, or project alerts.
+Show the actual authorized address as a `mailto:` link only when receiving is ready.
+Ask the user to send an email there.
+Offer direct use of the address or [Gmail forwarding](https://revdoku.com/blog/how-to-set-up-auto-forwarding-from-gmail-to-revdoku-s-email/) for future messages.
+If address access is missing, direct the user to the dashboard or mailbox owner.
+Read a fresh relevant message and produce the chosen result.
+A Gmail verification email alone does not prove forwarding works.
+Offer recurring automation after the first result.
+
 1. Call `account_list` and choose a granted account. Include its `account_id`
    on each call; omission uses the connection default. Browser account switching
    does not change that default.

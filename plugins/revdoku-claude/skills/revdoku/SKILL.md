@@ -30,6 +30,18 @@ authorized agency account. Use the returned client ID for subsequent calls.
 
 ## Receive and read email
 
+During setup without a chosen task, offer newsletter summaries, receipt amounts, or project alerts needing attention.
+Continue explicit tasks without this detour. Reuse the selected mailbox.
+Show its authorized, receiving-ready address as a `mailto:` link.
+Ask the user to send an email there.
+Offer direct use for relevant notifications or [Gmail forwarding](https://revdoku.com/blog/how-to-set-up-auto-forwarding-from-gmail-to-revdoku-s-email/).
+If address access is missing, direct the user to the dashboard or mailbox owner.
+Guide Gmail setup without assuming Gmail access.
+Poll with a deadline for a fresh relevant message, then produce the chosen result.
+A Gmail verification message alone does not prove forwarding works.
+Offer recurring automation afterward.
+See the [first email workflow](https://revdoku.com/docs.md#first-email-workflow).
+
 `mailbox_create` accepts an optional `username` and a ready custom `domain`;
 omit the username to generate one. Creation returns a receiving-enabled `email`
 address. A taken name returns `EMAIL_ALREADY_EXISTS`; ask for another name rather
