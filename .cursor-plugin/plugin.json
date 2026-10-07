@@ -1,7 +1,7 @@
 {
   "name": "revdoku",
   "displayName": "Revdoku",
-  "version": "1.0.543",
+  "version": "1.0.544",
   "description": "Email mailboxes and shared cloud files for people and AI agents. Receive and read messages and attachments, upload selected files, and write, restore, or organize stored files. Supports mailbox archiving, permanent deletion, and agency client account creation when explicitly requested and authorized.  File storage supports reads and writes.",
   "author": {
     "name": "Revdoku"
