@@ -1,6 +1,6 @@
 [project]
 name = "revdoku_api"
-version = "2.0.0"
+version = "2.0.1"
 description = "Revdoku public agent API"
 authors = [
   {name = "Revdoku",email = "support@revdoku.com"},

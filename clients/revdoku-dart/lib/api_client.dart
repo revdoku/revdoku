@@ -144,12 +144,7 @@ class ApiClient {
     }
   }
 
-  Future<dynamic> deserializeAsync(String value, String targetType, {bool growable = false,}) async =>
-    // ignore: deprecated_member_use_from_same_package
-    deserialize(value, targetType, growable: growable);
-
-  @Deprecated('Scheduled for removal in OpenAPI Generator 6.x. Use deserializeAsync() instead.')
-  dynamic deserialize(String value, String targetType, {bool growable = false,}) {
+  Future<dynamic> deserializeAsync(String value, String targetType, {bool growable = false,}) async {
     // Remove all spaces. Necessary for regular expressions as well.
     targetType = targetType.replaceAll(' ', ''); // ignore: parameter_assignments
 
@@ -159,11 +154,7 @@ class ApiClient {
       : fromJson(json.decode(value), targetType, growable: growable);
   }
 
-  // ignore: deprecated_member_use_from_same_package
-  Future<String> serializeAsync(Object? value) async => serialize(value);
-
-  @Deprecated('Scheduled for removal in OpenAPI Generator 6.x. Use serializeAsync() instead.')
-  String serialize(Object? value) => value == null ? '' : json.encode(value);
+  Future<String> serializeAsync(Object? value) async => value == null ? '' : json.encode(value);
 
   /// Returns a native instance of an OpenAPI class matching the [specified type][targetType].
   static dynamic fromJson(dynamic value, String targetType, {bool growable = false,}) {

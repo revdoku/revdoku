@@ -130,7 +130,7 @@ For a recurring consumer, list in arrival order and persist `pagination.next_cur
 Add the Git package to your application's `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/revdoku/revdoku-swift.git", exact: "2.0.0")
+.package(url: "https://github.com/revdoku/revdoku-swift.git", exact: "2.0.1")
 ```
 
 Add `.product(name: "RevdokuAPI", package: "revdoku-swift")` to your target's dependencies. Swift Package Manager resolves the public Git tag. The CLI examples use environment variables; applications must supply keys through private configuration.

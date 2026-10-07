@@ -18,7 +18,7 @@ Requires Ruby 3.1 or newer. From the cloned package directory:
 
 ```sh
 gem build revdoku_api.gemspec
-gem install --user-install ./revdoku_api-2.0.0.gem
+gem install --user-install ./revdoku_api-2.0.1.gem
 ```
 
 ### Run an example
