@@ -13,6 +13,42 @@ Use the REST API, CLI, MCP, or dashboard to create mailboxes and read messages.
 | Skill | Local coding agents using the bundled CLI | [Skill installation](https://github.com/revdoku/revdoku#local-ai-apps) |
 | Dashboard | Reading mail, managing access, account settings, and activity logs | [Open Revdoku](https://app.revdoku.com/mailboxes) |
 
+## First email workflow
+
+Signup creates your first mailbox. Use it to receive a message and get a useful result.
+If you already have a task, start with that task.
+
+| Workflow | Email source | Example request for your connected AI |
+| --- | --- | --- |
+| Newsletters | Subscribe with your mailbox address or forward selected newsletters. | Summarize the main points of this newsletter. |
+| Receipts | Use your mailbox address for receipts or forward selected receipts. | List the purchases and amounts stated in this email. |
+| Project alerts | Use your mailbox address for notifications or forward selected alerts. | Tell me what needs attention in this alert. |
+
+1. Open your existing mailbox in the [dashboard](https://app.revdoku.com/mailboxes).
+2. Wait until its receiving address is ready.
+3. Send an email to that address from your usual email app.
+   Select the address or **Compose test email** to open a draft.
+   You choose when to send it. You can also copy the address into your email app.
+4. For future messages, use this address with the source you chose above.
+   Alternatively, follow [Set up Gmail forwarding](https://revdoku.com/blog/how-to-set-up-auto-forwarding-from-gmail-to-revdoku-s-email/).
+   Choose messages relevant to your workflow.
+5. After setup, send a fresh relevant message through that source.
+   A Gmail verification email alone does not prove that forwarding works.
+6. Read the message in Revdoku, or ask your connected AI for the result you chose.
+   With the API, [list and read the message](https://revdoku.com/api.md#2-list-messages).
+
+AI agents: show the actual authorized address as a `mailto:` link with the full address as its text.
+Encode the address in the URL. Ask the user to send an email there.
+If address access is unavailable, direct the user to the dashboard or mailbox owner.
+Do not guess an address or suggest delivery while receiving is unavailable.
+Guide Gmail setup without assuming that Revdoku access grants Gmail access.
+When waiting for a message, use a delay and a deadline.
+If the message does not arrive, report that delivery is still unconfirmed.
+
+After the first result, you can add [recurring processing](#new-email-notifications).
+Automatic processing needs a running application or a scheduled agent.
+Connecting MCP alone does not make an idle AI chat monitor your mailbox.
+
 ## API quick start
 
 1. [Create an account](https://app.revdoku.com/users/sign_up) or sign in. Browser signup creates your first mailbox automatically.
@@ -132,7 +168,6 @@ files. Received email is stored as files inside `_email/`.
 | --- | --- |
 | `message.eml` | Original message, including its MIME parts. |
 | `message.json` | Decoded headers, body text and attachment metadata. |
-| `message.md` | Readable message with metadata. |
 | `attachments/` | Saved attachments. |
 
 New deliveries are organized under `_email/inbox/`. Follow returned file paths;

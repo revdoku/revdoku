@@ -9,6 +9,7 @@ and downloads attachments. Mailboxes also support uploaded files and version his
 | Task | Section |
 | --- | --- |
 | Make your first API request | [Quick start](#email-api-quick-start) |
+| Receive your first useful email | [First email workflow](https://revdoku.com/docs.md#first-email-workflow) |
 | Choose an SDK, n8n or Zapier | [Package directory and capability comparison](https://github.com/revdoku/revdoku/blob/main/guides/api-packages.md) |
 | Build customer mailboxes in your application | [SaaS mailbox guide](https://github.com/revdoku/revdoku/blob/main/guides/saas-mailboxes.md) |
 | Understand JSON and errors | [Response format](#response-format) |
@@ -46,6 +47,19 @@ Requests use the key’s default account. See [Accounts](#accounts) to select an
 | Authentication | `Authorization: Bearer YOUR_API_KEY` |
 | JSON requests | `Content-Type: application/json` |
 | Account | Credential default; pass `account_id` to select another granted account. |
+
+### Receive your first message
+
+1. Open the chosen mailbox in the [dashboard](https://app.revdoku.com/mailboxes).
+2. When receiving is ready, select its address or **Compose test email** to open a draft in your email app.
+3. Send the message to the complete address shown.
+4. For future messages, use the address for receipts, newsletters, or app notifications.
+   You can also [set up Gmail forwarding](https://revdoku.com/blog/how-to-set-up-auto-forwarding-from-gmail-to-revdoku-s-email/).
+5. Retrieve a fresh message with the requests below.
+
+Address discovery through `GET /v1/mailboxes/:mailbox_id/email` requires write access.
+Read-only clients can use an address from the dashboard or mailbox owner.
+See the [first email workflow](https://revdoku.com/docs.md#first-email-workflow) for example tasks and forwarding verification.
 
 <a id="2-list-messages"></a>
 
@@ -338,7 +352,7 @@ Authorization: Bearer YOUR_API_KEY
     "limits": {
       "max_mailboxes": 3,
       "max_file_size_bytes": 10485760,
-      "max_received_emails_per_month": 300
+      "max_received_emails_per_month": 3000
     }
   }
 }

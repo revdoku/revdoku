@@ -18,7 +18,7 @@ CLIENT_VERSION_FILE="${REVDOKU_CLIENT_VERSION_FILE:-${REVDOKU_CONFIG_DIR}/client
 UPDATE_CHECK_STAMP="${REVDOKU_CONFIG_DIR}/.update_check"
 
 installed_client_version() {
-  printf '%s' '1.0.541'
+  printf '%s' '1.0.543'
 }
 
 BASE_URL="${REVDOKU_URL:-$DEFAULT_URL}"

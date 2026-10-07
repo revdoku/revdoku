@@ -52,7 +52,7 @@ readiness, and activity. Use `revdoku emails --mailbox-id bkt_...` to list mail 
 
 Receive invoices, documents, project updates, or authorized service verification
 messages. Each accepted email is saved as original `message.eml`, decoded
-`message.json`, readable `message.md`, and attachment files. Authorized people and agents can read these
+`message.json` and attachment files. Authorized people and agents can read these
 through the email API and tools; file tools also expose the stored representations.
 
 Use `mailbox_email_list` or the CLI `emails` command with a saved `next_cursor`
