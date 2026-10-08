@@ -7,12 +7,7 @@
   "pricing": "https://app.revdoku.com/pricing",
   "api": {
     "catalog": "https://revdoku.com/.well-known/api-catalog",
-    "openapi": "https://revdoku.com/openapi.json",
-    "signup": {
-      "documentation": "https://revdoku.com/api.md#direct-api-signup",
-      "endpoint": "https://api.revdoku.com/v1/agent/signups",
-      "requires": "Human owner authorization and private email verification; creates the account, first mailbox, and API key."
-    }
+    "openapi": "https://revdoku.com/openapi.json"
   },
   "mcp": {
     "endpoint": "https://mcp.revdoku.com",
@@ -23,13 +18,7 @@
       "account_creation_in_chat": false,
       "signup_url": "https://app.revdoku.com/users/sign_up"
     },
-    "authentication_required": false,
-    "signup": {
-      "tools": ["revdoku_signup", "revdoku_signup_verify", "revdoku_signup_resend"],
-      "required": ["email", "accept_terms_and_policy"],
-      "documentation": "https://revdoku.com/mcp.md#direct-mcp-signup",
-      "private_verification_required": true
-    }
+    "authentication_required": true
   },
   "skill": {
     "npm": "npx skills add revdoku/revdoku --skill revdoku -g",
@@ -43,8 +32,7 @@
     "Store documents, data, and source files in private cloud mailboxes",
     "Share mailbox files with authorized people and AI connections",
     "Read, write, and append shared files; coordinate edits with locks and revision checks",
-    "Inspect versions and change history; restore earlier files",
-    "Sign up through REST or MCP with human authorization and private email verification, or use browser signup"
+    "Inspect versions and change history; restore earlier files"
   ],
   "discovery": {
     "agent_card": "https://revdoku.com/.well-known/agent-card.json",

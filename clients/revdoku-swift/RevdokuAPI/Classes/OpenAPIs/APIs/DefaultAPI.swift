@@ -1628,50 +1628,6 @@ open class DefaultAPI {
     }
 
     /**
-     Resend the human operator’s verification code
-     
-     - parameter resendAgentSignupCodeRequest: (body)  
-     - parameter apiResponseQueue: The queue on which api response is dispatched.
-     - parameter completion: completion handler to receive the data and the error objects
-     */
-    @discardableResult
-    open class func resendAgentSignupCode(resendAgentSignupCodeRequest: ResendAgentSignupCodeRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: StartAgentSignup202Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return resendAgentSignupCodeWithRequestBuilder(resendAgentSignupCodeRequest: resendAgentSignupCodeRequest).execute(apiResponseQueue) { result in
-            switch result {
-            case let .success(response):
-                completion(response.body, nil)
-            case let .failure(error):
-                completion(nil, error)
-            }
-        }
-    }
-
-    /**
-     Resend the human operator’s verification code
-     - POST /v1/agent/signups/resend
-     - Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
-     - parameter resendAgentSignupCodeRequest: (body)  
-     - returns: RequestBuilder<StartAgentSignup202Response> 
-     */
-    open class func resendAgentSignupCodeWithRequestBuilder(resendAgentSignupCodeRequest: ResendAgentSignupCodeRequest) -> RequestBuilder<StartAgentSignup202Response> {
-        let localVariablePath = "/v1/agent/signups/resend"
-        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
-        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: resendAgentSignupCodeRequest)
-
-        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
-
-        let localVariableNillableHeaders: [String: Any?] = [
-            "Content-Type": "application/json",
-        ]
-
-        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
-
-        let localVariableRequestBuilder: RequestBuilder<StartAgentSignup202Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
-
-        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: false)
-    }
-
-    /**
      Replace a mailbox email address after confirmation
      
      - parameter id: (path) Authorized mailbox prefix ID 
@@ -1824,50 +1780,6 @@ open class DefaultAPI {
         let localVariableRequestBuilder: RequestBuilder<SetEmailWebhook200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "PUT", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
-    }
-
-    /**
-     Start signup
-     
-     - parameter startAgentSignupRequest: (body)  
-     - parameter apiResponseQueue: The queue on which api response is dispatched.
-     - parameter completion: completion handler to receive the data and the error objects
-     */
-    @discardableResult
-    open class func startAgentSignup(startAgentSignupRequest: StartAgentSignupRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: StartAgentSignup202Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return startAgentSignupWithRequestBuilder(startAgentSignupRequest: startAgentSignupRequest).execute(apiResponseQueue) { result in
-            switch result {
-            case let .success(response):
-                completion(response.body, nil)
-            case let .failure(error):
-                completion(nil, error)
-            }
-        }
-    }
-
-    /**
-     Start signup
-     - POST /v1/agent/signups
-     - Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
-     - parameter startAgentSignupRequest: (body)  
-     - returns: RequestBuilder<StartAgentSignup202Response> 
-     */
-    open class func startAgentSignupWithRequestBuilder(startAgentSignupRequest: StartAgentSignupRequest) -> RequestBuilder<StartAgentSignup202Response> {
-        let localVariablePath = "/v1/agent/signups"
-        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
-        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: startAgentSignupRequest)
-
-        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
-
-        let localVariableNillableHeaders: [String: Any?] = [
-            "Content-Type": "application/json",
-        ]
-
-        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
-
-        let localVariableRequestBuilder: RequestBuilder<StartAgentSignup202Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
-
-        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: false)
     }
 
     /**
@@ -2049,49 +1961,5 @@ open class DefaultAPI {
         let localVariableRequestBuilder: RequestBuilder<EmailDomainListResponse>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
-    }
-
-    /**
-     Verify the human’s code and create the first mailbox
-     
-     - parameter verifyAgentSignupRequest: (body)  
-     - parameter apiResponseQueue: The queue on which api response is dispatched.
-     - parameter completion: completion handler to receive the data and the error objects
-     */
-    @discardableResult
-    open class func verifyAgentSignup(verifyAgentSignupRequest: VerifyAgentSignupRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: SignupResponse?, _ error: Error?) -> Void)) -> RequestTask {
-        return verifyAgentSignupWithRequestBuilder(verifyAgentSignupRequest: verifyAgentSignupRequest).execute(apiResponseQueue) { result in
-            switch result {
-            case let .success(response):
-                completion(response.body, nil)
-            case let .failure(error):
-                completion(nil, error)
-            }
-        }
-    }
-
-    /**
-     Verify the human’s code and create the first mailbox
-     - POST /v1/agent/signups/verify
-     - Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
-     - parameter verifyAgentSignupRequest: (body)  
-     - returns: RequestBuilder<SignupResponse> 
-     */
-    open class func verifyAgentSignupWithRequestBuilder(verifyAgentSignupRequest: VerifyAgentSignupRequest) -> RequestBuilder<SignupResponse> {
-        let localVariablePath = "/v1/agent/signups/verify"
-        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
-        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: verifyAgentSignupRequest)
-
-        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
-
-        let localVariableNillableHeaders: [String: Any?] = [
-            "Content-Type": "application/json",
-        ]
-
-        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
-
-        let localVariableRequestBuilder: RequestBuilder<SignupResponse>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
-
-        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: false)
     }
 }

@@ -2,8 +2,6 @@ import { createHash } from 'node:crypto';
 import { DefaultApi, ListEmailsRequest, ListMailboxesRequest, ListMailboxFilesRequest,
   GetEmailRequest, GetEmailAttachmentDownloadUrlRequest } from './apis/DefaultApi';
 import { Configuration, ResponseError, RequestOpts, InitOverrideFunction } from './runtime';
-import { StartAgentSignupRequest } from './models/StartAgentSignupRequest';
-import { VerifyAgentSignupRequest } from './models/VerifyAgentSignupRequest';
 import { MailboxCreateOptions } from './models/MailboxCreateOptions';
 import { SavedFileResponse } from './models/SavedFileResponse';
 
@@ -76,14 +74,6 @@ export class Revdoku {
 
   private account<T extends { accountId?: string }>(input: T): T {
     return { ...input, accountId: input.accountId ?? this.accountId };
-  }
-
-  signup(input: StartAgentSignupRequest, options: RequestOptions = {}) {
-    return this.api.startAgentSignup({ startAgentSignupRequest: input }, options);
-  }
-
-  verifySignup(input: VerifyAgentSignupRequest, options: RequestOptions = {}) {
-    return this.api.verifyAgentSignup({ verifyAgentSignupRequest: input }, options);
   }
 
   listMailboxes(input: ListMailboxesRequest = {}, options: RequestOptions = {}) {

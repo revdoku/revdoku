@@ -37,7 +37,7 @@ server-side; reject another customer's mailbox ID.
 Use a separate Revdoku account when ownership, membership, administration or the
 account encryption boundary must differ. Eligible managed accounts share
 billing-group capacity while retaining separate files and memberships.
-[Direct signup](../api.md#direct-api-signup) creates a new owner account.
+[Browser signup](https://app.revdoku.com/users/sign_up) creates a new owner account.
 
 | Task | Credential needed |
 | --- | --- |
@@ -49,7 +49,7 @@ billing-group capacity while retaining separate files and memberships.
 
 Use separate provisioning and reading credentials. Selected-mailbox access does
 not permit creating mailboxes. A normal API key consumes `max_api_keys`; an
-agent-labelled OAuth/device or direct-signup connection consumes
+agent-labelled OAuth/device connection consumes
 `max_agent_connections`, even when its bearer token calls REST. Human memberships
 have their own allowance.
 

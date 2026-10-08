@@ -125,7 +125,6 @@ part 'model/prepare_file_upload_request.dart';
 part 'model/prepared_file_upload.dart';
 part 'model/prepared_file_upload_response.dart';
 part 'model/remove_account_email_domain_request.dart';
-part 'model/resend_agent_signup_code_request.dart';
 part 'model/rotate_mailbox_email_address_request.dart';
 part 'model/save_uploaded_file_request.dart';
 part 'model/saved_file.dart';
@@ -134,15 +133,6 @@ part 'model/set_email_webhook200_response.dart';
 part 'model/set_email_webhook200_response_data.dart';
 part 'model/set_email_webhook200_response_data_webhook.dart';
 part 'model/set_email_webhook_request.dart';
-part 'model/signup_account.dart';
-part 'model/signup_challenge.dart';
-part 'model/signup_mailbox.dart';
-part 'model/signup_response.dart';
-part 'model/signup_result.dart';
-part 'model/signup_status.dart';
-part 'model/start_agent_signup202_response.dart';
-part 'model/start_agent_signup202_response_data.dart';
-part 'model/start_agent_signup_request.dart';
 part 'model/storage_upload.dart';
 part 'model/update_email200_response.dart';
 part 'model/update_email200_response_data.dart';
@@ -153,7 +143,6 @@ part 'model/update_mailbox_email_allowlist_request.dart';
 part 'model/update_mailbox_email_allowlist_request_sender_allowlist.dart';
 part 'model/upload_blob.dart';
 part 'model/verify_account_email_domain_request.dart';
-part 'model/verify_agent_signup_request.dart';
 
 
 /// An [ApiClient] instance that uses the default values obtained from

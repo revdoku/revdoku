@@ -1,7 +1,7 @@
 =begin
 #Revdoku public agent API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Direct API signup requires verification of the human operator email. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -113,7 +113,6 @@ require 'revdoku_api/models/prepare_file_upload_request'
 require 'revdoku_api/models/prepared_file_upload'
 require 'revdoku_api/models/prepared_file_upload_response'
 require 'revdoku_api/models/remove_account_email_domain_request'
-require 'revdoku_api/models/resend_agent_signup_code_request'
 require 'revdoku_api/models/rotate_mailbox_email_address_request'
 require 'revdoku_api/models/save_uploaded_file_request'
 require 'revdoku_api/models/saved_file'
@@ -122,15 +121,6 @@ require 'revdoku_api/models/set_email_webhook200_response'
 require 'revdoku_api/models/set_email_webhook200_response_data'
 require 'revdoku_api/models/set_email_webhook200_response_data_webhook'
 require 'revdoku_api/models/set_email_webhook_request'
-require 'revdoku_api/models/signup_account'
-require 'revdoku_api/models/signup_challenge'
-require 'revdoku_api/models/signup_mailbox'
-require 'revdoku_api/models/signup_response'
-require 'revdoku_api/models/signup_result'
-require 'revdoku_api/models/signup_status'
-require 'revdoku_api/models/start_agent_signup202_response'
-require 'revdoku_api/models/start_agent_signup202_response_data'
-require 'revdoku_api/models/start_agent_signup_request'
 require 'revdoku_api/models/storage_upload'
 require 'revdoku_api/models/update_email200_response'
 require 'revdoku_api/models/update_email200_response_data'
@@ -141,7 +131,6 @@ require 'revdoku_api/models/update_mailbox_email_allowlist_request'
 require 'revdoku_api/models/update_mailbox_email_allowlist_request_sender_allowlist'
 require 'revdoku_api/models/upload_blob'
 require 'revdoku_api/models/verify_account_email_domain_request'
-require 'revdoku_api/models/verify_agent_signup_request'
 
 # APIs
 require 'revdoku_api/api/default_api'

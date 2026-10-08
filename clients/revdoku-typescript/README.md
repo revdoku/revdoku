@@ -33,25 +33,8 @@ Keep API keys on your backend. Helper methods use the default account unless you
 or a request. When calling the advanced `api` object, pass `accountId` explicitly
 if you need another account.
 
-## Signup
-
-```js
-const signup = new Revdoku();
-const challenge = await signup.signup({
-  email: 'person@example.com', acceptTermsAndPolicy: true,
-});
-// Get the code from that email address.
-const result = await signup.verifySignup({
-  signupToken: challenge.data.signup.signupToken, code: '123456',
-});
-// Store result.data.apiKey securely. First verification returns it only once.
-```
-
-Signup creates the starter mailbox automatically. Repeated verification returns
-completion information and a recovery URL, without another API key. By signing up,
-you accept the [Terms](https://revdoku.com/terms) and
-[Acceptable Use Policy](https://revdoku.com/acceptable-use), and acknowledge the
-[Privacy Policy](https://revdoku.com/privacy).
+Create your account at https://app.revdoku.com/users/sign_up in the browser.
+Create an API key in Account → Access.
 
 ## Email and files
 

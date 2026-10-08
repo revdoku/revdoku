@@ -4,13 +4,13 @@ REST endpoints use `https://api.revdoku.com`; OAuth endpoints use
 `https://app.revdoku.com`.
 
 Most REST clients use an API key from **Account → Access**. Send it as
-`Authorization: Bearer YOUR_API_KEY`. For a new account, use [direct signup](https://revdoku.com/api.md#direct-api-signup).
+`Authorization: Bearer YOUR_API_KEY`. For a new account, use [browser signup](https://app.revdoku.com/users/sign_up).
 Hosted MCP setup is documented in the [MCP guide](https://revdoku.com/mcp.md).
 
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/v1/agent_auth/status` | API-key status alias for agents; same connection payload as `/v1/status`. |
-| `POST` | `/v1/agent_auth/request_code` | Request an email verification code without revealing whether the email has a Revdoku account. Existing-user sign-in only; use browser signup or the separate API signup flow for a new identity. |
+| `POST` | `/v1/agent_auth/request_code` | Request an email verification code without revealing whether the email has a Revdoku account. Existing-user sign-in only; use browser signup for a new identity. |
 | `POST` | `/v1/agent_auth/verify_code` | Verify the email code and create an API key when the code is valid. |
 | `POST` | `/v1/agent_auth/browser_login_link` | Return a stable dashboard URL (legacy endpoint name; normal sign-in is required). |
 | `POST` | `/oauth/device_authorization` | Start OAuth device authorization for local CLI/agent clients. |
@@ -101,8 +101,7 @@ provisioning new mailboxes requires account-wide `mailbox_admin`.
 
 OAuth/device requests and dashboard one-time connection prompts default to
 `mailbox_read` when permission is omitted. Legacy email-code login and raw API-key creation default to `mailbox_admin`;
-request an explicit permission for those flows. Direct signup creates an account-wide
-`mailbox_admin` key. Invalid values are rejected. Account → Access defaults
+request an explicit permission for those flows. Invalid values are rejected. Account → Access defaults
 new keys to selected mailboxes and read permission.
 
 ## POST /v1/agent_auth/request_code

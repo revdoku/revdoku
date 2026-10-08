@@ -11,11 +11,6 @@
       ],
       "service-doc": [
         {
-          "href": "https://revdoku.com/api.md#direct-api-signup",
-          "type": "text/markdown",
-          "title": "Sign up through the API: owner authorization, email verification, first mailbox and API key"
-        },
-        {
           "href": "https://revdoku.com/docs",
           "type": "text/html",
           "title": "Revdoku documentation"

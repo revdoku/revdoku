@@ -7,8 +7,8 @@
   "mcp_url": "https://mcp.revdoku.com",
   "supports_a2a_rpc": false,
   "authentication": {
-    "account_tools": "OAuth 2.0 sign-in for existing accounts",
-    "signup": "Public MCP signup tools require email, accept_terms_and_policy=true and private email verification; see https://revdoku.com/mcp.md#direct-mcp-signup"
+    "connection": "OAuth 2.0 browser sign-in is required before connecting.",
+    "signup": "Create new accounts at https://app.revdoku.com/users/sign_up in the browser."
   },
   "skills": [
     {

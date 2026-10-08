@@ -1,7 +1,7 @@
 =begin
 #Revdoku public agent API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Direct API signup requires verification of the human operator email. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -2020,74 +2020,6 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Resend the human operator’s verification code
-    # Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
-    # @param resend_agent_signup_code_request [ResendAgentSignupCodeRequest] 
-    # @param [Hash] opts the optional parameters
-    # @return [StartAgentSignup202Response]
-    def resend_agent_signup_code(resend_agent_signup_code_request, opts = {})
-      data, _status_code, _headers = resend_agent_signup_code_with_http_info(resend_agent_signup_code_request, opts)
-      data
-    end
-
-    # Resend the human operator’s verification code
-    # Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
-    # @param resend_agent_signup_code_request [ResendAgentSignupCodeRequest] 
-    # @param [Hash] opts the optional parameters
-    # @return [Array<(StartAgentSignup202Response, Integer, Hash)>] StartAgentSignup202Response data, response status code and response headers
-    def resend_agent_signup_code_with_http_info(resend_agent_signup_code_request, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.resend_agent_signup_code ...'
-      end
-      # verify the required parameter 'resend_agent_signup_code_request' is set
-      if @api_client.config.client_side_validation && resend_agent_signup_code_request.nil?
-        fail ArgumentError, "Missing the required parameter 'resend_agent_signup_code_request' when calling DefaultApi.resend_agent_signup_code"
-      end
-      # resource path
-      local_var_path = '/v1/agent/signups/resend'
-
-      # query parameters
-      query_params = opts[:query_params] || {}
-
-      # header parameters
-      header_params = opts[:header_params] || {}
-      # HTTP header 'Accept' (if needed)
-      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
-      # HTTP header 'Content-Type'
-      content_type = @api_client.select_header_content_type(['application/json'])
-      if !content_type.nil?
-          header_params['Content-Type'] = content_type
-      end
-
-      # form parameters
-      form_params = opts[:form_params] || {}
-
-      # http body (model)
-      post_body = opts[:debug_body] || @api_client.object_to_http_body(resend_agent_signup_code_request)
-
-      # return_type
-      return_type = opts[:debug_return_type] || 'StartAgentSignup202Response'
-
-      # auth_names
-      auth_names = opts[:debug_auth_names] || []
-
-      new_options = opts.merge(
-        :operation => :"DefaultApi.resend_agent_signup_code",
-        :header_params => header_params,
-        :query_params => query_params,
-        :form_params => form_params,
-        :body => post_body,
-        :auth_names => auth_names,
-        :return_type => return_type
-      )
-
-      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#resend_agent_signup_code\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
-      return data, status_code, headers
-    end
-
     # Replace a mailbox email address after confirmation
     # Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
     # @param id [String] Authorized mailbox prefix ID
@@ -2304,74 +2236,6 @@ module RevdokuApi
       data, status_code, headers = @api_client.call_api(:PUT, local_var_path, new_options)
       if @api_client.config.debugging
         @api_client.config.logger.debug "API called: DefaultApi#set_email_webhook\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
-      return data, status_code, headers
-    end
-
-    # Start signup
-    # Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
-    # @param start_agent_signup_request [StartAgentSignupRequest] 
-    # @param [Hash] opts the optional parameters
-    # @return [StartAgentSignup202Response]
-    def start_agent_signup(start_agent_signup_request, opts = {})
-      data, _status_code, _headers = start_agent_signup_with_http_info(start_agent_signup_request, opts)
-      data
-    end
-
-    # Start signup
-    # Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
-    # @param start_agent_signup_request [StartAgentSignupRequest] 
-    # @param [Hash] opts the optional parameters
-    # @return [Array<(StartAgentSignup202Response, Integer, Hash)>] StartAgentSignup202Response data, response status code and response headers
-    def start_agent_signup_with_http_info(start_agent_signup_request, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.start_agent_signup ...'
-      end
-      # verify the required parameter 'start_agent_signup_request' is set
-      if @api_client.config.client_side_validation && start_agent_signup_request.nil?
-        fail ArgumentError, "Missing the required parameter 'start_agent_signup_request' when calling DefaultApi.start_agent_signup"
-      end
-      # resource path
-      local_var_path = '/v1/agent/signups'
-
-      # query parameters
-      query_params = opts[:query_params] || {}
-
-      # header parameters
-      header_params = opts[:header_params] || {}
-      # HTTP header 'Accept' (if needed)
-      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
-      # HTTP header 'Content-Type'
-      content_type = @api_client.select_header_content_type(['application/json'])
-      if !content_type.nil?
-          header_params['Content-Type'] = content_type
-      end
-
-      # form parameters
-      form_params = opts[:form_params] || {}
-
-      # http body (model)
-      post_body = opts[:debug_body] || @api_client.object_to_http_body(start_agent_signup_request)
-
-      # return_type
-      return_type = opts[:debug_return_type] || 'StartAgentSignup202Response'
-
-      # auth_names
-      auth_names = opts[:debug_auth_names] || []
-
-      new_options = opts.merge(
-        :operation => :"DefaultApi.start_agent_signup",
-        :header_params => header_params,
-        :query_params => query_params,
-        :form_params => form_params,
-        :body => post_body,
-        :auth_names => auth_names,
-        :return_type => return_type
-      )
-
-      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#start_agent_signup\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end
@@ -2612,74 +2476,6 @@ module RevdokuApi
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
       if @api_client.config.debugging
         @api_client.config.logger.debug "API called: DefaultApi#verify_account_email_domain\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
-      return data, status_code, headers
-    end
-
-    # Verify the human’s code and create the first mailbox
-    # Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
-    # @param verify_agent_signup_request [VerifyAgentSignupRequest] 
-    # @param [Hash] opts the optional parameters
-    # @return [SignupResponse]
-    def verify_agent_signup(verify_agent_signup_request, opts = {})
-      data, _status_code, _headers = verify_agent_signup_with_http_info(verify_agent_signup_request, opts)
-      data
-    end
-
-    # Verify the human’s code and create the first mailbox
-    # Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
-    # @param verify_agent_signup_request [VerifyAgentSignupRequest] 
-    # @param [Hash] opts the optional parameters
-    # @return [Array<(SignupResponse, Integer, Hash)>] SignupResponse data, response status code and response headers
-    def verify_agent_signup_with_http_info(verify_agent_signup_request, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.verify_agent_signup ...'
-      end
-      # verify the required parameter 'verify_agent_signup_request' is set
-      if @api_client.config.client_side_validation && verify_agent_signup_request.nil?
-        fail ArgumentError, "Missing the required parameter 'verify_agent_signup_request' when calling DefaultApi.verify_agent_signup"
-      end
-      # resource path
-      local_var_path = '/v1/agent/signups/verify'
-
-      # query parameters
-      query_params = opts[:query_params] || {}
-
-      # header parameters
-      header_params = opts[:header_params] || {}
-      # HTTP header 'Accept' (if needed)
-      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
-      # HTTP header 'Content-Type'
-      content_type = @api_client.select_header_content_type(['application/json'])
-      if !content_type.nil?
-          header_params['Content-Type'] = content_type
-      end
-
-      # form parameters
-      form_params = opts[:form_params] || {}
-
-      # http body (model)
-      post_body = opts[:debug_body] || @api_client.object_to_http_body(verify_agent_signup_request)
-
-      # return_type
-      return_type = opts[:debug_return_type] || 'SignupResponse'
-
-      # auth_names
-      auth_names = opts[:debug_auth_names] || []
-
-      new_options = opts.merge(
-        :operation => :"DefaultApi.verify_agent_signup",
-        :header_params => header_params,
-        :query_params => query_params,
-        :form_params => form_params,
-        :body => post_body,
-        :auth_names => auth_names,
-        :return_type => return_type
-      )
-
-      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#verify_agent_signup\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end

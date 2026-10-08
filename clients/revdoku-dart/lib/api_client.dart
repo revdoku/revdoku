@@ -364,8 +364,6 @@ class ApiClient {
           return PreparedFileUploadResponse.fromJson(value);
         case 'RemoveAccountEmailDomainRequest':
           return RemoveAccountEmailDomainRequest.fromJson(value);
-        case 'ResendAgentSignupCodeRequest':
-          return ResendAgentSignupCodeRequest.fromJson(value);
         case 'RotateMailboxEmailAddressRequest':
           return RotateMailboxEmailAddressRequest.fromJson(value);
         case 'SaveUploadedFileRequest':
@@ -382,24 +380,6 @@ class ApiClient {
           return SetEmailWebhook200ResponseDataWebhook.fromJson(value);
         case 'SetEmailWebhookRequest':
           return SetEmailWebhookRequest.fromJson(value);
-        case 'SignupAccount':
-          return SignupAccount.fromJson(value);
-        case 'SignupChallenge':
-          return SignupChallenge.fromJson(value);
-        case 'SignupMailbox':
-          return SignupMailbox.fromJson(value);
-        case 'SignupResponse':
-          return SignupResponse.fromJson(value);
-        case 'SignupResult':
-          return SignupResult.fromJson(value);
-        case 'SignupStatus':
-          return SignupStatus.fromJson(value);
-        case 'StartAgentSignup202Response':
-          return StartAgentSignup202Response.fromJson(value);
-        case 'StartAgentSignup202ResponseData':
-          return StartAgentSignup202ResponseData.fromJson(value);
-        case 'StartAgentSignupRequest':
-          return StartAgentSignupRequest.fromJson(value);
         case 'StorageUpload':
           return StorageUpload.fromJson(value);
         case 'UpdateEmail200Response':
@@ -420,8 +400,6 @@ class ApiClient {
           return UploadBlob.fromJson(value);
         case 'VerifyAccountEmailDomainRequest':
           return VerifyAccountEmailDomainRequest.fromJson(value);
-        case 'VerifyAgentSignupRequest':
-          return VerifyAgentSignupRequest.fromJson(value);
         default:
           dynamic match;
           if (value is List && (match = _regList.firstMatch(targetType)?.group(1)) != null) {

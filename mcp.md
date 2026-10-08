@@ -16,13 +16,19 @@ free; see [pricing](https://app.revdoku.com/pricing).
 The desktop app, Codex CLI and IDE extension share MCP configuration on the same
 Codex host. See the [official OpenAI instructions](https://learn.chatgpt.com/docs/extend/mcp#configure-in-the-chatgpt-desktop-app).
 
-### Claude Desktop
+### Claude web / Desktop
 
 1. Open **Customize → Connectors → + Add → Add custom connector**. Organization
    owners may instead see **Add → Custom → Web**.
 2. Name it Revdoku, enter `https://mcp.revdoku.com`, and continue through discovery.
-3. Choose **Sign in now** and **Register automatically** for the OAuth client.
+3. Choose **Sign in now** and **Use Claude’s published identity** for the OAuth client.
 4. Add the connector, connect, then complete Revdoku sign-in and access selection.
+
+If Claude detects **No sign-in**, change it to **Sign in now**. Revdoku requires an authorized connection.
+
+Leave manual client ID and secret fields empty. **Register automatically** also works.
+If a saved connector fails, open Revdoku **Account → Access → Reconnect Claude**.
+Remove the connector in Claude before you add it again.
 
 See the [official Claude instructions](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp).
 
@@ -165,46 +171,6 @@ revdoku upload ./approved.csv --mailbox-id bkt_... --reason "Store the approved 
 ```
 
 Receiving diagnostics and audit logs are viewed by humans in the dashboard. Tools expose current receiving readiness and errors. No sending, drafts, attachment extraction or analysis operations are provided.
-
-## Direct MCP signup
-
-The starter mailbox address is generated automatically from the account email.
-
-New users can create an account through MCP without an existing connection when
-API signup is enabled. The tools use the same verification and policy records as
-[REST signup](https://revdoku.com/api.md#direct-api-signup). Clients must support private input and
-storage for verification codes, signup tokens and API keys; otherwise use
-[browser signup](https://app.revdoku.com/users/sign_up).
-
-| Tool | Required arguments | Result |
-| --- | --- | --- |
-| `revdoku_signup` | `email`, `accept_terms_and_policy: true` | Private `signup_token`, `expires_in`, `resend_after`; sends an email code. |
-| `revdoku_signup_verify` | `signup_token`, `code` | Creates the account, first mailbox and scoped API key after email proof. |
-| `revdoku_signup_resend` | `signup_token` | Resends after the cooldown; retains the original expiry. |
-
-| Signup field | Meaning |
-| --- | --- |
-| `email` | Email supplied by the human owner. Never substitute an agent mailbox. |
-| `accept_terms_and_policy` | Must be boolean `true`, authorized by the human: agreement to the [Terms](https://revdoku.com/terms) and [AUP](https://revdoku.com/acceptable-use), and acknowledgment of the [privacy notice](https://revdoku.com/privacy). This is not consent to optional processing. |
-
-1. Call `revdoku_signup` with the human's authorization:
-
-   ```json
-   {"email":"owner@customer.example","accept_terms_and_policy":true}
-   ```
-
-2. Collect the emailed code through private application input and call
-   `revdoku_signup_verify` with that code and the returned token. No account,
-   mailbox or key exists before verification succeeds. Never put these secrets
-   in ordinary chat, URLs or logs.
-3. Save the returned API key privately; it is returned only once. It authorizes
-   REST requests. Complete OAuth to use hosted MCP account tools. The local MCP
-   shim returns the key without replacing any existing connection.
-
-Send one signup tool call per request, with an uncompressed JSON envelope of at
-most 8 KiB. Limits are shared with REST signup. Do not automatically retry an
-uncertain signup or verification response. Use normal sign-in for existing
-accounts. Signup does not bypass sign-in, 2FA or account restrictions.
 
 ## HIPAA and high-security accounts
 
