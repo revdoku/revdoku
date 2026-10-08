@@ -69,8 +69,7 @@ Use returned email and attachment IDs for message operations; use paths for file
 `mailbox` reports the receiving address, readiness, and message activity. Revdoku
 receives email and attachments.
 
-CLI signup and sign-in use browser OAuth. Separate [direct API signup](../api.md#direct-api-signup)
-requires the human owner’s `email` and private OTP entry when enabled.
+Create accounts at https://app.revdoku.com/users/sign_up. CLI sign-in uses browser OAuth.
 
 For automation, set `REVDOKU_API_KEY` through your secret manager or environment.
 Use `--account-id acct_...` when selecting another authorized account. Credentials

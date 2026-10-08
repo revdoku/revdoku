@@ -1,7 +1,7 @@
 /*
  * Revdoku public agent API
  *
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Direct API signup requires verification of the human operator email. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -321,21 +321,6 @@ pub enum RemoveAccountEmailDomainError {
     UnknownValue(serde_json::Value),
 }
 
-/// struct for typed errors of method [`resend_agent_signup_code`]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum ResendAgentSignupCodeError {
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status409(models::ApiError),
-    Status413(models::ApiError),
-    Status415(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
-    Status503(models::ApiError),
-    UnknownValue(serde_json::Value),
-}
-
 /// struct for typed errors of method [`rotate_mailbox_email_address`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -368,21 +353,6 @@ pub enum SetEmailWebhookError {
     Status422(models::ApiError),
     Status429(models::ApiError),
     DefaultResponse(models::ApiError),
-    UnknownValue(serde_json::Value),
-}
-
-/// struct for typed errors of method [`start_agent_signup`]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum StartAgentSignupError {
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status409(models::ApiError),
-    Status413(models::ApiError),
-    Status415(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
-    Status503(models::ApiError),
     UnknownValue(serde_json::Value),
 }
 
@@ -424,21 +394,6 @@ pub enum VerifyAccountEmailDomainError {
     Status429(models::ApiError),
     Status503(models::ApiError),
     DefaultResponse(models::ApiError),
-    UnknownValue(serde_json::Value),
-}
-
-/// struct for typed errors of method [`verify_agent_signup`]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum VerifyAgentSignupError {
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status409(models::ApiError),
-    Status413(models::ApiError),
-    Status415(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
-    Status503(models::ApiError),
     UnknownValue(serde_json::Value),
 }
 
@@ -1721,44 +1676,6 @@ pub async fn remove_account_email_domain(configuration: &configuration::Configur
     }
 }
 
-/// Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
-pub async fn resend_agent_signup_code(configuration: &configuration::Configuration, resend_agent_signup_code_request: models::ResendAgentSignupCodeRequest) -> Result<models::StartAgentSignup202Response, Error<ResendAgentSignupCodeError>> {
-    // add a prefix to parameters to efficiently prevent name collisions
-    let p_body_resend_agent_signup_code_request = resend_agent_signup_code_request;
-
-    let uri_str = format!("{}/v1/agent/signups/resend", configuration.base_path);
-    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
-
-    if let Some(ref user_agent) = configuration.user_agent {
-        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
-    }
-    req_builder = req_builder.json(&p_body_resend_agent_signup_code_request);
-
-    let req = req_builder.build()?;
-    let resp = configuration.client.execute(req).await?;
-
-    let status = resp.status();
-    let content_type = resp
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("application/octet-stream");
-    let content_type = super::ContentType::from(content_type);
-
-    if !status.is_client_error() && !status.is_server_error() {
-        let content = resp.text().await?;
-        match content_type {
-            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::StartAgentSignup202Response`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::StartAgentSignup202Response`")))),
-        }
-    } else {
-        let content = resp.text().await?;
-        let entity: Option<ResendAgentSignupCodeError> = serde_json::from_str(&content).ok();
-        Err(Error::ResponseError(ResponseContent { status, content, entity }))
-    }
-}
-
 /// Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
 pub async fn rotate_mailbox_email_address(configuration: &configuration::Configuration, id: &str, rotate_mailbox_email_address_request: models::RotateMailboxEmailAddressRequest) -> Result<models::GetMailboxEmailSettings200Response, Error<RotateMailboxEmailAddressError>> {
     // add a prefix to parameters to efficiently prevent name collisions
@@ -1880,44 +1797,6 @@ pub async fn set_email_webhook(configuration: &configuration::Configuration, mai
     } else {
         let content = resp.text().await?;
         let entity: Option<SetEmailWebhookError> = serde_json::from_str(&content).ok();
-        Err(Error::ResponseError(ResponseContent { status, content, entity }))
-    }
-}
-
-/// Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
-pub async fn start_agent_signup(configuration: &configuration::Configuration, start_agent_signup_request: models::StartAgentSignupRequest) -> Result<models::StartAgentSignup202Response, Error<StartAgentSignupError>> {
-    // add a prefix to parameters to efficiently prevent name collisions
-    let p_body_start_agent_signup_request = start_agent_signup_request;
-
-    let uri_str = format!("{}/v1/agent/signups", configuration.base_path);
-    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
-
-    if let Some(ref user_agent) = configuration.user_agent {
-        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
-    }
-    req_builder = req_builder.json(&p_body_start_agent_signup_request);
-
-    let req = req_builder.build()?;
-    let resp = configuration.client.execute(req).await?;
-
-    let status = resp.status();
-    let content_type = resp
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("application/octet-stream");
-    let content_type = super::ContentType::from(content_type);
-
-    if !status.is_client_error() && !status.is_server_error() {
-        let content = resp.text().await?;
-        match content_type {
-            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::StartAgentSignup202Response`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::StartAgentSignup202Response`")))),
-        }
-    } else {
-        let content = resp.text().await?;
-        let entity: Option<StartAgentSignupError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent { status, content, entity }))
     }
 }
@@ -2061,44 +1940,6 @@ pub async fn verify_account_email_domain(configuration: &configuration::Configur
     } else {
         let content = resp.text().await?;
         let entity: Option<VerifyAccountEmailDomainError> = serde_json::from_str(&content).ok();
-        Err(Error::ResponseError(ResponseContent { status, content, entity }))
-    }
-}
-
-/// Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
-pub async fn verify_agent_signup(configuration: &configuration::Configuration, verify_agent_signup_request: models::VerifyAgentSignupRequest) -> Result<models::SignupResponse, Error<VerifyAgentSignupError>> {
-    // add a prefix to parameters to efficiently prevent name collisions
-    let p_body_verify_agent_signup_request = verify_agent_signup_request;
-
-    let uri_str = format!("{}/v1/agent/signups/verify", configuration.base_path);
-    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
-
-    if let Some(ref user_agent) = configuration.user_agent {
-        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
-    }
-    req_builder = req_builder.json(&p_body_verify_agent_signup_request);
-
-    let req = req_builder.build()?;
-    let resp = configuration.client.execute(req).await?;
-
-    let status = resp.status();
-    let content_type = resp
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("application/octet-stream");
-    let content_type = super::ContentType::from(content_type);
-
-    if !status.is_client_error() && !status.is_server_error() {
-        let content = resp.text().await?;
-        match content_type {
-            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::SignupResponse`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::SignupResponse`")))),
-        }
-    } else {
-        let content = resp.text().await?;
-        let entity: Option<VerifyAgentSignupError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent { status, content, entity }))
     }
 }

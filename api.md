@@ -20,7 +20,6 @@ and downloads attachments. Mailboxes also support uploaded files and version his
 | Choose an email username | [Create a mailbox](#create-a-mailbox) |
 | Use extra addresses or your own domain | [Aliases](#mailbox-aliases) · [Custom domains](#custom-email-domains) |
 | Upload a file | [Upload a file](#upload-a-file) |
-| Create a new owner's account through the API | [Direct API signup](#direct-api-signup) |
 
 ## Email API quick start
 
@@ -28,7 +27,7 @@ For Node.js, start with the [npm SDK](https://github.com/revdoku/revdoku-typescr
 
 1. Sign in to your existing account and create a backend key from **Connect via API**
    or **Account → Access**. If you need an account, [browser signup](https://app.revdoku.com/users/sign_up)
-   creates your first mailbox; [direct signup](#direct-api-signup) is also available.
+   creates your first mailbox.
 2. Keep the key on your backend. Replace `YOUR_API_KEY` below in your private application.
 3. List the existing mailboxes and choose an authorized mailbox. A read-only key can
    complete this read workflow; creating another mailbox requires account-wide admin access.
@@ -102,73 +101,12 @@ See [received email operations](#received-email-operations),
 [runnable JS/TypeScript examples](https://github.com/revdoku/revdoku/tree/main/examples), and the
 [SaaS mailbox guide](https://github.com/revdoku/revdoku/blob/main/guides/saas-mailboxes.md).
 
-## Direct API signup
-
-Create an account, its first mailbox, and an API key. No existing API key is required.
-The starter mailbox address is generated from your email. To choose a custom
-username later, sign in and [create another mailbox](#create-another-mailbox).
-
-By signing up, you agree to the [Terms of Use](https://revdoku.com/terms) and
-[Acceptable Use Policy](https://revdoku.com/acceptable-use) and acknowledge the
-[Privacy Policy](https://revdoku.com/privacy).
-
-1. Request a verification code:
-
-   ```http
-   POST /v1/agent/signups
-   Content-Type: application/json
-
-   { "email": "person@example.com", "accept_terms_and_policy": true }
-   ```
-
-   | Field | Required | Meaning |
-   | --- | --- | --- |
-   | `email` | Yes | Your account email address. |
-   | `accept_terms_and_policy` | Yes | Must be boolean `true`. |
-
-   The `202 Accepted` response contains `data.signup.signup_token` plus
-   `data.signup.expires_in` and `data.signup.resend_after` in seconds. Keep the
-   token for the next request.
-
-2. Verify the emailed code:
-
-   ```http
-   POST /v1/agent/signups/verify
-   Content-Type: application/json
-
-   { "signup_token": "TOKEN_FROM_STEP_1", "code": "123456" }
-   ```
-
-   `201 Created` returns:
-
-   | Field | Meaning |
-   | --- | --- |
-   | `data.api_key` | Your API key; save it securely. Returned only once. |
-   | `data.account.id` | New account ID. |
-   | `data.mailbox.id` | Starter mailbox ID. |
-   | `data.mailbox.email` | Generated address and receiving state. |
-   | `data.scope` | `mailbox_admin`, covering this account's mailboxes. |
-   | `data.expires_at` | API key expiration time. |
-
-To resend, POST `{ "signup_token": "TOKEN_FROM_STEP_1" }` to
-`/v1/agent/signups/resend` after `resend_after` seconds. Resending replaces the
-code without extending the signup expiry. On `429`, honor `Retry-After`.
-
-| Result | Action |
-| --- | --- |
-| `INVALID_CODE` | Check the emailed code. |
-| `INVALID_SIGNUP_TOKEN` | Start again; the signup token is invalid or expired. |
-| `SIGN_IN_REQUIRED` | The account exists; [sign in](https://app.revdoku.com/users/sign_in). |
-| Verification response lost | Sign in and create a key in Account → Access. Repeating verification does not return the key again. |
-| Receiving is temporarily unavailable | Keep the returned key and mailbox ID; check the mailbox's receiving state later. |
-
 <a id="1-create-an-mailbox"></a>
 <a id="create-a-mailbox"></a>
 
 ## Create another mailbox
 
-Use this only when you need another mailbox. Browser and direct signup already
-create a first mailbox.
+Use this only when you need another mailbox. Browser signup creates a first mailbox.
 
 ```http
 POST /v1/mailboxes

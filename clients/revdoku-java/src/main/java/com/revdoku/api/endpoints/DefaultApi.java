@@ -1,6 +1,6 @@
 /*
  * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Direct API signup requires verification of the human operator email. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -46,21 +46,16 @@ import java.time.OffsetDateTime;
 import com.revdoku.api.model.PrepareFileUploadRequest;
 import com.revdoku.api.model.PreparedFileUploadResponse;
 import com.revdoku.api.model.RemoveAccountEmailDomainRequest;
-import com.revdoku.api.model.ResendAgentSignupCodeRequest;
 import com.revdoku.api.model.RotateMailboxEmailAddressRequest;
 import com.revdoku.api.model.SaveUploadedFileRequest;
 import com.revdoku.api.model.SavedFileResponse;
 import com.revdoku.api.model.SetEmailWebhook200Response;
 import com.revdoku.api.model.SetEmailWebhookRequest;
-import com.revdoku.api.model.SignupResponse;
-import com.revdoku.api.model.StartAgentSignup202Response;
-import com.revdoku.api.model.StartAgentSignupRequest;
 import com.revdoku.api.model.UpdateEmail200Response;
 import com.revdoku.api.model.UpdateEmailRequest;
 import com.revdoku.api.model.UpdateMailboxEmailAllowlist200Response;
 import com.revdoku.api.model.UpdateMailboxEmailAllowlistRequest;
 import com.revdoku.api.model.VerifyAccountEmailDomainRequest;
-import com.revdoku.api.model.VerifyAgentSignupRequest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -4024,129 +4019,6 @@ public class DefaultApi {
   }
 
   /**
-   * Resend the human operator’s verification code
-   * Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
-   * @param resendAgentSignupCodeRequest  (required)
-   * @return StartAgentSignup202Response
-   * @throws ApiException if fails to make API call
-   */
-  public StartAgentSignup202Response resendAgentSignupCode(@javax.annotation.Nonnull ResendAgentSignupCodeRequest resendAgentSignupCodeRequest) throws ApiException {
-    return resendAgentSignupCode(resendAgentSignupCodeRequest, null);
-  }
-
-  /**
-   * Resend the human operator’s verification code
-   * Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
-   * @param resendAgentSignupCodeRequest  (required)
-   * @param headers Optional headers to include in the request
-   * @return StartAgentSignup202Response
-   * @throws ApiException if fails to make API call
-   */
-  public StartAgentSignup202Response resendAgentSignupCode(@javax.annotation.Nonnull ResendAgentSignupCodeRequest resendAgentSignupCodeRequest, Map<String, String> headers) throws ApiException {
-    ApiResponse<StartAgentSignup202Response> localVarResponse = resendAgentSignupCodeWithHttpInfo(resendAgentSignupCodeRequest, headers);
-    return localVarResponse.getData();
-  }
-
-  /**
-   * Resend the human operator’s verification code
-   * Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
-   * @param resendAgentSignupCodeRequest  (required)
-   * @return ApiResponse&lt;StartAgentSignup202Response&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<StartAgentSignup202Response> resendAgentSignupCodeWithHttpInfo(@javax.annotation.Nonnull ResendAgentSignupCodeRequest resendAgentSignupCodeRequest) throws ApiException {
-    return resendAgentSignupCodeWithHttpInfo(resendAgentSignupCodeRequest, null);
-  }
-
-  /**
-   * Resend the human operator’s verification code
-   * Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
-   * @param resendAgentSignupCodeRequest  (required)
-   * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;StartAgentSignup202Response&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<StartAgentSignup202Response> resendAgentSignupCodeWithHttpInfo(@javax.annotation.Nonnull ResendAgentSignupCodeRequest resendAgentSignupCodeRequest, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = resendAgentSignupCodeRequestBuilder(resendAgentSignupCodeRequest, headers);
-    try {
-      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
-          localVarRequestBuilder.build(),
-          HttpResponse.BodyHandlers.ofInputStream());
-      if (memberVarResponseInterceptor != null) {
-        memberVarResponseInterceptor.accept(localVarResponse);
-      }
-      InputStream localVarResponseBody = null;
-      try {
-        if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("resendAgentSignupCode", localVarResponse);
-        }
-        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
-        if (localVarResponseBody == null) {
-          return new ApiResponse<StartAgentSignup202Response>(
-              localVarResponse.statusCode(),
-              localVarResponse.headers().map(),
-              null
-          );
-        }
-
-        
-        
-        String responseBody = new String(localVarResponseBody.readAllBytes());
-        StartAgentSignup202Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<StartAgentSignup202Response>() {});
-        
-
-        return new ApiResponse<StartAgentSignup202Response>(
-            localVarResponse.statusCode(),
-            localVarResponse.headers().map(),
-            responseValue
-        );
-      } finally {
-        if (localVarResponseBody != null) {
-          localVarResponseBody.close();
-        }
-      }
-    } catch (IOException e) {
-      throw new ApiException(e);
-    }
-    catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new ApiException(e);
-    }
-  }
-
-  private HttpRequest.Builder resendAgentSignupCodeRequestBuilder(@javax.annotation.Nonnull ResendAgentSignupCodeRequest resendAgentSignupCodeRequest, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'resendAgentSignupCodeRequest' is set
-    if (resendAgentSignupCodeRequest == null) {
-      throw new ApiException(400, "Missing the required parameter 'resendAgentSignupCodeRequest' when calling resendAgentSignupCode");
-    }
-
-    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-    String localVarPath = "/v1/agent/signups/resend";
-
-    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-    localVarRequestBuilder.header("Content-Type", "application/json");
-    localVarRequestBuilder.header("Accept", "application/json");
-
-    try {
-      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(resendAgentSignupCodeRequest);
-      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
-    } catch (IOException e) {
-      throw new ApiException(e);
-    }
-    if (memberVarReadTimeout != null) {
-      localVarRequestBuilder.timeout(memberVarReadTimeout);
-    }
-    // Add custom headers if provided
-    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
-    if (memberVarInterceptor != null) {
-      memberVarInterceptor.accept(localVarRequestBuilder);
-    }
-    return localVarRequestBuilder;
-  }
-
-  /**
    * Replace a mailbox email address after confirmation
    * Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
    * @param id Authorized mailbox prefix ID (required)
@@ -4528,129 +4400,6 @@ public class DefaultApi {
     try {
       byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(setEmailWebhookRequest);
       localVarRequestBuilder.method("PUT", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
-    } catch (IOException e) {
-      throw new ApiException(e);
-    }
-    if (memberVarReadTimeout != null) {
-      localVarRequestBuilder.timeout(memberVarReadTimeout);
-    }
-    // Add custom headers if provided
-    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
-    if (memberVarInterceptor != null) {
-      memberVarInterceptor.accept(localVarRequestBuilder);
-    }
-    return localVarRequestBuilder;
-  }
-
-  /**
-   * Start signup
-   * Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
-   * @param startAgentSignupRequest  (required)
-   * @return StartAgentSignup202Response
-   * @throws ApiException if fails to make API call
-   */
-  public StartAgentSignup202Response startAgentSignup(@javax.annotation.Nonnull StartAgentSignupRequest startAgentSignupRequest) throws ApiException {
-    return startAgentSignup(startAgentSignupRequest, null);
-  }
-
-  /**
-   * Start signup
-   * Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
-   * @param startAgentSignupRequest  (required)
-   * @param headers Optional headers to include in the request
-   * @return StartAgentSignup202Response
-   * @throws ApiException if fails to make API call
-   */
-  public StartAgentSignup202Response startAgentSignup(@javax.annotation.Nonnull StartAgentSignupRequest startAgentSignupRequest, Map<String, String> headers) throws ApiException {
-    ApiResponse<StartAgentSignup202Response> localVarResponse = startAgentSignupWithHttpInfo(startAgentSignupRequest, headers);
-    return localVarResponse.getData();
-  }
-
-  /**
-   * Start signup
-   * Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
-   * @param startAgentSignupRequest  (required)
-   * @return ApiResponse&lt;StartAgentSignup202Response&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<StartAgentSignup202Response> startAgentSignupWithHttpInfo(@javax.annotation.Nonnull StartAgentSignupRequest startAgentSignupRequest) throws ApiException {
-    return startAgentSignupWithHttpInfo(startAgentSignupRequest, null);
-  }
-
-  /**
-   * Start signup
-   * Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
-   * @param startAgentSignupRequest  (required)
-   * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;StartAgentSignup202Response&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<StartAgentSignup202Response> startAgentSignupWithHttpInfo(@javax.annotation.Nonnull StartAgentSignupRequest startAgentSignupRequest, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = startAgentSignupRequestBuilder(startAgentSignupRequest, headers);
-    try {
-      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
-          localVarRequestBuilder.build(),
-          HttpResponse.BodyHandlers.ofInputStream());
-      if (memberVarResponseInterceptor != null) {
-        memberVarResponseInterceptor.accept(localVarResponse);
-      }
-      InputStream localVarResponseBody = null;
-      try {
-        if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("startAgentSignup", localVarResponse);
-        }
-        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
-        if (localVarResponseBody == null) {
-          return new ApiResponse<StartAgentSignup202Response>(
-              localVarResponse.statusCode(),
-              localVarResponse.headers().map(),
-              null
-          );
-        }
-
-        
-        
-        String responseBody = new String(localVarResponseBody.readAllBytes());
-        StartAgentSignup202Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<StartAgentSignup202Response>() {});
-        
-
-        return new ApiResponse<StartAgentSignup202Response>(
-            localVarResponse.statusCode(),
-            localVarResponse.headers().map(),
-            responseValue
-        );
-      } finally {
-        if (localVarResponseBody != null) {
-          localVarResponseBody.close();
-        }
-      }
-    } catch (IOException e) {
-      throw new ApiException(e);
-    }
-    catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new ApiException(e);
-    }
-  }
-
-  private HttpRequest.Builder startAgentSignupRequestBuilder(@javax.annotation.Nonnull StartAgentSignupRequest startAgentSignupRequest, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'startAgentSignupRequest' is set
-    if (startAgentSignupRequest == null) {
-      throw new ApiException(400, "Missing the required parameter 'startAgentSignupRequest' when calling startAgentSignup");
-    }
-
-    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-    String localVarPath = "/v1/agent/signups";
-
-    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-    localVarRequestBuilder.header("Content-Type", "application/json");
-    localVarRequestBuilder.header("Accept", "application/json");
-
-    try {
-      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(startAgentSignupRequest);
-      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
     } catch (IOException e) {
       throw new ApiException(e);
     }
@@ -5101,129 +4850,6 @@ public class DefaultApi {
 
     try {
       byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(verifyAccountEmailDomainRequest);
-      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
-    } catch (IOException e) {
-      throw new ApiException(e);
-    }
-    if (memberVarReadTimeout != null) {
-      localVarRequestBuilder.timeout(memberVarReadTimeout);
-    }
-    // Add custom headers if provided
-    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
-    if (memberVarInterceptor != null) {
-      memberVarInterceptor.accept(localVarRequestBuilder);
-    }
-    return localVarRequestBuilder;
-  }
-
-  /**
-   * Verify the human’s code and create the first mailbox
-   * Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
-   * @param verifyAgentSignupRequest  (required)
-   * @return SignupResponse
-   * @throws ApiException if fails to make API call
-   */
-  public SignupResponse verifyAgentSignup(@javax.annotation.Nonnull VerifyAgentSignupRequest verifyAgentSignupRequest) throws ApiException {
-    return verifyAgentSignup(verifyAgentSignupRequest, null);
-  }
-
-  /**
-   * Verify the human’s code and create the first mailbox
-   * Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
-   * @param verifyAgentSignupRequest  (required)
-   * @param headers Optional headers to include in the request
-   * @return SignupResponse
-   * @throws ApiException if fails to make API call
-   */
-  public SignupResponse verifyAgentSignup(@javax.annotation.Nonnull VerifyAgentSignupRequest verifyAgentSignupRequest, Map<String, String> headers) throws ApiException {
-    ApiResponse<SignupResponse> localVarResponse = verifyAgentSignupWithHttpInfo(verifyAgentSignupRequest, headers);
-    return localVarResponse.getData();
-  }
-
-  /**
-   * Verify the human’s code and create the first mailbox
-   * Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
-   * @param verifyAgentSignupRequest  (required)
-   * @return ApiResponse&lt;SignupResponse&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<SignupResponse> verifyAgentSignupWithHttpInfo(@javax.annotation.Nonnull VerifyAgentSignupRequest verifyAgentSignupRequest) throws ApiException {
-    return verifyAgentSignupWithHttpInfo(verifyAgentSignupRequest, null);
-  }
-
-  /**
-   * Verify the human’s code and create the first mailbox
-   * Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
-   * @param verifyAgentSignupRequest  (required)
-   * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;SignupResponse&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<SignupResponse> verifyAgentSignupWithHttpInfo(@javax.annotation.Nonnull VerifyAgentSignupRequest verifyAgentSignupRequest, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = verifyAgentSignupRequestBuilder(verifyAgentSignupRequest, headers);
-    try {
-      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
-          localVarRequestBuilder.build(),
-          HttpResponse.BodyHandlers.ofInputStream());
-      if (memberVarResponseInterceptor != null) {
-        memberVarResponseInterceptor.accept(localVarResponse);
-      }
-      InputStream localVarResponseBody = null;
-      try {
-        if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("verifyAgentSignup", localVarResponse);
-        }
-        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
-        if (localVarResponseBody == null) {
-          return new ApiResponse<SignupResponse>(
-              localVarResponse.statusCode(),
-              localVarResponse.headers().map(),
-              null
-          );
-        }
-
-        
-        
-        String responseBody = new String(localVarResponseBody.readAllBytes());
-        SignupResponse responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<SignupResponse>() {});
-        
-
-        return new ApiResponse<SignupResponse>(
-            localVarResponse.statusCode(),
-            localVarResponse.headers().map(),
-            responseValue
-        );
-      } finally {
-        if (localVarResponseBody != null) {
-          localVarResponseBody.close();
-        }
-      }
-    } catch (IOException e) {
-      throw new ApiException(e);
-    }
-    catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new ApiException(e);
-    }
-  }
-
-  private HttpRequest.Builder verifyAgentSignupRequestBuilder(@javax.annotation.Nonnull VerifyAgentSignupRequest verifyAgentSignupRequest, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'verifyAgentSignupRequest' is set
-    if (verifyAgentSignupRequest == null) {
-      throw new ApiException(400, "Missing the required parameter 'verifyAgentSignupRequest' when calling verifyAgentSignup");
-    }
-
-    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-    String localVarPath = "/v1/agent/signups/verify";
-
-    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-    localVarRequestBuilder.header("Content-Type", "application/json");
-    localVarRequestBuilder.header("Accept", "application/json");
-
-    try {
-      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(verifyAgentSignupRequest);
       localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
     } catch (IOException e) {
       throw new ApiException(e);

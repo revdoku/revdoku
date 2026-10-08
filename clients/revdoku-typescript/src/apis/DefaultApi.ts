@@ -2,7 +2,7 @@
 /* eslint-disable */
 /**
  * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Direct API signup requires verification of the human operator email. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -144,11 +144,6 @@ import {
     RemoveAccountEmailDomainRequestToJSON,
 } from '../models/RemoveAccountEmailDomainRequest';
 import {
-    type ResendAgentSignupCodeRequest,
-    ResendAgentSignupCodeRequestFromJSON,
-    ResendAgentSignupCodeRequestToJSON,
-} from '../models/ResendAgentSignupCodeRequest';
-import {
     type RotateMailboxEmailAddressRequest,
     RotateMailboxEmailAddressRequestFromJSON,
     RotateMailboxEmailAddressRequestToJSON,
@@ -174,21 +169,6 @@ import {
     SetEmailWebhookRequestToJSON,
 } from '../models/SetEmailWebhookRequest';
 import {
-    type SignupResponse,
-    SignupResponseFromJSON,
-    SignupResponseToJSON,
-} from '../models/SignupResponse';
-import {
-    type StartAgentSignup202Response,
-    StartAgentSignup202ResponseFromJSON,
-    StartAgentSignup202ResponseToJSON,
-} from '../models/StartAgentSignup202Response';
-import {
-    type StartAgentSignupRequest,
-    StartAgentSignupRequestFromJSON,
-    StartAgentSignupRequestToJSON,
-} from '../models/StartAgentSignupRequest';
-import {
     type UpdateEmail200Response,
     UpdateEmail200ResponseFromJSON,
     UpdateEmail200ResponseToJSON,
@@ -213,11 +193,6 @@ import {
     VerifyAccountEmailDomainRequestFromJSON,
     VerifyAccountEmailDomainRequestToJSON,
 } from '../models/VerifyAccountEmailDomainRequest';
-import {
-    type VerifyAgentSignupRequest,
-    VerifyAgentSignupRequestFromJSON,
-    VerifyAgentSignupRequestToJSON,
-} from '../models/VerifyAgentSignupRequest';
 
 export interface CheckEmailHostnameRequest {
     /**
@@ -644,13 +619,6 @@ export interface RemoveAccountEmailDomainOperationRequest {
     removeAccountEmailDomainRequest: RemoveAccountEmailDomainRequest;
 }
 
-export interface ResendAgentSignupCodeOperationRequest {
-    /**
-     * 
-     */
-    resendAgentSignupCodeRequest: ResendAgentSignupCodeRequest;
-}
-
 export interface RotateMailboxEmailAddressOperationRequest {
     /**
      * Authorized mailbox prefix ID
@@ -682,13 +650,6 @@ export interface SetEmailWebhookOperationRequest {
      * 
      */
     setEmailWebhookRequest: SetEmailWebhookRequest;
-}
-
-export interface StartAgentSignupOperationRequest {
-    /**
-     * 
-     */
-    startAgentSignupRequest: StartAgentSignupRequest;
 }
 
 export interface UpdateEmailOperationRequest {
@@ -742,13 +703,6 @@ export interface VerifyAccountEmailDomainOperationRequest {
      * 
      */
     verifyAccountEmailDomainRequest?: VerifyAccountEmailDomainRequest;
-}
-
-export interface VerifyAgentSignupOperationRequest {
-    /**
-     * 
-     */
-    verifyAgentSignupRequest: VerifyAgentSignupRequest;
 }
 
 /**
@@ -2482,55 +2436,6 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
-     * Creates request options for resendAgentSignupCode without sending the request
-     */
-    async resendAgentSignupCodeRequestOpts(requestParameters: ResendAgentSignupCodeOperationRequest): Promise<runtime.RequestOpts> {
-        if (requestParameters['resendAgentSignupCodeRequest'] == null) {
-            throw new runtime.RequiredError(
-                'resendAgentSignupCodeRequest',
-                'Required parameter "resendAgentSignupCodeRequest" was null or undefined when calling resendAgentSignupCode().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-
-        let urlPath = `/v1/agent/signups/resend`;
-
-        return {
-            path: urlPath,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: ResendAgentSignupCodeRequestToJSON(requestParameters['resendAgentSignupCodeRequest']),
-        };
-    }
-
-    /**
-     * Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
-     * Resend the human operator’s verification code
-     */
-    async resendAgentSignupCodeRaw(requestParameters: ResendAgentSignupCodeOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<StartAgentSignup202Response>> {
-        const requestOptions = await this.resendAgentSignupCodeRequestOpts(requestParameters);
-        const response = await this.request(requestOptions, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => StartAgentSignup202ResponseFromJSON(jsonValue));
-    }
-
-    /**
-     * Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
-     * Resend the human operator’s verification code
-     */
-    async resendAgentSignupCode(requestParameters: ResendAgentSignupCodeOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<StartAgentSignup202Response> {
-        const response = await this.resendAgentSignupCodeRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
      * Creates request options for rotateMailboxEmailAddress without sending the request
      */
     async rotateMailboxEmailAddressRequestOpts(requestParameters: RotateMailboxEmailAddressOperationRequest): Promise<runtime.RequestOpts> {
@@ -2720,55 +2625,6 @@ export class DefaultApi extends runtime.BaseAPI {
      */
     async setEmailWebhook(requestParameters: SetEmailWebhookOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SetEmailWebhook200Response> {
         const response = await this.setEmailWebhookRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Creates request options for startAgentSignup without sending the request
-     */
-    async startAgentSignupRequestOpts(requestParameters: StartAgentSignupOperationRequest): Promise<runtime.RequestOpts> {
-        if (requestParameters['startAgentSignupRequest'] == null) {
-            throw new runtime.RequiredError(
-                'startAgentSignupRequest',
-                'Required parameter "startAgentSignupRequest" was null or undefined when calling startAgentSignup().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-
-        let urlPath = `/v1/agent/signups`;
-
-        return {
-            path: urlPath,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: StartAgentSignupRequestToJSON(requestParameters['startAgentSignupRequest']),
-        };
-    }
-
-    /**
-     * Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
-     * Start signup
-     */
-    async startAgentSignupRaw(requestParameters: StartAgentSignupOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<StartAgentSignup202Response>> {
-        const requestOptions = await this.startAgentSignupRequestOpts(requestParameters);
-        const response = await this.request(requestOptions, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => StartAgentSignup202ResponseFromJSON(jsonValue));
-    }
-
-    /**
-     * Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
-     * Start signup
-     */
-    async startAgentSignup(requestParameters: StartAgentSignupOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<StartAgentSignup202Response> {
-        const response = await this.startAgentSignupRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -2981,55 +2837,6 @@ export class DefaultApi extends runtime.BaseAPI {
      */
     async verifyAccountEmailDomain(requestParameters: VerifyAccountEmailDomainOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<EmailDomainListResponse> {
         const response = await this.verifyAccountEmailDomainRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Creates request options for verifyAgentSignup without sending the request
-     */
-    async verifyAgentSignupRequestOpts(requestParameters: VerifyAgentSignupOperationRequest): Promise<runtime.RequestOpts> {
-        if (requestParameters['verifyAgentSignupRequest'] == null) {
-            throw new runtime.RequiredError(
-                'verifyAgentSignupRequest',
-                'Required parameter "verifyAgentSignupRequest" was null or undefined when calling verifyAgentSignup().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-
-        let urlPath = `/v1/agent/signups/verify`;
-
-        return {
-            path: urlPath,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: VerifyAgentSignupRequestToJSON(requestParameters['verifyAgentSignupRequest']),
-        };
-    }
-
-    /**
-     * Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
-     * Verify the human’s code and create the first mailbox
-     */
-    async verifyAgentSignupRaw(requestParameters: VerifyAgentSignupOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SignupResponse>> {
-        const requestOptions = await this.verifyAgentSignupRequestOpts(requestParameters);
-        const response = await this.request(requestOptions, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => SignupResponseFromJSON(jsonValue));
-    }
-
-    /**
-     * Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
-     * Verify the human’s code and create the first mailbox
-     */
-    async verifyAgentSignup(requestParameters: VerifyAgentSignupOperationRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SignupResponse> {
-        const response = await this.verifyAgentSignupRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

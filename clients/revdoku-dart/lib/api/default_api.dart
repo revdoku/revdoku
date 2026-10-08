@@ -2028,63 +2028,6 @@ class DefaultApi {
     return null;
   }
 
-  /// Resend the human operator’s verification code
-  ///
-  /// Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
-  ///
-  /// Note: This method returns the HTTP [Response].
-  ///
-  /// Parameters:
-  ///
-  /// * [ResendAgentSignupCodeRequest] resendAgentSignupCodeRequest (required):
-  Future<Response> resendAgentSignupCodeWithHttpInfo(ResendAgentSignupCodeRequest resendAgentSignupCodeRequest, { Future<void>? abortTrigger, }) async {
-    // ignore: prefer_const_declarations
-    final path = r'/v1/agent/signups/resend';
-
-    // ignore: prefer_final_locals
-    Object? postBody = resendAgentSignupCodeRequest;
-
-    final queryParams = <QueryParam>[];
-    final headerParams = <String, String>{};
-    final formParams = <String, String>{};
-
-    const contentTypes = <String>['application/json'];
-
-
-    return apiClient.invokeAPI(
-      path,
-      'POST',
-      queryParams,
-      postBody,
-      headerParams,
-      formParams,
-      contentTypes.isEmpty ? null : contentTypes.first,
-      abortTrigger: abortTrigger,
-    );
-  }
-
-  /// Resend the human operator’s verification code
-  ///
-  /// Resend the email code after resend_after seconds. Replaces the old code without extending signup expiry. On HTTP 429, honor Retry-After.
-  ///
-  /// Parameters:
-  ///
-  /// * [ResendAgentSignupCodeRequest] resendAgentSignupCodeRequest (required):
-  Future<StartAgentSignup202Response?> resendAgentSignupCode(ResendAgentSignupCodeRequest resendAgentSignupCodeRequest, { Future<void>? abortTrigger, }) async {
-    final response = await resendAgentSignupCodeWithHttpInfo(resendAgentSignupCodeRequest, abortTrigger: abortTrigger,);
-    if (response.statusCode >= HttpStatus.badRequest) {
-      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
-    }
-    // When a remote server returns no body with a status of 204, we shall not decode it.
-    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
-    // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'StartAgentSignup202Response',) as StartAgentSignup202Response;
-    
-    }
-    return null;
-  }
-
   /// Replace a mailbox email address after confirmation
   ///
   /// Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
@@ -2264,63 +2207,6 @@ class DefaultApi {
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
       return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'SetEmailWebhook200Response',) as SetEmailWebhook200Response;
-    
-    }
-    return null;
-  }
-
-  /// Start signup
-  ///
-  /// Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
-  ///
-  /// Note: This method returns the HTTP [Response].
-  ///
-  /// Parameters:
-  ///
-  /// * [StartAgentSignupRequest] startAgentSignupRequest (required):
-  Future<Response> startAgentSignupWithHttpInfo(StartAgentSignupRequest startAgentSignupRequest, { Future<void>? abortTrigger, }) async {
-    // ignore: prefer_const_declarations
-    final path = r'/v1/agent/signups';
-
-    // ignore: prefer_final_locals
-    Object? postBody = startAgentSignupRequest;
-
-    final queryParams = <QueryParam>[];
-    final headerParams = <String, String>{};
-    final formParams = <String, String>{};
-
-    const contentTypes = <String>['application/json'];
-
-
-    return apiClient.invokeAPI(
-      path,
-      'POST',
-      queryParams,
-      postBody,
-      headerParams,
-      formParams,
-      contentTypes.isEmpty ? null : contentTypes.first,
-      abortTrigger: abortTrigger,
-    );
-  }
-
-  /// Start signup
-  ///
-  /// Send an email verification code. No API key is required. Verify the code to create the account, starter mailbox and API key.
-  ///
-  /// Parameters:
-  ///
-  /// * [StartAgentSignupRequest] startAgentSignupRequest (required):
-  Future<StartAgentSignup202Response?> startAgentSignup(StartAgentSignupRequest startAgentSignupRequest, { Future<void>? abortTrigger, }) async {
-    final response = await startAgentSignupWithHttpInfo(startAgentSignupRequest, abortTrigger: abortTrigger,);
-    if (response.statusCode >= HttpStatus.badRequest) {
-      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
-    }
-    // When a remote server returns no body with a status of 204, we shall not decode it.
-    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
-    // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'StartAgentSignup202Response',) as StartAgentSignup202Response;
     
     }
     return null;
@@ -2550,63 +2436,6 @@ class DefaultApi {
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
       return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'EmailDomainListResponse',) as EmailDomainListResponse;
-    
-    }
-    return null;
-  }
-
-  /// Verify the human’s code and create the first mailbox
-  ///
-  /// Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
-  ///
-  /// Note: This method returns the HTTP [Response].
-  ///
-  /// Parameters:
-  ///
-  /// * [VerifyAgentSignupRequest] verifyAgentSignupRequest (required):
-  Future<Response> verifyAgentSignupWithHttpInfo(VerifyAgentSignupRequest verifyAgentSignupRequest, { Future<void>? abortTrigger, }) async {
-    // ignore: prefer_const_declarations
-    final path = r'/v1/agent/signups/verify';
-
-    // ignore: prefer_final_locals
-    Object? postBody = verifyAgentSignupRequest;
-
-    final queryParams = <QueryParam>[];
-    final headerParams = <String, String>{};
-    final formParams = <String, String>{};
-
-    const contentTypes = <String>['application/json'];
-
-
-    return apiClient.invokeAPI(
-      path,
-      'POST',
-      queryParams,
-      postBody,
-      headerParams,
-      formParams,
-      contentTypes.isEmpty ? null : contentTypes.first,
-      abortTrigger: abortTrigger,
-    );
-  }
-
-  /// Verify the human’s code and create the first mailbox
-  ///
-  /// Verify the emailed code to create the account, an automatically named starter mailbox and an account-wide mailbox_admin API key. Save the key securely; it is returned only once. Repeated verification returns completion details without another key.
-  ///
-  /// Parameters:
-  ///
-  /// * [VerifyAgentSignupRequest] verifyAgentSignupRequest (required):
-  Future<SignupResponse?> verifyAgentSignup(VerifyAgentSignupRequest verifyAgentSignupRequest, { Future<void>? abortTrigger, }) async {
-    final response = await verifyAgentSignupWithHttpInfo(verifyAgentSignupRequest, abortTrigger: abortTrigger,);
-    if (response.statusCode >= HttpStatus.badRequest) {
-      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
-    }
-    // When a remote server returns no body with a status of 204, we shall not decode it.
-    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
-    // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'SignupResponse',) as SignupResponse;
     
     }
     return null;

@@ -1,5 +1,25 @@
 # Revdoku Changelog
 
+## 1.0.548 — 2026-10-08
+
+### Improved
+
+- Create new accounts in the browser at app.revdoku.com. Direct API and MCP signup are unavailable.
+- Require sign-in when an AI client connects to MCP, including initial tool discovery.
+- Update API documentation, generated clients and the Skill for browser signup.
+
+## 1.0.547 — 2026-10-08
+
+### Improved
+
+- Connect Claude web and Desktop with Claude's published identity or automatic registration.
+- Open reconnect instructions from Account → Access when a saved Claude connector fails.
+
+### Fixed
+
+- Request sign-in when an AI client calls an account tool without a valid connection.
+- Keep connection revocation and refresh-token protection effective when client identity data changes or is unavailable.
+
 ## 1.0.540 — 2026-10-06
 
 ### Improved

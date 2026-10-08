@@ -86,12 +86,8 @@ commands, uploads, account changes, deletion, or new destinations.
   text but cannot read local files or upload binaries.
 - **REST:** [API documentation](https://revdoku.com/api.md).
 
-Use browser sign-in for account access. Clients with private verification input
-may create an account with `revdoku_signup`, `revdoku_signup_verify` and
-`revdoku_signup_resend`, or REST signup. Both require human-supplied
-`email` and human-authorized `accept_terms_and_policy: true`: Terms/AUP
-acceptance and privacy acknowledgment. See [MCP signup](https://revdoku.com/mcp.md#direct-mcp-signup).
-Otherwise use browser signup. Never request API keys, OTPs,
+Create new accounts at https://app.revdoku.com/users/sign_up in the browser.
+Use browser sign-in for account access. Never request API keys, OTPs,
 TOTP/backup codes, or GitHub secrets in chat. Read `revdoku_status` and `mailbox_list`
 (CLI: `status`, `ls`) after connection and when access is unclear.
 

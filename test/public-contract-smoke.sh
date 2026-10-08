@@ -255,6 +255,14 @@ ruby -e '
   files = patterns.flat_map { |pattern| Dir.glob(File.join(root, pattern), File::FNM_DOTMATCH) }.uniq
   stale = files.select { |path| File.file?(path) && File.basename(path) != "CHANGELOG.md" && File.binread(path).include?("localhost3000.love") }
   abort "Retired domain in current public guidance: #{stale.join(", ")}" unless stale.empty?
+  signup = files.select { |path| File.file?(path) && File.basename(path) != "CHANGELOG.md" && File.binread(path).match?(%r{revdoku_signup|/agent/signups|direct-(?:api|mcp)-signup|Sign up through REST}) }
+  abort "Direct signup in current public guidance: #{signup.join(", ")}" unless signup.empty?
+  discovery = File.directory?(File.join(root, "discovery")) ? File.join(root, "discovery") : root
+  require "json"
+  agent = JSON.parse(File.read(File.join(discovery, ".well-known/agent.json")))
+  abort "MCP must require authentication" unless agent.dig("mcp", "authentication_required") == true
+  abort "API signup must not be advertised" if agent.fetch("api").key?("signup")
+  abort "MCP signup must not be advertised" if agent.fetch("mcp").key?("signup")
 ' "$DIST_ROOT"
 
 echo "Public CLI, skill, MCP setup, plugin, and API contract checks passed."
