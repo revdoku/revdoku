@@ -69,6 +69,19 @@ Use returned email and attachment IDs for message operations; use paths for file
 `mailbox` reports the receiving address, readiness, and message activity. Revdoku
 receives email and attachments.
 
+`revdoku ls` returns active mailboxes with permitted addresses, receiving state and email counts.
+Use `ls --status archived` or `ls --status all` for other archive states.
+Use `--query TEXT` to filter the permitted email address or ID.
+Use `--limit N --offset N` for pages of at most 100 mailboxes.
+Continue with `data.pagination.next_offset` while `data.pagination.has_more` is true.
+`data.counts` contains exact active, archived and total counts for the authorized query.
+
+`email.message_count` counts stored emails.
+`email.unread_count` counts emails with shared unread status.
+Null counts mean the email index is being prepared.
+`email.received_count` counts lifetime deliveries, including messages deleted later.
+File counts include email representations and attachments.
+
 Create accounts at https://app.revdoku.com/users/sign_up. CLI sign-in uses browser OAuth.
 
 For automation, set `REVDOKU_API_KEY` through your secret manager or environment.

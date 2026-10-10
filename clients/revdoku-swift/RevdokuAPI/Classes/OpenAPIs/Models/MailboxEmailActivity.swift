@@ -13,21 +13,32 @@ import AnyCodable
 public struct MailboxEmailActivity: Codable, JSONEncodable, Hashable {
 
     public static let receivedCountRule = NumericRule<Int>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
+    public static let messageCountRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
+    public static let unreadCountRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
+    /** Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails. */
     public var receivedCount: Int?
     public var lastReceivedAt: Date?
     /** Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion. */
     public var lastReceivedPath: String?
+    /** Emails currently stored. Null while the email index is being prepared. */
+    public var messageCount: Int64?
+    /** Stored emails with shared unread status. Null while the email index is being prepared. */
+    public var unreadCount: Int64?
 
-    public init(receivedCount: Int? = nil, lastReceivedAt: Date? = nil, lastReceivedPath: String? = nil) {
+    public init(receivedCount: Int? = nil, lastReceivedAt: Date? = nil, lastReceivedPath: String? = nil, messageCount: Int64? = nil, unreadCount: Int64? = nil) {
         self.receivedCount = receivedCount
         self.lastReceivedAt = lastReceivedAt
         self.lastReceivedPath = lastReceivedPath
+        self.messageCount = messageCount
+        self.unreadCount = unreadCount
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case receivedCount = "received_count"
         case lastReceivedAt = "last_received_at"
         case lastReceivedPath = "last_received_path"
+        case messageCount = "message_count"
+        case unreadCount = "unread_count"
     }
 
     // Encodable protocol methods
@@ -37,6 +48,8 @@ public struct MailboxEmailActivity: Codable, JSONEncodable, Hashable {
         try container.encodeIfPresent(receivedCount, forKey: .receivedCount)
         try container.encodeIfPresent(lastReceivedAt, forKey: .lastReceivedAt)
         try container.encodeIfPresent(lastReceivedPath, forKey: .lastReceivedPath)
+        try container.encodeIfPresent(messageCount, forKey: .messageCount)
+        try container.encodeIfPresent(unreadCount, forKey: .unreadCount)
     }
 }
 

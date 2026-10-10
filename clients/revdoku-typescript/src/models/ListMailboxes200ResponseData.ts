@@ -13,6 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
+import type { MailboxCounts } from './MailboxCounts';
+import {
+    MailboxCountsFromJSON,
+    MailboxCountsFromJSONTyped,
+    MailboxCountsToJSON,
+    MailboxCountsToJSONTyped,
+} from './MailboxCounts';
 import type { Mailbox } from './Mailbox';
 import {
     MailboxFromJSON,
@@ -20,6 +27,13 @@ import {
     MailboxToJSON,
     MailboxToJSONTyped,
 } from './Mailbox';
+import type { MailboxPagination } from './MailboxPagination';
+import {
+    MailboxPaginationFromJSON,
+    MailboxPaginationFromJSONTyped,
+    MailboxPaginationToJSON,
+    MailboxPaginationToJSONTyped,
+} from './MailboxPagination';
 
 /**
  * 
@@ -31,6 +45,14 @@ export interface ListMailboxes200ResponseData {
      * 
      */
     mailboxes: Array<Mailbox>;
+    /**
+     * 
+     */
+    counts: MailboxCounts;
+    /**
+     * 
+     */
+    pagination: MailboxPagination;
 }
 
 /**
@@ -38,6 +60,8 @@ export interface ListMailboxes200ResponseData {
  */
 export function instanceOfListMailboxes200ResponseData(value: object): value is ListMailboxes200ResponseData {
     if (!('mailboxes' in value) || value['mailboxes'] === undefined) return false;
+    if (!('counts' in value) || value['counts'] === undefined) return false;
+    if (!('pagination' in value) || value['pagination'] === undefined) return false;
     return true;
 }
 
@@ -52,6 +76,8 @@ export function ListMailboxes200ResponseDataFromJSONTyped(json: any, ignoreDiscr
     return {
         
         'mailboxes': ((json['mailboxes'] as Array<any>).map(MailboxFromJSON)),
+        'counts': MailboxCountsFromJSON(json['counts']),
+        'pagination': MailboxPaginationFromJSON(json['pagination']),
     };
 }
 
@@ -67,6 +93,8 @@ export function ListMailboxes200ResponseDataToJSONTyped(value?: ListMailboxes200
     return {
         
         'mailboxes': ((value['mailboxes'] as Array<any>).map(MailboxToJSON)),
+        'counts': MailboxCountsToJSON(value['counts']),
+        'pagination': MailboxPaginationToJSON(value['pagination']),
     };
 }
 

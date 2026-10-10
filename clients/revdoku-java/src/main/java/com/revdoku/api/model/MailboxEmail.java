@@ -38,7 +38,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
 /**
- * Authorized mailbox reads include the email address. Creation and opt-in reads also include receiving settings; use the emails collection for a durable arrival cursor.
+ * Mailbox reads include stored and unread email counts, lifetime receipts, receiving state and the permitted address. Creation and include_email reads also include additional address settings.
  */
 @JsonPropertyOrder({
   MailboxEmail.JSON_PROPERTY_ADDRESS,
@@ -53,7 +53,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
   MailboxEmail.JSON_PROPERTY_SENDER_ALLOWLIST,
   MailboxEmail.JSON_PROPERTY_USERNAME,
   MailboxEmail.JSON_PROPERTY_SENDING_ENABLED,
-  MailboxEmail.JSON_PROPERTY_ALIASES
+  MailboxEmail.JSON_PROPERTY_ALIASES,
+  MailboxEmail.JSON_PROPERTY_MESSAGE_COUNT,
+  MailboxEmail.JSON_PROPERTY_UNREAD_COUNT
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class MailboxEmail {
@@ -61,14 +63,16 @@ public class MailboxEmail {
   private JsonNullable<String> address = JsonNullable.<String>undefined();
 
   public static final String JSON_PROPERTY_RECEIVED_COUNT = "received_count";
-  @javax.annotation.Nullable
+  @javax.annotation.Nonnull
   private Long receivedCount;
 
   public static final String JSON_PROPERTY_LAST_RECEIVED_AT = "last_received_at";
-  private JsonNullable<OffsetDateTime> lastReceivedAt = JsonNullable.<OffsetDateTime>undefined();
+  @javax.annotation.Nullable
+  private OffsetDateTime lastReceivedAt;
 
   public static final String JSON_PROPERTY_LAST_RECEIVED_PATH = "last_received_path";
-  private JsonNullable<String> lastReceivedPath = JsonNullable.<String>undefined();
+  @javax.annotation.Nullable
+  private String lastReceivedPath;
 
   public static final String JSON_PROPERTY_BLOCKED_REASON = "blocked_reason";
   private JsonNullable<String> blockedReason = JsonNullable.<String>undefined();
@@ -86,7 +90,7 @@ public class MailboxEmail {
   private MailboxEmailCustomization customization;
 
   public static final String JSON_PROPERTY_RECEIVING_ENABLED = "receiving_enabled";
-  @javax.annotation.Nullable
+  @javax.annotation.Nonnull
   private Boolean receivingEnabled;
 
   public static final String JSON_PROPERTY_SENDER_ALLOWLIST = "sender_allowlist";
@@ -97,12 +101,20 @@ public class MailboxEmail {
   private JsonNullable<String> username = JsonNullable.<String>undefined();
 
   public static final String JSON_PROPERTY_SENDING_ENABLED = "sending_enabled";
-  @javax.annotation.Nullable
+  @javax.annotation.Nonnull
   private Boolean sendingEnabled;
 
   public static final String JSON_PROPERTY_ALIASES = "aliases";
   @javax.annotation.Nullable
   private List<MailboxEmailAliasesInner> aliases = new ArrayList<>();
+
+  public static final String JSON_PROPERTY_MESSAGE_COUNT = "message_count";
+  @javax.annotation.Nullable
+  private Long messageCount;
+
+  public static final String JSON_PROPERTY_UNREAD_COUNT = "unread_count";
+  @javax.annotation.Nullable
+  private Long unreadCount;
 
   public MailboxEmail() { 
   }
@@ -113,7 +125,7 @@ public class MailboxEmail {
   }
 
   /**
-   * Get address
+   * Primary mailbox display label when authorized. Omitted without address permission. The address remains a valid label when receiving is unavailable.
    * @return address
    */
   @javax.annotation.Nullable
@@ -139,33 +151,33 @@ public class MailboxEmail {
   }
 
 
-  public MailboxEmail receivedCount(@javax.annotation.Nullable Long receivedCount) {
+  public MailboxEmail receivedCount(@javax.annotation.Nonnull Long receivedCount) {
     this.receivedCount = receivedCount;
     return this;
   }
 
   /**
-   * Get receivedCount
+   * Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
    * minimum: 0
    * @return receivedCount
    */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_RECEIVED_COUNT, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_RECEIVED_COUNT, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public Long getReceivedCount() {
     return receivedCount;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_RECEIVED_COUNT, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setReceivedCount(@javax.annotation.Nullable Long receivedCount) {
+  @JsonProperty(value = JSON_PROPERTY_RECEIVED_COUNT, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setReceivedCount(@javax.annotation.Nonnull Long receivedCount) {
     this.receivedCount = receivedCount;
   }
 
 
   public MailboxEmail lastReceivedAt(@javax.annotation.Nullable OffsetDateTime lastReceivedAt) {
-    this.lastReceivedAt = JsonNullable.<OffsetDateTime>of(lastReceivedAt);
+    this.lastReceivedAt = lastReceivedAt;
     return this;
   }
 
@@ -174,30 +186,22 @@ public class MailboxEmail {
    * @return lastReceivedAt
    */
   @javax.annotation.Nullable
-  @JsonIgnore
-  public OffsetDateTime getLastReceivedAt() {
-        return lastReceivedAt.orElse(null);
-  }
-
   @JsonProperty(value = JSON_PROPERTY_LAST_RECEIVED_AT, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-
-  public JsonNullable<OffsetDateTime> getLastReceivedAt_JsonNullable() {
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public OffsetDateTime getLastReceivedAt() {
     return lastReceivedAt;
   }
-  
-  @JsonProperty(JSON_PROPERTY_LAST_RECEIVED_AT)
-  public void setLastReceivedAt_JsonNullable(JsonNullable<OffsetDateTime> lastReceivedAt) {
-    this.lastReceivedAt = lastReceivedAt;
-  }
 
+
+  @JsonProperty(value = JSON_PROPERTY_LAST_RECEIVED_AT, required = false)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public void setLastReceivedAt(@javax.annotation.Nullable OffsetDateTime lastReceivedAt) {
-    this.lastReceivedAt = JsonNullable.<OffsetDateTime>of(lastReceivedAt);
+    this.lastReceivedAt = lastReceivedAt;
   }
 
 
   public MailboxEmail lastReceivedPath(@javax.annotation.Nullable String lastReceivedPath) {
-    this.lastReceivedPath = JsonNullable.<String>of(lastReceivedPath);
+    this.lastReceivedPath = lastReceivedPath;
     return this;
   }
 
@@ -206,25 +210,17 @@ public class MailboxEmail {
    * @return lastReceivedPath
    */
   @javax.annotation.Nullable
-  @JsonIgnore
-  public String getLastReceivedPath() {
-        return lastReceivedPath.orElse(null);
-  }
-
   @JsonProperty(value = JSON_PROPERTY_LAST_RECEIVED_PATH, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-
-  public JsonNullable<String> getLastReceivedPath_JsonNullable() {
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public String getLastReceivedPath() {
     return lastReceivedPath;
   }
-  
-  @JsonProperty(JSON_PROPERTY_LAST_RECEIVED_PATH)
-  public void setLastReceivedPath_JsonNullable(JsonNullable<String> lastReceivedPath) {
-    this.lastReceivedPath = lastReceivedPath;
-  }
 
+
+  @JsonProperty(value = JSON_PROPERTY_LAST_RECEIVED_PATH, required = false)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public void setLastReceivedPath(@javax.annotation.Nullable String lastReceivedPath) {
-    this.lastReceivedPath = JsonNullable.<String>of(lastReceivedPath);
+    this.lastReceivedPath = lastReceivedPath;
   }
 
 
@@ -340,26 +336,26 @@ public class MailboxEmail {
   }
 
 
-  public MailboxEmail receivingEnabled(@javax.annotation.Nullable Boolean receivingEnabled) {
+  public MailboxEmail receivingEnabled(@javax.annotation.Nonnull Boolean receivingEnabled) {
     this.receivingEnabled = receivingEnabled;
     return this;
   }
 
   /**
-   * Whether this mailbox can currently receive email. False when configuration, account state, quota or routing prevents receiving.
+   * Whether the mailbox can receive email now. Display an authorized address even when this is false.
    * @return receivingEnabled
    */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_RECEIVING_ENABLED, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_RECEIVING_ENABLED, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public Boolean getReceivingEnabled() {
     return receivingEnabled;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_RECEIVING_ENABLED, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setReceivingEnabled(@javax.annotation.Nullable Boolean receivingEnabled) {
+  @JsonProperty(value = JSON_PROPERTY_RECEIVING_ENABLED, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setReceivingEnabled(@javax.annotation.Nonnull Boolean receivingEnabled) {
     this.receivingEnabled = receivingEnabled;
   }
 
@@ -420,7 +416,7 @@ public class MailboxEmail {
   }
 
 
-  public MailboxEmail sendingEnabled(@javax.annotation.Nullable Boolean sendingEnabled) {
+  public MailboxEmail sendingEnabled(@javax.annotation.Nonnull Boolean sendingEnabled) {
     this.sendingEnabled = sendingEnabled;
     return this;
   }
@@ -429,17 +425,17 @@ public class MailboxEmail {
    * Always false. Sending is not implemented.
    * @return sendingEnabled
    */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_SENDING_ENABLED, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_SENDING_ENABLED, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public Boolean getSendingEnabled() {
     return sendingEnabled;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_SENDING_ENABLED, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setSendingEnabled(@javax.annotation.Nullable Boolean sendingEnabled) {
+  @JsonProperty(value = JSON_PROPERTY_SENDING_ENABLED, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setSendingEnabled(@javax.annotation.Nonnull Boolean sendingEnabled) {
     this.sendingEnabled = sendingEnabled;
   }
 
@@ -476,6 +472,56 @@ public class MailboxEmail {
   }
 
 
+  public MailboxEmail messageCount(@javax.annotation.Nullable Long messageCount) {
+    this.messageCount = messageCount;
+    return this;
+  }
+
+  /**
+   * Emails currently stored. Null while the email index is being prepared.
+   * minimum: 0
+   * @return messageCount
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_MESSAGE_COUNT, required = false)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public Long getMessageCount() {
+    return messageCount;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_MESSAGE_COUNT, required = false)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setMessageCount(@javax.annotation.Nullable Long messageCount) {
+    this.messageCount = messageCount;
+  }
+
+
+  public MailboxEmail unreadCount(@javax.annotation.Nullable Long unreadCount) {
+    this.unreadCount = unreadCount;
+    return this;
+  }
+
+  /**
+   * Stored emails with shared unread status. Null while the email index is being prepared.
+   * minimum: 0
+   * @return unreadCount
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_UNREAD_COUNT, required = false)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public Long getUnreadCount() {
+    return unreadCount;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_UNREAD_COUNT, required = false)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setUnreadCount(@javax.annotation.Nullable Long unreadCount) {
+    this.unreadCount = unreadCount;
+  }
+
+
   /**
    * Return true if this MailboxEmail object is equal to o.
    */
@@ -490,8 +536,8 @@ public class MailboxEmail {
     MailboxEmail mailboxEmail = (MailboxEmail) o;
     return equalsNullable(this.address, mailboxEmail.address) &&
         Objects.equals(this.receivedCount, mailboxEmail.receivedCount) &&
-        equalsNullable(this.lastReceivedAt, mailboxEmail.lastReceivedAt) &&
-        equalsNullable(this.lastReceivedPath, mailboxEmail.lastReceivedPath) &&
+        Objects.equals(this.lastReceivedAt, mailboxEmail.lastReceivedAt) &&
+        Objects.equals(this.lastReceivedPath, mailboxEmail.lastReceivedPath) &&
         equalsNullable(this.blockedReason, mailboxEmail.blockedReason) &&
         Objects.equals(this.availableDomains, mailboxEmail.availableDomains) &&
         Objects.equals(this.assignment, mailboxEmail.assignment) &&
@@ -500,7 +546,9 @@ public class MailboxEmail {
         Objects.equals(this.senderAllowlist, mailboxEmail.senderAllowlist) &&
         equalsNullable(this.username, mailboxEmail.username) &&
         Objects.equals(this.sendingEnabled, mailboxEmail.sendingEnabled) &&
-        Objects.equals(this.aliases, mailboxEmail.aliases);
+        Objects.equals(this.aliases, mailboxEmail.aliases) &&
+        Objects.equals(this.messageCount, mailboxEmail.messageCount) &&
+        Objects.equals(this.unreadCount, mailboxEmail.unreadCount);
   }
 
   private static <T> boolean equalsNullable(JsonNullable<T> a, JsonNullable<T> b) {
@@ -509,7 +557,7 @@ public class MailboxEmail {
 
   @Override
   public int hashCode() {
-    return Objects.hash(hashCodeNullable(address), receivedCount, hashCodeNullable(lastReceivedAt), hashCodeNullable(lastReceivedPath), hashCodeNullable(blockedReason), availableDomains, assignment, customization, receivingEnabled, senderAllowlist, hashCodeNullable(username), sendingEnabled, aliases);
+    return Objects.hash(hashCodeNullable(address), receivedCount, lastReceivedAt, lastReceivedPath, hashCodeNullable(blockedReason), availableDomains, assignment, customization, receivingEnabled, senderAllowlist, hashCodeNullable(username), sendingEnabled, aliases, messageCount, unreadCount);
   }
 
   private static <T> int hashCodeNullable(JsonNullable<T> a) {
@@ -536,6 +584,8 @@ public class MailboxEmail {
     sb.append("    username: ").append(toIndentedString(username)).append("\n");
     sb.append("    sendingEnabled: ").append(toIndentedString(sendingEnabled)).append("\n");
     sb.append("    aliases: ").append(toIndentedString(aliases)).append("\n");
+    sb.append("    messageCount: ").append(toIndentedString(messageCount)).append("\n");
+    sb.append("    unreadCount: ").append(toIndentedString(unreadCount)).append("\n");
     sb.append("}");
     return sb.toString();
   }

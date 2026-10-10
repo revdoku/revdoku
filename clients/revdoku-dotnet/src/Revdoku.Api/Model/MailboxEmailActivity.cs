@@ -35,20 +35,25 @@ namespace Revdoku.Api.Model
         /// <summary>
         /// Initializes a new instance of the <see cref="MailboxEmailActivity" /> class.
         /// </summary>
-        /// <param name="receivedCount">receivedCount.</param>
+        /// <param name="receivedCount">Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails..</param>
         /// <param name="lastReceivedAt">lastReceivedAt.</param>
         /// <param name="lastReceivedPath">Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion..</param>
-        public MailboxEmailActivity(int receivedCount = default, DateTime? lastReceivedAt = default, string lastReceivedPath = default)
+        /// <param name="messageCount">Emails currently stored. Null while the email index is being prepared..</param>
+        /// <param name="unreadCount">Stored emails with shared unread status. Null while the email index is being prepared..</param>
+        public MailboxEmailActivity(int receivedCount = default, DateTime? lastReceivedAt = default, string lastReceivedPath = default, long? messageCount = default, long? unreadCount = default)
         {
             this.ReceivedCount = receivedCount;
             this.LastReceivedAt = lastReceivedAt;
             this.LastReceivedPath = lastReceivedPath;
+            this.MessageCount = messageCount;
+            this.UnreadCount = unreadCount;
             this.AdditionalProperties = new Dictionary<string, object>();
         }
 
         /// <summary>
-        /// Gets or Sets ReceivedCount
+        /// Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
         /// </summary>
+        /// <value>Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.</value>
         [DataMember(Name = "received_count", EmitDefaultValue = false)]
         public int ReceivedCount { get; set; }
 
@@ -64,6 +69,20 @@ namespace Revdoku.Api.Model
         /// <value>Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion.</value>
         [DataMember(Name = "last_received_path", EmitDefaultValue = true)]
         public string LastReceivedPath { get; set; }
+
+        /// <summary>
+        /// Emails currently stored. Null while the email index is being prepared.
+        /// </summary>
+        /// <value>Emails currently stored. Null while the email index is being prepared.</value>
+        [DataMember(Name = "message_count", EmitDefaultValue = true)]
+        public long? MessageCount { get; set; }
+
+        /// <summary>
+        /// Stored emails with shared unread status. Null while the email index is being prepared.
+        /// </summary>
+        /// <value>Stored emails with shared unread status. Null while the email index is being prepared.</value>
+        [DataMember(Name = "unread_count", EmitDefaultValue = true)]
+        public long? UnreadCount { get; set; }
 
         /// <summary>
         /// Gets or Sets additional properties
@@ -82,6 +101,8 @@ namespace Revdoku.Api.Model
             sb.Append("  ReceivedCount: ").Append(ReceivedCount).Append("\n");
             sb.Append("  LastReceivedAt: ").Append(LastReceivedAt).Append("\n");
             sb.Append("  LastReceivedPath: ").Append(LastReceivedPath).Append("\n");
+            sb.Append("  MessageCount: ").Append(MessageCount).Append("\n");
+            sb.Append("  UnreadCount: ").Append(UnreadCount).Append("\n");
             sb.Append("  AdditionalProperties: ").Append(AdditionalProperties).Append("\n");
             sb.Append("}\n");
             return sb.ToString();
@@ -107,6 +128,18 @@ namespace Revdoku.Api.Model
             if (this.ReceivedCount < (int)0)
             {
                 yield return new ValidationResult("Invalid value for ReceivedCount, must be a value greater than or equal to 0.", new [] { "ReceivedCount" });
+            }
+
+            // MessageCount (long?) minimum
+            if (this.MessageCount < (long?)0)
+            {
+                yield return new ValidationResult("Invalid value for MessageCount, must be a value greater than or equal to 0.", new [] { "MessageCount" });
+            }
+
+            // UnreadCount (long?) minimum
+            if (this.UnreadCount < (long?)0)
+            {
+                yield return new ValidationResult("Invalid value for UnreadCount, must be a value greater than or equal to 0.", new [] { "UnreadCount" });
             }
 
             yield break;

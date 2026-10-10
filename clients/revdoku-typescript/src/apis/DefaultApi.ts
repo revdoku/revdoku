@@ -424,7 +424,7 @@ export interface GetMailboxRequest {
      */
     id: string;
     /**
-     * Requires upload/write access. Omission exposes activity only.
+     * Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address.
      */
     includeEmail?: boolean;
     /**
@@ -592,13 +592,21 @@ export interface ListMailboxesRequest {
      */
     accountId?: string;
     /**
-     * 
+     * Case-insensitive contains-filter on the permitted email address or ID.
      */
-    archived?: boolean;
+    q?: string;
+    /**
+     * Archive status: active, archived or all. Defaults to active.
+     */
+    status?: ListMailboxesStatusEnum;
     /**
      * 
      */
-    q?: string;
+    limit?: number;
+    /**
+     * 
+     */
+    offset?: number;
 }
 
 export interface PrepareFileUploadOperationRequest {
@@ -2268,12 +2276,20 @@ export class DefaultApi extends runtime.BaseAPI {
             queryParameters['account_id'] = requestParameters['accountId'];
         }
 
-        if (requestParameters['archived'] != null) {
-            queryParameters['archived'] = requestParameters['archived'];
-        }
-
         if (requestParameters['q'] != null) {
             queryParameters['q'] = requestParameters['q'];
+        }
+
+        if (requestParameters['status'] != null) {
+            queryParameters['status'] = requestParameters['status'];
+        }
+
+        if (requestParameters['limit'] != null) {
+            queryParameters['limit'] = requestParameters['limit'];
+        }
+
+        if (requestParameters['offset'] != null) {
+            queryParameters['offset'] = requestParameters['offset'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -2298,6 +2314,7 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
+     * List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
      * List accessible mailboxes
      */
     async listMailboxesRaw(requestParameters: ListMailboxesRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ListMailboxes200Response>> {
@@ -2308,6 +2325,7 @@ export class DefaultApi extends runtime.BaseAPI {
     }
 
     /**
+     * List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
      * List accessible mailboxes
      */
     async listMailboxes(requestParameters: ListMailboxesRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ListMailboxes200Response> {
@@ -2874,3 +2892,12 @@ export const ListEmailsOrderEnum = {
     Desc: 'desc',
 } as const;
 export type ListEmailsOrderEnum = typeof ListEmailsOrderEnum[keyof typeof ListEmailsOrderEnum];
+/**
+ * @export
+ */
+export const ListMailboxesStatusEnum = {
+    Active: 'active',
+    Archived: 'archived',
+    All: 'all',
+} as const;
+export type ListMailboxesStatusEnum = typeof ListMailboxesStatusEnum[keyof typeof ListMailboxesStatusEnum];

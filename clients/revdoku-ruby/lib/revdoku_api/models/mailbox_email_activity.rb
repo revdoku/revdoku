@@ -15,6 +15,7 @@ require 'time'
 
 module RevdokuApi
   class MailboxEmailActivity < ApiModelBase
+    # Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
     attr_accessor :received_count
 
     attr_accessor :last_received_at
@@ -22,12 +23,20 @@ module RevdokuApi
     # Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion.
     attr_accessor :last_received_path
 
+    # Emails currently stored. Null while the email index is being prepared.
+    attr_accessor :message_count
+
+    # Stored emails with shared unread status. Null while the email index is being prepared.
+    attr_accessor :unread_count
+
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
         :'received_count' => :'received_count',
         :'last_received_at' => :'last_received_at',
-        :'last_received_path' => :'last_received_path'
+        :'last_received_path' => :'last_received_path',
+        :'message_count' => :'message_count',
+        :'unread_count' => :'unread_count'
       }
     end
 
@@ -46,7 +55,9 @@ module RevdokuApi
       {
         :'received_count' => :'Integer',
         :'last_received_at' => :'Time',
-        :'last_received_path' => :'String'
+        :'last_received_path' => :'String',
+        :'message_count' => :'Integer',
+        :'unread_count' => :'Integer'
       }
     end
 
@@ -54,7 +65,9 @@ module RevdokuApi
     def self.openapi_nullable
       Set.new([
         :'last_received_at',
-        :'last_received_path'
+        :'last_received_path',
+        :'message_count',
+        :'unread_count'
       ])
     end
 
@@ -85,6 +98,14 @@ module RevdokuApi
       if attributes.key?(:'last_received_path')
         self.last_received_path = attributes[:'last_received_path']
       end
+
+      if attributes.key?(:'message_count')
+        self.message_count = attributes[:'message_count']
+      end
+
+      if attributes.key?(:'unread_count')
+        self.unread_count = attributes[:'unread_count']
+      end
     end
 
     # Custom attribute writer method with validation
@@ -101,6 +122,26 @@ module RevdokuApi
       @received_count = received_count
     end
 
+    # Custom attribute writer method with validation
+    # @param [Object] message_count Value to be assigned
+    def message_count=(message_count)
+      if !message_count.nil? && message_count < 0
+        fail ArgumentError, 'invalid value for "message_count", must be greater than or equal to 0.'
+      end
+
+      @message_count = message_count
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] unread_count Value to be assigned
+    def unread_count=(unread_count)
+      if !unread_count.nil? && unread_count < 0
+        fail ArgumentError, 'invalid value for "unread_count", must be greater than or equal to 0.'
+      end
+
+      @unread_count = unread_count
+    end
+
     # Checks equality by comparing each attribute.
     # @param [Object] Object to be compared
     def ==(o)
@@ -108,7 +149,9 @@ module RevdokuApi
       self.class == o.class &&
           received_count == o.received_count &&
           last_received_at == o.last_received_at &&
-          last_received_path == o.last_received_path
+          last_received_path == o.last_received_path &&
+          message_count == o.message_count &&
+          unread_count == o.unread_count
     end
 
     # @see the `==` method
@@ -120,7 +163,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [received_count, last_received_at, last_received_path].hash
+      [received_count, last_received_at, last_received_path, message_count, unread_count].hash
     end
 
     # Builds the object from hash

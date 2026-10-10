@@ -14,25 +14,37 @@ class ListMailboxes200ResponseData {
   /// Returns a new [ListMailboxes200ResponseData] instance.
   ListMailboxes200ResponseData({
     this.mailboxes = const [],
+    required this.counts,
+    required this.pagination,
   });
 
   List<Mailbox> mailboxes;
 
+  MailboxCounts counts;
+
+  MailboxPagination pagination;
+
   @override
   bool operator ==(Object other) => identical(this, other) || other is ListMailboxes200ResponseData &&
-    _deepEquality.equals(other.mailboxes, mailboxes);
+    _deepEquality.equals(other.mailboxes, mailboxes) &&
+    other.counts == counts &&
+    other.pagination == pagination;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (mailboxes.hashCode);
+    (mailboxes.hashCode) +
+    (counts.hashCode) +
+    (pagination.hashCode);
 
   @override
-  String toString() => 'ListMailboxes200ResponseData[mailboxes=$mailboxes]';
+  String toString() => 'ListMailboxes200ResponseData[mailboxes=$mailboxes, counts=$counts, pagination=$pagination]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
       json[r'mailboxes'] = this.mailboxes;
+      json[r'counts'] = this.counts;
+      json[r'pagination'] = this.pagination;
     return json;
   }
 
@@ -49,11 +61,17 @@ class ListMailboxes200ResponseData {
       assert(() {
         assert(json.containsKey(r'mailboxes'), 'Required key "ListMailboxes200ResponseData[mailboxes]" is missing from JSON.');
         assert(json[r'mailboxes'] != null, 'Required key "ListMailboxes200ResponseData[mailboxes]" has a null value in JSON.');
+        assert(json.containsKey(r'counts'), 'Required key "ListMailboxes200ResponseData[counts]" is missing from JSON.');
+        assert(json[r'counts'] != null, 'Required key "ListMailboxes200ResponseData[counts]" has a null value in JSON.');
+        assert(json.containsKey(r'pagination'), 'Required key "ListMailboxes200ResponseData[pagination]" is missing from JSON.');
+        assert(json[r'pagination'] != null, 'Required key "ListMailboxes200ResponseData[pagination]" has a null value in JSON.');
         return true;
       }());
 
       return ListMailboxes200ResponseData(
         mailboxes: Mailbox.listFromJson(json[r'mailboxes']),
+        counts: MailboxCounts.fromJson(json[r'counts'])!,
+        pagination: MailboxPagination.fromJson(json[r'pagination'])!,
       );
     }
     return null;
@@ -102,6 +120,8 @@ class ListMailboxes200ResponseData {
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
     'mailboxes',
+    'counts',
+    'pagination',
   };
 }
 

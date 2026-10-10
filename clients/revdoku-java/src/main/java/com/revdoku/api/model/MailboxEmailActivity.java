@@ -36,7 +36,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonPropertyOrder({
   MailboxEmailActivity.JSON_PROPERTY_RECEIVED_COUNT,
   MailboxEmailActivity.JSON_PROPERTY_LAST_RECEIVED_AT,
-  MailboxEmailActivity.JSON_PROPERTY_LAST_RECEIVED_PATH
+  MailboxEmailActivity.JSON_PROPERTY_LAST_RECEIVED_PATH,
+  MailboxEmailActivity.JSON_PROPERTY_MESSAGE_COUNT,
+  MailboxEmailActivity.JSON_PROPERTY_UNREAD_COUNT
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class MailboxEmailActivity {
@@ -50,6 +52,12 @@ public class MailboxEmailActivity {
   public static final String JSON_PROPERTY_LAST_RECEIVED_PATH = "last_received_path";
   private JsonNullable<String> lastReceivedPath = JsonNullable.<String>undefined();
 
+  public static final String JSON_PROPERTY_MESSAGE_COUNT = "message_count";
+  private JsonNullable<Long> messageCount = JsonNullable.<Long>undefined();
+
+  public static final String JSON_PROPERTY_UNREAD_COUNT = "unread_count";
+  private JsonNullable<Long> unreadCount = JsonNullable.<Long>undefined();
+
   public MailboxEmailActivity() { 
   }
 
@@ -59,7 +67,7 @@ public class MailboxEmailActivity {
   }
 
   /**
-   * Get receivedCount
+   * Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
    * minimum: 0
    * @return receivedCount
    */
@@ -142,6 +150,72 @@ public class MailboxEmailActivity {
   }
 
 
+  public MailboxEmailActivity messageCount(@javax.annotation.Nullable Long messageCount) {
+    this.messageCount = JsonNullable.<Long>of(messageCount);
+    return this;
+  }
+
+  /**
+   * Emails currently stored. Null while the email index is being prepared.
+   * minimum: 0
+   * @return messageCount
+   */
+  @javax.annotation.Nullable
+  @JsonIgnore
+  public Long getMessageCount() {
+        return messageCount.orElse(null);
+  }
+
+  @JsonProperty(value = JSON_PROPERTY_MESSAGE_COUNT, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public JsonNullable<Long> getMessageCount_JsonNullable() {
+    return messageCount;
+  }
+  
+  @JsonProperty(JSON_PROPERTY_MESSAGE_COUNT)
+  public void setMessageCount_JsonNullable(JsonNullable<Long> messageCount) {
+    this.messageCount = messageCount;
+  }
+
+  public void setMessageCount(@javax.annotation.Nullable Long messageCount) {
+    this.messageCount = JsonNullable.<Long>of(messageCount);
+  }
+
+
+  public MailboxEmailActivity unreadCount(@javax.annotation.Nullable Long unreadCount) {
+    this.unreadCount = JsonNullable.<Long>of(unreadCount);
+    return this;
+  }
+
+  /**
+   * Stored emails with shared unread status. Null while the email index is being prepared.
+   * minimum: 0
+   * @return unreadCount
+   */
+  @javax.annotation.Nullable
+  @JsonIgnore
+  public Long getUnreadCount() {
+        return unreadCount.orElse(null);
+  }
+
+  @JsonProperty(value = JSON_PROPERTY_UNREAD_COUNT, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public JsonNullable<Long> getUnreadCount_JsonNullable() {
+    return unreadCount;
+  }
+  
+  @JsonProperty(JSON_PROPERTY_UNREAD_COUNT)
+  public void setUnreadCount_JsonNullable(JsonNullable<Long> unreadCount) {
+    this.unreadCount = unreadCount;
+  }
+
+  public void setUnreadCount(@javax.annotation.Nullable Long unreadCount) {
+    this.unreadCount = JsonNullable.<Long>of(unreadCount);
+  }
+
+
   /**
    * Return true if this MailboxEmailActivity object is equal to o.
    */
@@ -156,7 +230,9 @@ public class MailboxEmailActivity {
     MailboxEmailActivity mailboxEmailActivity = (MailboxEmailActivity) o;
     return Objects.equals(this.receivedCount, mailboxEmailActivity.receivedCount) &&
         equalsNullable(this.lastReceivedAt, mailboxEmailActivity.lastReceivedAt) &&
-        equalsNullable(this.lastReceivedPath, mailboxEmailActivity.lastReceivedPath);
+        equalsNullable(this.lastReceivedPath, mailboxEmailActivity.lastReceivedPath) &&
+        equalsNullable(this.messageCount, mailboxEmailActivity.messageCount) &&
+        equalsNullable(this.unreadCount, mailboxEmailActivity.unreadCount);
   }
 
   private static <T> boolean equalsNullable(JsonNullable<T> a, JsonNullable<T> b) {
@@ -165,7 +241,7 @@ public class MailboxEmailActivity {
 
   @Override
   public int hashCode() {
-    return Objects.hash(receivedCount, hashCodeNullable(lastReceivedAt), hashCodeNullable(lastReceivedPath));
+    return Objects.hash(receivedCount, hashCodeNullable(lastReceivedAt), hashCodeNullable(lastReceivedPath), hashCodeNullable(messageCount), hashCodeNullable(unreadCount));
   }
 
   private static <T> int hashCodeNullable(JsonNullable<T> a) {
@@ -182,6 +258,8 @@ public class MailboxEmailActivity {
     sb.append("    receivedCount: ").append(toIndentedString(receivedCount)).append("\n");
     sb.append("    lastReceivedAt: ").append(toIndentedString(lastReceivedAt)).append("\n");
     sb.append("    lastReceivedPath: ").append(toIndentedString(lastReceivedPath)).append("\n");
+    sb.append("    messageCount: ").append(toIndentedString(messageCount)).append("\n");
+    sb.append("    unreadCount: ").append(toIndentedString(unreadCount)).append("\n");
     sb.append("}");
     return sb.toString();
   }

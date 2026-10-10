@@ -10,7 +10,7 @@ import Foundation
 import AnyCodable
 #endif
 
-/** Public mailbox details. Write-authorized reads include email.address. Creation and authorized include_email reads also include receiving settings. */
+/** Public mailbox details, including the permitted address, stored and unread email counts, lifetime receipts and receiving state. Keep IDs for API operations. Use the address as the dashboard link label. */
 public struct Mailbox: Codable, JSONEncodable, Hashable {
 
     public static let storageBytesRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)

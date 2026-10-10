@@ -21,6 +21,8 @@ var _ MappedNullable = &ListMailboxes200ResponseData{}
 // ListMailboxes200ResponseData struct for ListMailboxes200ResponseData
 type ListMailboxes200ResponseData struct {
 	Mailboxes []Mailbox `json:"mailboxes"`
+	Counts MailboxCounts `json:"counts"`
+	Pagination MailboxPagination `json:"pagination"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -30,9 +32,11 @@ type _ListMailboxes200ResponseData ListMailboxes200ResponseData
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewListMailboxes200ResponseData(mailboxes []Mailbox) *ListMailboxes200ResponseData {
+func NewListMailboxes200ResponseData(mailboxes []Mailbox, counts MailboxCounts, pagination MailboxPagination) *ListMailboxes200ResponseData {
 	this := ListMailboxes200ResponseData{}
 	this.Mailboxes = mailboxes
+	this.Counts = counts
+	this.Pagination = pagination
 	return &this
 }
 
@@ -68,6 +72,54 @@ func (o *ListMailboxes200ResponseData) SetMailboxes(v []Mailbox) {
 	o.Mailboxes = v
 }
 
+// GetCounts returns the Counts field value
+func (o *ListMailboxes200ResponseData) GetCounts() MailboxCounts {
+	if o == nil {
+		var ret MailboxCounts
+		return ret
+	}
+
+	return o.Counts
+}
+
+// GetCountsOk returns a tuple with the Counts field value
+// and a boolean to check if the value has been set.
+func (o *ListMailboxes200ResponseData) GetCountsOk() (*MailboxCounts, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Counts, true
+}
+
+// SetCounts sets field value
+func (o *ListMailboxes200ResponseData) SetCounts(v MailboxCounts) {
+	o.Counts = v
+}
+
+// GetPagination returns the Pagination field value
+func (o *ListMailboxes200ResponseData) GetPagination() MailboxPagination {
+	if o == nil {
+		var ret MailboxPagination
+		return ret
+	}
+
+	return o.Pagination
+}
+
+// GetPaginationOk returns a tuple with the Pagination field value
+// and a boolean to check if the value has been set.
+func (o *ListMailboxes200ResponseData) GetPaginationOk() (*MailboxPagination, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Pagination, true
+}
+
+// SetPagination sets field value
+func (o *ListMailboxes200ResponseData) SetPagination(v MailboxPagination) {
+	o.Pagination = v
+}
+
 func (o ListMailboxes200ResponseData) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -79,6 +131,8 @@ func (o ListMailboxes200ResponseData) MarshalJSON() ([]byte, error) {
 func (o ListMailboxes200ResponseData) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["mailboxes"] = o.Mailboxes
+	toSerialize["counts"] = o.Counts
+	toSerialize["pagination"] = o.Pagination
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -93,6 +147,8 @@ func (o *ListMailboxes200ResponseData) UnmarshalJSON(data []byte) (err error) {
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"mailboxes",
+		"counts",
+		"pagination",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -123,6 +179,8 @@ func (o *ListMailboxes200ResponseData) UnmarshalJSON(data []byte) (err error) {
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "mailboxes")
+		delete(additionalProperties, "counts")
+		delete(additionalProperties, "pagination")
 		o.AdditionalProperties = additionalProperties
 	}
 

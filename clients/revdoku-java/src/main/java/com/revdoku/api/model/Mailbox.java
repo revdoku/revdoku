@@ -37,7 +37,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
 /**
- * Public mailbox details. Write-authorized reads include email.address. Creation and authorized include_email reads also include receiving settings.
+ * Public mailbox details, including the permitted address, stored and unread email counts, lifetime receipts and receiving state. Keep IDs for API operations. Use the address as the dashboard link label.
  */
 @JsonPropertyOrder({
   Mailbox.JSON_PROPERTY_ID,

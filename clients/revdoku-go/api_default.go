@@ -2823,7 +2823,7 @@ type ApiGetMailboxRequest struct {
 	reason *string
 }
 
-// Requires upload/write access. Omission exposes activity only.
+// Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address.
 func (r ApiGetMailboxRequest) IncludeEmail(includeEmail bool) ApiGetMailboxRequest {
 	r.includeEmail = &includeEmail
 	return r
@@ -4189,8 +4189,10 @@ type ApiListMailboxesRequest struct {
 	ctx context.Context
 	ApiService *DefaultAPIService
 	accountId *string
-	archived *bool
 	q *string
+	status *string
+	limit *int32
+	offset *int32
 }
 
 // Select another granted account; otherwise use the credential default.
@@ -4199,13 +4201,25 @@ func (r ApiListMailboxesRequest) AccountId(accountId string) ApiListMailboxesReq
 	return r
 }
 
-func (r ApiListMailboxesRequest) Archived(archived bool) ApiListMailboxesRequest {
-	r.archived = &archived
+// Case-insensitive contains-filter on the permitted email address or ID.
+func (r ApiListMailboxesRequest) Q(q string) ApiListMailboxesRequest {
+	r.q = &q
 	return r
 }
 
-func (r ApiListMailboxesRequest) Q(q string) ApiListMailboxesRequest {
-	r.q = &q
+// Archive status: active, archived or all. Defaults to active.
+func (r ApiListMailboxesRequest) Status(status string) ApiListMailboxesRequest {
+	r.status = &status
+	return r
+}
+
+func (r ApiListMailboxesRequest) Limit(limit int32) ApiListMailboxesRequest {
+	r.limit = &limit
+	return r
+}
+
+func (r ApiListMailboxesRequest) Offset(offset int32) ApiListMailboxesRequest {
+	r.offset = &offset
 	return r
 }
 
@@ -4215,6 +4229,8 @@ func (r ApiListMailboxesRequest) Execute() (*ListMailboxes200Response, *http.Res
 
 /*
 ListMailboxes List accessible mailboxes
+
+List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiListMailboxesRequest
@@ -4250,15 +4266,29 @@ func (a *DefaultAPIService) ListMailboxesExecute(r ApiListMailboxesRequest) (*Li
 	if r.accountId != nil {
 		parameterAddToHeaderOrQuery(localVarQueryParams, "account_id", r.accountId, "form", "")
 	}
-	if r.archived != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "archived", r.archived, "form", "")
-	} else {
-		var defaultValue bool = false
-		parameterAddToHeaderOrQuery(localVarQueryParams, "archived", defaultValue, "form", "")
-		r.archived = &defaultValue
-	}
 	if r.q != nil {
 		parameterAddToHeaderOrQuery(localVarQueryParams, "q", r.q, "form", "")
+	}
+	if r.status != nil {
+		parameterAddToHeaderOrQuery(localVarQueryParams, "status", r.status, "form", "")
+	} else {
+		var defaultValue string = "active"
+		parameterAddToHeaderOrQuery(localVarQueryParams, "status", defaultValue, "form", "")
+		r.status = &defaultValue
+	}
+	if r.limit != nil {
+		parameterAddToHeaderOrQuery(localVarQueryParams, "limit", r.limit, "form", "")
+	} else {
+		var defaultValue int32 = 100
+		parameterAddToHeaderOrQuery(localVarQueryParams, "limit", defaultValue, "form", "")
+		r.limit = &defaultValue
+	}
+	if r.offset != nil {
+		parameterAddToHeaderOrQuery(localVarQueryParams, "offset", r.offset, "form", "")
+	} else {
+		var defaultValue int32 = 0
+		parameterAddToHeaderOrQuery(localVarQueryParams, "offset", defaultValue, "form", "")
+		r.offset = &defaultValue
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}

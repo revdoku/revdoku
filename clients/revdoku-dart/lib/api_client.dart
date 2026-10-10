@@ -326,6 +326,8 @@ class ApiClient {
           return Mailbox.fromJson(value);
         case 'MailboxAction':
           return MailboxAction.fromJson(value);
+        case 'MailboxCounts':
+          return MailboxCounts.fromJson(value);
         case 'MailboxCreateOptions':
           return MailboxCreateOptions.fromJson(value);
         case 'MailboxEmail':
@@ -356,6 +358,8 @@ class ApiClient {
           return MailboxLockLockedBy.fromJson(value);
         case 'MailboxLockLockedByApiKey':
           return MailboxLockLockedByApiKey.fromJson(value);
+        case 'MailboxPagination':
+          return MailboxPagination.fromJson(value);
         case 'PrepareFileUploadRequest':
           return PrepareFileUploadRequest.fromJson(value);
         case 'PreparedFileUpload':

@@ -1544,11 +1544,14 @@ pub async fn list_mailbox_files(configuration: &configuration::Configuration, id
     }
 }
 
-pub async fn list_mailboxes(configuration: &configuration::Configuration, account_id: Option<&str>, archived: Option<bool>, q: Option<&str>) -> Result<models::ListMailboxes200Response, Error<ListMailboxesError>> {
+/// List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
+pub async fn list_mailboxes(configuration: &configuration::Configuration, account_id: Option<&str>, q: Option<&str>, status: Option<&str>, limit: Option<i32>, offset: Option<i32>) -> Result<models::ListMailboxes200Response, Error<ListMailboxesError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_query_account_id = account_id;
-    let p_query_archived = archived;
     let p_query_q = q;
+    let p_query_status = status;
+    let p_query_limit = limit;
+    let p_query_offset = offset;
 
     let uri_str = format!("{}/v1/mailboxes", configuration.base_path);
     let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
@@ -1556,11 +1559,17 @@ pub async fn list_mailboxes(configuration: &configuration::Configuration, accoun
     if let Some(ref param_value) = p_query_account_id {
         req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
     }
-    if let Some(ref param_value) = p_query_archived {
-        req_builder = req_builder.query(&[("archived", &param_value.to_string())]);
-    }
     if let Some(ref param_value) = p_query_q {
         req_builder = req_builder.query(&[("q", &param_value.to_string())]);
+    }
+    if let Some(ref param_value) = p_query_status {
+        req_builder = req_builder.query(&[("status", &param_value.to_string())]);
+    }
+    if let Some(ref param_value) = p_query_limit {
+        req_builder = req_builder.query(&[("limit", &param_value.to_string())]);
+    }
+    if let Some(ref param_value) = p_query_offset {
+        req_builder = req_builder.query(&[("offset", &param_value.to_string())]);
     }
     if let Some(ref user_agent) = configuration.user_agent {
         req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());

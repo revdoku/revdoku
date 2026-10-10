@@ -35,7 +35,7 @@ repository. For agent setup, see [Local AI apps](#local-ai-apps).
 ## Prompt for an AI agent
 
 ```text
-Connect Revdoku so you can create and manage email mailboxes for my AI agents, read emails and attachments, and store files. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do.
+Connect Revdoku so you can create and manage email mailboxes for my AI agents, read emails and attachments, and store files. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do.
 ```
 
 ## Receive and read email

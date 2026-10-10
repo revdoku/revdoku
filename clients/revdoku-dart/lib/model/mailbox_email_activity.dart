@@ -16,8 +16,12 @@ class MailboxEmailActivity {
     this.receivedCount,
     this.lastReceivedAt,
     this.lastReceivedPath,
+    this.messageCount,
+    this.unreadCount,
   });
 
+  /// Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
+  ///
   /// Minimum value: 0
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
@@ -32,21 +36,35 @@ class MailboxEmailActivity {
   /// Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion.
   String? lastReceivedPath;
 
+  /// Emails currently stored. Null while the email index is being prepared.
+  ///
+  /// Minimum value: 0
+  int? messageCount;
+
+  /// Stored emails with shared unread status. Null while the email index is being prepared.
+  ///
+  /// Minimum value: 0
+  int? unreadCount;
+
   @override
   bool operator ==(Object other) => identical(this, other) || other is MailboxEmailActivity &&
     other.receivedCount == receivedCount &&
     other.lastReceivedAt == lastReceivedAt &&
-    other.lastReceivedPath == lastReceivedPath;
+    other.lastReceivedPath == lastReceivedPath &&
+    other.messageCount == messageCount &&
+    other.unreadCount == unreadCount;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
     (receivedCount == null ? 0 : receivedCount!.hashCode) +
     (lastReceivedAt == null ? 0 : lastReceivedAt!.hashCode) +
-    (lastReceivedPath == null ? 0 : lastReceivedPath!.hashCode);
+    (lastReceivedPath == null ? 0 : lastReceivedPath!.hashCode) +
+    (messageCount == null ? 0 : messageCount!.hashCode) +
+    (unreadCount == null ? 0 : unreadCount!.hashCode);
 
   @override
-  String toString() => 'MailboxEmailActivity[receivedCount=$receivedCount, lastReceivedAt=$lastReceivedAt, lastReceivedPath=$lastReceivedPath]';
+  String toString() => 'MailboxEmailActivity[receivedCount=$receivedCount, lastReceivedAt=$lastReceivedAt, lastReceivedPath=$lastReceivedPath, messageCount=$messageCount, unreadCount=$unreadCount]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -62,6 +80,16 @@ class MailboxEmailActivity {
       json[r'last_received_path'] = this.lastReceivedPath;
     } else {
       json[r'last_received_path'] = null;
+    }
+    if (this.messageCount != null) {
+      json[r'message_count'] = this.messageCount;
+    } else {
+      json[r'message_count'] = null;
+    }
+    if (this.unreadCount != null) {
+      json[r'unread_count'] = this.unreadCount;
+    } else {
+      json[r'unread_count'] = null;
     }
     return json;
   }
@@ -84,6 +112,8 @@ class MailboxEmailActivity {
         receivedCount: mapValueOfType<int>(json, r'received_count'),
         lastReceivedAt: mapDateTime(json, r'last_received_at', r''),
         lastReceivedPath: mapValueOfType<String>(json, r'last_received_path'),
+        messageCount: mapValueOfType<int>(json, r'message_count'),
+        unreadCount: mapValueOfType<int>(json, r'unread_count'),
       );
     }
     return null;

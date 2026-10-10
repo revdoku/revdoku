@@ -5032,7 +5032,7 @@ class DefaultApi:
     def get_mailbox(
         self,
         id: StrictStr,
-        include_email: Annotated[Optional[StrictBool], Field(description="Requires upload/write access. Omission exposes activity only.")] = None,
+        include_email: Annotated[Optional[StrictBool], Field(description="Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address.")] = None,
         account_id: Optional[StrictStr] = None,
         reason: Optional[Annotated[str, Field(strict=True, max_length=2000)]] = None,
         _request_timeout: Union[
@@ -5054,7 +5054,7 @@ class DefaultApi:
 
         :param id: (required)
         :type id: str
-        :param include_email: Requires upload/write access. Omission exposes activity only.
+        :param include_email: Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address.
         :type include_email: bool
         :param account_id:
         :type account_id: str
@@ -5114,7 +5114,7 @@ class DefaultApi:
     def get_mailbox_with_http_info(
         self,
         id: StrictStr,
-        include_email: Annotated[Optional[StrictBool], Field(description="Requires upload/write access. Omission exposes activity only.")] = None,
+        include_email: Annotated[Optional[StrictBool], Field(description="Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address.")] = None,
         account_id: Optional[StrictStr] = None,
         reason: Optional[Annotated[str, Field(strict=True, max_length=2000)]] = None,
         _request_timeout: Union[
@@ -5136,7 +5136,7 @@ class DefaultApi:
 
         :param id: (required)
         :type id: str
-        :param include_email: Requires upload/write access. Omission exposes activity only.
+        :param include_email: Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address.
         :type include_email: bool
         :param account_id:
         :type account_id: str
@@ -5196,7 +5196,7 @@ class DefaultApi:
     def get_mailbox_without_preload_content(
         self,
         id: StrictStr,
-        include_email: Annotated[Optional[StrictBool], Field(description="Requires upload/write access. Omission exposes activity only.")] = None,
+        include_email: Annotated[Optional[StrictBool], Field(description="Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address.")] = None,
         account_id: Optional[StrictStr] = None,
         reason: Optional[Annotated[str, Field(strict=True, max_length=2000)]] = None,
         _request_timeout: Union[
@@ -5218,7 +5218,7 @@ class DefaultApi:
 
         :param id: (required)
         :type id: str
-        :param include_email: Requires upload/write access. Omission exposes activity only.
+        :param include_email: Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address.
         :type include_email: bool
         :param account_id:
         :type account_id: str
@@ -7681,8 +7681,10 @@ class DefaultApi:
     def list_mailboxes(
         self,
         account_id: Annotated[Optional[StrictStr], Field(description="Select another granted account; otherwise use the credential default.")] = None,
-        archived: Optional[StrictBool] = None,
-        q: Optional[StrictStr] = None,
+        q: Annotated[Optional[Annotated[str, Field(strict=True, max_length=500)]], Field(description="Case-insensitive contains-filter on the permitted email address or ID.")] = None,
+        status: Annotated[Optional[StrictStr], Field(description="Archive status: active, archived or all. Defaults to active.")] = None,
+        limit: Optional[Annotated[int, Field(le=100, strict=True, ge=1)]] = None,
+        offset: Optional[Annotated[int, Field(strict=True, ge=0)]] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -7698,13 +7700,18 @@ class DefaultApi:
     ) -> ListMailboxes200Response:
         """List accessible mailboxes
 
+        List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
 
         :param account_id: Select another granted account; otherwise use the credential default.
         :type account_id: str
-        :param archived:
-        :type archived: bool
-        :param q:
+        :param q: Case-insensitive contains-filter on the permitted email address or ID.
         :type q: str
+        :param status: Archive status: active, archived or all. Defaults to active.
+        :type status: str
+        :param limit:
+        :type limit: int
+        :param offset:
+        :type offset: int
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -7729,8 +7736,10 @@ class DefaultApi:
 
         _param = self._list_mailboxes_serialize(
             account_id=account_id,
-            archived=archived,
             q=q,
+            status=status,
+            limit=limit,
+            offset=offset,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -7756,8 +7765,10 @@ class DefaultApi:
     def list_mailboxes_with_http_info(
         self,
         account_id: Annotated[Optional[StrictStr], Field(description="Select another granted account; otherwise use the credential default.")] = None,
-        archived: Optional[StrictBool] = None,
-        q: Optional[StrictStr] = None,
+        q: Annotated[Optional[Annotated[str, Field(strict=True, max_length=500)]], Field(description="Case-insensitive contains-filter on the permitted email address or ID.")] = None,
+        status: Annotated[Optional[StrictStr], Field(description="Archive status: active, archived or all. Defaults to active.")] = None,
+        limit: Optional[Annotated[int, Field(le=100, strict=True, ge=1)]] = None,
+        offset: Optional[Annotated[int, Field(strict=True, ge=0)]] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -7773,13 +7784,18 @@ class DefaultApi:
     ) -> ApiResponse[ListMailboxes200Response]:
         """List accessible mailboxes
 
+        List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
 
         :param account_id: Select another granted account; otherwise use the credential default.
         :type account_id: str
-        :param archived:
-        :type archived: bool
-        :param q:
+        :param q: Case-insensitive contains-filter on the permitted email address or ID.
         :type q: str
+        :param status: Archive status: active, archived or all. Defaults to active.
+        :type status: str
+        :param limit:
+        :type limit: int
+        :param offset:
+        :type offset: int
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -7804,8 +7820,10 @@ class DefaultApi:
 
         _param = self._list_mailboxes_serialize(
             account_id=account_id,
-            archived=archived,
             q=q,
+            status=status,
+            limit=limit,
+            offset=offset,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -7831,8 +7849,10 @@ class DefaultApi:
     def list_mailboxes_without_preload_content(
         self,
         account_id: Annotated[Optional[StrictStr], Field(description="Select another granted account; otherwise use the credential default.")] = None,
-        archived: Optional[StrictBool] = None,
-        q: Optional[StrictStr] = None,
+        q: Annotated[Optional[Annotated[str, Field(strict=True, max_length=500)]], Field(description="Case-insensitive contains-filter on the permitted email address or ID.")] = None,
+        status: Annotated[Optional[StrictStr], Field(description="Archive status: active, archived or all. Defaults to active.")] = None,
+        limit: Optional[Annotated[int, Field(le=100, strict=True, ge=1)]] = None,
+        offset: Optional[Annotated[int, Field(strict=True, ge=0)]] = None,
         _request_timeout: Union[
             None,
             Annotated[StrictFloat, Field(gt=0)],
@@ -7848,13 +7868,18 @@ class DefaultApi:
     ) -> RESTResponseType:
         """List accessible mailboxes
 
+        List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
 
         :param account_id: Select another granted account; otherwise use the credential default.
         :type account_id: str
-        :param archived:
-        :type archived: bool
-        :param q:
+        :param q: Case-insensitive contains-filter on the permitted email address or ID.
         :type q: str
+        :param status: Archive status: active, archived or all. Defaults to active.
+        :type status: str
+        :param limit:
+        :type limit: int
+        :param offset:
+        :type offset: int
         :param _request_timeout: timeout setting for this request. If one
                                  number provided, it will be total request
                                  timeout. It can also be a pair (tuple) of
@@ -7879,8 +7904,10 @@ class DefaultApi:
 
         _param = self._list_mailboxes_serialize(
             account_id=account_id,
-            archived=archived,
             q=q,
+            status=status,
+            limit=limit,
+            offset=offset,
             _request_auth=_request_auth,
             _content_type=_content_type,
             _headers=_headers,
@@ -7901,8 +7928,10 @@ class DefaultApi:
     def _list_mailboxes_serialize(
         self,
         account_id,
-        archived,
         q,
+        status,
+        limit,
+        offset,
         _request_auth,
         _content_type,
         _headers,
@@ -7929,13 +7958,21 @@ class DefaultApi:
             
             _query_params.append(('account_id', account_id))
             
-        if archived is not None:
-            
-            _query_params.append(('archived', archived))
-            
         if q is not None:
             
             _query_params.append(('q', q))
+            
+        if status is not None:
+            
+            _query_params.append(('status', status))
+            
+        if limit is not None:
+            
+            _query_params.append(('limit', limit))
+            
+        if offset is not None:
+            
+            _query_params.append(('offset', offset))
             
         # process the header parameters
         # process the form parameters

@@ -20,7 +20,7 @@ import { mapValues, parseDate, parseDateTime, serializeDate, serializeDateTime }
  */
 export interface MailboxEmailActivity {
     /**
-     * 
+     * Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
      */
     receivedCount?: number;
     /**
@@ -31,6 +31,14 @@ export interface MailboxEmailActivity {
      * Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion.
      */
     lastReceivedPath?: string | null;
+    /**
+     * Emails currently stored. Null while the email index is being prepared.
+     */
+    messageCount?: number | null;
+    /**
+     * Stored emails with shared unread status. Null while the email index is being prepared.
+     */
+    unreadCount?: number | null;
 }
 
 /**
@@ -53,6 +61,8 @@ export function MailboxEmailActivityFromJSONTyped(json: any, ignoreDiscriminator
         'receivedCount': json['received_count'] == null ? undefined : json['received_count'],
         'lastReceivedAt': json['last_received_at'] === undefined ? undefined : json['last_received_at'] === null ? null : (parseDateTime(json['last_received_at'])),
         'lastReceivedPath': json['last_received_path'] === undefined ? undefined : json['last_received_path'] === null ? null : json['last_received_path'],
+        'messageCount': json['message_count'] === undefined ? undefined : json['message_count'] === null ? null : json['message_count'],
+        'unreadCount': json['unread_count'] === undefined ? undefined : json['unread_count'] === null ? null : json['unread_count'],
     };
 }
 
@@ -70,6 +80,8 @@ export function MailboxEmailActivityToJSONTyped(value?: MailboxEmailActivity | n
         'received_count': value['receivedCount'],
         'last_received_at': value['lastReceivedAt'] == null ? value['lastReceivedAt'] : serializeDateTime(value['lastReceivedAt']),
         'last_received_path': value['lastReceivedPath'],
+        'message_count': value['messageCount'],
+        'unread_count': value['unreadCount'],
     };
 }
 

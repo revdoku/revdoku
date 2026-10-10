@@ -29,11 +29,13 @@ class MailboxEmailActivity(BaseModel):
     """
     MailboxEmailActivity
     """ # noqa: E501
-    received_count: Optional[Annotated[int, Field(strict=True, ge=0)]] = None
+    received_count: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.")
     last_received_at: Optional[datetime] = None
     last_received_path: Optional[StrictStr] = Field(default=None, description="Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion.")
+    message_count: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Emails currently stored. Null while the email index is being prepared.")
+    unread_count: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(default=None, description="Stored emails with shared unread status. Null while the email index is being prepared.")
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["received_count", "last_received_at", "last_received_path"]
+    __properties: ClassVar[List[str]] = ["received_count", "last_received_at", "last_received_path", "message_count", "unread_count"]
 
     model_config = ConfigDict(
         validate_by_name=True,
@@ -91,6 +93,16 @@ class MailboxEmailActivity(BaseModel):
         if self.last_received_path is None and "last_received_path" in self.model_fields_set:
             _dict['last_received_path'] = None
 
+        # set to None if message_count (nullable) is None
+        # and model_fields_set contains the field
+        if self.message_count is None and "message_count" in self.model_fields_set:
+            _dict['message_count'] = None
+
+        # set to None if unread_count (nullable) is None
+        # and model_fields_set contains the field
+        if self.unread_count is None and "unread_count" in self.model_fields_set:
+            _dict['unread_count'] = None
+
         return _dict
 
     @classmethod
@@ -105,7 +117,9 @@ class MailboxEmailActivity(BaseModel):
         _obj = cls.model_validate({
             "received_count": obj.get("received_count"),
             "last_received_at": obj.get("last_received_at"),
-            "last_received_path": obj.get("last_received_path")
+            "last_received_path": obj.get("last_received_path"),
+            "message_count": obj.get("message_count"),
+            "unread_count": obj.get("unread_count")
         })
         # store additional fields in additional_properties
         for _key in obj.keys():

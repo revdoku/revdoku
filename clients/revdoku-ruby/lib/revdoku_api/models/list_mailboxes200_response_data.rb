@@ -17,10 +17,16 @@ module RevdokuApi
   class ListMailboxes200ResponseData < ApiModelBase
     attr_accessor :mailboxes
 
+    attr_accessor :counts
+
+    attr_accessor :pagination
+
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
-        :'mailboxes' => :'mailboxes'
+        :'mailboxes' => :'mailboxes',
+        :'counts' => :'counts',
+        :'pagination' => :'pagination'
       }
     end
 
@@ -37,7 +43,9 @@ module RevdokuApi
     # Attribute type mapping.
     def self.openapi_types
       {
-        :'mailboxes' => :'Array<Mailbox>'
+        :'mailboxes' => :'Array<Mailbox>',
+        :'counts' => :'MailboxCounts',
+        :'pagination' => :'MailboxPagination'
       }
     end
 
@@ -70,6 +78,18 @@ module RevdokuApi
       else
         self.mailboxes = nil
       end
+
+      if attributes.key?(:'counts')
+        self.counts = attributes[:'counts']
+      else
+        self.counts = nil
+      end
+
+      if attributes.key?(:'pagination')
+        self.pagination = attributes[:'pagination']
+      else
+        self.pagination = nil
+      end
     end
 
     # Custom attribute writer method with validation
@@ -82,12 +102,34 @@ module RevdokuApi
       @mailboxes = mailboxes
     end
 
+    # Custom attribute writer method with validation
+    # @param [Object] counts Value to be assigned
+    def counts=(counts)
+      if counts.nil?
+        fail ArgumentError, 'counts cannot be nil'
+      end
+
+      @counts = counts
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] pagination Value to be assigned
+    def pagination=(pagination)
+      if pagination.nil?
+        fail ArgumentError, 'pagination cannot be nil'
+      end
+
+      @pagination = pagination
+    end
+
     # Checks equality by comparing each attribute.
     # @param [Object] Object to be compared
     def ==(o)
       return true if self.equal?(o)
       self.class == o.class &&
-          mailboxes == o.mailboxes
+          mailboxes == o.mailboxes &&
+          counts == o.counts &&
+          pagination == o.pagination
     end
 
     # @see the `==` method
@@ -99,7 +141,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [mailboxes].hash
+      [mailboxes, counts, pagination].hash
     end
 
     # Builds the object from hash

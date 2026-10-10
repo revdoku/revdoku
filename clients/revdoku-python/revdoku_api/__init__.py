@@ -104,6 +104,7 @@ __all__ = [
     "ListMailboxes200ResponseData",
     "Mailbox",
     "MailboxAction",
+    "MailboxCounts",
     "MailboxCreateOptions",
     "MailboxEmail",
     "MailboxEmailActivity",
@@ -119,6 +120,7 @@ __all__ = [
     "MailboxLock",
     "MailboxLockLockedBy",
     "MailboxLockLockedByApiKey",
+    "MailboxPagination",
     "PrepareFileUploadRequest",
     "PreparedFileUpload",
     "PreparedFileUploadResponse",
@@ -234,6 +236,7 @@ from revdoku_api.models.list_mailboxes200_response import ListMailboxes200Respon
 from revdoku_api.models.list_mailboxes200_response_data import ListMailboxes200ResponseData as ListMailboxes200ResponseData
 from revdoku_api.models.mailbox import Mailbox as Mailbox
 from revdoku_api.models.mailbox_action import MailboxAction as MailboxAction
+from revdoku_api.models.mailbox_counts import MailboxCounts as MailboxCounts
 from revdoku_api.models.mailbox_create_options import MailboxCreateOptions as MailboxCreateOptions
 from revdoku_api.models.mailbox_email import MailboxEmail as MailboxEmail
 from revdoku_api.models.mailbox_email_activity import MailboxEmailActivity as MailboxEmailActivity
@@ -249,6 +252,7 @@ from revdoku_api.models.mailbox_file_response_data import MailboxFileResponseDat
 from revdoku_api.models.mailbox_lock import MailboxLock as MailboxLock
 from revdoku_api.models.mailbox_lock_locked_by import MailboxLockLockedBy as MailboxLockLockedBy
 from revdoku_api.models.mailbox_lock_locked_by_api_key import MailboxLockLockedByApiKey as MailboxLockLockedByApiKey
+from revdoku_api.models.mailbox_pagination import MailboxPagination as MailboxPagination
 from revdoku_api.models.prepare_file_upload_request import PrepareFileUploadRequest as PrepareFileUploadRequest
 from revdoku_api.models.prepared_file_upload import PreparedFileUpload as PreparedFileUpload
 from revdoku_api.models.prepared_file_upload_response import PreparedFileUploadResponse as PreparedFileUploadResponse

@@ -7,7 +7,15 @@ public class ListMailboxes {
         if (key == null || key.isEmpty()) throw new IllegalArgumentException("Set REVDOKU_API_KEY");
         String account = System.getenv("REVDOKU_ACCOUNT_ID");
         var client = new ApiClient().setRequestInterceptor(request -> request.header("Authorization", "Bearer " + key));
-        var result = new DefaultApi(client).listMailboxes(account == null || account.isEmpty() ? null : account, false, null);
-        for (var mailbox : result.getData().getMailboxes()) System.out.println(mailbox.getId() + " " + (mailbox.getEmail() == null ? mailbox.getId() : mailbox.getEmail().getAddress()));
+        var api = new DefaultApi(client);
+        int offset = 0;
+        while (true) {
+            var page = api.listMailboxes(account == null || account.isEmpty() ? null : account, null, "active", 100, offset).getData();
+            for (var mailbox : page.getMailboxes()) System.out.println(mailbox.getId() + " " + (mailbox.getEmail() == null ? mailbox.getId() : mailbox.getEmail().getAddress()));
+            if (!page.getPagination().getHasMore()) break;
+            var next = page.getPagination().getNextOffset();
+            if (next == null || next <= offset) throw new IllegalStateException("Mailbox pagination did not advance");
+            offset = next;
+        }
     }
 }

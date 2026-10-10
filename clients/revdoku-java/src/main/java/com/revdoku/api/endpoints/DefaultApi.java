@@ -2417,7 +2417,7 @@ public class DefaultApi {
    * Read mailbox activity and optionally its incoming address
    * Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
    * @param id  (required)
-   * @param includeEmail Requires upload/write access. Omission exposes activity only. (optional, default to false)
+   * @param includeEmail Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
    * @param accountId  (optional)
    * @param reason  (optional)
    * @return CreateMailbox201Response
@@ -2431,7 +2431,7 @@ public class DefaultApi {
    * Read mailbox activity and optionally its incoming address
    * Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
    * @param id  (required)
-   * @param includeEmail Requires upload/write access. Omission exposes activity only. (optional, default to false)
+   * @param includeEmail Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
    * @param accountId  (optional)
    * @param reason  (optional)
    * @param headers Optional headers to include in the request
@@ -2447,7 +2447,7 @@ public class DefaultApi {
    * Read mailbox activity and optionally its incoming address
    * Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
    * @param id  (required)
-   * @param includeEmail Requires upload/write access. Omission exposes activity only. (optional, default to false)
+   * @param includeEmail Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
    * @param accountId  (optional)
    * @param reason  (optional)
    * @return ApiResponse&lt;CreateMailbox201Response&gt;
@@ -2461,7 +2461,7 @@ public class DefaultApi {
    * Read mailbox activity and optionally its incoming address
    * Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
    * @param id  (required)
-   * @param includeEmail Requires upload/write access. Omission exposes activity only. (optional, default to false)
+   * @param includeEmail Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
    * @param accountId  (optional)
    * @param reason  (optional)
    * @param headers Optional headers to include in the request
@@ -3625,57 +3625,65 @@ public class DefaultApi {
 
   /**
    * List accessible mailboxes
-   * 
+   * List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
    * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param archived  (optional, default to false)
-   * @param q  (optional)
+   * @param q Case-insensitive contains-filter on the permitted email address or ID. (optional)
+   * @param status Archive status: active, archived or all. Defaults to active. (optional, default to active)
+   * @param limit  (optional, default to 100)
+   * @param offset  (optional, default to 0)
    * @return ListMailboxes200Response
    * @throws ApiException if fails to make API call
    */
-  public ListMailboxes200Response listMailboxes(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable Boolean archived, @javax.annotation.Nullable String q) throws ApiException {
-    return listMailboxes(accountId, archived, q, null);
+  public ListMailboxes200Response listMailboxes(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String q, @javax.annotation.Nullable String status, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset) throws ApiException {
+    return listMailboxes(accountId, q, status, limit, offset, null);
   }
 
   /**
    * List accessible mailboxes
-   * 
+   * List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
    * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param archived  (optional, default to false)
-   * @param q  (optional)
+   * @param q Case-insensitive contains-filter on the permitted email address or ID. (optional)
+   * @param status Archive status: active, archived or all. Defaults to active. (optional, default to active)
+   * @param limit  (optional, default to 100)
+   * @param offset  (optional, default to 0)
    * @param headers Optional headers to include in the request
    * @return ListMailboxes200Response
    * @throws ApiException if fails to make API call
    */
-  public ListMailboxes200Response listMailboxes(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable Boolean archived, @javax.annotation.Nullable String q, Map<String, String> headers) throws ApiException {
-    ApiResponse<ListMailboxes200Response> localVarResponse = listMailboxesWithHttpInfo(accountId, archived, q, headers);
+  public ListMailboxes200Response listMailboxes(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String q, @javax.annotation.Nullable String status, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset, Map<String, String> headers) throws ApiException {
+    ApiResponse<ListMailboxes200Response> localVarResponse = listMailboxesWithHttpInfo(accountId, q, status, limit, offset, headers);
     return localVarResponse.getData();
   }
 
   /**
    * List accessible mailboxes
-   * 
+   * List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
    * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param archived  (optional, default to false)
-   * @param q  (optional)
+   * @param q Case-insensitive contains-filter on the permitted email address or ID. (optional)
+   * @param status Archive status: active, archived or all. Defaults to active. (optional, default to active)
+   * @param limit  (optional, default to 100)
+   * @param offset  (optional, default to 0)
    * @return ApiResponse&lt;ListMailboxes200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<ListMailboxes200Response> listMailboxesWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable Boolean archived, @javax.annotation.Nullable String q) throws ApiException {
-    return listMailboxesWithHttpInfo(accountId, archived, q, null);
+  public ApiResponse<ListMailboxes200Response> listMailboxesWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String q, @javax.annotation.Nullable String status, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset) throws ApiException {
+    return listMailboxesWithHttpInfo(accountId, q, status, limit, offset, null);
   }
 
   /**
    * List accessible mailboxes
-   * 
+   * List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
    * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param archived  (optional, default to false)
-   * @param q  (optional)
+   * @param q Case-insensitive contains-filter on the permitted email address or ID. (optional)
+   * @param status Archive status: active, archived or all. Defaults to active. (optional, default to active)
+   * @param limit  (optional, default to 100)
+   * @param offset  (optional, default to 0)
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;ListMailboxes200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<ListMailboxes200Response> listMailboxesWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable Boolean archived, @javax.annotation.Nullable String q, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = listMailboxesRequestBuilder(accountId, archived, q, headers);
+  public ApiResponse<ListMailboxes200Response> listMailboxesWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String q, @javax.annotation.Nullable String status, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = listMailboxesRequestBuilder(accountId, q, status, limit, offset, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -3722,7 +3730,7 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder listMailboxesRequestBuilder(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable Boolean archived, @javax.annotation.Nullable String q, Map<String, String> headers) throws ApiException {
+  private HttpRequest.Builder listMailboxesRequestBuilder(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String q, @javax.annotation.Nullable String status, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset, Map<String, String> headers) throws ApiException {
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
@@ -3733,10 +3741,14 @@ public class DefaultApi {
     String localVarQueryParameterBaseName;
     localVarQueryParameterBaseName = "account_id";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
-    localVarQueryParameterBaseName = "archived";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("archived", archived));
     localVarQueryParameterBaseName = "q";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("q", q));
+    localVarQueryParameterBaseName = "status";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("status", status));
+    localVarQueryParameterBaseName = "limit";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("limit", limit));
+    localVarQueryParameterBaseName = "offset";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("offset", offset));
 
     if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
       StringJoiner queryJoiner = new StringJoiner("&");

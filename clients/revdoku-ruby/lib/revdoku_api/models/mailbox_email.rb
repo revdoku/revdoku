@@ -14,10 +14,12 @@ require 'date'
 require 'time'
 
 module RevdokuApi
-  # Authorized mailbox reads include the email address. Creation and opt-in reads also include receiving settings; use the emails collection for a durable arrival cursor.
+  # Mailbox reads include stored and unread email counts, lifetime receipts, receiving state and the permitted address. Creation and include_email reads also include additional address settings.
   class MailboxEmail < ApiModelBase
+    # Primary mailbox display label when authorized. Omitted without address permission. The address remains a valid label when receiving is unavailable.
     attr_accessor :address
 
+    # Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
     attr_accessor :received_count
 
     attr_accessor :last_received_at
@@ -34,7 +36,7 @@ module RevdokuApi
 
     attr_accessor :customization
 
-    # Whether this mailbox can currently receive email. False when configuration, account state, quota or routing prevents receiving.
+    # Whether the mailbox can receive email now. Display an authorized address even when this is false.
     attr_accessor :receiving_enabled
 
     attr_accessor :sender_allowlist
@@ -45,6 +47,12 @@ module RevdokuApi
     attr_accessor :sending_enabled
 
     attr_accessor :aliases
+
+    # Emails currently stored. Null while the email index is being prepared.
+    attr_accessor :message_count
+
+    # Stored emails with shared unread status. Null while the email index is being prepared.
+    attr_accessor :unread_count
 
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
@@ -61,7 +69,9 @@ module RevdokuApi
         :'sender_allowlist' => :'sender_allowlist',
         :'username' => :'username',
         :'sending_enabled' => :'sending_enabled',
-        :'aliases' => :'aliases'
+        :'aliases' => :'aliases',
+        :'message_count' => :'message_count',
+        :'unread_count' => :'unread_count'
       }
     end
 
@@ -90,7 +100,9 @@ module RevdokuApi
         :'sender_allowlist' => :'EmailSenderAllowlist',
         :'username' => :'String',
         :'sending_enabled' => :'Boolean',
-        :'aliases' => :'Array<MailboxEmailAliasesInner>'
+        :'aliases' => :'Array<MailboxEmailAliasesInner>',
+        :'message_count' => :'Integer',
+        :'unread_count' => :'Integer'
       }
     end
 
@@ -102,6 +114,8 @@ module RevdokuApi
         :'last_received_path',
         :'blocked_reason',
         :'username',
+        :'message_count',
+        :'unread_count'
       ])
     end
 
@@ -127,14 +141,20 @@ module RevdokuApi
 
       if attributes.key?(:'received_count')
         self.received_count = attributes[:'received_count']
+      else
+        self.received_count = nil
       end
 
       if attributes.key?(:'last_received_at')
         self.last_received_at = attributes[:'last_received_at']
+      else
+        self.last_received_at = nil
       end
 
       if attributes.key?(:'last_received_path')
         self.last_received_path = attributes[:'last_received_path']
+      else
+        self.last_received_path = nil
       end
 
       if attributes.key?(:'blocked_reason')
@@ -157,6 +177,8 @@ module RevdokuApi
 
       if attributes.key?(:'receiving_enabled')
         self.receiving_enabled = attributes[:'receiving_enabled']
+      else
+        self.receiving_enabled = nil
       end
 
       if attributes.key?(:'sender_allowlist')
@@ -169,12 +191,26 @@ module RevdokuApi
 
       if attributes.key?(:'sending_enabled')
         self.sending_enabled = attributes[:'sending_enabled']
+      else
+        self.sending_enabled = nil
       end
 
       if attributes.key?(:'aliases')
         if (value = attributes[:'aliases']).is_a?(Array)
           self.aliases = value
         end
+      end
+
+      if attributes.key?(:'message_count')
+        self.message_count = attributes[:'message_count']
+      else
+        self.message_count = nil
+      end
+
+      if attributes.key?(:'unread_count')
+        self.unread_count = attributes[:'unread_count']
+      else
+        self.unread_count = nil
       end
     end
 
@@ -190,6 +226,46 @@ module RevdokuApi
       end
 
       @received_count = received_count
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] receiving_enabled Value to be assigned
+    def receiving_enabled=(receiving_enabled)
+      if receiving_enabled.nil?
+        fail ArgumentError, 'receiving_enabled cannot be nil'
+      end
+
+      @receiving_enabled = receiving_enabled
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] sending_enabled Value to be assigned
+    def sending_enabled=(sending_enabled)
+      if sending_enabled.nil?
+        fail ArgumentError, 'sending_enabled cannot be nil'
+      end
+
+      @sending_enabled = sending_enabled
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] message_count Value to be assigned
+    def message_count=(message_count)
+      if !message_count.nil? && message_count < 0
+        fail ArgumentError, 'invalid value for "message_count", must be greater than or equal to 0.'
+      end
+
+      @message_count = message_count
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] unread_count Value to be assigned
+    def unread_count=(unread_count)
+      if !unread_count.nil? && unread_count < 0
+        fail ArgumentError, 'invalid value for "unread_count", must be greater than or equal to 0.'
+      end
+
+      @unread_count = unread_count
     end
 
     # Checks equality by comparing each attribute.
@@ -209,7 +285,9 @@ module RevdokuApi
           sender_allowlist == o.sender_allowlist &&
           username == o.username &&
           sending_enabled == o.sending_enabled &&
-          aliases == o.aliases
+          aliases == o.aliases &&
+          message_count == o.message_count &&
+          unread_count == o.unread_count
     end
 
     # @see the `==` method
@@ -221,7 +299,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [address, received_count, last_received_at, last_received_path, blocked_reason, available_domains, assignment, customization, receiving_enabled, sender_allowlist, username, sending_enabled, aliases].hash
+      [address, received_count, last_received_at, last_received_path, blocked_reason, available_domains, assignment, customization, receiving_enabled, sender_allowlist, username, sending_enabled, aliases, message_count, unread_count].hash
     end
 
     # Builds the object from hash

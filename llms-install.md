@@ -16,13 +16,13 @@ are instructions for one of these methods; they do not require another credentia
 ## Public prompt
 
 ```text
-Connect Revdoku so you can create and manage email mailboxes for my AI agents, read emails and attachments, and store files. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access. Continue my task. If I have no task yet, help me choose a first email workflow using https://revdoku.com/docs.md#first-email-workflow. Reuse my mailbox. Show its actual address as a mailto link only when receiving is ready and access permits it. Ask me to send an email there, use the address for relevant notifications, or set up Gmail forwarding. After a relevant message arrives, help me get the result I chose. Offer recurring automation afterward without implying that this connection runs it.
+Connect Revdoku so you can create and manage email mailboxes for my AI agents, read emails and attachments, and store files. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access. Continue my task. If I have no task yet, help me choose a first email workflow using https://revdoku.com/docs.md#first-email-workflow. Reuse my mailbox. Show its actual address as a mailto link only when receiving is ready and access permits it. Ask me to send an email there, use the address for relevant notifications, or set up Gmail forwarding. After a relevant message arrives, help me get the result I chose. Offer recurring automation afterward without implying that this connection runs it.
 ```
 
 ## Account setup
 
 1. If you already have an authorized connection, verify it and continue the task.
-2. If you need an account, complete [browser signup](https://app.revdoku.com/users/sign_up).
+2. If you need an account, complete [browser signup](https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect).
 3. Sign in through the browser to authorize the connection.
 
 Signup creates the first mailbox. List the accessible mailboxes after connecting. Reuse that mailbox for the task, or create another only when needed.

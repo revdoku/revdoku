@@ -1157,7 +1157,7 @@ class DefaultApi {
   /// * [String] id (required):
   ///
   /// * [bool] includeEmail:
-  ///   Requires upload/write access. Omission exposes activity only.
+  ///   Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address.
   ///
   /// * [String] accountId:
   ///
@@ -1208,7 +1208,7 @@ class DefaultApi {
   /// * [String] id (required):
   ///
   /// * [bool] includeEmail:
-  ///   Requires upload/write access. Omission exposes activity only.
+  ///   Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address.
   ///
   /// * [String] accountId:
   ///
@@ -1842,6 +1842,8 @@ class DefaultApi {
 
   /// List accessible mailboxes
   ///
+  /// List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
+  ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
@@ -1849,10 +1851,16 @@ class DefaultApi {
   /// * [String] accountId:
   ///   Select another granted account; otherwise use the credential default.
   ///
-  /// * [bool] archived:
-  ///
   /// * [String] q:
-  Future<Response> listMailboxesWithHttpInfo({ String? accountId, bool? archived, String? q, Future<void>? abortTrigger, }) async {
+  ///   Case-insensitive contains-filter on the permitted email address or ID.
+  ///
+  /// * [String] status:
+  ///   Archive status: active, archived or all. Defaults to active.
+  ///
+  /// * [int] limit:
+  ///
+  /// * [int] offset:
+  Future<Response> listMailboxesWithHttpInfo({ String? accountId, String? q, String? status, int? limit, int? offset, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
     final path = r'/v1/mailboxes';
 
@@ -1866,11 +1874,17 @@ class DefaultApi {
     if (accountId != null) {
       queryParams.addAll(_queryParams('', 'account_id', accountId));
     }
-    if (archived != null) {
-      queryParams.addAll(_queryParams('', 'archived', archived));
-    }
     if (q != null) {
       queryParams.addAll(_queryParams('', 'q', q));
+    }
+    if (status != null) {
+      queryParams.addAll(_queryParams('', 'status', status));
+    }
+    if (limit != null) {
+      queryParams.addAll(_queryParams('', 'limit', limit));
+    }
+    if (offset != null) {
+      queryParams.addAll(_queryParams('', 'offset', offset));
     }
 
     const contentTypes = <String>[];
@@ -1890,16 +1904,24 @@ class DefaultApi {
 
   /// List accessible mailboxes
   ///
+  /// List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
+  ///
   /// Parameters:
   ///
   /// * [String] accountId:
   ///   Select another granted account; otherwise use the credential default.
   ///
-  /// * [bool] archived:
-  ///
   /// * [String] q:
-  Future<ListMailboxes200Response?> listMailboxes({ String? accountId, bool? archived, String? q, Future<void>? abortTrigger, }) async {
-    final response = await listMailboxesWithHttpInfo(accountId: accountId, archived: archived, q: q, abortTrigger: abortTrigger,);
+  ///   Case-insensitive contains-filter on the permitted email address or ID.
+  ///
+  /// * [String] status:
+  ///   Archive status: active, archived or all. Defaults to active.
+  ///
+  /// * [int] limit:
+  ///
+  /// * [int] offset:
+  Future<ListMailboxes200Response?> listMailboxes({ String? accountId, String? q, String? status, int? limit, int? offset, Future<void>? abortTrigger, }) async {
+    final response = await listMailboxesWithHttpInfo(accountId: accountId, q: q, status: status, limit: limit, offset: offset, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

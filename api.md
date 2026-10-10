@@ -544,11 +544,15 @@ for an incident handoff. Mail rejected while paused must be resent.
 
 ### Activity fields
 
-These fields are also available on ordinary mailbox reads.
+List and detail reads include the permitted address, receiving state and these fields.
+Address access still requires write permission.
+An unavailable receiving state does not hide an authorized address.
 
 | Field | Meaning |
 | --- | --- |
-| `received_count` | Total saved messages; not an unread count or polling cursor. |
+| `message_count` | Emails currently stored. `null` while the email index is being prepared. |
+| `unread_count` | Stored emails with shared unread status. `null` while the email index is being prepared. |
+| `received_count` | Lifetime accepted deliveries. Deletion does not reduce this count. It is not a stored-message count or polling cursor. |
 | `last_received_at` | Most recent saved-message receipt timestamp; `null` before the first message. |
 | `last_received_path` | Latest message folder, ending in `/`; `null` before the first message. It can become stale if files are moved or deleted. |
 
@@ -823,7 +827,7 @@ Revdoku at any time.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/v1/mailboxes` | List active mailboxes by default. Use `?archived=true` to list archived mailboxes. |
+| `GET` | `/v1/mailboxes` | List active mailboxes by default. Use `status=archived` or `status=all` for other states. |
 | `POST` | `/v1/mailboxes` | Create a mailbox. |
 | `GET` | `/v1/mailboxes/:id` | Read a mailbox. |
 | `PATCH` | `/v1/mailboxes/:id` | Update mailbox metadata. |
@@ -847,11 +851,37 @@ Authorization: Bearer YOUR_API_KEY
 By default, this returns active mailboxes. To list archived mailboxes, call:
 
 ```http
-GET /v1/mailboxes?archived=true
+GET /v1/mailboxes?status=archived
 Authorization: Bearer YOUR_API_KEY
 ```
 
-Mailbox list/detail responses include effective lifecycle action metadata:
+| Query parameter | Meaning |
+| --- | --- |
+| `status` | `active` (default), `archived`, or `all`. This filters archive status, not receiving state. |
+| `q` | Case-insensitive text contained in the authorized address or ID. Maximum 500 characters. |
+| `limit` | Page size from 1 to 100. Default 100. |
+| `offset` | Number of matching mailboxes to skip. Default 0. |
+
+Results use creation time and ID order, newest first.
+List responses contain:
+
+| Response field | Meaning |
+| --- | --- |
+| `mailboxes` | The current page. Use each permitted `email.address` as its label and `dashboard_url` as its link. |
+| `counts.active`, `counts.archived`, `counts.total` | Exact authorized totals after `q`, before status filtering and pagination. |
+| `pagination.total` | Total matching mailboxes for the selected status across all pages. |
+| `pagination.has_more`, `pagination.next_offset` | Whether another page exists and its offset. The offset is `null` after the last page. |
+
+1. Request the first page with the required filters.
+2. Read `counts` and `pagination` before reporting totals.
+3. If `has_more` is true, request `next_offset` with the same filters.
+4. Continue until `has_more` is false.
+
+Mailbox IDs remain stable operation identifiers.
+Descriptions provide optional context and are not mailbox names.
+File counts include email representations and attachments.
+Do not add file counts to message counts.
+Mailbox list/detail responses also include effective lifecycle action metadata:
 
 | Field | Meaning |
 | --- | --- |

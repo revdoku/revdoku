@@ -11,7 +11,7 @@
 use crate::models;
 use serde::{Deserialize, Serialize};
 
-/// Mailbox : Public mailbox details. Write-authorized reads include email.address. Creation and authorized include_email reads also include receiving settings.
+/// Mailbox : Public mailbox details, including the permitted address, stored and unread email counts, lifetime receipts and receiving state. Keep IDs for API operations. Use the address as the dashboard link label.
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Mailbox {
     #[serde(rename = "id")]
@@ -55,7 +55,7 @@ pub struct Mailbox {
 }
 
 impl Mailbox {
-    /// Public mailbox details. Write-authorized reads include email.address. Creation and authorized include_email reads also include receiving settings.
+    /// Public mailbox details, including the permitted address, stored and unread email counts, lifetime receipts and receiving state. Keep IDs for API operations. Use the address as the dashboard link label.
     pub fn new(id: String, account_id: String, email: models::MailboxEmail) -> Mailbox {
         Mailbox {
             id,

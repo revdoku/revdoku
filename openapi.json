@@ -910,18 +910,45 @@
             "$ref": "#/components/parameters/AccountId"
           },
           {
-            "name": "archived",
-            "in": "query",
-            "schema": {
-              "type": "boolean",
-              "default": false
-            }
-          },
-          {
             "name": "q",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 500
+            },
+            "description": "Case-insensitive contains-filter on the permitted email address or ID."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Archive status: active, archived or all. Defaults to active.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "archived",
+                "all"
+              ],
+              "default": "active"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
             }
           }
         ],
@@ -945,10 +972,18 @@
                           "items": {
                             "$ref": "#/components/schemas/Mailbox"
                           }
+                        },
+                        "counts": {
+                          "$ref": "#/components/schemas/MailboxCounts"
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/MailboxPagination"
                         }
                       },
                       "required": [
-                        "mailboxes"
+                        "mailboxes",
+                        "counts",
+                        "pagination"
                       ]
                     }
                   },
@@ -977,7 +1012,8 @@
           "default": {
             "$ref": "#/components/responses/ApiError"
           }
-        }
+        },
+        "description": "List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read."
       }
     },
     "/v1/mailboxes/{id}": {
@@ -1005,7 +1041,7 @@
               "type": "boolean",
               "default": false
             },
-            "description": "Requires upload/write access. Omission exposes activity only."
+            "description": "Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address."
           },
           {
             "name": "account_id",
@@ -3828,18 +3864,20 @@
       },
       "MailboxEmail": {
         "type": "object",
-        "description": "Authorized mailbox reads include the email address. Creation and opt-in reads also include receiving settings; use the emails collection for a durable arrival cursor.",
+        "description": "Mailbox reads include stored and unread email counts, lifetime receipts, receiving state and the permitted address. Creation and include_email reads also include additional address settings.",
         "properties": {
           "address": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "description": "Primary mailbox display label when authorized. Omitted without address permission. The address remains a valid label when receiving is unavailable."
           },
           "received_count": {
             "type": "integer",
             "minimum": 0,
-            "format": "int64"
+            "format": "int64",
+            "description": "Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails."
           },
           "last_received_at": {
             "type": [
@@ -3938,7 +3976,7 @@
           },
           "receiving_enabled": {
             "type": "boolean",
-            "description": "Whether this mailbox can currently receive email. False when configuration, account state, quota or routing prevents receiving."
+            "description": "Whether the mailbox can receive email now. Display an authorized address even when this is false."
           },
           "sender_allowlist": {
             "$ref": "#/components/schemas/EmailSenderAllowlist",
@@ -3977,15 +4015,43 @@
                 }
               }
             }
+          },
+          "message_count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0,
+            "description": "Emails currently stored. Null while the email index is being prepared."
+          },
+          "unread_count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0,
+            "description": "Stored emails with shared unread status. Null while the email index is being prepared."
           }
-        }
+        },
+        "required": [
+          "received_count",
+          "message_count",
+          "unread_count",
+          "last_received_at",
+          "last_received_path",
+          "receiving_enabled",
+          "sending_enabled"
+        ]
       },
       "MailboxEmailActivity": {
         "type": "object",
         "properties": {
           "received_count": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "description": "Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails."
           },
           "last_received_at": {
             "type": [
@@ -4000,6 +4066,24 @@
               "null"
             ],
             "description": "Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion."
+          },
+          "message_count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0,
+            "description": "Emails currently stored. Null while the email index is being prepared."
+          },
+          "unread_count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0,
+            "description": "Stored emails with shared unread status. Null while the email index is being prepared."
           }
         }
       },
@@ -5189,7 +5273,7 @@
             "$ref": "#/components/schemas/MailboxAction"
           }
         },
-        "description": "Public mailbox details. Write-authorized reads include email.address. Creation and authorized include_email reads also include receiving settings.",
+        "description": "Public mailbox details, including the permitted address, stored and unread email counts, lifetime receipts and receiving state. Keep IDs for API operations. Use the address as the dashboard link label.",
         "required": [
           "id",
           "account_id",
@@ -6101,6 +6185,70 @@
             "additionalProperties": true
           }
         }
+      },
+      "MailboxCounts": {
+        "type": "object",
+        "description": "Exact authorized mailbox totals after query filtering, before status filtering and pagination.",
+        "properties": {
+          "active": {
+            "type": "integer",
+            "minimum": 0,
+            "format": "int64"
+          },
+          "archived": {
+            "type": "integer",
+            "minimum": 0,
+            "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "active",
+          "archived",
+          "total"
+        ]
+      },
+      "MailboxPagination": {
+        "type": "object",
+        "description": "A page of mailboxes ordered by creation time and ID, newest first. Continue with next_offset and the same filters.",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "format": "int64",
+            "description": "Matching mailboxes for the selected status across all pages."
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "next_offset": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          }
+        },
+        "required": [
+          "limit",
+          "offset",
+          "total",
+          "has_more",
+          "next_offset"
+        ]
       }
     },
     "responses": {

@@ -28,6 +28,29 @@ Agency entitlements do not grant access to client files.
 `client_account_create` requires an explicit request naming the client and an
 authorized agency account. Use the returned client ID for subsequent calls.
 
+## List mailboxes
+
+Use `mailbox_list` for active mailboxes.
+Use `status: "archived"` or `status: "all"` only when relevant.
+Filter with `query` on the permitted address or ID.
+Use `limit` and `offset` for pages of at most 100 mailboxes.
+Continue with `pagination.next_offset` and the same filters when `pagination.has_more` is true.
+Never describe a partial page as the complete list.
+Use exact `counts.active`, `counts.archived` and `counts.total` values.
+These counts include only authorized mailboxes that match the query.
+
+Use `email.address` as the label linked to `dashboard_url`.
+Keep IDs for tool calls unless the user requests them.
+Do not use descriptions as mailbox names.
+If the address is unavailable, use an Open mailbox link and state that the address is unavailable.
+Do not request write access just to improve a list label.
+Display the permitted address even when receiving is unavailable.
+Show `email.message_count` as stored emails and `email.unread_count` as unread emails.
+If either count is null, state that the count is unavailable while the email index is prepared.
+Label `email.received_count` as lifetime receipts, only when relevant.
+File counts include stored email representations and attachments.
+Do not add file counts to email counts.
+
 ## Receive and read email
 
 During setup without a chosen task, offer newsletter summaries, receipt amounts, or project alerts needing attention.
@@ -46,7 +69,8 @@ See the [first email workflow](https://revdoku.com/docs.md#first-email-workflow)
 omit the username to generate one. Creation returns a receiving-enabled `email`
 address. A taken name returns `EMAIL_ALREADY_EXISTS`; ask for another name rather
 than silently replacing the requested one. Write-authorized
-`mailbox_get(include_email: true)` returns an existing mailbox's address.
+`mailbox_get(include_email: true)` adds address settings and aliases.
+Ordinary list and detail reads already return the permitted address and receiving state.
 Use the complete returned address and check `receiving_enabled` before presenting it as
 available. Readers can inspect saved email but may need an administrator to
 provide the address. Never guess an address or rotate one implicitly.

@@ -285,6 +285,10 @@ paths:
       summary: Replace a mailbox email address after confirmation
   /v1/mailboxes:
     get:
+      description: "List active mailboxes by default. Returns permitted email addresses,\
+        \ current email and unread counts, lifetime receipts and receiving state.\
+        \ Counts and pagination cover only authorized mailboxes. No message content\
+        \ is read."
       operationId: listMailboxes
       parameters:
       - description: Select another granted account; otherwise use the credential
@@ -296,20 +300,47 @@ paths:
         schema:
           type: string
         style: form
-      - explode: true
-        in: query
-        name: archived
-        required: false
-        schema:
-          default: false
-          type: boolean
-        style: form
-      - explode: true
+      - description: Case-insensitive contains-filter on the permitted email address
+          or ID.
+        explode: true
         in: query
         name: q
         required: false
         schema:
+          maxLength: 500
           type: string
+        style: form
+      - description: "Archive status: active, archived or all. Defaults to active."
+        explode: true
+        in: query
+        name: status
+        required: false
+        schema:
+          default: active
+          enum:
+          - active
+          - archived
+          - all
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 100
+          maximum: 100
+          minimum: 1
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          minimum: 0
+          type: integer
         style: form
       responses:
         "200":
@@ -435,7 +466,9 @@ paths:
         schema:
           type: string
         style: simple
-      - description: Requires upload/write access. Omission exposes activity only.
+      - description: Include additional address settings and aliases. Requires write
+          access. Ordinary reads already include receiving state and the permitted
+          address.
         explode: true
         in: query
         name: include_email
@@ -2529,9 +2562,9 @@ components:
       - name
       type: object
     MailboxEmail:
-      description: Authorized mailbox reads include the email address. Creation and
-        opt-in reads also include receiving settings; use the emails collection for
-        a durable arrival cursor.
+      description: "Mailbox reads include stored and unread email counts, lifetime\
+        \ receipts, receiving state and the permitted address. Creation and include_email\
+        \ reads also include additional address settings."
       example:
         address: address
         received_count: 0
@@ -2576,11 +2609,18 @@ components:
         - id: id
           address: address
           active: true
+        message_count: 0
+        unread_count: 0
       properties:
         address:
+          description: Primary mailbox display label when authorized. Omitted without
+            address permission. The address remains a valid label when receiving is
+            unavailable.
           nullable: true
           type: string
         received_count:
+          description: Lifetime accepted deliveries. Deleting messages does not reduce
+            this count. This is not the number of stored emails.
           format: int64
           minimum: 0
           type: integer
@@ -2607,8 +2647,8 @@ components:
         customization:
           $ref: "#/components/schemas/MailboxEmail_customization"
         receiving_enabled:
-          description: "Whether this mailbox can currently receive email. False when\
-            \ configuration, account state, quota or routing prevents receiving."
+          description: Whether the mailbox can receive email now. Display an authorized
+            address even when this is false.
           type: boolean
         sender_allowlist:
           $ref: "#/components/schemas/EmailSenderAllowlist"
@@ -2622,10 +2662,34 @@ components:
           items:
             $ref: "#/components/schemas/MailboxEmail_aliases_inner"
           type: array
+        message_count:
+          description: Emails currently stored. Null while the email index is being
+            prepared.
+          format: int64
+          minimum: 0
+          nullable: true
+          type: integer
+        unread_count:
+          description: Stored emails with shared unread status. Null while the email
+            index is being prepared.
+          format: int64
+          minimum: 0
+          nullable: true
+          type: integer
+      required:
+      - last_received_at
+      - last_received_path
+      - message_count
+      - received_count
+      - receiving_enabled
+      - sending_enabled
+      - unread_count
       type: object
     MailboxEmailActivity:
       properties:
         received_count:
+          description: Lifetime accepted deliveries. Deleting messages does not reduce
+            this count. This is not the number of stored emails.
           minimum: 0
           type: integer
         last_received_at:
@@ -2637,6 +2701,20 @@ components:
             May become stale after manual file moves/deletion.
           nullable: true
           type: string
+        message_count:
+          description: Emails currently stored. Null while the email index is being
+            prepared.
+          format: int64
+          minimum: 0
+          nullable: true
+          type: integer
+        unread_count:
+          description: Stored emails with shared unread status. Null while the email
+            index is being prepared.
+          format: int64
+          minimum: 0
+          nullable: true
+          type: integer
       type: object
     DecodedEmailAddress:
       example:
@@ -3504,8 +3582,9 @@ components:
       - allowed
       type: object
     Mailbox:
-      description: Public mailbox details. Write-authorized reads include email.address.
-        Creation and authorized include_email reads also include receiving settings.
+      description: "Public mailbox details, including the permitted address, stored\
+        \ and unread email counts, lifetime receipts and receiving state. Keep IDs\
+        \ for API operations. Use the address as the dashboard link label."
       example:
         id: id
         account_id: account_id
@@ -3557,6 +3636,8 @@ components:
           - id: id
             address: address
             active: true
+          message_count: 0
+          unread_count: 0
         archived: true
         archived_at: 2000-01-23T04:56:07.000+00:00
         lock:
@@ -4044,6 +4125,8 @@ components:
             - id: id
               address: address
               active: true
+            message_count: 0
+            unread_count: 0
         - id: id
           email:
             address: address
@@ -4089,6 +4172,8 @@ components:
             - id: id
               address: address
               active: true
+            message_count: 0
+            unread_count: 0
       properties:
         suggested_subdomain:
           nullable: true
@@ -4226,6 +4311,8 @@ components:
               - id: id
                 address: address
                 active: true
+              message_count: 0
+              unread_count: 0
           - id: id
             email:
               address: address
@@ -4271,6 +4358,8 @@ components:
               - id: id
                 address: address
                 active: true
+              message_count: 0
+              unread_count: 0
         - suggested_subdomain: suggested_subdomain
           root_guidance: root_guidance
           pause_reason: pause_reason
@@ -4348,6 +4437,8 @@ components:
               - id: id
                 address: address
                 active: true
+              message_count: 0
+              unread_count: 0
           - id: id
             email:
               address: address
@@ -4393,6 +4484,8 @@ components:
               - id: id
                 address: address
                 active: true
+              message_count: 0
+              unread_count: 0
         enabled: true
         configured: true
         limit: 0
@@ -4528,6 +4621,8 @@ components:
                 - id: id
                   address: address
                   active: true
+                message_count: 0
+                unread_count: 0
             - id: id
               email:
                 address: address
@@ -4573,6 +4668,8 @@ components:
                 - id: id
                   address: address
                   active: true
+                message_count: 0
+                unread_count: 0
           - suggested_subdomain: suggested_subdomain
             root_guidance: root_guidance
             pause_reason: pause_reason
@@ -4650,6 +4747,8 @@ components:
                 - id: id
                   address: address
                   active: true
+                message_count: 0
+                unread_count: 0
             - id: id
               email:
                 address: address
@@ -4695,6 +4794,8 @@ components:
                 - id: id
                   address: address
                   active: true
+                message_count: 0
+                unread_count: 0
           enabled: true
           configured: true
           limit: 0
@@ -4800,6 +4901,8 @@ components:
               - id: id
                 address: address
                 active: true
+              message_count: 0
+              unread_count: 0
           - id: id
             email:
               address: address
@@ -4845,6 +4948,8 @@ components:
               - id: id
                 address: address
                 active: true
+              message_count: 0
+              unread_count: 0
       properties:
         success:
           type: boolean
@@ -5600,6 +5705,66 @@ components:
           additionalProperties: true
           type: object
       type: object
+    MailboxCounts:
+      description: "Exact authorized mailbox totals after query filtering, before\
+        \ status filtering and pagination."
+      example:
+        active: 0
+        archived: 0
+        total: 0
+      properties:
+        active:
+          format: int64
+          minimum: 0
+          type: integer
+        archived:
+          format: int64
+          minimum: 0
+          type: integer
+        total:
+          format: int64
+          minimum: 0
+          type: integer
+      required:
+      - active
+      - archived
+      - total
+      type: object
+    MailboxPagination:
+      description: "A page of mailboxes ordered by creation time and ID, newest first.\
+        \ Continue with next_offset and the same filters."
+      example:
+        limit: 70
+        offset: 0
+        total: 0
+        has_more: true
+        next_offset: 0
+      properties:
+        limit:
+          maximum: 100
+          minimum: 1
+          type: integer
+        offset:
+          minimum: 0
+          type: integer
+        total:
+          description: Matching mailboxes for the selected status across all pages.
+          format: int64
+          minimum: 0
+          type: integer
+        has_more:
+          type: boolean
+        next_offset:
+          minimum: 0
+          nullable: true
+          type: integer
+      required:
+      - has_more
+      - limit
+      - next_offset
+      - offset
+      - total
+      type: object
     getRevdokuStatus_200_response_data_features:
       additionalProperties: true
       example:
@@ -6100,6 +6265,8 @@ components:
           - id: id
             address: address
             active: true
+          message_count: 0
+          unread_count: 0
         success: true
       properties:
         data:
@@ -6200,6 +6367,8 @@ components:
             - id: id
               address: address
               active: true
+            message_count: 0
+            unread_count: 0
           archived: true
           archived_at: 2000-01-23T04:56:07.000+00:00
           lock:
@@ -6290,6 +6459,8 @@ components:
             - id: id
               address: address
               active: true
+            message_count: 0
+            unread_count: 0
           archived: true
           archived_at: 2000-01-23T04:56:07.000+00:00
           lock:
@@ -6330,13 +6501,29 @@ components:
             blocked_reason: blocked_reason
             required_action: required_action
             confirmation: confirmation
+        counts:
+          active: 0
+          archived: 0
+          total: 0
+        pagination:
+          limit: 70
+          offset: 0
+          total: 0
+          has_more: true
+          next_offset: 0
       properties:
         mailboxes:
           items:
             $ref: "#/components/schemas/Mailbox"
           type: array
+        counts:
+          $ref: "#/components/schemas/MailboxCounts"
+        pagination:
+          $ref: "#/components/schemas/MailboxPagination"
       required:
+      - counts
       - mailboxes
+      - pagination
       type: object
     listMailboxes_200_response:
       example:
@@ -6393,6 +6580,8 @@ components:
               - id: id
                 address: address
                 active: true
+              message_count: 0
+              unread_count: 0
             archived: true
             archived_at: 2000-01-23T04:56:07.000+00:00
             lock:
@@ -6483,6 +6672,8 @@ components:
               - id: id
                 address: address
                 active: true
+              message_count: 0
+              unread_count: 0
             archived: true
             archived_at: 2000-01-23T04:56:07.000+00:00
             lock:
@@ -6523,6 +6714,16 @@ components:
               blocked_reason: blocked_reason
               required_action: required_action
               confirmation: confirmation
+          counts:
+            active: 0
+            archived: 0
+            total: 0
+          pagination:
+            limit: 70
+            offset: 0
+            total: 0
+            has_more: true
+            next_offset: 0
       properties:
         success:
           type: boolean
@@ -6601,6 +6802,8 @@ components:
             - id: id
               address: address
               active: true
+            message_count: 0
+            unread_count: 0
           archived: true
           archived_at: 2000-01-23T04:56:07.000+00:00
           lock:
@@ -6701,6 +6904,8 @@ components:
               - id: id
                 address: address
                 active: true
+              message_count: 0
+              unread_count: 0
             archived: true
             archived_at: 2000-01-23T04:56:07.000+00:00
             lock:
@@ -8453,6 +8658,8 @@ components:
           - id: id
             address: address
             active: true
+          message_count: 0
+          unread_count: 0
       properties:
         id:
           type: string

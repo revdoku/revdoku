@@ -22,6 +22,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.revdoku.api.model.Mailbox;
+import com.revdoku.api.model.MailboxCounts;
+import com.revdoku.api.model.MailboxPagination;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,13 +34,23 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * ListMailboxes200ResponseData
  */
 @JsonPropertyOrder({
-  ListMailboxes200ResponseData.JSON_PROPERTY_MAILBOXES
+  ListMailboxes200ResponseData.JSON_PROPERTY_MAILBOXES,
+  ListMailboxes200ResponseData.JSON_PROPERTY_COUNTS,
+  ListMailboxes200ResponseData.JSON_PROPERTY_PAGINATION
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class ListMailboxes200ResponseData {
   public static final String JSON_PROPERTY_MAILBOXES = "mailboxes";
   @javax.annotation.Nonnull
   private List<Mailbox> mailboxes = new ArrayList<>();
+
+  public static final String JSON_PROPERTY_COUNTS = "counts";
+  @javax.annotation.Nonnull
+  private MailboxCounts counts;
+
+  public static final String JSON_PROPERTY_PAGINATION = "pagination";
+  @javax.annotation.Nonnull
+  private MailboxPagination pagination;
 
   public ListMailboxes200ResponseData() { 
   }
@@ -75,6 +87,54 @@ public class ListMailboxes200ResponseData {
   }
 
 
+  public ListMailboxes200ResponseData counts(@javax.annotation.Nonnull MailboxCounts counts) {
+    this.counts = counts;
+    return this;
+  }
+
+  /**
+   * Get counts
+   * @return counts
+   */
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_COUNTS, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public MailboxCounts getCounts() {
+    return counts;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_COUNTS, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setCounts(@javax.annotation.Nonnull MailboxCounts counts) {
+    this.counts = counts;
+  }
+
+
+  public ListMailboxes200ResponseData pagination(@javax.annotation.Nonnull MailboxPagination pagination) {
+    this.pagination = pagination;
+    return this;
+  }
+
+  /**
+   * Get pagination
+   * @return pagination
+   */
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_PAGINATION, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public MailboxPagination getPagination() {
+    return pagination;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_PAGINATION, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setPagination(@javax.annotation.Nonnull MailboxPagination pagination) {
+    this.pagination = pagination;
+  }
+
+
   /**
    * Return true if this listMailboxes_200_response_data object is equal to o.
    */
@@ -87,12 +147,14 @@ public class ListMailboxes200ResponseData {
       return false;
     }
     ListMailboxes200ResponseData listMailboxes200ResponseData = (ListMailboxes200ResponseData) o;
-    return Objects.equals(this.mailboxes, listMailboxes200ResponseData.mailboxes);
+    return Objects.equals(this.mailboxes, listMailboxes200ResponseData.mailboxes) &&
+        Objects.equals(this.counts, listMailboxes200ResponseData.counts) &&
+        Objects.equals(this.pagination, listMailboxes200ResponseData.pagination);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(mailboxes);
+    return Objects.hash(mailboxes, counts, pagination);
   }
 
   @Override
@@ -100,6 +162,8 @@ public class ListMailboxes200ResponseData {
     StringBuilder sb = new StringBuilder();
     sb.append("class ListMailboxes200ResponseData {\n");
     sb.append("    mailboxes: ").append(toIndentedString(mailboxes)).append("\n");
+    sb.append("    counts: ").append(toIndentedString(counts)).append("\n");
+    sb.append("    pagination: ").append(toIndentedString(pagination)).append("\n");
     sb.append("}");
     return sb.toString();
   }

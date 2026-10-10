@@ -32,23 +32,25 @@ from pydantic_core import to_jsonable_python
 
 class MailboxEmail(BaseModel):
     """
-    Authorized mailbox reads include the email address. Creation and opt-in reads also include receiving settings; use the emails collection for a durable arrival cursor.
+    Mailbox reads include stored and unread email counts, lifetime receipts, receiving state and the permitted address. Creation and include_email reads also include additional address settings.
     """ # noqa: E501
-    address: Optional[StrictStr] = None
-    received_count: Optional[Annotated[int, Field(strict=True, ge=0)]] = None
-    last_received_at: Optional[datetime] = None
-    last_received_path: Optional[StrictStr] = Field(default=None, description="Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion.")
+    address: Optional[StrictStr] = Field(default=None, description="Primary mailbox display label when authorized. Omitted without address permission. The address remains a valid label when receiving is unavailable.")
+    received_count: Annotated[int, Field(strict=True, ge=0)] = Field(description="Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.")
+    last_received_at: Optional[datetime]
+    last_received_path: Optional[StrictStr] = Field(description="Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion.")
     blocked_reason: Optional[StrictStr] = Field(default=None, description="Why receiving is unavailable; omitted when receiving_enabled is true.")
     available_domains: Optional[List[MailboxEmailAvailableDomainsInner]] = None
     assignment: Optional[MailboxEmailAssignment] = None
     customization: Optional[MailboxEmailCustomization] = None
-    receiving_enabled: Optional[StrictBool] = Field(default=None, description="Whether this mailbox can currently receive email. False when configuration, account state, quota or routing prevents receiving.")
+    receiving_enabled: StrictBool = Field(description="Whether the mailbox can receive email now. Display an authorized address even when this is false.")
     sender_allowlist: Optional[EmailSenderAllowlist] = None
     username: Optional[StrictStr] = None
-    sending_enabled: Optional[StrictBool] = Field(default=None, description="Always false. Sending is not implemented.")
+    sending_enabled: StrictBool = Field(description="Always false. Sending is not implemented.")
     aliases: Optional[List[MailboxEmailAliasesInner]] = None
+    message_count: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(description="Emails currently stored. Null while the email index is being prepared.")
+    unread_count: Optional[Annotated[int, Field(strict=True, ge=0)]] = Field(description="Stored emails with shared unread status. Null while the email index is being prepared.")
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["address", "received_count", "last_received_at", "last_received_path", "blocked_reason", "available_domains", "assignment", "customization", "receiving_enabled", "sender_allowlist", "username", "sending_enabled", "aliases"]
+    __properties: ClassVar[List[str]] = ["address", "received_count", "last_received_at", "last_received_path", "blocked_reason", "available_domains", "assignment", "customization", "receiving_enabled", "sender_allowlist", "username", "sending_enabled", "aliases", "message_count", "unread_count"]
 
     model_config = ConfigDict(
         validate_by_name=True,
@@ -142,6 +144,16 @@ class MailboxEmail(BaseModel):
         if self.username is None and "username" in self.model_fields_set:
             _dict['username'] = None
 
+        # set to None if message_count (nullable) is None
+        # and model_fields_set contains the field
+        if self.message_count is None and "message_count" in self.model_fields_set:
+            _dict['message_count'] = None
+
+        # set to None if unread_count (nullable) is None
+        # and model_fields_set contains the field
+        if self.unread_count is None and "unread_count" in self.model_fields_set:
+            _dict['unread_count'] = None
+
         return _dict
 
     @classmethod
@@ -166,7 +178,9 @@ class MailboxEmail(BaseModel):
             "sender_allowlist": EmailSenderAllowlist.from_dict(obj["sender_allowlist"]) if obj.get("sender_allowlist") is not None else None,
             "username": obj.get("username"),
             "sending_enabled": obj.get("sending_enabled"),
-            "aliases": [MailboxEmailAliasesInner.from_dict(_item) for _item in obj["aliases"]] if obj.get("aliases") is not None else None
+            "aliases": [MailboxEmailAliasesInner.from_dict(_item) for _item in obj["aliases"]] if obj.get("aliases") is not None else None,
+            "message_count": obj.get("message_count"),
+            "unread_count": obj.get("unread_count")
         })
         # store additional fields in additional_properties
         for _key in obj.keys():

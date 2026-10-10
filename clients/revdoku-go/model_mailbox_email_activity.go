@@ -20,10 +20,15 @@ var _ MappedNullable = &MailboxEmailActivity{}
 
 // MailboxEmailActivity struct for MailboxEmailActivity
 type MailboxEmailActivity struct {
+	// Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
 	ReceivedCount *int32 `json:"received_count,omitempty"`
 	LastReceivedAt NullableTime `json:"last_received_at,omitempty"`
 	// Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion.
 	LastReceivedPath NullableString `json:"last_received_path,omitempty"`
+	// Emails currently stored. Null while the email index is being prepared.
+	MessageCount NullableInt64 `json:"message_count,omitempty"`
+	// Stored emails with shared unread status. Null while the email index is being prepared.
+	UnreadCount NullableInt64 `json:"unread_count,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -162,6 +167,90 @@ func (o *MailboxEmailActivity) UnsetLastReceivedPath() {
 	o.LastReceivedPath.Unset()
 }
 
+// GetMessageCount returns the MessageCount field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *MailboxEmailActivity) GetMessageCount() int64 {
+	if o == nil || IsNil(o.MessageCount.Get()) {
+		var ret int64
+		return ret
+	}
+	return *o.MessageCount.Get()
+}
+
+// GetMessageCountOk returns a tuple with the MessageCount field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *MailboxEmailActivity) GetMessageCountOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.MessageCount.Get(), o.MessageCount.IsSet()
+}
+
+// HasMessageCount returns a boolean if a field has been set.
+func (o *MailboxEmailActivity) HasMessageCount() bool {
+	if o != nil && o.MessageCount.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetMessageCount gets a reference to the given NullableInt64 and assigns it to the MessageCount field.
+func (o *MailboxEmailActivity) SetMessageCount(v int64) {
+	o.MessageCount.Set(&v)
+}
+// SetMessageCountNil sets the value for MessageCount to be an explicit nil
+func (o *MailboxEmailActivity) SetMessageCountNil() {
+	o.MessageCount.Set(nil)
+}
+
+// UnsetMessageCount ensures that no value is present for MessageCount, not even an explicit nil
+func (o *MailboxEmailActivity) UnsetMessageCount() {
+	o.MessageCount.Unset()
+}
+
+// GetUnreadCount returns the UnreadCount field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *MailboxEmailActivity) GetUnreadCount() int64 {
+	if o == nil || IsNil(o.UnreadCount.Get()) {
+		var ret int64
+		return ret
+	}
+	return *o.UnreadCount.Get()
+}
+
+// GetUnreadCountOk returns a tuple with the UnreadCount field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *MailboxEmailActivity) GetUnreadCountOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.UnreadCount.Get(), o.UnreadCount.IsSet()
+}
+
+// HasUnreadCount returns a boolean if a field has been set.
+func (o *MailboxEmailActivity) HasUnreadCount() bool {
+	if o != nil && o.UnreadCount.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetUnreadCount gets a reference to the given NullableInt64 and assigns it to the UnreadCount field.
+func (o *MailboxEmailActivity) SetUnreadCount(v int64) {
+	o.UnreadCount.Set(&v)
+}
+// SetUnreadCountNil sets the value for UnreadCount to be an explicit nil
+func (o *MailboxEmailActivity) SetUnreadCountNil() {
+	o.UnreadCount.Set(nil)
+}
+
+// UnsetUnreadCount ensures that no value is present for UnreadCount, not even an explicit nil
+func (o *MailboxEmailActivity) UnsetUnreadCount() {
+	o.UnreadCount.Unset()
+}
+
 func (o MailboxEmailActivity) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -180,6 +269,12 @@ func (o MailboxEmailActivity) ToMap() (map[string]interface{}, error) {
 	}
 	if o.LastReceivedPath.IsSet() {
 		toSerialize["last_received_path"] = o.LastReceivedPath.Get()
+	}
+	if o.MessageCount.IsSet() {
+		toSerialize["message_count"] = o.MessageCount.Get()
+	}
+	if o.UnreadCount.IsSet() {
+		toSerialize["unread_count"] = o.UnreadCount.Get()
 	}
 
 	for key, value := range o.AdditionalProperties {
@@ -206,6 +301,8 @@ func (o *MailboxEmailActivity) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "received_count")
 		delete(additionalProperties, "last_received_at")
 		delete(additionalProperties, "last_received_path")
+		delete(additionalProperties, "message_count")
+		delete(additionalProperties, "unread_count")
 		o.AdditionalProperties = additionalProperties
 	}
 
