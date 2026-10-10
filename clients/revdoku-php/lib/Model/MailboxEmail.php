@@ -35,7 +35,7 @@ use \Revdoku\Api\ObjectSerializer;
  * MailboxEmail Class Doc Comment
  *
  * @category Class
- * @description Authorized mailbox reads include the email address. Creation and opt-in reads also include receiving settings; use the emails collection for a durable arrival cursor.
+ * @description Mailbox reads include stored and unread email counts, lifetime receipts, receiving state and the permitted address. Creation and include_email reads also include additional address settings.
  * @package  Revdoku\Api
  * @author   OpenAPI Generator team
  * @link     https://openapi-generator.tech
@@ -70,7 +70,9 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
         'sender_allowlist' => '\Revdoku\Api\Model\EmailSenderAllowlist',
         'username' => 'string',
         'sending_enabled' => 'bool',
-        'aliases' => '\Revdoku\Api\Model\MailboxEmailAliasesInner[]'
+        'aliases' => '\Revdoku\Api\Model\MailboxEmailAliasesInner[]',
+        'message_count' => 'int',
+        'unread_count' => 'int'
     ];
 
     /**
@@ -93,7 +95,9 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
         'sender_allowlist' => null,
         'username' => null,
         'sending_enabled' => null,
-        'aliases' => null
+        'aliases' => null,
+        'message_count' => 'int64',
+        'unread_count' => 'int64'
     ];
 
     /**
@@ -114,7 +118,9 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
         'sender_allowlist' => false,
         'username' => true,
         'sending_enabled' => false,
-        'aliases' => false
+        'aliases' => false,
+        'message_count' => true,
+        'unread_count' => true
     ];
 
     /**
@@ -215,7 +221,9 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
         'sender_allowlist' => 'sender_allowlist',
         'username' => 'username',
         'sending_enabled' => 'sending_enabled',
-        'aliases' => 'aliases'
+        'aliases' => 'aliases',
+        'message_count' => 'message_count',
+        'unread_count' => 'unread_count'
     ];
 
     /**
@@ -236,7 +244,9 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
         'sender_allowlist' => 'setSenderAllowlist',
         'username' => 'setUsername',
         'sending_enabled' => 'setSendingEnabled',
-        'aliases' => 'setAliases'
+        'aliases' => 'setAliases',
+        'message_count' => 'setMessageCount',
+        'unread_count' => 'setUnreadCount'
     ];
 
     /**
@@ -257,7 +267,9 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
         'sender_allowlist' => 'getSenderAllowlist',
         'username' => 'getUsername',
         'sending_enabled' => 'getSendingEnabled',
-        'aliases' => 'getAliases'
+        'aliases' => 'getAliases',
+        'message_count' => 'getMessageCount',
+        'unread_count' => 'getUnreadCount'
     ];
 
     /**
@@ -330,6 +342,8 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
         $this->setIfExists('username', $data ?? [], null);
         $this->setIfExists('sending_enabled', $data ?? [], null);
         $this->setIfExists('aliases', $data ?? [], null);
+        $this->setIfExists('message_count', $data ?? [], null);
+        $this->setIfExists('unread_count', $data ?? [], null);
     }
 
     /**
@@ -359,8 +373,37 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
     {
         $invalidProperties = [];
 
-        if (!is_null($this->container['received_count']) && ($this->container['received_count'] < 0)) {
+        if ($this->container['received_count'] === null) {
+            $invalidProperties[] = "'received_count' can't be null";
+        }
+        if (($this->container['received_count'] < 0)) {
             $invalidProperties[] = "invalid value for 'received_count', must be bigger than or equal to 0.";
+        }
+
+        if ($this->container['last_received_at'] === null && !$this->isNullableSetToNull('last_received_at')) {
+            $invalidProperties[] = "'last_received_at' is required";
+        }
+        if ($this->container['last_received_path'] === null && !$this->isNullableSetToNull('last_received_path')) {
+            $invalidProperties[] = "'last_received_path' is required";
+        }
+        if ($this->container['receiving_enabled'] === null) {
+            $invalidProperties[] = "'receiving_enabled' can't be null";
+        }
+        if ($this->container['sending_enabled'] === null) {
+            $invalidProperties[] = "'sending_enabled' can't be null";
+        }
+        if ($this->container['message_count'] === null && !$this->isNullableSetToNull('message_count')) {
+            $invalidProperties[] = "'message_count' is required";
+        }
+        if (!is_null($this->container['message_count']) && ($this->container['message_count'] < 0)) {
+            $invalidProperties[] = "invalid value for 'message_count', must be bigger than or equal to 0.";
+        }
+
+        if ($this->container['unread_count'] === null && !$this->isNullableSetToNull('unread_count')) {
+            $invalidProperties[] = "'unread_count' is required";
+        }
+        if (!is_null($this->container['unread_count']) && ($this->container['unread_count'] < 0)) {
+            $invalidProperties[] = "invalid value for 'unread_count', must be bigger than or equal to 0.";
         }
 
         return $invalidProperties;
@@ -391,7 +434,7 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets address
      *
-     * @param string|null $address address
+     * @param string|null $address Primary mailbox display label when authorized. Omitted without address permission. The address remains a valid label when receiving is unavailable.
      *
      * @return self
      */
@@ -415,7 +458,7 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Gets received_count
      *
-     * @return int|null
+     * @return int
      */
     public function getReceivedCount()
     {
@@ -425,7 +468,7 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets received_count
      *
-     * @param int|null $received_count received_count
+     * @param int $received_count Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
      *
      * @return self
      */
@@ -629,7 +672,7 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Gets receiving_enabled
      *
-     * @return bool|null
+     * @return bool
      */
     public function getReceivingEnabled()
     {
@@ -639,7 +682,7 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets receiving_enabled
      *
-     * @param bool|null $receiving_enabled Whether this mailbox can currently receive email. False when configuration, account state, quota or routing prevents receiving.
+     * @param bool $receiving_enabled Whether the mailbox can receive email now. Display an authorized address even when this is false.
      *
      * @return self
      */
@@ -717,7 +760,7 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Gets sending_enabled
      *
-     * @return bool|null
+     * @return bool
      */
     public function getSendingEnabled()
     {
@@ -727,7 +770,7 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
     /**
      * Sets sending_enabled
      *
-     * @param bool|null $sending_enabled Always false. Sending is not implemented.
+     * @param bool $sending_enabled Always false. Sending is not implemented.
      *
      * @return self
      */
@@ -764,6 +807,82 @@ class MailboxEmail implements ModelInterface, ArrayAccess, \JsonSerializable
             throw new \InvalidArgumentException('non-nullable aliases cannot be null');
         }
         $this->container['aliases'] = $aliases;
+
+        return $this;
+    }
+
+    /**
+     * Gets message_count
+     *
+     * @return int|null
+     */
+    public function getMessageCount()
+    {
+        return $this->container['message_count'];
+    }
+
+    /**
+     * Sets message_count
+     *
+     * @param int|null $message_count Emails currently stored. Null while the email index is being prepared.
+     *
+     * @return self
+     */
+    public function setMessageCount($message_count)
+    {
+        if (is_null($message_count)) {
+            array_push($this->openAPINullablesSetToNull, 'message_count');
+        } else {
+            $nullablesSetToNull = $this->getOpenAPINullablesSetToNull();
+            $index = array_search('message_count', $nullablesSetToNull);
+            if ($index !== FALSE) {
+                unset($nullablesSetToNull[$index]);
+                $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
+            }
+        }
+        if (!is_null($message_count) && ($message_count < 0)) {
+            throw new \InvalidArgumentException('invalid value for $message_count when calling MailboxEmail., must be bigger than or equal to 0.');
+        }
+
+        $this->container['message_count'] = $message_count;
+
+        return $this;
+    }
+
+    /**
+     * Gets unread_count
+     *
+     * @return int|null
+     */
+    public function getUnreadCount()
+    {
+        return $this->container['unread_count'];
+    }
+
+    /**
+     * Sets unread_count
+     *
+     * @param int|null $unread_count Stored emails with shared unread status. Null while the email index is being prepared.
+     *
+     * @return self
+     */
+    public function setUnreadCount($unread_count)
+    {
+        if (is_null($unread_count)) {
+            array_push($this->openAPINullablesSetToNull, 'unread_count');
+        } else {
+            $nullablesSetToNull = $this->getOpenAPINullablesSetToNull();
+            $index = array_search('unread_count', $nullablesSetToNull);
+            if ($index !== FALSE) {
+                unset($nullablesSetToNull[$index]);
+                $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
+            }
+        }
+        if (!is_null($unread_count) && ($unread_count < 0)) {
+            throw new \InvalidArgumentException('invalid value for $unread_count when calling MailboxEmail., must be bigger than or equal to 0.');
+        }
+
+        $this->container['unread_count'] = $unread_count;
 
         return $this;
     }

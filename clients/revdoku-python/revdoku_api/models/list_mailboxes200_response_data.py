@@ -20,6 +20,8 @@ import json
 from pydantic import BaseModel, ConfigDict
 from typing import Any, ClassVar, Dict, List
 from revdoku_api.models.mailbox import Mailbox
+from revdoku_api.models.mailbox_counts import MailboxCounts
+from revdoku_api.models.mailbox_pagination import MailboxPagination
 from typing import Optional, Set
 from typing_extensions import Self
 from pydantic_core import to_jsonable_python
@@ -29,8 +31,10 @@ class ListMailboxes200ResponseData(BaseModel):
     ListMailboxes200ResponseData
     """ # noqa: E501
     mailboxes: List[Mailbox]
+    counts: MailboxCounts
+    pagination: MailboxPagination
     additional_properties: Dict[str, Any] = {}
-    __properties: ClassVar[List[str]] = ["mailboxes"]
+    __properties: ClassVar[List[str]] = ["mailboxes", "counts", "pagination"]
 
     model_config = ConfigDict(
         validate_by_name=True,
@@ -79,6 +83,12 @@ class ListMailboxes200ResponseData(BaseModel):
             for _item_mailboxes in self.mailboxes:
                 _items.append(_item_mailboxes.to_dict() if _item_mailboxes is not None else None)
             _dict['mailboxes'] = _items
+        # override the default output from pydantic by calling `to_dict()` of counts
+        if self.counts:
+            _dict['counts'] = self.counts.to_dict()
+        # override the default output from pydantic by calling `to_dict()` of pagination
+        if self.pagination:
+            _dict['pagination'] = self.pagination.to_dict()
         # puts key-value pairs in additional_properties in the top level
         if self.additional_properties is not None:
             for _key, _value in self.additional_properties.items():
@@ -96,7 +106,9 @@ class ListMailboxes200ResponseData(BaseModel):
             return cls.model_validate(obj)
 
         _obj = cls.model_validate({
-            "mailboxes": [Mailbox.from_dict(_item) for _item in obj["mailboxes"]] if obj.get("mailboxes") is not None else None
+            "mailboxes": [Mailbox.from_dict(_item) for _item in obj["mailboxes"]] if obj.get("mailboxes") is not None else None,
+            "counts": MailboxCounts.from_dict(obj["counts"]) if obj.get("counts") is not None else None,
+            "pagination": MailboxPagination.from_dict(obj["pagination"]) if obj.get("pagination") is not None else None
         })
         # store additional fields in additional_properties
         for _key in obj.keys():

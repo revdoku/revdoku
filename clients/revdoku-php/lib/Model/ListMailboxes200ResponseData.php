@@ -57,7 +57,9 @@ class ListMailboxes200ResponseData implements ModelInterface, ArrayAccess, \Json
      * @var string[]
      */
     protected static $openAPITypes = [
-        'mailboxes' => '\Revdoku\Api\Model\Mailbox[]'
+        'mailboxes' => '\Revdoku\Api\Model\Mailbox[]',
+        'counts' => '\Revdoku\Api\Model\MailboxCounts',
+        'pagination' => '\Revdoku\Api\Model\MailboxPagination'
     ];
 
     /**
@@ -68,7 +70,9 @@ class ListMailboxes200ResponseData implements ModelInterface, ArrayAccess, \Json
      * @psalm-var array<string, string|null>
      */
     protected static $openAPIFormats = [
-        'mailboxes' => null
+        'mailboxes' => null,
+        'counts' => null,
+        'pagination' => null
     ];
 
     /**
@@ -77,7 +81,9 @@ class ListMailboxes200ResponseData implements ModelInterface, ArrayAccess, \Json
      * @var boolean[]
      */
     protected static array $openAPINullables = [
-        'mailboxes' => false
+        'mailboxes' => false,
+        'counts' => false,
+        'pagination' => false
     ];
 
     /**
@@ -166,7 +172,9 @@ class ListMailboxes200ResponseData implements ModelInterface, ArrayAccess, \Json
      * @var string[]
      */
     protected static $attributeMap = [
-        'mailboxes' => 'mailboxes'
+        'mailboxes' => 'mailboxes',
+        'counts' => 'counts',
+        'pagination' => 'pagination'
     ];
 
     /**
@@ -175,7 +183,9 @@ class ListMailboxes200ResponseData implements ModelInterface, ArrayAccess, \Json
      * @var string[]
      */
     protected static $setters = [
-        'mailboxes' => 'setMailboxes'
+        'mailboxes' => 'setMailboxes',
+        'counts' => 'setCounts',
+        'pagination' => 'setPagination'
     ];
 
     /**
@@ -184,7 +194,9 @@ class ListMailboxes200ResponseData implements ModelInterface, ArrayAccess, \Json
      * @var string[]
      */
     protected static $getters = [
-        'mailboxes' => 'getMailboxes'
+        'mailboxes' => 'getMailboxes',
+        'counts' => 'getCounts',
+        'pagination' => 'getPagination'
     ];
 
     /**
@@ -245,6 +257,8 @@ class ListMailboxes200ResponseData implements ModelInterface, ArrayAccess, \Json
     public function __construct(?array $data = null)
     {
         $this->setIfExists('mailboxes', $data ?? [], null);
+        $this->setIfExists('counts', $data ?? [], null);
+        $this->setIfExists('pagination', $data ?? [], null);
     }
 
     /**
@@ -276,6 +290,12 @@ class ListMailboxes200ResponseData implements ModelInterface, ArrayAccess, \Json
 
         if ($this->container['mailboxes'] === null) {
             $invalidProperties[] = "'mailboxes' can't be null";
+        }
+        if ($this->container['counts'] === null) {
+            $invalidProperties[] = "'counts' can't be null";
+        }
+        if ($this->container['pagination'] === null) {
+            $invalidProperties[] = "'pagination' can't be null";
         }
         return $invalidProperties;
     }
@@ -315,6 +335,60 @@ class ListMailboxes200ResponseData implements ModelInterface, ArrayAccess, \Json
             throw new \InvalidArgumentException('non-nullable mailboxes cannot be null');
         }
         $this->container['mailboxes'] = $mailboxes;
+
+        return $this;
+    }
+
+    /**
+     * Gets counts
+     *
+     * @return \Revdoku\Api\Model\MailboxCounts
+     */
+    public function getCounts()
+    {
+        return $this->container['counts'];
+    }
+
+    /**
+     * Sets counts
+     *
+     * @param \Revdoku\Api\Model\MailboxCounts $counts counts
+     *
+     * @return self
+     */
+    public function setCounts($counts)
+    {
+        if (is_null($counts)) {
+            throw new \InvalidArgumentException('non-nullable counts cannot be null');
+        }
+        $this->container['counts'] = $counts;
+
+        return $this;
+    }
+
+    /**
+     * Gets pagination
+     *
+     * @return \Revdoku\Api\Model\MailboxPagination
+     */
+    public function getPagination()
+    {
+        return $this->container['pagination'];
+    }
+
+    /**
+     * Sets pagination
+     *
+     * @param \Revdoku\Api\Model\MailboxPagination $pagination pagination
+     *
+     * @return self
+     */
+    public function setPagination($pagination)
+    {
+        if (is_null($pagination)) {
+            throw new \InvalidArgumentException('non-nullable pagination cannot be null');
+        }
+        $this->container['pagination'] = $pagination;
 
         return $this;
     }

@@ -85,6 +85,9 @@ EMAIL_SENDER=""
 EMAIL_SUBJECT=""
 EMAIL_CONVERSATION=""
 EMAIL_READ=""
+MAILBOX_LIST_STATUS="active"
+MAILBOX_LIST_QUERY=""
+MAILBOX_LIST_OPTIONS="false"
 OUTPUT_PATH=""
 SHOW_UPLOAD_HINT="false"
 # Project-local binding (.revdoku): remembers the mailbox so `revdoku upload`
@@ -197,7 +200,7 @@ Usage: revdoku <command> [PATH] [options]
 
   upload PATH           Save the selected local file or folder (use . explicitly).
                         Opens browser sign-in when credentials are missing.
-  ls, list              List your mailboxes.
+  ls, list              List active mailboxes with addresses and email counts.
   create                Create a mailbox; optionally choose --username and --domain.
   o, open               Open this mailbox in the dashboard.
   st, status            Show connection and account status.
@@ -233,6 +236,9 @@ Options:
   --account-id ID       Select a granted account for this command.
   --client-name NAME    Client person or business (account create-client).
   --mailbox-id ID        Target mailbox; overrides the local .revdoku binding.
+  --status active|archived|all          Mailbox list filter (default: active).
+  --query TEXT                        Mailbox address or ID filter (ls).
+  --limit N --offset N                 Mailbox/file pagination (maximum 100).
   --cursor CURSOR      --limit N       Email pagination (maximum 100).
   --sender ADDRESS     --subject TEXT  Email filters.
   --conversation-id ID                 Filter an email conversation.
@@ -315,6 +321,16 @@ while [[ $# -gt 0 ]]; do
       [[ $# -ge 2 ]] || die "--mailbox-id requires a value"
       MAILBOX_ID="$2"
       MAILBOX_EXPLICIT="true"
+      shift 2
+      ;;
+    --status|--query)
+      [[ $# -ge 2 && -n "$2" ]] || die "$1 requires a value"
+      if [[ "$1" == "--status" ]]; then
+        case "$2" in active|archived|all) MAILBOX_LIST_STATUS="$2" ;; *) die "--status must be active, archived or all" ;; esac
+      else
+        MAILBOX_LIST_QUERY="$2"
+      fi
+      MAILBOX_LIST_OPTIONS="true"
       shift 2
       ;;
     --cursor|--limit|--offset|--sender|--subject|--conversation-id|--read|--attachment-id)
@@ -496,6 +512,9 @@ fi
 [[ -z "$DELETE_CONFIRMATION" || "$ACTION" == "delete_mailbox" || "$ACTION" == "email-delete" || "$ACTION" == "webhook-delete" ]] || die "--confirm-delete is only available with delete, email-delete or webhook-delete"
 if [[ ( -n "$WEBHOOK_URL" || "$ROTATE_SECRET" == "true" ) && "$ACTION" != "webhook-set" ]]; then
   die "--webhook-url and --rotate-secret require webhook-set"
+fi
+if [[ "$MAILBOX_LIST_OPTIONS" == "true" && "$ACTION" != "list_mailboxes" ]]; then
+  die "--status and --query require ls or list"
 fi
 if [[ -n "$EMAIL_USERNAME$EMAIL_DOMAIN" && "$ACTION" != "create_mailbox" ]]; then
   die "--username and --domain require create"
@@ -1005,14 +1024,17 @@ open_dashboard() {
 }
 
 request_device_agent_key() {
-  local payload response response_file client_id device_code user_code verification_uri_complete expires_in interval deadline now token_payload key
+  local payload response response_file client_id device_code user_code verification_uri_complete expires_in interval deadline now token_payload key signup_medium
+
+  signup_medium=cli
+  [[ "${REVDOKU_SIGNUP_MEDIUM:-}" == "skill" ]] && signup_medium=skill
 
   payload="$("$JQ_BIN" -nc --arg grant "$DEVICE_CODE_GRANT_TYPE" '{client_name:"Revdoku CLI", redirect_uris:[], grant_types:[$grant,"refresh_token"], response_types:[], token_endpoint_auth_method:"none"}')"
   response="$(http_json_quiet POST "/oauth/register" "$payload")" || return 1
   client_id="$("$JQ_BIN" -r '.client_id // empty' <<<"$response")"
   [[ -n "$client_id" ]] || return 1
 
-  payload="$("$JQ_BIN" -nc --arg client_id "$client_id" --arg resource "$MCP_RESOURCE" '{client_id:$client_id, scope:"revdoku:mcp", resource:$resource}')"
+  payload="$("$JQ_BIN" -nc --arg client_id "$client_id" --arg resource "$MCP_RESOURCE" --arg signup_medium "$signup_medium" '{client_id:$client_id, scope:"revdoku:mcp", resource:$resource, signup_medium:$signup_medium}')"
   response="$(http_json_quiet POST "/oauth/device_authorization" "$payload")" || return 1
   device_code="$("$JQ_BIN" -r '.device_code // empty' <<<"$response")"
   user_code="$("$JQ_BIN" -r '.user_code // empty' <<<"$response")"
@@ -1170,25 +1192,9 @@ if [[ "$DRY_RUN" != "true" ]]; then
   esac
 fi # network authentication is skipped by upload --dry-run
 list_mailboxes() {
-  local active_response archived_response
-  active_response="$(http_json GET "/api/v1/mailboxes" "{}")"
-  archived_response="$(http_json GET "/api/v1/mailboxes?archived=true" "{}")"
-  "$JQ_BIN" -nc \
-    --argjson active "$active_response" \
-    --argjson archived "$archived_response" \
-    '
-      ($active.data.mailboxes // []) as $active_mailboxes
-      | ($archived.data.mailboxes // []) as $archived_mailboxes
-      | ($active_mailboxes + $archived_mailboxes | unique_by(.id)) as $mailboxes
-      | $active + {
-          data: ($active.data + {
-            mailboxes: $mailboxes,
-            active_mailboxes_count: ($active_mailboxes | length),
-            archived_mailboxes_count: ($archived_mailboxes | length),
-            includes_archived: true
-          })
-        }
-    '
+  local query
+  query="$("$JQ_BIN" -rn --arg s "$MAILBOX_LIST_QUERY" '$s|@uri')"
+  http_json GET "/api/v1/mailboxes?status=${MAILBOX_LIST_STATUS}&limit=${EMAIL_LIMIT}&offset=${FILE_OFFSET}&q=${query}" "{}"
 }
 
 list_versions() {

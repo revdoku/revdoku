@@ -11,18 +11,20 @@
 use crate::models;
 use serde::{Deserialize, Serialize};
 
-/// MailboxEmail : Authorized mailbox reads include the email address. Creation and opt-in reads also include receiving settings; use the emails collection for a durable arrival cursor.
+/// MailboxEmail : Mailbox reads include stored and unread email counts, lifetime receipts, receiving state and the permitted address. Creation and include_email reads also include additional address settings.
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MailboxEmail {
+    /// Primary mailbox display label when authorized. Omitted without address permission. The address remains a valid label when receiving is unavailable.
     #[serde(rename = "address", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
     pub address: Option<Option<String>>,
-    #[serde(rename = "received_count", skip_serializing_if = "Option::is_none")]
-    pub received_count: Option<i64>,
-    #[serde(rename = "last_received_at", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
-    pub last_received_at: Option<Option<chrono::DateTime<chrono::FixedOffset>>>,
+    /// Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
+    #[serde(rename = "received_count")]
+    pub received_count: i64,
+    #[serde(rename = "last_received_at", deserialize_with = "Option::deserialize")]
+    pub last_received_at: Option<chrono::DateTime<chrono::FixedOffset>>,
     /// Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion.
-    #[serde(rename = "last_received_path", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
-    pub last_received_path: Option<Option<String>>,
+    #[serde(rename = "last_received_path", deserialize_with = "Option::deserialize")]
+    pub last_received_path: Option<String>,
     /// Why receiving is unavailable; omitted when receiving_enabled is true.
     #[serde(rename = "blocked_reason", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
     pub blocked_reason: Option<Option<String>>,
@@ -32,37 +34,45 @@ pub struct MailboxEmail {
     pub assignment: Option<Box<models::MailboxEmailAssignment>>,
     #[serde(rename = "customization", skip_serializing_if = "Option::is_none")]
     pub customization: Option<Box<models::MailboxEmailCustomization>>,
-    /// Whether this mailbox can currently receive email. False when configuration, account state, quota or routing prevents receiving.
-    #[serde(rename = "receiving_enabled", skip_serializing_if = "Option::is_none")]
-    pub receiving_enabled: Option<bool>,
+    /// Whether the mailbox can receive email now. Display an authorized address even when this is false.
+    #[serde(rename = "receiving_enabled")]
+    pub receiving_enabled: bool,
     #[serde(rename = "sender_allowlist", skip_serializing_if = "Option::is_none")]
     pub sender_allowlist: Option<Box<models::EmailSenderAllowlist>>,
     #[serde(rename = "username", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
     pub username: Option<Option<String>>,
     /// Always false. Sending is not implemented.
-    #[serde(rename = "sending_enabled", skip_serializing_if = "Option::is_none")]
-    pub sending_enabled: Option<bool>,
+    #[serde(rename = "sending_enabled")]
+    pub sending_enabled: bool,
     #[serde(rename = "aliases", skip_serializing_if = "Option::is_none")]
     pub aliases: Option<Vec<models::MailboxEmailAliasesInner>>,
+    /// Emails currently stored. Null while the email index is being prepared.
+    #[serde(rename = "message_count", deserialize_with = "Option::deserialize")]
+    pub message_count: Option<i64>,
+    /// Stored emails with shared unread status. Null while the email index is being prepared.
+    #[serde(rename = "unread_count", deserialize_with = "Option::deserialize")]
+    pub unread_count: Option<i64>,
 }
 
 impl MailboxEmail {
-    /// Authorized mailbox reads include the email address. Creation and opt-in reads also include receiving settings; use the emails collection for a durable arrival cursor.
-    pub fn new() -> MailboxEmail {
+    /// Mailbox reads include stored and unread email counts, lifetime receipts, receiving state and the permitted address. Creation and include_email reads also include additional address settings.
+    pub fn new(received_count: i64, last_received_at: Option<chrono::DateTime<chrono::FixedOffset>>, last_received_path: Option<String>, receiving_enabled: bool, sending_enabled: bool, message_count: Option<i64>, unread_count: Option<i64>) -> MailboxEmail {
         MailboxEmail {
             address: None,
-            received_count: None,
-            last_received_at: None,
-            last_received_path: None,
+            received_count,
+            last_received_at,
+            last_received_path,
             blocked_reason: None,
             available_domains: None,
             assignment: None,
             customization: None,
-            receiving_enabled: None,
+            receiving_enabled,
             sender_allowlist: None,
             username: None,
-            sending_enabled: None,
+            sending_enabled,
             aliases: None,
+            message_count,
+            unread_count,
         }
     }
 }

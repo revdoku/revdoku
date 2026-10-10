@@ -84,6 +84,10 @@ if [ "$offline" = false ]; then ensure_jq; fi
 PATH="$SKILL_DIR/bin:$PATH"
 export PATH
 
+# Preserve the Skill entry path through the CLI's browser sign-in.
+REVDOKU_SIGNUP_MEDIUM=skill
+export REVDOKU_SIGNUP_MEDIUM
+
 if [ -f "$SKILL_DIR/VERSION" ]; then
   REVDOKU_CLIENT_VERSION_FILE="$SKILL_DIR/VERSION"
   export REVDOKU_CLIENT_VERSION_FILE

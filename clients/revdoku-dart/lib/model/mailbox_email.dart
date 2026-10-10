@@ -14,30 +14,29 @@ class MailboxEmail {
   /// Returns a new [MailboxEmail] instance.
   MailboxEmail({
     this.address,
-    this.receivedCount,
-    this.lastReceivedAt,
-    this.lastReceivedPath,
+    required this.receivedCount,
+    required this.lastReceivedAt,
+    required this.lastReceivedPath,
     this.blockedReason,
     this.availableDomains = const [],
     this.assignment,
     this.customization,
-    this.receivingEnabled,
+    required this.receivingEnabled,
     this.senderAllowlist,
     this.username,
-    this.sendingEnabled,
+    required this.sendingEnabled,
     this.aliases = const [],
+    required this.messageCount,
+    required this.unreadCount,
   });
 
+  /// Primary mailbox display label when authorized. Omitted without address permission. The address remains a valid label when receiving is unavailable.
   String? address;
 
+  /// Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
+  ///
   /// Minimum value: 0
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  int? receivedCount;
+  int receivedCount;
 
   DateTime? lastReceivedAt;
 
@@ -65,14 +64,8 @@ class MailboxEmail {
   ///
   MailboxEmailCustomization? customization;
 
-  /// Whether this mailbox can currently receive email. False when configuration, account state, quota or routing prevents receiving.
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  bool? receivingEnabled;
+  /// Whether the mailbox can receive email now. Display an authorized address even when this is false.
+  bool receivingEnabled;
 
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
@@ -85,15 +78,19 @@ class MailboxEmail {
   String? username;
 
   /// Always false. Sending is not implemented.
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  bool? sendingEnabled;
+  bool sendingEnabled;
 
   List<MailboxEmailAliasesInner> aliases;
+
+  /// Emails currently stored. Null while the email index is being prepared.
+  ///
+  /// Minimum value: 0
+  int? messageCount;
+
+  /// Stored emails with shared unread status. Null while the email index is being prepared.
+  ///
+  /// Minimum value: 0
+  int? unreadCount;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is MailboxEmail &&
@@ -109,27 +106,31 @@ class MailboxEmail {
     other.senderAllowlist == senderAllowlist &&
     other.username == username &&
     other.sendingEnabled == sendingEnabled &&
-    _deepEquality.equals(other.aliases, aliases);
+    _deepEquality.equals(other.aliases, aliases) &&
+    other.messageCount == messageCount &&
+    other.unreadCount == unreadCount;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
     (address == null ? 0 : address!.hashCode) +
-    (receivedCount == null ? 0 : receivedCount!.hashCode) +
+    (receivedCount.hashCode) +
     (lastReceivedAt == null ? 0 : lastReceivedAt!.hashCode) +
     (lastReceivedPath == null ? 0 : lastReceivedPath!.hashCode) +
     (blockedReason == null ? 0 : blockedReason!.hashCode) +
     (availableDomains.hashCode) +
     (assignment == null ? 0 : assignment!.hashCode) +
     (customization == null ? 0 : customization!.hashCode) +
-    (receivingEnabled == null ? 0 : receivingEnabled!.hashCode) +
+    (receivingEnabled.hashCode) +
     (senderAllowlist == null ? 0 : senderAllowlist!.hashCode) +
     (username == null ? 0 : username!.hashCode) +
-    (sendingEnabled == null ? 0 : sendingEnabled!.hashCode) +
-    (aliases.hashCode);
+    (sendingEnabled.hashCode) +
+    (aliases.hashCode) +
+    (messageCount == null ? 0 : messageCount!.hashCode) +
+    (unreadCount == null ? 0 : unreadCount!.hashCode);
 
   @override
-  String toString() => 'MailboxEmail[address=$address, receivedCount=$receivedCount, lastReceivedAt=$lastReceivedAt, lastReceivedPath=$lastReceivedPath, blockedReason=$blockedReason, availableDomains=$availableDomains, assignment=$assignment, customization=$customization, receivingEnabled=$receivingEnabled, senderAllowlist=$senderAllowlist, username=$username, sendingEnabled=$sendingEnabled, aliases=$aliases]';
+  String toString() => 'MailboxEmail[address=$address, receivedCount=$receivedCount, lastReceivedAt=$lastReceivedAt, lastReceivedPath=$lastReceivedPath, blockedReason=$blockedReason, availableDomains=$availableDomains, assignment=$assignment, customization=$customization, receivingEnabled=$receivingEnabled, senderAllowlist=$senderAllowlist, username=$username, sendingEnabled=$sendingEnabled, aliases=$aliases, messageCount=$messageCount, unreadCount=$unreadCount]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -138,9 +139,7 @@ class MailboxEmail {
     } else {
       json[r'address'] = null;
     }
-    if (this.receivedCount != null) {
       json[r'received_count'] = this.receivedCount;
-    }
     if (this.lastReceivedAt != null) {
       json[r'last_received_at'] = this.lastReceivedAt!.toUtc().toIso8601String();
     } else {
@@ -163,9 +162,7 @@ class MailboxEmail {
     if (this.customization != null) {
       json[r'customization'] = this.customization;
     }
-    if (this.receivingEnabled != null) {
       json[r'receiving_enabled'] = this.receivingEnabled;
-    }
     if (this.senderAllowlist != null) {
       json[r'sender_allowlist'] = this.senderAllowlist;
     }
@@ -174,10 +171,18 @@ class MailboxEmail {
     } else {
       json[r'username'] = null;
     }
-    if (this.sendingEnabled != null) {
       json[r'sending_enabled'] = this.sendingEnabled;
-    }
       json[r'aliases'] = this.aliases;
+    if (this.messageCount != null) {
+      json[r'message_count'] = this.messageCount;
+    } else {
+      json[r'message_count'] = null;
+    }
+    if (this.unreadCount != null) {
+      json[r'unread_count'] = this.unreadCount;
+    } else {
+      json[r'unread_count'] = null;
+    }
     return json;
   }
 
@@ -192,23 +197,35 @@ class MailboxEmail {
       // Note 1: the values aren't checked for validity beyond being non-null.
       // Note 2: this code is stripped in release mode!
       assert(() {
+        assert(json.containsKey(r'received_count'), 'Required key "MailboxEmail[received_count]" is missing from JSON.');
+        assert(json[r'received_count'] != null, 'Required key "MailboxEmail[received_count]" has a null value in JSON.');
+        assert(json.containsKey(r'last_received_at'), 'Required key "MailboxEmail[last_received_at]" is missing from JSON.');
+        assert(json.containsKey(r'last_received_path'), 'Required key "MailboxEmail[last_received_path]" is missing from JSON.');
+        assert(json.containsKey(r'receiving_enabled'), 'Required key "MailboxEmail[receiving_enabled]" is missing from JSON.');
+        assert(json[r'receiving_enabled'] != null, 'Required key "MailboxEmail[receiving_enabled]" has a null value in JSON.');
+        assert(json.containsKey(r'sending_enabled'), 'Required key "MailboxEmail[sending_enabled]" is missing from JSON.');
+        assert(json[r'sending_enabled'] != null, 'Required key "MailboxEmail[sending_enabled]" has a null value in JSON.');
+        assert(json.containsKey(r'message_count'), 'Required key "MailboxEmail[message_count]" is missing from JSON.');
+        assert(json.containsKey(r'unread_count'), 'Required key "MailboxEmail[unread_count]" is missing from JSON.');
         return true;
       }());
 
       return MailboxEmail(
         address: mapValueOfType<String>(json, r'address'),
-        receivedCount: mapValueOfType<int>(json, r'received_count'),
+        receivedCount: mapValueOfType<int>(json, r'received_count')!,
         lastReceivedAt: mapDateTime(json, r'last_received_at', r''),
         lastReceivedPath: mapValueOfType<String>(json, r'last_received_path'),
         blockedReason: mapValueOfType<String>(json, r'blocked_reason'),
         availableDomains: MailboxEmailAvailableDomainsInner.listFromJson(json[r'available_domains']),
         assignment: MailboxEmailAssignment.fromJson(json[r'assignment']),
         customization: MailboxEmailCustomization.fromJson(json[r'customization']),
-        receivingEnabled: mapValueOfType<bool>(json, r'receiving_enabled'),
+        receivingEnabled: mapValueOfType<bool>(json, r'receiving_enabled')!,
         senderAllowlist: EmailSenderAllowlist.fromJson(json[r'sender_allowlist']),
         username: mapValueOfType<String>(json, r'username'),
-        sendingEnabled: mapValueOfType<bool>(json, r'sending_enabled'),
+        sendingEnabled: mapValueOfType<bool>(json, r'sending_enabled')!,
         aliases: MailboxEmailAliasesInner.listFromJson(json[r'aliases']),
+        messageCount: mapValueOfType<int>(json, r'message_count'),
+        unreadCount: mapValueOfType<int>(json, r'unread_count'),
       );
     }
     return null;
@@ -256,6 +273,13 @@ class MailboxEmail {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
+    'received_count',
+    'last_received_at',
+    'last_received_path',
+    'receiving_enabled',
+    'sending_enabled',
+    'message_count',
+    'unread_count',
   };
 }
 

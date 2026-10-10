@@ -13,30 +13,37 @@ package revdoku
 import (
 	"encoding/json"
 	"time"
+	"fmt"
 )
 
 // checks if the MailboxEmail type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &MailboxEmail{}
 
-// MailboxEmail Authorized mailbox reads include the email address. Creation and opt-in reads also include receiving settings; use the emails collection for a durable arrival cursor.
+// MailboxEmail Mailbox reads include stored and unread email counts, lifetime receipts, receiving state and the permitted address. Creation and include_email reads also include additional address settings.
 type MailboxEmail struct {
+	// Primary mailbox display label when authorized. Omitted without address permission. The address remains a valid label when receiving is unavailable.
 	Address NullableString `json:"address,omitempty"`
-	ReceivedCount *int64 `json:"received_count,omitempty"`
-	LastReceivedAt NullableTime `json:"last_received_at,omitempty"`
+	// Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
+	ReceivedCount int64 `json:"received_count"`
+	LastReceivedAt NullableTime `json:"last_received_at"`
 	// Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion.
-	LastReceivedPath NullableString `json:"last_received_path,omitempty"`
+	LastReceivedPath NullableString `json:"last_received_path"`
 	// Why receiving is unavailable; omitted when receiving_enabled is true.
 	BlockedReason NullableString `json:"blocked_reason,omitempty"`
 	AvailableDomains []MailboxEmailAvailableDomainsInner `json:"available_domains,omitempty"`
 	Assignment *MailboxEmailAssignment `json:"assignment,omitempty"`
 	Customization *MailboxEmailCustomization `json:"customization,omitempty"`
-	// Whether this mailbox can currently receive email. False when configuration, account state, quota or routing prevents receiving.
-	ReceivingEnabled *bool `json:"receiving_enabled,omitempty"`
+	// Whether the mailbox can receive email now. Display an authorized address even when this is false.
+	ReceivingEnabled bool `json:"receiving_enabled"`
 	SenderAllowlist *EmailSenderAllowlist `json:"sender_allowlist,omitempty"`
 	Username NullableString `json:"username,omitempty"`
 	// Always false. Sending is not implemented.
-	SendingEnabled *bool `json:"sending_enabled,omitempty"`
+	SendingEnabled bool `json:"sending_enabled"`
 	Aliases []MailboxEmailAliasesInner `json:"aliases,omitempty"`
+	// Emails currently stored. Null while the email index is being prepared.
+	MessageCount NullableInt64 `json:"message_count"`
+	// Stored emails with shared unread status. Null while the email index is being prepared.
+	UnreadCount NullableInt64 `json:"unread_count"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -46,8 +53,15 @@ type _MailboxEmail MailboxEmail
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewMailboxEmail() *MailboxEmail {
+func NewMailboxEmail(receivedCount int64, lastReceivedAt NullableTime, lastReceivedPath NullableString, receivingEnabled bool, sendingEnabled bool, messageCount NullableInt64, unreadCount NullableInt64) *MailboxEmail {
 	this := MailboxEmail{}
+	this.ReceivedCount = receivedCount
+	this.LastReceivedAt = lastReceivedAt
+	this.LastReceivedPath = lastReceivedPath
+	this.ReceivingEnabled = receivingEnabled
+	this.SendingEnabled = sendingEnabled
+	this.MessageCount = messageCount
+	this.UnreadCount = unreadCount
 	return &this
 }
 
@@ -101,48 +115,42 @@ func (o *MailboxEmail) UnsetAddress() {
 	o.Address.Unset()
 }
 
-// GetReceivedCount returns the ReceivedCount field value if set, zero value otherwise.
+// GetReceivedCount returns the ReceivedCount field value
 func (o *MailboxEmail) GetReceivedCount() int64 {
-	if o == nil || IsNil(o.ReceivedCount) {
+	if o == nil {
 		var ret int64
 		return ret
 	}
-	return *o.ReceivedCount
+
+	return o.ReceivedCount
 }
 
-// GetReceivedCountOk returns a tuple with the ReceivedCount field value if set, nil otherwise
+// GetReceivedCountOk returns a tuple with the ReceivedCount field value
 // and a boolean to check if the value has been set.
 func (o *MailboxEmail) GetReceivedCountOk() (*int64, bool) {
-	if o == nil || IsNil(o.ReceivedCount) {
+	if o == nil {
 		return nil, false
 	}
-	return o.ReceivedCount, true
+	return &o.ReceivedCount, true
 }
 
-// HasReceivedCount returns a boolean if a field has been set.
-func (o *MailboxEmail) HasReceivedCount() bool {
-	if o != nil && !IsNil(o.ReceivedCount) {
-		return true
-	}
-
-	return false
-}
-
-// SetReceivedCount gets a reference to the given int64 and assigns it to the ReceivedCount field.
+// SetReceivedCount sets field value
 func (o *MailboxEmail) SetReceivedCount(v int64) {
-	o.ReceivedCount = &v
+	o.ReceivedCount = v
 }
 
-// GetLastReceivedAt returns the LastReceivedAt field value if set, zero value otherwise (both if not set or set to explicit null).
+// GetLastReceivedAt returns the LastReceivedAt field value
+// If the value is explicit nil, the zero value for time.Time will be returned
 func (o *MailboxEmail) GetLastReceivedAt() time.Time {
-	if o == nil || IsNil(o.LastReceivedAt.Get()) {
+	if o == nil || o.LastReceivedAt.Get() == nil {
 		var ret time.Time
 		return ret
 	}
+
 	return *o.LastReceivedAt.Get()
 }
 
-// GetLastReceivedAtOk returns a tuple with the LastReceivedAt field value if set, nil otherwise
+// GetLastReceivedAtOk returns a tuple with the LastReceivedAt field value
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MailboxEmail) GetLastReceivedAtOk() (*time.Time, bool) {
@@ -152,39 +160,23 @@ func (o *MailboxEmail) GetLastReceivedAtOk() (*time.Time, bool) {
 	return o.LastReceivedAt.Get(), o.LastReceivedAt.IsSet()
 }
 
-// HasLastReceivedAt returns a boolean if a field has been set.
-func (o *MailboxEmail) HasLastReceivedAt() bool {
-	if o != nil && o.LastReceivedAt.IsSet() {
-		return true
-	}
-
-	return false
-}
-
-// SetLastReceivedAt gets a reference to the given NullableTime and assigns it to the LastReceivedAt field.
+// SetLastReceivedAt sets field value
 func (o *MailboxEmail) SetLastReceivedAt(v time.Time) {
 	o.LastReceivedAt.Set(&v)
 }
-// SetLastReceivedAtNil sets the value for LastReceivedAt to be an explicit nil
-func (o *MailboxEmail) SetLastReceivedAtNil() {
-	o.LastReceivedAt.Set(nil)
-}
 
-// UnsetLastReceivedAt ensures that no value is present for LastReceivedAt, not even an explicit nil
-func (o *MailboxEmail) UnsetLastReceivedAt() {
-	o.LastReceivedAt.Unset()
-}
-
-// GetLastReceivedPath returns the LastReceivedPath field value if set, zero value otherwise (both if not set or set to explicit null).
+// GetLastReceivedPath returns the LastReceivedPath field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *MailboxEmail) GetLastReceivedPath() string {
-	if o == nil || IsNil(o.LastReceivedPath.Get()) {
+	if o == nil || o.LastReceivedPath.Get() == nil {
 		var ret string
 		return ret
 	}
+
 	return *o.LastReceivedPath.Get()
 }
 
-// GetLastReceivedPathOk returns a tuple with the LastReceivedPath field value if set, nil otherwise
+// GetLastReceivedPathOk returns a tuple with the LastReceivedPath field value
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MailboxEmail) GetLastReceivedPathOk() (*string, bool) {
@@ -194,27 +186,9 @@ func (o *MailboxEmail) GetLastReceivedPathOk() (*string, bool) {
 	return o.LastReceivedPath.Get(), o.LastReceivedPath.IsSet()
 }
 
-// HasLastReceivedPath returns a boolean if a field has been set.
-func (o *MailboxEmail) HasLastReceivedPath() bool {
-	if o != nil && o.LastReceivedPath.IsSet() {
-		return true
-	}
-
-	return false
-}
-
-// SetLastReceivedPath gets a reference to the given NullableString and assigns it to the LastReceivedPath field.
+// SetLastReceivedPath sets field value
 func (o *MailboxEmail) SetLastReceivedPath(v string) {
 	o.LastReceivedPath.Set(&v)
-}
-// SetLastReceivedPathNil sets the value for LastReceivedPath to be an explicit nil
-func (o *MailboxEmail) SetLastReceivedPathNil() {
-	o.LastReceivedPath.Set(nil)
-}
-
-// UnsetLastReceivedPath ensures that no value is present for LastReceivedPath, not even an explicit nil
-func (o *MailboxEmail) UnsetLastReceivedPath() {
-	o.LastReceivedPath.Unset()
 }
 
 // GetBlockedReason returns the BlockedReason field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -355,36 +329,28 @@ func (o *MailboxEmail) SetCustomization(v MailboxEmailCustomization) {
 	o.Customization = &v
 }
 
-// GetReceivingEnabled returns the ReceivingEnabled field value if set, zero value otherwise.
+// GetReceivingEnabled returns the ReceivingEnabled field value
 func (o *MailboxEmail) GetReceivingEnabled() bool {
-	if o == nil || IsNil(o.ReceivingEnabled) {
+	if o == nil {
 		var ret bool
 		return ret
 	}
-	return *o.ReceivingEnabled
+
+	return o.ReceivingEnabled
 }
 
-// GetReceivingEnabledOk returns a tuple with the ReceivingEnabled field value if set, nil otherwise
+// GetReceivingEnabledOk returns a tuple with the ReceivingEnabled field value
 // and a boolean to check if the value has been set.
 func (o *MailboxEmail) GetReceivingEnabledOk() (*bool, bool) {
-	if o == nil || IsNil(o.ReceivingEnabled) {
+	if o == nil {
 		return nil, false
 	}
-	return o.ReceivingEnabled, true
+	return &o.ReceivingEnabled, true
 }
 
-// HasReceivingEnabled returns a boolean if a field has been set.
-func (o *MailboxEmail) HasReceivingEnabled() bool {
-	if o != nil && !IsNil(o.ReceivingEnabled) {
-		return true
-	}
-
-	return false
-}
-
-// SetReceivingEnabled gets a reference to the given bool and assigns it to the ReceivingEnabled field.
+// SetReceivingEnabled sets field value
 func (o *MailboxEmail) SetReceivingEnabled(v bool) {
-	o.ReceivingEnabled = &v
+	o.ReceivingEnabled = v
 }
 
 // GetSenderAllowlist returns the SenderAllowlist field value if set, zero value otherwise.
@@ -461,36 +427,28 @@ func (o *MailboxEmail) UnsetUsername() {
 	o.Username.Unset()
 }
 
-// GetSendingEnabled returns the SendingEnabled field value if set, zero value otherwise.
+// GetSendingEnabled returns the SendingEnabled field value
 func (o *MailboxEmail) GetSendingEnabled() bool {
-	if o == nil || IsNil(o.SendingEnabled) {
+	if o == nil {
 		var ret bool
 		return ret
 	}
-	return *o.SendingEnabled
+
+	return o.SendingEnabled
 }
 
-// GetSendingEnabledOk returns a tuple with the SendingEnabled field value if set, nil otherwise
+// GetSendingEnabledOk returns a tuple with the SendingEnabled field value
 // and a boolean to check if the value has been set.
 func (o *MailboxEmail) GetSendingEnabledOk() (*bool, bool) {
-	if o == nil || IsNil(o.SendingEnabled) {
+	if o == nil {
 		return nil, false
 	}
-	return o.SendingEnabled, true
+	return &o.SendingEnabled, true
 }
 
-// HasSendingEnabled returns a boolean if a field has been set.
-func (o *MailboxEmail) HasSendingEnabled() bool {
-	if o != nil && !IsNil(o.SendingEnabled) {
-		return true
-	}
-
-	return false
-}
-
-// SetSendingEnabled gets a reference to the given bool and assigns it to the SendingEnabled field.
+// SetSendingEnabled sets field value
 func (o *MailboxEmail) SetSendingEnabled(v bool) {
-	o.SendingEnabled = &v
+	o.SendingEnabled = v
 }
 
 // GetAliases returns the Aliases field value if set, zero value otherwise.
@@ -525,6 +483,58 @@ func (o *MailboxEmail) SetAliases(v []MailboxEmailAliasesInner) {
 	o.Aliases = v
 }
 
+// GetMessageCount returns the MessageCount field value
+// If the value is explicit nil, the zero value for int64 will be returned
+func (o *MailboxEmail) GetMessageCount() int64 {
+	if o == nil || o.MessageCount.Get() == nil {
+		var ret int64
+		return ret
+	}
+
+	return *o.MessageCount.Get()
+}
+
+// GetMessageCountOk returns a tuple with the MessageCount field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *MailboxEmail) GetMessageCountOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.MessageCount.Get(), o.MessageCount.IsSet()
+}
+
+// SetMessageCount sets field value
+func (o *MailboxEmail) SetMessageCount(v int64) {
+	o.MessageCount.Set(&v)
+}
+
+// GetUnreadCount returns the UnreadCount field value
+// If the value is explicit nil, the zero value for int64 will be returned
+func (o *MailboxEmail) GetUnreadCount() int64 {
+	if o == nil || o.UnreadCount.Get() == nil {
+		var ret int64
+		return ret
+	}
+
+	return *o.UnreadCount.Get()
+}
+
+// GetUnreadCountOk returns a tuple with the UnreadCount field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *MailboxEmail) GetUnreadCountOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.UnreadCount.Get(), o.UnreadCount.IsSet()
+}
+
+// SetUnreadCount sets field value
+func (o *MailboxEmail) SetUnreadCount(v int64) {
+	o.UnreadCount.Set(&v)
+}
+
 func (o MailboxEmail) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -538,15 +548,9 @@ func (o MailboxEmail) ToMap() (map[string]interface{}, error) {
 	if o.Address.IsSet() {
 		toSerialize["address"] = o.Address.Get()
 	}
-	if !IsNil(o.ReceivedCount) {
-		toSerialize["received_count"] = o.ReceivedCount
-	}
-	if o.LastReceivedAt.IsSet() {
-		toSerialize["last_received_at"] = o.LastReceivedAt.Get()
-	}
-	if o.LastReceivedPath.IsSet() {
-		toSerialize["last_received_path"] = o.LastReceivedPath.Get()
-	}
+	toSerialize["received_count"] = o.ReceivedCount
+	toSerialize["last_received_at"] = o.LastReceivedAt.Get()
+	toSerialize["last_received_path"] = o.LastReceivedPath.Get()
 	if o.BlockedReason.IsSet() {
 		toSerialize["blocked_reason"] = o.BlockedReason.Get()
 	}
@@ -559,21 +563,19 @@ func (o MailboxEmail) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Customization) {
 		toSerialize["customization"] = o.Customization
 	}
-	if !IsNil(o.ReceivingEnabled) {
-		toSerialize["receiving_enabled"] = o.ReceivingEnabled
-	}
+	toSerialize["receiving_enabled"] = o.ReceivingEnabled
 	if !IsNil(o.SenderAllowlist) {
 		toSerialize["sender_allowlist"] = o.SenderAllowlist
 	}
 	if o.Username.IsSet() {
 		toSerialize["username"] = o.Username.Get()
 	}
-	if !IsNil(o.SendingEnabled) {
-		toSerialize["sending_enabled"] = o.SendingEnabled
-	}
+	toSerialize["sending_enabled"] = o.SendingEnabled
 	if !IsNil(o.Aliases) {
 		toSerialize["aliases"] = o.Aliases
 	}
+	toSerialize["message_count"] = o.MessageCount.Get()
+	toSerialize["unread_count"] = o.UnreadCount.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -583,6 +585,33 @@ func (o MailboxEmail) ToMap() (map[string]interface{}, error) {
 }
 
 func (o *MailboxEmail) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"received_count",
+		"last_received_at",
+		"last_received_path",
+		"receiving_enabled",
+		"sending_enabled",
+		"message_count",
+		"unread_count",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
 	varMailboxEmail := _MailboxEmail{}
 
 	err = json.Unmarshal(data, &varMailboxEmail)
@@ -609,6 +638,8 @@ func (o *MailboxEmail) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "username")
 		delete(additionalProperties, "sending_enabled")
 		delete(additionalProperties, "aliases")
+		delete(additionalProperties, "message_count")
+		delete(additionalProperties, "unread_count")
 		o.AdditionalProperties = additionalProperties
 	}
 

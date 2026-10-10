@@ -960,7 +960,7 @@ open class DefaultAPI {
      Read mailbox activity and optionally its incoming address
      
      - parameter id: (path)  
-     - parameter includeEmail: (query) Requires upload/write access. Omission exposes activity only. (optional, default to false)
+     - parameter includeEmail: (query) Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
      - parameter accountId: (query)  (optional)
      - parameter reason: (query)  (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
@@ -986,7 +986,7 @@ open class DefaultAPI {
        - type: http
        - name: bearerAuth
      - parameter id: (path)  
-     - parameter includeEmail: (query) Requires upload/write access. Omission exposes activity only. (optional, default to false)
+     - parameter includeEmail: (query) Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
      - parameter accountId: (query)  (optional)
      - parameter reason: (query)  (optional)
      - returns: RequestBuilder<CreateMailbox201Response> 
@@ -1473,17 +1473,28 @@ open class DefaultAPI {
     }
 
     /**
+     * enum for parameter status
+     */
+    public enum Status_listMailboxes: String, CaseIterable {
+        case active = "active"
+        case archived = "archived"
+        case all = "all"
+    }
+
+    /**
      List accessible mailboxes
      
      - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter archived: (query)  (optional, default to false)
-     - parameter q: (query)  (optional)
+     - parameter q: (query) Case-insensitive contains-filter on the permitted email address or ID. (optional)
+     - parameter status: (query) Archive status: active, archived or all. Defaults to active. (optional, default to .active)
+     - parameter limit: (query)  (optional, default to 100)
+     - parameter offset: (query)  (optional, default to 0)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func listMailboxes(accountId: String? = nil, archived: Bool? = nil, q: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: ListMailboxes200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return listMailboxesWithRequestBuilder(accountId: accountId, archived: archived, q: q).execute(apiResponseQueue) { result in
+    open class func listMailboxes(accountId: String? = nil, q: String? = nil, status: Status_listMailboxes? = nil, limit: Int? = nil, offset: Int? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: ListMailboxes200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return listMailboxesWithRequestBuilder(accountId: accountId, q: q, status: status, limit: limit, offset: offset).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -1496,15 +1507,18 @@ open class DefaultAPI {
     /**
      List accessible mailboxes
      - GET /v1/mailboxes
+     - List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
      - Bearer Token:
        - type: http
        - name: bearerAuth
      - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter archived: (query)  (optional, default to false)
-     - parameter q: (query)  (optional)
+     - parameter q: (query) Case-insensitive contains-filter on the permitted email address or ID. (optional)
+     - parameter status: (query) Archive status: active, archived or all. Defaults to active. (optional, default to .active)
+     - parameter limit: (query)  (optional, default to 100)
+     - parameter offset: (query)  (optional, default to 0)
      - returns: RequestBuilder<ListMailboxes200Response> 
      */
-    open class func listMailboxesWithRequestBuilder(accountId: String? = nil, archived: Bool? = nil, q: String? = nil) -> RequestBuilder<ListMailboxes200Response> {
+    open class func listMailboxesWithRequestBuilder(accountId: String? = nil, q: String? = nil, status: Status_listMailboxes? = nil, limit: Int? = nil, offset: Int? = nil) -> RequestBuilder<ListMailboxes200Response> {
         let localVariablePath = "/v1/mailboxes"
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
         let localVariableParameters: [String: Any]? = nil
@@ -1512,8 +1526,10 @@ open class DefaultAPI {
         var localVariableUrlComponents = URLComponents(string: localVariableURLString)
         localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
             "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
-            "archived": (wrappedValue: archived?.encodeToJSON(), isExplode: true),
             "q": (wrappedValue: q?.encodeToJSON(), isExplode: true),
+            "status": (wrappedValue: status?.encodeToJSON(), isExplode: true),
+            "limit": (wrappedValue: limit?.encodeToJSON(), isExplode: true),
+            "offset": (wrappedValue: offset?.encodeToJSON(), isExplode: true),
         ])
         let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
         localVariableUrlComponents?.percentEncodedQuery = encodedQuery

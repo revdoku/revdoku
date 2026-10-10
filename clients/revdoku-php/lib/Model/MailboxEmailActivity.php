@@ -59,7 +59,9 @@ class MailboxEmailActivity implements ModelInterface, ArrayAccess, \JsonSerializ
     protected static $openAPITypes = [
         'received_count' => 'int',
         'last_received_at' => '\DateTime',
-        'last_received_path' => 'string'
+        'last_received_path' => 'string',
+        'message_count' => 'int',
+        'unread_count' => 'int'
     ];
 
     /**
@@ -72,7 +74,9 @@ class MailboxEmailActivity implements ModelInterface, ArrayAccess, \JsonSerializ
     protected static $openAPIFormats = [
         'received_count' => null,
         'last_received_at' => 'date-time',
-        'last_received_path' => null
+        'last_received_path' => null,
+        'message_count' => 'int64',
+        'unread_count' => 'int64'
     ];
 
     /**
@@ -83,7 +87,9 @@ class MailboxEmailActivity implements ModelInterface, ArrayAccess, \JsonSerializ
     protected static array $openAPINullables = [
         'received_count' => false,
         'last_received_at' => true,
-        'last_received_path' => true
+        'last_received_path' => true,
+        'message_count' => true,
+        'unread_count' => true
     ];
 
     /**
@@ -174,7 +180,9 @@ class MailboxEmailActivity implements ModelInterface, ArrayAccess, \JsonSerializ
     protected static $attributeMap = [
         'received_count' => 'received_count',
         'last_received_at' => 'last_received_at',
-        'last_received_path' => 'last_received_path'
+        'last_received_path' => 'last_received_path',
+        'message_count' => 'message_count',
+        'unread_count' => 'unread_count'
     ];
 
     /**
@@ -185,7 +193,9 @@ class MailboxEmailActivity implements ModelInterface, ArrayAccess, \JsonSerializ
     protected static $setters = [
         'received_count' => 'setReceivedCount',
         'last_received_at' => 'setLastReceivedAt',
-        'last_received_path' => 'setLastReceivedPath'
+        'last_received_path' => 'setLastReceivedPath',
+        'message_count' => 'setMessageCount',
+        'unread_count' => 'setUnreadCount'
     ];
 
     /**
@@ -196,7 +206,9 @@ class MailboxEmailActivity implements ModelInterface, ArrayAccess, \JsonSerializ
     protected static $getters = [
         'received_count' => 'getReceivedCount',
         'last_received_at' => 'getLastReceivedAt',
-        'last_received_path' => 'getLastReceivedPath'
+        'last_received_path' => 'getLastReceivedPath',
+        'message_count' => 'getMessageCount',
+        'unread_count' => 'getUnreadCount'
     ];
 
     /**
@@ -259,6 +271,8 @@ class MailboxEmailActivity implements ModelInterface, ArrayAccess, \JsonSerializ
         $this->setIfExists('received_count', $data ?? [], null);
         $this->setIfExists('last_received_at', $data ?? [], null);
         $this->setIfExists('last_received_path', $data ?? [], null);
+        $this->setIfExists('message_count', $data ?? [], null);
+        $this->setIfExists('unread_count', $data ?? [], null);
     }
 
     /**
@@ -292,6 +306,14 @@ class MailboxEmailActivity implements ModelInterface, ArrayAccess, \JsonSerializ
             $invalidProperties[] = "invalid value for 'received_count', must be bigger than or equal to 0.";
         }
 
+        if (!is_null($this->container['message_count']) && ($this->container['message_count'] < 0)) {
+            $invalidProperties[] = "invalid value for 'message_count', must be bigger than or equal to 0.";
+        }
+
+        if (!is_null($this->container['unread_count']) && ($this->container['unread_count'] < 0)) {
+            $invalidProperties[] = "invalid value for 'unread_count', must be bigger than or equal to 0.";
+        }
+
         return $invalidProperties;
     }
 
@@ -320,7 +342,7 @@ class MailboxEmailActivity implements ModelInterface, ArrayAccess, \JsonSerializ
     /**
      * Sets received_count
      *
-     * @param int|null $received_count received_count
+     * @param int|null $received_count Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
      *
      * @return self
      */
@@ -402,6 +424,82 @@ class MailboxEmailActivity implements ModelInterface, ArrayAccess, \JsonSerializ
             }
         }
         $this->container['last_received_path'] = $last_received_path;
+
+        return $this;
+    }
+
+    /**
+     * Gets message_count
+     *
+     * @return int|null
+     */
+    public function getMessageCount()
+    {
+        return $this->container['message_count'];
+    }
+
+    /**
+     * Sets message_count
+     *
+     * @param int|null $message_count Emails currently stored. Null while the email index is being prepared.
+     *
+     * @return self
+     */
+    public function setMessageCount($message_count)
+    {
+        if (is_null($message_count)) {
+            array_push($this->openAPINullablesSetToNull, 'message_count');
+        } else {
+            $nullablesSetToNull = $this->getOpenAPINullablesSetToNull();
+            $index = array_search('message_count', $nullablesSetToNull);
+            if ($index !== FALSE) {
+                unset($nullablesSetToNull[$index]);
+                $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
+            }
+        }
+        if (!is_null($message_count) && ($message_count < 0)) {
+            throw new \InvalidArgumentException('invalid value for $message_count when calling MailboxEmailActivity., must be bigger than or equal to 0.');
+        }
+
+        $this->container['message_count'] = $message_count;
+
+        return $this;
+    }
+
+    /**
+     * Gets unread_count
+     *
+     * @return int|null
+     */
+    public function getUnreadCount()
+    {
+        return $this->container['unread_count'];
+    }
+
+    /**
+     * Sets unread_count
+     *
+     * @param int|null $unread_count Stored emails with shared unread status. Null while the email index is being prepared.
+     *
+     * @return self
+     */
+    public function setUnreadCount($unread_count)
+    {
+        if (is_null($unread_count)) {
+            array_push($this->openAPINullablesSetToNull, 'unread_count');
+        } else {
+            $nullablesSetToNull = $this->getOpenAPINullablesSetToNull();
+            $index = array_search('unread_count', $nullablesSetToNull);
+            if ($index !== FALSE) {
+                unset($nullablesSetToNull[$index]);
+                $this->setOpenAPINullablesSetToNull($nullablesSetToNull);
+            }
+        }
+        if (!is_null($unread_count) && ($unread_count < 0)) {
+            throw new \InvalidArgumentException('invalid value for $unread_count when calling MailboxEmailActivity., must be bigger than or equal to 0.');
+        }
+
+        $this->container['unread_count'] = $unread_count;
 
         return $this;
     }

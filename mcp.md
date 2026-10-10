@@ -50,6 +50,25 @@ Select the intended account before reading or changing its contents.
 - Keep existing credentials. Updating instructions or tool metadata does not
   require creating another API key.
 
+## List mailboxes
+
+`mailbox_list` returns active mailboxes by default.
+Use `status: "archived"` or `status: "all"` for other archive states.
+Use `query` to filter the permitted email address or ID.
+Use `limit` and `offset` for pages of at most 100 mailboxes.
+Continue with `pagination.next_offset` and the same filters when `pagination.has_more` is true.
+`counts.active`, `counts.archived` and `counts.total` cover authorized matches before status filtering and pagination.
+
+Use `email.address` as the label linked to `dashboard_url`.
+Keep IDs for tool calls unless the user requests them.
+Descriptions provide optional context and are not mailbox names.
+If the address is unavailable, use an Open mailbox link and state that the address is unavailable.
+Display `email.message_count` as stored emails and `email.unread_count` as unread emails.
+Null counts mean the email index is being prepared.
+`email.received_count` is lifetime deliveries, including messages deleted later.
+`email.receiving_enabled` reports whether receiving is currently available.
+A paused mailbox keeps its permitted address as its label.
+
 ## Receive and read email
 
 If the user has a task, continue it after connection.

@@ -15,12 +15,18 @@ use serde::{Deserialize, Serialize};
 pub struct ListMailboxes200ResponseData {
     #[serde(rename = "mailboxes")]
     pub mailboxes: Vec<models::Mailbox>,
+    #[serde(rename = "counts")]
+    pub counts: Box<models::MailboxCounts>,
+    #[serde(rename = "pagination")]
+    pub pagination: Box<models::MailboxPagination>,
 }
 
 impl ListMailboxes200ResponseData {
-    pub fn new(mailboxes: Vec<models::Mailbox>) -> ListMailboxes200ResponseData {
+    pub fn new(mailboxes: Vec<models::Mailbox>, counts: models::MailboxCounts, pagination: models::MailboxPagination) -> ListMailboxes200ResponseData {
         ListMailboxes200ResponseData {
             mailboxes,
+            counts: Box::new(counts),
+            pagination: Box::new(pagination),
         }
     }
 }

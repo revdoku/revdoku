@@ -13,13 +13,19 @@ import AnyCodable
 public struct ListMailboxes200ResponseData: Codable, JSONEncodable, Hashable {
 
     public var mailboxes: [Mailbox]
+    public var counts: MailboxCounts
+    public var pagination: MailboxPagination
 
-    public init(mailboxes: [Mailbox]) {
+    public init(mailboxes: [Mailbox], counts: MailboxCounts, pagination: MailboxPagination) {
         self.mailboxes = mailboxes
+        self.counts = counts
+        self.pagination = pagination
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case mailboxes
+        case counts
+        case pagination
     }
 
     // Encodable protocol methods
@@ -27,6 +33,8 @@ public struct ListMailboxes200ResponseData: Codable, JSONEncodable, Hashable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(mailboxes, forKey: .mailboxes)
+        try container.encode(counts, forKey: .counts)
+        try container.encode(pagination, forKey: .pagination)
     }
 }
 

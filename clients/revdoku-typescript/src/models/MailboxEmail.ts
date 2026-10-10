@@ -50,27 +50,27 @@ import {
 } from './MailboxEmailAvailableDomainsInner';
 
 /**
- * Authorized mailbox reads include the email address. Creation and opt-in reads also include receiving settings; use the emails collection for a durable arrival cursor.
+ * Mailbox reads include stored and unread email counts, lifetime receipts, receiving state and the permitted address. Creation and include_email reads also include additional address settings.
  * @export
  * @interface MailboxEmail
  */
 export interface MailboxEmail {
     /**
-     * 
+     * Primary mailbox display label when authorized. Omitted without address permission. The address remains a valid label when receiving is unavailable.
      */
     address?: string | null;
     /**
-     * 
+     * Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
      */
-    receivedCount?: number;
+    receivedCount: number;
     /**
      * 
      */
-    lastReceivedAt?: Date | null;
+    lastReceivedAt: Date | null;
     /**
      * Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion.
      */
-    lastReceivedPath?: string | null;
+    lastReceivedPath: string | null;
     /**
      * Why receiving is unavailable; omitted when receiving_enabled is true.
      */
@@ -88,9 +88,9 @@ export interface MailboxEmail {
      */
     customization?: MailboxEmailCustomization;
     /**
-     * Whether this mailbox can currently receive email. False when configuration, account state, quota or routing prevents receiving.
+     * Whether the mailbox can receive email now. Display an authorized address even when this is false.
      */
-    receivingEnabled?: boolean;
+    receivingEnabled: boolean;
     /**
      * 
      */
@@ -102,17 +102,32 @@ export interface MailboxEmail {
     /**
      * Always false. Sending is not implemented.
      */
-    sendingEnabled?: boolean;
+    sendingEnabled: boolean;
     /**
      * 
      */
     aliases?: Array<MailboxEmailAliasesInner>;
+    /**
+     * Emails currently stored. Null while the email index is being prepared.
+     */
+    messageCount: number | null;
+    /**
+     * Stored emails with shared unread status. Null while the email index is being prepared.
+     */
+    unreadCount: number | null;
 }
 
 /**
  * Check if a given object implements the MailboxEmail interface.
  */
 export function instanceOfMailboxEmail(value: object): value is MailboxEmail {
+    if ((!('receivedCount' in (value as Record<string, any>)) && !('received_count' in (value as Record<string, any>))) || ((value as Record<string, any>)['receivedCount'] === undefined && (value as Record<string, any>)['received_count'] === undefined)) return false;
+    if ((!('lastReceivedAt' in (value as Record<string, any>)) && !('last_received_at' in (value as Record<string, any>))) || ((value as Record<string, any>)['lastReceivedAt'] === undefined && (value as Record<string, any>)['last_received_at'] === undefined)) return false;
+    if ((!('lastReceivedPath' in (value as Record<string, any>)) && !('last_received_path' in (value as Record<string, any>))) || ((value as Record<string, any>)['lastReceivedPath'] === undefined && (value as Record<string, any>)['last_received_path'] === undefined)) return false;
+    if ((!('receivingEnabled' in (value as Record<string, any>)) && !('receiving_enabled' in (value as Record<string, any>))) || ((value as Record<string, any>)['receivingEnabled'] === undefined && (value as Record<string, any>)['receiving_enabled'] === undefined)) return false;
+    if ((!('sendingEnabled' in (value as Record<string, any>)) && !('sending_enabled' in (value as Record<string, any>))) || ((value as Record<string, any>)['sendingEnabled'] === undefined && (value as Record<string, any>)['sending_enabled'] === undefined)) return false;
+    if ((!('messageCount' in (value as Record<string, any>)) && !('message_count' in (value as Record<string, any>))) || ((value as Record<string, any>)['messageCount'] === undefined && (value as Record<string, any>)['message_count'] === undefined)) return false;
+    if ((!('unreadCount' in (value as Record<string, any>)) && !('unread_count' in (value as Record<string, any>))) || ((value as Record<string, any>)['unreadCount'] === undefined && (value as Record<string, any>)['unread_count'] === undefined)) return false;
     return true;
 }
 
@@ -127,18 +142,20 @@ export function MailboxEmailFromJSONTyped(json: any, ignoreDiscriminator: boolea
     return {
         
         'address': json['address'] === undefined ? undefined : json['address'] === null ? null : json['address'],
-        'receivedCount': json['received_count'] == null ? undefined : json['received_count'],
-        'lastReceivedAt': json['last_received_at'] === undefined ? undefined : json['last_received_at'] === null ? null : (parseDateTime(json['last_received_at'])),
-        'lastReceivedPath': json['last_received_path'] === undefined ? undefined : json['last_received_path'] === null ? null : json['last_received_path'],
+        'receivedCount': json['received_count'],
+        'lastReceivedAt': (json['last_received_at'] == null ? null : parseDateTime(json['last_received_at'])),
+        'lastReceivedPath': json['last_received_path'],
         'blockedReason': json['blocked_reason'] === undefined ? undefined : json['blocked_reason'] === null ? null : json['blocked_reason'],
         'availableDomains': json['available_domains'] == null ? undefined : ((json['available_domains'] as Array<any>).map(MailboxEmailAvailableDomainsInnerFromJSON)),
         'assignment': json['assignment'] == null ? undefined : MailboxEmailAssignmentFromJSON(json['assignment']),
         'customization': json['customization'] == null ? undefined : MailboxEmailCustomizationFromJSON(json['customization']),
-        'receivingEnabled': json['receiving_enabled'] == null ? undefined : json['receiving_enabled'],
+        'receivingEnabled': json['receiving_enabled'],
         'senderAllowlist': json['sender_allowlist'] == null ? undefined : EmailSenderAllowlistFromJSON(json['sender_allowlist']),
         'username': json['username'] === undefined ? undefined : json['username'] === null ? null : json['username'],
-        'sendingEnabled': json['sending_enabled'] == null ? undefined : json['sending_enabled'],
+        'sendingEnabled': json['sending_enabled'],
         'aliases': json['aliases'] == null ? undefined : ((json['aliases'] as Array<any>).map(MailboxEmailAliasesInnerFromJSON)),
+        'messageCount': json['message_count'],
+        'unreadCount': json['unread_count'],
     };
 }
 
@@ -166,6 +183,8 @@ export function MailboxEmailToJSONTyped(value?: MailboxEmail | null, ignoreDiscr
         'username': value['username'],
         'sending_enabled': value['sendingEnabled'],
         'aliases': value['aliases'] == null ? undefined : ((value['aliases'] as Array<any>).map(MailboxEmailAliasesInnerToJSON)),
+        'message_count': value['messageCount'],
+        'unread_count': value['unreadCount'],
     };
 }
 

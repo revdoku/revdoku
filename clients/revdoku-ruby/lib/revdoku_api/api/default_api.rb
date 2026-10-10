@@ -1194,7 +1194,7 @@ module RevdokuApi
     # Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
     # @param id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [Boolean] :include_email Requires upload/write access. Omission exposes activity only. (default to false)
+    # @option opts [Boolean] :include_email Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (default to false)
     # @option opts [String] :account_id 
     # @option opts [String] :reason 
     # @return [CreateMailbox201Response]
@@ -1207,7 +1207,7 @@ module RevdokuApi
     # Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
     # @param id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [Boolean] :include_email Requires upload/write access. Omission exposes activity only. (default to false)
+    # @option opts [Boolean] :include_email Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (default to false)
     # @option opts [String] :account_id 
     # @option opts [String] :reason 
     # @return [Array<(CreateMailbox201Response, Integer, Hash)>] CreateMailbox201Response data, response status code and response headers
@@ -1817,10 +1817,13 @@ module RevdokuApi
     end
 
     # List accessible mailboxes
+    # List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
     # @param [Hash] opts the optional parameters
     # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [Boolean] :archived  (default to false)
-    # @option opts [String] :q 
+    # @option opts [String] :q Case-insensitive contains-filter on the permitted email address or ID.
+    # @option opts [String] :status Archive status: active, archived or all. Defaults to active. (default to 'active')
+    # @option opts [Integer] :limit  (default to 100)
+    # @option opts [Integer] :offset  (default to 0)
     # @return [ListMailboxes200Response]
     def list_mailboxes(opts = {})
       data, _status_code, _headers = list_mailboxes_with_http_info(opts)
@@ -1828,23 +1831,48 @@ module RevdokuApi
     end
 
     # List accessible mailboxes
+    # List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
     # @param [Hash] opts the optional parameters
     # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [Boolean] :archived  (default to false)
-    # @option opts [String] :q 
+    # @option opts [String] :q Case-insensitive contains-filter on the permitted email address or ID.
+    # @option opts [String] :status Archive status: active, archived or all. Defaults to active. (default to 'active')
+    # @option opts [Integer] :limit  (default to 100)
+    # @option opts [Integer] :offset  (default to 0)
     # @return [Array<(ListMailboxes200Response, Integer, Hash)>] ListMailboxes200Response data, response status code and response headers
     def list_mailboxes_with_http_info(opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: DefaultApi.list_mailboxes ...'
       end
+      if @api_client.config.client_side_validation && !opts[:'q'].nil? && opts[:'q'].to_s.length > 500
+        fail ArgumentError, 'invalid value for "opts[:"q"]" when calling DefaultApi.list_mailboxes, the character length must be smaller than or equal to 500.'
+      end
+
+      allowable_values = ["active", "archived", "all"]
+      if @api_client.config.client_side_validation && opts[:'status'] && !allowable_values.include?(opts[:'status'])
+        fail ArgumentError, "invalid value for \"status\", must be one of #{allowable_values}"
+      end
+      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] > 100
+        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_mailboxes, must be smaller than or equal to 100.'
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] < 1
+        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_mailboxes, must be greater than or equal to 1.'
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'offset'].nil? && opts[:'offset'] < 0
+        fail ArgumentError, 'invalid value for "opts[:"offset"]" when calling DefaultApi.list_mailboxes, must be greater than or equal to 0.'
+      end
+
       # resource path
       local_var_path = '/v1/mailboxes'
 
       # query parameters
       query_params = opts[:query_params] || {}
       query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
-      query_params[:'archived'] = opts[:'archived'] if !opts[:'archived'].nil?
       query_params[:'q'] = opts[:'q'] if !opts[:'q'].nil?
+      query_params[:'status'] = opts[:'status'] if !opts[:'status'].nil?
+      query_params[:'limit'] = opts[:'limit'] if !opts[:'limit'].nil?
+      query_params[:'offset'] = opts[:'offset'] if !opts[:'offset'].nil?
 
       # header parameters
       header_params = opts[:header_params] || {}

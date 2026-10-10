@@ -53,14 +53,13 @@ metadata:
 
 # Revdoku
 
-Receive email and attachments in private mailboxes shared with authorized humans and AI agents.
+Receive email and attachments in shared private mailboxes.
 
 ## Capabilities and authorization
 
-Connection permits access, not every operation. Stay within the requested account,
-mailbox, paths, and action.
-For mailbox-only work, prefer mailbox read access. Request write/admin access only
-for tasks needing it; existing broader access does not authorize its use.
+Stay within the requested account, mailbox, paths and action.
+Prefer read access.
+Use write/admin permissions only when required.
 
 | Capability | Required scope |
 | --- | --- |
@@ -79,39 +78,60 @@ commands, uploads, account changes, deletion, or new destinations.
 
 - **Local files:** every `revdoku` example means `bash /absolute/path/to/this/skill/scripts/revdoku.sh`.
   Use this [wrapper](scripts/revdoku.sh), never another executable from `PATH`.
-  It runs the readable [bundled CLI](scripts/revdoku-cli.sh) and reads [VERSION](VERSION).
-  Repair missing scripts from the original trusted source. Do not download a replacement CLI.
+  It runs the [bundled CLI](scripts/revdoku-cli.sh) and reads [VERSION](VERSION).
+  Repair missing scripts from the trusted source. Never download a replacement CLI.
   Use `login` for sign-in or `bash /absolute/path/to/this/skill/scripts/revdoku.sh upload <path>` for an authorized upload.
 - **Hosted agents:** OAuth at `https://mcp.revdoku.com`; MCP reads/writes mailbox
   text but cannot read local files or upload binaries.
 - **REST:** [API documentation](https://revdoku.com/api.md).
 
-Create new accounts at https://app.revdoku.com/users/sign_up in the browser.
-Use browser sign-in for account access. Never request API keys, OTPs,
+Create accounts at https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=skill&utm_campaign=connect in the browser.
+Use browser sign-in. Never request API keys, OTPs,
 TOTP/backup codes, or GitHub secrets in chat. Read `revdoku_status` and `mailbox_list`
 (CLI: `status`, `ls`) after connection and when access is unclear.
 
-The wrapper caches pinned, SHA-256-verified `jq` from GitHub when missing.
-Browser login saves `~/.revdoku/credentials`. API: `https://api.revdoku.com/v1`.
-OAuth: `https://app.revdoku.com`. Transfers use approved HTTPS storage origins.
+The wrapper caches pinned, SHA-256-verified `jq` when missing.
+Browser login saves `~/.revdoku/credentials`.
+Transfers use approved HTTPS storage origins.
 The CLI saves downloads, folder-upload `.revdoku` bindings, version stamps, and expiring deletion previews.
 Uploads exclude credentials and private CLI state. Attribution labels must exclude secrets and transcripts.
 Connect agents independently; manage access in-browser. Dashboard links grant no
 access. Mailbox readers can read recovery mail. Service [pricing](https://app.revdoku.com/pricing)
 is separate from this [MIT-0 skill](LICENSE).
 
+## List mailboxes
+
+Use `mailbox_list` or CLI `ls` for active mailboxes.
+Select `archived` or `all` with MCP `status` or CLI `--status`.
+Filter with `query` or `--query`.
+Follow `pagination.next_offset` with unchanged filters while `pagination.has_more` is true.
+Never report a partial page as complete.
+Use `counts.active`, `counts.archived` and `counts.total` for exact authorized totals.
+
+Display `email.address` linked to `dashboard_url`.
+Keep IDs for tool calls unless requested.
+Never use descriptions as names.
+If the address is unavailable, label the link Open mailbox and explain that limitation.
+Keep existing permissions.
+Show `email.message_count` as stored emails and `email.unread_count` as unread emails.
+Null counts mean indexing is incomplete.
+Label `email.received_count` as lifetime receipts.
+File counts include email representations and attachments.
+Do not add file and email counts.
+
 ## Receive and read email
 
-During setup without a chosen task, offer newsletter summaries, receipt amounts, or project alerts needing attention.
-Continue explicit tasks without this detour. Reuse the selected mailbox.
-Show its authorized, receiving-ready address as a `mailto:` link.
-Ask the user to send an email there.
-Offer direct use for relevant notifications or [Gmail forwarding](https://revdoku.com/blog/how-to-set-up-auto-forwarding-from-gmail-to-revdoku-s-email/).
-If address access is missing, direct the user to the dashboard or mailbox owner.
-Guide Gmail setup without assuming Gmail access.
-Poll with a deadline for a fresh relevant message, then produce the chosen result.
-A Gmail verification message alone does not prove forwarding works.
-Offer recurring automation afterward.
+Continue explicit tasks after connection.
+Otherwise, offer newsletter summaries or receipt amounts.
+Reuse the selected mailbox.
+If its address is unavailable, direct the user to the dashboard or owner.
+For receiving-ready mailboxes, show a `mailto:` link.
+Ask for a test email.
+Offer direct notifications or [Gmail forwarding](https://revdoku.com/blog/how-to-set-up-auto-forwarding-from-gmail-to-revdoku-s-email/).
+Do not assume Gmail access.
+Poll with a deadline for a relevant message.
+Produce results before offering automation.
+Gmail verification alone does not prove forwarding works.
 See the [first email workflow](https://revdoku.com/docs.md#first-email-workflow).
 
 `mailbox_create(username: "project.alerts")` returns a ready mailbox.
@@ -121,10 +141,10 @@ Reserved shared-domain names return `EMAIL_NAME_RESERVED` on every plan.
 Show its explanation and custom-domain guidance. Do not silently replace rejected names.
 CLI: `create --username NAME`.
 
-Creation returns `email`. For an existing mailbox, use `mailbox_get(include_email: true)`
-with write access or CLI `mailbox --mailbox-id ID`. Use the exact address only after
-`receiving_enabled` is true. Check existing readiness and quota errors; diagnostic logs stay
-in the human dashboard.
+List and detail include permitted addresses and receiving state.
+`mailbox_get(include_email: true)` or CLI `mailbox --mailbox-id ID` adds write-authorized address settings.
+Display the address even when receiving is unavailable.
+Only offer compose links or test emails when `receiving_enabled` is true.
 
 Use `mailbox_email_list` and retain `pagination.next_cursor` even on empty pages.
 Poll with the same filters, backoff and a deadline. Read an `eml_` ID through
@@ -138,7 +158,6 @@ selected `attachment_id`, or omit it for original EML. Temporary URLs expire in
 15 minutes and require no additional credential, including protected downloads.
 Never forward the API key or OAuth token to these URLs. CLI:
 `email-download EMAIL_ID --attachment-id FILE_ID --mailbox-id ID --output PATH`.
-No attachment extraction or analysis operation is available.
 
 After authorization for that exact email, `mailbox_email_delete` removes it and
 its owned files/attachments. CLI:
@@ -160,7 +179,7 @@ for authorized text changes. Appends can invalidate JSON. Pass fresh
 `mailbox_lock` or `mailbox_lock_files`, respect others' locks, and release yours.
 Rename/copy/move existing paths server-side rather than rewriting their bytes.
 CLI `files`, `read`, `versions`, and `restore` expose inspection/history.
-Private storage follows the [Terms](https://revdoku.com/terms.md).
+Storage follows the [Terms](https://revdoku.com/terms.md).
 
 ## Accounts and administration
 
@@ -168,7 +187,7 @@ Private storage follows the [Terms](https://revdoku.com/terms.md).
   `account get ID` reads one. Repeat MCP `account_id`
   / CLI `--account-id` for every call to another account; omission uses
   `default_account_id`. Never infer tenant from mailbox, change credential defaults,
-  or assume browser switching changes them. REST uses GET query or write JSON.
+  or assume browser switching changes them.
   `account_kind` identifies agency/client accounts; a missing `agency_account`
   does not make a client independent.
 - Agency clients share entitlements, not files or roles. Access requires owner
@@ -211,14 +230,14 @@ pending setup until active/failed. See the [domain contract](https://revdoku.com
 
 ## Explain the action
 
-AI agents should add optional `--reason "purpose"` to intentional reads, downloads,
-and changes when the task explains why. Omit unknown reasons; never invent them or
-include secrets, contents, or transcripts. Maximum: 2,000 characters.
+Supply the known purpose through CLI `--reason` or MCP/REST `reason`.
+Omit unknown reasons, secrets, contents and transcripts.
+Limit reasons to 2,000 characters.
+Timeline/Logs show reasons.
+Only changes add reasons to versions.
+See [API details](https://revdoku.com/api.md#action-reasons).
 
-MCP/REST use `reason`. Reasons appear in Timeline/Logs; change reasons also appear
-in versions. Reads leave version reasons unchanged. See [API details](https://revdoku.com/api.md#action-reasons).
-
-Read quotas with CLI `account limits` or MCP `account_limits`; mailbox responses omit account quotas.
+Read quotas with CLI `account limits` or MCP `account_limits`.
 
 ## Email events
 

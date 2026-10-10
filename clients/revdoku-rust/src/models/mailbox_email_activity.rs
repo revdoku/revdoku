@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MailboxEmailActivity {
+    /// Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
     #[serde(rename = "received_count", skip_serializing_if = "Option::is_none")]
     pub received_count: Option<i32>,
     #[serde(rename = "last_received_at", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
@@ -20,6 +21,12 @@ pub struct MailboxEmailActivity {
     /// Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion.
     #[serde(rename = "last_received_path", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
     pub last_received_path: Option<Option<String>>,
+    /// Emails currently stored. Null while the email index is being prepared.
+    #[serde(rename = "message_count", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
+    pub message_count: Option<Option<i64>>,
+    /// Stored emails with shared unread status. Null while the email index is being prepared.
+    #[serde(rename = "unread_count", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
+    pub unread_count: Option<Option<i64>>,
 }
 
 impl MailboxEmailActivity {
@@ -28,6 +35,8 @@ impl MailboxEmailActivity {
             received_count: None,
             last_received_at: None,
             last_received_path: None,
+            message_count: None,
+            unread_count: None,
         }
     }
 }

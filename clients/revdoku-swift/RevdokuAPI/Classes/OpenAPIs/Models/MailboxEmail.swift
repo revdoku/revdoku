@@ -10,12 +10,16 @@ import Foundation
 import AnyCodable
 #endif
 
-/** Authorized mailbox reads include the email address. Creation and opt-in reads also include receiving settings; use the emails collection for a durable arrival cursor. */
+/** Mailbox reads include stored and unread email counts, lifetime receipts, receiving state and the permitted address. Creation and include_email reads also include additional address settings. */
 public struct MailboxEmail: Codable, JSONEncodable, Hashable {
 
     public static let receivedCountRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
+    public static let messageCountRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
+    public static let unreadCountRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
+    /** Primary mailbox display label when authorized. Omitted without address permission. The address remains a valid label when receiving is unavailable. */
     public var address: String?
-    public var receivedCount: Int64?
+    /** Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails. */
+    public var receivedCount: Int64
     public var lastReceivedAt: Date?
     /** Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion. */
     public var lastReceivedPath: String?
@@ -24,15 +28,19 @@ public struct MailboxEmail: Codable, JSONEncodable, Hashable {
     public var availableDomains: [MailboxEmailAvailableDomainsInner]?
     public var assignment: MailboxEmailAssignment?
     public var customization: MailboxEmailCustomization?
-    /** Whether this mailbox can currently receive email. False when configuration, account state, quota or routing prevents receiving. */
-    public var receivingEnabled: Bool?
+    /** Whether the mailbox can receive email now. Display an authorized address even when this is false. */
+    public var receivingEnabled: Bool
     public var senderAllowlist: EmailSenderAllowlist?
     public var username: String?
     /** Always false. Sending is not implemented. */
-    public var sendingEnabled: Bool?
+    public var sendingEnabled: Bool
     public var aliases: [MailboxEmailAliasesInner]?
+    /** Emails currently stored. Null while the email index is being prepared. */
+    public var messageCount: Int64?
+    /** Stored emails with shared unread status. Null while the email index is being prepared. */
+    public var unreadCount: Int64?
 
-    public init(address: String? = nil, receivedCount: Int64? = nil, lastReceivedAt: Date? = nil, lastReceivedPath: String? = nil, blockedReason: String? = nil, availableDomains: [MailboxEmailAvailableDomainsInner]? = nil, assignment: MailboxEmailAssignment? = nil, customization: MailboxEmailCustomization? = nil, receivingEnabled: Bool? = nil, senderAllowlist: EmailSenderAllowlist? = nil, username: String? = nil, sendingEnabled: Bool? = nil, aliases: [MailboxEmailAliasesInner]? = nil) {
+    public init(address: String? = nil, receivedCount: Int64, lastReceivedAt: Date?, lastReceivedPath: String?, blockedReason: String? = nil, availableDomains: [MailboxEmailAvailableDomainsInner]? = nil, assignment: MailboxEmailAssignment? = nil, customization: MailboxEmailCustomization? = nil, receivingEnabled: Bool, senderAllowlist: EmailSenderAllowlist? = nil, username: String? = nil, sendingEnabled: Bool, aliases: [MailboxEmailAliasesInner]? = nil, messageCount: Int64?, unreadCount: Int64?) {
         self.address = address
         self.receivedCount = receivedCount
         self.lastReceivedAt = lastReceivedAt
@@ -46,6 +54,8 @@ public struct MailboxEmail: Codable, JSONEncodable, Hashable {
         self.username = username
         self.sendingEnabled = sendingEnabled
         self.aliases = aliases
+        self.messageCount = messageCount
+        self.unreadCount = unreadCount
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
@@ -62,6 +72,8 @@ public struct MailboxEmail: Codable, JSONEncodable, Hashable {
         case username
         case sendingEnabled = "sending_enabled"
         case aliases
+        case messageCount = "message_count"
+        case unreadCount = "unread_count"
     }
 
     // Encodable protocol methods
@@ -69,18 +81,20 @@ public struct MailboxEmail: Codable, JSONEncodable, Hashable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(address, forKey: .address)
-        try container.encodeIfPresent(receivedCount, forKey: .receivedCount)
-        try container.encodeIfPresent(lastReceivedAt, forKey: .lastReceivedAt)
-        try container.encodeIfPresent(lastReceivedPath, forKey: .lastReceivedPath)
+        try container.encode(receivedCount, forKey: .receivedCount)
+        try container.encode(lastReceivedAt, forKey: .lastReceivedAt)
+        try container.encode(lastReceivedPath, forKey: .lastReceivedPath)
         try container.encodeIfPresent(blockedReason, forKey: .blockedReason)
         try container.encodeIfPresent(availableDomains, forKey: .availableDomains)
         try container.encodeIfPresent(assignment, forKey: .assignment)
         try container.encodeIfPresent(customization, forKey: .customization)
-        try container.encodeIfPresent(receivingEnabled, forKey: .receivingEnabled)
+        try container.encode(receivingEnabled, forKey: .receivingEnabled)
         try container.encodeIfPresent(senderAllowlist, forKey: .senderAllowlist)
         try container.encodeIfPresent(username, forKey: .username)
-        try container.encodeIfPresent(sendingEnabled, forKey: .sendingEnabled)
+        try container.encode(sendingEnabled, forKey: .sendingEnabled)
         try container.encodeIfPresent(aliases, forKey: .aliases)
+        try container.encode(messageCount, forKey: .messageCount)
+        try container.encode(unreadCount, forKey: .unreadCount)
     }
 }
 

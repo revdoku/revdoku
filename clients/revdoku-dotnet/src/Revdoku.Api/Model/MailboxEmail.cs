@@ -27,7 +27,7 @@ using OpenAPIDateConverter = Revdoku.Api.Client.OpenAPIDateConverter;
 namespace Revdoku.Api.Model
 {
     /// <summary>
-    /// Authorized mailbox reads include the email address. Creation and opt-in reads also include receiving settings; use the emails collection for a durable arrival cursor.
+    /// Mailbox reads include stored and unread email counts, lifetime receipts, receiving state and the permitted address. Creation and include_email reads also include additional address settings.
     /// </summary>
     [DataContract(Name = "MailboxEmail")]
     public partial class MailboxEmail : IValidatableObject
@@ -35,60 +35,74 @@ namespace Revdoku.Api.Model
         /// <summary>
         /// Initializes a new instance of the <see cref="MailboxEmail" /> class.
         /// </summary>
-        /// <param name="address">address.</param>
-        /// <param name="receivedCount">receivedCount.</param>
-        /// <param name="lastReceivedAt">lastReceivedAt.</param>
-        /// <param name="lastReceivedPath">Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion..</param>
+        [JsonConstructorAttribute]
+        protected MailboxEmail()
+        {
+            this.AdditionalProperties = new Dictionary<string, object>();
+        }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MailboxEmail" /> class.
+        /// </summary>
+        /// <param name="address">Primary mailbox display label when authorized. Omitted without address permission. The address remains a valid label when receiving is unavailable..</param>
+        /// <param name="receivedCount">Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails. (required).</param>
+        /// <param name="lastReceivedAt">lastReceivedAt (required).</param>
+        /// <param name="lastReceivedPath">Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion. (required).</param>
         /// <param name="blockedReason">Why receiving is unavailable; omitted when receiving_enabled is true..</param>
         /// <param name="availableDomains">availableDomains.</param>
         /// <param name="assignment">assignment.</param>
         /// <param name="customization">customization.</param>
-        /// <param name="receivingEnabled">Whether this mailbox can currently receive email. False when configuration, account state, quota or routing prevents receiving..</param>
+        /// <param name="receivingEnabled">Whether the mailbox can receive email now. Display an authorized address even when this is false. (required).</param>
         /// <param name="senderAllowlist">senderAllowlist.</param>
         /// <param name="username">username.</param>
-        /// <param name="sendingEnabled">Always false. Sending is not implemented..</param>
+        /// <param name="sendingEnabled">Always false. Sending is not implemented. (required).</param>
         /// <param name="aliases">aliases.</param>
-        public MailboxEmail(string address = default, long receivedCount = default, DateTime? lastReceivedAt = default, string lastReceivedPath = default, string blockedReason = default, List<MailboxEmailAvailableDomainsInner> availableDomains = default, MailboxEmailAssignment assignment = default, MailboxEmailCustomization customization = default, bool receivingEnabled = default, EmailSenderAllowlist senderAllowlist = default, string username = default, bool sendingEnabled = default, List<MailboxEmailAliasesInner> aliases = default)
+        /// <param name="messageCount">Emails currently stored. Null while the email index is being prepared. (required).</param>
+        /// <param name="unreadCount">Stored emails with shared unread status. Null while the email index is being prepared. (required).</param>
+        public MailboxEmail(string address = default, long receivedCount = default, DateTime? lastReceivedAt = default, string lastReceivedPath = default, string blockedReason = default, List<MailboxEmailAvailableDomainsInner> availableDomains = default, MailboxEmailAssignment assignment = default, MailboxEmailCustomization customization = default, bool receivingEnabled = default, EmailSenderAllowlist senderAllowlist = default, string username = default, bool sendingEnabled = default, List<MailboxEmailAliasesInner> aliases = default, long? messageCount = default, long? unreadCount = default)
         {
-            this.Address = address;
             this.ReceivedCount = receivedCount;
             this.LastReceivedAt = lastReceivedAt;
             this.LastReceivedPath = lastReceivedPath;
+            this.ReceivingEnabled = receivingEnabled;
+            this.SendingEnabled = sendingEnabled;
+            this.MessageCount = messageCount;
+            this.UnreadCount = unreadCount;
+            this.Address = address;
             this.BlockedReason = blockedReason;
             this.AvailableDomains = availableDomains;
             this.Assignment = assignment;
             this.Customization = customization;
-            this.ReceivingEnabled = receivingEnabled;
             this.SenderAllowlist = senderAllowlist;
             this.Username = username;
-            this.SendingEnabled = sendingEnabled;
             this.Aliases = aliases;
             this.AdditionalProperties = new Dictionary<string, object>();
         }
 
         /// <summary>
-        /// Gets or Sets Address
+        /// Primary mailbox display label when authorized. Omitted without address permission. The address remains a valid label when receiving is unavailable.
         /// </summary>
+        /// <value>Primary mailbox display label when authorized. Omitted without address permission. The address remains a valid label when receiving is unavailable.</value>
         [DataMember(Name = "address", EmitDefaultValue = true)]
         public string Address { get; set; }
 
         /// <summary>
-        /// Gets or Sets ReceivedCount
+        /// Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
         /// </summary>
-        [DataMember(Name = "received_count", EmitDefaultValue = false)]
+        /// <value>Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.</value>
+        [DataMember(Name = "received_count", IsRequired = true, EmitDefaultValue = true)]
         public long ReceivedCount { get; set; }
 
         /// <summary>
         /// Gets or Sets LastReceivedAt
         /// </summary>
-        [DataMember(Name = "last_received_at", EmitDefaultValue = true)]
+        [DataMember(Name = "last_received_at", IsRequired = true, EmitDefaultValue = true)]
         public DateTime? LastReceivedAt { get; set; }
 
         /// <summary>
         /// Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion.
         /// </summary>
         /// <value>Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion.</value>
-        [DataMember(Name = "last_received_path", EmitDefaultValue = true)]
+        [DataMember(Name = "last_received_path", IsRequired = true, EmitDefaultValue = true)]
         public string LastReceivedPath { get; set; }
 
         /// <summary>
@@ -117,10 +131,10 @@ namespace Revdoku.Api.Model
         public MailboxEmailCustomization Customization { get; set; }
 
         /// <summary>
-        /// Whether this mailbox can currently receive email. False when configuration, account state, quota or routing prevents receiving.
+        /// Whether the mailbox can receive email now. Display an authorized address even when this is false.
         /// </summary>
-        /// <value>Whether this mailbox can currently receive email. False when configuration, account state, quota or routing prevents receiving.</value>
-        [DataMember(Name = "receiving_enabled", EmitDefaultValue = true)]
+        /// <value>Whether the mailbox can receive email now. Display an authorized address even when this is false.</value>
+        [DataMember(Name = "receiving_enabled", IsRequired = true, EmitDefaultValue = true)]
         public bool ReceivingEnabled { get; set; }
 
         /// <summary>
@@ -139,7 +153,7 @@ namespace Revdoku.Api.Model
         /// Always false. Sending is not implemented.
         /// </summary>
         /// <value>Always false. Sending is not implemented.</value>
-        [DataMember(Name = "sending_enabled", EmitDefaultValue = true)]
+        [DataMember(Name = "sending_enabled", IsRequired = true, EmitDefaultValue = true)]
         public bool SendingEnabled { get; set; }
 
         /// <summary>
@@ -147,6 +161,20 @@ namespace Revdoku.Api.Model
         /// </summary>
         [DataMember(Name = "aliases", EmitDefaultValue = false)]
         public List<MailboxEmailAliasesInner> Aliases { get; set; }
+
+        /// <summary>
+        /// Emails currently stored. Null while the email index is being prepared.
+        /// </summary>
+        /// <value>Emails currently stored. Null while the email index is being prepared.</value>
+        [DataMember(Name = "message_count", IsRequired = true, EmitDefaultValue = true)]
+        public long? MessageCount { get; set; }
+
+        /// <summary>
+        /// Stored emails with shared unread status. Null while the email index is being prepared.
+        /// </summary>
+        /// <value>Stored emails with shared unread status. Null while the email index is being prepared.</value>
+        [DataMember(Name = "unread_count", IsRequired = true, EmitDefaultValue = true)]
+        public long? UnreadCount { get; set; }
 
         /// <summary>
         /// Gets or Sets additional properties
@@ -175,6 +203,8 @@ namespace Revdoku.Api.Model
             sb.Append("  Username: ").Append(Username).Append("\n");
             sb.Append("  SendingEnabled: ").Append(SendingEnabled).Append("\n");
             sb.Append("  Aliases: ").Append(Aliases).Append("\n");
+            sb.Append("  MessageCount: ").Append(MessageCount).Append("\n");
+            sb.Append("  UnreadCount: ").Append(UnreadCount).Append("\n");
             sb.Append("  AdditionalProperties: ").Append(AdditionalProperties).Append("\n");
             sb.Append("}\n");
             return sb.ToString();
@@ -200,6 +230,18 @@ namespace Revdoku.Api.Model
             if (this.ReceivedCount < (long)0)
             {
                 yield return new ValidationResult("Invalid value for ReceivedCount, must be a value greater than or equal to 0.", new [] { "ReceivedCount" });
+            }
+
+            // MessageCount (long?) minimum
+            if (this.MessageCount < (long?)0)
+            {
+                yield return new ValidationResult("Invalid value for MessageCount, must be a value greater than or equal to 0.", new [] { "MessageCount" });
+            }
+
+            // UnreadCount (long?) minimum
+            if (this.UnreadCount < (long?)0)
+            {
+                yield return new ValidationResult("Invalid value for UnreadCount, must be a value greater than or equal to 0.", new [] { "UnreadCount" });
             }
 
             yield break;

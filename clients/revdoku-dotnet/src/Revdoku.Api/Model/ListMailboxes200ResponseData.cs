@@ -44,7 +44,9 @@ namespace Revdoku.Api.Model
         /// Initializes a new instance of the <see cref="ListMailboxes200ResponseData" /> class.
         /// </summary>
         /// <param name="mailboxes">mailboxes (required).</param>
-        public ListMailboxes200ResponseData(List<Mailbox> mailboxes = default)
+        /// <param name="counts">counts (required).</param>
+        /// <param name="pagination">pagination (required).</param>
+        public ListMailboxes200ResponseData(List<Mailbox> mailboxes = default, MailboxCounts counts = default, MailboxPagination pagination = default)
         {
             // to ensure "mailboxes" is required (not null)
             if (mailboxes == null)
@@ -52,6 +54,18 @@ namespace Revdoku.Api.Model
                 throw new ArgumentNullException("mailboxes is a required property for ListMailboxes200ResponseData and cannot be null");
             }
             this.Mailboxes = mailboxes;
+            // to ensure "counts" is required (not null)
+            if (counts == null)
+            {
+                throw new ArgumentNullException("counts is a required property for ListMailboxes200ResponseData and cannot be null");
+            }
+            this.Counts = counts;
+            // to ensure "pagination" is required (not null)
+            if (pagination == null)
+            {
+                throw new ArgumentNullException("pagination is a required property for ListMailboxes200ResponseData and cannot be null");
+            }
+            this.Pagination = pagination;
             this.AdditionalProperties = new Dictionary<string, object>();
         }
 
@@ -60,6 +74,18 @@ namespace Revdoku.Api.Model
         /// </summary>
         [DataMember(Name = "mailboxes", IsRequired = true, EmitDefaultValue = true)]
         public List<Mailbox> Mailboxes { get; set; }
+
+        /// <summary>
+        /// Gets or Sets Counts
+        /// </summary>
+        [DataMember(Name = "counts", IsRequired = true, EmitDefaultValue = true)]
+        public MailboxCounts Counts { get; set; }
+
+        /// <summary>
+        /// Gets or Sets Pagination
+        /// </summary>
+        [DataMember(Name = "pagination", IsRequired = true, EmitDefaultValue = true)]
+        public MailboxPagination Pagination { get; set; }
 
         /// <summary>
         /// Gets or Sets additional properties
@@ -76,6 +102,8 @@ namespace Revdoku.Api.Model
             StringBuilder sb = new StringBuilder();
             sb.Append("class ListMailboxes200ResponseData {\n");
             sb.Append("  Mailboxes: ").Append(Mailboxes).Append("\n");
+            sb.Append("  Counts: ").Append(Counts).Append("\n");
+            sb.Append("  Pagination: ").Append(Pagination).Append("\n");
             sb.Append("  AdditionalProperties: ").Append(AdditionalProperties).Append("\n");
             sb.Append("}\n");
             return sb.ToString();

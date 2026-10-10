@@ -6161,7 +6161,7 @@ class DefaultApi
      * Read mailbox activity and optionally its incoming address
      *
      * @param  string $id id (required)
-     * @param  bool|null $include_email Requires upload/write access. Omission exposes activity only. (optional, default to false)
+     * @param  bool|null $include_email Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
      * @param  string|null $account_id account_id (optional)
      * @param  string|null $reason reason (optional)
      * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getMailbox'] to see the possible values for this operation
@@ -6182,7 +6182,7 @@ class DefaultApi
      * Read mailbox activity and optionally its incoming address
      *
      * @param  string $id (required)
-     * @param  bool|null $include_email Requires upload/write access. Omission exposes activity only. (optional, default to false)
+     * @param  bool|null $include_email Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
      * @param  string|null $account_id (optional)
      * @param  string|null $reason (optional)
      * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getMailbox'] to see the possible values for this operation
@@ -6312,7 +6312,7 @@ class DefaultApi
      * Read mailbox activity and optionally its incoming address
      *
      * @param  string $id (required)
-     * @param  bool|null $include_email Requires upload/write access. Omission exposes activity only. (optional, default to false)
+     * @param  bool|null $include_email Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
      * @param  string|null $account_id (optional)
      * @param  string|null $reason (optional)
      * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getMailbox'] to see the possible values for this operation
@@ -6336,7 +6336,7 @@ class DefaultApi
      * Read mailbox activity and optionally its incoming address
      *
      * @param  string $id (required)
-     * @param  bool|null $include_email Requires upload/write access. Omission exposes activity only. (optional, default to false)
+     * @param  bool|null $include_email Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
      * @param  string|null $account_id (optional)
      * @param  string|null $reason (optional)
      * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getMailbox'] to see the possible values for this operation
@@ -6389,7 +6389,7 @@ class DefaultApi
      * Create request for operation 'getMailbox'
      *
      * @param  string $id (required)
-     * @param  bool|null $include_email Requires upload/write access. Omission exposes activity only. (optional, default to false)
+     * @param  bool|null $include_email Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
      * @param  string|null $account_id (optional)
      * @param  string|null $reason (optional)
      * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['getMailbox'] to see the possible values for this operation
@@ -9165,17 +9165,19 @@ class DefaultApi
      * List accessible mailboxes
      *
      * @param  string|null $account_id Select another granted account; otherwise use the credential default. (optional)
-     * @param  bool|null $archived archived (optional, default to false)
-     * @param  string|null $q q (optional)
+     * @param  string|null $q Case-insensitive contains-filter on the permitted email address or ID. (optional)
+     * @param  string|null $status Archive status: active, archived or all. Defaults to active. (optional, default to 'active')
+     * @param  int|null $limit limit (optional, default to 100)
+     * @param  int|null $offset offset (optional, default to 0)
      * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['listMailboxes'] to see the possible values for this operation
      *
      * @throws \Revdoku\Api\ApiException on non-2xx response or if the response body is not in the expected format
      * @throws \InvalidArgumentException
      * @return \Revdoku\Api\Model\ListMailboxes200Response|\Revdoku\Api\Model\ApiError
      */
-    public function listMailboxes($account_id = null, $archived = false, $q = null, string $contentType = self::contentTypes['listMailboxes'][0])
+    public function listMailboxes($account_id = null, $q = null, $status = 'active', $limit = 100, $offset = 0, string $contentType = self::contentTypes['listMailboxes'][0])
     {
-        list($response) = $this->listMailboxesWithHttpInfo($account_id, $archived, $q, $contentType);
+        list($response) = $this->listMailboxesWithHttpInfo($account_id, $q, $status, $limit, $offset, $contentType);
         return $response;
     }
 
@@ -9185,17 +9187,19 @@ class DefaultApi
      * List accessible mailboxes
      *
      * @param  string|null $account_id Select another granted account; otherwise use the credential default. (optional)
-     * @param  bool|null $archived (optional, default to false)
-     * @param  string|null $q (optional)
+     * @param  string|null $q Case-insensitive contains-filter on the permitted email address or ID. (optional)
+     * @param  string|null $status Archive status: active, archived or all. Defaults to active. (optional, default to 'active')
+     * @param  int|null $limit (optional, default to 100)
+     * @param  int|null $offset (optional, default to 0)
      * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['listMailboxes'] to see the possible values for this operation
      *
      * @throws \Revdoku\Api\ApiException on non-2xx response or if the response body is not in the expected format
      * @throws \InvalidArgumentException
      * @return array of \Revdoku\Api\Model\ListMailboxes200Response|\Revdoku\Api\Model\ApiError, HTTP status code, HTTP response headers (array of strings)
      */
-    public function listMailboxesWithHttpInfo($account_id = null, $archived = false, $q = null, string $contentType = self::contentTypes['listMailboxes'][0])
+    public function listMailboxesWithHttpInfo($account_id = null, $q = null, $status = 'active', $limit = 100, $offset = 0, string $contentType = self::contentTypes['listMailboxes'][0])
     {
-        $request = $this->listMailboxesRequest($account_id, $archived, $q, $contentType);
+        $request = $this->listMailboxesRequest($account_id, $q, $status, $limit, $offset, $contentType);
 
         try {
             $options = $this->createHttpClientOption();
@@ -9286,16 +9290,18 @@ class DefaultApi
      * List accessible mailboxes
      *
      * @param  string|null $account_id Select another granted account; otherwise use the credential default. (optional)
-     * @param  bool|null $archived (optional, default to false)
-     * @param  string|null $q (optional)
+     * @param  string|null $q Case-insensitive contains-filter on the permitted email address or ID. (optional)
+     * @param  string|null $status Archive status: active, archived or all. Defaults to active. (optional, default to 'active')
+     * @param  int|null $limit (optional, default to 100)
+     * @param  int|null $offset (optional, default to 0)
      * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['listMailboxes'] to see the possible values for this operation
      *
      * @throws \InvalidArgumentException
      * @return \GuzzleHttp\Promise\PromiseInterface
      */
-    public function listMailboxesAsync($account_id = null, $archived = false, $q = null, string $contentType = self::contentTypes['listMailboxes'][0])
+    public function listMailboxesAsync($account_id = null, $q = null, $status = 'active', $limit = 100, $offset = 0, string $contentType = self::contentTypes['listMailboxes'][0])
     {
-        return $this->listMailboxesAsyncWithHttpInfo($account_id, $archived, $q, $contentType)
+        return $this->listMailboxesAsyncWithHttpInfo($account_id, $q, $status, $limit, $offset, $contentType)
             ->then(
                 function ($response) {
                     return $response[0];
@@ -9309,17 +9315,19 @@ class DefaultApi
      * List accessible mailboxes
      *
      * @param  string|null $account_id Select another granted account; otherwise use the credential default. (optional)
-     * @param  bool|null $archived (optional, default to false)
-     * @param  string|null $q (optional)
+     * @param  string|null $q Case-insensitive contains-filter on the permitted email address or ID. (optional)
+     * @param  string|null $status Archive status: active, archived or all. Defaults to active. (optional, default to 'active')
+     * @param  int|null $limit (optional, default to 100)
+     * @param  int|null $offset (optional, default to 0)
      * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['listMailboxes'] to see the possible values for this operation
      *
      * @throws \InvalidArgumentException
      * @return \GuzzleHttp\Promise\PromiseInterface
      */
-    public function listMailboxesAsyncWithHttpInfo($account_id = null, $archived = false, $q = null, string $contentType = self::contentTypes['listMailboxes'][0])
+    public function listMailboxesAsyncWithHttpInfo($account_id = null, $q = null, $status = 'active', $limit = 100, $offset = 0, string $contentType = self::contentTypes['listMailboxes'][0])
     {
         $returnType = '\Revdoku\Api\Model\ListMailboxes200Response';
-        $request = $this->listMailboxesRequest($account_id, $archived, $q, $contentType);
+        $request = $this->listMailboxesRequest($account_id, $q, $status, $limit, $offset, $contentType);
 
         return $this->client
             ->sendAsync($request, $this->createHttpClientOption())
@@ -9361,19 +9369,35 @@ class DefaultApi
      * Create request for operation 'listMailboxes'
      *
      * @param  string|null $account_id Select another granted account; otherwise use the credential default. (optional)
-     * @param  bool|null $archived (optional, default to false)
-     * @param  string|null $q (optional)
+     * @param  string|null $q Case-insensitive contains-filter on the permitted email address or ID. (optional)
+     * @param  string|null $status Archive status: active, archived or all. Defaults to active. (optional, default to 'active')
+     * @param  int|null $limit (optional, default to 100)
+     * @param  int|null $offset (optional, default to 0)
      * @param  string $contentType The value for the Content-Type header. Check self::contentTypes['listMailboxes'] to see the possible values for this operation
      *
      * @throws \InvalidArgumentException
      * @return \GuzzleHttp\Psr7\Request
      */
-    public function listMailboxesRequest($account_id = null, $archived = false, $q = null, string $contentType = self::contentTypes['listMailboxes'][0])
+    public function listMailboxesRequest($account_id = null, $q = null, $status = 'active', $limit = 100, $offset = 0, string $contentType = self::contentTypes['listMailboxes'][0])
     {
 
 
+        if ($q !== null && strlen($q) > 500) {
+            throw new \InvalidArgumentException('invalid length for "$q" when calling DefaultApi.listMailboxes, must be smaller than or equal to 500.');
+        }
+        
 
-
+        if ($limit !== null && $limit > 100) {
+            throw new \InvalidArgumentException('invalid value for "$limit" when calling DefaultApi.listMailboxes, must be smaller than or equal to 100.');
+        }
+        if ($limit !== null && $limit < 1) {
+            throw new \InvalidArgumentException('invalid value for "$limit" when calling DefaultApi.listMailboxes, must be bigger than or equal to 1.');
+        }
+        
+        if ($offset !== null && $offset < 0) {
+            throw new \InvalidArgumentException('invalid value for "$offset" when calling DefaultApi.listMailboxes, must be bigger than or equal to 0.');
+        }
+        
 
         $resourcePath = '/v1/mailboxes';
         $formParams = [];
@@ -9393,18 +9417,36 @@ class DefaultApi
         ) ?? []);
         // query params
         $queryParams = array_merge($queryParams, ObjectSerializer::toQueryValue(
-            $archived,
-            'archived', // param base name
-            'boolean', // openApiType
+            $q,
+            'q', // param base name
+            'string', // openApiType
             'form', // style
             true, // explode
             false // required
         ) ?? []);
         // query params
         $queryParams = array_merge($queryParams, ObjectSerializer::toQueryValue(
-            $q,
-            'q', // param base name
+            $status,
+            'status', // param base name
             'string', // openApiType
+            'form', // style
+            true, // explode
+            false // required
+        ) ?? []);
+        // query params
+        $queryParams = array_merge($queryParams, ObjectSerializer::toQueryValue(
+            $limit,
+            'limit', // param base name
+            'integer', // openApiType
+            'form', // style
+            true, // explode
+            false // required
+        ) ?? []);
+        // query params
+        $queryParams = array_merge($queryParams, ObjectSerializer::toQueryValue(
+            $offset,
+            'offset', // param base name
+            'integer', // openApiType
             'form', // style
             true, // explode
             false // required

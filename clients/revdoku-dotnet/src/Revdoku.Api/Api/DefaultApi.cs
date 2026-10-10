@@ -421,7 +421,7 @@ namespace Revdoku.Api.Api
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="id"></param>
-        /// <param name="includeEmail">Requires upload/write access. Omission exposes activity only. (optional, default to false)</param>
+        /// <param name="includeEmail">Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)</param>
         /// <param name="accountId"> (optional)</param>
         /// <param name="reason"> (optional)</param>
         /// <returns>CreateMailbox201Response</returns>
@@ -435,7 +435,7 @@ namespace Revdoku.Api.Api
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="id"></param>
-        /// <param name="includeEmail">Requires upload/write access. Omission exposes activity only. (optional, default to false)</param>
+        /// <param name="includeEmail">Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)</param>
         /// <param name="accountId"> (optional)</param>
         /// <param name="reason"> (optional)</param>
         /// <returns>ApiResponse of CreateMailbox201Response</returns>
@@ -628,25 +628,32 @@ namespace Revdoku.Api.Api
         /// <summary>
         /// List accessible mailboxes
         /// </summary>
+        /// <remarks>
+        /// List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
+        /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="accountId">Select another granted account; otherwise use the credential default. (optional)</param>
-        /// <param name="archived"> (optional, default to false)</param>
-        /// <param name="q"> (optional)</param>
+        /// <param name="q">Case-insensitive contains-filter on the permitted email address or ID. (optional)</param>
+        /// <param name="status">Archive status: active, archived or all. Defaults to active. (optional, default to active)</param>
+        /// <param name="limit"> (optional, default to 100)</param>
+        /// <param name="offset"> (optional, default to 0)</param>
         /// <returns>ListMailboxes200Response</returns>
-        ListMailboxes200Response ListMailboxes(string? accountId = default, bool? archived = default, string? q = default);
+        ListMailboxes200Response ListMailboxes(string? accountId = default, string? q = default, string? status = default, int? limit = default, int? offset = default);
 
         /// <summary>
         /// List accessible mailboxes
         /// </summary>
         /// <remarks>
-        /// 
+        /// List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="accountId">Select another granted account; otherwise use the credential default. (optional)</param>
-        /// <param name="archived"> (optional, default to false)</param>
-        /// <param name="q"> (optional)</param>
+        /// <param name="q">Case-insensitive contains-filter on the permitted email address or ID. (optional)</param>
+        /// <param name="status">Archive status: active, archived or all. Defaults to active. (optional, default to active)</param>
+        /// <param name="limit"> (optional, default to 100)</param>
+        /// <param name="offset"> (optional, default to 0)</param>
         /// <returns>ApiResponse of ListMailboxes200Response</returns>
-        ApiResponse<ListMailboxes200Response> ListMailboxesWithHttpInfo(string? accountId = default, bool? archived = default, string? q = default);
+        ApiResponse<ListMailboxes200Response> ListMailboxesWithHttpInfo(string? accountId = default, string? q = default, string? status = default, int? limit = default, int? offset = default);
         /// <summary>
         /// Prepare a single file upload
         /// </summary>
@@ -1274,7 +1281,7 @@ namespace Revdoku.Api.Api
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="id"></param>
-        /// <param name="includeEmail">Requires upload/write access. Omission exposes activity only. (optional, default to false)</param>
+        /// <param name="includeEmail">Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)</param>
         /// <param name="accountId"> (optional)</param>
         /// <param name="reason"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
@@ -1289,7 +1296,7 @@ namespace Revdoku.Api.Api
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="id"></param>
-        /// <param name="includeEmail">Requires upload/write access. Omission exposes activity only. (optional, default to false)</param>
+        /// <param name="includeEmail">Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)</param>
         /// <param name="accountId"> (optional)</param>
         /// <param name="reason"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
@@ -1510,29 +1517,33 @@ namespace Revdoku.Api.Api
         /// List accessible mailboxes
         /// </summary>
         /// <remarks>
-        /// 
+        /// List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="accountId">Select another granted account; otherwise use the credential default. (optional)</param>
-        /// <param name="archived"> (optional, default to false)</param>
-        /// <param name="q"> (optional)</param>
+        /// <param name="q">Case-insensitive contains-filter on the permitted email address or ID. (optional)</param>
+        /// <param name="status">Archive status: active, archived or all. Defaults to active. (optional, default to active)</param>
+        /// <param name="limit"> (optional, default to 100)</param>
+        /// <param name="offset"> (optional, default to 0)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns>Task of ListMailboxes200Response</returns>
-        System.Threading.Tasks.Task<ListMailboxes200Response> ListMailboxesAsync(string? accountId = default, bool? archived = default, string? q = default, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<ListMailboxes200Response> ListMailboxesAsync(string? accountId = default, string? q = default, string? status = default, int? limit = default, int? offset = default, System.Threading.CancellationToken cancellationToken = default);
 
         /// <summary>
         /// List accessible mailboxes
         /// </summary>
         /// <remarks>
-        /// 
+        /// List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
         /// </remarks>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="accountId">Select another granted account; otherwise use the credential default. (optional)</param>
-        /// <param name="archived"> (optional, default to false)</param>
-        /// <param name="q"> (optional)</param>
+        /// <param name="q">Case-insensitive contains-filter on the permitted email address or ID. (optional)</param>
+        /// <param name="status">Archive status: active, archived or all. Defaults to active. (optional, default to active)</param>
+        /// <param name="limit"> (optional, default to 100)</param>
+        /// <param name="offset"> (optional, default to 0)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns>Task of ApiResponse (ListMailboxes200Response)</returns>
-        System.Threading.Tasks.Task<ApiResponse<ListMailboxes200Response>> ListMailboxesWithHttpInfoAsync(string? accountId = default, bool? archived = default, string? q = default, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<ApiResponse<ListMailboxes200Response>> ListMailboxesWithHttpInfoAsync(string? accountId = default, string? q = default, string? status = default, int? limit = default, int? offset = default, System.Threading.CancellationToken cancellationToken = default);
         /// <summary>
         /// Prepare a single file upload
         /// </summary>
@@ -4337,7 +4348,7 @@ namespace Revdoku.Api.Api
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="id"></param>
-        /// <param name="includeEmail">Requires upload/write access. Omission exposes activity only. (optional, default to false)</param>
+        /// <param name="includeEmail">Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)</param>
         /// <param name="accountId"> (optional)</param>
         /// <param name="reason"> (optional)</param>
         /// <returns>CreateMailbox201Response</returns>
@@ -4352,7 +4363,7 @@ namespace Revdoku.Api.Api
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="id"></param>
-        /// <param name="includeEmail">Requires upload/write access. Omission exposes activity only. (optional, default to false)</param>
+        /// <param name="includeEmail">Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)</param>
         /// <param name="accountId"> (optional)</param>
         /// <param name="reason"> (optional)</param>
         /// <returns>ApiResponse of CreateMailbox201Response</returns>
@@ -4416,7 +4427,7 @@ namespace Revdoku.Api.Api
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="id"></param>
-        /// <param name="includeEmail">Requires upload/write access. Omission exposes activity only. (optional, default to false)</param>
+        /// <param name="includeEmail">Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)</param>
         /// <param name="accountId"> (optional)</param>
         /// <param name="reason"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
@@ -4432,7 +4443,7 @@ namespace Revdoku.Api.Api
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="id"></param>
-        /// <param name="includeEmail">Requires upload/write access. Omission exposes activity only. (optional, default to false)</param>
+        /// <param name="includeEmail">Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)</param>
         /// <param name="accountId"> (optional)</param>
         /// <param name="reason"> (optional)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
@@ -5681,28 +5692,32 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// List accessible mailboxes 
+        /// List accessible mailboxes List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="accountId">Select another granted account; otherwise use the credential default. (optional)</param>
-        /// <param name="archived"> (optional, default to false)</param>
-        /// <param name="q"> (optional)</param>
+        /// <param name="q">Case-insensitive contains-filter on the permitted email address or ID. (optional)</param>
+        /// <param name="status">Archive status: active, archived or all. Defaults to active. (optional, default to active)</param>
+        /// <param name="limit"> (optional, default to 100)</param>
+        /// <param name="offset"> (optional, default to 0)</param>
         /// <returns>ListMailboxes200Response</returns>
-        public ListMailboxes200Response ListMailboxes(string? accountId = default, bool? archived = default, string? q = default)
+        public ListMailboxes200Response ListMailboxes(string? accountId = default, string? q = default, string? status = default, int? limit = default, int? offset = default)
         {
-            Revdoku.Api.Client.ApiResponse<ListMailboxes200Response> localVarResponse = ListMailboxesWithHttpInfo(accountId, archived, q);
+            Revdoku.Api.Client.ApiResponse<ListMailboxes200Response> localVarResponse = ListMailboxesWithHttpInfo(accountId, q, status, limit, offset);
             return localVarResponse.Data;
         }
 
         /// <summary>
-        /// List accessible mailboxes 
+        /// List accessible mailboxes List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="accountId">Select another granted account; otherwise use the credential default. (optional)</param>
-        /// <param name="archived"> (optional, default to false)</param>
-        /// <param name="q"> (optional)</param>
+        /// <param name="q">Case-insensitive contains-filter on the permitted email address or ID. (optional)</param>
+        /// <param name="status">Archive status: active, archived or all. Defaults to active. (optional, default to active)</param>
+        /// <param name="limit"> (optional, default to 100)</param>
+        /// <param name="offset"> (optional, default to 0)</param>
         /// <returns>ApiResponse of ListMailboxes200Response</returns>
-        public Revdoku.Api.Client.ApiResponse<ListMailboxes200Response> ListMailboxesWithHttpInfo(string? accountId = default, bool? archived = default, string? q = default)
+        public Revdoku.Api.Client.ApiResponse<ListMailboxes200Response> ListMailboxesWithHttpInfo(string? accountId = default, string? q = default, string? status = default, int? limit = default, int? offset = default)
         {
             Revdoku.Api.Client.RequestOptions localVarRequestOptions = new Revdoku.Api.Client.RequestOptions();
 
@@ -5724,13 +5739,21 @@ namespace Revdoku.Api.Api
             {
                 localVarRequestOptions.QueryParameters.Add(Revdoku.Api.Client.ClientUtils.ParameterToMultiMap("", "account_id", accountId));
             }
-            if (archived != null)
-            {
-                localVarRequestOptions.QueryParameters.Add(Revdoku.Api.Client.ClientUtils.ParameterToMultiMap("", "archived", archived));
-            }
             if (q != null)
             {
                 localVarRequestOptions.QueryParameters.Add(Revdoku.Api.Client.ClientUtils.ParameterToMultiMap("", "q", q));
+            }
+            if (status != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Revdoku.Api.Client.ClientUtils.ParameterToMultiMap("", "status", status));
+            }
+            if (limit != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Revdoku.Api.Client.ClientUtils.ParameterToMultiMap("", "limit", limit));
+            }
+            if (offset != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Revdoku.Api.Client.ClientUtils.ParameterToMultiMap("", "offset", offset));
             }
 
             // authentication (bearerAuth) required
@@ -5753,30 +5776,34 @@ namespace Revdoku.Api.Api
         }
 
         /// <summary>
-        /// List accessible mailboxes 
+        /// List accessible mailboxes List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="accountId">Select another granted account; otherwise use the credential default. (optional)</param>
-        /// <param name="archived"> (optional, default to false)</param>
-        /// <param name="q"> (optional)</param>
+        /// <param name="q">Case-insensitive contains-filter on the permitted email address or ID. (optional)</param>
+        /// <param name="status">Archive status: active, archived or all. Defaults to active. (optional, default to active)</param>
+        /// <param name="limit"> (optional, default to 100)</param>
+        /// <param name="offset"> (optional, default to 0)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns>Task of ListMailboxes200Response</returns>
-        public async System.Threading.Tasks.Task<ListMailboxes200Response> ListMailboxesAsync(string? accountId = default, bool? archived = default, string? q = default, System.Threading.CancellationToken cancellationToken = default)
+        public async System.Threading.Tasks.Task<ListMailboxes200Response> ListMailboxesAsync(string? accountId = default, string? q = default, string? status = default, int? limit = default, int? offset = default, System.Threading.CancellationToken cancellationToken = default)
         {
-            Revdoku.Api.Client.ApiResponse<ListMailboxes200Response> localVarResponse = await ListMailboxesWithHttpInfoAsync(accountId, archived, q, cancellationToken).ConfigureAwait(false);
+            Revdoku.Api.Client.ApiResponse<ListMailboxes200Response> localVarResponse = await ListMailboxesWithHttpInfoAsync(accountId, q, status, limit, offset, cancellationToken).ConfigureAwait(false);
             return localVarResponse.Data;
         }
 
         /// <summary>
-        /// List accessible mailboxes 
+        /// List accessible mailboxes List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
         /// </summary>
         /// <exception cref="Revdoku.Api.Client.ApiException">Thrown when fails to make API call</exception>
         /// <param name="accountId">Select another granted account; otherwise use the credential default. (optional)</param>
-        /// <param name="archived"> (optional, default to false)</param>
-        /// <param name="q"> (optional)</param>
+        /// <param name="q">Case-insensitive contains-filter on the permitted email address or ID. (optional)</param>
+        /// <param name="status">Archive status: active, archived or all. Defaults to active. (optional, default to active)</param>
+        /// <param name="limit"> (optional, default to 100)</param>
+        /// <param name="offset"> (optional, default to 0)</param>
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <returns>Task of ApiResponse (ListMailboxes200Response)</returns>
-        public async System.Threading.Tasks.Task<Revdoku.Api.Client.ApiResponse<ListMailboxes200Response>> ListMailboxesWithHttpInfoAsync(string? accountId = default, bool? archived = default, string? q = default, System.Threading.CancellationToken cancellationToken = default)
+        public async System.Threading.Tasks.Task<Revdoku.Api.Client.ApiResponse<ListMailboxes200Response>> ListMailboxesWithHttpInfoAsync(string? accountId = default, string? q = default, string? status = default, int? limit = default, int? offset = default, System.Threading.CancellationToken cancellationToken = default)
         {
 
             Revdoku.Api.Client.RequestOptions localVarRequestOptions = new Revdoku.Api.Client.RequestOptions();
@@ -5800,13 +5827,21 @@ namespace Revdoku.Api.Api
             {
                 localVarRequestOptions.QueryParameters.Add(Revdoku.Api.Client.ClientUtils.ParameterToMultiMap("", "account_id", accountId));
             }
-            if (archived != null)
-            {
-                localVarRequestOptions.QueryParameters.Add(Revdoku.Api.Client.ClientUtils.ParameterToMultiMap("", "archived", archived));
-            }
             if (q != null)
             {
                 localVarRequestOptions.QueryParameters.Add(Revdoku.Api.Client.ClientUtils.ParameterToMultiMap("", "q", q));
+            }
+            if (status != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Revdoku.Api.Client.ClientUtils.ParameterToMultiMap("", "status", status));
+            }
+            if (limit != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Revdoku.Api.Client.ClientUtils.ParameterToMultiMap("", "limit", limit));
+            }
+            if (offset != null)
+            {
+                localVarRequestOptions.QueryParameters.Add(Revdoku.Api.Client.ClientUtils.ParameterToMultiMap("", "offset", offset));
             }
 
             // authentication (bearerAuth) required

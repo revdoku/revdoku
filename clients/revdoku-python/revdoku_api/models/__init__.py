@@ -89,6 +89,7 @@ from revdoku_api.models.list_mailboxes200_response import ListMailboxes200Respon
 from revdoku_api.models.list_mailboxes200_response_data import ListMailboxes200ResponseData
 from revdoku_api.models.mailbox import Mailbox
 from revdoku_api.models.mailbox_action import MailboxAction
+from revdoku_api.models.mailbox_counts import MailboxCounts
 from revdoku_api.models.mailbox_create_options import MailboxCreateOptions
 from revdoku_api.models.mailbox_email import MailboxEmail
 from revdoku_api.models.mailbox_email_activity import MailboxEmailActivity
@@ -104,6 +105,7 @@ from revdoku_api.models.mailbox_file_response_data import MailboxFileResponseDat
 from revdoku_api.models.mailbox_lock import MailboxLock
 from revdoku_api.models.mailbox_lock_locked_by import MailboxLockLockedBy
 from revdoku_api.models.mailbox_lock_locked_by_api_key import MailboxLockLockedByApiKey
+from revdoku_api.models.mailbox_pagination import MailboxPagination
 from revdoku_api.models.prepare_file_upload_request import PrepareFileUploadRequest
 from revdoku_api.models.prepared_file_upload import PreparedFileUpload
 from revdoku_api.models.prepared_file_upload_response import PreparedFileUploadResponse
