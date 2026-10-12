@@ -41,6 +41,9 @@ authorization. See the [official OpenAI instructions](https://developers.openai.
 In a new chat, enable the connection and ask: **“List my Revdoku accounts and mailboxes.”**
 Select the intended account before reading or changing its contents.
 
+Custom connectors depend on your ChatGPT or Claude plan. If your chat app cannot
+add one, follow [No connector available](https://revdoku.com/llms-install.md#no-connector-available).
+
 ## Refresh an existing connection
 
 - **Hosted MCP:** refresh the connection's tools in your AI app and start a new
@@ -131,7 +134,8 @@ Replace placeholders with returned values. For another granted account, include
 its `account_id` on every call. Omitting it uses the connection's default account.
 
 `mailbox_list` and `mailbox_get` show `email.address` to connections with write
-access. Use the address once `email.receiving_enabled` is true. Readers can use
+access (**Read & write** or **Full access** on the permission screen). Use the
+address once `email.receiving_enabled` is true. **Read only** connections can use
 saved messages without the address. See the
 [credential matrix](https://github.com/revdoku/revdoku/blob/main/guides/saas-mailboxes.md#map-customers-and-choose-access).
 
