@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -15,14 +15,13 @@ require 'time'
 
 module RevdokuApi
   class CreateClientAccountRequest < ApiModelBase
-    # Account name.
     attr_accessor :name
 
-    # Optional granted Agency account id. Does not change the credential default.
-    attr_accessor :account_id
-
-    # Optional client person or business, separate from the account name. Omit when unknown.
+    # Optional client person or business name.
     attr_accessor :client_name
+
+    # Granted agency account that owns the new client account.
+    attr_accessor :account_id
 
     # Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
     attr_accessor :reason
@@ -31,8 +30,8 @@ module RevdokuApi
     def self.attribute_map
       {
         :'name' => :'name',
-        :'account_id' => :'account_id',
         :'client_name' => :'client_name',
+        :'account_id' => :'account_id',
         :'reason' => :'reason'
       }
     end
@@ -51,8 +50,8 @@ module RevdokuApi
     def self.openapi_types
       {
         :'name' => :'String',
-        :'account_id' => :'String',
         :'client_name' => :'String',
+        :'account_id' => :'String',
         :'reason' => :'String'
       }
     end
@@ -86,12 +85,12 @@ module RevdokuApi
         self.name = nil
       end
 
-      if attributes.key?(:'account_id')
-        self.account_id = attributes[:'account_id']
-      end
-
       if attributes.key?(:'client_name')
         self.client_name = attributes[:'client_name']
+      end
+
+      if attributes.key?(:'account_id')
+        self.account_id = attributes[:'account_id']
       end
 
       if attributes.key?(:'reason')
@@ -143,8 +142,8 @@ module RevdokuApi
       return true if self.equal?(o)
       self.class == o.class &&
           name == o.name &&
-          account_id == o.account_id &&
           client_name == o.client_name &&
+          account_id == o.account_id &&
           reason == o.reason
     end
 
@@ -157,7 +156,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [name, account_id, client_name, reason].hash
+      [name, client_name, account_id, reason].hash
     end
 
     # Builds the object from hash

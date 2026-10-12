@@ -13,32 +13,32 @@ part of revdoku.api;
 class CreateClientAccount201Response {
   /// Returns a new [CreateClientAccount201Response] instance.
   CreateClientAccount201Response({
-    required this.data,
     required this.success,
+    required this.data,
   });
-
-  CreateClientAccount201ResponseData data;
 
   bool success;
 
+  CreateClientAccount201ResponseData data;
+
   @override
   bool operator ==(Object other) => identical(this, other) || other is CreateClientAccount201Response &&
-    other.data == data &&
-    other.success == success;
+    other.success == success &&
+    other.data == data;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (data.hashCode) +
-    (success.hashCode);
+    (success.hashCode) +
+    (data.hashCode);
 
   @override
-  String toString() => 'CreateClientAccount201Response[data=$data, success=$success]';
+  String toString() => 'CreateClientAccount201Response[success=$success, data=$data]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'data'] = this.data;
       json[r'success'] = this.success;
+      json[r'data'] = this.data;
     return json;
   }
 
@@ -53,16 +53,16 @@ class CreateClientAccount201Response {
       // Note 1: the values aren't checked for validity beyond being non-null.
       // Note 2: this code is stripped in release mode!
       assert(() {
-        assert(json.containsKey(r'data'), 'Required key "CreateClientAccount201Response[data]" is missing from JSON.');
-        assert(json[r'data'] != null, 'Required key "CreateClientAccount201Response[data]" has a null value in JSON.');
         assert(json.containsKey(r'success'), 'Required key "CreateClientAccount201Response[success]" is missing from JSON.');
         assert(json[r'success'] != null, 'Required key "CreateClientAccount201Response[success]" has a null value in JSON.');
+        assert(json.containsKey(r'data'), 'Required key "CreateClientAccount201Response[data]" is missing from JSON.');
+        assert(json[r'data'] != null, 'Required key "CreateClientAccount201Response[data]" has a null value in JSON.');
         return true;
       }());
 
       return CreateClientAccount201Response(
-        data: CreateClientAccount201ResponseData.fromJson(json[r'data'])!,
         success: mapValueOfType<bool>(json, r'success')!,
+        data: CreateClientAccount201ResponseData.fromJson(json[r'data'])!,
       );
     }
     return null;
@@ -110,8 +110,8 @@ class CreateClientAccount201Response {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
-    'data',
     'success',
+    'data',
   };
 }
 

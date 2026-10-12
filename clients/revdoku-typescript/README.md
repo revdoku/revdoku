@@ -53,16 +53,16 @@ await revdoku.uploadFile({ mailboxId, path: 'notes.txt', content: 'Hello' });
 Reading does not mark email read. Use the generated `api.updateEmail` operation
 when you want to change shared read status. For continuous processing, save each
 page's `nextCursor` after processing, including empty pages. Keep filters fixed
-and deduplicate by email ID. [Polling reference](https://revdoku.com/api.md#poll-for-new-messages).
+and deduplicate by email ID. [Polling reference](https://revdoku.com/api.md#poll-for-new-email).
 
 `downloadAttachment` returns bytes, with a default 64 MiB bound. Set `maxBytes` in
-its second argument to change that bound. Use `getAttachmentDownloadUrl` when you
+its second argument to change that bound. Use `getAttachmentDownload` when you
 want the temporary URL and metadata instead. Neither method writes local files.
 
 `uploadFile` accepts UTF-8 text or a `Uint8Array`. It computes both checksums, uploads
 to storage without your API key, then commits the file version. Identical content returns the existing file with
 `data.duplicate: true`, without uploading again. Pass
-`expectedMailboxRevisionId` when editing to reject concurrent changes. If a write
+`expectedMailboxVersion` (the mailbox `versionId`) when editing to reject concurrent changes. If a write
 response is lost, inspect the mailbox before repeating the write.
 
 ## Errors and request control

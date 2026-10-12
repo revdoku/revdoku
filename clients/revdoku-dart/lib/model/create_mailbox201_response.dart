@@ -13,32 +13,32 @@ part of revdoku.api;
 class CreateMailbox201Response {
   /// Returns a new [CreateMailbox201Response] instance.
   CreateMailbox201Response({
-    required this.data,
     required this.success,
+    required this.data,
   });
-
-  CreateMailbox201ResponseData data;
 
   bool success;
 
+  CreateMailbox201ResponseData data;
+
   @override
   bool operator ==(Object other) => identical(this, other) || other is CreateMailbox201Response &&
-    other.data == data &&
-    other.success == success;
+    other.success == success &&
+    other.data == data;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (data.hashCode) +
-    (success.hashCode);
+    (success.hashCode) +
+    (data.hashCode);
 
   @override
-  String toString() => 'CreateMailbox201Response[data=$data, success=$success]';
+  String toString() => 'CreateMailbox201Response[success=$success, data=$data]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'data'] = this.data;
       json[r'success'] = this.success;
+      json[r'data'] = this.data;
     return json;
   }
 
@@ -53,16 +53,16 @@ class CreateMailbox201Response {
       // Note 1: the values aren't checked for validity beyond being non-null.
       // Note 2: this code is stripped in release mode!
       assert(() {
-        assert(json.containsKey(r'data'), 'Required key "CreateMailbox201Response[data]" is missing from JSON.');
-        assert(json[r'data'] != null, 'Required key "CreateMailbox201Response[data]" has a null value in JSON.');
         assert(json.containsKey(r'success'), 'Required key "CreateMailbox201Response[success]" is missing from JSON.');
         assert(json[r'success'] != null, 'Required key "CreateMailbox201Response[success]" has a null value in JSON.');
+        assert(json.containsKey(r'data'), 'Required key "CreateMailbox201Response[data]" is missing from JSON.');
+        assert(json[r'data'] != null, 'Required key "CreateMailbox201Response[data]" has a null value in JSON.');
         return true;
       }());
 
       return CreateMailbox201Response(
-        data: CreateMailbox201ResponseData.fromJson(json[r'data'])!,
         success: mapValueOfType<bool>(json, r'success')!,
+        data: CreateMailbox201ResponseData.fromJson(json[r'data'])!,
       );
     }
     return null;
@@ -110,8 +110,8 @@ class CreateMailbox201Response {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
-    'data',
     'success',
+    'data',
   };
 }
 

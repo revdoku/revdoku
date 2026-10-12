@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -20,6 +20,28 @@ module RevdokuApi
     attr_accessor :mailbox_access
 
     attr_accessor :can_create_mailboxes
+
+    class EnumAttributeValidator
+      attr_reader :datatype
+      attr_reader :allowable_values
+
+      def initialize(datatype, allowable_values)
+        @allowable_values = allowable_values.map do |value|
+          case datatype.to_s
+          when /Integer/i
+            value.to_i
+          when /Float/i
+            value.to_f
+          else
+            value
+          end
+        end
+      end
+
+      def valid?(value)
+        !value || allowable_values.include?(value)
+      end
+    end
 
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
@@ -82,6 +104,26 @@ module RevdokuApi
       if attributes.key?(:'can_create_mailboxes')
         self.can_create_mailboxes = attributes[:'can_create_mailboxes']
       end
+    end
+
+    # Custom attribute writer method checking allowed values (enum).
+    # @param [Object] scope Object to be assigned
+    def scope=(scope)
+      validator = EnumAttributeValidator.new('String', ["mailbox_read", "mailbox_write", "mailbox_admin"])
+      unless validator.valid?(scope)
+        fail ArgumentError, "invalid value for \"scope\", must be one of #{validator.allowable_values}."
+      end
+      @scope = scope
+    end
+
+    # Custom attribute writer method checking allowed values (enum).
+    # @param [Object] mailbox_access Object to be assigned
+    def mailbox_access=(mailbox_access)
+      validator = EnumAttributeValidator.new('String', ["all", "selected"])
+      unless validator.valid?(mailbox_access)
+        fail ArgumentError, "invalid value for \"mailbox_access\", must be one of #{validator.allowable_values}."
+      end
+      @mailbox_access = mailbox_access
     end
 
     # Checks equality by comparing each attribute.

@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -13,10 +13,6 @@
 
 package com.revdoku.api.model;
 
-import java.util.Map;
-import java.util.HashMap;
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import java.util.Objects;
 import java.util.Map;
 import java.util.HashMap;
@@ -25,8 +21,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.revdoku.api.model.MailboxLockLockedBy;
-import com.revdoku.api.model.MailboxLockLockedByApiKey;
+import com.revdoku.api.model.FileActor;
+import com.revdoku.api.model.FileKey;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,7 +37,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
   MailboxLock.JSON_PROPERTY_LOCKED,
   MailboxLock.JSON_PROPERTY_LOCKED_UNTIL,
   MailboxLock.JSON_PROPERTY_KIND,
-  MailboxLock.JSON_PROPERTY_MAILBOX_UPLOAD_SESSION_ID,
   MailboxLock.JSON_PROPERTY_MESSAGE,
   MailboxLock.JSON_PROPERTY_PROGRESS,
   MailboxLock.JSON_PROPERTY_LOCKED_BY,
@@ -61,10 +56,6 @@ public class MailboxLock {
   @javax.annotation.Nullable
   private String kind;
 
-  public static final String JSON_PROPERTY_MAILBOX_UPLOAD_SESSION_ID = "mailbox_upload_session_id";
-  @javax.annotation.Nullable
-  private String mailboxUploadSessionId;
-
   public static final String JSON_PROPERTY_MESSAGE = "message";
   @javax.annotation.Nullable
   private String message;
@@ -75,11 +66,11 @@ public class MailboxLock {
 
   public static final String JSON_PROPERTY_LOCKED_BY = "locked_by";
   @javax.annotation.Nullable
-  private MailboxLockLockedBy lockedBy;
+  private FileActor lockedBy;
 
   public static final String JSON_PROPERTY_LOCKED_BY_API_KEY = "locked_by_api_key";
   @javax.annotation.Nullable
-  private MailboxLockLockedByApiKey lockedByApiKey;
+  private FileKey lockedByApiKey;
 
   public MailboxLock() { 
   }
@@ -138,7 +129,7 @@ public class MailboxLock {
   }
 
   /**
-   * Get kind
+   * For example mailbox_delete while a permanent delete runs.
    * @return kind
    */
   @javax.annotation.Nullable
@@ -153,30 +144,6 @@ public class MailboxLock {
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
   public void setKind(@javax.annotation.Nullable String kind) {
     this.kind = kind;
-  }
-
-
-  public MailboxLock mailboxUploadSessionId(@javax.annotation.Nullable String mailboxUploadSessionId) {
-    this.mailboxUploadSessionId = mailboxUploadSessionId;
-    return this;
-  }
-
-  /**
-   * Get mailboxUploadSessionId
-   * @return mailboxUploadSessionId
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_MAILBOX_UPLOAD_SESSION_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public String getMailboxUploadSessionId() {
-    return mailboxUploadSessionId;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_MAILBOX_UPLOAD_SESSION_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setMailboxUploadSessionId(@javax.annotation.Nullable String mailboxUploadSessionId) {
-    this.mailboxUploadSessionId = mailboxUploadSessionId;
   }
 
 
@@ -236,7 +203,7 @@ public class MailboxLock {
   }
 
 
-  public MailboxLock lockedBy(@javax.annotation.Nullable MailboxLockLockedBy lockedBy) {
+  public MailboxLock lockedBy(@javax.annotation.Nullable FileActor lockedBy) {
     this.lockedBy = lockedBy;
     return this;
   }
@@ -248,19 +215,19 @@ public class MailboxLock {
   @javax.annotation.Nullable
   @JsonProperty(value = JSON_PROPERTY_LOCKED_BY, required = false)
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public MailboxLockLockedBy getLockedBy() {
+  public FileActor getLockedBy() {
     return lockedBy;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_LOCKED_BY, required = false)
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setLockedBy(@javax.annotation.Nullable MailboxLockLockedBy lockedBy) {
+  public void setLockedBy(@javax.annotation.Nullable FileActor lockedBy) {
     this.lockedBy = lockedBy;
   }
 
 
-  public MailboxLock lockedByApiKey(@javax.annotation.Nullable MailboxLockLockedByApiKey lockedByApiKey) {
+  public MailboxLock lockedByApiKey(@javax.annotation.Nullable FileKey lockedByApiKey) {
     this.lockedByApiKey = lockedByApiKey;
     return this;
   }
@@ -272,63 +239,20 @@ public class MailboxLock {
   @javax.annotation.Nullable
   @JsonProperty(value = JSON_PROPERTY_LOCKED_BY_API_KEY, required = false)
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public MailboxLockLockedByApiKey getLockedByApiKey() {
+  public FileKey getLockedByApiKey() {
     return lockedByApiKey;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_LOCKED_BY_API_KEY, required = false)
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setLockedByApiKey(@javax.annotation.Nullable MailboxLockLockedByApiKey lockedByApiKey) {
+  public void setLockedByApiKey(@javax.annotation.Nullable FileKey lockedByApiKey) {
     this.lockedByApiKey = lockedByApiKey;
   }
 
-  /**
-   * A container for additional, undeclared properties.
-   * This is a holder for any undeclared properties as specified with
-   * the 'additionalProperties' keyword in the OAS document.
-   */
-  private Map<String, Object> additionalProperties;
 
   /**
-   * Set the additional (undeclared) property with the specified name and value.
-   * If the property does not already exist, create it otherwise replace it.
-   * @param key the name of the property
-   * @param value the value of the property
-   * @return self reference
-   */
-  @JsonAnySetter
-  public MailboxLock putAdditionalProperty(String key, Object value) {
-    if (this.additionalProperties == null) {
-        this.additionalProperties = new HashMap<String, Object>();
-    }
-    this.additionalProperties.put(key, value);
-    return this;
-  }
-
-  /**
-   * Return the additional (undeclared) properties.
-   * @return the additional (undeclared) properties
-   */
-  @JsonAnyGetter
-  public Map<String, Object> getAdditionalProperties() {
-    return additionalProperties;
-  }
-
-  /**
-   * Return the additional (undeclared) property with the specified name.
-   * @param key the name of the property
-   * @return the additional (undeclared) property with the specified name
-   */
-  public Object getAdditionalProperty(String key) {
-    if (this.additionalProperties == null) {
-        return null;
-    }
-    return this.additionalProperties.get(key);
-  }
-
-  /**
-   * Return true if this Mailbox_lock object is equal to o.
+   * Return true if this MailboxLock object is equal to o.
    */
   @Override
   public boolean equals(Object o) {
@@ -342,17 +266,15 @@ public class MailboxLock {
     return Objects.equals(this.locked, mailboxLock.locked) &&
         Objects.equals(this.lockedUntil, mailboxLock.lockedUntil) &&
         Objects.equals(this.kind, mailboxLock.kind) &&
-        Objects.equals(this.mailboxUploadSessionId, mailboxLock.mailboxUploadSessionId) &&
         Objects.equals(this.message, mailboxLock.message) &&
         Objects.equals(this.progress, mailboxLock.progress) &&
         Objects.equals(this.lockedBy, mailboxLock.lockedBy) &&
-        Objects.equals(this.lockedByApiKey, mailboxLock.lockedByApiKey)&&
-        Objects.equals(this.additionalProperties, mailboxLock.additionalProperties);
+        Objects.equals(this.lockedByApiKey, mailboxLock.lockedByApiKey);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(locked, lockedUntil, kind, mailboxUploadSessionId, message, progress, lockedBy, lockedByApiKey, additionalProperties);
+    return Objects.hash(locked, lockedUntil, kind, message, progress, lockedBy, lockedByApiKey);
   }
 
   @Override
@@ -362,12 +284,10 @@ public class MailboxLock {
     sb.append("    locked: ").append(toIndentedString(locked)).append("\n");
     sb.append("    lockedUntil: ").append(toIndentedString(lockedUntil)).append("\n");
     sb.append("    kind: ").append(toIndentedString(kind)).append("\n");
-    sb.append("    mailboxUploadSessionId: ").append(toIndentedString(mailboxUploadSessionId)).append("\n");
     sb.append("    message: ").append(toIndentedString(message)).append("\n");
     sb.append("    progress: ").append(toIndentedString(progress)).append("\n");
     sb.append("    lockedBy: ").append(toIndentedString(lockedBy)).append("\n");
     sb.append("    lockedByApiKey: ").append(toIndentedString(lockedByApiKey)).append("\n");
-    sb.append("    additionalProperties: ").append(toIndentedString(additionalProperties)).append("\n");
     sb.append("}");
     return sb.toString();
   }

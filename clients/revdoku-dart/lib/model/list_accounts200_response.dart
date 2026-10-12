@@ -19,7 +19,7 @@ class ListAccounts200Response {
 
   bool success;
 
-  ListAccounts200ResponseData data;
+  AccountList data;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is ListAccounts200Response &&
@@ -62,7 +62,7 @@ class ListAccounts200Response {
 
       return ListAccounts200Response(
         success: mapValueOfType<bool>(json, r'success')!,
-        data: ListAccounts200ResponseData.fromJson(json[r'data'])!,
+        data: AccountList.fromJson(json[r'data'])!,
       );
     }
     return null;

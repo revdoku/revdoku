@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.revdoku.api.model.EmailDomain;
-import com.revdoku.api.model.EmailUsage;
+import com.revdoku.api.model.Pagination;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -35,10 +35,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonPropertyOrder({
   EmailDomainList.JSON_PROPERTY_DOMAINS,
   EmailDomainList.JSON_PROPERTY_ENABLED,
-  EmailDomainList.JSON_PROPERTY_CONFIGURED,
-  EmailDomainList.JSON_PROPERTY_LIMIT,
-  EmailDomainList.JSON_PROPERTY_USAGE,
-  EmailDomainList.JSON_PROPERTY_GUIDANCE
+  EmailDomainList.JSON_PROPERTY_GUIDANCE,
+  EmailDomainList.JSON_PROPERTY_PAGINATION
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class EmailDomainList {
@@ -47,24 +45,16 @@ public class EmailDomainList {
   private List<EmailDomain> domains = new ArrayList<>();
 
   public static final String JSON_PROPERTY_ENABLED = "enabled";
-  @javax.annotation.Nullable
+  @javax.annotation.Nonnull
   private Boolean enabled;
-
-  public static final String JSON_PROPERTY_CONFIGURED = "configured";
-  @javax.annotation.Nullable
-  private Boolean configured;
-
-  public static final String JSON_PROPERTY_LIMIT = "limit";
-  @javax.annotation.Nullable
-  private Integer limit;
-
-  public static final String JSON_PROPERTY_USAGE = "usage";
-  @javax.annotation.Nullable
-  private EmailUsage usage;
 
   public static final String JSON_PROPERTY_GUIDANCE = "guidance";
   @javax.annotation.Nullable
   private String guidance;
+
+  public static final String JSON_PROPERTY_PAGINATION = "pagination";
+  @javax.annotation.Nonnull
+  private Pagination pagination;
 
   public EmailDomainList() { 
   }
@@ -101,99 +91,27 @@ public class EmailDomainList {
   }
 
 
-  public EmailDomainList enabled(@javax.annotation.Nullable Boolean enabled) {
+  public EmailDomainList enabled(@javax.annotation.Nonnull Boolean enabled) {
     this.enabled = enabled;
     return this;
   }
 
   /**
-   * Get enabled
+   * Whether this account can use custom email domains.
    * @return enabled
    */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_ENABLED, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_ENABLED, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public Boolean getEnabled() {
     return enabled;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_ENABLED, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setEnabled(@javax.annotation.Nullable Boolean enabled) {
+  @JsonProperty(value = JSON_PROPERTY_ENABLED, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setEnabled(@javax.annotation.Nonnull Boolean enabled) {
     this.enabled = enabled;
-  }
-
-
-  public EmailDomainList configured(@javax.annotation.Nullable Boolean configured) {
-    this.configured = configured;
-    return this;
-  }
-
-  /**
-   * Get configured
-   * @return configured
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_CONFIGURED, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public Boolean getConfigured() {
-    return configured;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_CONFIGURED, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setConfigured(@javax.annotation.Nullable Boolean configured) {
-    this.configured = configured;
-  }
-
-
-  public EmailDomainList limit(@javax.annotation.Nullable Integer limit) {
-    this.limit = limit;
-    return this;
-  }
-
-  /**
-   * Get limit
-   * @return limit
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_LIMIT, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public Integer getLimit() {
-    return limit;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_LIMIT, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setLimit(@javax.annotation.Nullable Integer limit) {
-    this.limit = limit;
-  }
-
-
-  public EmailDomainList usage(@javax.annotation.Nullable EmailUsage usage) {
-    this.usage = usage;
-    return this;
-  }
-
-  /**
-   * Get usage
-   * @return usage
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_USAGE, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public EmailUsage getUsage() {
-    return usage;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_USAGE, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setUsage(@javax.annotation.Nullable EmailUsage usage) {
-    this.usage = usage;
   }
 
 
@@ -221,6 +139,30 @@ public class EmailDomainList {
   }
 
 
+  public EmailDomainList pagination(@javax.annotation.Nonnull Pagination pagination) {
+    this.pagination = pagination;
+    return this;
+  }
+
+  /**
+   * Get pagination
+   * @return pagination
+   */
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_PAGINATION, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public Pagination getPagination() {
+    return pagination;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_PAGINATION, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setPagination(@javax.annotation.Nonnull Pagination pagination) {
+    this.pagination = pagination;
+  }
+
+
   /**
    * Return true if this EmailDomainList object is equal to o.
    */
@@ -235,15 +177,13 @@ public class EmailDomainList {
     EmailDomainList emailDomainList = (EmailDomainList) o;
     return Objects.equals(this.domains, emailDomainList.domains) &&
         Objects.equals(this.enabled, emailDomainList.enabled) &&
-        Objects.equals(this.configured, emailDomainList.configured) &&
-        Objects.equals(this.limit, emailDomainList.limit) &&
-        Objects.equals(this.usage, emailDomainList.usage) &&
-        Objects.equals(this.guidance, emailDomainList.guidance);
+        Objects.equals(this.guidance, emailDomainList.guidance) &&
+        Objects.equals(this.pagination, emailDomainList.pagination);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(domains, enabled, configured, limit, usage, guidance);
+    return Objects.hash(domains, enabled, guidance, pagination);
   }
 
   @Override
@@ -252,10 +192,8 @@ public class EmailDomainList {
     sb.append("class EmailDomainList {\n");
     sb.append("    domains: ").append(toIndentedString(domains)).append("\n");
     sb.append("    enabled: ").append(toIndentedString(enabled)).append("\n");
-    sb.append("    configured: ").append(toIndentedString(configured)).append("\n");
-    sb.append("    limit: ").append(toIndentedString(limit)).append("\n");
-    sb.append("    usage: ").append(toIndentedString(usage)).append("\n");
     sb.append("    guidance: ").append(toIndentedString(guidance)).append("\n");
+    sb.append("    pagination: ").append(toIndentedString(pagination)).append("\n");
     sb.append("}");
     return sb.toString();
   }

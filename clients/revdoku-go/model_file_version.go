@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -13,6 +13,7 @@ package revdoku
 import (
 	"encoding/json"
 	"time"
+	"fmt"
 )
 
 // checks if the FileVersion type satisfies the MappedNullable interface at compile time
@@ -20,23 +21,20 @@ var _ MappedNullable = &FileVersion{}
 
 // FileVersion struct for FileVersion
 type FileVersion struct {
-	Id *string `json:"id,omitempty"`
-	FileId *string `json:"file_id,omitempty"`
+	Id string `json:"id"`
+	FileId string `json:"file_id"`
 	Name *string `json:"name,omitempty"`
 	MimeType *string `json:"mime_type,omitempty"`
 	Sha256 *string `json:"sha256,omitempty"`
 	Reason NullableString `json:"reason,omitempty"`
-	MetaKey *string `json:"meta_key,omitempty"`
 	CreatedBySystem *string `json:"created_by_system,omitempty"`
+	// True for the version that records a deletion.
 	Deleted *bool `json:"deleted,omitempty"`
 	Ready *bool `json:"ready,omitempty"`
 	HasText *bool `json:"has_text,omitempty"`
-	NormalizationRequired *bool `json:"normalization_required,omitempty"`
-	MetaReady *bool `json:"meta_ready,omitempty"`
-	VersionNumber *int64 `json:"version_number,omitempty"`
+	VersionNumber int64 `json:"version_number"`
 	ByteSize *int64 `json:"byte_size,omitempty"`
 	CreatedAt *time.Time `json:"created_at,omitempty"`
-	MetaCreatedAt *time.Time `json:"meta_created_at,omitempty"`
 	CreatedBy *FileActor `json:"created_by,omitempty"`
 	UpdatedBy *FileActor `json:"updated_by,omitempty"`
 	CreatedByAgent map[string]interface{} `json:"created_by_agent,omitempty"`
@@ -56,8 +54,11 @@ type _FileVersion FileVersion
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFileVersion() *FileVersion {
+func NewFileVersion(id string, fileId string, versionNumber int64) *FileVersion {
 	this := FileVersion{}
+	this.Id = id
+	this.FileId = fileId
+	this.VersionNumber = versionNumber
 	return &this
 }
 
@@ -69,68 +70,52 @@ func NewFileVersionWithDefaults() *FileVersion {
 	return &this
 }
 
-// GetId returns the Id field value if set, zero value otherwise.
+// GetId returns the Id field value
 func (o *FileVersion) GetId() string {
-	if o == nil || IsNil(o.Id) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.Id
+
+	return o.Id
 }
 
-// GetIdOk returns a tuple with the Id field value if set, nil otherwise
+// GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
 func (o *FileVersion) GetIdOk() (*string, bool) {
-	if o == nil || IsNil(o.Id) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Id, true
+	return &o.Id, true
 }
 
-// HasId returns a boolean if a field has been set.
-func (o *FileVersion) HasId() bool {
-	if o != nil && !IsNil(o.Id) {
-		return true
-	}
-
-	return false
-}
-
-// SetId gets a reference to the given string and assigns it to the Id field.
+// SetId sets field value
 func (o *FileVersion) SetId(v string) {
-	o.Id = &v
+	o.Id = v
 }
 
-// GetFileId returns the FileId field value if set, zero value otherwise.
+// GetFileId returns the FileId field value
 func (o *FileVersion) GetFileId() string {
-	if o == nil || IsNil(o.FileId) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.FileId
+
+	return o.FileId
 }
 
-// GetFileIdOk returns a tuple with the FileId field value if set, nil otherwise
+// GetFileIdOk returns a tuple with the FileId field value
 // and a boolean to check if the value has been set.
 func (o *FileVersion) GetFileIdOk() (*string, bool) {
-	if o == nil || IsNil(o.FileId) {
+	if o == nil {
 		return nil, false
 	}
-	return o.FileId, true
+	return &o.FileId, true
 }
 
-// HasFileId returns a boolean if a field has been set.
-func (o *FileVersion) HasFileId() bool {
-	if o != nil && !IsNil(o.FileId) {
-		return true
-	}
-
-	return false
-}
-
-// SetFileId gets a reference to the given string and assigns it to the FileId field.
+// SetFileId sets field value
 func (o *FileVersion) SetFileId(v string) {
-	o.FileId = &v
+	o.FileId = v
 }
 
 // GetName returns the Name field value if set, zero value otherwise.
@@ -271,38 +256,6 @@ func (o *FileVersion) UnsetReason() {
 	o.Reason.Unset()
 }
 
-// GetMetaKey returns the MetaKey field value if set, zero value otherwise.
-func (o *FileVersion) GetMetaKey() string {
-	if o == nil || IsNil(o.MetaKey) {
-		var ret string
-		return ret
-	}
-	return *o.MetaKey
-}
-
-// GetMetaKeyOk returns a tuple with the MetaKey field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *FileVersion) GetMetaKeyOk() (*string, bool) {
-	if o == nil || IsNil(o.MetaKey) {
-		return nil, false
-	}
-	return o.MetaKey, true
-}
-
-// HasMetaKey returns a boolean if a field has been set.
-func (o *FileVersion) HasMetaKey() bool {
-	if o != nil && !IsNil(o.MetaKey) {
-		return true
-	}
-
-	return false
-}
-
-// SetMetaKey gets a reference to the given string and assigns it to the MetaKey field.
-func (o *FileVersion) SetMetaKey(v string) {
-	o.MetaKey = &v
-}
-
 // GetCreatedBySystem returns the CreatedBySystem field value if set, zero value otherwise.
 func (o *FileVersion) GetCreatedBySystem() string {
 	if o == nil || IsNil(o.CreatedBySystem) {
@@ -431,100 +384,28 @@ func (o *FileVersion) SetHasText(v bool) {
 	o.HasText = &v
 }
 
-// GetNormalizationRequired returns the NormalizationRequired field value if set, zero value otherwise.
-func (o *FileVersion) GetNormalizationRequired() bool {
-	if o == nil || IsNil(o.NormalizationRequired) {
-		var ret bool
-		return ret
-	}
-	return *o.NormalizationRequired
-}
-
-// GetNormalizationRequiredOk returns a tuple with the NormalizationRequired field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *FileVersion) GetNormalizationRequiredOk() (*bool, bool) {
-	if o == nil || IsNil(o.NormalizationRequired) {
-		return nil, false
-	}
-	return o.NormalizationRequired, true
-}
-
-// HasNormalizationRequired returns a boolean if a field has been set.
-func (o *FileVersion) HasNormalizationRequired() bool {
-	if o != nil && !IsNil(o.NormalizationRequired) {
-		return true
-	}
-
-	return false
-}
-
-// SetNormalizationRequired gets a reference to the given bool and assigns it to the NormalizationRequired field.
-func (o *FileVersion) SetNormalizationRequired(v bool) {
-	o.NormalizationRequired = &v
-}
-
-// GetMetaReady returns the MetaReady field value if set, zero value otherwise.
-func (o *FileVersion) GetMetaReady() bool {
-	if o == nil || IsNil(o.MetaReady) {
-		var ret bool
-		return ret
-	}
-	return *o.MetaReady
-}
-
-// GetMetaReadyOk returns a tuple with the MetaReady field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *FileVersion) GetMetaReadyOk() (*bool, bool) {
-	if o == nil || IsNil(o.MetaReady) {
-		return nil, false
-	}
-	return o.MetaReady, true
-}
-
-// HasMetaReady returns a boolean if a field has been set.
-func (o *FileVersion) HasMetaReady() bool {
-	if o != nil && !IsNil(o.MetaReady) {
-		return true
-	}
-
-	return false
-}
-
-// SetMetaReady gets a reference to the given bool and assigns it to the MetaReady field.
-func (o *FileVersion) SetMetaReady(v bool) {
-	o.MetaReady = &v
-}
-
-// GetVersionNumber returns the VersionNumber field value if set, zero value otherwise.
+// GetVersionNumber returns the VersionNumber field value
 func (o *FileVersion) GetVersionNumber() int64 {
-	if o == nil || IsNil(o.VersionNumber) {
+	if o == nil {
 		var ret int64
 		return ret
 	}
-	return *o.VersionNumber
+
+	return o.VersionNumber
 }
 
-// GetVersionNumberOk returns a tuple with the VersionNumber field value if set, nil otherwise
+// GetVersionNumberOk returns a tuple with the VersionNumber field value
 // and a boolean to check if the value has been set.
 func (o *FileVersion) GetVersionNumberOk() (*int64, bool) {
-	if o == nil || IsNil(o.VersionNumber) {
+	if o == nil {
 		return nil, false
 	}
-	return o.VersionNumber, true
+	return &o.VersionNumber, true
 }
 
-// HasVersionNumber returns a boolean if a field has been set.
-func (o *FileVersion) HasVersionNumber() bool {
-	if o != nil && !IsNil(o.VersionNumber) {
-		return true
-	}
-
-	return false
-}
-
-// SetVersionNumber gets a reference to the given int64 and assigns it to the VersionNumber field.
+// SetVersionNumber sets field value
 func (o *FileVersion) SetVersionNumber(v int64) {
-	o.VersionNumber = &v
+	o.VersionNumber = v
 }
 
 // GetByteSize returns the ByteSize field value if set, zero value otherwise.
@@ -589,38 +470,6 @@ func (o *FileVersion) HasCreatedAt() bool {
 // SetCreatedAt gets a reference to the given time.Time and assigns it to the CreatedAt field.
 func (o *FileVersion) SetCreatedAt(v time.Time) {
 	o.CreatedAt = &v
-}
-
-// GetMetaCreatedAt returns the MetaCreatedAt field value if set, zero value otherwise.
-func (o *FileVersion) GetMetaCreatedAt() time.Time {
-	if o == nil || IsNil(o.MetaCreatedAt) {
-		var ret time.Time
-		return ret
-	}
-	return *o.MetaCreatedAt
-}
-
-// GetMetaCreatedAtOk returns a tuple with the MetaCreatedAt field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *FileVersion) GetMetaCreatedAtOk() (*time.Time, bool) {
-	if o == nil || IsNil(o.MetaCreatedAt) {
-		return nil, false
-	}
-	return o.MetaCreatedAt, true
-}
-
-// HasMetaCreatedAt returns a boolean if a field has been set.
-func (o *FileVersion) HasMetaCreatedAt() bool {
-	if o != nil && !IsNil(o.MetaCreatedAt) {
-		return true
-	}
-
-	return false
-}
-
-// SetMetaCreatedAt gets a reference to the given time.Time and assigns it to the MetaCreatedAt field.
-func (o *FileVersion) SetMetaCreatedAt(v time.Time) {
-	o.MetaCreatedAt = &v
 }
 
 // GetCreatedBy returns the CreatedBy field value if set, zero value otherwise.
@@ -983,12 +832,8 @@ func (o FileVersion) MarshalJSON() ([]byte, error) {
 
 func (o FileVersion) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Id) {
-		toSerialize["id"] = o.Id
-	}
-	if !IsNil(o.FileId) {
-		toSerialize["file_id"] = o.FileId
-	}
+	toSerialize["id"] = o.Id
+	toSerialize["file_id"] = o.FileId
 	if !IsNil(o.Name) {
 		toSerialize["name"] = o.Name
 	}
@@ -1000,9 +845,6 @@ func (o FileVersion) ToMap() (map[string]interface{}, error) {
 	}
 	if o.Reason.IsSet() {
 		toSerialize["reason"] = o.Reason.Get()
-	}
-	if !IsNil(o.MetaKey) {
-		toSerialize["meta_key"] = o.MetaKey
 	}
 	if !IsNil(o.CreatedBySystem) {
 		toSerialize["created_by_system"] = o.CreatedBySystem
@@ -1016,23 +858,12 @@ func (o FileVersion) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.HasText) {
 		toSerialize["has_text"] = o.HasText
 	}
-	if !IsNil(o.NormalizationRequired) {
-		toSerialize["normalization_required"] = o.NormalizationRequired
-	}
-	if !IsNil(o.MetaReady) {
-		toSerialize["meta_ready"] = o.MetaReady
-	}
-	if !IsNil(o.VersionNumber) {
-		toSerialize["version_number"] = o.VersionNumber
-	}
+	toSerialize["version_number"] = o.VersionNumber
 	if !IsNil(o.ByteSize) {
 		toSerialize["byte_size"] = o.ByteSize
 	}
 	if !IsNil(o.CreatedAt) {
 		toSerialize["created_at"] = o.CreatedAt
-	}
-	if !IsNil(o.MetaCreatedAt) {
-		toSerialize["meta_created_at"] = o.MetaCreatedAt
 	}
 	if !IsNil(o.CreatedBy) {
 		toSerialize["created_by"] = o.CreatedBy
@@ -1073,6 +904,29 @@ func (o FileVersion) ToMap() (map[string]interface{}, error) {
 }
 
 func (o *FileVersion) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"id",
+		"file_id",
+		"version_number",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
 	varFileVersion := _FileVersion{}
 
 	err = json.Unmarshal(data, &varFileVersion)
@@ -1092,17 +946,13 @@ func (o *FileVersion) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "mime_type")
 		delete(additionalProperties, "sha256")
 		delete(additionalProperties, "reason")
-		delete(additionalProperties, "meta_key")
 		delete(additionalProperties, "created_by_system")
 		delete(additionalProperties, "deleted")
 		delete(additionalProperties, "ready")
 		delete(additionalProperties, "has_text")
-		delete(additionalProperties, "normalization_required")
-		delete(additionalProperties, "meta_ready")
 		delete(additionalProperties, "version_number")
 		delete(additionalProperties, "byte_size")
 		delete(additionalProperties, "created_at")
-		delete(additionalProperties, "meta_created_at")
 		delete(additionalProperties, "created_by")
 		delete(additionalProperties, "updated_by")
 		delete(additionalProperties, "created_by_agent")

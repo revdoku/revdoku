@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -20,7 +20,7 @@ var _ MappedNullable = &GetEmailWebhook200ResponseData{}
 
 // GetEmailWebhook200ResponseData struct for GetEmailWebhook200ResponseData
 type GetEmailWebhook200ResponseData struct {
-	Webhook NullableGetEmailWebhook200ResponseDataWebhook `json:"webhook"`
+	Webhook NullableWebhook `json:"webhook"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -30,7 +30,7 @@ type _GetEmailWebhook200ResponseData GetEmailWebhook200ResponseData
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGetEmailWebhook200ResponseData(webhook NullableGetEmailWebhook200ResponseDataWebhook) *GetEmailWebhook200ResponseData {
+func NewGetEmailWebhook200ResponseData(webhook NullableWebhook) *GetEmailWebhook200ResponseData {
 	this := GetEmailWebhook200ResponseData{}
 	this.Webhook = webhook
 	return &this
@@ -45,10 +45,10 @@ func NewGetEmailWebhook200ResponseDataWithDefaults() *GetEmailWebhook200Response
 }
 
 // GetWebhook returns the Webhook field value
-// If the value is explicit nil, the zero value for GetEmailWebhook200ResponseDataWebhook will be returned
-func (o *GetEmailWebhook200ResponseData) GetWebhook() GetEmailWebhook200ResponseDataWebhook {
+// If the value is explicit nil, the zero value for Webhook will be returned
+func (o *GetEmailWebhook200ResponseData) GetWebhook() Webhook {
 	if o == nil || o.Webhook.Get() == nil {
-		var ret GetEmailWebhook200ResponseDataWebhook
+		var ret Webhook
 		return ret
 	}
 
@@ -58,7 +58,7 @@ func (o *GetEmailWebhook200ResponseData) GetWebhook() GetEmailWebhook200Response
 // GetWebhookOk returns a tuple with the Webhook field value
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *GetEmailWebhook200ResponseData) GetWebhookOk() (*GetEmailWebhook200ResponseDataWebhook, bool) {
+func (o *GetEmailWebhook200ResponseData) GetWebhookOk() (*Webhook, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -66,7 +66,7 @@ func (o *GetEmailWebhook200ResponseData) GetWebhookOk() (*GetEmailWebhook200Resp
 }
 
 // SetWebhook sets field value
-func (o *GetEmailWebhook200ResponseData) SetWebhook(v GetEmailWebhook200ResponseDataWebhook) {
+func (o *GetEmailWebhook200ResponseData) SetWebhook(v Webhook) {
 	o.Webhook.Set(&v)
 }
 

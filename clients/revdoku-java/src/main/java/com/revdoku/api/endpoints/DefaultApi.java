@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -18,44 +18,67 @@ import com.revdoku.api.ApiResponse;
 import com.revdoku.api.Configuration;
 import com.revdoku.api.Pair;
 
+import com.revdoku.api.model.ActionRequest;
+import com.revdoku.api.model.AddUploadSessionFilesRequest;
 import com.revdoku.api.model.ApiError;
-import com.revdoku.api.model.CreateAccountEmailDomainRequest;
+import com.revdoku.api.model.AppendText200Response;
+import com.revdoku.api.model.AppendTextRequest;
+import com.revdoku.api.model.ChangeMailboxAddressRequest;
+import com.revdoku.api.model.CheckEmailDomain200Response;
+import com.revdoku.api.model.CreateBrowserLink201Response;
+import com.revdoku.api.model.CreateBrowserLinkRequest;
 import com.revdoku.api.model.CreateClientAccount201Response;
 import com.revdoku.api.model.CreateClientAccountRequest;
+import com.revdoku.api.model.CreateEmailAliasRequest;
+import com.revdoku.api.model.CreateEmailDomain201Response;
+import com.revdoku.api.model.CreateEmailDomainRequest;
 import com.revdoku.api.model.CreateMailbox201Response;
-import com.revdoku.api.model.CreateMailboxEmailAliasRequest;
 import com.revdoku.api.model.CreateMailboxRequest;
-import com.revdoku.api.model.EmailDomainCheckResponse;
-import com.revdoku.api.model.EmailDomainListResponse;
-import com.revdoku.api.model.EmailDomainResponse;
-import java.io.File;
-import com.revdoku.api.model.GetAccount200Response;
+import com.revdoku.api.model.CreateUploadSession201Response;
+import com.revdoku.api.model.CreateUploadSessionRequest;
+import com.revdoku.api.model.DeleteEmailDomain200Response;
+import com.revdoku.api.model.DeleteEmailDomainRequest;
+import com.revdoku.api.model.DeleteMailboxRequest;
+import com.revdoku.api.model.ExchangeConnectionGrantRequest;
+import com.revdoku.api.model.FinalizeUploadSessionRequest;
 import com.revdoku.api.model.GetAccountLimits200Response;
 import com.revdoku.api.model.GetEmail200Response;
-import com.revdoku.api.model.GetEmailOriginalDownloadUrl200Response;
+import com.revdoku.api.model.GetEmailOriginalDownload200Response;
 import com.revdoku.api.model.GetEmailSubscription200Response;
 import com.revdoku.api.model.GetEmailWebhook200Response;
+import com.revdoku.api.model.GetFileByPath200Response;
+import com.revdoku.api.model.GetFileDownload200Response;
 import com.revdoku.api.model.GetMailboxEmailSettings200Response;
-import com.revdoku.api.model.GetRevdokuStatus200Response;
+import com.revdoku.api.model.GetStatus200Response;
 import com.revdoku.api.model.ListAccounts200Response;
+import com.revdoku.api.model.ListEmailDomains200Response;
 import com.revdoku.api.model.ListEmails200Response;
-import com.revdoku.api.model.ListMailboxFiles200Response;
+import com.revdoku.api.model.ListFileVersions200Response;
+import com.revdoku.api.model.ListFiles200Response;
 import com.revdoku.api.model.ListMailboxes200Response;
-import com.revdoku.api.model.MailboxFileResponse;
+import com.revdoku.api.model.MoveFileRequest;
 import java.time.OffsetDateTime;
+import com.revdoku.api.model.PrepareFileUpload201Response;
 import com.revdoku.api.model.PrepareFileUploadRequest;
-import com.revdoku.api.model.PreparedFileUploadResponse;
-import com.revdoku.api.model.RemoveAccountEmailDomainRequest;
-import com.revdoku.api.model.RotateMailboxEmailAddressRequest;
+import com.revdoku.api.model.RenameFile200Response;
+import com.revdoku.api.model.RenameFileRequest;
+import com.revdoku.api.model.RequestSignInCode200Response;
+import com.revdoku.api.model.RequestSignInCodeRequest;
+import com.revdoku.api.model.RestoreFileVersion201Response;
+import com.revdoku.api.model.SaveUploadSessionBatchRequest;
+import com.revdoku.api.model.SaveUploadedFile201Response;
 import com.revdoku.api.model.SaveUploadedFileRequest;
-import com.revdoku.api.model.SavedFileResponse;
+import com.revdoku.api.model.SendEmail202Response;
+import com.revdoku.api.model.SendEmailRequest;
 import com.revdoku.api.model.SetEmailWebhook200Response;
 import com.revdoku.api.model.SetEmailWebhookRequest;
-import com.revdoku.api.model.UpdateEmail200Response;
+import com.revdoku.api.model.UpdateEmailAllowlist200Response;
+import com.revdoku.api.model.UpdateEmailAllowlistRequest;
 import com.revdoku.api.model.UpdateEmailRequest;
-import com.revdoku.api.model.UpdateMailboxEmailAllowlist200Response;
-import com.revdoku.api.model.UpdateMailboxEmailAllowlistRequest;
-import com.revdoku.api.model.VerifyAccountEmailDomainRequest;
+import com.revdoku.api.model.UpdateMailboxRequest;
+import com.revdoku.api.model.VerifyEmailDomainRequest;
+import com.revdoku.api.model.VerifySignInCode201Response;
+import com.revdoku.api.model.VerifySignInCodeRequest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -200,50 +223,58 @@ public class DefaultApi {
   }
 
   /**
-   * Check a domain hostname and existing DNS routing
-   * Requires full-account owner/administrator access. Checks the exact hostname for conflicting MX or CNAME records without creating a claim or changing DNS. If the root already receives email elsewhere, use an unused subdomain such as mailbox.yourdomain.com. Cookie-authenticated requests require CSRF.
-   * @param createAccountEmailDomainRequest  (required)
-   * @return EmailDomainCheckResponse
+   * Get storage targets for a batch
+   * Returns upload.url and upload.headers for each file that needs bytes. Repeating a path returns a fresh target, for example after a failed PUT. Files with identical content are skipped.
+   * @param mailboxId  (required)
+   * @param sessionId mailbox_upload_session.id from the create response. (required)
+   * @param addUploadSessionFilesRequest  (required)
+   * @return CreateUploadSession201Response
    * @throws ApiException if fails to make API call
    */
-  public EmailDomainCheckResponse checkEmailHostname(@javax.annotation.Nonnull CreateAccountEmailDomainRequest createAccountEmailDomainRequest) throws ApiException {
-    return checkEmailHostname(createAccountEmailDomainRequest, null);
+  public CreateUploadSession201Response addUploadSessionFiles(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String sessionId, @javax.annotation.Nonnull AddUploadSessionFilesRequest addUploadSessionFilesRequest) throws ApiException {
+    return addUploadSessionFiles(mailboxId, sessionId, addUploadSessionFilesRequest, null);
   }
 
   /**
-   * Check a domain hostname and existing DNS routing
-   * Requires full-account owner/administrator access. Checks the exact hostname for conflicting MX or CNAME records without creating a claim or changing DNS. If the root already receives email elsewhere, use an unused subdomain such as mailbox.yourdomain.com. Cookie-authenticated requests require CSRF.
-   * @param createAccountEmailDomainRequest  (required)
+   * Get storage targets for a batch
+   * Returns upload.url and upload.headers for each file that needs bytes. Repeating a path returns a fresh target, for example after a failed PUT. Files with identical content are skipped.
+   * @param mailboxId  (required)
+   * @param sessionId mailbox_upload_session.id from the create response. (required)
+   * @param addUploadSessionFilesRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return EmailDomainCheckResponse
+   * @return CreateUploadSession201Response
    * @throws ApiException if fails to make API call
    */
-  public EmailDomainCheckResponse checkEmailHostname(@javax.annotation.Nonnull CreateAccountEmailDomainRequest createAccountEmailDomainRequest, Map<String, String> headers) throws ApiException {
-    ApiResponse<EmailDomainCheckResponse> localVarResponse = checkEmailHostnameWithHttpInfo(createAccountEmailDomainRequest, headers);
+  public CreateUploadSession201Response addUploadSessionFiles(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String sessionId, @javax.annotation.Nonnull AddUploadSessionFilesRequest addUploadSessionFilesRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<CreateUploadSession201Response> localVarResponse = addUploadSessionFilesWithHttpInfo(mailboxId, sessionId, addUploadSessionFilesRequest, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Check a domain hostname and existing DNS routing
-   * Requires full-account owner/administrator access. Checks the exact hostname for conflicting MX or CNAME records without creating a claim or changing DNS. If the root already receives email elsewhere, use an unused subdomain such as mailbox.yourdomain.com. Cookie-authenticated requests require CSRF.
-   * @param createAccountEmailDomainRequest  (required)
-   * @return ApiResponse&lt;EmailDomainCheckResponse&gt;
+   * Get storage targets for a batch
+   * Returns upload.url and upload.headers for each file that needs bytes. Repeating a path returns a fresh target, for example after a failed PUT. Files with identical content are skipped.
+   * @param mailboxId  (required)
+   * @param sessionId mailbox_upload_session.id from the create response. (required)
+   * @param addUploadSessionFilesRequest  (required)
+   * @return ApiResponse&lt;CreateUploadSession201Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<EmailDomainCheckResponse> checkEmailHostnameWithHttpInfo(@javax.annotation.Nonnull CreateAccountEmailDomainRequest createAccountEmailDomainRequest) throws ApiException {
-    return checkEmailHostnameWithHttpInfo(createAccountEmailDomainRequest, null);
+  public ApiResponse<CreateUploadSession201Response> addUploadSessionFilesWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String sessionId, @javax.annotation.Nonnull AddUploadSessionFilesRequest addUploadSessionFilesRequest) throws ApiException {
+    return addUploadSessionFilesWithHttpInfo(mailboxId, sessionId, addUploadSessionFilesRequest, null);
   }
 
   /**
-   * Check a domain hostname and existing DNS routing
-   * Requires full-account owner/administrator access. Checks the exact hostname for conflicting MX or CNAME records without creating a claim or changing DNS. If the root already receives email elsewhere, use an unused subdomain such as mailbox.yourdomain.com. Cookie-authenticated requests require CSRF.
-   * @param createAccountEmailDomainRequest  (required)
+   * Get storage targets for a batch
+   * Returns upload.url and upload.headers for each file that needs bytes. Repeating a path returns a fresh target, for example after a failed PUT. Files with identical content are skipped.
+   * @param mailboxId  (required)
+   * @param sessionId mailbox_upload_session.id from the create response. (required)
+   * @param addUploadSessionFilesRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;EmailDomainCheckResponse&gt;
+   * @return ApiResponse&lt;CreateUploadSession201Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<EmailDomainCheckResponse> checkEmailHostnameWithHttpInfo(@javax.annotation.Nonnull CreateAccountEmailDomainRequest createAccountEmailDomainRequest, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = checkEmailHostnameRequestBuilder(createAccountEmailDomainRequest, headers);
+  public ApiResponse<CreateUploadSession201Response> addUploadSessionFilesWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String sessionId, @javax.annotation.Nonnull AddUploadSessionFilesRequest addUploadSessionFilesRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = addUploadSessionFilesRequestBuilder(mailboxId, sessionId, addUploadSessionFilesRequest, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -254,11 +285,11 @@ public class DefaultApi {
       InputStream localVarResponseBody = null;
       try {
         if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("checkEmailHostname", localVarResponse);
+          throw getApiException("addUploadSessionFiles", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
         if (localVarResponseBody == null) {
-          return new ApiResponse<EmailDomainCheckResponse>(
+          return new ApiResponse<CreateUploadSession201Response>(
               localVarResponse.statusCode(),
               localVarResponse.headers().map(),
               null
@@ -268,10 +299,10 @@ public class DefaultApi {
         
         
         String responseBody = new String(localVarResponseBody.readAllBytes());
-        EmailDomainCheckResponse responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<EmailDomainCheckResponse>() {});
+        CreateUploadSession201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<CreateUploadSession201Response>() {});
         
 
-        return new ApiResponse<EmailDomainCheckResponse>(
+        return new ApiResponse<CreateUploadSession201Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
             responseValue
@@ -290,10 +321,539 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder checkEmailHostnameRequestBuilder(@javax.annotation.Nonnull CreateAccountEmailDomainRequest createAccountEmailDomainRequest, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'createAccountEmailDomainRequest' is set
-    if (createAccountEmailDomainRequest == null) {
-      throw new ApiException(400, "Missing the required parameter 'createAccountEmailDomainRequest' when calling checkEmailHostname");
+  private HttpRequest.Builder addUploadSessionFilesRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String sessionId, @javax.annotation.Nonnull AddUploadSessionFilesRequest addUploadSessionFilesRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling addUploadSessionFiles");
+    }
+    // verify the required parameter 'sessionId' is set
+    if (sessionId == null) {
+      throw new ApiException(400, "Missing the required parameter 'sessionId' when calling addUploadSessionFiles");
+    }
+    // verify the required parameter 'addUploadSessionFilesRequest' is set
+    if (addUploadSessionFilesRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'addUploadSessionFilesRequest' when calling addUploadSessionFiles");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/uploads"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()))
+        .replace("{session_id}", ApiClient.urlEncode(sessionId.toString()));
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(addUploadSessionFilesRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Append text to a file
+   * Appends UTF-8 text to an existing text file and creates a new version. A missing file returns MAILBOX_FILE_NOT_FOUND.
+   * @param mailboxId  (required)
+   * @param appendTextRequest  (required)
+   * @return AppendText200Response
+   * @throws ApiException if fails to make API call
+   */
+  public AppendText200Response appendText(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull AppendTextRequest appendTextRequest) throws ApiException {
+    return appendText(mailboxId, appendTextRequest, null);
+  }
+
+  /**
+   * Append text to a file
+   * Appends UTF-8 text to an existing text file and creates a new version. A missing file returns MAILBOX_FILE_NOT_FOUND.
+   * @param mailboxId  (required)
+   * @param appendTextRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return AppendText200Response
+   * @throws ApiException if fails to make API call
+   */
+  public AppendText200Response appendText(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull AppendTextRequest appendTextRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<AppendText200Response> localVarResponse = appendTextWithHttpInfo(mailboxId, appendTextRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Append text to a file
+   * Appends UTF-8 text to an existing text file and creates a new version. A missing file returns MAILBOX_FILE_NOT_FOUND.
+   * @param mailboxId  (required)
+   * @param appendTextRequest  (required)
+   * @return ApiResponse&lt;AppendText200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<AppendText200Response> appendTextWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull AppendTextRequest appendTextRequest) throws ApiException {
+    return appendTextWithHttpInfo(mailboxId, appendTextRequest, null);
+  }
+
+  /**
+   * Append text to a file
+   * Appends UTF-8 text to an existing text file and creates a new version. A missing file returns MAILBOX_FILE_NOT_FOUND.
+   * @param mailboxId  (required)
+   * @param appendTextRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;AppendText200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<AppendText200Response> appendTextWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull AppendTextRequest appendTextRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = appendTextRequestBuilder(mailboxId, appendTextRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("appendText", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<AppendText200Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        AppendText200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<AppendText200Response>() {});
+        
+
+        return new ApiResponse<AppendText200Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder appendTextRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull AppendTextRequest appendTextRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling appendText");
+    }
+    // verify the required parameter 'appendTextRequest' is set
+    if (appendTextRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'appendTextRequest' when calling appendText");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/files/append_text"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()));
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(appendTextRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Archive a mailbox
+   * Archived mailboxes keep their files and emails and become read-only.
+   * @param mailboxId  (required)
+   * @param actionRequest  (required)
+   * @return CreateMailbox201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateMailbox201Response archiveMailbox(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull ActionRequest actionRequest) throws ApiException {
+    return archiveMailbox(mailboxId, actionRequest, null);
+  }
+
+  /**
+   * Archive a mailbox
+   * Archived mailboxes keep their files and emails and become read-only.
+   * @param mailboxId  (required)
+   * @param actionRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return CreateMailbox201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateMailbox201Response archiveMailbox(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull ActionRequest actionRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<CreateMailbox201Response> localVarResponse = archiveMailboxWithHttpInfo(mailboxId, actionRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Archive a mailbox
+   * Archived mailboxes keep their files and emails and become read-only.
+   * @param mailboxId  (required)
+   * @param actionRequest  (required)
+   * @return ApiResponse&lt;CreateMailbox201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CreateMailbox201Response> archiveMailboxWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull ActionRequest actionRequest) throws ApiException {
+    return archiveMailboxWithHttpInfo(mailboxId, actionRequest, null);
+  }
+
+  /**
+   * Archive a mailbox
+   * Archived mailboxes keep their files and emails and become read-only.
+   * @param mailboxId  (required)
+   * @param actionRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;CreateMailbox201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CreateMailbox201Response> archiveMailboxWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull ActionRequest actionRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = archiveMailboxRequestBuilder(mailboxId, actionRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("archiveMailbox", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<CreateMailbox201Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        CreateMailbox201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<CreateMailbox201Response>() {});
+        
+
+        return new ApiResponse<CreateMailbox201Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder archiveMailboxRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull ActionRequest actionRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling archiveMailbox");
+    }
+    // verify the required parameter 'actionRequest' is set
+    if (actionRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'actionRequest' when calling archiveMailbox");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/archive"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()));
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(actionRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Change the primary address
+   * Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. The old address stops receiving unless keep_old_as_alias is true.
+   * @param mailboxId  (required)
+   * @param changeMailboxAddressRequest  (required)
+   * @return GetMailboxEmailSettings200Response
+   * @throws ApiException if fails to make API call
+   */
+  public GetMailboxEmailSettings200Response changeMailboxAddress(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull ChangeMailboxAddressRequest changeMailboxAddressRequest) throws ApiException {
+    return changeMailboxAddress(mailboxId, changeMailboxAddressRequest, null);
+  }
+
+  /**
+   * Change the primary address
+   * Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. The old address stops receiving unless keep_old_as_alias is true.
+   * @param mailboxId  (required)
+   * @param changeMailboxAddressRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return GetMailboxEmailSettings200Response
+   * @throws ApiException if fails to make API call
+   */
+  public GetMailboxEmailSettings200Response changeMailboxAddress(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull ChangeMailboxAddressRequest changeMailboxAddressRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<GetMailboxEmailSettings200Response> localVarResponse = changeMailboxAddressWithHttpInfo(mailboxId, changeMailboxAddressRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Change the primary address
+   * Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. The old address stops receiving unless keep_old_as_alias is true.
+   * @param mailboxId  (required)
+   * @param changeMailboxAddressRequest  (required)
+   * @return ApiResponse&lt;GetMailboxEmailSettings200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<GetMailboxEmailSettings200Response> changeMailboxAddressWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull ChangeMailboxAddressRequest changeMailboxAddressRequest) throws ApiException {
+    return changeMailboxAddressWithHttpInfo(mailboxId, changeMailboxAddressRequest, null);
+  }
+
+  /**
+   * Change the primary address
+   * Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. The old address stops receiving unless keep_old_as_alias is true.
+   * @param mailboxId  (required)
+   * @param changeMailboxAddressRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;GetMailboxEmailSettings200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<GetMailboxEmailSettings200Response> changeMailboxAddressWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull ChangeMailboxAddressRequest changeMailboxAddressRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = changeMailboxAddressRequestBuilder(mailboxId, changeMailboxAddressRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("changeMailboxAddress", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<GetMailboxEmailSettings200Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        GetMailboxEmailSettings200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<GetMailboxEmailSettings200Response>() {});
+        
+
+        return new ApiResponse<GetMailboxEmailSettings200Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder changeMailboxAddressRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull ChangeMailboxAddressRequest changeMailboxAddressRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling changeMailboxAddress");
+    }
+    // verify the required parameter 'changeMailboxAddressRequest' is set
+    if (changeMailboxAddressRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'changeMailboxAddressRequest' when calling changeMailboxAddress");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/email/rotate"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()));
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(changeMailboxAddressRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Check a hostname for conflicting DNS
+   * Makes no claim and changes no DNS. If the root domain already receives email, use an unused subdomain such as inbox.example.com.
+   * @param createEmailDomainRequest  (required)
+   * @return CheckEmailDomain200Response
+   * @throws ApiException if fails to make API call
+   */
+  public CheckEmailDomain200Response checkEmailDomain(@javax.annotation.Nonnull CreateEmailDomainRequest createEmailDomainRequest) throws ApiException {
+    return checkEmailDomain(createEmailDomainRequest, null);
+  }
+
+  /**
+   * Check a hostname for conflicting DNS
+   * Makes no claim and changes no DNS. If the root domain already receives email, use an unused subdomain such as inbox.example.com.
+   * @param createEmailDomainRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return CheckEmailDomain200Response
+   * @throws ApiException if fails to make API call
+   */
+  public CheckEmailDomain200Response checkEmailDomain(@javax.annotation.Nonnull CreateEmailDomainRequest createEmailDomainRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<CheckEmailDomain200Response> localVarResponse = checkEmailDomainWithHttpInfo(createEmailDomainRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Check a hostname for conflicting DNS
+   * Makes no claim and changes no DNS. If the root domain already receives email, use an unused subdomain such as inbox.example.com.
+   * @param createEmailDomainRequest  (required)
+   * @return ApiResponse&lt;CheckEmailDomain200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CheckEmailDomain200Response> checkEmailDomainWithHttpInfo(@javax.annotation.Nonnull CreateEmailDomainRequest createEmailDomainRequest) throws ApiException {
+    return checkEmailDomainWithHttpInfo(createEmailDomainRequest, null);
+  }
+
+  /**
+   * Check a hostname for conflicting DNS
+   * Makes no claim and changes no DNS. If the root domain already receives email, use an unused subdomain such as inbox.example.com.
+   * @param createEmailDomainRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;CheckEmailDomain200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CheckEmailDomain200Response> checkEmailDomainWithHttpInfo(@javax.annotation.Nonnull CreateEmailDomainRequest createEmailDomainRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = checkEmailDomainRequestBuilder(createEmailDomainRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("checkEmailDomain", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<CheckEmailDomain200Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        CheckEmailDomain200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<CheckEmailDomain200Response>() {});
+        
+
+        return new ApiResponse<CheckEmailDomain200Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder checkEmailDomainRequestBuilder(@javax.annotation.Nonnull CreateEmailDomainRequest createEmailDomainRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'createEmailDomainRequest' is set
+    if (createEmailDomainRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'createEmailDomainRequest' when calling checkEmailDomain");
     }
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
@@ -306,7 +866,7 @@ public class DefaultApi {
     localVarRequestBuilder.header("Accept", "application/json");
 
     try {
-      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(createAccountEmailDomainRequest);
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(createEmailDomainRequest);
       localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
     } catch (IOException e) {
       throw new ApiException(e);
@@ -323,50 +883,58 @@ public class DefaultApi {
   }
 
   /**
-   * Claim an exact email domain
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param createAccountEmailDomainRequest  (required)
-   * @return EmailDomainListResponse
+   * Copy a file
+   * Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param moveFileRequest  (required)
+   * @return RenameFile200Response
    * @throws ApiException if fails to make API call
    */
-  public EmailDomainListResponse createAccountEmailDomain(@javax.annotation.Nonnull CreateAccountEmailDomainRequest createAccountEmailDomainRequest) throws ApiException {
-    return createAccountEmailDomain(createAccountEmailDomainRequest, null);
+  public RenameFile200Response copyFile(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull MoveFileRequest moveFileRequest) throws ApiException {
+    return copyFile(mailboxId, fileId, moveFileRequest, null);
   }
 
   /**
-   * Claim an exact email domain
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param createAccountEmailDomainRequest  (required)
+   * Copy a file
+   * Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param moveFileRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return EmailDomainListResponse
+   * @return RenameFile200Response
    * @throws ApiException if fails to make API call
    */
-  public EmailDomainListResponse createAccountEmailDomain(@javax.annotation.Nonnull CreateAccountEmailDomainRequest createAccountEmailDomainRequest, Map<String, String> headers) throws ApiException {
-    ApiResponse<EmailDomainListResponse> localVarResponse = createAccountEmailDomainWithHttpInfo(createAccountEmailDomainRequest, headers);
+  public RenameFile200Response copyFile(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull MoveFileRequest moveFileRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<RenameFile200Response> localVarResponse = copyFileWithHttpInfo(mailboxId, fileId, moveFileRequest, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Claim an exact email domain
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param createAccountEmailDomainRequest  (required)
-   * @return ApiResponse&lt;EmailDomainListResponse&gt;
+   * Copy a file
+   * Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param moveFileRequest  (required)
+   * @return ApiResponse&lt;RenameFile200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<EmailDomainListResponse> createAccountEmailDomainWithHttpInfo(@javax.annotation.Nonnull CreateAccountEmailDomainRequest createAccountEmailDomainRequest) throws ApiException {
-    return createAccountEmailDomainWithHttpInfo(createAccountEmailDomainRequest, null);
+  public ApiResponse<RenameFile200Response> copyFileWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull MoveFileRequest moveFileRequest) throws ApiException {
+    return copyFileWithHttpInfo(mailboxId, fileId, moveFileRequest, null);
   }
 
   /**
-   * Claim an exact email domain
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param createAccountEmailDomainRequest  (required)
+   * Copy a file
+   * Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param moveFileRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;EmailDomainListResponse&gt;
+   * @return ApiResponse&lt;RenameFile200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<EmailDomainListResponse> createAccountEmailDomainWithHttpInfo(@javax.annotation.Nonnull CreateAccountEmailDomainRequest createAccountEmailDomainRequest, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = createAccountEmailDomainRequestBuilder(createAccountEmailDomainRequest, headers);
+  public ApiResponse<RenameFile200Response> copyFileWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull MoveFileRequest moveFileRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = copyFileRequestBuilder(mailboxId, fileId, moveFileRequest, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -377,11 +945,11 @@ public class DefaultApi {
       InputStream localVarResponseBody = null;
       try {
         if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("createAccountEmailDomain", localVarResponse);
+          throw getApiException("copyFile", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
         if (localVarResponseBody == null) {
-          return new ApiResponse<EmailDomainListResponse>(
+          return new ApiResponse<RenameFile200Response>(
               localVarResponse.statusCode(),
               localVarResponse.headers().map(),
               null
@@ -391,10 +959,10 @@ public class DefaultApi {
         
         
         String responseBody = new String(localVarResponseBody.readAllBytes());
-        EmailDomainListResponse responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<EmailDomainListResponse>() {});
+        RenameFile200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<RenameFile200Response>() {});
         
 
-        return new ApiResponse<EmailDomainListResponse>(
+        return new ApiResponse<RenameFile200Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
             responseValue
@@ -413,15 +981,25 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder createAccountEmailDomainRequestBuilder(@javax.annotation.Nonnull CreateAccountEmailDomainRequest createAccountEmailDomainRequest, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'createAccountEmailDomainRequest' is set
-    if (createAccountEmailDomainRequest == null) {
-      throw new ApiException(400, "Missing the required parameter 'createAccountEmailDomainRequest' when calling createAccountEmailDomain");
+  private HttpRequest.Builder copyFileRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull MoveFileRequest moveFileRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling copyFile");
+    }
+    // verify the required parameter 'fileId' is set
+    if (fileId == null) {
+      throw new ApiException(400, "Missing the required parameter 'fileId' when calling copyFile");
+    }
+    // verify the required parameter 'moveFileRequest' is set
+    if (moveFileRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'moveFileRequest' when calling copyFile");
     }
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
-    String localVarPath = "/v1/account/email_domains";
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/files/{file_id}/copy"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()))
+        .replace("{file_id}", ApiClient.urlEncode(fileId.toString()));
 
     localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
 
@@ -429,7 +1007,7 @@ public class DefaultApi {
     localVarRequestBuilder.header("Accept", "application/json");
 
     try {
-      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(createAccountEmailDomainRequest);
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(moveFileRequest);
       localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
     } catch (IOException e) {
       throw new ApiException(e);
@@ -446,8 +1024,131 @@ public class DefaultApi {
   }
 
   /**
-   * Create a client account within an authorized agency
-   * 
+   * Create a dashboard link for the user
+   * Returns a dashboard URL for a path such as /mailboxes. The user signs in normally; the link grants no access.
+   * @param createBrowserLinkRequest  (required)
+   * @return CreateBrowserLink201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateBrowserLink201Response createBrowserLink(@javax.annotation.Nonnull CreateBrowserLinkRequest createBrowserLinkRequest) throws ApiException {
+    return createBrowserLink(createBrowserLinkRequest, null);
+  }
+
+  /**
+   * Create a dashboard link for the user
+   * Returns a dashboard URL for a path such as /mailboxes. The user signs in normally; the link grants no access.
+   * @param createBrowserLinkRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return CreateBrowserLink201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateBrowserLink201Response createBrowserLink(@javax.annotation.Nonnull CreateBrowserLinkRequest createBrowserLinkRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<CreateBrowserLink201Response> localVarResponse = createBrowserLinkWithHttpInfo(createBrowserLinkRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Create a dashboard link for the user
+   * Returns a dashboard URL for a path such as /mailboxes. The user signs in normally; the link grants no access.
+   * @param createBrowserLinkRequest  (required)
+   * @return ApiResponse&lt;CreateBrowserLink201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CreateBrowserLink201Response> createBrowserLinkWithHttpInfo(@javax.annotation.Nonnull CreateBrowserLinkRequest createBrowserLinkRequest) throws ApiException {
+    return createBrowserLinkWithHttpInfo(createBrowserLinkRequest, null);
+  }
+
+  /**
+   * Create a dashboard link for the user
+   * Returns a dashboard URL for a path such as /mailboxes. The user signs in normally; the link grants no access.
+   * @param createBrowserLinkRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;CreateBrowserLink201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CreateBrowserLink201Response> createBrowserLinkWithHttpInfo(@javax.annotation.Nonnull CreateBrowserLinkRequest createBrowserLinkRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = createBrowserLinkRequestBuilder(createBrowserLinkRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("createBrowserLink", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<CreateBrowserLink201Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        CreateBrowserLink201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<CreateBrowserLink201Response>() {});
+        
+
+        return new ApiResponse<CreateBrowserLink201Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder createBrowserLinkRequestBuilder(@javax.annotation.Nonnull CreateBrowserLinkRequest createBrowserLinkRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'createBrowserLinkRequest' is set
+    if (createBrowserLinkRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'createBrowserLinkRequest' when calling createBrowserLink");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/agent_auth/browser_login_link";
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(createBrowserLinkRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Create a client account
+   * Requires an agency owner credential with client-account access. The credential default does not change; send the new account_id on later requests.
    * @param createClientAccountRequest  (required)
    * @return CreateClientAccount201Response
    * @throws ApiException if fails to make API call
@@ -457,8 +1158,8 @@ public class DefaultApi {
   }
 
   /**
-   * Create a client account within an authorized agency
-   * 
+   * Create a client account
+   * Requires an agency owner credential with client-account access. The credential default does not change; send the new account_id on later requests.
    * @param createClientAccountRequest  (required)
    * @param headers Optional headers to include in the request
    * @return CreateClientAccount201Response
@@ -470,8 +1171,8 @@ public class DefaultApi {
   }
 
   /**
-   * Create a client account within an authorized agency
-   * 
+   * Create a client account
+   * Requires an agency owner credential with client-account access. The credential default does not change; send the new account_id on later requests.
    * @param createClientAccountRequest  (required)
    * @return ApiResponse&lt;CreateClientAccount201Response&gt;
    * @throws ApiException if fails to make API call
@@ -481,8 +1182,8 @@ public class DefaultApi {
   }
 
   /**
-   * Create a client account within an authorized agency
-   * 
+   * Create a client account
+   * Requires an agency owner credential with client-account access. The credential default does not change; send the new account_id on later requests.
    * @param createClientAccountRequest  (required)
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;CreateClientAccount201Response&gt;
@@ -569,8 +1270,263 @@ public class DefaultApi {
   }
 
   /**
-   * Create a mailbox with a ready receiving address
-   * Creates a mailbox with file storage and waits for receiving confirmation. On Free, email.username is a prefix with a permanent 12-character random suffix. An exact name requires a paid plan. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id. Creation quotas apply.
+   * Add an alias address
+   * Requires a paid plan and a full-account owner or administrator with mailbox-admin permission. The primary address stays unchanged.
+   * @param mailboxId  (required)
+   * @param createEmailAliasRequest  (required)
+   * @return GetMailboxEmailSettings200Response
+   * @throws ApiException if fails to make API call
+   */
+  public GetMailboxEmailSettings200Response createEmailAlias(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull CreateEmailAliasRequest createEmailAliasRequest) throws ApiException {
+    return createEmailAlias(mailboxId, createEmailAliasRequest, null);
+  }
+
+  /**
+   * Add an alias address
+   * Requires a paid plan and a full-account owner or administrator with mailbox-admin permission. The primary address stays unchanged.
+   * @param mailboxId  (required)
+   * @param createEmailAliasRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return GetMailboxEmailSettings200Response
+   * @throws ApiException if fails to make API call
+   */
+  public GetMailboxEmailSettings200Response createEmailAlias(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull CreateEmailAliasRequest createEmailAliasRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<GetMailboxEmailSettings200Response> localVarResponse = createEmailAliasWithHttpInfo(mailboxId, createEmailAliasRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Add an alias address
+   * Requires a paid plan and a full-account owner or administrator with mailbox-admin permission. The primary address stays unchanged.
+   * @param mailboxId  (required)
+   * @param createEmailAliasRequest  (required)
+   * @return ApiResponse&lt;GetMailboxEmailSettings200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<GetMailboxEmailSettings200Response> createEmailAliasWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull CreateEmailAliasRequest createEmailAliasRequest) throws ApiException {
+    return createEmailAliasWithHttpInfo(mailboxId, createEmailAliasRequest, null);
+  }
+
+  /**
+   * Add an alias address
+   * Requires a paid plan and a full-account owner or administrator with mailbox-admin permission. The primary address stays unchanged.
+   * @param mailboxId  (required)
+   * @param createEmailAliasRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;GetMailboxEmailSettings200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<GetMailboxEmailSettings200Response> createEmailAliasWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull CreateEmailAliasRequest createEmailAliasRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = createEmailAliasRequestBuilder(mailboxId, createEmailAliasRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("createEmailAlias", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<GetMailboxEmailSettings200Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        GetMailboxEmailSettings200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<GetMailboxEmailSettings200Response>() {});
+        
+
+        return new ApiResponse<GetMailboxEmailSettings200Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder createEmailAliasRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull CreateEmailAliasRequest createEmailAliasRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling createEmailAlias");
+    }
+    // verify the required parameter 'createEmailAliasRequest' is set
+    if (createEmailAliasRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'createEmailAliasRequest' when calling createEmailAlias");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/email/aliases"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()));
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(createEmailAliasRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Connect a custom email domain
+   * Claims an exact hostname and returns the DNS records to publish. Never change DNS without the domain owner&#39;s authorization.
+   * @param createEmailDomainRequest  (required)
+   * @return CreateEmailDomain201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateEmailDomain201Response createEmailDomain(@javax.annotation.Nonnull CreateEmailDomainRequest createEmailDomainRequest) throws ApiException {
+    return createEmailDomain(createEmailDomainRequest, null);
+  }
+
+  /**
+   * Connect a custom email domain
+   * Claims an exact hostname and returns the DNS records to publish. Never change DNS without the domain owner&#39;s authorization.
+   * @param createEmailDomainRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return CreateEmailDomain201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateEmailDomain201Response createEmailDomain(@javax.annotation.Nonnull CreateEmailDomainRequest createEmailDomainRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<CreateEmailDomain201Response> localVarResponse = createEmailDomainWithHttpInfo(createEmailDomainRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Connect a custom email domain
+   * Claims an exact hostname and returns the DNS records to publish. Never change DNS without the domain owner&#39;s authorization.
+   * @param createEmailDomainRequest  (required)
+   * @return ApiResponse&lt;CreateEmailDomain201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CreateEmailDomain201Response> createEmailDomainWithHttpInfo(@javax.annotation.Nonnull CreateEmailDomainRequest createEmailDomainRequest) throws ApiException {
+    return createEmailDomainWithHttpInfo(createEmailDomainRequest, null);
+  }
+
+  /**
+   * Connect a custom email domain
+   * Claims an exact hostname and returns the DNS records to publish. Never change DNS without the domain owner&#39;s authorization.
+   * @param createEmailDomainRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;CreateEmailDomain201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CreateEmailDomain201Response> createEmailDomainWithHttpInfo(@javax.annotation.Nonnull CreateEmailDomainRequest createEmailDomainRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = createEmailDomainRequestBuilder(createEmailDomainRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("createEmailDomain", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<CreateEmailDomain201Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        CreateEmailDomain201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<CreateEmailDomain201Response>() {});
+        
+
+        return new ApiResponse<CreateEmailDomain201Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder createEmailDomainRequestBuilder(@javax.annotation.Nonnull CreateEmailDomainRequest createEmailDomainRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'createEmailDomainRequest' is set
+    if (createEmailDomainRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'createEmailDomainRequest' when calling createEmailDomain");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/account/email_domains";
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(createEmailDomainRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Create a mailbox
+   * Waits until the address can receive email. On Free, email.username is a prefix with a permanent random suffix; an exact name requires a paid plan. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. Never retry a creation automatically.
    * @param createMailboxRequest  (required)
    * @return CreateMailbox201Response
    * @throws ApiException if fails to make API call
@@ -580,8 +1536,8 @@ public class DefaultApi {
   }
 
   /**
-   * Create a mailbox with a ready receiving address
-   * Creates a mailbox with file storage and waits for receiving confirmation. On Free, email.username is a prefix with a permanent 12-character random suffix. An exact name requires a paid plan. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id. Creation quotas apply.
+   * Create a mailbox
+   * Waits until the address can receive email. On Free, email.username is a prefix with a permanent random suffix; an exact name requires a paid plan. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. Never retry a creation automatically.
    * @param createMailboxRequest  (required)
    * @param headers Optional headers to include in the request
    * @return CreateMailbox201Response
@@ -593,8 +1549,8 @@ public class DefaultApi {
   }
 
   /**
-   * Create a mailbox with a ready receiving address
-   * Creates a mailbox with file storage and waits for receiving confirmation. On Free, email.username is a prefix with a permanent 12-character random suffix. An exact name requires a paid plan. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id. Creation quotas apply.
+   * Create a mailbox
+   * Waits until the address can receive email. On Free, email.username is a prefix with a permanent random suffix; an exact name requires a paid plan. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. Never retry a creation automatically.
    * @param createMailboxRequest  (required)
    * @return ApiResponse&lt;CreateMailbox201Response&gt;
    * @throws ApiException if fails to make API call
@@ -604,8 +1560,8 @@ public class DefaultApi {
   }
 
   /**
-   * Create a mailbox with a ready receiving address
-   * Creates a mailbox with file storage and waits for receiving confirmation. On Free, email.username is a prefix with a permanent 12-character random suffix. An exact name requires a paid plan. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id. Creation quotas apply.
+   * Create a mailbox
+   * Waits until the address can receive email. On Free, email.username is a prefix with a permanent random suffix; an exact name requires a paid plan. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. Never retry a creation automatically.
    * @param createMailboxRequest  (required)
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;CreateMailbox201Response&gt;
@@ -692,62 +1648,54 @@ public class DefaultApi {
   }
 
   /**
-   * Add an email alias to a mailbox
-   * Requires a paid plan, a full-account owner/administrator with mailbox-admin access and an available alias slot. Free returns EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param createMailboxEmailAliasRequest  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param reason  (optional)
-   * @return GetMailboxEmailSettings200Response
+   * Start a batch upload
+   * Starts an upload session for many files and returns storage targets for the first files. The session locks the mailbox for other writers; incoming email still arrives. Send files in batches with POST .../uploads, PUT the bytes to each upload.url, save each batch with POST .../finalize_batch, then call POST .../finalize. Unsaved uploads are discarded when the session expires.
+   * @param mailboxId  (required)
+   * @param createUploadSessionRequest  (required)
+   * @return CreateUploadSession201Response
    * @throws ApiException if fails to make API call
    */
-  public GetMailboxEmailSettings200Response createMailboxEmailAlias(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull CreateMailboxEmailAliasRequest createMailboxEmailAliasRequest, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return createMailboxEmailAlias(id, createMailboxEmailAliasRequest, accountId, reason, null);
+  public CreateUploadSession201Response createUploadSession(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull CreateUploadSessionRequest createUploadSessionRequest) throws ApiException {
+    return createUploadSession(mailboxId, createUploadSessionRequest, null);
   }
 
   /**
-   * Add an email alias to a mailbox
-   * Requires a paid plan, a full-account owner/administrator with mailbox-admin access and an available alias slot. Free returns EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param createMailboxEmailAliasRequest  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param reason  (optional)
+   * Start a batch upload
+   * Starts an upload session for many files and returns storage targets for the first files. The session locks the mailbox for other writers; incoming email still arrives. Send files in batches with POST .../uploads, PUT the bytes to each upload.url, save each batch with POST .../finalize_batch, then call POST .../finalize. Unsaved uploads are discarded when the session expires.
+   * @param mailboxId  (required)
+   * @param createUploadSessionRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return GetMailboxEmailSettings200Response
+   * @return CreateUploadSession201Response
    * @throws ApiException if fails to make API call
    */
-  public GetMailboxEmailSettings200Response createMailboxEmailAlias(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull CreateMailboxEmailAliasRequest createMailboxEmailAliasRequest, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    ApiResponse<GetMailboxEmailSettings200Response> localVarResponse = createMailboxEmailAliasWithHttpInfo(id, createMailboxEmailAliasRequest, accountId, reason, headers);
+  public CreateUploadSession201Response createUploadSession(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull CreateUploadSessionRequest createUploadSessionRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<CreateUploadSession201Response> localVarResponse = createUploadSessionWithHttpInfo(mailboxId, createUploadSessionRequest, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Add an email alias to a mailbox
-   * Requires a paid plan, a full-account owner/administrator with mailbox-admin access and an available alias slot. Free returns EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param createMailboxEmailAliasRequest  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param reason  (optional)
-   * @return ApiResponse&lt;GetMailboxEmailSettings200Response&gt;
+   * Start a batch upload
+   * Starts an upload session for many files and returns storage targets for the first files. The session locks the mailbox for other writers; incoming email still arrives. Send files in batches with POST .../uploads, PUT the bytes to each upload.url, save each batch with POST .../finalize_batch, then call POST .../finalize. Unsaved uploads are discarded when the session expires.
+   * @param mailboxId  (required)
+   * @param createUploadSessionRequest  (required)
+   * @return ApiResponse&lt;CreateUploadSession201Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<GetMailboxEmailSettings200Response> createMailboxEmailAliasWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull CreateMailboxEmailAliasRequest createMailboxEmailAliasRequest, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return createMailboxEmailAliasWithHttpInfo(id, createMailboxEmailAliasRequest, accountId, reason, null);
+  public ApiResponse<CreateUploadSession201Response> createUploadSessionWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull CreateUploadSessionRequest createUploadSessionRequest) throws ApiException {
+    return createUploadSessionWithHttpInfo(mailboxId, createUploadSessionRequest, null);
   }
 
   /**
-   * Add an email alias to a mailbox
-   * Requires a paid plan, a full-account owner/administrator with mailbox-admin access and an available alias slot. Free returns EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param createMailboxEmailAliasRequest  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param reason  (optional)
+   * Start a batch upload
+   * Starts an upload session for many files and returns storage targets for the first files. The session locks the mailbox for other writers; incoming email still arrives. Send files in batches with POST .../uploads, PUT the bytes to each upload.url, save each batch with POST .../finalize_batch, then call POST .../finalize. Unsaved uploads are discarded when the session expires.
+   * @param mailboxId  (required)
+   * @param createUploadSessionRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;GetMailboxEmailSettings200Response&gt;
+   * @return ApiResponse&lt;CreateUploadSession201Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<GetMailboxEmailSettings200Response> createMailboxEmailAliasWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull CreateMailboxEmailAliasRequest createMailboxEmailAliasRequest, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = createMailboxEmailAliasRequestBuilder(id, createMailboxEmailAliasRequest, accountId, reason, headers);
+  public ApiResponse<CreateUploadSession201Response> createUploadSessionWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull CreateUploadSessionRequest createUploadSessionRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = createUploadSessionRequestBuilder(mailboxId, createUploadSessionRequest, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -758,11 +1706,11 @@ public class DefaultApi {
       InputStream localVarResponseBody = null;
       try {
         if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("createMailboxEmailAlias", localVarResponse);
+          throw getApiException("createUploadSession", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
         if (localVarResponseBody == null) {
-          return new ApiResponse<GetMailboxEmailSettings200Response>(
+          return new ApiResponse<CreateUploadSession201Response>(
               localVarResponse.statusCode(),
               localVarResponse.headers().map(),
               null
@@ -772,10 +1720,10 @@ public class DefaultApi {
         
         
         String responseBody = new String(localVarResponseBody.readAllBytes());
-        GetMailboxEmailSettings200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<GetMailboxEmailSettings200Response>() {});
+        CreateUploadSession201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<CreateUploadSession201Response>() {});
         
 
-        return new ApiResponse<GetMailboxEmailSettings200Response>(
+        return new ApiResponse<CreateUploadSession201Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
             responseValue
@@ -794,45 +1742,28 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder createMailboxEmailAliasRequestBuilder(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull CreateMailboxEmailAliasRequest createMailboxEmailAliasRequest, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'id' is set
-    if (id == null) {
-      throw new ApiException(400, "Missing the required parameter 'id' when calling createMailboxEmailAlias");
+  private HttpRequest.Builder createUploadSessionRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull CreateUploadSessionRequest createUploadSessionRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling createUploadSession");
     }
-    // verify the required parameter 'createMailboxEmailAliasRequest' is set
-    if (createMailboxEmailAliasRequest == null) {
-      throw new ApiException(400, "Missing the required parameter 'createMailboxEmailAliasRequest' when calling createMailboxEmailAlias");
+    // verify the required parameter 'createUploadSessionRequest' is set
+    if (createUploadSessionRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'createUploadSessionRequest' when calling createUploadSession");
     }
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
-    String localVarPath = "/v1/mailboxes/{id}/email/aliases"
-        .replace("{id}", ApiClient.urlEncode(id.toString()));
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/upload_sessions"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()));
 
-    List<Pair> localVarQueryParams = new ArrayList<>();
-    StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
-    String localVarQueryParameterBaseName;
-    localVarQueryParameterBaseName = "account_id";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
-    localVarQueryParameterBaseName = "reason";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
-
-    if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
-      StringJoiner queryJoiner = new StringJoiner("&");
-      localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
-      if (localVarQueryStringJoiner.length() != 0) {
-        queryJoiner.add(localVarQueryStringJoiner.toString());
-      }
-      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
-    } else {
-      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-    }
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
 
     localVarRequestBuilder.header("Content-Type", "application/json");
     localVarRequestBuilder.header("Accept", "application/json");
 
     try {
-      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(createMailboxEmailAliasRequest);
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(createUploadSessionRequest);
       localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
     } catch (IOException e) {
       throw new ApiException(e);
@@ -849,58 +1780,61 @@ public class DefaultApi {
   }
 
   /**
-   * Delete one received email
-   * Requires mailbox-admin permission. Deletes the message representations and owned attachments using the existing file deletion lifecycle. Separately copied files are unaffected. No email trash or restore operation. A repeated delete returns 404.
+   * Delete an email
+   * Requires mailbox-admin permission. Deletes the stored message and its attachments. There is no trash.
    * @param mailboxId  (required)
    * @param emailId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
+   * @return DeleteEmailDomain200Response
    * @throws ApiException if fails to make API call
    */
-  public void deleteEmail(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    deleteEmail(mailboxId, emailId, accountId, reason, null);
+  public DeleteEmailDomain200Response deleteEmail(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return deleteEmail(mailboxId, emailId, accountId, reason, null);
   }
 
   /**
-   * Delete one received email
-   * Requires mailbox-admin permission. Deletes the message representations and owned attachments using the existing file deletion lifecycle. Separately copied files are unaffected. No email trash or restore operation. A repeated delete returns 404.
+   * Delete an email
+   * Requires mailbox-admin permission. Deletes the stored message and its attachments. There is no trash.
    * @param mailboxId  (required)
    * @param emailId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
    * @param headers Optional headers to include in the request
+   * @return DeleteEmailDomain200Response
    * @throws ApiException if fails to make API call
    */
-  public void deleteEmail(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    deleteEmailWithHttpInfo(mailboxId, emailId, accountId, reason, headers);
+  public DeleteEmailDomain200Response deleteEmail(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    ApiResponse<DeleteEmailDomain200Response> localVarResponse = deleteEmailWithHttpInfo(mailboxId, emailId, accountId, reason, headers);
+    return localVarResponse.getData();
   }
 
   /**
-   * Delete one received email
-   * Requires mailbox-admin permission. Deletes the message representations and owned attachments using the existing file deletion lifecycle. Separately copied files are unaffected. No email trash or restore operation. A repeated delete returns 404.
+   * Delete an email
+   * Requires mailbox-admin permission. Deletes the stored message and its attachments. There is no trash.
    * @param mailboxId  (required)
    * @param emailId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
-   * @return ApiResponse&lt;Void&gt;
+   * @return ApiResponse&lt;DeleteEmailDomain200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<Void> deleteEmailWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+  public ApiResponse<DeleteEmailDomain200Response> deleteEmailWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
     return deleteEmailWithHttpInfo(mailboxId, emailId, accountId, reason, null);
   }
 
   /**
-   * Delete one received email
-   * Requires mailbox-admin permission. Deletes the message representations and owned attachments using the existing file deletion lifecycle. Separately copied files are unaffected. No email trash or restore operation. A repeated delete returns 404.
+   * Delete an email
+   * Requires mailbox-admin permission. Deletes the stored message and its attachments. There is no trash.
    * @param mailboxId  (required)
    * @param emailId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;Void&gt;
+   * @return ApiResponse&lt;DeleteEmailDomain200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<Void> deleteEmailWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+  public ApiResponse<DeleteEmailDomain200Response> deleteEmailWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
     HttpRequest.Builder localVarRequestBuilder = deleteEmailRequestBuilder(mailboxId, emailId, accountId, reason, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
@@ -915,13 +1849,24 @@ public class DefaultApi {
           throw getApiException("deleteEmail", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
-        if (localVarResponseBody != null) {
-          localVarResponseBody.readAllBytes();
+        if (localVarResponseBody == null) {
+          return new ApiResponse<DeleteEmailDomain200Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
         }
-        return new ApiResponse<>(
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        DeleteEmailDomain200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<DeleteEmailDomain200Response>() {});
+        
+
+        return new ApiResponse<DeleteEmailDomain200Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
-            null
+            responseValue
         );
       } finally {
         if (localVarResponseBody != null) {
@@ -987,50 +1932,337 @@ public class DefaultApi {
   }
 
   /**
-   * Disable a mailbox webhook
-   * Requires mailbox admin permission. Cancels queued attempts; a request already in flight may finish.
+   * Remove an alias address
+   * Stops new and queued deliveries to the alias. Saved emails stay.
    * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param aliasId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @return DeleteEmailDomain200Response
    * @throws ApiException if fails to make API call
    */
-  public void deleteEmailWebhook(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId) throws ApiException {
-    deleteEmailWebhook(mailboxId, accountId, null);
+  public DeleteEmailDomain200Response deleteEmailAlias(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String aliasId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return deleteEmailAlias(mailboxId, aliasId, accountId, reason, null);
   }
 
   /**
-   * Disable a mailbox webhook
-   * Requires mailbox admin permission. Cancels queued attempts; a request already in flight may finish.
+   * Remove an alias address
+   * Stops new and queued deliveries to the alias. Saved emails stay.
    * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param aliasId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
    * @param headers Optional headers to include in the request
+   * @return DeleteEmailDomain200Response
    * @throws ApiException if fails to make API call
    */
-  public void deleteEmailWebhook(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, Map<String, String> headers) throws ApiException {
-    deleteEmailWebhookWithHttpInfo(mailboxId, accountId, headers);
+  public DeleteEmailDomain200Response deleteEmailAlias(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String aliasId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    ApiResponse<DeleteEmailDomain200Response> localVarResponse = deleteEmailAliasWithHttpInfo(mailboxId, aliasId, accountId, reason, headers);
+    return localVarResponse.getData();
   }
 
   /**
-   * Disable a mailbox webhook
-   * Requires mailbox admin permission. Cancels queued attempts; a request already in flight may finish.
+   * Remove an alias address
+   * Stops new and queued deliveries to the alias. Saved emails stay.
    * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @return ApiResponse&lt;Void&gt;
+   * @param aliasId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @return ApiResponse&lt;DeleteEmailDomain200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<Void> deleteEmailWebhookWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId) throws ApiException {
+  public ApiResponse<DeleteEmailDomain200Response> deleteEmailAliasWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String aliasId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return deleteEmailAliasWithHttpInfo(mailboxId, aliasId, accountId, reason, null);
+  }
+
+  /**
+   * Remove an alias address
+   * Stops new and queued deliveries to the alias. Saved emails stay.
+   * @param mailboxId  (required)
+   * @param aliasId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;DeleteEmailDomain200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<DeleteEmailDomain200Response> deleteEmailAliasWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String aliasId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = deleteEmailAliasRequestBuilder(mailboxId, aliasId, accountId, reason, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("deleteEmailAlias", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<DeleteEmailDomain200Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        DeleteEmailDomain200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<DeleteEmailDomain200Response>() {});
+        
+
+        return new ApiResponse<DeleteEmailDomain200Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder deleteEmailAliasRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String aliasId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling deleteEmailAlias");
+    }
+    // verify the required parameter 'aliasId' is set
+    if (aliasId == null) {
+      throw new ApiException(400, "Missing the required parameter 'aliasId' when calling deleteEmailAlias");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/email/aliases/{alias_id}"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()))
+        .replace("{alias_id}", ApiClient.urlEncode(aliasId.toString()));
+
+    List<Pair> localVarQueryParams = new ArrayList<>();
+    StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
+    String localVarQueryParameterBaseName;
+    localVarQueryParameterBaseName = "account_id";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
+    localVarQueryParameterBaseName = "reason";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
+
+    if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
+      StringJoiner queryJoiner = new StringJoiner("&");
+      localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
+      if (localVarQueryStringJoiner.length() != 0) {
+        queryJoiner.add(localVarQueryStringJoiner.toString());
+      }
+      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
+    } else {
+      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+    }
+
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    localVarRequestBuilder.method("DELETE", HttpRequest.BodyPublishers.noBody());
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Remove an unused custom email domain
+   * Send the domain hostname and confirm&#x3D;true. A domain that mailbox addresses still use returns EMAIL_DOMAIN_IN_USE.
+   * @param domainId  (required)
+   * @param deleteEmailDomainRequest  (required)
+   * @return DeleteEmailDomain200Response
+   * @throws ApiException if fails to make API call
+   */
+  public DeleteEmailDomain200Response deleteEmailDomain(@javax.annotation.Nonnull String domainId, @javax.annotation.Nonnull DeleteEmailDomainRequest deleteEmailDomainRequest) throws ApiException {
+    return deleteEmailDomain(domainId, deleteEmailDomainRequest, null);
+  }
+
+  /**
+   * Remove an unused custom email domain
+   * Send the domain hostname and confirm&#x3D;true. A domain that mailbox addresses still use returns EMAIL_DOMAIN_IN_USE.
+   * @param domainId  (required)
+   * @param deleteEmailDomainRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return DeleteEmailDomain200Response
+   * @throws ApiException if fails to make API call
+   */
+  public DeleteEmailDomain200Response deleteEmailDomain(@javax.annotation.Nonnull String domainId, @javax.annotation.Nonnull DeleteEmailDomainRequest deleteEmailDomainRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<DeleteEmailDomain200Response> localVarResponse = deleteEmailDomainWithHttpInfo(domainId, deleteEmailDomainRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Remove an unused custom email domain
+   * Send the domain hostname and confirm&#x3D;true. A domain that mailbox addresses still use returns EMAIL_DOMAIN_IN_USE.
+   * @param domainId  (required)
+   * @param deleteEmailDomainRequest  (required)
+   * @return ApiResponse&lt;DeleteEmailDomain200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<DeleteEmailDomain200Response> deleteEmailDomainWithHttpInfo(@javax.annotation.Nonnull String domainId, @javax.annotation.Nonnull DeleteEmailDomainRequest deleteEmailDomainRequest) throws ApiException {
+    return deleteEmailDomainWithHttpInfo(domainId, deleteEmailDomainRequest, null);
+  }
+
+  /**
+   * Remove an unused custom email domain
+   * Send the domain hostname and confirm&#x3D;true. A domain that mailbox addresses still use returns EMAIL_DOMAIN_IN_USE.
+   * @param domainId  (required)
+   * @param deleteEmailDomainRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;DeleteEmailDomain200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<DeleteEmailDomain200Response> deleteEmailDomainWithHttpInfo(@javax.annotation.Nonnull String domainId, @javax.annotation.Nonnull DeleteEmailDomainRequest deleteEmailDomainRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = deleteEmailDomainRequestBuilder(domainId, deleteEmailDomainRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("deleteEmailDomain", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<DeleteEmailDomain200Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        DeleteEmailDomain200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<DeleteEmailDomain200Response>() {});
+        
+
+        return new ApiResponse<DeleteEmailDomain200Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder deleteEmailDomainRequestBuilder(@javax.annotation.Nonnull String domainId, @javax.annotation.Nonnull DeleteEmailDomainRequest deleteEmailDomainRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'domainId' is set
+    if (domainId == null) {
+      throw new ApiException(400, "Missing the required parameter 'domainId' when calling deleteEmailDomain");
+    }
+    // verify the required parameter 'deleteEmailDomainRequest' is set
+    if (deleteEmailDomainRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'deleteEmailDomainRequest' when calling deleteEmailDomain");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/account/email_domains/{domain_id}"
+        .replace("{domain_id}", ApiClient.urlEncode(domainId.toString()));
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(deleteEmailDomainRequest);
+      localVarRequestBuilder.method("DELETE", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Remove the email webhook
+   * Cancels queued deliveries. A delivery already in progress can finish. Returns the mailbox ID, also when no webhook is set.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @return DeleteEmailDomain200Response
+   * @throws ApiException if fails to make API call
+   */
+  public DeleteEmailDomain200Response deleteEmailWebhook(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId) throws ApiException {
+    return deleteEmailWebhook(mailboxId, accountId, null);
+  }
+
+  /**
+   * Remove the email webhook
+   * Cancels queued deliveries. A delivery already in progress can finish. Returns the mailbox ID, also when no webhook is set.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param headers Optional headers to include in the request
+   * @return DeleteEmailDomain200Response
+   * @throws ApiException if fails to make API call
+   */
+  public DeleteEmailDomain200Response deleteEmailWebhook(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, Map<String, String> headers) throws ApiException {
+    ApiResponse<DeleteEmailDomain200Response> localVarResponse = deleteEmailWebhookWithHttpInfo(mailboxId, accountId, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Remove the email webhook
+   * Cancels queued deliveries. A delivery already in progress can finish. Returns the mailbox ID, also when no webhook is set.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @return ApiResponse&lt;DeleteEmailDomain200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<DeleteEmailDomain200Response> deleteEmailWebhookWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId) throws ApiException {
     return deleteEmailWebhookWithHttpInfo(mailboxId, accountId, null);
   }
 
   /**
-   * Disable a mailbox webhook
-   * Requires mailbox admin permission. Cancels queued attempts; a request already in flight may finish.
+   * Remove the email webhook
+   * Cancels queued deliveries. A delivery already in progress can finish. Returns the mailbox ID, also when no webhook is set.
    * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;Void&gt;
+   * @return ApiResponse&lt;DeleteEmailDomain200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<Void> deleteEmailWebhookWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, Map<String, String> headers) throws ApiException {
+  public ApiResponse<DeleteEmailDomain200Response> deleteEmailWebhookWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, Map<String, String> headers) throws ApiException {
     HttpRequest.Builder localVarRequestBuilder = deleteEmailWebhookRequestBuilder(mailboxId, accountId, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
@@ -1045,13 +2277,24 @@ public class DefaultApi {
           throw getApiException("deleteEmailWebhook", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
-        if (localVarResponseBody != null) {
-          localVarResponseBody.readAllBytes();
+        if (localVarResponseBody == null) {
+          return new ApiResponse<DeleteEmailDomain200Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
         }
-        return new ApiResponse<>(
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        DeleteEmailDomain200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<DeleteEmailDomain200Response>() {});
+        
+
+        return new ApiResponse<DeleteEmailDomain200Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
-            null
+            responseValue
         );
       } finally {
         if (localVarResponseBody != null) {
@@ -1110,62 +2353,62 @@ public class DefaultApi {
   }
 
   /**
-   * Remove one email alias
-   * Requires a full-account owner/administrator with mailbox-admin access. Immediately revokes this alias, including queued deliveries. Retains existing messages and the permanent address reservation. Returns updated mailbox settings.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param aliasId Alias ID from mailbox settings (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * Delete a file
+   * Requires mailbox-admin permission. Files under _email/ return EMAIL_PATH_READ_ONLY; delete the email instead.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
-   * @return GetMailboxEmailSettings200Response
+   * @return DeleteEmailDomain200Response
    * @throws ApiException if fails to make API call
    */
-  public GetMailboxEmailSettings200Response deleteMailboxEmailAlias(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull String aliasId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return deleteMailboxEmailAlias(id, aliasId, accountId, reason, null);
+  public DeleteEmailDomain200Response deleteFile(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return deleteFile(mailboxId, fileId, accountId, reason, null);
   }
 
   /**
-   * Remove one email alias
-   * Requires a full-account owner/administrator with mailbox-admin access. Immediately revokes this alias, including queued deliveries. Retains existing messages and the permanent address reservation. Returns updated mailbox settings.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param aliasId Alias ID from mailbox settings (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * Delete a file
+   * Requires mailbox-admin permission. Files under _email/ return EMAIL_PATH_READ_ONLY; delete the email instead.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
    * @param headers Optional headers to include in the request
-   * @return GetMailboxEmailSettings200Response
+   * @return DeleteEmailDomain200Response
    * @throws ApiException if fails to make API call
    */
-  public GetMailboxEmailSettings200Response deleteMailboxEmailAlias(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull String aliasId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    ApiResponse<GetMailboxEmailSettings200Response> localVarResponse = deleteMailboxEmailAliasWithHttpInfo(id, aliasId, accountId, reason, headers);
+  public DeleteEmailDomain200Response deleteFile(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    ApiResponse<DeleteEmailDomain200Response> localVarResponse = deleteFileWithHttpInfo(mailboxId, fileId, accountId, reason, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Remove one email alias
-   * Requires a full-account owner/administrator with mailbox-admin access. Immediately revokes this alias, including queued deliveries. Retains existing messages and the permanent address reservation. Returns updated mailbox settings.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param aliasId Alias ID from mailbox settings (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * Delete a file
+   * Requires mailbox-admin permission. Files under _email/ return EMAIL_PATH_READ_ONLY; delete the email instead.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
-   * @return ApiResponse&lt;GetMailboxEmailSettings200Response&gt;
+   * @return ApiResponse&lt;DeleteEmailDomain200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<GetMailboxEmailSettings200Response> deleteMailboxEmailAliasWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull String aliasId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return deleteMailboxEmailAliasWithHttpInfo(id, aliasId, accountId, reason, null);
+  public ApiResponse<DeleteEmailDomain200Response> deleteFileWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return deleteFileWithHttpInfo(mailboxId, fileId, accountId, reason, null);
   }
 
   /**
-   * Remove one email alias
-   * Requires a full-account owner/administrator with mailbox-admin access. Immediately revokes this alias, including queued deliveries. Retains existing messages and the permanent address reservation. Returns updated mailbox settings.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param aliasId Alias ID from mailbox settings (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * Delete a file
+   * Requires mailbox-admin permission. Files under _email/ return EMAIL_PATH_READ_ONLY; delete the email instead.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;GetMailboxEmailSettings200Response&gt;
+   * @return ApiResponse&lt;DeleteEmailDomain200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<GetMailboxEmailSettings200Response> deleteMailboxEmailAliasWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull String aliasId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = deleteMailboxEmailAliasRequestBuilder(id, aliasId, accountId, reason, headers);
+  public ApiResponse<DeleteEmailDomain200Response> deleteFileWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = deleteFileRequestBuilder(mailboxId, fileId, accountId, reason, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -1176,11 +2419,11 @@ public class DefaultApi {
       InputStream localVarResponseBody = null;
       try {
         if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("deleteMailboxEmailAlias", localVarResponse);
+          throw getApiException("deleteFile", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
         if (localVarResponseBody == null) {
-          return new ApiResponse<GetMailboxEmailSettings200Response>(
+          return new ApiResponse<DeleteEmailDomain200Response>(
               localVarResponse.statusCode(),
               localVarResponse.headers().map(),
               null
@@ -1190,10 +2433,10 @@ public class DefaultApi {
         
         
         String responseBody = new String(localVarResponseBody.readAllBytes());
-        GetMailboxEmailSettings200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<GetMailboxEmailSettings200Response>() {});
+        DeleteEmailDomain200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<DeleteEmailDomain200Response>() {});
         
 
-        return new ApiResponse<GetMailboxEmailSettings200Response>(
+        return new ApiResponse<DeleteEmailDomain200Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
             responseValue
@@ -1212,21 +2455,21 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder deleteMailboxEmailAliasRequestBuilder(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull String aliasId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'id' is set
-    if (id == null) {
-      throw new ApiException(400, "Missing the required parameter 'id' when calling deleteMailboxEmailAlias");
+  private HttpRequest.Builder deleteFileRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling deleteFile");
     }
-    // verify the required parameter 'aliasId' is set
-    if (aliasId == null) {
-      throw new ApiException(400, "Missing the required parameter 'aliasId' when calling deleteMailboxEmailAlias");
+    // verify the required parameter 'fileId' is set
+    if (fileId == null) {
+      throw new ApiException(400, "Missing the required parameter 'fileId' when calling deleteFile");
     }
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
-    String localVarPath = "/v1/mailboxes/{id}/email/aliases/{alias_id}"
-        .replace("{id}", ApiClient.urlEncode(id.toString()))
-        .replace("{alias_id}", ApiClient.urlEncode(aliasId.toString()));
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/files/{file_id}"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()))
+        .replace("{file_id}", ApiClient.urlEncode(fileId.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<>();
     StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
@@ -1262,50 +2505,54 @@ public class DefaultApi {
   }
 
   /**
-   * Read one granted account
-   * 
-   * @param id  (required)
-   * @return GetAccount200Response
+   * Permanently delete an archived mailbox
+   * Archive the mailbox first. Send delete.confirmation from the mailbox read after the user confirms. Large mailboxes finish deleting in the background.
+   * @param mailboxId  (required)
+   * @param deleteMailboxRequest  (required)
+   * @return DeleteEmailDomain200Response
    * @throws ApiException if fails to make API call
    */
-  public GetAccount200Response getAccount(@javax.annotation.Nonnull String id) throws ApiException {
-    return getAccount(id, null);
+  public DeleteEmailDomain200Response deleteMailbox(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull DeleteMailboxRequest deleteMailboxRequest) throws ApiException {
+    return deleteMailbox(mailboxId, deleteMailboxRequest, null);
   }
 
   /**
-   * Read one granted account
-   * 
-   * @param id  (required)
+   * Permanently delete an archived mailbox
+   * Archive the mailbox first. Send delete.confirmation from the mailbox read after the user confirms. Large mailboxes finish deleting in the background.
+   * @param mailboxId  (required)
+   * @param deleteMailboxRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return GetAccount200Response
+   * @return DeleteEmailDomain200Response
    * @throws ApiException if fails to make API call
    */
-  public GetAccount200Response getAccount(@javax.annotation.Nonnull String id, Map<String, String> headers) throws ApiException {
-    ApiResponse<GetAccount200Response> localVarResponse = getAccountWithHttpInfo(id, headers);
+  public DeleteEmailDomain200Response deleteMailbox(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull DeleteMailboxRequest deleteMailboxRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<DeleteEmailDomain200Response> localVarResponse = deleteMailboxWithHttpInfo(mailboxId, deleteMailboxRequest, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Read one granted account
-   * 
-   * @param id  (required)
-   * @return ApiResponse&lt;GetAccount200Response&gt;
+   * Permanently delete an archived mailbox
+   * Archive the mailbox first. Send delete.confirmation from the mailbox read after the user confirms. Large mailboxes finish deleting in the background.
+   * @param mailboxId  (required)
+   * @param deleteMailboxRequest  (required)
+   * @return ApiResponse&lt;DeleteEmailDomain200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<GetAccount200Response> getAccountWithHttpInfo(@javax.annotation.Nonnull String id) throws ApiException {
-    return getAccountWithHttpInfo(id, null);
+  public ApiResponse<DeleteEmailDomain200Response> deleteMailboxWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull DeleteMailboxRequest deleteMailboxRequest) throws ApiException {
+    return deleteMailboxWithHttpInfo(mailboxId, deleteMailboxRequest, null);
   }
 
   /**
-   * Read one granted account
-   * 
-   * @param id  (required)
+   * Permanently delete an archived mailbox
+   * Archive the mailbox first. Send delete.confirmation from the mailbox read after the user confirms. Large mailboxes finish deleting in the background.
+   * @param mailboxId  (required)
+   * @param deleteMailboxRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;GetAccount200Response&gt;
+   * @return ApiResponse&lt;DeleteEmailDomain200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<GetAccount200Response> getAccountWithHttpInfo(@javax.annotation.Nonnull String id, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = getAccountRequestBuilder(id, headers);
+  public ApiResponse<DeleteEmailDomain200Response> deleteMailboxWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull DeleteMailboxRequest deleteMailboxRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = deleteMailboxRequestBuilder(mailboxId, deleteMailboxRequest, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -1316,11 +2563,11 @@ public class DefaultApi {
       InputStream localVarResponseBody = null;
       try {
         if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("getAccount", localVarResponse);
+          throw getApiException("deleteMailbox", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
         if (localVarResponseBody == null) {
-          return new ApiResponse<GetAccount200Response>(
+          return new ApiResponse<DeleteEmailDomain200Response>(
               localVarResponse.statusCode(),
               localVarResponse.headers().map(),
               null
@@ -1330,10 +2577,10 @@ public class DefaultApi {
         
         
         String responseBody = new String(localVarResponseBody.readAllBytes());
-        GetAccount200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<GetAccount200Response>() {});
+        DeleteEmailDomain200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<DeleteEmailDomain200Response>() {});
         
 
-        return new ApiResponse<GetAccount200Response>(
+        return new ApiResponse<DeleteEmailDomain200Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
             responseValue
@@ -1352,16 +2599,404 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder getAccountRequestBuilder(@javax.annotation.Nonnull String id, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'id' is set
-    if (id == null) {
-      throw new ApiException(400, "Missing the required parameter 'id' when calling getAccount");
+  private HttpRequest.Builder deleteMailboxRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull DeleteMailboxRequest deleteMailboxRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling deleteMailbox");
+    }
+    // verify the required parameter 'deleteMailboxRequest' is set
+    if (deleteMailboxRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'deleteMailboxRequest' when calling deleteMailbox");
     }
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
-    String localVarPath = "/v1/accounts/{id}"
-        .replace("{id}", ApiClient.urlEncode(id.toString()));
+    String localVarPath = "/v1/mailboxes/{mailbox_id}"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()));
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(deleteMailboxRequest);
+      localVarRequestBuilder.method("DELETE", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Exchange a one-time dashboard connection code for an API key
+   * The dashboard creates the one-time code when a signed-in administrator copies a connection prompt.
+   * @param exchangeConnectionGrantRequest  (required)
+   * @return VerifySignInCode201Response
+   * @throws ApiException if fails to make API call
+   */
+  public VerifySignInCode201Response exchangeConnectionGrant(@javax.annotation.Nonnull ExchangeConnectionGrantRequest exchangeConnectionGrantRequest) throws ApiException {
+    return exchangeConnectionGrant(exchangeConnectionGrantRequest, null);
+  }
+
+  /**
+   * Exchange a one-time dashboard connection code for an API key
+   * The dashboard creates the one-time code when a signed-in administrator copies a connection prompt.
+   * @param exchangeConnectionGrantRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return VerifySignInCode201Response
+   * @throws ApiException if fails to make API call
+   */
+  public VerifySignInCode201Response exchangeConnectionGrant(@javax.annotation.Nonnull ExchangeConnectionGrantRequest exchangeConnectionGrantRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<VerifySignInCode201Response> localVarResponse = exchangeConnectionGrantWithHttpInfo(exchangeConnectionGrantRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Exchange a one-time dashboard connection code for an API key
+   * The dashboard creates the one-time code when a signed-in administrator copies a connection prompt.
+   * @param exchangeConnectionGrantRequest  (required)
+   * @return ApiResponse&lt;VerifySignInCode201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<VerifySignInCode201Response> exchangeConnectionGrantWithHttpInfo(@javax.annotation.Nonnull ExchangeConnectionGrantRequest exchangeConnectionGrantRequest) throws ApiException {
+    return exchangeConnectionGrantWithHttpInfo(exchangeConnectionGrantRequest, null);
+  }
+
+  /**
+   * Exchange a one-time dashboard connection code for an API key
+   * The dashboard creates the one-time code when a signed-in administrator copies a connection prompt.
+   * @param exchangeConnectionGrantRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;VerifySignInCode201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<VerifySignInCode201Response> exchangeConnectionGrantWithHttpInfo(@javax.annotation.Nonnull ExchangeConnectionGrantRequest exchangeConnectionGrantRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = exchangeConnectionGrantRequestBuilder(exchangeConnectionGrantRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("exchangeConnectionGrant", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<VerifySignInCode201Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        VerifySignInCode201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<VerifySignInCode201Response>() {});
+        
+
+        return new ApiResponse<VerifySignInCode201Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder exchangeConnectionGrantRequestBuilder(@javax.annotation.Nonnull ExchangeConnectionGrantRequest exchangeConnectionGrantRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'exchangeConnectionGrantRequest' is set
+    if (exchangeConnectionGrantRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'exchangeConnectionGrantRequest' when calling exchangeConnectionGrant");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/agent_auth/exchange_grant";
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(exchangeConnectionGrantRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Finish or cancel a batch upload
+   * complete&#x3D;true saves the remaining uploaded files, creates one mailbox version and releases the lock. A 202 response with finalize_pending&#x3D;true means more files remain: call finalize again after Retry-After. complete&#x3D;false cancels the session and discards its unsaved files. Finalizing a finished session returns it unchanged.
+   * @param mailboxId  (required)
+   * @param sessionId mailbox_upload_session.id from the create response. (required)
+   * @param finalizeUploadSessionRequest  (optional)
+   * @return CreateUploadSession201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateUploadSession201Response finalizeUploadSession(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String sessionId, @javax.annotation.Nullable FinalizeUploadSessionRequest finalizeUploadSessionRequest) throws ApiException {
+    return finalizeUploadSession(mailboxId, sessionId, finalizeUploadSessionRequest, null);
+  }
+
+  /**
+   * Finish or cancel a batch upload
+   * complete&#x3D;true saves the remaining uploaded files, creates one mailbox version and releases the lock. A 202 response with finalize_pending&#x3D;true means more files remain: call finalize again after Retry-After. complete&#x3D;false cancels the session and discards its unsaved files. Finalizing a finished session returns it unchanged.
+   * @param mailboxId  (required)
+   * @param sessionId mailbox_upload_session.id from the create response. (required)
+   * @param finalizeUploadSessionRequest  (optional)
+   * @param headers Optional headers to include in the request
+   * @return CreateUploadSession201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateUploadSession201Response finalizeUploadSession(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String sessionId, @javax.annotation.Nullable FinalizeUploadSessionRequest finalizeUploadSessionRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<CreateUploadSession201Response> localVarResponse = finalizeUploadSessionWithHttpInfo(mailboxId, sessionId, finalizeUploadSessionRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Finish or cancel a batch upload
+   * complete&#x3D;true saves the remaining uploaded files, creates one mailbox version and releases the lock. A 202 response with finalize_pending&#x3D;true means more files remain: call finalize again after Retry-After. complete&#x3D;false cancels the session and discards its unsaved files. Finalizing a finished session returns it unchanged.
+   * @param mailboxId  (required)
+   * @param sessionId mailbox_upload_session.id from the create response. (required)
+   * @param finalizeUploadSessionRequest  (optional)
+   * @return ApiResponse&lt;CreateUploadSession201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CreateUploadSession201Response> finalizeUploadSessionWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String sessionId, @javax.annotation.Nullable FinalizeUploadSessionRequest finalizeUploadSessionRequest) throws ApiException {
+    return finalizeUploadSessionWithHttpInfo(mailboxId, sessionId, finalizeUploadSessionRequest, null);
+  }
+
+  /**
+   * Finish or cancel a batch upload
+   * complete&#x3D;true saves the remaining uploaded files, creates one mailbox version and releases the lock. A 202 response with finalize_pending&#x3D;true means more files remain: call finalize again after Retry-After. complete&#x3D;false cancels the session and discards its unsaved files. Finalizing a finished session returns it unchanged.
+   * @param mailboxId  (required)
+   * @param sessionId mailbox_upload_session.id from the create response. (required)
+   * @param finalizeUploadSessionRequest  (optional)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;CreateUploadSession201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CreateUploadSession201Response> finalizeUploadSessionWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String sessionId, @javax.annotation.Nullable FinalizeUploadSessionRequest finalizeUploadSessionRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = finalizeUploadSessionRequestBuilder(mailboxId, sessionId, finalizeUploadSessionRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("finalizeUploadSession", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<CreateUploadSession201Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        CreateUploadSession201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<CreateUploadSession201Response>() {});
+        
+
+        return new ApiResponse<CreateUploadSession201Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder finalizeUploadSessionRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String sessionId, @javax.annotation.Nullable FinalizeUploadSessionRequest finalizeUploadSessionRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling finalizeUploadSession");
+    }
+    // verify the required parameter 'sessionId' is set
+    if (sessionId == null) {
+      throw new ApiException(400, "Missing the required parameter 'sessionId' when calling finalizeUploadSession");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()))
+        .replace("{session_id}", ApiClient.urlEncode(sessionId.toString()));
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(finalizeUploadSessionRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Read one granted account
+   * 
+   * @param accountId Granted account to read. (required)
+   * @return CreateClientAccount201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateClientAccount201Response getAccount(@javax.annotation.Nonnull String accountId) throws ApiException {
+    return getAccount(accountId, null);
+  }
+
+  /**
+   * Read one granted account
+   * 
+   * @param accountId Granted account to read. (required)
+   * @param headers Optional headers to include in the request
+   * @return CreateClientAccount201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateClientAccount201Response getAccount(@javax.annotation.Nonnull String accountId, Map<String, String> headers) throws ApiException {
+    ApiResponse<CreateClientAccount201Response> localVarResponse = getAccountWithHttpInfo(accountId, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Read one granted account
+   * 
+   * @param accountId Granted account to read. (required)
+   * @return ApiResponse&lt;CreateClientAccount201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CreateClientAccount201Response> getAccountWithHttpInfo(@javax.annotation.Nonnull String accountId) throws ApiException {
+    return getAccountWithHttpInfo(accountId, null);
+  }
+
+  /**
+   * Read one granted account
+   * 
+   * @param accountId Granted account to read. (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;CreateClientAccount201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CreateClientAccount201Response> getAccountWithHttpInfo(@javax.annotation.Nonnull String accountId, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = getAccountRequestBuilder(accountId, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("getAccount", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<CreateClientAccount201Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        CreateClientAccount201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<CreateClientAccount201Response>() {});
+        
+
+        return new ApiResponse<CreateClientAccount201Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder getAccountRequestBuilder(@javax.annotation.Nonnull String accountId, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'accountId' is set
+    if (accountId == null) {
+      throw new ApiException(400, "Missing the required parameter 'accountId' when calling getAccount");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/accounts/{account_id}"
+        .replace("{account_id}", ApiClient.urlEncode(accountId.toString()));
 
     localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
 
@@ -1380,152 +3015,9 @@ public class DefaultApi {
   }
 
   /**
-   * Read exact domain setup state
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param id  (required)
-   * @param accountId Explicit granted account for this call; omission uses the credential account. (optional)
-   * @param reason  (optional)
-   * @return EmailDomainResponse
-   * @throws ApiException if fails to make API call
-   */
-  public EmailDomainResponse getAccountEmailDomain(@javax.annotation.Nonnull String id, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return getAccountEmailDomain(id, accountId, reason, null);
-  }
-
-  /**
-   * Read exact domain setup state
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param id  (required)
-   * @param accountId Explicit granted account for this call; omission uses the credential account. (optional)
-   * @param reason  (optional)
-   * @param headers Optional headers to include in the request
-   * @return EmailDomainResponse
-   * @throws ApiException if fails to make API call
-   */
-  public EmailDomainResponse getAccountEmailDomain(@javax.annotation.Nonnull String id, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    ApiResponse<EmailDomainResponse> localVarResponse = getAccountEmailDomainWithHttpInfo(id, accountId, reason, headers);
-    return localVarResponse.getData();
-  }
-
-  /**
-   * Read exact domain setup state
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param id  (required)
-   * @param accountId Explicit granted account for this call; omission uses the credential account. (optional)
-   * @param reason  (optional)
-   * @return ApiResponse&lt;EmailDomainResponse&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<EmailDomainResponse> getAccountEmailDomainWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return getAccountEmailDomainWithHttpInfo(id, accountId, reason, null);
-  }
-
-  /**
-   * Read exact domain setup state
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param id  (required)
-   * @param accountId Explicit granted account for this call; omission uses the credential account. (optional)
-   * @param reason  (optional)
-   * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;EmailDomainResponse&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<EmailDomainResponse> getAccountEmailDomainWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = getAccountEmailDomainRequestBuilder(id, accountId, reason, headers);
-    try {
-      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
-          localVarRequestBuilder.build(),
-          HttpResponse.BodyHandlers.ofInputStream());
-      if (memberVarResponseInterceptor != null) {
-        memberVarResponseInterceptor.accept(localVarResponse);
-      }
-      InputStream localVarResponseBody = null;
-      try {
-        if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("getAccountEmailDomain", localVarResponse);
-        }
-        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
-        if (localVarResponseBody == null) {
-          return new ApiResponse<EmailDomainResponse>(
-              localVarResponse.statusCode(),
-              localVarResponse.headers().map(),
-              null
-          );
-        }
-
-        
-        
-        String responseBody = new String(localVarResponseBody.readAllBytes());
-        EmailDomainResponse responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<EmailDomainResponse>() {});
-        
-
-        return new ApiResponse<EmailDomainResponse>(
-            localVarResponse.statusCode(),
-            localVarResponse.headers().map(),
-            responseValue
-        );
-      } finally {
-        if (localVarResponseBody != null) {
-          localVarResponseBody.close();
-        }
-      }
-    } catch (IOException e) {
-      throw new ApiException(e);
-    }
-    catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new ApiException(e);
-    }
-  }
-
-  private HttpRequest.Builder getAccountEmailDomainRequestBuilder(@javax.annotation.Nonnull String id, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'id' is set
-    if (id == null) {
-      throw new ApiException(400, "Missing the required parameter 'id' when calling getAccountEmailDomain");
-    }
-
-    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-    String localVarPath = "/v1/account/email_domains/{id}"
-        .replace("{id}", ApiClient.urlEncode(id.toString()));
-
-    List<Pair> localVarQueryParams = new ArrayList<>();
-    StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
-    String localVarQueryParameterBaseName;
-    localVarQueryParameterBaseName = "account_id";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
-    localVarQueryParameterBaseName = "reason";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
-
-    if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
-      StringJoiner queryJoiner = new StringJoiner("&");
-      localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
-      if (localVarQueryStringJoiner.length() != 0) {
-        queryJoiner.add(localVarQueryStringJoiner.toString());
-      }
-      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
-    } else {
-      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-    }
-
-    localVarRequestBuilder.header("Accept", "application/json");
-
-    localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
-    if (memberVarReadTimeout != null) {
-      localVarRequestBuilder.timeout(memberVarReadTimeout);
-    }
-    // Add custom headers if provided
-    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
-    if (memberVarInterceptor != null) {
-      memberVarInterceptor.accept(localVarRequestBuilder);
-    }
-    return localVarRequestBuilder;
-  }
-
-  /**
-   * Read effective mailbox and file storage limits
-   * For the selected account. Uses the same plan and overrides as enforcement. Limits are not repeated in mailbox responses. Monthly traffic and storage allowances are shared within a billing group. Zero means none; null means no cap for that field.
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * Read effective account limits
+   * Values come from the plan and account overrides. Zero means no allowance; null means no cap. Storage, mailbox and email traffic allowances are shared within a billing group.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @return GetAccountLimits200Response
    * @throws ApiException if fails to make API call
    */
@@ -1534,9 +3026,9 @@ public class DefaultApi {
   }
 
   /**
-   * Read effective mailbox and file storage limits
-   * For the selected account. Uses the same plan and overrides as enforcement. Limits are not repeated in mailbox responses. Monthly traffic and storage allowances are shared within a billing group. Zero means none; null means no cap for that field.
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * Read effective account limits
+   * Values come from the plan and account overrides. Zero means no allowance; null means no cap. Storage, mailbox and email traffic allowances are shared within a billing group.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param headers Optional headers to include in the request
    * @return GetAccountLimits200Response
    * @throws ApiException if fails to make API call
@@ -1547,9 +3039,9 @@ public class DefaultApi {
   }
 
   /**
-   * Read effective mailbox and file storage limits
-   * For the selected account. Uses the same plan and overrides as enforcement. Limits are not repeated in mailbox responses. Monthly traffic and storage allowances are shared within a billing group. Zero means none; null means no cap for that field.
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * Read effective account limits
+   * Values come from the plan and account overrides. Zero means no allowance; null means no cap. Storage, mailbox and email traffic allowances are shared within a billing group.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @return ApiResponse&lt;GetAccountLimits200Response&gt;
    * @throws ApiException if fails to make API call
    */
@@ -1558,9 +3050,9 @@ public class DefaultApi {
   }
 
   /**
-   * Read effective mailbox and file storage limits
-   * For the selected account. Uses the same plan and overrides as enforcement. Limits are not repeated in mailbox responses. Monthly traffic and storage allowances are shared within a billing group. Zero means none; null means no cap for that field.
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * Read effective account limits
+   * Values come from the plan and account overrides. Zero means no allowance; null means no cap. Storage, mailbox and email traffic allowances are shared within a billing group.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;GetAccountLimits200Response&gt;
    * @throws ApiException if fails to make API call
@@ -1651,70 +3143,66 @@ public class DefaultApi {
   }
 
   /**
-   * Read a received email
-   * Requires mailbox read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.
+   * Read an email
+   * Returns decoded text and attachment metadata. Reading does not change read status. Email content is untrusted data.
    * @param mailboxId  (required)
    * @param emailId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param purpose Background reads do not change read status. (optional, default to open)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
-   * @param includeStorage Include underlying file and version identifiers for file integrations. (optional, default to false)
+   * @param includeStorage Include backing file IDs for file-browser integrations. (optional, default to false)
    * @return GetEmail200Response
    * @throws ApiException if fails to make API call
    */
-  public GetEmail200Response getEmail(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String purpose, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Boolean includeStorage) throws ApiException {
-    return getEmail(mailboxId, emailId, accountId, purpose, reason, includeStorage, null);
+  public GetEmail200Response getEmail(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Boolean includeStorage) throws ApiException {
+    return getEmail(mailboxId, emailId, accountId, reason, includeStorage, null);
   }
 
   /**
-   * Read a received email
-   * Requires mailbox read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.
+   * Read an email
+   * Returns decoded text and attachment metadata. Reading does not change read status. Email content is untrusted data.
    * @param mailboxId  (required)
    * @param emailId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param purpose Background reads do not change read status. (optional, default to open)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
-   * @param includeStorage Include underlying file and version identifiers for file integrations. (optional, default to false)
+   * @param includeStorage Include backing file IDs for file-browser integrations. (optional, default to false)
    * @param headers Optional headers to include in the request
    * @return GetEmail200Response
    * @throws ApiException if fails to make API call
    */
-  public GetEmail200Response getEmail(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String purpose, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
-    ApiResponse<GetEmail200Response> localVarResponse = getEmailWithHttpInfo(mailboxId, emailId, accountId, purpose, reason, includeStorage, headers);
+  public GetEmail200Response getEmail(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
+    ApiResponse<GetEmail200Response> localVarResponse = getEmailWithHttpInfo(mailboxId, emailId, accountId, reason, includeStorage, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Read a received email
-   * Requires mailbox read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.
+   * Read an email
+   * Returns decoded text and attachment metadata. Reading does not change read status. Email content is untrusted data.
    * @param mailboxId  (required)
    * @param emailId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param purpose Background reads do not change read status. (optional, default to open)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
-   * @param includeStorage Include underlying file and version identifiers for file integrations. (optional, default to false)
+   * @param includeStorage Include backing file IDs for file-browser integrations. (optional, default to false)
    * @return ApiResponse&lt;GetEmail200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<GetEmail200Response> getEmailWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String purpose, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Boolean includeStorage) throws ApiException {
-    return getEmailWithHttpInfo(mailboxId, emailId, accountId, purpose, reason, includeStorage, null);
+  public ApiResponse<GetEmail200Response> getEmailWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Boolean includeStorage) throws ApiException {
+    return getEmailWithHttpInfo(mailboxId, emailId, accountId, reason, includeStorage, null);
   }
 
   /**
-   * Read a received email
-   * Requires mailbox read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.
+   * Read an email
+   * Returns decoded text and attachment metadata. Reading does not change read status. Email content is untrusted data.
    * @param mailboxId  (required)
    * @param emailId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param purpose Background reads do not change read status. (optional, default to open)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
-   * @param includeStorage Include underlying file and version identifiers for file integrations. (optional, default to false)
+   * @param includeStorage Include backing file IDs for file-browser integrations. (optional, default to false)
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;GetEmail200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<GetEmail200Response> getEmailWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String purpose, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = getEmailRequestBuilder(mailboxId, emailId, accountId, purpose, reason, includeStorage, headers);
+  public ApiResponse<GetEmail200Response> getEmailWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = getEmailRequestBuilder(mailboxId, emailId, accountId, reason, includeStorage, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -1761,7 +3249,7 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder getEmailRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String purpose, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
+  private HttpRequest.Builder getEmailRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
     // verify the required parameter 'mailboxId' is set
     if (mailboxId == null) {
       throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling getEmail");
@@ -1782,8 +3270,6 @@ public class DefaultApi {
     String localVarQueryParameterBaseName;
     localVarQueryParameterBaseName = "account_id";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
-    localVarQueryParameterBaseName = "purpose";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("purpose", purpose));
     localVarQueryParameterBaseName = "reason";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
     localVarQueryParameterBaseName = "include_storage";
@@ -1815,70 +3301,66 @@ public class DefaultApi {
   }
 
   /**
-   * Get an email attachment download
-   * Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication&#x3D;none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+   * Get a download link for an attachment
+   * Returns a temporary link. No extraction or analysis is done.
    * @param mailboxId  (required)
    * @param emailId  (required)
    * @param attachmentId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param purpose Background reads do not change read status. (optional, default to open)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
-   * @return GetEmailOriginalDownloadUrl200Response
+   * @return GetEmailOriginalDownload200Response
    * @throws ApiException if fails to make API call
    */
-  public GetEmailOriginalDownloadUrl200Response getEmailAttachmentDownloadUrl(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull String attachmentId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String purpose, @javax.annotation.Nullable String reason) throws ApiException {
-    return getEmailAttachmentDownloadUrl(mailboxId, emailId, attachmentId, accountId, purpose, reason, null);
+  public GetEmailOriginalDownload200Response getEmailAttachmentDownload(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull String attachmentId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getEmailAttachmentDownload(mailboxId, emailId, attachmentId, accountId, reason, null);
   }
 
   /**
-   * Get an email attachment download
-   * Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication&#x3D;none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+   * Get a download link for an attachment
+   * Returns a temporary link. No extraction or analysis is done.
    * @param mailboxId  (required)
    * @param emailId  (required)
    * @param attachmentId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param purpose Background reads do not change read status. (optional, default to open)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
    * @param headers Optional headers to include in the request
-   * @return GetEmailOriginalDownloadUrl200Response
+   * @return GetEmailOriginalDownload200Response
    * @throws ApiException if fails to make API call
    */
-  public GetEmailOriginalDownloadUrl200Response getEmailAttachmentDownloadUrl(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull String attachmentId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String purpose, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    ApiResponse<GetEmailOriginalDownloadUrl200Response> localVarResponse = getEmailAttachmentDownloadUrlWithHttpInfo(mailboxId, emailId, attachmentId, accountId, purpose, reason, headers);
+  public GetEmailOriginalDownload200Response getEmailAttachmentDownload(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull String attachmentId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    ApiResponse<GetEmailOriginalDownload200Response> localVarResponse = getEmailAttachmentDownloadWithHttpInfo(mailboxId, emailId, attachmentId, accountId, reason, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Get an email attachment download
-   * Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication&#x3D;none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+   * Get a download link for an attachment
+   * Returns a temporary link. No extraction or analysis is done.
    * @param mailboxId  (required)
    * @param emailId  (required)
    * @param attachmentId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param purpose Background reads do not change read status. (optional, default to open)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
-   * @return ApiResponse&lt;GetEmailOriginalDownloadUrl200Response&gt;
+   * @return ApiResponse&lt;GetEmailOriginalDownload200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<GetEmailOriginalDownloadUrl200Response> getEmailAttachmentDownloadUrlWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull String attachmentId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String purpose, @javax.annotation.Nullable String reason) throws ApiException {
-    return getEmailAttachmentDownloadUrlWithHttpInfo(mailboxId, emailId, attachmentId, accountId, purpose, reason, null);
+  public ApiResponse<GetEmailOriginalDownload200Response> getEmailAttachmentDownloadWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull String attachmentId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getEmailAttachmentDownloadWithHttpInfo(mailboxId, emailId, attachmentId, accountId, reason, null);
   }
 
   /**
-   * Get an email attachment download
-   * Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication&#x3D;none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+   * Get a download link for an attachment
+   * Returns a temporary link. No extraction or analysis is done.
    * @param mailboxId  (required)
    * @param emailId  (required)
    * @param attachmentId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param purpose Background reads do not change read status. (optional, default to open)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;GetEmailOriginalDownloadUrl200Response&gt;
+   * @return ApiResponse&lt;GetEmailOriginalDownload200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<GetEmailOriginalDownloadUrl200Response> getEmailAttachmentDownloadUrlWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull String attachmentId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String purpose, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = getEmailAttachmentDownloadUrlRequestBuilder(mailboxId, emailId, attachmentId, accountId, purpose, reason, headers);
+  public ApiResponse<GetEmailOriginalDownload200Response> getEmailAttachmentDownloadWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull String attachmentId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = getEmailAttachmentDownloadRequestBuilder(mailboxId, emailId, attachmentId, accountId, reason, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -1889,11 +3371,11 @@ public class DefaultApi {
       InputStream localVarResponseBody = null;
       try {
         if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("getEmailAttachmentDownloadUrl", localVarResponse);
+          throw getApiException("getEmailAttachmentDownload", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
         if (localVarResponseBody == null) {
-          return new ApiResponse<GetEmailOriginalDownloadUrl200Response>(
+          return new ApiResponse<GetEmailOriginalDownload200Response>(
               localVarResponse.statusCode(),
               localVarResponse.headers().map(),
               null
@@ -1903,10 +3385,10 @@ public class DefaultApi {
         
         
         String responseBody = new String(localVarResponseBody.readAllBytes());
-        GetEmailOriginalDownloadUrl200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<GetEmailOriginalDownloadUrl200Response>() {});
+        GetEmailOriginalDownload200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<GetEmailOriginalDownload200Response>() {});
         
 
-        return new ApiResponse<GetEmailOriginalDownloadUrl200Response>(
+        return new ApiResponse<GetEmailOriginalDownload200Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
             responseValue
@@ -1925,18 +3407,18 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder getEmailAttachmentDownloadUrlRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull String attachmentId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String purpose, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+  private HttpRequest.Builder getEmailAttachmentDownloadRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull String attachmentId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
     // verify the required parameter 'mailboxId' is set
     if (mailboxId == null) {
-      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling getEmailAttachmentDownloadUrl");
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling getEmailAttachmentDownload");
     }
     // verify the required parameter 'emailId' is set
     if (emailId == null) {
-      throw new ApiException(400, "Missing the required parameter 'emailId' when calling getEmailAttachmentDownloadUrl");
+      throw new ApiException(400, "Missing the required parameter 'emailId' when calling getEmailAttachmentDownload");
     }
     // verify the required parameter 'attachmentId' is set
     if (attachmentId == null) {
-      throw new ApiException(400, "Missing the required parameter 'attachmentId' when calling getEmailAttachmentDownloadUrl");
+      throw new ApiException(400, "Missing the required parameter 'attachmentId' when calling getEmailAttachmentDownload");
     }
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
@@ -1951,8 +3433,6 @@ public class DefaultApi {
     String localVarQueryParameterBaseName;
     localVarQueryParameterBaseName = "account_id";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
-    localVarQueryParameterBaseName = "purpose";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("purpose", purpose));
     localVarQueryParameterBaseName = "reason";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
 
@@ -1967,7 +3447,7 @@ public class DefaultApi {
       localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
     }
 
-    localVarRequestBuilder.header("Accept", "application/json, application/octet-stream");
+    localVarRequestBuilder.header("Accept", "application/json");
 
     localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
     if (memberVarReadTimeout != null) {
@@ -1982,66 +3462,54 @@ public class DefaultApi {
   }
 
   /**
-   * Get the original EML download
-   * Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication&#x3D;none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
-   * @param mailboxId  (required)
-   * @param emailId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param purpose Background reads do not change read status. (optional, default to open)
-   * @param reason  (optional)
-   * @return GetEmailOriginalDownloadUrl200Response
+   * Read a custom email domain
+   * 
+   * @param domainId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @return CreateEmailDomain201Response
    * @throws ApiException if fails to make API call
    */
-  public GetEmailOriginalDownloadUrl200Response getEmailOriginalDownloadUrl(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String purpose, @javax.annotation.Nullable String reason) throws ApiException {
-    return getEmailOriginalDownloadUrl(mailboxId, emailId, accountId, purpose, reason, null);
+  public CreateEmailDomain201Response getEmailDomain(@javax.annotation.Nonnull String domainId, @javax.annotation.Nullable String accountId) throws ApiException {
+    return getEmailDomain(domainId, accountId, null);
   }
 
   /**
-   * Get the original EML download
-   * Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication&#x3D;none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
-   * @param mailboxId  (required)
-   * @param emailId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param purpose Background reads do not change read status. (optional, default to open)
-   * @param reason  (optional)
+   * Read a custom email domain
+   * 
+   * @param domainId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param headers Optional headers to include in the request
-   * @return GetEmailOriginalDownloadUrl200Response
+   * @return CreateEmailDomain201Response
    * @throws ApiException if fails to make API call
    */
-  public GetEmailOriginalDownloadUrl200Response getEmailOriginalDownloadUrl(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String purpose, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    ApiResponse<GetEmailOriginalDownloadUrl200Response> localVarResponse = getEmailOriginalDownloadUrlWithHttpInfo(mailboxId, emailId, accountId, purpose, reason, headers);
+  public CreateEmailDomain201Response getEmailDomain(@javax.annotation.Nonnull String domainId, @javax.annotation.Nullable String accountId, Map<String, String> headers) throws ApiException {
+    ApiResponse<CreateEmailDomain201Response> localVarResponse = getEmailDomainWithHttpInfo(domainId, accountId, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Get the original EML download
-   * Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication&#x3D;none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
-   * @param mailboxId  (required)
-   * @param emailId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param purpose Background reads do not change read status. (optional, default to open)
-   * @param reason  (optional)
-   * @return ApiResponse&lt;GetEmailOriginalDownloadUrl200Response&gt;
+   * Read a custom email domain
+   * 
+   * @param domainId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @return ApiResponse&lt;CreateEmailDomain201Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<GetEmailOriginalDownloadUrl200Response> getEmailOriginalDownloadUrlWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String purpose, @javax.annotation.Nullable String reason) throws ApiException {
-    return getEmailOriginalDownloadUrlWithHttpInfo(mailboxId, emailId, accountId, purpose, reason, null);
+  public ApiResponse<CreateEmailDomain201Response> getEmailDomainWithHttpInfo(@javax.annotation.Nonnull String domainId, @javax.annotation.Nullable String accountId) throws ApiException {
+    return getEmailDomainWithHttpInfo(domainId, accountId, null);
   }
 
   /**
-   * Get the original EML download
-   * Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication&#x3D;none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
-   * @param mailboxId  (required)
-   * @param emailId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param purpose Background reads do not change read status. (optional, default to open)
-   * @param reason  (optional)
+   * Read a custom email domain
+   * 
+   * @param domainId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;GetEmailOriginalDownloadUrl200Response&gt;
+   * @return ApiResponse&lt;CreateEmailDomain201Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<GetEmailOriginalDownloadUrl200Response> getEmailOriginalDownloadUrlWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String purpose, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = getEmailOriginalDownloadUrlRequestBuilder(mailboxId, emailId, accountId, purpose, reason, headers);
+  public ApiResponse<CreateEmailDomain201Response> getEmailDomainWithHttpInfo(@javax.annotation.Nonnull String domainId, @javax.annotation.Nullable String accountId, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = getEmailDomainRequestBuilder(domainId, accountId, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -2052,11 +3520,11 @@ public class DefaultApi {
       InputStream localVarResponseBody = null;
       try {
         if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("getEmailOriginalDownloadUrl", localVarResponse);
+          throw getApiException("getEmailDomain", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
         if (localVarResponseBody == null) {
-          return new ApiResponse<GetEmailOriginalDownloadUrl200Response>(
+          return new ApiResponse<CreateEmailDomain201Response>(
               localVarResponse.statusCode(),
               localVarResponse.headers().map(),
               null
@@ -2066,10 +3534,10 @@ public class DefaultApi {
         
         
         String responseBody = new String(localVarResponseBody.readAllBytes());
-        GetEmailOriginalDownloadUrl200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<GetEmailOriginalDownloadUrl200Response>() {});
+        CreateEmailDomain201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<CreateEmailDomain201Response>() {});
         
 
-        return new ApiResponse<GetEmailOriginalDownloadUrl200Response>(
+        return new ApiResponse<CreateEmailDomain201Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
             responseValue
@@ -2088,31 +3556,22 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder getEmailOriginalDownloadUrlRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String purpose, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'mailboxId' is set
-    if (mailboxId == null) {
-      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling getEmailOriginalDownloadUrl");
-    }
-    // verify the required parameter 'emailId' is set
-    if (emailId == null) {
-      throw new ApiException(400, "Missing the required parameter 'emailId' when calling getEmailOriginalDownloadUrl");
+  private HttpRequest.Builder getEmailDomainRequestBuilder(@javax.annotation.Nonnull String domainId, @javax.annotation.Nullable String accountId, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'domainId' is set
+    if (domainId == null) {
+      throw new ApiException(400, "Missing the required parameter 'domainId' when calling getEmailDomain");
     }
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
-    String localVarPath = "/v1/mailboxes/{mailbox_id}/emails/{email_id}/raw"
-        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()))
-        .replace("{email_id}", ApiClient.urlEncode(emailId.toString()));
+    String localVarPath = "/v1/account/email_domains/{domain_id}"
+        .replace("{domain_id}", ApiClient.urlEncode(domainId.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<>();
     StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
     String localVarQueryParameterBaseName;
     localVarQueryParameterBaseName = "account_id";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
-    localVarQueryParameterBaseName = "purpose";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("purpose", purpose));
-    localVarQueryParameterBaseName = "reason";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
 
     if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
       StringJoiner queryJoiner = new StringJoiner("&");
@@ -2125,7 +3584,7 @@ public class DefaultApi {
       localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
     }
 
-    localVarRequestBuilder.header("Accept", "application/json, application/octet-stream");
+    localVarRequestBuilder.header("Accept", "application/json");
 
     localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
     if (memberVarReadTimeout != null) {
@@ -2140,10 +3599,162 @@ public class DefaultApi {
   }
 
   /**
-   * Get a short-lived Action Cable ticket for local email monitoring
-   * Requires mailbox read permission. Connect to the returned websocket_url with email_subscription_token&#x3D;TICKET using actioncable-v1-json within 60 seconds. Subscribe to EmailReceivedChannel with the returned account_id/mailbox_id. Frames contain EmailReceivedEvent in message. Live only: after confirmation and on reconnect, catch up using existing ascending email arrival cursors.
+   * Get a download link for the original email
+   * Returns a temporary link to the original .eml file. Downloads do not change read status.
    * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param emailId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @return GetEmailOriginalDownload200Response
+   * @throws ApiException if fails to make API call
+   */
+  public GetEmailOriginalDownload200Response getEmailOriginalDownload(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getEmailOriginalDownload(mailboxId, emailId, accountId, reason, null);
+  }
+
+  /**
+   * Get a download link for the original email
+   * Returns a temporary link to the original .eml file. Downloads do not change read status.
+   * @param mailboxId  (required)
+   * @param emailId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param headers Optional headers to include in the request
+   * @return GetEmailOriginalDownload200Response
+   * @throws ApiException if fails to make API call
+   */
+  public GetEmailOriginalDownload200Response getEmailOriginalDownload(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    ApiResponse<GetEmailOriginalDownload200Response> localVarResponse = getEmailOriginalDownloadWithHttpInfo(mailboxId, emailId, accountId, reason, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Get a download link for the original email
+   * Returns a temporary link to the original .eml file. Downloads do not change read status.
+   * @param mailboxId  (required)
+   * @param emailId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @return ApiResponse&lt;GetEmailOriginalDownload200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<GetEmailOriginalDownload200Response> getEmailOriginalDownloadWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getEmailOriginalDownloadWithHttpInfo(mailboxId, emailId, accountId, reason, null);
+  }
+
+  /**
+   * Get a download link for the original email
+   * Returns a temporary link to the original .eml file. Downloads do not change read status.
+   * @param mailboxId  (required)
+   * @param emailId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;GetEmailOriginalDownload200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<GetEmailOriginalDownload200Response> getEmailOriginalDownloadWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = getEmailOriginalDownloadRequestBuilder(mailboxId, emailId, accountId, reason, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("getEmailOriginalDownload", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<GetEmailOriginalDownload200Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        GetEmailOriginalDownload200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<GetEmailOriginalDownload200Response>() {});
+        
+
+        return new ApiResponse<GetEmailOriginalDownload200Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder getEmailOriginalDownloadRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling getEmailOriginalDownload");
+    }
+    // verify the required parameter 'emailId' is set
+    if (emailId == null) {
+      throw new ApiException(400, "Missing the required parameter 'emailId' when calling getEmailOriginalDownload");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/emails/{email_id}/raw"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()))
+        .replace("{email_id}", ApiClient.urlEncode(emailId.toString()));
+
+    List<Pair> localVarQueryParams = new ArrayList<>();
+    StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
+    String localVarQueryParameterBaseName;
+    localVarQueryParameterBaseName = "account_id";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
+    localVarQueryParameterBaseName = "reason";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
+
+    if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
+      StringJoiner queryJoiner = new StringJoiner("&");
+      localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
+      if (localVarQueryStringJoiner.length() != 0) {
+        queryJoiner.add(localVarQueryStringJoiner.toString());
+      }
+      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
+    } else {
+      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+    }
+
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Get a live email subscription ticket
+   * Requires mailbox read permission. Connect to websocket_url with email_subscription_token&#x3D;TOKEN within 60 seconds, then subscribe to EmailReceivedChannel. Catch up with the email list cursor after every connect.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @return GetEmailSubscription200Response
    * @throws ApiException if fails to make API call
    */
@@ -2152,10 +3763,10 @@ public class DefaultApi {
   }
 
   /**
-   * Get a short-lived Action Cable ticket for local email monitoring
-   * Requires mailbox read permission. Connect to the returned websocket_url with email_subscription_token&#x3D;TICKET using actioncable-v1-json within 60 seconds. Subscribe to EmailReceivedChannel with the returned account_id/mailbox_id. Frames contain EmailReceivedEvent in message. Live only: after confirmation and on reconnect, catch up using existing ascending email arrival cursors.
+   * Get a live email subscription ticket
+   * Requires mailbox read permission. Connect to websocket_url with email_subscription_token&#x3D;TOKEN within 60 seconds, then subscribe to EmailReceivedChannel. Catch up with the email list cursor after every connect.
    * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param headers Optional headers to include in the request
    * @return GetEmailSubscription200Response
    * @throws ApiException if fails to make API call
@@ -2166,10 +3777,10 @@ public class DefaultApi {
   }
 
   /**
-   * Get a short-lived Action Cable ticket for local email monitoring
-   * Requires mailbox read permission. Connect to the returned websocket_url with email_subscription_token&#x3D;TICKET using actioncable-v1-json within 60 seconds. Subscribe to EmailReceivedChannel with the returned account_id/mailbox_id. Frames contain EmailReceivedEvent in message. Live only: after confirmation and on reconnect, catch up using existing ascending email arrival cursors.
+   * Get a live email subscription ticket
+   * Requires mailbox read permission. Connect to websocket_url with email_subscription_token&#x3D;TOKEN within 60 seconds, then subscribe to EmailReceivedChannel. Catch up with the email list cursor after every connect.
    * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @return ApiResponse&lt;GetEmailSubscription200Response&gt;
    * @throws ApiException if fails to make API call
    */
@@ -2178,10 +3789,10 @@ public class DefaultApi {
   }
 
   /**
-   * Get a short-lived Action Cable ticket for local email monitoring
-   * Requires mailbox read permission. Connect to the returned websocket_url with email_subscription_token&#x3D;TICKET using actioncable-v1-json within 60 seconds. Subscribe to EmailReceivedChannel with the returned account_id/mailbox_id. Frames contain EmailReceivedEvent in message. Live only: after confirmation and on reconnect, catch up using existing ascending email arrival cursors.
+   * Get a live email subscription ticket
+   * Requires mailbox read permission. Connect to websocket_url with email_subscription_token&#x3D;TOKEN within 60 seconds, then subscribe to EmailReceivedChannel. Catch up with the email list cursor after every connect.
    * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;GetEmailSubscription200Response&gt;
    * @throws ApiException if fails to make API call
@@ -2277,10 +3888,10 @@ public class DefaultApi {
   }
 
   /**
-   * Read a mailbox webhook endpoint
-   * Requires mailbox admin permission. Returns null when disabled; never includes the signing secret.
+   * Read the email webhook
+   * Requires mailbox-admin permission. webhook is null when no webhook is set. The signing secret is never returned here.
    * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @return GetEmailWebhook200Response
    * @throws ApiException if fails to make API call
    */
@@ -2289,10 +3900,10 @@ public class DefaultApi {
   }
 
   /**
-   * Read a mailbox webhook endpoint
-   * Requires mailbox admin permission. Returns null when disabled; never includes the signing secret.
+   * Read the email webhook
+   * Requires mailbox-admin permission. webhook is null when no webhook is set. The signing secret is never returned here.
    * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param headers Optional headers to include in the request
    * @return GetEmailWebhook200Response
    * @throws ApiException if fails to make API call
@@ -2303,10 +3914,10 @@ public class DefaultApi {
   }
 
   /**
-   * Read a mailbox webhook endpoint
-   * Requires mailbox admin permission. Returns null when disabled; never includes the signing secret.
+   * Read the email webhook
+   * Requires mailbox-admin permission. webhook is null when no webhook is set. The signing secret is never returned here.
    * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @return ApiResponse&lt;GetEmailWebhook200Response&gt;
    * @throws ApiException if fails to make API call
    */
@@ -2315,10 +3926,10 @@ public class DefaultApi {
   }
 
   /**
-   * Read a mailbox webhook endpoint
-   * Requires mailbox admin permission. Returns null when disabled; never includes the signing secret.
+   * Read the email webhook
+   * Requires mailbox-admin permission. webhook is null when no webhook is set. The signing secret is never returned here.
    * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;GetEmailWebhook200Response&gt;
    * @throws ApiException if fails to make API call
@@ -2414,62 +4025,521 @@ public class DefaultApi {
   }
 
   /**
-   * Read mailbox activity and optionally its incoming address
-   * Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
-   * @param id  (required)
-   * @param includeEmail Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
-   * @param accountId  (optional)
+   * Read file metadata
+   * Reading metadata never marks the file read.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
-   * @return CreateMailbox201Response
+   * @return GetFileByPath200Response
    * @throws ApiException if fails to make API call
    */
-  public CreateMailbox201Response getMailbox(@javax.annotation.Nonnull String id, @javax.annotation.Nullable Boolean includeEmail, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return getMailbox(id, includeEmail, accountId, reason, null);
+  public GetFileByPath200Response getFile(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getFile(mailboxId, fileId, accountId, reason, null);
   }
 
   /**
-   * Read mailbox activity and optionally its incoming address
-   * Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
-   * @param id  (required)
-   * @param includeEmail Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
-   * @param accountId  (optional)
+   * Read file metadata
+   * Reading metadata never marks the file read.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
    * @param headers Optional headers to include in the request
-   * @return CreateMailbox201Response
+   * @return GetFileByPath200Response
    * @throws ApiException if fails to make API call
    */
-  public CreateMailbox201Response getMailbox(@javax.annotation.Nonnull String id, @javax.annotation.Nullable Boolean includeEmail, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    ApiResponse<CreateMailbox201Response> localVarResponse = getMailboxWithHttpInfo(id, includeEmail, accountId, reason, headers);
+  public GetFileByPath200Response getFile(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    ApiResponse<GetFileByPath200Response> localVarResponse = getFileWithHttpInfo(mailboxId, fileId, accountId, reason, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Read mailbox activity and optionally its incoming address
-   * Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
-   * @param id  (required)
-   * @param includeEmail Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
-   * @param accountId  (optional)
+   * Read file metadata
+   * Reading metadata never marks the file read.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @return ApiResponse&lt;GetFileByPath200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<GetFileByPath200Response> getFileWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getFileWithHttpInfo(mailboxId, fileId, accountId, reason, null);
+  }
+
+  /**
+   * Read file metadata
+   * Reading metadata never marks the file read.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;GetFileByPath200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<GetFileByPath200Response> getFileWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = getFileRequestBuilder(mailboxId, fileId, accountId, reason, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("getFile", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<GetFileByPath200Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        GetFileByPath200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<GetFileByPath200Response>() {});
+        
+
+        return new ApiResponse<GetFileByPath200Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder getFileRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling getFile");
+    }
+    // verify the required parameter 'fileId' is set
+    if (fileId == null) {
+      throw new ApiException(400, "Missing the required parameter 'fileId' when calling getFile");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/files/{file_id}"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()))
+        .replace("{file_id}", ApiClient.urlEncode(fileId.toString()));
+
+    List<Pair> localVarQueryParams = new ArrayList<>();
+    StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
+    String localVarQueryParameterBaseName;
+    localVarQueryParameterBaseName = "account_id";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
+    localVarQueryParameterBaseName = "reason";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
+
+    if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
+      StringJoiner queryJoiner = new StringJoiner("&");
+      localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
+      if (localVarQueryStringJoiner.length() != 0) {
+        queryJoiner.add(localVarQueryStringJoiner.toString());
+      }
+      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
+    } else {
+      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+    }
+
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Find a file by path
+   * Returns file metadata only. Read content with the download endpoint. The disposition and content_url parameters return INVALID_ARGUMENT.
+   * @param mailboxId  (required)
+   * @param path  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @return GetFileByPath200Response
+   * @throws ApiException if fails to make API call
+   */
+  public GetFileByPath200Response getFileByPath(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String path, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getFileByPath(mailboxId, path, accountId, reason, null);
+  }
+
+  /**
+   * Find a file by path
+   * Returns file metadata only. Read content with the download endpoint. The disposition and content_url parameters return INVALID_ARGUMENT.
+   * @param mailboxId  (required)
+   * @param path  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param headers Optional headers to include in the request
+   * @return GetFileByPath200Response
+   * @throws ApiException if fails to make API call
+   */
+  public GetFileByPath200Response getFileByPath(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String path, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    ApiResponse<GetFileByPath200Response> localVarResponse = getFileByPathWithHttpInfo(mailboxId, path, accountId, reason, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Find a file by path
+   * Returns file metadata only. Read content with the download endpoint. The disposition and content_url parameters return INVALID_ARGUMENT.
+   * @param mailboxId  (required)
+   * @param path  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @return ApiResponse&lt;GetFileByPath200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<GetFileByPath200Response> getFileByPathWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String path, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getFileByPathWithHttpInfo(mailboxId, path, accountId, reason, null);
+  }
+
+  /**
+   * Find a file by path
+   * Returns file metadata only. Read content with the download endpoint. The disposition and content_url parameters return INVALID_ARGUMENT.
+   * @param mailboxId  (required)
+   * @param path  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;GetFileByPath200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<GetFileByPath200Response> getFileByPathWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String path, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = getFileByPathRequestBuilder(mailboxId, path, accountId, reason, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("getFileByPath", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<GetFileByPath200Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        GetFileByPath200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<GetFileByPath200Response>() {});
+        
+
+        return new ApiResponse<GetFileByPath200Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder getFileByPathRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String path, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling getFileByPath");
+    }
+    // verify the required parameter 'path' is set
+    if (path == null) {
+      throw new ApiException(400, "Missing the required parameter 'path' when calling getFileByPath");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/files/by_path"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()));
+
+    List<Pair> localVarQueryParams = new ArrayList<>();
+    StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
+    String localVarQueryParameterBaseName;
+    localVarQueryParameterBaseName = "path";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("path", path));
+    localVarQueryParameterBaseName = "account_id";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
+    localVarQueryParameterBaseName = "reason";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
+
+    if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
+      StringJoiner queryJoiner = new StringJoiner("&");
+      localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
+      if (localVarQueryStringJoiner.length() != 0) {
+        queryJoiner.add(localVarQueryStringJoiner.toString());
+      }
+      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
+    } else {
+      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+    }
+
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Get a download link for a file
+   * Returns a temporary link and marks this version read. Send version_id for an older version.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param versionId  (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @return GetFileDownload200Response
+   * @throws ApiException if fails to make API call
+   */
+  public GetFileDownload200Response getFileDownload(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String versionId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getFileDownload(mailboxId, fileId, versionId, accountId, reason, null);
+  }
+
+  /**
+   * Get a download link for a file
+   * Returns a temporary link and marks this version read. Send version_id for an older version.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param versionId  (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param headers Optional headers to include in the request
+   * @return GetFileDownload200Response
+   * @throws ApiException if fails to make API call
+   */
+  public GetFileDownload200Response getFileDownload(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String versionId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    ApiResponse<GetFileDownload200Response> localVarResponse = getFileDownloadWithHttpInfo(mailboxId, fileId, versionId, accountId, reason, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Get a download link for a file
+   * Returns a temporary link and marks this version read. Send version_id for an older version.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param versionId  (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @return ApiResponse&lt;GetFileDownload200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<GetFileDownload200Response> getFileDownloadWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String versionId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getFileDownloadWithHttpInfo(mailboxId, fileId, versionId, accountId, reason, null);
+  }
+
+  /**
+   * Get a download link for a file
+   * Returns a temporary link and marks this version read. Send version_id for an older version.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param versionId  (optional)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;GetFileDownload200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<GetFileDownload200Response> getFileDownloadWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String versionId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = getFileDownloadRequestBuilder(mailboxId, fileId, versionId, accountId, reason, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("getFileDownload", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<GetFileDownload200Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        GetFileDownload200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<GetFileDownload200Response>() {});
+        
+
+        return new ApiResponse<GetFileDownload200Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder getFileDownloadRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String versionId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling getFileDownload");
+    }
+    // verify the required parameter 'fileId' is set
+    if (fileId == null) {
+      throw new ApiException(400, "Missing the required parameter 'fileId' when calling getFileDownload");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/files/{file_id}/download"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()))
+        .replace("{file_id}", ApiClient.urlEncode(fileId.toString()));
+
+    List<Pair> localVarQueryParams = new ArrayList<>();
+    StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
+    String localVarQueryParameterBaseName;
+    localVarQueryParameterBaseName = "version_id";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("version_id", versionId));
+    localVarQueryParameterBaseName = "account_id";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
+    localVarQueryParameterBaseName = "reason";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
+
+    if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
+      StringJoiner queryJoiner = new StringJoiner("&");
+      localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
+      if (localVarQueryStringJoiner.length() != 0) {
+        queryJoiner.add(localVarQueryStringJoiner.toString());
+      }
+      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
+    } else {
+      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+    }
+
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Read a mailbox
+   * Reading never changes the mailbox. Read address settings, emails and files through their own endpoints.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @return CreateMailbox201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateMailbox201Response getMailbox(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getMailbox(mailboxId, accountId, reason, null);
+  }
+
+  /**
+   * Read a mailbox
+   * Reading never changes the mailbox. Read address settings, emails and files through their own endpoints.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param headers Optional headers to include in the request
+   * @return CreateMailbox201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateMailbox201Response getMailbox(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    ApiResponse<CreateMailbox201Response> localVarResponse = getMailboxWithHttpInfo(mailboxId, accountId, reason, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Read a mailbox
+   * Reading never changes the mailbox. Read address settings, emails and files through their own endpoints.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
    * @return ApiResponse&lt;CreateMailbox201Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<CreateMailbox201Response> getMailboxWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nullable Boolean includeEmail, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return getMailboxWithHttpInfo(id, includeEmail, accountId, reason, null);
+  public ApiResponse<CreateMailbox201Response> getMailboxWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getMailboxWithHttpInfo(mailboxId, accountId, reason, null);
   }
 
   /**
-   * Read mailbox activity and optionally its incoming address
-   * Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
-   * @param id  (required)
-   * @param includeEmail Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
-   * @param accountId  (optional)
+   * Read a mailbox
+   * Reading never changes the mailbox. Read address settings, emails and files through their own endpoints.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;CreateMailbox201Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<CreateMailbox201Response> getMailboxWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nullable Boolean includeEmail, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = getMailboxRequestBuilder(id, includeEmail, accountId, reason, headers);
+  public ApiResponse<CreateMailbox201Response> getMailboxWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = getMailboxRequestBuilder(mailboxId, accountId, reason, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -2516,22 +4586,20 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder getMailboxRequestBuilder(@javax.annotation.Nonnull String id, @javax.annotation.Nullable Boolean includeEmail, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'id' is set
-    if (id == null) {
-      throw new ApiException(400, "Missing the required parameter 'id' when calling getMailbox");
+  private HttpRequest.Builder getMailboxRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling getMailbox");
     }
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
-    String localVarPath = "/v1/mailboxes/{id}"
-        .replace("{id}", ApiClient.urlEncode(id.toString()));
+    String localVarPath = "/v1/mailboxes/{mailbox_id}"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<>();
     StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
     String localVarQueryParameterBaseName;
-    localVarQueryParameterBaseName = "include_email";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("include_email", includeEmail));
     localVarQueryParameterBaseName = "account_id";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
     localVarQueryParameterBaseName = "reason";
@@ -2563,58 +4631,58 @@ public class DefaultApi {
   }
 
   /**
-   * Read a mailbox email address and limits
-   * Requires upload/write access. Anyone knowing the address can send; reading files requires mailbox authorization. Original message.eml, decoded message.json, and attachments are stored together.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param accountId Explicitly granted account; omission uses credential default (optional)
+   * Read address settings
+   * Requires mailbox write permission.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
    * @return GetMailboxEmailSettings200Response
    * @throws ApiException if fails to make API call
    */
-  public GetMailboxEmailSettings200Response getMailboxEmailSettings(@javax.annotation.Nonnull String id, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return getMailboxEmailSettings(id, accountId, reason, null);
+  public GetMailboxEmailSettings200Response getMailboxEmailSettings(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getMailboxEmailSettings(mailboxId, accountId, reason, null);
   }
 
   /**
-   * Read a mailbox email address and limits
-   * Requires upload/write access. Anyone knowing the address can send; reading files requires mailbox authorization. Original message.eml, decoded message.json, and attachments are stored together.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param accountId Explicitly granted account; omission uses credential default (optional)
+   * Read address settings
+   * Requires mailbox write permission.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
    * @param headers Optional headers to include in the request
    * @return GetMailboxEmailSettings200Response
    * @throws ApiException if fails to make API call
    */
-  public GetMailboxEmailSettings200Response getMailboxEmailSettings(@javax.annotation.Nonnull String id, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    ApiResponse<GetMailboxEmailSettings200Response> localVarResponse = getMailboxEmailSettingsWithHttpInfo(id, accountId, reason, headers);
+  public GetMailboxEmailSettings200Response getMailboxEmailSettings(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    ApiResponse<GetMailboxEmailSettings200Response> localVarResponse = getMailboxEmailSettingsWithHttpInfo(mailboxId, accountId, reason, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Read a mailbox email address and limits
-   * Requires upload/write access. Anyone knowing the address can send; reading files requires mailbox authorization. Original message.eml, decoded message.json, and attachments are stored together.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param accountId Explicitly granted account; omission uses credential default (optional)
+   * Read address settings
+   * Requires mailbox write permission.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
    * @return ApiResponse&lt;GetMailboxEmailSettings200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<GetMailboxEmailSettings200Response> getMailboxEmailSettingsWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return getMailboxEmailSettingsWithHttpInfo(id, accountId, reason, null);
+  public ApiResponse<GetMailboxEmailSettings200Response> getMailboxEmailSettingsWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getMailboxEmailSettingsWithHttpInfo(mailboxId, accountId, reason, null);
   }
 
   /**
-   * Read a mailbox email address and limits
-   * Requires upload/write access. Anyone knowing the address can send; reading files requires mailbox authorization. Original message.eml, decoded message.json, and attachments are stored together.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param accountId Explicitly granted account; omission uses credential default (optional)
+   * Read address settings
+   * Requires mailbox write permission.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;GetMailboxEmailSettings200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<GetMailboxEmailSettings200Response> getMailboxEmailSettingsWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = getMailboxEmailSettingsRequestBuilder(id, accountId, reason, headers);
+  public ApiResponse<GetMailboxEmailSettings200Response> getMailboxEmailSettingsWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = getMailboxEmailSettingsRequestBuilder(mailboxId, accountId, reason, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -2661,16 +4729,16 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder getMailboxEmailSettingsRequestBuilder(@javax.annotation.Nonnull String id, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'id' is set
-    if (id == null) {
-      throw new ApiException(400, "Missing the required parameter 'id' when calling getMailboxEmailSettings");
+  private HttpRequest.Builder getMailboxEmailSettingsRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling getMailboxEmailSettings");
     }
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
-    String localVarPath = "/v1/mailboxes/{id}/email"
-        .replace("{id}", ApiClient.urlEncode(id.toString()));
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/email"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<>();
     StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
@@ -2706,58 +4774,54 @@ public class DefaultApi {
   }
 
   /**
-   * Read stored file metadata
-   * 
-   * @param id  (required)
-   * @param fileId  (required)
-   * @param accountId  (optional)
-   * @return MailboxFileResponse
+   * Read the connection and selected account
+   * Works with every API key, including mailbox-scoped keys. Read quotas with GET /v1/account/limits.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @return GetStatus200Response
    * @throws ApiException if fails to make API call
    */
-  public MailboxFileResponse getMailboxFile(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId) throws ApiException {
-    return getMailboxFile(id, fileId, accountId, null);
+  public GetStatus200Response getStatus(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getStatus(accountId, reason, null);
   }
 
   /**
-   * Read stored file metadata
-   * 
-   * @param id  (required)
-   * @param fileId  (required)
-   * @param accountId  (optional)
+   * Read the connection and selected account
+   * Works with every API key, including mailbox-scoped keys. Read quotas with GET /v1/account/limits.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
    * @param headers Optional headers to include in the request
-   * @return MailboxFileResponse
+   * @return GetStatus200Response
    * @throws ApiException if fails to make API call
    */
-  public MailboxFileResponse getMailboxFile(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, Map<String, String> headers) throws ApiException {
-    ApiResponse<MailboxFileResponse> localVarResponse = getMailboxFileWithHttpInfo(id, fileId, accountId, headers);
+  public GetStatus200Response getStatus(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    ApiResponse<GetStatus200Response> localVarResponse = getStatusWithHttpInfo(accountId, reason, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Read stored file metadata
-   * 
-   * @param id  (required)
-   * @param fileId  (required)
-   * @param accountId  (optional)
-   * @return ApiResponse&lt;MailboxFileResponse&gt;
+   * Read the connection and selected account
+   * Works with every API key, including mailbox-scoped keys. Read quotas with GET /v1/account/limits.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @return ApiResponse&lt;GetStatus200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<MailboxFileResponse> getMailboxFileWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId) throws ApiException {
-    return getMailboxFileWithHttpInfo(id, fileId, accountId, null);
+  public ApiResponse<GetStatus200Response> getStatusWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
+    return getStatusWithHttpInfo(accountId, reason, null);
   }
 
   /**
-   * Read stored file metadata
-   * 
-   * @param id  (required)
-   * @param fileId  (required)
-   * @param accountId  (optional)
+   * Read the connection and selected account
+   * Works with every API key, including mailbox-scoped keys. Read quotas with GET /v1/account/limits.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;MailboxFileResponse&gt;
+   * @return ApiResponse&lt;GetStatus200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<MailboxFileResponse> getMailboxFileWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = getMailboxFileRequestBuilder(id, fileId, accountId, headers);
+  public ApiResponse<GetStatus200Response> getStatusWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = getStatusRequestBuilder(accountId, reason, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -2768,11 +4832,11 @@ public class DefaultApi {
       InputStream localVarResponseBody = null;
       try {
         if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("getMailboxFile", localVarResponse);
+          throw getApiException("getStatus", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
         if (localVarResponseBody == null) {
-          return new ApiResponse<MailboxFileResponse>(
+          return new ApiResponse<GetStatus200Response>(
               localVarResponse.statusCode(),
               localVarResponse.headers().map(),
               null
@@ -2782,10 +4846,10 @@ public class DefaultApi {
         
         
         String responseBody = new String(localVarResponseBody.readAllBytes());
-        MailboxFileResponse responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<MailboxFileResponse>() {});
+        GetStatus200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<GetStatus200Response>() {});
         
 
-        return new ApiResponse<MailboxFileResponse>(
+        return new ApiResponse<GetStatus200Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
             responseValue
@@ -2804,149 +4868,7 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder getMailboxFileRequestBuilder(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'id' is set
-    if (id == null) {
-      throw new ApiException(400, "Missing the required parameter 'id' when calling getMailboxFile");
-    }
-    // verify the required parameter 'fileId' is set
-    if (fileId == null) {
-      throw new ApiException(400, "Missing the required parameter 'fileId' when calling getMailboxFile");
-    }
-
-    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-    String localVarPath = "/v1/mailboxes/{id}/files/{file_id}"
-        .replace("{id}", ApiClient.urlEncode(id.toString()))
-        .replace("{file_id}", ApiClient.urlEncode(fileId.toString()));
-
-    List<Pair> localVarQueryParams = new ArrayList<>();
-    StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
-    String localVarQueryParameterBaseName;
-    localVarQueryParameterBaseName = "account_id";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
-
-    if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
-      StringJoiner queryJoiner = new StringJoiner("&");
-      localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
-      if (localVarQueryStringJoiner.length() != 0) {
-        queryJoiner.add(localVarQueryStringJoiner.toString());
-      }
-      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
-    } else {
-      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-    }
-
-    localVarRequestBuilder.header("Accept", "application/json");
-
-    localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
-    if (memberVarReadTimeout != null) {
-      localVarRequestBuilder.timeout(memberVarReadTimeout);
-    }
-    // Add custom headers if provided
-    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
-    if (memberVarInterceptor != null) {
-      memberVarInterceptor.accept(localVarRequestBuilder);
-    }
-    return localVarRequestBuilder;
-  }
-
-  /**
-   * Read current account identity and granted accounts
-   * 
-   * @param accountId Select a granted account for this request only; omit for the credential&#39;s default account. (optional)
-   * @param reason  (optional)
-   * @return GetRevdokuStatus200Response
-   * @throws ApiException if fails to make API call
-   */
-  public GetRevdokuStatus200Response getRevdokuStatus(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return getRevdokuStatus(accountId, reason, null);
-  }
-
-  /**
-   * Read current account identity and granted accounts
-   * 
-   * @param accountId Select a granted account for this request only; omit for the credential&#39;s default account. (optional)
-   * @param reason  (optional)
-   * @param headers Optional headers to include in the request
-   * @return GetRevdokuStatus200Response
-   * @throws ApiException if fails to make API call
-   */
-  public GetRevdokuStatus200Response getRevdokuStatus(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    ApiResponse<GetRevdokuStatus200Response> localVarResponse = getRevdokuStatusWithHttpInfo(accountId, reason, headers);
-    return localVarResponse.getData();
-  }
-
-  /**
-   * Read current account identity and granted accounts
-   * 
-   * @param accountId Select a granted account for this request only; omit for the credential&#39;s default account. (optional)
-   * @param reason  (optional)
-   * @return ApiResponse&lt;GetRevdokuStatus200Response&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<GetRevdokuStatus200Response> getRevdokuStatusWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return getRevdokuStatusWithHttpInfo(accountId, reason, null);
-  }
-
-  /**
-   * Read current account identity and granted accounts
-   * 
-   * @param accountId Select a granted account for this request only; omit for the credential&#39;s default account. (optional)
-   * @param reason  (optional)
-   * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;GetRevdokuStatus200Response&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<GetRevdokuStatus200Response> getRevdokuStatusWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = getRevdokuStatusRequestBuilder(accountId, reason, headers);
-    try {
-      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
-          localVarRequestBuilder.build(),
-          HttpResponse.BodyHandlers.ofInputStream());
-      if (memberVarResponseInterceptor != null) {
-        memberVarResponseInterceptor.accept(localVarResponse);
-      }
-      InputStream localVarResponseBody = null;
-      try {
-        if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("getRevdokuStatus", localVarResponse);
-        }
-        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
-        if (localVarResponseBody == null) {
-          return new ApiResponse<GetRevdokuStatus200Response>(
-              localVarResponse.statusCode(),
-              localVarResponse.headers().map(),
-              null
-          );
-        }
-
-        
-        
-        String responseBody = new String(localVarResponseBody.readAllBytes());
-        GetRevdokuStatus200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<GetRevdokuStatus200Response>() {});
-        
-
-        return new ApiResponse<GetRevdokuStatus200Response>(
-            localVarResponse.statusCode(),
-            localVarResponse.headers().map(),
-            responseValue
-        );
-      } finally {
-        if (localVarResponseBody != null) {
-          localVarResponseBody.close();
-        }
-      }
-    } catch (IOException e) {
-      throw new ApiException(e);
-    }
-    catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new ApiException(e);
-    }
-  }
-
-  private HttpRequest.Builder getRevdokuStatusRequestBuilder(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
+  private HttpRequest.Builder getStatusRequestBuilder(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
@@ -2986,188 +4908,54 @@ public class DefaultApi {
   }
 
   /**
-   * List account email domains, DNS records, receiving state and usage
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param accountId Explicit granted account for this call; omission uses the credential account. (optional)
-   * @param reason  (optional)
-   * @return EmailDomainListResponse
+   * List accounts granted to this credential
+   * 
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @return ListAccounts200Response
    * @throws ApiException if fails to make API call
    */
-  public EmailDomainListResponse listAccountEmailDomains(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return listAccountEmailDomains(accountId, reason, null);
-  }
-
-  /**
-   * List account email domains, DNS records, receiving state and usage
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param accountId Explicit granted account for this call; omission uses the credential account. (optional)
-   * @param reason  (optional)
-   * @param headers Optional headers to include in the request
-   * @return EmailDomainListResponse
-   * @throws ApiException if fails to make API call
-   */
-  public EmailDomainListResponse listAccountEmailDomains(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    ApiResponse<EmailDomainListResponse> localVarResponse = listAccountEmailDomainsWithHttpInfo(accountId, reason, headers);
-    return localVarResponse.getData();
-  }
-
-  /**
-   * List account email domains, DNS records, receiving state and usage
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param accountId Explicit granted account for this call; omission uses the credential account. (optional)
-   * @param reason  (optional)
-   * @return ApiResponse&lt;EmailDomainListResponse&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<EmailDomainListResponse> listAccountEmailDomainsWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return listAccountEmailDomainsWithHttpInfo(accountId, reason, null);
-  }
-
-  /**
-   * List account email domains, DNS records, receiving state and usage
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param accountId Explicit granted account for this call; omission uses the credential account. (optional)
-   * @param reason  (optional)
-   * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;EmailDomainListResponse&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<EmailDomainListResponse> listAccountEmailDomainsWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = listAccountEmailDomainsRequestBuilder(accountId, reason, headers);
-    try {
-      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
-          localVarRequestBuilder.build(),
-          HttpResponse.BodyHandlers.ofInputStream());
-      if (memberVarResponseInterceptor != null) {
-        memberVarResponseInterceptor.accept(localVarResponse);
-      }
-      InputStream localVarResponseBody = null;
-      try {
-        if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("listAccountEmailDomains", localVarResponse);
-        }
-        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
-        if (localVarResponseBody == null) {
-          return new ApiResponse<EmailDomainListResponse>(
-              localVarResponse.statusCode(),
-              localVarResponse.headers().map(),
-              null
-          );
-        }
-
-        
-        
-        String responseBody = new String(localVarResponseBody.readAllBytes());
-        EmailDomainListResponse responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<EmailDomainListResponse>() {});
-        
-
-        return new ApiResponse<EmailDomainListResponse>(
-            localVarResponse.statusCode(),
-            localVarResponse.headers().map(),
-            responseValue
-        );
-      } finally {
-        if (localVarResponseBody != null) {
-          localVarResponseBody.close();
-        }
-      }
-    } catch (IOException e) {
-      throw new ApiException(e);
-    }
-    catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new ApiException(e);
-    }
-  }
-
-  private HttpRequest.Builder listAccountEmailDomainsRequestBuilder(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-
-    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-    String localVarPath = "/v1/account/email_domains";
-
-    List<Pair> localVarQueryParams = new ArrayList<>();
-    StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
-    String localVarQueryParameterBaseName;
-    localVarQueryParameterBaseName = "account_id";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
-    localVarQueryParameterBaseName = "reason";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
-
-    if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
-      StringJoiner queryJoiner = new StringJoiner("&");
-      localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
-      if (localVarQueryStringJoiner.length() != 0) {
-        queryJoiner.add(localVarQueryStringJoiner.toString());
-      }
-      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
-    } else {
-      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-    }
-
-    localVarRequestBuilder.header("Accept", "application/json");
-
-    localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
-    if (memberVarReadTimeout != null) {
-      localVarRequestBuilder.timeout(memberVarReadTimeout);
-    }
-    // Add custom headers if provided
-    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
-    if (memberVarInterceptor != null) {
-      memberVarInterceptor.accept(localVarRequestBuilder);
-    }
-    return localVarRequestBuilder;
+  public ListAccounts200Response listAccounts(@javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor) throws ApiException {
+    return listAccounts(limit, cursor, null);
   }
 
   /**
    * List accounts granted to this credential
    * 
-   * @param limit  (optional, default to 100)
-   * @param offset  (optional)
-   * @return ListAccounts200Response
-   * @throws ApiException if fails to make API call
-   */
-  public ListAccounts200Response listAccounts(@javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset) throws ApiException {
-    return listAccounts(limit, offset, null);
-  }
-
-  /**
-   * List accounts granted to this credential
-   * 
-   * @param limit  (optional, default to 100)
-   * @param offset  (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
    * @param headers Optional headers to include in the request
    * @return ListAccounts200Response
    * @throws ApiException if fails to make API call
    */
-  public ListAccounts200Response listAccounts(@javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset, Map<String, String> headers) throws ApiException {
-    ApiResponse<ListAccounts200Response> localVarResponse = listAccountsWithHttpInfo(limit, offset, headers);
+  public ListAccounts200Response listAccounts(@javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, Map<String, String> headers) throws ApiException {
+    ApiResponse<ListAccounts200Response> localVarResponse = listAccountsWithHttpInfo(limit, cursor, headers);
     return localVarResponse.getData();
   }
 
   /**
    * List accounts granted to this credential
    * 
-   * @param limit  (optional, default to 100)
-   * @param offset  (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
    * @return ApiResponse&lt;ListAccounts200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<ListAccounts200Response> listAccountsWithHttpInfo(@javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset) throws ApiException {
-    return listAccountsWithHttpInfo(limit, offset, null);
+  public ApiResponse<ListAccounts200Response> listAccountsWithHttpInfo(@javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor) throws ApiException {
+    return listAccountsWithHttpInfo(limit, cursor, null);
   }
 
   /**
    * List accounts granted to this credential
    * 
-   * @param limit  (optional, default to 100)
-   * @param offset  (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;ListAccounts200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<ListAccounts200Response> listAccountsWithHttpInfo(@javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = listAccountsRequestBuilder(limit, offset, headers);
+  public ApiResponse<ListAccounts200Response> listAccountsWithHttpInfo(@javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = listAccountsRequestBuilder(limit, cursor, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -3214,7 +5002,7 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder listAccountsRequestBuilder(@javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset, Map<String, String> headers) throws ApiException {
+  private HttpRequest.Builder listAccountsRequestBuilder(@javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, Map<String, String> headers) throws ApiException {
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
@@ -3225,8 +5013,8 @@ public class DefaultApi {
     String localVarQueryParameterBaseName;
     localVarQueryParameterBaseName = "limit";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("limit", limit));
-    localVarQueryParameterBaseName = "offset";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("offset", offset));
+    localVarQueryParameterBaseName = "cursor";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("cursor", cursor));
 
     if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
       StringJoiner queryJoiner = new StringJoiner("&");
@@ -3254,98 +5042,246 @@ public class DefaultApi {
   }
 
   /**
-   * List received emails
-   * Requires mailbox read permission. Ascending arrival order supports incremental polling: retain next_cursor even after an empty page. Reuse account, mailbox and filters. Late receipt timestamps are included. Descending order browses history. Edits/read changes/restorations do not replay earlier arrivals. Listing does not mark read.
-   * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param limit Maximum messages on this page. (optional, default to 50)
-   * @param cursor Opaque next_cursor from a previous page. (optional)
-   * @param order Arrival order. (optional, default to asc)
-   * @param sender Exact sender address, case insensitive. (optional)
-   * @param subject Case insensitive subject substring. (optional)
-   * @param receivedAfter Exclusive receipt-time lower bound. (optional)
-   * @param receivedBefore Exclusive receipt-time upper bound. (optional)
-   * @param read Current shared read status. (optional)
-   * @param hasAttachments Saved attachment presence. (optional)
-   * @param conversationId An email ID in the selected conversation. (optional)
-   * @param includeStorage Include backing file identifiers for file-browser integration. (optional, default to false)
-   * @return ListEmails200Response
+   * List custom email domains
+   * Requires a full-account owner or administrator credential.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @return ListEmailDomains200Response
    * @throws ApiException if fails to make API call
    */
-  public ListEmails200Response listEmails(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, @javax.annotation.Nullable String order, @javax.annotation.Nullable String sender, @javax.annotation.Nullable String subject, @javax.annotation.Nullable OffsetDateTime receivedAfter, @javax.annotation.Nullable OffsetDateTime receivedBefore, @javax.annotation.Nullable Boolean read, @javax.annotation.Nullable Boolean hasAttachments, @javax.annotation.Nullable String conversationId, @javax.annotation.Nullable Boolean includeStorage) throws ApiException {
-    return listEmails(mailboxId, accountId, limit, cursor, order, sender, subject, receivedAfter, receivedBefore, read, hasAttachments, conversationId, includeStorage, null);
+  public ListEmailDomains200Response listEmailDomains(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor) throws ApiException {
+    return listEmailDomains(accountId, limit, cursor, null);
   }
 
   /**
-   * List received emails
-   * Requires mailbox read permission. Ascending arrival order supports incremental polling: retain next_cursor even after an empty page. Reuse account, mailbox and filters. Late receipt timestamps are included. Descending order browses history. Edits/read changes/restorations do not replay earlier arrivals. Listing does not mark read.
-   * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param limit Maximum messages on this page. (optional, default to 50)
-   * @param cursor Opaque next_cursor from a previous page. (optional)
-   * @param order Arrival order. (optional, default to asc)
-   * @param sender Exact sender address, case insensitive. (optional)
-   * @param subject Case insensitive subject substring. (optional)
-   * @param receivedAfter Exclusive receipt-time lower bound. (optional)
-   * @param receivedBefore Exclusive receipt-time upper bound. (optional)
-   * @param read Current shared read status. (optional)
-   * @param hasAttachments Saved attachment presence. (optional)
-   * @param conversationId An email ID in the selected conversation. (optional)
-   * @param includeStorage Include backing file identifiers for file-browser integration. (optional, default to false)
+   * List custom email domains
+   * Requires a full-account owner or administrator credential.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
    * @param headers Optional headers to include in the request
-   * @return ListEmails200Response
+   * @return ListEmailDomains200Response
    * @throws ApiException if fails to make API call
    */
-  public ListEmails200Response listEmails(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, @javax.annotation.Nullable String order, @javax.annotation.Nullable String sender, @javax.annotation.Nullable String subject, @javax.annotation.Nullable OffsetDateTime receivedAfter, @javax.annotation.Nullable OffsetDateTime receivedBefore, @javax.annotation.Nullable Boolean read, @javax.annotation.Nullable Boolean hasAttachments, @javax.annotation.Nullable String conversationId, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
-    ApiResponse<ListEmails200Response> localVarResponse = listEmailsWithHttpInfo(mailboxId, accountId, limit, cursor, order, sender, subject, receivedAfter, receivedBefore, read, hasAttachments, conversationId, includeStorage, headers);
+  public ListEmailDomains200Response listEmailDomains(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, Map<String, String> headers) throws ApiException {
+    ApiResponse<ListEmailDomains200Response> localVarResponse = listEmailDomainsWithHttpInfo(accountId, limit, cursor, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * List received emails
-   * Requires mailbox read permission. Ascending arrival order supports incremental polling: retain next_cursor even after an empty page. Reuse account, mailbox and filters. Late receipt timestamps are included. Descending order browses history. Edits/read changes/restorations do not replay earlier arrivals. Listing does not mark read.
-   * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param limit Maximum messages on this page. (optional, default to 50)
-   * @param cursor Opaque next_cursor from a previous page. (optional)
-   * @param order Arrival order. (optional, default to asc)
-   * @param sender Exact sender address, case insensitive. (optional)
-   * @param subject Case insensitive subject substring. (optional)
-   * @param receivedAfter Exclusive receipt-time lower bound. (optional)
-   * @param receivedBefore Exclusive receipt-time upper bound. (optional)
-   * @param read Current shared read status. (optional)
-   * @param hasAttachments Saved attachment presence. (optional)
-   * @param conversationId An email ID in the selected conversation. (optional)
-   * @param includeStorage Include backing file identifiers for file-browser integration. (optional, default to false)
-   * @return ApiResponse&lt;ListEmails200Response&gt;
+   * List custom email domains
+   * Requires a full-account owner or administrator credential.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @return ApiResponse&lt;ListEmailDomains200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<ListEmails200Response> listEmailsWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, @javax.annotation.Nullable String order, @javax.annotation.Nullable String sender, @javax.annotation.Nullable String subject, @javax.annotation.Nullable OffsetDateTime receivedAfter, @javax.annotation.Nullable OffsetDateTime receivedBefore, @javax.annotation.Nullable Boolean read, @javax.annotation.Nullable Boolean hasAttachments, @javax.annotation.Nullable String conversationId, @javax.annotation.Nullable Boolean includeStorage) throws ApiException {
-    return listEmailsWithHttpInfo(mailboxId, accountId, limit, cursor, order, sender, subject, receivedAfter, receivedBefore, read, hasAttachments, conversationId, includeStorage, null);
+  public ApiResponse<ListEmailDomains200Response> listEmailDomainsWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor) throws ApiException {
+    return listEmailDomainsWithHttpInfo(accountId, limit, cursor, null);
   }
 
   /**
-   * List received emails
-   * Requires mailbox read permission. Ascending arrival order supports incremental polling: retain next_cursor even after an empty page. Reuse account, mailbox and filters. Late receipt timestamps are included. Descending order browses history. Edits/read changes/restorations do not replay earlier arrivals. Listing does not mark read.
+   * List custom email domains
+   * Requires a full-account owner or administrator credential.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;ListEmailDomains200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<ListEmailDomains200Response> listEmailDomainsWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = listEmailDomainsRequestBuilder(accountId, limit, cursor, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("listEmailDomains", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<ListEmailDomains200Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        ListEmailDomains200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<ListEmailDomains200Response>() {});
+        
+
+        return new ApiResponse<ListEmailDomains200Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder listEmailDomainsRequestBuilder(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, Map<String, String> headers) throws ApiException {
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/account/email_domains";
+
+    List<Pair> localVarQueryParams = new ArrayList<>();
+    StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
+    String localVarQueryParameterBaseName;
+    localVarQueryParameterBaseName = "account_id";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
+    localVarQueryParameterBaseName = "limit";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("limit", limit));
+    localVarQueryParameterBaseName = "cursor";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("cursor", cursor));
+
+    if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
+      StringJoiner queryJoiner = new StringJoiner("&");
+      localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
+      if (localVarQueryStringJoiner.length() != 0) {
+        queryJoiner.add(localVarQueryStringJoiner.toString());
+      }
+      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
+    } else {
+      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+    }
+
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * List emails
+   * Requires mailbox read permission. Lists received email by default. To poll, list in ascending order, save pagination.next_cursor after every page (including an empty page) and send it next time with the same filters. Listing never marks email read.
    * @param mailboxId  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param limit Maximum messages on this page. (optional, default to 50)
-   * @param cursor Opaque next_cursor from a previous page. (optional)
-   * @param order Arrival order. (optional, default to asc)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @param order Arrival order. Use asc to poll. (optional, default to asc)
+   * @param direction  (optional, default to received)
    * @param sender Exact sender address, case insensitive. (optional)
-   * @param subject Case insensitive subject substring. (optional)
-   * @param receivedAfter Exclusive receipt-time lower bound. (optional)
-   * @param receivedBefore Exclusive receipt-time upper bound. (optional)
-   * @param read Current shared read status. (optional)
-   * @param hasAttachments Saved attachment presence. (optional)
-   * @param conversationId An email ID in the selected conversation. (optional)
-   * @param includeStorage Include backing file identifiers for file-browser integration. (optional, default to false)
+   * @param subject Case-insensitive subject text. (optional)
+   * @param receivedAfter  (optional)
+   * @param receivedBefore  (optional)
+   * @param read  (optional)
+   * @param hasAttachments  (optional)
+   * @param conversationId Return the emails of this conversation. (optional)
+   * @param includeStorage Include backing file IDs for file-browser integrations. (optional, default to false)
+   * @return ListEmails200Response
+   * @throws ApiException if fails to make API call
+   */
+  public ListEmails200Response listEmails(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, @javax.annotation.Nullable String order, @javax.annotation.Nullable String direction, @javax.annotation.Nullable String sender, @javax.annotation.Nullable String subject, @javax.annotation.Nullable OffsetDateTime receivedAfter, @javax.annotation.Nullable OffsetDateTime receivedBefore, @javax.annotation.Nullable Boolean read, @javax.annotation.Nullable Boolean hasAttachments, @javax.annotation.Nullable String conversationId, @javax.annotation.Nullable Boolean includeStorage) throws ApiException {
+    return listEmails(mailboxId, accountId, reason, limit, cursor, order, direction, sender, subject, receivedAfter, receivedBefore, read, hasAttachments, conversationId, includeStorage, null);
+  }
+
+  /**
+   * List emails
+   * Requires mailbox read permission. Lists received email by default. To poll, list in ascending order, save pagination.next_cursor after every page (including an empty page) and send it next time with the same filters. Listing never marks email read.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @param order Arrival order. Use asc to poll. (optional, default to asc)
+   * @param direction  (optional, default to received)
+   * @param sender Exact sender address, case insensitive. (optional)
+   * @param subject Case-insensitive subject text. (optional)
+   * @param receivedAfter  (optional)
+   * @param receivedBefore  (optional)
+   * @param read  (optional)
+   * @param hasAttachments  (optional)
+   * @param conversationId Return the emails of this conversation. (optional)
+   * @param includeStorage Include backing file IDs for file-browser integrations. (optional, default to false)
+   * @param headers Optional headers to include in the request
+   * @return ListEmails200Response
+   * @throws ApiException if fails to make API call
+   */
+  public ListEmails200Response listEmails(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, @javax.annotation.Nullable String order, @javax.annotation.Nullable String direction, @javax.annotation.Nullable String sender, @javax.annotation.Nullable String subject, @javax.annotation.Nullable OffsetDateTime receivedAfter, @javax.annotation.Nullable OffsetDateTime receivedBefore, @javax.annotation.Nullable Boolean read, @javax.annotation.Nullable Boolean hasAttachments, @javax.annotation.Nullable String conversationId, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
+    ApiResponse<ListEmails200Response> localVarResponse = listEmailsWithHttpInfo(mailboxId, accountId, reason, limit, cursor, order, direction, sender, subject, receivedAfter, receivedBefore, read, hasAttachments, conversationId, includeStorage, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * List emails
+   * Requires mailbox read permission. Lists received email by default. To poll, list in ascending order, save pagination.next_cursor after every page (including an empty page) and send it next time with the same filters. Listing never marks email read.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @param order Arrival order. Use asc to poll. (optional, default to asc)
+   * @param direction  (optional, default to received)
+   * @param sender Exact sender address, case insensitive. (optional)
+   * @param subject Case-insensitive subject text. (optional)
+   * @param receivedAfter  (optional)
+   * @param receivedBefore  (optional)
+   * @param read  (optional)
+   * @param hasAttachments  (optional)
+   * @param conversationId Return the emails of this conversation. (optional)
+   * @param includeStorage Include backing file IDs for file-browser integrations. (optional, default to false)
+   * @return ApiResponse&lt;ListEmails200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<ListEmails200Response> listEmailsWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, @javax.annotation.Nullable String order, @javax.annotation.Nullable String direction, @javax.annotation.Nullable String sender, @javax.annotation.Nullable String subject, @javax.annotation.Nullable OffsetDateTime receivedAfter, @javax.annotation.Nullable OffsetDateTime receivedBefore, @javax.annotation.Nullable Boolean read, @javax.annotation.Nullable Boolean hasAttachments, @javax.annotation.Nullable String conversationId, @javax.annotation.Nullable Boolean includeStorage) throws ApiException {
+    return listEmailsWithHttpInfo(mailboxId, accountId, reason, limit, cursor, order, direction, sender, subject, receivedAfter, receivedBefore, read, hasAttachments, conversationId, includeStorage, null);
+  }
+
+  /**
+   * List emails
+   * Requires mailbox read permission. Lists received email by default. To poll, list in ascending order, save pagination.next_cursor after every page (including an empty page) and send it next time with the same filters. Listing never marks email read.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @param order Arrival order. Use asc to poll. (optional, default to asc)
+   * @param direction  (optional, default to received)
+   * @param sender Exact sender address, case insensitive. (optional)
+   * @param subject Case-insensitive subject text. (optional)
+   * @param receivedAfter  (optional)
+   * @param receivedBefore  (optional)
+   * @param read  (optional)
+   * @param hasAttachments  (optional)
+   * @param conversationId Return the emails of this conversation. (optional)
+   * @param includeStorage Include backing file IDs for file-browser integrations. (optional, default to false)
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;ListEmails200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<ListEmails200Response> listEmailsWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, @javax.annotation.Nullable String order, @javax.annotation.Nullable String sender, @javax.annotation.Nullable String subject, @javax.annotation.Nullable OffsetDateTime receivedAfter, @javax.annotation.Nullable OffsetDateTime receivedBefore, @javax.annotation.Nullable Boolean read, @javax.annotation.Nullable Boolean hasAttachments, @javax.annotation.Nullable String conversationId, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = listEmailsRequestBuilder(mailboxId, accountId, limit, cursor, order, sender, subject, receivedAfter, receivedBefore, read, hasAttachments, conversationId, includeStorage, headers);
+  public ApiResponse<ListEmails200Response> listEmailsWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, @javax.annotation.Nullable String order, @javax.annotation.Nullable String direction, @javax.annotation.Nullable String sender, @javax.annotation.Nullable String subject, @javax.annotation.Nullable OffsetDateTime receivedAfter, @javax.annotation.Nullable OffsetDateTime receivedBefore, @javax.annotation.Nullable Boolean read, @javax.annotation.Nullable Boolean hasAttachments, @javax.annotation.Nullable String conversationId, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = listEmailsRequestBuilder(mailboxId, accountId, reason, limit, cursor, order, direction, sender, subject, receivedAfter, receivedBefore, read, hasAttachments, conversationId, includeStorage, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -3392,7 +5328,7 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder listEmailsRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, @javax.annotation.Nullable String order, @javax.annotation.Nullable String sender, @javax.annotation.Nullable String subject, @javax.annotation.Nullable OffsetDateTime receivedAfter, @javax.annotation.Nullable OffsetDateTime receivedBefore, @javax.annotation.Nullable Boolean read, @javax.annotation.Nullable Boolean hasAttachments, @javax.annotation.Nullable String conversationId, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
+  private HttpRequest.Builder listEmailsRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, @javax.annotation.Nullable String order, @javax.annotation.Nullable String direction, @javax.annotation.Nullable String sender, @javax.annotation.Nullable String subject, @javax.annotation.Nullable OffsetDateTime receivedAfter, @javax.annotation.Nullable OffsetDateTime receivedBefore, @javax.annotation.Nullable Boolean read, @javax.annotation.Nullable Boolean hasAttachments, @javax.annotation.Nullable String conversationId, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
     // verify the required parameter 'mailboxId' is set
     if (mailboxId == null) {
       throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling listEmails");
@@ -3408,12 +5344,16 @@ public class DefaultApi {
     String localVarQueryParameterBaseName;
     localVarQueryParameterBaseName = "account_id";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
+    localVarQueryParameterBaseName = "reason";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
     localVarQueryParameterBaseName = "limit";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("limit", limit));
     localVarQueryParameterBaseName = "cursor";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("cursor", cursor));
     localVarQueryParameterBaseName = "order";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("order", order));
+    localVarQueryParameterBaseName = "direction";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("direction", direction));
     localVarQueryParameterBaseName = "sender";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("sender", sender));
     localVarQueryParameterBaseName = "subject";
@@ -3457,74 +5397,70 @@ public class DefaultApi {
   }
 
   /**
-   * List files or related email without marking read
-   * 
-   * @param id  (required)
-   * @param limit Default and maximum 100. (optional, default to 100)
-   * @param offset  (optional)
+   * List file versions
+   * Newest first.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
-   * @param q  (optional)
-   * @param folder  (optional)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @return ListMailboxFiles200Response
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @return ListFileVersions200Response
    * @throws ApiException if fails to make API call
    */
-  public ListMailboxFiles200Response listMailboxFiles(@javax.annotation.Nonnull String id, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset, @javax.annotation.Nullable String reason, @javax.annotation.Nullable String q, @javax.annotation.Nullable String folder, @javax.annotation.Nullable String accountId) throws ApiException {
-    return listMailboxFiles(id, limit, offset, reason, q, folder, accountId, null);
+  public ListFileVersions200Response listFileVersions(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor) throws ApiException {
+    return listFileVersions(mailboxId, fileId, accountId, reason, limit, cursor, null);
   }
 
   /**
-   * List files or related email without marking read
-   * 
-   * @param id  (required)
-   * @param limit Default and maximum 100. (optional, default to 100)
-   * @param offset  (optional)
+   * List file versions
+   * Newest first.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
-   * @param q  (optional)
-   * @param folder  (optional)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
    * @param headers Optional headers to include in the request
-   * @return ListMailboxFiles200Response
+   * @return ListFileVersions200Response
    * @throws ApiException if fails to make API call
    */
-  public ListMailboxFiles200Response listMailboxFiles(@javax.annotation.Nonnull String id, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset, @javax.annotation.Nullable String reason, @javax.annotation.Nullable String q, @javax.annotation.Nullable String folder, @javax.annotation.Nullable String accountId, Map<String, String> headers) throws ApiException {
-    ApiResponse<ListMailboxFiles200Response> localVarResponse = listMailboxFilesWithHttpInfo(id, limit, offset, reason, q, folder, accountId, headers);
+  public ListFileVersions200Response listFileVersions(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, Map<String, String> headers) throws ApiException {
+    ApiResponse<ListFileVersions200Response> localVarResponse = listFileVersionsWithHttpInfo(mailboxId, fileId, accountId, reason, limit, cursor, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * List files or related email without marking read
-   * 
-   * @param id  (required)
-   * @param limit Default and maximum 100. (optional, default to 100)
-   * @param offset  (optional)
+   * List file versions
+   * Newest first.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
-   * @param q  (optional)
-   * @param folder  (optional)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @return ApiResponse&lt;ListMailboxFiles200Response&gt;
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @return ApiResponse&lt;ListFileVersions200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<ListMailboxFiles200Response> listMailboxFilesWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset, @javax.annotation.Nullable String reason, @javax.annotation.Nullable String q, @javax.annotation.Nullable String folder, @javax.annotation.Nullable String accountId) throws ApiException {
-    return listMailboxFilesWithHttpInfo(id, limit, offset, reason, q, folder, accountId, null);
+  public ApiResponse<ListFileVersions200Response> listFileVersionsWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor) throws ApiException {
+    return listFileVersionsWithHttpInfo(mailboxId, fileId, accountId, reason, limit, cursor, null);
   }
 
   /**
-   * List files or related email without marking read
-   * 
-   * @param id  (required)
-   * @param limit Default and maximum 100. (optional, default to 100)
-   * @param offset  (optional)
+   * List file versions
+   * Newest first.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
    * @param reason  (optional)
-   * @param q  (optional)
-   * @param folder  (optional)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;ListMailboxFiles200Response&gt;
+   * @return ApiResponse&lt;ListFileVersions200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<ListMailboxFiles200Response> listMailboxFilesWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset, @javax.annotation.Nullable String reason, @javax.annotation.Nullable String q, @javax.annotation.Nullable String folder, @javax.annotation.Nullable String accountId, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = listMailboxFilesRequestBuilder(id, limit, offset, reason, q, folder, accountId, headers);
+  public ApiResponse<ListFileVersions200Response> listFileVersionsWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = listFileVersionsRequestBuilder(mailboxId, fileId, accountId, reason, limit, cursor, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -3535,11 +5471,11 @@ public class DefaultApi {
       InputStream localVarResponseBody = null;
       try {
         if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("listMailboxFiles", localVarResponse);
+          throw getApiException("listFileVersions", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
         if (localVarResponseBody == null) {
-          return new ApiResponse<ListMailboxFiles200Response>(
+          return new ApiResponse<ListFileVersions200Response>(
               localVarResponse.statusCode(),
               localVarResponse.headers().map(),
               null
@@ -3549,10 +5485,10 @@ public class DefaultApi {
         
         
         String responseBody = new String(localVarResponseBody.readAllBytes());
-        ListMailboxFiles200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<ListMailboxFiles200Response>() {});
+        ListFileVersions200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<ListFileVersions200Response>() {});
         
 
-        return new ApiResponse<ListMailboxFiles200Response>(
+        return new ApiResponse<ListFileVersions200Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
             responseValue
@@ -3571,32 +5507,33 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder listMailboxFilesRequestBuilder(@javax.annotation.Nonnull String id, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset, @javax.annotation.Nullable String reason, @javax.annotation.Nullable String q, @javax.annotation.Nullable String folder, @javax.annotation.Nullable String accountId, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'id' is set
-    if (id == null) {
-      throw new ApiException(400, "Missing the required parameter 'id' when calling listMailboxFiles");
+  private HttpRequest.Builder listFileVersionsRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling listFileVersions");
+    }
+    // verify the required parameter 'fileId' is set
+    if (fileId == null) {
+      throw new ApiException(400, "Missing the required parameter 'fileId' when calling listFileVersions");
     }
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
-    String localVarPath = "/v1/mailboxes/{id}/files"
-        .replace("{id}", ApiClient.urlEncode(id.toString()));
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/files/{file_id}/versions"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()))
+        .replace("{file_id}", ApiClient.urlEncode(fileId.toString()));
 
     List<Pair> localVarQueryParams = new ArrayList<>();
     StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
     String localVarQueryParameterBaseName;
-    localVarQueryParameterBaseName = "limit";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("limit", limit));
-    localVarQueryParameterBaseName = "offset";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("offset", offset));
-    localVarQueryParameterBaseName = "reason";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
-    localVarQueryParameterBaseName = "q";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("q", q));
-    localVarQueryParameterBaseName = "folder";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("folder", folder));
     localVarQueryParameterBaseName = "account_id";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
+    localVarQueryParameterBaseName = "reason";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
+    localVarQueryParameterBaseName = "limit";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("limit", limit));
+    localVarQueryParameterBaseName = "cursor";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("cursor", cursor));
 
     if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
       StringJoiner queryJoiner = new StringJoiner("&");
@@ -3624,66 +5561,237 @@ public class DefaultApi {
   }
 
   /**
-   * List accessible mailboxes
-   * List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param q Case-insensitive contains-filter on the permitted email address or ID. (optional)
-   * @param status Archive status: active, archived or all. Defaults to active. (optional, default to active)
-   * @param limit  (optional, default to 100)
-   * @param offset  (optional, default to 0)
-   * @return ListMailboxes200Response
+   * List files
+   * Lists current files, including stored emails under _email/. Listing never marks files read.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param q Case-insensitive text in the path. (optional)
+   * @param folder List one folder. An empty value lists the root. (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @return ListFiles200Response
    * @throws ApiException if fails to make API call
    */
-  public ListMailboxes200Response listMailboxes(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String q, @javax.annotation.Nullable String status, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset) throws ApiException {
-    return listMailboxes(accountId, q, status, limit, offset, null);
+  public ListFiles200Response listFiles(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable String q, @javax.annotation.Nullable String folder, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor) throws ApiException {
+    return listFiles(mailboxId, accountId, reason, q, folder, limit, cursor, null);
   }
 
   /**
-   * List accessible mailboxes
-   * List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param q Case-insensitive contains-filter on the permitted email address or ID. (optional)
-   * @param status Archive status: active, archived or all. Defaults to active. (optional, default to active)
-   * @param limit  (optional, default to 100)
-   * @param offset  (optional, default to 0)
+   * List files
+   * Lists current files, including stored emails under _email/. Listing never marks files read.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param q Case-insensitive text in the path. (optional)
+   * @param folder List one folder. An empty value lists the root. (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
    * @param headers Optional headers to include in the request
-   * @return ListMailboxes200Response
+   * @return ListFiles200Response
    * @throws ApiException if fails to make API call
    */
-  public ListMailboxes200Response listMailboxes(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String q, @javax.annotation.Nullable String status, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset, Map<String, String> headers) throws ApiException {
-    ApiResponse<ListMailboxes200Response> localVarResponse = listMailboxesWithHttpInfo(accountId, q, status, limit, offset, headers);
+  public ListFiles200Response listFiles(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable String q, @javax.annotation.Nullable String folder, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, Map<String, String> headers) throws ApiException {
+    ApiResponse<ListFiles200Response> localVarResponse = listFilesWithHttpInfo(mailboxId, accountId, reason, q, folder, limit, cursor, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * List accessible mailboxes
-   * List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param q Case-insensitive contains-filter on the permitted email address or ID. (optional)
-   * @param status Archive status: active, archived or all. Defaults to active. (optional, default to active)
-   * @param limit  (optional, default to 100)
-   * @param offset  (optional, default to 0)
-   * @return ApiResponse&lt;ListMailboxes200Response&gt;
+   * List files
+   * Lists current files, including stored emails under _email/. Listing never marks files read.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param q Case-insensitive text in the path. (optional)
+   * @param folder List one folder. An empty value lists the root. (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @return ApiResponse&lt;ListFiles200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<ListMailboxes200Response> listMailboxesWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String q, @javax.annotation.Nullable String status, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset) throws ApiException {
-    return listMailboxesWithHttpInfo(accountId, q, status, limit, offset, null);
+  public ApiResponse<ListFiles200Response> listFilesWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable String q, @javax.annotation.Nullable String folder, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor) throws ApiException {
+    return listFilesWithHttpInfo(mailboxId, accountId, reason, q, folder, limit, cursor, null);
   }
 
   /**
-   * List accessible mailboxes
-   * List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param q Case-insensitive contains-filter on the permitted email address or ID. (optional)
-   * @param status Archive status: active, archived or all. Defaults to active. (optional, default to active)
-   * @param limit  (optional, default to 100)
-   * @param offset  (optional, default to 0)
+   * List files
+   * Lists current files, including stored emails under _email/. Listing never marks files read.
+   * @param mailboxId  (required)
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param q Case-insensitive text in the path. (optional)
+   * @param folder List one folder. An empty value lists the root. (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;ListFiles200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<ListFiles200Response> listFilesWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable String q, @javax.annotation.Nullable String folder, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = listFilesRequestBuilder(mailboxId, accountId, reason, q, folder, limit, cursor, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("listFiles", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<ListFiles200Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        ListFiles200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<ListFiles200Response>() {});
+        
+
+        return new ApiResponse<ListFiles200Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder listFilesRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable String q, @javax.annotation.Nullable String folder, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling listFiles");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/files"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()));
+
+    List<Pair> localVarQueryParams = new ArrayList<>();
+    StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
+    String localVarQueryParameterBaseName;
+    localVarQueryParameterBaseName = "account_id";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
+    localVarQueryParameterBaseName = "reason";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
+    localVarQueryParameterBaseName = "q";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("q", q));
+    localVarQueryParameterBaseName = "folder";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("folder", folder));
+    localVarQueryParameterBaseName = "limit";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("limit", limit));
+    localVarQueryParameterBaseName = "cursor";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("cursor", cursor));
+
+    if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
+      StringJoiner queryJoiner = new StringJoiner("&");
+      localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
+      if (localVarQueryStringJoiner.length() != 0) {
+        queryJoiner.add(localVarQueryStringJoiner.toString());
+      }
+      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
+    } else {
+      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+    }
+
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * List mailboxes
+   * Lists active mailboxes by default, newest first. Counts and pages cover only mailboxes this credential can access. Reads no email content.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param status  (optional, default to active)
+   * @param q Case-insensitive text in the permitted address or the mailbox ID. (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @return ListMailboxes200Response
+   * @throws ApiException if fails to make API call
+   */
+  public ListMailboxes200Response listMailboxes(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable String status, @javax.annotation.Nullable String q, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor) throws ApiException {
+    return listMailboxes(accountId, reason, status, q, limit, cursor, null);
+  }
+
+  /**
+   * List mailboxes
+   * Lists active mailboxes by default, newest first. Counts and pages cover only mailboxes this credential can access. Reads no email content.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param status  (optional, default to active)
+   * @param q Case-insensitive text in the permitted address or the mailbox ID. (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @param headers Optional headers to include in the request
+   * @return ListMailboxes200Response
+   * @throws ApiException if fails to make API call
+   */
+  public ListMailboxes200Response listMailboxes(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable String status, @javax.annotation.Nullable String q, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, Map<String, String> headers) throws ApiException {
+    ApiResponse<ListMailboxes200Response> localVarResponse = listMailboxesWithHttpInfo(accountId, reason, status, q, limit, cursor, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * List mailboxes
+   * Lists active mailboxes by default, newest first. Counts and pages cover only mailboxes this credential can access. Reads no email content.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param status  (optional, default to active)
+   * @param q Case-insensitive text in the permitted address or the mailbox ID. (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
+   * @return ApiResponse&lt;ListMailboxes200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<ListMailboxes200Response> listMailboxesWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable String status, @javax.annotation.Nullable String q, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor) throws ApiException {
+    return listMailboxesWithHttpInfo(accountId, reason, status, q, limit, cursor, null);
+  }
+
+  /**
+   * List mailboxes
+   * Lists active mailboxes by default, newest first. Counts and pages cover only mailboxes this credential can access. Reads no email content.
+   * @param accountId Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+   * @param reason  (optional)
+   * @param status  (optional, default to active)
+   * @param q Case-insensitive text in the permitted address or the mailbox ID. (optional)
+   * @param limit  (optional, default to 50)
+   * @param cursor pagination.next_cursor from the previous page. (optional)
    * @param headers Optional headers to include in the request
    * @return ApiResponse&lt;ListMailboxes200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<ListMailboxes200Response> listMailboxesWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String q, @javax.annotation.Nullable String status, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = listMailboxesRequestBuilder(accountId, q, status, limit, offset, headers);
+  public ApiResponse<ListMailboxes200Response> listMailboxesWithHttpInfo(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable String status, @javax.annotation.Nullable String q, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = listMailboxesRequestBuilder(accountId, reason, status, q, limit, cursor, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -3730,7 +5838,7 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder listMailboxesRequestBuilder(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String q, @javax.annotation.Nullable String status, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable Integer offset, Map<String, String> headers) throws ApiException {
+  private HttpRequest.Builder listMailboxesRequestBuilder(@javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, @javax.annotation.Nullable String status, @javax.annotation.Nullable String q, @javax.annotation.Nullable Integer limit, @javax.annotation.Nullable String cursor, Map<String, String> headers) throws ApiException {
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
@@ -3741,14 +5849,16 @@ public class DefaultApi {
     String localVarQueryParameterBaseName;
     localVarQueryParameterBaseName = "account_id";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
-    localVarQueryParameterBaseName = "q";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("q", q));
+    localVarQueryParameterBaseName = "reason";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
     localVarQueryParameterBaseName = "status";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("status", status));
+    localVarQueryParameterBaseName = "q";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("q", q));
     localVarQueryParameterBaseName = "limit";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("limit", limit));
-    localVarQueryParameterBaseName = "offset";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("offset", offset));
+    localVarQueryParameterBaseName = "cursor";
+    localVarQueryParams.addAll(ApiClient.parameterToPairs("cursor", cursor));
 
     if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
       StringJoiner queryJoiner = new StringJoiner("&");
@@ -3776,49 +5886,190 @@ public class DefaultApi {
   }
 
   /**
-   * Prepare a single file upload
-   * 
-   * @param prepareFileUploadRequest  (required)
-   * @return PreparedFileUploadResponse
+   * Move a file
+   * Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param moveFileRequest  (required)
+   * @return RenameFile200Response
    * @throws ApiException if fails to make API call
    */
-  public PreparedFileUploadResponse prepareFileUpload(@javax.annotation.Nonnull PrepareFileUploadRequest prepareFileUploadRequest) throws ApiException {
-    return prepareFileUpload(prepareFileUploadRequest, null);
+  public RenameFile200Response moveFile(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull MoveFileRequest moveFileRequest) throws ApiException {
+    return moveFile(mailboxId, fileId, moveFileRequest, null);
   }
 
   /**
-   * Prepare a single file upload
-   * 
-   * @param prepareFileUploadRequest  (required)
+   * Move a file
+   * Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param moveFileRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return PreparedFileUploadResponse
+   * @return RenameFile200Response
    * @throws ApiException if fails to make API call
    */
-  public PreparedFileUploadResponse prepareFileUpload(@javax.annotation.Nonnull PrepareFileUploadRequest prepareFileUploadRequest, Map<String, String> headers) throws ApiException {
-    ApiResponse<PreparedFileUploadResponse> localVarResponse = prepareFileUploadWithHttpInfo(prepareFileUploadRequest, headers);
+  public RenameFile200Response moveFile(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull MoveFileRequest moveFileRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<RenameFile200Response> localVarResponse = moveFileWithHttpInfo(mailboxId, fileId, moveFileRequest, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Prepare a single file upload
-   * 
-   * @param prepareFileUploadRequest  (required)
-   * @return ApiResponse&lt;PreparedFileUploadResponse&gt;
+   * Move a file
+   * Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param moveFileRequest  (required)
+   * @return ApiResponse&lt;RenameFile200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<PreparedFileUploadResponse> prepareFileUploadWithHttpInfo(@javax.annotation.Nonnull PrepareFileUploadRequest prepareFileUploadRequest) throws ApiException {
+  public ApiResponse<RenameFile200Response> moveFileWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull MoveFileRequest moveFileRequest) throws ApiException {
+    return moveFileWithHttpInfo(mailboxId, fileId, moveFileRequest, null);
+  }
+
+  /**
+   * Move a file
+   * Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param moveFileRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;RenameFile200Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<RenameFile200Response> moveFileWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull MoveFileRequest moveFileRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = moveFileRequestBuilder(mailboxId, fileId, moveFileRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("moveFile", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<RenameFile200Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        RenameFile200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<RenameFile200Response>() {});
+        
+
+        return new ApiResponse<RenameFile200Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder moveFileRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull MoveFileRequest moveFileRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling moveFile");
+    }
+    // verify the required parameter 'fileId' is set
+    if (fileId == null) {
+      throw new ApiException(400, "Missing the required parameter 'fileId' when calling moveFile");
+    }
+    // verify the required parameter 'moveFileRequest' is set
+    if (moveFileRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'moveFileRequest' when calling moveFile");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/files/{file_id}/move"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()))
+        .replace("{file_id}", ApiClient.urlEncode(fileId.toString()));
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(moveFileRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Prepare a file upload (step 1 of 3)
+   * Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/mailboxes/{mailbox_id}/files (step 3). Identical content at the same path returns skipped&#x3D;true and duplicate&#x3D;true without an upload.
+   * @param prepareFileUploadRequest  (required)
+   * @return PrepareFileUpload201Response
+   * @throws ApiException if fails to make API call
+   */
+  public PrepareFileUpload201Response prepareFileUpload(@javax.annotation.Nonnull PrepareFileUploadRequest prepareFileUploadRequest) throws ApiException {
+    return prepareFileUpload(prepareFileUploadRequest, null);
+  }
+
+  /**
+   * Prepare a file upload (step 1 of 3)
+   * Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/mailboxes/{mailbox_id}/files (step 3). Identical content at the same path returns skipped&#x3D;true and duplicate&#x3D;true without an upload.
+   * @param prepareFileUploadRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return PrepareFileUpload201Response
+   * @throws ApiException if fails to make API call
+   */
+  public PrepareFileUpload201Response prepareFileUpload(@javax.annotation.Nonnull PrepareFileUploadRequest prepareFileUploadRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<PrepareFileUpload201Response> localVarResponse = prepareFileUploadWithHttpInfo(prepareFileUploadRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Prepare a file upload (step 1 of 3)
+   * Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/mailboxes/{mailbox_id}/files (step 3). Identical content at the same path returns skipped&#x3D;true and duplicate&#x3D;true without an upload.
+   * @param prepareFileUploadRequest  (required)
+   * @return ApiResponse&lt;PrepareFileUpload201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<PrepareFileUpload201Response> prepareFileUploadWithHttpInfo(@javax.annotation.Nonnull PrepareFileUploadRequest prepareFileUploadRequest) throws ApiException {
     return prepareFileUploadWithHttpInfo(prepareFileUploadRequest, null);
   }
 
   /**
-   * Prepare a single file upload
-   * 
+   * Prepare a file upload (step 1 of 3)
+   * Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/mailboxes/{mailbox_id}/files (step 3). Identical content at the same path returns skipped&#x3D;true and duplicate&#x3D;true without an upload.
    * @param prepareFileUploadRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;PreparedFileUploadResponse&gt;
+   * @return ApiResponse&lt;PrepareFileUpload201Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<PreparedFileUploadResponse> prepareFileUploadWithHttpInfo(@javax.annotation.Nonnull PrepareFileUploadRequest prepareFileUploadRequest, Map<String, String> headers) throws ApiException {
+  public ApiResponse<PrepareFileUpload201Response> prepareFileUploadWithHttpInfo(@javax.annotation.Nonnull PrepareFileUploadRequest prepareFileUploadRequest, Map<String, String> headers) throws ApiException {
     HttpRequest.Builder localVarRequestBuilder = prepareFileUploadRequestBuilder(prepareFileUploadRequest, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
@@ -3834,7 +6085,7 @@ public class DefaultApi {
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
         if (localVarResponseBody == null) {
-          return new ApiResponse<PreparedFileUploadResponse>(
+          return new ApiResponse<PrepareFileUpload201Response>(
               localVarResponse.statusCode(),
               localVarResponse.headers().map(),
               null
@@ -3844,10 +6095,10 @@ public class DefaultApi {
         
         
         String responseBody = new String(localVarResponseBody.readAllBytes());
-        PreparedFileUploadResponse responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<PreparedFileUploadResponse>() {});
+        PrepareFileUpload201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<PrepareFileUpload201Response>() {});
         
 
-        return new ApiResponse<PreparedFileUploadResponse>(
+        return new ApiResponse<PrepareFileUpload201Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
             responseValue
@@ -3899,54 +6150,58 @@ public class DefaultApi {
   }
 
   /**
-   * Remove unused receiving domain after confirmation
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param id  (required)
-   * @param removeAccountEmailDomainRequest  (required)
-   * @return EmailDomainListResponse
+   * Rename or move a file in the same mailbox
+   * Changes the path without uploading the content again.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param renameFileRequest  (required)
+   * @return RenameFile200Response
    * @throws ApiException if fails to make API call
    */
-  public EmailDomainListResponse removeAccountEmailDomain(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull RemoveAccountEmailDomainRequest removeAccountEmailDomainRequest) throws ApiException {
-    return removeAccountEmailDomain(id, removeAccountEmailDomainRequest, null);
+  public RenameFile200Response renameFile(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull RenameFileRequest renameFileRequest) throws ApiException {
+    return renameFile(mailboxId, fileId, renameFileRequest, null);
   }
 
   /**
-   * Remove unused receiving domain after confirmation
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param id  (required)
-   * @param removeAccountEmailDomainRequest  (required)
+   * Rename or move a file in the same mailbox
+   * Changes the path without uploading the content again.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param renameFileRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return EmailDomainListResponse
+   * @return RenameFile200Response
    * @throws ApiException if fails to make API call
    */
-  public EmailDomainListResponse removeAccountEmailDomain(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull RemoveAccountEmailDomainRequest removeAccountEmailDomainRequest, Map<String, String> headers) throws ApiException {
-    ApiResponse<EmailDomainListResponse> localVarResponse = removeAccountEmailDomainWithHttpInfo(id, removeAccountEmailDomainRequest, headers);
+  public RenameFile200Response renameFile(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull RenameFileRequest renameFileRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<RenameFile200Response> localVarResponse = renameFileWithHttpInfo(mailboxId, fileId, renameFileRequest, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Remove unused receiving domain after confirmation
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param id  (required)
-   * @param removeAccountEmailDomainRequest  (required)
-   * @return ApiResponse&lt;EmailDomainListResponse&gt;
+   * Rename or move a file in the same mailbox
+   * Changes the path without uploading the content again.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param renameFileRequest  (required)
+   * @return ApiResponse&lt;RenameFile200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<EmailDomainListResponse> removeAccountEmailDomainWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull RemoveAccountEmailDomainRequest removeAccountEmailDomainRequest) throws ApiException {
-    return removeAccountEmailDomainWithHttpInfo(id, removeAccountEmailDomainRequest, null);
+  public ApiResponse<RenameFile200Response> renameFileWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull RenameFileRequest renameFileRequest) throws ApiException {
+    return renameFileWithHttpInfo(mailboxId, fileId, renameFileRequest, null);
   }
 
   /**
-   * Remove unused receiving domain after confirmation
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param id  (required)
-   * @param removeAccountEmailDomainRequest  (required)
+   * Rename or move a file in the same mailbox
+   * Changes the path without uploading the content again.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param renameFileRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;EmailDomainListResponse&gt;
+   * @return ApiResponse&lt;RenameFile200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<EmailDomainListResponse> removeAccountEmailDomainWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull RemoveAccountEmailDomainRequest removeAccountEmailDomainRequest, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = removeAccountEmailDomainRequestBuilder(id, removeAccountEmailDomainRequest, headers);
+  public ApiResponse<RenameFile200Response> renameFileWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull RenameFileRequest renameFileRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = renameFileRequestBuilder(mailboxId, fileId, renameFileRequest, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -3957,11 +6212,11 @@ public class DefaultApi {
       InputStream localVarResponseBody = null;
       try {
         if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("removeAccountEmailDomain", localVarResponse);
+          throw getApiException("renameFile", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
         if (localVarResponseBody == null) {
-          return new ApiResponse<EmailDomainListResponse>(
+          return new ApiResponse<RenameFile200Response>(
               localVarResponse.statusCode(),
               localVarResponse.headers().map(),
               null
@@ -3971,10 +6226,10 @@ public class DefaultApi {
         
         
         String responseBody = new String(localVarResponseBody.readAllBytes());
-        EmailDomainListResponse responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<EmailDomainListResponse>() {});
+        RenameFile200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<RenameFile200Response>() {});
         
 
-        return new ApiResponse<EmailDomainListResponse>(
+        return new ApiResponse<RenameFile200Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
             responseValue
@@ -3993,20 +6248,25 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder removeAccountEmailDomainRequestBuilder(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull RemoveAccountEmailDomainRequest removeAccountEmailDomainRequest, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'id' is set
-    if (id == null) {
-      throw new ApiException(400, "Missing the required parameter 'id' when calling removeAccountEmailDomain");
+  private HttpRequest.Builder renameFileRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull RenameFileRequest renameFileRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling renameFile");
     }
-    // verify the required parameter 'removeAccountEmailDomainRequest' is set
-    if (removeAccountEmailDomainRequest == null) {
-      throw new ApiException(400, "Missing the required parameter 'removeAccountEmailDomainRequest' when calling removeAccountEmailDomain");
+    // verify the required parameter 'fileId' is set
+    if (fileId == null) {
+      throw new ApiException(400, "Missing the required parameter 'fileId' when calling renameFile");
+    }
+    // verify the required parameter 'renameFileRequest' is set
+    if (renameFileRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'renameFileRequest' when calling renameFile");
     }
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
-    String localVarPath = "/v1/account/email_domains/{id}"
-        .replace("{id}", ApiClient.urlEncode(id.toString()));
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/files/{file_id}/rename"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()))
+        .replace("{file_id}", ApiClient.urlEncode(fileId.toString()));
 
     localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
 
@@ -4014,139 +6274,7 @@ public class DefaultApi {
     localVarRequestBuilder.header("Accept", "application/json");
 
     try {
-      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(removeAccountEmailDomainRequest);
-      localVarRequestBuilder.method("DELETE", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
-    } catch (IOException e) {
-      throw new ApiException(e);
-    }
-    if (memberVarReadTimeout != null) {
-      localVarRequestBuilder.timeout(memberVarReadTimeout);
-    }
-    // Add custom headers if provided
-    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
-    if (memberVarInterceptor != null) {
-      memberVarInterceptor.accept(localVarRequestBuilder);
-    }
-    return localVarRequestBuilder;
-  }
-
-  /**
-   * Replace a mailbox email address after confirmation
-   * Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param rotateMailboxEmailAddressRequest  (required)
-   * @return GetMailboxEmailSettings200Response
-   * @throws ApiException if fails to make API call
-   */
-  public GetMailboxEmailSettings200Response rotateMailboxEmailAddress(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull RotateMailboxEmailAddressRequest rotateMailboxEmailAddressRequest) throws ApiException {
-    return rotateMailboxEmailAddress(id, rotateMailboxEmailAddressRequest, null);
-  }
-
-  /**
-   * Replace a mailbox email address after confirmation
-   * Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param rotateMailboxEmailAddressRequest  (required)
-   * @param headers Optional headers to include in the request
-   * @return GetMailboxEmailSettings200Response
-   * @throws ApiException if fails to make API call
-   */
-  public GetMailboxEmailSettings200Response rotateMailboxEmailAddress(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull RotateMailboxEmailAddressRequest rotateMailboxEmailAddressRequest, Map<String, String> headers) throws ApiException {
-    ApiResponse<GetMailboxEmailSettings200Response> localVarResponse = rotateMailboxEmailAddressWithHttpInfo(id, rotateMailboxEmailAddressRequest, headers);
-    return localVarResponse.getData();
-  }
-
-  /**
-   * Replace a mailbox email address after confirmation
-   * Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param rotateMailboxEmailAddressRequest  (required)
-   * @return ApiResponse&lt;GetMailboxEmailSettings200Response&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<GetMailboxEmailSettings200Response> rotateMailboxEmailAddressWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull RotateMailboxEmailAddressRequest rotateMailboxEmailAddressRequest) throws ApiException {
-    return rotateMailboxEmailAddressWithHttpInfo(id, rotateMailboxEmailAddressRequest, null);
-  }
-
-  /**
-   * Replace a mailbox email address after confirmation
-   * Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param rotateMailboxEmailAddressRequest  (required)
-   * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;GetMailboxEmailSettings200Response&gt;
-   * @throws ApiException if fails to make API call
-   */
-  public ApiResponse<GetMailboxEmailSettings200Response> rotateMailboxEmailAddressWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull RotateMailboxEmailAddressRequest rotateMailboxEmailAddressRequest, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = rotateMailboxEmailAddressRequestBuilder(id, rotateMailboxEmailAddressRequest, headers);
-    try {
-      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
-          localVarRequestBuilder.build(),
-          HttpResponse.BodyHandlers.ofInputStream());
-      if (memberVarResponseInterceptor != null) {
-        memberVarResponseInterceptor.accept(localVarResponse);
-      }
-      InputStream localVarResponseBody = null;
-      try {
-        if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("rotateMailboxEmailAddress", localVarResponse);
-        }
-        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
-        if (localVarResponseBody == null) {
-          return new ApiResponse<GetMailboxEmailSettings200Response>(
-              localVarResponse.statusCode(),
-              localVarResponse.headers().map(),
-              null
-          );
-        }
-
-        
-        
-        String responseBody = new String(localVarResponseBody.readAllBytes());
-        GetMailboxEmailSettings200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<GetMailboxEmailSettings200Response>() {});
-        
-
-        return new ApiResponse<GetMailboxEmailSettings200Response>(
-            localVarResponse.statusCode(),
-            localVarResponse.headers().map(),
-            responseValue
-        );
-      } finally {
-        if (localVarResponseBody != null) {
-          localVarResponseBody.close();
-        }
-      }
-    } catch (IOException e) {
-      throw new ApiException(e);
-    }
-    catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new ApiException(e);
-    }
-  }
-
-  private HttpRequest.Builder rotateMailboxEmailAddressRequestBuilder(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull RotateMailboxEmailAddressRequest rotateMailboxEmailAddressRequest, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'id' is set
-    if (id == null) {
-      throw new ApiException(400, "Missing the required parameter 'id' when calling rotateMailboxEmailAddress");
-    }
-    // verify the required parameter 'rotateMailboxEmailAddressRequest' is set
-    if (rotateMailboxEmailAddressRequest == null) {
-      throw new ApiException(400, "Missing the required parameter 'rotateMailboxEmailAddressRequest' when calling rotateMailboxEmailAddress");
-    }
-
-    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-    String localVarPath = "/v1/mailboxes/{id}/email/rotate"
-        .replace("{id}", ApiClient.urlEncode(id.toString()));
-
-    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-    localVarRequestBuilder.header("Content-Type", "application/json");
-    localVarRequestBuilder.header("Accept", "application/json");
-
-    try {
-      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(rotateMailboxEmailAddressRequest);
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(renameFileRequest);
       localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
     } catch (IOException e) {
       throw new ApiException(e);
@@ -4163,54 +6291,50 @@ public class DefaultApi {
   }
 
   /**
-   * Save an uploaded file or a new version
-   * 
-   * @param id  (required)
-   * @param saveUploadedFileRequest  (required)
-   * @return SavedFileResponse
+   * Email a sign-in code
+   * Sends a six-digit code to an existing account email. The response is the same for every address, so it never reveals whether an account exists. Create new accounts in the browser at https://app.revdoku.com/users/sign_up.
+   * @param requestSignInCodeRequest  (required)
+   * @return RequestSignInCode200Response
    * @throws ApiException if fails to make API call
    */
-  public SavedFileResponse saveUploadedFile(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull SaveUploadedFileRequest saveUploadedFileRequest) throws ApiException {
-    return saveUploadedFile(id, saveUploadedFileRequest, null);
+  public RequestSignInCode200Response requestSignInCode(@javax.annotation.Nonnull RequestSignInCodeRequest requestSignInCodeRequest) throws ApiException {
+    return requestSignInCode(requestSignInCodeRequest, null);
   }
 
   /**
-   * Save an uploaded file or a new version
-   * 
-   * @param id  (required)
-   * @param saveUploadedFileRequest  (required)
+   * Email a sign-in code
+   * Sends a six-digit code to an existing account email. The response is the same for every address, so it never reveals whether an account exists. Create new accounts in the browser at https://app.revdoku.com/users/sign_up.
+   * @param requestSignInCodeRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return SavedFileResponse
+   * @return RequestSignInCode200Response
    * @throws ApiException if fails to make API call
    */
-  public SavedFileResponse saveUploadedFile(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull SaveUploadedFileRequest saveUploadedFileRequest, Map<String, String> headers) throws ApiException {
-    ApiResponse<SavedFileResponse> localVarResponse = saveUploadedFileWithHttpInfo(id, saveUploadedFileRequest, headers);
+  public RequestSignInCode200Response requestSignInCode(@javax.annotation.Nonnull RequestSignInCodeRequest requestSignInCodeRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<RequestSignInCode200Response> localVarResponse = requestSignInCodeWithHttpInfo(requestSignInCodeRequest, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Save an uploaded file or a new version
-   * 
-   * @param id  (required)
-   * @param saveUploadedFileRequest  (required)
-   * @return ApiResponse&lt;SavedFileResponse&gt;
+   * Email a sign-in code
+   * Sends a six-digit code to an existing account email. The response is the same for every address, so it never reveals whether an account exists. Create new accounts in the browser at https://app.revdoku.com/users/sign_up.
+   * @param requestSignInCodeRequest  (required)
+   * @return ApiResponse&lt;RequestSignInCode200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<SavedFileResponse> saveUploadedFileWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull SaveUploadedFileRequest saveUploadedFileRequest) throws ApiException {
-    return saveUploadedFileWithHttpInfo(id, saveUploadedFileRequest, null);
+  public ApiResponse<RequestSignInCode200Response> requestSignInCodeWithHttpInfo(@javax.annotation.Nonnull RequestSignInCodeRequest requestSignInCodeRequest) throws ApiException {
+    return requestSignInCodeWithHttpInfo(requestSignInCodeRequest, null);
   }
 
   /**
-   * Save an uploaded file or a new version
-   * 
-   * @param id  (required)
-   * @param saveUploadedFileRequest  (required)
+   * Email a sign-in code
+   * Sends a six-digit code to an existing account email. The response is the same for every address, so it never reveals whether an account exists. Create new accounts in the browser at https://app.revdoku.com/users/sign_up.
+   * @param requestSignInCodeRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;SavedFileResponse&gt;
+   * @return ApiResponse&lt;RequestSignInCode200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<SavedFileResponse> saveUploadedFileWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull SaveUploadedFileRequest saveUploadedFileRequest, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = saveUploadedFileRequestBuilder(id, saveUploadedFileRequest, headers);
+  public ApiResponse<RequestSignInCode200Response> requestSignInCodeWithHttpInfo(@javax.annotation.Nonnull RequestSignInCodeRequest requestSignInCodeRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = requestSignInCodeRequestBuilder(requestSignInCodeRequest, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -4221,11 +6345,11 @@ public class DefaultApi {
       InputStream localVarResponseBody = null;
       try {
         if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("saveUploadedFile", localVarResponse);
+          throw getApiException("requestSignInCode", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
         if (localVarResponseBody == null) {
-          return new ApiResponse<SavedFileResponse>(
+          return new ApiResponse<RequestSignInCode200Response>(
               localVarResponse.statusCode(),
               localVarResponse.headers().map(),
               null
@@ -4235,10 +6359,10 @@ public class DefaultApi {
         
         
         String responseBody = new String(localVarResponseBody.readAllBytes());
-        SavedFileResponse responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<SavedFileResponse>() {});
+        RequestSignInCode200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<RequestSignInCode200Response>() {});
         
 
-        return new ApiResponse<SavedFileResponse>(
+        return new ApiResponse<RequestSignInCode200Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
             responseValue
@@ -4257,10 +6381,424 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder saveUploadedFileRequestBuilder(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull SaveUploadedFileRequest saveUploadedFileRequest, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'id' is set
-    if (id == null) {
-      throw new ApiException(400, "Missing the required parameter 'id' when calling saveUploadedFile");
+  private HttpRequest.Builder requestSignInCodeRequestBuilder(@javax.annotation.Nonnull RequestSignInCodeRequest requestSignInCodeRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'requestSignInCodeRequest' is set
+    if (requestSignInCodeRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'requestSignInCodeRequest' when calling requestSignInCode");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/agent_auth/request_code";
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(requestSignInCodeRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Restore a file version
+   * Creates a new current version with the content of the selected version. History is kept. Requires a plan with version restore.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param versionId  (required)
+   * @param actionRequest  (required)
+   * @return RestoreFileVersion201Response
+   * @throws ApiException if fails to make API call
+   */
+  public RestoreFileVersion201Response restoreFileVersion(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull String versionId, @javax.annotation.Nonnull ActionRequest actionRequest) throws ApiException {
+    return restoreFileVersion(mailboxId, fileId, versionId, actionRequest, null);
+  }
+
+  /**
+   * Restore a file version
+   * Creates a new current version with the content of the selected version. History is kept. Requires a plan with version restore.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param versionId  (required)
+   * @param actionRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return RestoreFileVersion201Response
+   * @throws ApiException if fails to make API call
+   */
+  public RestoreFileVersion201Response restoreFileVersion(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull String versionId, @javax.annotation.Nonnull ActionRequest actionRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<RestoreFileVersion201Response> localVarResponse = restoreFileVersionWithHttpInfo(mailboxId, fileId, versionId, actionRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Restore a file version
+   * Creates a new current version with the content of the selected version. History is kept. Requires a plan with version restore.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param versionId  (required)
+   * @param actionRequest  (required)
+   * @return ApiResponse&lt;RestoreFileVersion201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<RestoreFileVersion201Response> restoreFileVersionWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull String versionId, @javax.annotation.Nonnull ActionRequest actionRequest) throws ApiException {
+    return restoreFileVersionWithHttpInfo(mailboxId, fileId, versionId, actionRequest, null);
+  }
+
+  /**
+   * Restore a file version
+   * Creates a new current version with the content of the selected version. History is kept. Requires a plan with version restore.
+   * @param mailboxId  (required)
+   * @param fileId  (required)
+   * @param versionId  (required)
+   * @param actionRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;RestoreFileVersion201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<RestoreFileVersion201Response> restoreFileVersionWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull String versionId, @javax.annotation.Nonnull ActionRequest actionRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = restoreFileVersionRequestBuilder(mailboxId, fileId, versionId, actionRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("restoreFileVersion", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<RestoreFileVersion201Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        RestoreFileVersion201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<RestoreFileVersion201Response>() {});
+        
+
+        return new ApiResponse<RestoreFileVersion201Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder restoreFileVersionRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String fileId, @javax.annotation.Nonnull String versionId, @javax.annotation.Nonnull ActionRequest actionRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling restoreFileVersion");
+    }
+    // verify the required parameter 'fileId' is set
+    if (fileId == null) {
+      throw new ApiException(400, "Missing the required parameter 'fileId' when calling restoreFileVersion");
+    }
+    // verify the required parameter 'versionId' is set
+    if (versionId == null) {
+      throw new ApiException(400, "Missing the required parameter 'versionId' when calling restoreFileVersion");
+    }
+    // verify the required parameter 'actionRequest' is set
+    if (actionRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'actionRequest' when calling restoreFileVersion");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/files/{file_id}/versions/{version_id}/restore"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()))
+        .replace("{file_id}", ApiClient.urlEncode(fileId.toString()))
+        .replace("{version_id}", ApiClient.urlEncode(versionId.toString()));
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(actionRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Save uploaded files
+   * Saves up to limit files whose bytes were uploaded. Call it after each batch to keep each request short. DIRECT_UPLOAD_NOT_FOUND names a file whose bytes are missing in error.details.path; upload it again and retry.
+   * @param mailboxId  (required)
+   * @param sessionId mailbox_upload_session.id from the create response. (required)
+   * @param saveUploadSessionBatchRequest  (optional)
+   * @return CreateUploadSession201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateUploadSession201Response saveUploadSessionBatch(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String sessionId, @javax.annotation.Nullable SaveUploadSessionBatchRequest saveUploadSessionBatchRequest) throws ApiException {
+    return saveUploadSessionBatch(mailboxId, sessionId, saveUploadSessionBatchRequest, null);
+  }
+
+  /**
+   * Save uploaded files
+   * Saves up to limit files whose bytes were uploaded. Call it after each batch to keep each request short. DIRECT_UPLOAD_NOT_FOUND names a file whose bytes are missing in error.details.path; upload it again and retry.
+   * @param mailboxId  (required)
+   * @param sessionId mailbox_upload_session.id from the create response. (required)
+   * @param saveUploadSessionBatchRequest  (optional)
+   * @param headers Optional headers to include in the request
+   * @return CreateUploadSession201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateUploadSession201Response saveUploadSessionBatch(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String sessionId, @javax.annotation.Nullable SaveUploadSessionBatchRequest saveUploadSessionBatchRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<CreateUploadSession201Response> localVarResponse = saveUploadSessionBatchWithHttpInfo(mailboxId, sessionId, saveUploadSessionBatchRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Save uploaded files
+   * Saves up to limit files whose bytes were uploaded. Call it after each batch to keep each request short. DIRECT_UPLOAD_NOT_FOUND names a file whose bytes are missing in error.details.path; upload it again and retry.
+   * @param mailboxId  (required)
+   * @param sessionId mailbox_upload_session.id from the create response. (required)
+   * @param saveUploadSessionBatchRequest  (optional)
+   * @return ApiResponse&lt;CreateUploadSession201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CreateUploadSession201Response> saveUploadSessionBatchWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String sessionId, @javax.annotation.Nullable SaveUploadSessionBatchRequest saveUploadSessionBatchRequest) throws ApiException {
+    return saveUploadSessionBatchWithHttpInfo(mailboxId, sessionId, saveUploadSessionBatchRequest, null);
+  }
+
+  /**
+   * Save uploaded files
+   * Saves up to limit files whose bytes were uploaded. Call it after each batch to keep each request short. DIRECT_UPLOAD_NOT_FOUND names a file whose bytes are missing in error.details.path; upload it again and retry.
+   * @param mailboxId  (required)
+   * @param sessionId mailbox_upload_session.id from the create response. (required)
+   * @param saveUploadSessionBatchRequest  (optional)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;CreateUploadSession201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CreateUploadSession201Response> saveUploadSessionBatchWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String sessionId, @javax.annotation.Nullable SaveUploadSessionBatchRequest saveUploadSessionBatchRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = saveUploadSessionBatchRequestBuilder(mailboxId, sessionId, saveUploadSessionBatchRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("saveUploadSessionBatch", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<CreateUploadSession201Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        CreateUploadSession201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<CreateUploadSession201Response>() {});
+        
+
+        return new ApiResponse<CreateUploadSession201Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder saveUploadSessionBatchRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String sessionId, @javax.annotation.Nullable SaveUploadSessionBatchRequest saveUploadSessionBatchRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling saveUploadSessionBatch");
+    }
+    // verify the required parameter 'sessionId' is set
+    if (sessionId == null) {
+      throw new ApiException(400, "Missing the required parameter 'sessionId' when calling saveUploadSessionBatch");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize_batch"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()))
+        .replace("{session_id}", ApiClient.urlEncode(sessionId.toString()));
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(saveUploadSessionBatchRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Save an uploaded file (step 3 of 3)
+   * Saves the uploaded blob at path. An existing path gets a new version.
+   * @param mailboxId  (required)
+   * @param saveUploadedFileRequest  (required)
+   * @return SaveUploadedFile201Response
+   * @throws ApiException if fails to make API call
+   */
+  public SaveUploadedFile201Response saveUploadedFile(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull SaveUploadedFileRequest saveUploadedFileRequest) throws ApiException {
+    return saveUploadedFile(mailboxId, saveUploadedFileRequest, null);
+  }
+
+  /**
+   * Save an uploaded file (step 3 of 3)
+   * Saves the uploaded blob at path. An existing path gets a new version.
+   * @param mailboxId  (required)
+   * @param saveUploadedFileRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return SaveUploadedFile201Response
+   * @throws ApiException if fails to make API call
+   */
+  public SaveUploadedFile201Response saveUploadedFile(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull SaveUploadedFileRequest saveUploadedFileRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<SaveUploadedFile201Response> localVarResponse = saveUploadedFileWithHttpInfo(mailboxId, saveUploadedFileRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Save an uploaded file (step 3 of 3)
+   * Saves the uploaded blob at path. An existing path gets a new version.
+   * @param mailboxId  (required)
+   * @param saveUploadedFileRequest  (required)
+   * @return ApiResponse&lt;SaveUploadedFile201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<SaveUploadedFile201Response> saveUploadedFileWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull SaveUploadedFileRequest saveUploadedFileRequest) throws ApiException {
+    return saveUploadedFileWithHttpInfo(mailboxId, saveUploadedFileRequest, null);
+  }
+
+  /**
+   * Save an uploaded file (step 3 of 3)
+   * Saves the uploaded blob at path. An existing path gets a new version.
+   * @param mailboxId  (required)
+   * @param saveUploadedFileRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;SaveUploadedFile201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<SaveUploadedFile201Response> saveUploadedFileWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull SaveUploadedFileRequest saveUploadedFileRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = saveUploadedFileRequestBuilder(mailboxId, saveUploadedFileRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("saveUploadedFile", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<SaveUploadedFile201Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        SaveUploadedFile201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<SaveUploadedFile201Response>() {});
+        
+
+        return new ApiResponse<SaveUploadedFile201Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder saveUploadedFileRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull SaveUploadedFileRequest saveUploadedFileRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling saveUploadedFile");
     }
     // verify the required parameter 'saveUploadedFileRequest' is set
     if (saveUploadedFileRequest == null) {
@@ -4269,8 +6807,8 @@ public class DefaultApi {
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
-    String localVarPath = "/v1/mailboxes/{id}/files"
-        .replace("{id}", ApiClient.urlEncode(id.toString()));
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/files"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()));
 
     localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
 
@@ -4295,8 +6833,140 @@ public class DefaultApi {
   }
 
   /**
-   * Configure one received-email webhook per mailbox
-   * Requires mailbox admin permission. Public HTTPS, including explicit ports such as 8443. Generates an encrypted signing secret, returned here. Same-URL updates retain it; replacing the URL rotates it and cancels pending old-version deliveries. Events are signed and retried up to eight attempts on transient failure; duplicates are possible. Worker-crash recovery is bounded to 24 hours from event creation. Exhausted and permanent failures require operator review.
+   * Send a reply
+   * Requires mailbox write permission. Recipients must have emailed this mailbox and passed sender authentication. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction&#x3D;sent before you send again.
+   * @param mailboxId  (required)
+   * @param sendEmailRequest  (required)
+   * @return SendEmail202Response
+   * @throws ApiException if fails to make API call
+   */
+  public SendEmail202Response sendEmail(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull SendEmailRequest sendEmailRequest) throws ApiException {
+    return sendEmail(mailboxId, sendEmailRequest, null);
+  }
+
+  /**
+   * Send a reply
+   * Requires mailbox write permission. Recipients must have emailed this mailbox and passed sender authentication. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction&#x3D;sent before you send again.
+   * @param mailboxId  (required)
+   * @param sendEmailRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return SendEmail202Response
+   * @throws ApiException if fails to make API call
+   */
+  public SendEmail202Response sendEmail(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull SendEmailRequest sendEmailRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<SendEmail202Response> localVarResponse = sendEmailWithHttpInfo(mailboxId, sendEmailRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Send a reply
+   * Requires mailbox write permission. Recipients must have emailed this mailbox and passed sender authentication. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction&#x3D;sent before you send again.
+   * @param mailboxId  (required)
+   * @param sendEmailRequest  (required)
+   * @return ApiResponse&lt;SendEmail202Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<SendEmail202Response> sendEmailWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull SendEmailRequest sendEmailRequest) throws ApiException {
+    return sendEmailWithHttpInfo(mailboxId, sendEmailRequest, null);
+  }
+
+  /**
+   * Send a reply
+   * Requires mailbox write permission. Recipients must have emailed this mailbox and passed sender authentication. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction&#x3D;sent before you send again.
+   * @param mailboxId  (required)
+   * @param sendEmailRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;SendEmail202Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<SendEmail202Response> sendEmailWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull SendEmailRequest sendEmailRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = sendEmailRequestBuilder(mailboxId, sendEmailRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("sendEmail", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<SendEmail202Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        SendEmail202Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<SendEmail202Response>() {});
+        
+
+        return new ApiResponse<SendEmail202Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder sendEmailRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull SendEmailRequest sendEmailRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling sendEmail");
+    }
+    // verify the required parameter 'sendEmailRequest' is set
+    if (sendEmailRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'sendEmailRequest' when calling sendEmail");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/emails"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()));
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(sendEmailRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Set the email webhook
+   * Requires mailbox-admin permission and a public HTTPS URL. A new URL or rotate_secret&#x3D;true creates a new signing secret, returns it once and cancels pending deliveries. The same URL without rotate_secret returns the webhook without a secret.
    * @param mailboxId  (required)
    * @param setEmailWebhookRequest  (required)
    * @return SetEmailWebhook200Response
@@ -4307,8 +6977,8 @@ public class DefaultApi {
   }
 
   /**
-   * Configure one received-email webhook per mailbox
-   * Requires mailbox admin permission. Public HTTPS, including explicit ports such as 8443. Generates an encrypted signing secret, returned here. Same-URL updates retain it; replacing the URL rotates it and cancels pending old-version deliveries. Events are signed and retried up to eight attempts on transient failure; duplicates are possible. Worker-crash recovery is bounded to 24 hours from event creation. Exhausted and permanent failures require operator review.
+   * Set the email webhook
+   * Requires mailbox-admin permission and a public HTTPS URL. A new URL or rotate_secret&#x3D;true creates a new signing secret, returns it once and cancels pending deliveries. The same URL without rotate_secret returns the webhook without a secret.
    * @param mailboxId  (required)
    * @param setEmailWebhookRequest  (required)
    * @param headers Optional headers to include in the request
@@ -4321,8 +6991,8 @@ public class DefaultApi {
   }
 
   /**
-   * Configure one received-email webhook per mailbox
-   * Requires mailbox admin permission. Public HTTPS, including explicit ports such as 8443. Generates an encrypted signing secret, returned here. Same-URL updates retain it; replacing the URL rotates it and cancels pending old-version deliveries. Events are signed and retried up to eight attempts on transient failure; duplicates are possible. Worker-crash recovery is bounded to 24 hours from event creation. Exhausted and permanent failures require operator review.
+   * Set the email webhook
+   * Requires mailbox-admin permission and a public HTTPS URL. A new URL or rotate_secret&#x3D;true creates a new signing secret, returns it once and cancels pending deliveries. The same URL without rotate_secret returns the webhook without a secret.
    * @param mailboxId  (required)
    * @param setEmailWebhookRequest  (required)
    * @return ApiResponse&lt;SetEmailWebhook200Response&gt;
@@ -4333,8 +7003,8 @@ public class DefaultApi {
   }
 
   /**
-   * Configure one received-email webhook per mailbox
-   * Requires mailbox admin permission. Public HTTPS, including explicit ports such as 8443. Generates an encrypted signing secret, returned here. Same-URL updates retain it; replacing the URL rotates it and cancels pending old-version deliveries. Events are signed and retried up to eight attempts on transient failure; duplicates are possible. Worker-crash recovery is bounded to 24 hours from event creation. Exhausted and permanent failures require operator review.
+   * Set the email webhook
+   * Requires mailbox-admin permission and a public HTTPS URL. A new URL or rotate_secret&#x3D;true creates a new signing secret, returns it once and cancels pending deliveries. The same URL without rotate_secret returns the webhook without a secret.
    * @param mailboxId  (required)
    * @param setEmailWebhookRequest  (required)
    * @param headers Optional headers to include in the request
@@ -4427,66 +7097,54 @@ public class DefaultApi {
   }
 
   /**
-   * Mark a received email read or unread
-   * Requires mailbox read permission, including for locked/read-only content. Only read status can change. Receipt and audit event commit atomically. Repeated state changes are idempotent.
+   * Unarchive a mailbox
+   * 
    * @param mailboxId  (required)
-   * @param emailId  (required)
-   * @param updateEmailRequest  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param includeStorage Include the related file identifiers in the updated email response. (optional, default to false)
-   * @return UpdateEmail200Response
+   * @param actionRequest  (required)
+   * @return CreateMailbox201Response
    * @throws ApiException if fails to make API call
    */
-  public UpdateEmail200Response updateEmail(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull UpdateEmailRequest updateEmailRequest, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable Boolean includeStorage) throws ApiException {
-    return updateEmail(mailboxId, emailId, updateEmailRequest, accountId, includeStorage, null);
+  public CreateMailbox201Response unarchiveMailbox(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull ActionRequest actionRequest) throws ApiException {
+    return unarchiveMailbox(mailboxId, actionRequest, null);
   }
 
   /**
-   * Mark a received email read or unread
-   * Requires mailbox read permission, including for locked/read-only content. Only read status can change. Receipt and audit event commit atomically. Repeated state changes are idempotent.
+   * Unarchive a mailbox
+   * 
    * @param mailboxId  (required)
-   * @param emailId  (required)
-   * @param updateEmailRequest  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param includeStorage Include the related file identifiers in the updated email response. (optional, default to false)
+   * @param actionRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return UpdateEmail200Response
+   * @return CreateMailbox201Response
    * @throws ApiException if fails to make API call
    */
-  public UpdateEmail200Response updateEmail(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull UpdateEmailRequest updateEmailRequest, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
-    ApiResponse<UpdateEmail200Response> localVarResponse = updateEmailWithHttpInfo(mailboxId, emailId, updateEmailRequest, accountId, includeStorage, headers);
+  public CreateMailbox201Response unarchiveMailbox(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull ActionRequest actionRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<CreateMailbox201Response> localVarResponse = unarchiveMailboxWithHttpInfo(mailboxId, actionRequest, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Mark a received email read or unread
-   * Requires mailbox read permission, including for locked/read-only content. Only read status can change. Receipt and audit event commit atomically. Repeated state changes are idempotent.
+   * Unarchive a mailbox
+   * 
    * @param mailboxId  (required)
-   * @param emailId  (required)
-   * @param updateEmailRequest  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param includeStorage Include the related file identifiers in the updated email response. (optional, default to false)
-   * @return ApiResponse&lt;UpdateEmail200Response&gt;
+   * @param actionRequest  (required)
+   * @return ApiResponse&lt;CreateMailbox201Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<UpdateEmail200Response> updateEmailWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull UpdateEmailRequest updateEmailRequest, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable Boolean includeStorage) throws ApiException {
-    return updateEmailWithHttpInfo(mailboxId, emailId, updateEmailRequest, accountId, includeStorage, null);
+  public ApiResponse<CreateMailbox201Response> unarchiveMailboxWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull ActionRequest actionRequest) throws ApiException {
+    return unarchiveMailboxWithHttpInfo(mailboxId, actionRequest, null);
   }
 
   /**
-   * Mark a received email read or unread
-   * Requires mailbox read permission, including for locked/read-only content. Only read status can change. Receipt and audit event commit atomically. Repeated state changes are idempotent.
+   * Unarchive a mailbox
+   * 
    * @param mailboxId  (required)
-   * @param emailId  (required)
-   * @param updateEmailRequest  (required)
-   * @param accountId Select another granted account; otherwise use the credential default. (optional)
-   * @param includeStorage Include the related file identifiers in the updated email response. (optional, default to false)
+   * @param actionRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;UpdateEmail200Response&gt;
+   * @return ApiResponse&lt;CreateMailbox201Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<UpdateEmail200Response> updateEmailWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull UpdateEmailRequest updateEmailRequest, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = updateEmailRequestBuilder(mailboxId, emailId, updateEmailRequest, accountId, includeStorage, headers);
+  public ApiResponse<CreateMailbox201Response> unarchiveMailboxWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull ActionRequest actionRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = unarchiveMailboxRequestBuilder(mailboxId, actionRequest, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -4497,11 +7155,11 @@ public class DefaultApi {
       InputStream localVarResponseBody = null;
       try {
         if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("updateEmail", localVarResponse);
+          throw getApiException("unarchiveMailbox", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
         if (localVarResponseBody == null) {
-          return new ApiResponse<UpdateEmail200Response>(
+          return new ApiResponse<CreateMailbox201Response>(
               localVarResponse.statusCode(),
               localVarResponse.headers().map(),
               null
@@ -4511,10 +7169,10 @@ public class DefaultApi {
         
         
         String responseBody = new String(localVarResponseBody.readAllBytes());
-        UpdateEmail200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<UpdateEmail200Response>() {});
+        CreateMailbox201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<CreateMailbox201Response>() {});
         
 
-        return new ApiResponse<UpdateEmail200Response>(
+        return new ApiResponse<CreateMailbox201Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
             responseValue
@@ -4533,7 +7191,147 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder updateEmailRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull UpdateEmailRequest updateEmailRequest, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
+  private HttpRequest.Builder unarchiveMailboxRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull ActionRequest actionRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling unarchiveMailbox");
+    }
+    // verify the required parameter 'actionRequest' is set
+    if (actionRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'actionRequest' when calling unarchiveMailbox");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/unarchive"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()));
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(actionRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Mark an email read or unread
+   * Only read status can change.
+   * @param mailboxId  (required)
+   * @param emailId  (required)
+   * @param updateEmailRequest  (required)
+   * @param includeStorage Include backing file IDs for file-browser integrations. (optional, default to false)
+   * @return SendEmail202Response
+   * @throws ApiException if fails to make API call
+   */
+  public SendEmail202Response updateEmail(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull UpdateEmailRequest updateEmailRequest, @javax.annotation.Nullable Boolean includeStorage) throws ApiException {
+    return updateEmail(mailboxId, emailId, updateEmailRequest, includeStorage, null);
+  }
+
+  /**
+   * Mark an email read or unread
+   * Only read status can change.
+   * @param mailboxId  (required)
+   * @param emailId  (required)
+   * @param updateEmailRequest  (required)
+   * @param includeStorage Include backing file IDs for file-browser integrations. (optional, default to false)
+   * @param headers Optional headers to include in the request
+   * @return SendEmail202Response
+   * @throws ApiException if fails to make API call
+   */
+  public SendEmail202Response updateEmail(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull UpdateEmailRequest updateEmailRequest, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
+    ApiResponse<SendEmail202Response> localVarResponse = updateEmailWithHttpInfo(mailboxId, emailId, updateEmailRequest, includeStorage, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Mark an email read or unread
+   * Only read status can change.
+   * @param mailboxId  (required)
+   * @param emailId  (required)
+   * @param updateEmailRequest  (required)
+   * @param includeStorage Include backing file IDs for file-browser integrations. (optional, default to false)
+   * @return ApiResponse&lt;SendEmail202Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<SendEmail202Response> updateEmailWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull UpdateEmailRequest updateEmailRequest, @javax.annotation.Nullable Boolean includeStorage) throws ApiException {
+    return updateEmailWithHttpInfo(mailboxId, emailId, updateEmailRequest, includeStorage, null);
+  }
+
+  /**
+   * Mark an email read or unread
+   * Only read status can change.
+   * @param mailboxId  (required)
+   * @param emailId  (required)
+   * @param updateEmailRequest  (required)
+   * @param includeStorage Include backing file IDs for file-browser integrations. (optional, default to false)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;SendEmail202Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<SendEmail202Response> updateEmailWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull UpdateEmailRequest updateEmailRequest, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = updateEmailRequestBuilder(mailboxId, emailId, updateEmailRequest, includeStorage, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("updateEmail", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<SendEmail202Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        SendEmail202Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<SendEmail202Response>() {});
+        
+
+        return new ApiResponse<SendEmail202Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder updateEmailRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull String emailId, @javax.annotation.Nonnull UpdateEmailRequest updateEmailRequest, @javax.annotation.Nullable Boolean includeStorage, Map<String, String> headers) throws ApiException {
     // verify the required parameter 'mailboxId' is set
     if (mailboxId == null) {
       throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling updateEmail");
@@ -4556,8 +7354,6 @@ public class DefaultApi {
     List<Pair> localVarQueryParams = new ArrayList<>();
     StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
     String localVarQueryParameterBaseName;
-    localVarQueryParameterBaseName = "account_id";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
     localVarQueryParameterBaseName = "include_storage";
     localVarQueryParams.addAll(ApiClient.parameterToPairs("include_storage", includeStorage));
 
@@ -4593,62 +7389,54 @@ public class DefaultApi {
   }
 
   /**
-   * Replace the allowed senders for a mailbox
-   * Requires account owner/administrator and mailbox-admin permission. Read sender_allowlist.version from GET /mailboxes/{id}/email first. Entries match exact authenticated From addresses or domains, with no wildcards or implicit subdomains. A stale or missing version returns EMAIL_ALLOWLIST_CHANGED; invalid entries return EMAIL_ALLOWLIST_INVALID. Disabled policies retain the supplied entries. Locks and read-only account state apply.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param updateMailboxEmailAllowlistRequest  (required)
-   * @param accountId Explicitly granted account; omission uses credential default (optional)
-   * @param reason  (optional)
-   * @return UpdateMailboxEmailAllowlist200Response
+   * Replace the allowed senders
+   * Requires an account owner or administrator with mailbox-admin permission. Send sender_allowlist.version from the settings read as expected_version.
+   * @param mailboxId  (required)
+   * @param updateEmailAllowlistRequest  (required)
+   * @return UpdateEmailAllowlist200Response
    * @throws ApiException if fails to make API call
    */
-  public UpdateMailboxEmailAllowlist200Response updateMailboxEmailAllowlist(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull UpdateMailboxEmailAllowlistRequest updateMailboxEmailAllowlistRequest, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return updateMailboxEmailAllowlist(id, updateMailboxEmailAllowlistRequest, accountId, reason, null);
+  public UpdateEmailAllowlist200Response updateEmailAllowlist(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull UpdateEmailAllowlistRequest updateEmailAllowlistRequest) throws ApiException {
+    return updateEmailAllowlist(mailboxId, updateEmailAllowlistRequest, null);
   }
 
   /**
-   * Replace the allowed senders for a mailbox
-   * Requires account owner/administrator and mailbox-admin permission. Read sender_allowlist.version from GET /mailboxes/{id}/email first. Entries match exact authenticated From addresses or domains, with no wildcards or implicit subdomains. A stale or missing version returns EMAIL_ALLOWLIST_CHANGED; invalid entries return EMAIL_ALLOWLIST_INVALID. Disabled policies retain the supplied entries. Locks and read-only account state apply.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param updateMailboxEmailAllowlistRequest  (required)
-   * @param accountId Explicitly granted account; omission uses credential default (optional)
-   * @param reason  (optional)
+   * Replace the allowed senders
+   * Requires an account owner or administrator with mailbox-admin permission. Send sender_allowlist.version from the settings read as expected_version.
+   * @param mailboxId  (required)
+   * @param updateEmailAllowlistRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return UpdateMailboxEmailAllowlist200Response
+   * @return UpdateEmailAllowlist200Response
    * @throws ApiException if fails to make API call
    */
-  public UpdateMailboxEmailAllowlist200Response updateMailboxEmailAllowlist(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull UpdateMailboxEmailAllowlistRequest updateMailboxEmailAllowlistRequest, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    ApiResponse<UpdateMailboxEmailAllowlist200Response> localVarResponse = updateMailboxEmailAllowlistWithHttpInfo(id, updateMailboxEmailAllowlistRequest, accountId, reason, headers);
+  public UpdateEmailAllowlist200Response updateEmailAllowlist(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull UpdateEmailAllowlistRequest updateEmailAllowlistRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<UpdateEmailAllowlist200Response> localVarResponse = updateEmailAllowlistWithHttpInfo(mailboxId, updateEmailAllowlistRequest, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Replace the allowed senders for a mailbox
-   * Requires account owner/administrator and mailbox-admin permission. Read sender_allowlist.version from GET /mailboxes/{id}/email first. Entries match exact authenticated From addresses or domains, with no wildcards or implicit subdomains. A stale or missing version returns EMAIL_ALLOWLIST_CHANGED; invalid entries return EMAIL_ALLOWLIST_INVALID. Disabled policies retain the supplied entries. Locks and read-only account state apply.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param updateMailboxEmailAllowlistRequest  (required)
-   * @param accountId Explicitly granted account; omission uses credential default (optional)
-   * @param reason  (optional)
-   * @return ApiResponse&lt;UpdateMailboxEmailAllowlist200Response&gt;
+   * Replace the allowed senders
+   * Requires an account owner or administrator with mailbox-admin permission. Send sender_allowlist.version from the settings read as expected_version.
+   * @param mailboxId  (required)
+   * @param updateEmailAllowlistRequest  (required)
+   * @return ApiResponse&lt;UpdateEmailAllowlist200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<UpdateMailboxEmailAllowlist200Response> updateMailboxEmailAllowlistWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull UpdateMailboxEmailAllowlistRequest updateMailboxEmailAllowlistRequest, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason) throws ApiException {
-    return updateMailboxEmailAllowlistWithHttpInfo(id, updateMailboxEmailAllowlistRequest, accountId, reason, null);
+  public ApiResponse<UpdateEmailAllowlist200Response> updateEmailAllowlistWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull UpdateEmailAllowlistRequest updateEmailAllowlistRequest) throws ApiException {
+    return updateEmailAllowlistWithHttpInfo(mailboxId, updateEmailAllowlistRequest, null);
   }
 
   /**
-   * Replace the allowed senders for a mailbox
-   * Requires account owner/administrator and mailbox-admin permission. Read sender_allowlist.version from GET /mailboxes/{id}/email first. Entries match exact authenticated From addresses or domains, with no wildcards or implicit subdomains. A stale or missing version returns EMAIL_ALLOWLIST_CHANGED; invalid entries return EMAIL_ALLOWLIST_INVALID. Disabled policies retain the supplied entries. Locks and read-only account state apply.
-   * @param id Authorized mailbox prefix ID (required)
-   * @param updateMailboxEmailAllowlistRequest  (required)
-   * @param accountId Explicitly granted account; omission uses credential default (optional)
-   * @param reason  (optional)
+   * Replace the allowed senders
+   * Requires an account owner or administrator with mailbox-admin permission. Send sender_allowlist.version from the settings read as expected_version.
+   * @param mailboxId  (required)
+   * @param updateEmailAllowlistRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;UpdateMailboxEmailAllowlist200Response&gt;
+   * @return ApiResponse&lt;UpdateEmailAllowlist200Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<UpdateMailboxEmailAllowlist200Response> updateMailboxEmailAllowlistWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull UpdateMailboxEmailAllowlistRequest updateMailboxEmailAllowlistRequest, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = updateMailboxEmailAllowlistRequestBuilder(id, updateMailboxEmailAllowlistRequest, accountId, reason, headers);
+  public ApiResponse<UpdateEmailAllowlist200Response> updateEmailAllowlistWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull UpdateEmailAllowlistRequest updateEmailAllowlistRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = updateEmailAllowlistRequestBuilder(mailboxId, updateEmailAllowlistRequest, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -4659,11 +7447,11 @@ public class DefaultApi {
       InputStream localVarResponseBody = null;
       try {
         if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("updateMailboxEmailAllowlist", localVarResponse);
+          throw getApiException("updateEmailAllowlist", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
         if (localVarResponseBody == null) {
-          return new ApiResponse<UpdateMailboxEmailAllowlist200Response>(
+          return new ApiResponse<UpdateEmailAllowlist200Response>(
               localVarResponse.statusCode(),
               localVarResponse.headers().map(),
               null
@@ -4673,10 +7461,10 @@ public class DefaultApi {
         
         
         String responseBody = new String(localVarResponseBody.readAllBytes());
-        UpdateMailboxEmailAllowlist200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<UpdateMailboxEmailAllowlist200Response>() {});
+        UpdateEmailAllowlist200Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<UpdateEmailAllowlist200Response>() {});
         
 
-        return new ApiResponse<UpdateMailboxEmailAllowlist200Response>(
+        return new ApiResponse<UpdateEmailAllowlist200Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
             responseValue
@@ -4695,45 +7483,28 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder updateMailboxEmailAllowlistRequestBuilder(@javax.annotation.Nonnull String id, @javax.annotation.Nonnull UpdateMailboxEmailAllowlistRequest updateMailboxEmailAllowlistRequest, @javax.annotation.Nullable String accountId, @javax.annotation.Nullable String reason, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'id' is set
-    if (id == null) {
-      throw new ApiException(400, "Missing the required parameter 'id' when calling updateMailboxEmailAllowlist");
+  private HttpRequest.Builder updateEmailAllowlistRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull UpdateEmailAllowlistRequest updateEmailAllowlistRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling updateEmailAllowlist");
     }
-    // verify the required parameter 'updateMailboxEmailAllowlistRequest' is set
-    if (updateMailboxEmailAllowlistRequest == null) {
-      throw new ApiException(400, "Missing the required parameter 'updateMailboxEmailAllowlistRequest' when calling updateMailboxEmailAllowlist");
+    // verify the required parameter 'updateEmailAllowlistRequest' is set
+    if (updateEmailAllowlistRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'updateEmailAllowlistRequest' when calling updateEmailAllowlist");
     }
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
-    String localVarPath = "/v1/mailboxes/{id}/email/allowlist"
-        .replace("{id}", ApiClient.urlEncode(id.toString()));
+    String localVarPath = "/v1/mailboxes/{mailbox_id}/email/allowlist"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()));
 
-    List<Pair> localVarQueryParams = new ArrayList<>();
-    StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
-    String localVarQueryParameterBaseName;
-    localVarQueryParameterBaseName = "account_id";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("account_id", accountId));
-    localVarQueryParameterBaseName = "reason";
-    localVarQueryParams.addAll(ApiClient.parameterToPairs("reason", reason));
-
-    if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
-      StringJoiner queryJoiner = new StringJoiner("&");
-      localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
-      if (localVarQueryStringJoiner.length() != 0) {
-        queryJoiner.add(localVarQueryStringJoiner.toString());
-      }
-      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
-    } else {
-      localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-    }
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
 
     localVarRequestBuilder.header("Content-Type", "application/json");
     localVarRequestBuilder.header("Accept", "application/json");
 
     try {
-      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(updateMailboxEmailAllowlistRequest);
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(updateEmailAllowlistRequest);
       localVarRequestBuilder.method("PATCH", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
     } catch (IOException e) {
       throw new ApiException(e);
@@ -4750,54 +7521,54 @@ public class DefaultApi {
   }
 
   /**
-   * Queue exact ownership, SES and MX verification
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param id  (required)
-   * @param verifyAccountEmailDomainRequest  (optional)
-   * @return EmailDomainListResponse
+   * Update a mailbox description or metadata
+   * metadata must be a JSON object. It replaces the stored object; {} clears it. Send expected_metadata_version from your last read; a stale value changes nothing and returns MAILBOX_METADATA_CONFLICT.
+   * @param mailboxId  (required)
+   * @param updateMailboxRequest  (required)
+   * @return CreateMailbox201Response
    * @throws ApiException if fails to make API call
    */
-  public EmailDomainListResponse verifyAccountEmailDomain(@javax.annotation.Nonnull String id, @javax.annotation.Nullable VerifyAccountEmailDomainRequest verifyAccountEmailDomainRequest) throws ApiException {
-    return verifyAccountEmailDomain(id, verifyAccountEmailDomainRequest, null);
+  public CreateMailbox201Response updateMailbox(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull UpdateMailboxRequest updateMailboxRequest) throws ApiException {
+    return updateMailbox(mailboxId, updateMailboxRequest, null);
   }
 
   /**
-   * Queue exact ownership, SES and MX verification
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param id  (required)
-   * @param verifyAccountEmailDomainRequest  (optional)
+   * Update a mailbox description or metadata
+   * metadata must be a JSON object. It replaces the stored object; {} clears it. Send expected_metadata_version from your last read; a stale value changes nothing and returns MAILBOX_METADATA_CONFLICT.
+   * @param mailboxId  (required)
+   * @param updateMailboxRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return EmailDomainListResponse
+   * @return CreateMailbox201Response
    * @throws ApiException if fails to make API call
    */
-  public EmailDomainListResponse verifyAccountEmailDomain(@javax.annotation.Nonnull String id, @javax.annotation.Nullable VerifyAccountEmailDomainRequest verifyAccountEmailDomainRequest, Map<String, String> headers) throws ApiException {
-    ApiResponse<EmailDomainListResponse> localVarResponse = verifyAccountEmailDomainWithHttpInfo(id, verifyAccountEmailDomainRequest, headers);
+  public CreateMailbox201Response updateMailbox(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull UpdateMailboxRequest updateMailboxRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<CreateMailbox201Response> localVarResponse = updateMailboxWithHttpInfo(mailboxId, updateMailboxRequest, headers);
     return localVarResponse.getData();
   }
 
   /**
-   * Queue exact ownership, SES and MX verification
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param id  (required)
-   * @param verifyAccountEmailDomainRequest  (optional)
-   * @return ApiResponse&lt;EmailDomainListResponse&gt;
+   * Update a mailbox description or metadata
+   * metadata must be a JSON object. It replaces the stored object; {} clears it. Send expected_metadata_version from your last read; a stale value changes nothing and returns MAILBOX_METADATA_CONFLICT.
+   * @param mailboxId  (required)
+   * @param updateMailboxRequest  (required)
+   * @return ApiResponse&lt;CreateMailbox201Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<EmailDomainListResponse> verifyAccountEmailDomainWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nullable VerifyAccountEmailDomainRequest verifyAccountEmailDomainRequest) throws ApiException {
-    return verifyAccountEmailDomainWithHttpInfo(id, verifyAccountEmailDomainRequest, null);
+  public ApiResponse<CreateMailbox201Response> updateMailboxWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull UpdateMailboxRequest updateMailboxRequest) throws ApiException {
+    return updateMailboxWithHttpInfo(mailboxId, updateMailboxRequest, null);
   }
 
   /**
-   * Queue exact ownership, SES and MX verification
-   * Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-   * @param id  (required)
-   * @param verifyAccountEmailDomainRequest  (optional)
+   * Update a mailbox description or metadata
+   * metadata must be a JSON object. It replaces the stored object; {} clears it. Send expected_metadata_version from your last read; a stale value changes nothing and returns MAILBOX_METADATA_CONFLICT.
+   * @param mailboxId  (required)
+   * @param updateMailboxRequest  (required)
    * @param headers Optional headers to include in the request
-   * @return ApiResponse&lt;EmailDomainListResponse&gt;
+   * @return ApiResponse&lt;CreateMailbox201Response&gt;
    * @throws ApiException if fails to make API call
    */
-  public ApiResponse<EmailDomainListResponse> verifyAccountEmailDomainWithHttpInfo(@javax.annotation.Nonnull String id, @javax.annotation.Nullable VerifyAccountEmailDomainRequest verifyAccountEmailDomainRequest, Map<String, String> headers) throws ApiException {
-    HttpRequest.Builder localVarRequestBuilder = verifyAccountEmailDomainRequestBuilder(id, verifyAccountEmailDomainRequest, headers);
+  public ApiResponse<CreateMailbox201Response> updateMailboxWithHttpInfo(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull UpdateMailboxRequest updateMailboxRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = updateMailboxRequestBuilder(mailboxId, updateMailboxRequest, headers);
     try {
       HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
           localVarRequestBuilder.build(),
@@ -4808,11 +7579,11 @@ public class DefaultApi {
       InputStream localVarResponseBody = null;
       try {
         if (localVarResponse.statusCode()/ 100 != 2) {
-          throw getApiException("verifyAccountEmailDomain", localVarResponse);
+          throw getApiException("updateMailbox", localVarResponse);
         }
         localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
         if (localVarResponseBody == null) {
-          return new ApiResponse<EmailDomainListResponse>(
+          return new ApiResponse<CreateMailbox201Response>(
               localVarResponse.statusCode(),
               localVarResponse.headers().map(),
               null
@@ -4822,10 +7593,10 @@ public class DefaultApi {
         
         
         String responseBody = new String(localVarResponseBody.readAllBytes());
-        EmailDomainListResponse responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<EmailDomainListResponse>() {});
+        CreateMailbox201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<CreateMailbox201Response>() {});
         
 
-        return new ApiResponse<EmailDomainListResponse>(
+        return new ApiResponse<CreateMailbox201Response>(
             localVarResponse.statusCode(),
             localVarResponse.headers().map(),
             responseValue
@@ -4844,16 +7615,20 @@ public class DefaultApi {
     }
   }
 
-  private HttpRequest.Builder verifyAccountEmailDomainRequestBuilder(@javax.annotation.Nonnull String id, @javax.annotation.Nullable VerifyAccountEmailDomainRequest verifyAccountEmailDomainRequest, Map<String, String> headers) throws ApiException {
-    // verify the required parameter 'id' is set
-    if (id == null) {
-      throw new ApiException(400, "Missing the required parameter 'id' when calling verifyAccountEmailDomain");
+  private HttpRequest.Builder updateMailboxRequestBuilder(@javax.annotation.Nonnull String mailboxId, @javax.annotation.Nonnull UpdateMailboxRequest updateMailboxRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'mailboxId' is set
+    if (mailboxId == null) {
+      throw new ApiException(400, "Missing the required parameter 'mailboxId' when calling updateMailbox");
+    }
+    // verify the required parameter 'updateMailboxRequest' is set
+    if (updateMailboxRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'updateMailboxRequest' when calling updateMailbox");
     }
 
     HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
 
-    String localVarPath = "/v1/account/email_domains/{id}/verify"
-        .replace("{id}", ApiClient.urlEncode(id.toString()));
+    String localVarPath = "/v1/mailboxes/{mailbox_id}"
+        .replace("{mailbox_id}", ApiClient.urlEncode(mailboxId.toString()));
 
     localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
 
@@ -4861,7 +7636,262 @@ public class DefaultApi {
     localVarRequestBuilder.header("Accept", "application/json");
 
     try {
-      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(verifyAccountEmailDomainRequest);
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(updateMailboxRequest);
+      localVarRequestBuilder.method("PATCH", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Check DNS and provider setup again
+   * Queues the check and returns the current state. Read the domain again to see the result.
+   * @param domainId  (required)
+   * @param verifyEmailDomainRequest  (required)
+   * @return CreateEmailDomain201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateEmailDomain201Response verifyEmailDomain(@javax.annotation.Nonnull String domainId, @javax.annotation.Nonnull VerifyEmailDomainRequest verifyEmailDomainRequest) throws ApiException {
+    return verifyEmailDomain(domainId, verifyEmailDomainRequest, null);
+  }
+
+  /**
+   * Check DNS and provider setup again
+   * Queues the check and returns the current state. Read the domain again to see the result.
+   * @param domainId  (required)
+   * @param verifyEmailDomainRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return CreateEmailDomain201Response
+   * @throws ApiException if fails to make API call
+   */
+  public CreateEmailDomain201Response verifyEmailDomain(@javax.annotation.Nonnull String domainId, @javax.annotation.Nonnull VerifyEmailDomainRequest verifyEmailDomainRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<CreateEmailDomain201Response> localVarResponse = verifyEmailDomainWithHttpInfo(domainId, verifyEmailDomainRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Check DNS and provider setup again
+   * Queues the check and returns the current state. Read the domain again to see the result.
+   * @param domainId  (required)
+   * @param verifyEmailDomainRequest  (required)
+   * @return ApiResponse&lt;CreateEmailDomain201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CreateEmailDomain201Response> verifyEmailDomainWithHttpInfo(@javax.annotation.Nonnull String domainId, @javax.annotation.Nonnull VerifyEmailDomainRequest verifyEmailDomainRequest) throws ApiException {
+    return verifyEmailDomainWithHttpInfo(domainId, verifyEmailDomainRequest, null);
+  }
+
+  /**
+   * Check DNS and provider setup again
+   * Queues the check and returns the current state. Read the domain again to see the result.
+   * @param domainId  (required)
+   * @param verifyEmailDomainRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;CreateEmailDomain201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<CreateEmailDomain201Response> verifyEmailDomainWithHttpInfo(@javax.annotation.Nonnull String domainId, @javax.annotation.Nonnull VerifyEmailDomainRequest verifyEmailDomainRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = verifyEmailDomainRequestBuilder(domainId, verifyEmailDomainRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("verifyEmailDomain", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<CreateEmailDomain201Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        CreateEmailDomain201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<CreateEmailDomain201Response>() {});
+        
+
+        return new ApiResponse<CreateEmailDomain201Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder verifyEmailDomainRequestBuilder(@javax.annotation.Nonnull String domainId, @javax.annotation.Nonnull VerifyEmailDomainRequest verifyEmailDomainRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'domainId' is set
+    if (domainId == null) {
+      throw new ApiException(400, "Missing the required parameter 'domainId' when calling verifyEmailDomain");
+    }
+    // verify the required parameter 'verifyEmailDomainRequest' is set
+    if (verifyEmailDomainRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'verifyEmailDomainRequest' when calling verifyEmailDomain");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/account/email_domains/{domain_id}/verify"
+        .replace("{domain_id}", ApiClient.urlEncode(domainId.toString()));
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(verifyEmailDomainRequest);
+      localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    if (memberVarReadTimeout != null) {
+      localVarRequestBuilder.timeout(memberVarReadTimeout);
+    }
+    // Add custom headers if provided
+    localVarRequestBuilder = HttpRequestBuilderExtensions.withAdditionalHeaders(localVarRequestBuilder, headers);
+    if (memberVarInterceptor != null) {
+      memberVarInterceptor.accept(localVarRequestBuilder);
+    }
+    return localVarRequestBuilder;
+  }
+
+  /**
+   * Exchange a sign-in code for an API key
+   * Creates an AI agent connection for an account owner or administrator. Accounts with two-factor authentication must use browser sign-in.
+   * @param verifySignInCodeRequest  (required)
+   * @return VerifySignInCode201Response
+   * @throws ApiException if fails to make API call
+   */
+  public VerifySignInCode201Response verifySignInCode(@javax.annotation.Nonnull VerifySignInCodeRequest verifySignInCodeRequest) throws ApiException {
+    return verifySignInCode(verifySignInCodeRequest, null);
+  }
+
+  /**
+   * Exchange a sign-in code for an API key
+   * Creates an AI agent connection for an account owner or administrator. Accounts with two-factor authentication must use browser sign-in.
+   * @param verifySignInCodeRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return VerifySignInCode201Response
+   * @throws ApiException if fails to make API call
+   */
+  public VerifySignInCode201Response verifySignInCode(@javax.annotation.Nonnull VerifySignInCodeRequest verifySignInCodeRequest, Map<String, String> headers) throws ApiException {
+    ApiResponse<VerifySignInCode201Response> localVarResponse = verifySignInCodeWithHttpInfo(verifySignInCodeRequest, headers);
+    return localVarResponse.getData();
+  }
+
+  /**
+   * Exchange a sign-in code for an API key
+   * Creates an AI agent connection for an account owner or administrator. Accounts with two-factor authentication must use browser sign-in.
+   * @param verifySignInCodeRequest  (required)
+   * @return ApiResponse&lt;VerifySignInCode201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<VerifySignInCode201Response> verifySignInCodeWithHttpInfo(@javax.annotation.Nonnull VerifySignInCodeRequest verifySignInCodeRequest) throws ApiException {
+    return verifySignInCodeWithHttpInfo(verifySignInCodeRequest, null);
+  }
+
+  /**
+   * Exchange a sign-in code for an API key
+   * Creates an AI agent connection for an account owner or administrator. Accounts with two-factor authentication must use browser sign-in.
+   * @param verifySignInCodeRequest  (required)
+   * @param headers Optional headers to include in the request
+   * @return ApiResponse&lt;VerifySignInCode201Response&gt;
+   * @throws ApiException if fails to make API call
+   */
+  public ApiResponse<VerifySignInCode201Response> verifySignInCodeWithHttpInfo(@javax.annotation.Nonnull VerifySignInCodeRequest verifySignInCodeRequest, Map<String, String> headers) throws ApiException {
+    HttpRequest.Builder localVarRequestBuilder = verifySignInCodeRequestBuilder(verifySignInCodeRequest, headers);
+    try {
+      HttpResponse<InputStream> localVarResponse = memberVarHttpClient.send(
+          localVarRequestBuilder.build(),
+          HttpResponse.BodyHandlers.ofInputStream());
+      if (memberVarResponseInterceptor != null) {
+        memberVarResponseInterceptor.accept(localVarResponse);
+      }
+      InputStream localVarResponseBody = null;
+      try {
+        if (localVarResponse.statusCode()/ 100 != 2) {
+          throw getApiException("verifySignInCode", localVarResponse);
+        }
+        localVarResponseBody = ApiClient.getResponseBody(localVarResponse);
+        if (localVarResponseBody == null) {
+          return new ApiResponse<VerifySignInCode201Response>(
+              localVarResponse.statusCode(),
+              localVarResponse.headers().map(),
+              null
+          );
+        }
+
+        
+        
+        String responseBody = new String(localVarResponseBody.readAllBytes());
+        VerifySignInCode201Response responseValue = responseBody.isBlank()? null: memberVarObjectMapper.readValue(responseBody, new TypeReference<VerifySignInCode201Response>() {});
+        
+
+        return new ApiResponse<VerifySignInCode201Response>(
+            localVarResponse.statusCode(),
+            localVarResponse.headers().map(),
+            responseValue
+        );
+      } finally {
+        if (localVarResponseBody != null) {
+          localVarResponseBody.close();
+        }
+      }
+    } catch (IOException e) {
+      throw new ApiException(e);
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new ApiException(e);
+    }
+  }
+
+  private HttpRequest.Builder verifySignInCodeRequestBuilder(@javax.annotation.Nonnull VerifySignInCodeRequest verifySignInCodeRequest, Map<String, String> headers) throws ApiException {
+    // verify the required parameter 'verifySignInCodeRequest' is set
+    if (verifySignInCodeRequest == null) {
+      throw new ApiException(400, "Missing the required parameter 'verifySignInCodeRequest' when calling verifySignInCode");
+    }
+
+    HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+
+    String localVarPath = "/v1/agent_auth/verify_code";
+
+    localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+
+    localVarRequestBuilder.header("Content-Type", "application/json");
+    localVarRequestBuilder.header("Accept", "application/json");
+
+    try {
+      byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(verifySignInCodeRequest);
       localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
     } catch (IOException e) {
       throw new ApiException(e);

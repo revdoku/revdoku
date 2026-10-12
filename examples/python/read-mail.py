@@ -40,7 +40,7 @@ for page in range(100):
         if response.status_code != 200:
             raise RuntimeError(f"{detail['error']['code']}: {detail['error']['message']}")
         email = detail["data"]["email"]
-        fields = ("id", "subject", "from", "body_status", "attachments")
+        fields = ("id", "subject", "from_addresses", "body_status", "attachments")
         print(json.dumps({field: email.get(field) for field in fields}))
         if "--show-body" in sys.argv:
             print(json.dumps({"body_text": email.get("body_text")}))

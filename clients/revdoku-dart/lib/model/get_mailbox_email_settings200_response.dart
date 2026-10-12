@@ -13,32 +13,32 @@ part of revdoku.api;
 class GetMailboxEmailSettings200Response {
   /// Returns a new [GetMailboxEmailSettings200Response] instance.
   GetMailboxEmailSettings200Response({
-    required this.data,
     required this.success,
+    required this.data,
   });
-
-  MailboxEmail data;
 
   bool success;
 
+  MailboxEmailSettings data;
+
   @override
   bool operator ==(Object other) => identical(this, other) || other is GetMailboxEmailSettings200Response &&
-    other.data == data &&
-    other.success == success;
+    other.success == success &&
+    other.data == data;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (data.hashCode) +
-    (success.hashCode);
+    (success.hashCode) +
+    (data.hashCode);
 
   @override
-  String toString() => 'GetMailboxEmailSettings200Response[data=$data, success=$success]';
+  String toString() => 'GetMailboxEmailSettings200Response[success=$success, data=$data]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'data'] = this.data;
       json[r'success'] = this.success;
+      json[r'data'] = this.data;
     return json;
   }
 
@@ -53,16 +53,16 @@ class GetMailboxEmailSettings200Response {
       // Note 1: the values aren't checked for validity beyond being non-null.
       // Note 2: this code is stripped in release mode!
       assert(() {
-        assert(json.containsKey(r'data'), 'Required key "GetMailboxEmailSettings200Response[data]" is missing from JSON.');
-        assert(json[r'data'] != null, 'Required key "GetMailboxEmailSettings200Response[data]" has a null value in JSON.');
         assert(json.containsKey(r'success'), 'Required key "GetMailboxEmailSettings200Response[success]" is missing from JSON.');
         assert(json[r'success'] != null, 'Required key "GetMailboxEmailSettings200Response[success]" has a null value in JSON.');
+        assert(json.containsKey(r'data'), 'Required key "GetMailboxEmailSettings200Response[data]" is missing from JSON.');
+        assert(json[r'data'] != null, 'Required key "GetMailboxEmailSettings200Response[data]" has a null value in JSON.');
         return true;
       }());
 
       return GetMailboxEmailSettings200Response(
-        data: MailboxEmail.fromJson(json[r'data'])!,
         success: mapValueOfType<bool>(json, r'success')!,
+        data: MailboxEmailSettings.fromJson(json[r'data'])!,
       );
     }
     return null;
@@ -110,8 +110,8 @@ class GetMailboxEmailSettings200Response {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
-    'data',
     'success',
+    'data',
   };
 }
 

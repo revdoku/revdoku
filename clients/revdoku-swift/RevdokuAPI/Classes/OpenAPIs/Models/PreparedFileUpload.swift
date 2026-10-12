@@ -18,7 +18,6 @@ public struct PreparedFileUpload: Codable, JSONEncodable, Hashable {
     public var byteSize: Int64?
     public var checksum: String?
     public var contentType: String?
-    public var serviceName: String?
     public var directUpload: StorageUpload?
     public var file: MailboxFile?
     public var version: FileVersion?
@@ -27,13 +26,12 @@ public struct PreparedFileUpload: Codable, JSONEncodable, Hashable {
     public var reason: String?
     public var details: [String: AnyCodable]?
 
-    public init(signedId: String? = nil, filename: String? = nil, byteSize: Int64? = nil, checksum: String? = nil, contentType: String? = nil, serviceName: String? = nil, directUpload: StorageUpload? = nil, file: MailboxFile? = nil, version: FileVersion? = nil, skipped: Bool? = nil, duplicate: Bool? = nil, reason: String? = nil, details: [String: AnyCodable]? = nil) {
+    public init(signedId: String? = nil, filename: String? = nil, byteSize: Int64? = nil, checksum: String? = nil, contentType: String? = nil, directUpload: StorageUpload? = nil, file: MailboxFile? = nil, version: FileVersion? = nil, skipped: Bool? = nil, duplicate: Bool? = nil, reason: String? = nil, details: [String: AnyCodable]? = nil) {
         self.signedId = signedId
         self.filename = filename
         self.byteSize = byteSize
         self.checksum = checksum
         self.contentType = contentType
-        self.serviceName = serviceName
         self.directUpload = directUpload
         self.file = file
         self.version = version
@@ -49,7 +47,6 @@ public struct PreparedFileUpload: Codable, JSONEncodable, Hashable {
         case byteSize = "byte_size"
         case checksum
         case contentType = "content_type"
-        case serviceName = "service_name"
         case directUpload = "direct_upload"
         case file
         case version
@@ -68,7 +65,6 @@ public struct PreparedFileUpload: Codable, JSONEncodable, Hashable {
         try container.encodeIfPresent(byteSize, forKey: .byteSize)
         try container.encodeIfPresent(checksum, forKey: .checksum)
         try container.encodeIfPresent(contentType, forKey: .contentType)
-        try container.encodeIfPresent(serviceName, forKey: .serviceName)
         try container.encodeIfPresent(directUpload, forKey: .directUpload)
         try container.encodeIfPresent(file, forKey: .file)
         try container.encodeIfPresent(version, forKey: .version)

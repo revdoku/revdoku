@@ -12,23 +12,20 @@ import AnyCodable
 
 public struct FileVersion: Codable, JSONEncodable, Hashable {
 
-    public var id: String?
-    public var fileId: String?
+    public var id: String
+    public var fileId: String
     public var name: String?
     public var mimeType: String?
     public var sha256: String?
     public var reason: String?
-    public var metaKey: String?
     public var createdBySystem: String?
+    /** True for the version that records a deletion. */
     public var deleted: Bool?
     public var ready: Bool?
     public var hasText: Bool?
-    public var normalizationRequired: Bool?
-    public var metaReady: Bool?
-    public var versionNumber: Int64?
+    public var versionNumber: Int64
     public var byteSize: Int64?
     public var createdAt: Date?
-    public var metaCreatedAt: Date?
     public var createdBy: FileActor?
     public var updatedBy: FileActor?
     public var createdByAgent: [String: AnyCodable]?
@@ -40,24 +37,20 @@ public struct FileVersion: Codable, JSONEncodable, Hashable {
     public var readBy: FileActor?
     public var readByApiKey: FileKey?
 
-    public init(id: String? = nil, fileId: String? = nil, name: String? = nil, mimeType: String? = nil, sha256: String? = nil, reason: String? = nil, metaKey: String? = nil, createdBySystem: String? = nil, deleted: Bool? = nil, ready: Bool? = nil, hasText: Bool? = nil, normalizationRequired: Bool? = nil, metaReady: Bool? = nil, versionNumber: Int64? = nil, byteSize: Int64? = nil, createdAt: Date? = nil, metaCreatedAt: Date? = nil, createdBy: FileActor? = nil, updatedBy: FileActor? = nil, createdByAgent: [String: AnyCodable]? = nil, updatedByAgent: [String: AnyCodable]? = nil, createdByApiKey: [String: AnyCodable]? = nil, updatedByApiKey: [String: AnyCodable]? = nil, read: Bool? = nil, readAt: Date? = nil, readBy: FileActor? = nil, readByApiKey: FileKey? = nil) {
+    public init(id: String, fileId: String, name: String? = nil, mimeType: String? = nil, sha256: String? = nil, reason: String? = nil, createdBySystem: String? = nil, deleted: Bool? = nil, ready: Bool? = nil, hasText: Bool? = nil, versionNumber: Int64, byteSize: Int64? = nil, createdAt: Date? = nil, createdBy: FileActor? = nil, updatedBy: FileActor? = nil, createdByAgent: [String: AnyCodable]? = nil, updatedByAgent: [String: AnyCodable]? = nil, createdByApiKey: [String: AnyCodable]? = nil, updatedByApiKey: [String: AnyCodable]? = nil, read: Bool? = nil, readAt: Date? = nil, readBy: FileActor? = nil, readByApiKey: FileKey? = nil) {
         self.id = id
         self.fileId = fileId
         self.name = name
         self.mimeType = mimeType
         self.sha256 = sha256
         self.reason = reason
-        self.metaKey = metaKey
         self.createdBySystem = createdBySystem
         self.deleted = deleted
         self.ready = ready
         self.hasText = hasText
-        self.normalizationRequired = normalizationRequired
-        self.metaReady = metaReady
         self.versionNumber = versionNumber
         self.byteSize = byteSize
         self.createdAt = createdAt
-        self.metaCreatedAt = metaCreatedAt
         self.createdBy = createdBy
         self.updatedBy = updatedBy
         self.createdByAgent = createdByAgent
@@ -77,17 +70,13 @@ public struct FileVersion: Codable, JSONEncodable, Hashable {
         case mimeType = "mime_type"
         case sha256
         case reason
-        case metaKey = "meta_key"
         case createdBySystem = "created_by_system"
         case deleted
         case ready
         case hasText = "has_text"
-        case normalizationRequired = "normalization_required"
-        case metaReady = "meta_ready"
         case versionNumber = "version_number"
         case byteSize = "byte_size"
         case createdAt = "created_at"
-        case metaCreatedAt = "meta_created_at"
         case createdBy = "created_by"
         case updatedBy = "updated_by"
         case createdByAgent = "created_by_agent"
@@ -104,23 +93,19 @@ public struct FileVersion: Codable, JSONEncodable, Hashable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encodeIfPresent(id, forKey: .id)
-        try container.encodeIfPresent(fileId, forKey: .fileId)
+        try container.encode(id, forKey: .id)
+        try container.encode(fileId, forKey: .fileId)
         try container.encodeIfPresent(name, forKey: .name)
         try container.encodeIfPresent(mimeType, forKey: .mimeType)
         try container.encodeIfPresent(sha256, forKey: .sha256)
         try container.encodeIfPresent(reason, forKey: .reason)
-        try container.encodeIfPresent(metaKey, forKey: .metaKey)
         try container.encodeIfPresent(createdBySystem, forKey: .createdBySystem)
         try container.encodeIfPresent(deleted, forKey: .deleted)
         try container.encodeIfPresent(ready, forKey: .ready)
         try container.encodeIfPresent(hasText, forKey: .hasText)
-        try container.encodeIfPresent(normalizationRequired, forKey: .normalizationRequired)
-        try container.encodeIfPresent(metaReady, forKey: .metaReady)
-        try container.encodeIfPresent(versionNumber, forKey: .versionNumber)
+        try container.encode(versionNumber, forKey: .versionNumber)
         try container.encodeIfPresent(byteSize, forKey: .byteSize)
         try container.encodeIfPresent(createdAt, forKey: .createdAt)
-        try container.encodeIfPresent(metaCreatedAt, forKey: .metaCreatedAt)
         try container.encodeIfPresent(createdBy, forKey: .createdBy)
         try container.encodeIfPresent(updatedBy, forKey: .updatedBy)
         try container.encodeIfPresent(createdByAgent, forKey: .createdByAgent)

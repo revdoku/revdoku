@@ -14,7 +14,6 @@ To implement folder uploads yourself:
 
 | Option or event | Behavior |
 | --- | --- |
-| `delete_missing: true` | Full-folder sync: remove omitted destination files only when the entire session completes. Omit for ordinary uploads. |
 | Connection interrupted | Already finalized files remain saved. |
 | Session expires | Unfinished uploads are abandoned and the write lock is released. |
 | `complete: false` | Cancel remaining work and release the lock. |

@@ -1,7 +1,7 @@
 /*
- * Revdoku public agent API
+ * Revdoku API
  *
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -13,17 +13,17 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateClientAccount201Response {
-    #[serde(rename = "data")]
-    pub data: Box<models::CreateClientAccount201ResponseData>,
     #[serde(rename = "success")]
     pub success: bool,
+    #[serde(rename = "data")]
+    pub data: Box<models::CreateClientAccount201ResponseData>,
 }
 
 impl CreateClientAccount201Response {
-    pub fn new(data: models::CreateClientAccount201ResponseData, success: bool) -> CreateClientAccount201Response {
+    pub fn new(success: bool, data: models::CreateClientAccount201ResponseData) -> CreateClientAccount201Response {
         CreateClientAccount201Response {
-            data: Box::new(data),
             success,
+            data: Box::new(data),
         }
     }
 }

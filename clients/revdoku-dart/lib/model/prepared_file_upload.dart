@@ -18,7 +18,6 @@ class PreparedFileUpload {
     this.byteSize,
     this.checksum,
     this.contentType,
-    this.serviceName,
     this.directUpload,
     this.file,
     this.version,
@@ -67,14 +66,6 @@ class PreparedFileUpload {
   /// Consider adding a "default:" property in the specification file to hide this note.
   ///
   String? contentType;
-
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  String? serviceName;
 
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
@@ -133,7 +124,6 @@ class PreparedFileUpload {
     other.byteSize == byteSize &&
     other.checksum == checksum &&
     other.contentType == contentType &&
-    other.serviceName == serviceName &&
     other.directUpload == directUpload &&
     other.file == file &&
     other.version == version &&
@@ -150,7 +140,6 @@ class PreparedFileUpload {
     (byteSize == null ? 0 : byteSize!.hashCode) +
     (checksum == null ? 0 : checksum!.hashCode) +
     (contentType == null ? 0 : contentType!.hashCode) +
-    (serviceName == null ? 0 : serviceName!.hashCode) +
     (directUpload == null ? 0 : directUpload!.hashCode) +
     (file == null ? 0 : file!.hashCode) +
     (version == null ? 0 : version!.hashCode) +
@@ -160,7 +149,7 @@ class PreparedFileUpload {
     (details.hashCode);
 
   @override
-  String toString() => 'PreparedFileUpload[signedId=$signedId, filename=$filename, byteSize=$byteSize, checksum=$checksum, contentType=$contentType, serviceName=$serviceName, directUpload=$directUpload, file=$file, version=$version, skipped=$skipped, duplicate=$duplicate, reason=$reason, details=$details]';
+  String toString() => 'PreparedFileUpload[signedId=$signedId, filename=$filename, byteSize=$byteSize, checksum=$checksum, contentType=$contentType, directUpload=$directUpload, file=$file, version=$version, skipped=$skipped, duplicate=$duplicate, reason=$reason, details=$details]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -178,9 +167,6 @@ class PreparedFileUpload {
     }
     if (this.contentType != null) {
       json[r'content_type'] = this.contentType;
-    }
-    if (this.serviceName != null) {
-      json[r'service_name'] = this.serviceName;
     }
     if (this.directUpload != null) {
       json[r'direct_upload'] = this.directUpload;
@@ -224,7 +210,6 @@ class PreparedFileUpload {
         byteSize: mapValueOfType<int>(json, r'byte_size'),
         checksum: mapValueOfType<String>(json, r'checksum'),
         contentType: mapValueOfType<String>(json, r'content_type'),
-        serviceName: mapValueOfType<String>(json, r'service_name'),
         directUpload: StorageUpload.fromJson(json[r'direct_upload']),
         file: MailboxFile.fromJson(json[r'file']),
         version: FileVersion.fromJson(json[r'version']),

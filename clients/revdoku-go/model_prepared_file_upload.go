@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -24,7 +24,6 @@ type PreparedFileUpload struct {
 	ByteSize *int64 `json:"byte_size,omitempty"`
 	Checksum *string `json:"checksum,omitempty"`
 	ContentType *string `json:"content_type,omitempty"`
-	ServiceName *string `json:"service_name,omitempty"`
 	DirectUpload *StorageUpload `json:"direct_upload,omitempty"`
 	File *MailboxFile `json:"file,omitempty"`
 	Version *FileVersion `json:"version,omitempty"`
@@ -212,38 +211,6 @@ func (o *PreparedFileUpload) HasContentType() bool {
 // SetContentType gets a reference to the given string and assigns it to the ContentType field.
 func (o *PreparedFileUpload) SetContentType(v string) {
 	o.ContentType = &v
-}
-
-// GetServiceName returns the ServiceName field value if set, zero value otherwise.
-func (o *PreparedFileUpload) GetServiceName() string {
-	if o == nil || IsNil(o.ServiceName) {
-		var ret string
-		return ret
-	}
-	return *o.ServiceName
-}
-
-// GetServiceNameOk returns a tuple with the ServiceName field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *PreparedFileUpload) GetServiceNameOk() (*string, bool) {
-	if o == nil || IsNil(o.ServiceName) {
-		return nil, false
-	}
-	return o.ServiceName, true
-}
-
-// HasServiceName returns a boolean if a field has been set.
-func (o *PreparedFileUpload) HasServiceName() bool {
-	if o != nil && !IsNil(o.ServiceName) {
-		return true
-	}
-
-	return false
-}
-
-// SetServiceName gets a reference to the given string and assigns it to the ServiceName field.
-func (o *PreparedFileUpload) SetServiceName(v string) {
-	o.ServiceName = &v
 }
 
 // GetDirectUpload returns the DirectUpload field value if set, zero value otherwise.
@@ -495,9 +462,6 @@ func (o PreparedFileUpload) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.ContentType) {
 		toSerialize["content_type"] = o.ContentType
 	}
-	if !IsNil(o.ServiceName) {
-		toSerialize["service_name"] = o.ServiceName
-	}
 	if !IsNil(o.DirectUpload) {
 		toSerialize["direct_upload"] = o.DirectUpload
 	}
@@ -546,7 +510,6 @@ func (o *PreparedFileUpload) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "byte_size")
 		delete(additionalProperties, "checksum")
 		delete(additionalProperties, "content_type")
-		delete(additionalProperties, "service_name")
 		delete(additionalProperties, "direct_upload")
 		delete(additionalProperties, "file")
 		delete(additionalProperties, "version")

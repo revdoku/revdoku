@@ -16,21 +16,276 @@ class DefaultApi {
 
   final ApiClient apiClient;
 
-  /// Check a domain hostname and existing DNS routing
+  /// Get storage targets for a batch
   ///
-  /// Requires full-account owner/administrator access. Checks the exact hostname for conflicting MX or CNAME records without creating a claim or changing DNS. If the root already receives email elsewhere, use an unused subdomain such as mailbox.yourdomain.com. Cookie-authenticated requests require CSRF.
+  /// Returns upload.url and upload.headers for each file that needs bytes. Repeating a path returns a fresh target, for example after a failed PUT. Files with identical content are skipped.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
-  /// * [CreateAccountEmailDomainRequest] createAccountEmailDomainRequest (required):
-  Future<Response> checkEmailHostnameWithHttpInfo(CreateAccountEmailDomainRequest createAccountEmailDomainRequest, { Future<void>? abortTrigger, }) async {
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] sessionId (required):
+  ///   mailbox_upload_session.id from the create response.
+  ///
+  /// * [AddUploadSessionFilesRequest] addUploadSessionFilesRequest (required):
+  Future<Response> addUploadSessionFilesWithHttpInfo(String mailboxId, String sessionId, AddUploadSessionFilesRequest addUploadSessionFilesRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/uploads'
+      .replaceAll('{mailbox_id}', mailboxId)
+      .replaceAll('{session_id}', sessionId);
+
+    // ignore: prefer_final_locals
+    Object? postBody = addUploadSessionFilesRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Get storage targets for a batch
+  ///
+  /// Returns upload.url and upload.headers for each file that needs bytes. Repeating a path returns a fresh target, for example after a failed PUT. Files with identical content are skipped.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] sessionId (required):
+  ///   mailbox_upload_session.id from the create response.
+  ///
+  /// * [AddUploadSessionFilesRequest] addUploadSessionFilesRequest (required):
+  Future<CreateUploadSession201Response?> addUploadSessionFiles(String mailboxId, String sessionId, AddUploadSessionFilesRequest addUploadSessionFilesRequest, { Future<void>? abortTrigger, }) async {
+    final response = await addUploadSessionFilesWithHttpInfo(mailboxId, sessionId, addUploadSessionFilesRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateUploadSession201Response',) as CreateUploadSession201Response;
+    
+    }
+    return null;
+  }
+
+  /// Append text to a file
+  ///
+  /// Appends UTF-8 text to an existing text file and creates a new version. A missing file returns MAILBOX_FILE_NOT_FOUND.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [AppendTextRequest] appendTextRequest (required):
+  Future<Response> appendTextWithHttpInfo(String mailboxId, AppendTextRequest appendTextRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/files/append_text'
+      .replaceAll('{mailbox_id}', mailboxId);
+
+    // ignore: prefer_final_locals
+    Object? postBody = appendTextRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Append text to a file
+  ///
+  /// Appends UTF-8 text to an existing text file and creates a new version. A missing file returns MAILBOX_FILE_NOT_FOUND.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [AppendTextRequest] appendTextRequest (required):
+  Future<AppendText200Response?> appendText(String mailboxId, AppendTextRequest appendTextRequest, { Future<void>? abortTrigger, }) async {
+    final response = await appendTextWithHttpInfo(mailboxId, appendTextRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'AppendText200Response',) as AppendText200Response;
+    
+    }
+    return null;
+  }
+
+  /// Archive a mailbox
+  ///
+  /// Archived mailboxes keep their files and emails and become read-only.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [ActionRequest] actionRequest (required):
+  Future<Response> archiveMailboxWithHttpInfo(String mailboxId, ActionRequest actionRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/archive'
+      .replaceAll('{mailbox_id}', mailboxId);
+
+    // ignore: prefer_final_locals
+    Object? postBody = actionRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Archive a mailbox
+  ///
+  /// Archived mailboxes keep their files and emails and become read-only.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [ActionRequest] actionRequest (required):
+  Future<CreateMailbox201Response?> archiveMailbox(String mailboxId, ActionRequest actionRequest, { Future<void>? abortTrigger, }) async {
+    final response = await archiveMailboxWithHttpInfo(mailboxId, actionRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateMailbox201Response',) as CreateMailbox201Response;
+    
+    }
+    return null;
+  }
+
+  /// Change the primary address
+  ///
+  /// Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. The old address stops receiving unless keep_old_as_alias is true.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [ChangeMailboxAddressRequest] changeMailboxAddressRequest (required):
+  Future<Response> changeMailboxAddressWithHttpInfo(String mailboxId, ChangeMailboxAddressRequest changeMailboxAddressRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/email/rotate'
+      .replaceAll('{mailbox_id}', mailboxId);
+
+    // ignore: prefer_final_locals
+    Object? postBody = changeMailboxAddressRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Change the primary address
+  ///
+  /// Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. The old address stops receiving unless keep_old_as_alias is true.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [ChangeMailboxAddressRequest] changeMailboxAddressRequest (required):
+  Future<GetMailboxEmailSettings200Response?> changeMailboxAddress(String mailboxId, ChangeMailboxAddressRequest changeMailboxAddressRequest, { Future<void>? abortTrigger, }) async {
+    final response = await changeMailboxAddressWithHttpInfo(mailboxId, changeMailboxAddressRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetMailboxEmailSettings200Response',) as GetMailboxEmailSettings200Response;
+    
+    }
+    return null;
+  }
+
+  /// Check a hostname for conflicting DNS
+  ///
+  /// Makes no claim and changes no DNS. If the root domain already receives email, use an unused subdomain such as inbox.example.com.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [CreateEmailDomainRequest] createEmailDomainRequest (required):
+  Future<Response> checkEmailDomainWithHttpInfo(CreateEmailDomainRequest createEmailDomainRequest, { Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
     final path = r'/v1/account/email_domains/check';
 
     // ignore: prefer_final_locals
-    Object? postBody = createAccountEmailDomainRequest;
+    Object? postBody = createEmailDomainRequest;
 
     final queryParams = <QueryParam>[];
     final headerParams = <String, String>{};
@@ -51,15 +306,15 @@ class DefaultApi {
     );
   }
 
-  /// Check a domain hostname and existing DNS routing
+  /// Check a hostname for conflicting DNS
   ///
-  /// Requires full-account owner/administrator access. Checks the exact hostname for conflicting MX or CNAME records without creating a claim or changing DNS. If the root already receives email elsewhere, use an unused subdomain such as mailbox.yourdomain.com. Cookie-authenticated requests require CSRF.
+  /// Makes no claim and changes no DNS. If the root domain already receives email, use an unused subdomain such as inbox.example.com.
   ///
   /// Parameters:
   ///
-  /// * [CreateAccountEmailDomainRequest] createAccountEmailDomainRequest (required):
-  Future<EmailDomainCheckResponse?> checkEmailHostname(CreateAccountEmailDomainRequest createAccountEmailDomainRequest, { Future<void>? abortTrigger, }) async {
-    final response = await checkEmailHostnameWithHttpInfo(createAccountEmailDomainRequest, abortTrigger: abortTrigger,);
+  /// * [CreateEmailDomainRequest] createEmailDomainRequest (required):
+  Future<CheckEmailDomain200Response?> checkEmailDomain(CreateEmailDomainRequest createEmailDomainRequest, { Future<void>? abortTrigger, }) async {
+    final response = await checkEmailDomainWithHttpInfo(createEmailDomainRequest, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -67,27 +322,33 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'EmailDomainCheckResponse',) as EmailDomainCheckResponse;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CheckEmailDomain200Response',) as CheckEmailDomain200Response;
     
     }
     return null;
   }
 
-  /// Claim an exact email domain
+  /// Copy a file
   ///
-  /// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
+  /// Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
-  /// * [CreateAccountEmailDomainRequest] createAccountEmailDomainRequest (required):
-  Future<Response> createAccountEmailDomainWithHttpInfo(CreateAccountEmailDomainRequest createAccountEmailDomainRequest, { Future<void>? abortTrigger, }) async {
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] fileId (required):
+  ///
+  /// * [MoveFileRequest] moveFileRequest (required):
+  Future<Response> copyFileWithHttpInfo(String mailboxId, String fileId, MoveFileRequest moveFileRequest, { Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
-    final path = r'/v1/account/email_domains';
+    final path = r'/v1/mailboxes/{mailbox_id}/files/{file_id}/copy'
+      .replaceAll('{mailbox_id}', mailboxId)
+      .replaceAll('{file_id}', fileId);
 
     // ignore: prefer_final_locals
-    Object? postBody = createAccountEmailDomainRequest;
+    Object? postBody = moveFileRequest;
 
     final queryParams = <QueryParam>[];
     final headerParams = <String, String>{};
@@ -108,15 +369,19 @@ class DefaultApi {
     );
   }
 
-  /// Claim an exact email domain
+  /// Copy a file
   ///
-  /// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
+  /// Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
   ///
   /// Parameters:
   ///
-  /// * [CreateAccountEmailDomainRequest] createAccountEmailDomainRequest (required):
-  Future<EmailDomainListResponse?> createAccountEmailDomain(CreateAccountEmailDomainRequest createAccountEmailDomainRequest, { Future<void>? abortTrigger, }) async {
-    final response = await createAccountEmailDomainWithHttpInfo(createAccountEmailDomainRequest, abortTrigger: abortTrigger,);
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] fileId (required):
+  ///
+  /// * [MoveFileRequest] moveFileRequest (required):
+  Future<RenameFile200Response?> copyFile(String mailboxId, String fileId, MoveFileRequest moveFileRequest, { Future<void>? abortTrigger, }) async {
+    final response = await copyFileWithHttpInfo(mailboxId, fileId, moveFileRequest, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -124,13 +389,72 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'EmailDomainListResponse',) as EmailDomainListResponse;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'RenameFile200Response',) as RenameFile200Response;
     
     }
     return null;
   }
 
-  /// Create a client account within an authorized agency
+  /// Create a dashboard link for the user
+  ///
+  /// Returns a dashboard URL for a path such as /mailboxes. The user signs in normally; the link grants no access.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [CreateBrowserLinkRequest] createBrowserLinkRequest (required):
+  Future<Response> createBrowserLinkWithHttpInfo(CreateBrowserLinkRequest createBrowserLinkRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/agent_auth/browser_login_link';
+
+    // ignore: prefer_final_locals
+    Object? postBody = createBrowserLinkRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Create a dashboard link for the user
+  ///
+  /// Returns a dashboard URL for a path such as /mailboxes. The user signs in normally; the link grants no access.
+  ///
+  /// Parameters:
+  ///
+  /// * [CreateBrowserLinkRequest] createBrowserLinkRequest (required):
+  Future<CreateBrowserLink201Response?> createBrowserLink(CreateBrowserLinkRequest createBrowserLinkRequest, { Future<void>? abortTrigger, }) async {
+    final response = await createBrowserLinkWithHttpInfo(createBrowserLinkRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateBrowserLink201Response',) as CreateBrowserLink201Response;
+    
+    }
+    return null;
+  }
+
+  /// Create a client account
+  ///
+  /// Requires an agency owner credential with client-account access. The credential default does not change; send the new account_id on later requests.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -163,7 +487,9 @@ class DefaultApi {
     );
   }
 
-  /// Create a client account within an authorized agency
+  /// Create a client account
+  ///
+  /// Requires an agency owner credential with client-account access. The credential default does not change; send the new account_id on later requests.
   ///
   /// Parameters:
   ///
@@ -183,9 +509,128 @@ class DefaultApi {
     return null;
   }
 
-  /// Create a mailbox with a ready receiving address
+  /// Add an alias address
   ///
-  /// Creates a mailbox with file storage and waits for receiving confirmation. On Free, email.username is a prefix with a permanent 12-character random suffix. An exact name requires a paid plan. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id. Creation quotas apply.
+  /// Requires a paid plan and a full-account owner or administrator with mailbox-admin permission. The primary address stays unchanged.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [CreateEmailAliasRequest] createEmailAliasRequest (required):
+  Future<Response> createEmailAliasWithHttpInfo(String mailboxId, CreateEmailAliasRequest createEmailAliasRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/email/aliases'
+      .replaceAll('{mailbox_id}', mailboxId);
+
+    // ignore: prefer_final_locals
+    Object? postBody = createEmailAliasRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Add an alias address
+  ///
+  /// Requires a paid plan and a full-account owner or administrator with mailbox-admin permission. The primary address stays unchanged.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [CreateEmailAliasRequest] createEmailAliasRequest (required):
+  Future<GetMailboxEmailSettings200Response?> createEmailAlias(String mailboxId, CreateEmailAliasRequest createEmailAliasRequest, { Future<void>? abortTrigger, }) async {
+    final response = await createEmailAliasWithHttpInfo(mailboxId, createEmailAliasRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetMailboxEmailSettings200Response',) as GetMailboxEmailSettings200Response;
+    
+    }
+    return null;
+  }
+
+  /// Connect a custom email domain
+  ///
+  /// Claims an exact hostname and returns the DNS records to publish. Never change DNS without the domain owner's authorization.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [CreateEmailDomainRequest] createEmailDomainRequest (required):
+  Future<Response> createEmailDomainWithHttpInfo(CreateEmailDomainRequest createEmailDomainRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/account/email_domains';
+
+    // ignore: prefer_final_locals
+    Object? postBody = createEmailDomainRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Connect a custom email domain
+  ///
+  /// Claims an exact hostname and returns the DNS records to publish. Never change DNS without the domain owner's authorization.
+  ///
+  /// Parameters:
+  ///
+  /// * [CreateEmailDomainRequest] createEmailDomainRequest (required):
+  Future<CreateEmailDomain201Response?> createEmailDomain(CreateEmailDomainRequest createEmailDomainRequest, { Future<void>? abortTrigger, }) async {
+    final response = await createEmailDomainWithHttpInfo(createEmailDomainRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateEmailDomain201Response',) as CreateEmailDomain201Response;
+    
+    }
+    return null;
+  }
+
+  /// Create a mailbox
+  ///
+  /// Waits until the address can receive email. On Free, email.username is a prefix with a permanent random suffix; an exact name requires a paid plan. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. Never retry a creation automatically.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -218,9 +663,9 @@ class DefaultApi {
     );
   }
 
-  /// Create a mailbox with a ready receiving address
+  /// Create a mailbox
   ///
-  /// Creates a mailbox with file storage and waits for receiving confirmation. On Free, email.username is a prefix with a permanent 12-character random suffix. An exact name requires a paid plan. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id. Creation quotas apply.
+  /// Waits until the address can receive email. On Free, email.username is a prefix with a permanent random suffix; an exact name requires a paid plan. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. Never retry a creation automatically.
   ///
   /// Parameters:
   ///
@@ -240,41 +685,28 @@ class DefaultApi {
     return null;
   }
 
-  /// Add an email alias to a mailbox
+  /// Start a batch upload
   ///
-  /// Requires a paid plan, a full-account owner/administrator with mailbox-admin access and an available alias slot. Free returns EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
+  /// Starts an upload session for many files and returns storage targets for the first files. The session locks the mailbox for other writers; incoming email still arrives. Send files in batches with POST .../uploads, PUT the bytes to each upload.url, save each batch with POST .../finalize_batch, then call POST .../finalize. Unsaved uploads are discarded when the session expires.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
-  ///   Authorized mailbox prefix ID
+  /// * [String] mailboxId (required):
   ///
-  /// * [CreateMailboxEmailAliasRequest] createMailboxEmailAliasRequest (required):
-  ///
-  /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  ///
-  /// * [String] reason:
-  Future<Response> createMailboxEmailAliasWithHttpInfo(String id, CreateMailboxEmailAliasRequest createMailboxEmailAliasRequest, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+  /// * [CreateUploadSessionRequest] createUploadSessionRequest (required):
+  Future<Response> createUploadSessionWithHttpInfo(String mailboxId, CreateUploadSessionRequest createUploadSessionRequest, { Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
-    final path = r'/v1/mailboxes/{id}/email/aliases'
-      .replaceAll('{id}', id);
+    final path = r'/v1/mailboxes/{mailbox_id}/upload_sessions'
+      .replaceAll('{mailbox_id}', mailboxId);
 
     // ignore: prefer_final_locals
-    Object? postBody = createMailboxEmailAliasRequest;
+    Object? postBody = createUploadSessionRequest;
 
     final queryParams = <QueryParam>[];
     final headerParams = <String, String>{};
     final formParams = <String, String>{};
-
-    if (accountId != null) {
-      queryParams.addAll(_queryParams('', 'account_id', accountId));
-    }
-    if (reason != null) {
-      queryParams.addAll(_queryParams('', 'reason', reason));
-    }
 
     const contentTypes = <String>['application/json'];
 
@@ -291,23 +723,17 @@ class DefaultApi {
     );
   }
 
-  /// Add an email alias to a mailbox
+  /// Start a batch upload
   ///
-  /// Requires a paid plan, a full-account owner/administrator with mailbox-admin access and an available alias slot. Free returns EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
+  /// Starts an upload session for many files and returns storage targets for the first files. The session locks the mailbox for other writers; incoming email still arrives. Send files in batches with POST .../uploads, PUT the bytes to each upload.url, save each batch with POST .../finalize_batch, then call POST .../finalize. Unsaved uploads are discarded when the session expires.
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
-  ///   Authorized mailbox prefix ID
+  /// * [String] mailboxId (required):
   ///
-  /// * [CreateMailboxEmailAliasRequest] createMailboxEmailAliasRequest (required):
-  ///
-  /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  ///
-  /// * [String] reason:
-  Future<GetMailboxEmailSettings200Response?> createMailboxEmailAlias(String id, CreateMailboxEmailAliasRequest createMailboxEmailAliasRequest, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
-    final response = await createMailboxEmailAliasWithHttpInfo(id, createMailboxEmailAliasRequest, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
+  /// * [CreateUploadSessionRequest] createUploadSessionRequest (required):
+  Future<CreateUploadSession201Response?> createUploadSession(String mailboxId, CreateUploadSessionRequest createUploadSessionRequest, { Future<void>? abortTrigger, }) async {
+    final response = await createUploadSessionWithHttpInfo(mailboxId, createUploadSessionRequest, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -315,15 +741,15 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetMailboxEmailSettings200Response',) as GetMailboxEmailSettings200Response;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateUploadSession201Response',) as CreateUploadSession201Response;
     
     }
     return null;
   }
 
-  /// Delete one received email
+  /// Delete an email
   ///
-  /// Requires mailbox-admin permission. Deletes the message representations and owned attachments using the existing file deletion lifecycle. Separately copied files are unaffected. No email trash or restore operation. A repeated delete returns 404.
+  /// Requires mailbox-admin permission. Deletes the stored message and its attachments. There is no trash.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -334,7 +760,7 @@ class DefaultApi {
   /// * [String] emailId (required):
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
   Future<Response> deleteEmailWithHttpInfo(String mailboxId, String emailId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
@@ -372,9 +798,9 @@ class DefaultApi {
     );
   }
 
-  /// Delete one received email
+  /// Delete an email
   ///
-  /// Requires mailbox-admin permission. Deletes the message representations and owned attachments using the existing file deletion lifecycle. Separately copied files are unaffected. No email trash or restore operation. A repeated delete returns 404.
+  /// Requires mailbox-admin permission. Deletes the stored message and its attachments. There is no trash.
   ///
   /// Parameters:
   ///
@@ -383,98 +809,44 @@ class DefaultApi {
   /// * [String] emailId (required):
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
-  Future<void> deleteEmail(String mailboxId, String emailId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+  Future<DeleteEmailDomain200Response?> deleteEmail(String mailboxId, String emailId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
     final response = await deleteEmailWithHttpInfo(mailboxId, emailId, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'DeleteEmailDomain200Response',) as DeleteEmailDomain200Response;
+    
+    }
+    return null;
   }
 
-  /// Disable a mailbox webhook
+  /// Remove an alias address
   ///
-  /// Requires mailbox admin permission. Cancels queued attempts; a request already in flight may finish.
+  /// Stops new and queued deliveries to the alias. Saved emails stay.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
   /// * [String] mailboxId (required):
-  ///
-  /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  Future<Response> deleteEmailWebhookWithHttpInfo(String mailboxId, { String? accountId, Future<void>? abortTrigger, }) async {
-    // ignore: prefer_const_declarations
-    final path = r'/v1/mailboxes/{mailbox_id}/email/webhook'
-      .replaceAll('{mailbox_id}', mailboxId);
-
-    // ignore: prefer_final_locals
-    Object? postBody;
-
-    final queryParams = <QueryParam>[];
-    final headerParams = <String, String>{};
-    final formParams = <String, String>{};
-
-    if (accountId != null) {
-      queryParams.addAll(_queryParams('', 'account_id', accountId));
-    }
-
-    const contentTypes = <String>[];
-
-
-    return apiClient.invokeAPI(
-      path,
-      'DELETE',
-      queryParams,
-      postBody,
-      headerParams,
-      formParams,
-      contentTypes.isEmpty ? null : contentTypes.first,
-      abortTrigger: abortTrigger,
-    );
-  }
-
-  /// Disable a mailbox webhook
-  ///
-  /// Requires mailbox admin permission. Cancels queued attempts; a request already in flight may finish.
-  ///
-  /// Parameters:
-  ///
-  /// * [String] mailboxId (required):
-  ///
-  /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  Future<void> deleteEmailWebhook(String mailboxId, { String? accountId, Future<void>? abortTrigger, }) async {
-    final response = await deleteEmailWebhookWithHttpInfo(mailboxId, accountId: accountId, abortTrigger: abortTrigger,);
-    if (response.statusCode >= HttpStatus.badRequest) {
-      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
-    }
-  }
-
-  /// Remove one email alias
-  ///
-  /// Requires a full-account owner/administrator with mailbox-admin access. Immediately revokes this alias, including queued deliveries. Retains existing messages and the permanent address reservation. Returns updated mailbox settings.
-  ///
-  /// Note: This method returns the HTTP [Response].
-  ///
-  /// Parameters:
-  ///
-  /// * [String] id (required):
-  ///   Authorized mailbox prefix ID
   ///
   /// * [String] aliasId (required):
-  ///   Alias ID from mailbox settings
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
-  Future<Response> deleteMailboxEmailAliasWithHttpInfo(String id, String aliasId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+  Future<Response> deleteEmailAliasWithHttpInfo(String mailboxId, String aliasId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
-    final path = r'/v1/mailboxes/{id}/email/aliases/{alias_id}'
-      .replaceAll('{id}', id)
+    final path = r'/v1/mailboxes/{mailbox_id}/email/aliases/{alias_id}'
+      .replaceAll('{mailbox_id}', mailboxId)
       .replaceAll('{alias_id}', aliasId);
 
     // ignore: prefer_final_locals
@@ -506,24 +878,22 @@ class DefaultApi {
     );
   }
 
-  /// Remove one email alias
+  /// Remove an alias address
   ///
-  /// Requires a full-account owner/administrator with mailbox-admin access. Immediately revokes this alias, including queued deliveries. Retains existing messages and the permanent address reservation. Returns updated mailbox settings.
+  /// Stops new and queued deliveries to the alias. Saved emails stay.
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
-  ///   Authorized mailbox prefix ID
+  /// * [String] mailboxId (required):
   ///
   /// * [String] aliasId (required):
-  ///   Alias ID from mailbox settings
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
-  Future<GetMailboxEmailSettings200Response?> deleteMailboxEmailAlias(String id, String aliasId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
-    final response = await deleteMailboxEmailAliasWithHttpInfo(id, aliasId, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
+  Future<DeleteEmailDomain200Response?> deleteEmailAlias(String mailboxId, String aliasId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+    final response = await deleteEmailAliasWithHttpInfo(mailboxId, aliasId, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -531,37 +901,41 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetMailboxEmailSettings200Response',) as GetMailboxEmailSettings200Response;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'DeleteEmailDomain200Response',) as DeleteEmailDomain200Response;
     
     }
     return null;
   }
 
-  /// Read one granted account
+  /// Remove an unused custom email domain
+  ///
+  /// Send the domain hostname and confirm=true. A domain that mailbox addresses still use returns EMAIL_DOMAIN_IN_USE.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
-  Future<Response> getAccountWithHttpInfo(String id, { Future<void>? abortTrigger, }) async {
+  /// * [String] domainId (required):
+  ///
+  /// * [DeleteEmailDomainRequest] deleteEmailDomainRequest (required):
+  Future<Response> deleteEmailDomainWithHttpInfo(String domainId, DeleteEmailDomainRequest deleteEmailDomainRequest, { Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
-    final path = r'/v1/accounts/{id}'
-      .replaceAll('{id}', id);
+    final path = r'/v1/account/email_domains/{domain_id}'
+      .replaceAll('{domain_id}', domainId);
 
     // ignore: prefer_final_locals
-    Object? postBody;
+    Object? postBody = deleteEmailDomainRequest;
 
     final queryParams = <QueryParam>[];
     final headerParams = <String, String>{};
     final formParams = <String, String>{};
 
-    const contentTypes = <String>[];
+    const contentTypes = <String>['application/json'];
 
 
     return apiClient.invokeAPI(
       path,
-      'GET',
+      'DELETE',
       queryParams,
       postBody,
       headerParams,
@@ -571,13 +945,17 @@ class DefaultApi {
     );
   }
 
-  /// Read one granted account
+  /// Remove an unused custom email domain
+  ///
+  /// Send the domain hostname and confirm=true. A domain that mailbox addresses still use returns EMAIL_DOMAIN_IN_USE.
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
-  Future<GetAccount200Response?> getAccount(String id, { Future<void>? abortTrigger, }) async {
-    final response = await getAccountWithHttpInfo(id, abortTrigger: abortTrigger,);
+  /// * [String] domainId (required):
+  ///
+  /// * [DeleteEmailDomainRequest] deleteEmailDomainRequest (required):
+  Future<DeleteEmailDomain200Response?> deleteEmailDomain(String domainId, DeleteEmailDomainRequest deleteEmailDomainRequest, { Future<void>? abortTrigger, }) async {
+    final response = await deleteEmailDomainWithHttpInfo(domainId, deleteEmailDomainRequest, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -585,30 +963,101 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetAccount200Response',) as GetAccount200Response;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'DeleteEmailDomain200Response',) as DeleteEmailDomain200Response;
     
     }
     return null;
   }
 
-  /// Read exact domain setup state
+  /// Remove the email webhook
   ///
-  /// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
+  /// Cancels queued deliveries. A delivery already in progress can finish. Returns the mailbox ID, also when no webhook is set.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
+  /// * [String] mailboxId (required):
   ///
   /// * [String] accountId:
-  ///   Explicit granted account for this call; omission uses the credential account.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  Future<Response> deleteEmailWebhookWithHttpInfo(String mailboxId, { String? accountId, Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/email/webhook'
+      .replaceAll('{mailbox_id}', mailboxId);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    if (accountId != null) {
+      queryParams.addAll(_queryParams('', 'account_id', accountId));
+    }
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'DELETE',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Remove the email webhook
+  ///
+  /// Cancels queued deliveries. A delivery already in progress can finish. Returns the mailbox ID, also when no webhook is set.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  Future<DeleteEmailDomain200Response?> deleteEmailWebhook(String mailboxId, { String? accountId, Future<void>? abortTrigger, }) async {
+    final response = await deleteEmailWebhookWithHttpInfo(mailboxId, accountId: accountId, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'DeleteEmailDomain200Response',) as DeleteEmailDomain200Response;
+    
+    }
+    return null;
+  }
+
+  /// Delete a file
+  ///
+  /// Requires mailbox-admin permission. Files under _email/ return EMAIL_PATH_READ_ONLY; delete the email instead.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] fileId (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
-  Future<Response> getAccountEmailDomainWithHttpInfo(String id, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+  Future<Response> deleteFileWithHttpInfo(String mailboxId, String fileId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
-    final path = r'/v1/account/email_domains/{id}'
-      .replaceAll('{id}', id);
+    final path = r'/v1/mailboxes/{mailbox_id}/files/{file_id}'
+      .replaceAll('{mailbox_id}', mailboxId)
+      .replaceAll('{file_id}', fileId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -629,6 +1078,258 @@ class DefaultApi {
 
     return apiClient.invokeAPI(
       path,
+      'DELETE',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Delete a file
+  ///
+  /// Requires mailbox-admin permission. Files under _email/ return EMAIL_PATH_READ_ONLY; delete the email instead.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] fileId (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  ///
+  /// * [String] reason:
+  Future<DeleteEmailDomain200Response?> deleteFile(String mailboxId, String fileId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+    final response = await deleteFileWithHttpInfo(mailboxId, fileId, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'DeleteEmailDomain200Response',) as DeleteEmailDomain200Response;
+    
+    }
+    return null;
+  }
+
+  /// Permanently delete an archived mailbox
+  ///
+  /// Archive the mailbox first. Send delete.confirmation from the mailbox read after the user confirms. Large mailboxes finish deleting in the background.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [DeleteMailboxRequest] deleteMailboxRequest (required):
+  Future<Response> deleteMailboxWithHttpInfo(String mailboxId, DeleteMailboxRequest deleteMailboxRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}'
+      .replaceAll('{mailbox_id}', mailboxId);
+
+    // ignore: prefer_final_locals
+    Object? postBody = deleteMailboxRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'DELETE',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Permanently delete an archived mailbox
+  ///
+  /// Archive the mailbox first. Send delete.confirmation from the mailbox read after the user confirms. Large mailboxes finish deleting in the background.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [DeleteMailboxRequest] deleteMailboxRequest (required):
+  Future<DeleteEmailDomain200Response?> deleteMailbox(String mailboxId, DeleteMailboxRequest deleteMailboxRequest, { Future<void>? abortTrigger, }) async {
+    final response = await deleteMailboxWithHttpInfo(mailboxId, deleteMailboxRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'DeleteEmailDomain200Response',) as DeleteEmailDomain200Response;
+    
+    }
+    return null;
+  }
+
+  /// Exchange a one-time dashboard connection code for an API key
+  ///
+  /// The dashboard creates the one-time code when a signed-in administrator copies a connection prompt.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [ExchangeConnectionGrantRequest] exchangeConnectionGrantRequest (required):
+  Future<Response> exchangeConnectionGrantWithHttpInfo(ExchangeConnectionGrantRequest exchangeConnectionGrantRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/agent_auth/exchange_grant';
+
+    // ignore: prefer_final_locals
+    Object? postBody = exchangeConnectionGrantRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Exchange a one-time dashboard connection code for an API key
+  ///
+  /// The dashboard creates the one-time code when a signed-in administrator copies a connection prompt.
+  ///
+  /// Parameters:
+  ///
+  /// * [ExchangeConnectionGrantRequest] exchangeConnectionGrantRequest (required):
+  Future<VerifySignInCode201Response?> exchangeConnectionGrant(ExchangeConnectionGrantRequest exchangeConnectionGrantRequest, { Future<void>? abortTrigger, }) async {
+    final response = await exchangeConnectionGrantWithHttpInfo(exchangeConnectionGrantRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'VerifySignInCode201Response',) as VerifySignInCode201Response;
+    
+    }
+    return null;
+  }
+
+  /// Finish or cancel a batch upload
+  ///
+  /// complete=true saves the remaining uploaded files, creates one mailbox version and releases the lock. A 202 response with finalize_pending=true means more files remain: call finalize again after Retry-After. complete=false cancels the session and discards its unsaved files. Finalizing a finished session returns it unchanged.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] sessionId (required):
+  ///   mailbox_upload_session.id from the create response.
+  ///
+  /// * [FinalizeUploadSessionRequest] finalizeUploadSessionRequest:
+  Future<Response> finalizeUploadSessionWithHttpInfo(String mailboxId, String sessionId, { FinalizeUploadSessionRequest? finalizeUploadSessionRequest, Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize'
+      .replaceAll('{mailbox_id}', mailboxId)
+      .replaceAll('{session_id}', sessionId);
+
+    // ignore: prefer_final_locals
+    Object? postBody = finalizeUploadSessionRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Finish or cancel a batch upload
+  ///
+  /// complete=true saves the remaining uploaded files, creates one mailbox version and releases the lock. A 202 response with finalize_pending=true means more files remain: call finalize again after Retry-After. complete=false cancels the session and discards its unsaved files. Finalizing a finished session returns it unchanged.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] sessionId (required):
+  ///   mailbox_upload_session.id from the create response.
+  ///
+  /// * [FinalizeUploadSessionRequest] finalizeUploadSessionRequest:
+  Future<CreateUploadSession201Response?> finalizeUploadSession(String mailboxId, String sessionId, { FinalizeUploadSessionRequest? finalizeUploadSessionRequest, Future<void>? abortTrigger, }) async {
+    final response = await finalizeUploadSessionWithHttpInfo(mailboxId, sessionId, finalizeUploadSessionRequest: finalizeUploadSessionRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateUploadSession201Response',) as CreateUploadSession201Response;
+    
+    }
+    return null;
+  }
+
+  /// Read one granted account
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] accountId (required):
+  ///   Granted account to read.
+  Future<Response> getAccountWithHttpInfo(String accountId, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/accounts/{account_id}'
+      .replaceAll('{account_id}', accountId);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
       'GET',
       queryParams,
       postBody,
@@ -639,20 +1340,14 @@ class DefaultApi {
     );
   }
 
-  /// Read exact domain setup state
-  ///
-  /// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
+  /// Read one granted account
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
-  ///
-  /// * [String] accountId:
-  ///   Explicit granted account for this call; omission uses the credential account.
-  ///
-  /// * [String] reason:
-  Future<EmailDomainResponse?> getAccountEmailDomain(String id, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
-    final response = await getAccountEmailDomainWithHttpInfo(id, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
+  /// * [String] accountId (required):
+  ///   Granted account to read.
+  Future<CreateClientAccount201Response?> getAccount(String accountId, { Future<void>? abortTrigger, }) async {
+    final response = await getAccountWithHttpInfo(accountId, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -660,22 +1355,22 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'EmailDomainResponse',) as EmailDomainResponse;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateClientAccount201Response',) as CreateClientAccount201Response;
     
     }
     return null;
   }
 
-  /// Read effective mailbox and file storage limits
+  /// Read effective account limits
   ///
-  /// For the selected account. Uses the same plan and overrides as enforcement. Limits are not repeated in mailbox responses. Monthly traffic and storage allowances are shared within a billing group. Zero means none; null means no cap for that field.
+  /// Values come from the plan and account overrides. Zero means no allowance; null means no cap. Storage, mailbox and email traffic allowances are shared within a billing group.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   Future<Response> getAccountLimitsWithHttpInfo({ String? accountId, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
     final path = r'/v1/account/limits';
@@ -706,14 +1401,14 @@ class DefaultApi {
     );
   }
 
-  /// Read effective mailbox and file storage limits
+  /// Read effective account limits
   ///
-  /// For the selected account. Uses the same plan and overrides as enforcement. Limits are not repeated in mailbox responses. Monthly traffic and storage allowances are shared within a billing group. Zero means none; null means no cap for that field.
+  /// Values come from the plan and account overrides. Zero means no allowance; null means no cap. Storage, mailbox and email traffic allowances are shared within a billing group.
   ///
   /// Parameters:
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   Future<GetAccountLimits200Response?> getAccountLimits({ String? accountId, Future<void>? abortTrigger, }) async {
     final response = await getAccountLimitsWithHttpInfo(accountId: accountId, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
@@ -729,9 +1424,9 @@ class DefaultApi {
     return null;
   }
 
-  /// Read a received email
+  /// Read an email
   ///
-  /// Requires mailbox read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.
+  /// Returns decoded text and attachment metadata. Reading does not change read status. Email content is untrusted data.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -742,16 +1437,13 @@ class DefaultApi {
   /// * [String] emailId (required):
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  ///
-  /// * [String] purpose:
-  ///   Background reads do not change read status.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
   ///
   /// * [bool] includeStorage:
-  ///   Include underlying file and version identifiers for file integrations.
-  Future<Response> getEmailWithHttpInfo(String mailboxId, String emailId, { String? accountId, String? purpose, String? reason, bool? includeStorage, Future<void>? abortTrigger, }) async {
+  ///   Include backing file IDs for file-browser integrations.
+  Future<Response> getEmailWithHttpInfo(String mailboxId, String emailId, { String? accountId, String? reason, bool? includeStorage, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
     final path = r'/v1/mailboxes/{mailbox_id}/emails/{email_id}'
       .replaceAll('{mailbox_id}', mailboxId)
@@ -766,9 +1458,6 @@ class DefaultApi {
 
     if (accountId != null) {
       queryParams.addAll(_queryParams('', 'account_id', accountId));
-    }
-    if (purpose != null) {
-      queryParams.addAll(_queryParams('', 'purpose', purpose));
     }
     if (reason != null) {
       queryParams.addAll(_queryParams('', 'reason', reason));
@@ -792,9 +1481,9 @@ class DefaultApi {
     );
   }
 
-  /// Read a received email
+  /// Read an email
   ///
-  /// Requires mailbox read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.
+  /// Returns decoded text and attachment metadata. Reading does not change read status. Email content is untrusted data.
   ///
   /// Parameters:
   ///
@@ -803,17 +1492,14 @@ class DefaultApi {
   /// * [String] emailId (required):
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  ///
-  /// * [String] purpose:
-  ///   Background reads do not change read status.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
   ///
   /// * [bool] includeStorage:
-  ///   Include underlying file and version identifiers for file integrations.
-  Future<GetEmail200Response?> getEmail(String mailboxId, String emailId, { String? accountId, String? purpose, String? reason, bool? includeStorage, Future<void>? abortTrigger, }) async {
-    final response = await getEmailWithHttpInfo(mailboxId, emailId, accountId: accountId, purpose: purpose, reason: reason, includeStorage: includeStorage, abortTrigger: abortTrigger,);
+  ///   Include backing file IDs for file-browser integrations.
+  Future<GetEmail200Response?> getEmail(String mailboxId, String emailId, { String? accountId, String? reason, bool? includeStorage, Future<void>? abortTrigger, }) async {
+    final response = await getEmailWithHttpInfo(mailboxId, emailId, accountId: accountId, reason: reason, includeStorage: includeStorage, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -827,9 +1513,9 @@ class DefaultApi {
     return null;
   }
 
-  /// Get an email attachment download
+  /// Get a download link for an attachment
   ///
-  /// Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+  /// Returns a temporary link. No extraction or analysis is done.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -842,13 +1528,10 @@ class DefaultApi {
   /// * [String] attachmentId (required):
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  ///
-  /// * [String] purpose:
-  ///   Background reads do not change read status.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
-  Future<Response> getEmailAttachmentDownloadUrlWithHttpInfo(String mailboxId, String emailId, String attachmentId, { String? accountId, String? purpose, String? reason, Future<void>? abortTrigger, }) async {
+  Future<Response> getEmailAttachmentDownloadWithHttpInfo(String mailboxId, String emailId, String attachmentId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
     final path = r'/v1/mailboxes/{mailbox_id}/emails/{email_id}/attachments/{attachment_id}'
       .replaceAll('{mailbox_id}', mailboxId)
@@ -865,9 +1548,6 @@ class DefaultApi {
     if (accountId != null) {
       queryParams.addAll(_queryParams('', 'account_id', accountId));
     }
-    if (purpose != null) {
-      queryParams.addAll(_queryParams('', 'purpose', purpose));
-    }
     if (reason != null) {
       queryParams.addAll(_queryParams('', 'reason', reason));
     }
@@ -887,9 +1567,9 @@ class DefaultApi {
     );
   }
 
-  /// Get an email attachment download
+  /// Get a download link for an attachment
   ///
-  /// Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+  /// Returns a temporary link. No extraction or analysis is done.
   ///
   /// Parameters:
   ///
@@ -900,14 +1580,11 @@ class DefaultApi {
   /// * [String] attachmentId (required):
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  ///
-  /// * [String] purpose:
-  ///   Background reads do not change read status.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
-  Future<GetEmailOriginalDownloadUrl200Response?> getEmailAttachmentDownloadUrl(String mailboxId, String emailId, String attachmentId, { String? accountId, String? purpose, String? reason, Future<void>? abortTrigger, }) async {
-    final response = await getEmailAttachmentDownloadUrlWithHttpInfo(mailboxId, emailId, attachmentId, accountId: accountId, purpose: purpose, reason: reason, abortTrigger: abortTrigger,);
+  Future<GetEmailOriginalDownload200Response?> getEmailAttachmentDownload(String mailboxId, String emailId, String attachmentId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+    final response = await getEmailAttachmentDownloadWithHttpInfo(mailboxId, emailId, attachmentId, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -915,15 +1592,79 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetEmailOriginalDownloadUrl200Response',) as GetEmailOriginalDownloadUrl200Response;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetEmailOriginalDownload200Response',) as GetEmailOriginalDownload200Response;
     
     }
     return null;
   }
 
-  /// Get the original EML download
+  /// Read a custom email domain
   ///
-  /// Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] domainId (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  Future<Response> getEmailDomainWithHttpInfo(String domainId, { String? accountId, Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/account/email_domains/{domain_id}'
+      .replaceAll('{domain_id}', domainId);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    if (accountId != null) {
+      queryParams.addAll(_queryParams('', 'account_id', accountId));
+    }
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Read a custom email domain
+  ///
+  /// Parameters:
+  ///
+  /// * [String] domainId (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  Future<CreateEmailDomain201Response?> getEmailDomain(String domainId, { String? accountId, Future<void>? abortTrigger, }) async {
+    final response = await getEmailDomainWithHttpInfo(domainId, accountId: accountId, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateEmailDomain201Response',) as CreateEmailDomain201Response;
+    
+    }
+    return null;
+  }
+
+  /// Get a download link for the original email
+  ///
+  /// Returns a temporary link to the original .eml file. Downloads do not change read status.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -934,13 +1675,10 @@ class DefaultApi {
   /// * [String] emailId (required):
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  ///
-  /// * [String] purpose:
-  ///   Background reads do not change read status.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
-  Future<Response> getEmailOriginalDownloadUrlWithHttpInfo(String mailboxId, String emailId, { String? accountId, String? purpose, String? reason, Future<void>? abortTrigger, }) async {
+  Future<Response> getEmailOriginalDownloadWithHttpInfo(String mailboxId, String emailId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
     final path = r'/v1/mailboxes/{mailbox_id}/emails/{email_id}/raw'
       .replaceAll('{mailbox_id}', mailboxId)
@@ -956,9 +1694,6 @@ class DefaultApi {
     if (accountId != null) {
       queryParams.addAll(_queryParams('', 'account_id', accountId));
     }
-    if (purpose != null) {
-      queryParams.addAll(_queryParams('', 'purpose', purpose));
-    }
     if (reason != null) {
       queryParams.addAll(_queryParams('', 'reason', reason));
     }
@@ -978,9 +1713,9 @@ class DefaultApi {
     );
   }
 
-  /// Get the original EML download
+  /// Get a download link for the original email
   ///
-  /// Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+  /// Returns a temporary link to the original .eml file. Downloads do not change read status.
   ///
   /// Parameters:
   ///
@@ -989,14 +1724,11 @@ class DefaultApi {
   /// * [String] emailId (required):
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  ///
-  /// * [String] purpose:
-  ///   Background reads do not change read status.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
-  Future<GetEmailOriginalDownloadUrl200Response?> getEmailOriginalDownloadUrl(String mailboxId, String emailId, { String? accountId, String? purpose, String? reason, Future<void>? abortTrigger, }) async {
-    final response = await getEmailOriginalDownloadUrlWithHttpInfo(mailboxId, emailId, accountId: accountId, purpose: purpose, reason: reason, abortTrigger: abortTrigger,);
+  Future<GetEmailOriginalDownload200Response?> getEmailOriginalDownload(String mailboxId, String emailId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+    final response = await getEmailOriginalDownloadWithHttpInfo(mailboxId, emailId, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -1004,15 +1736,15 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetEmailOriginalDownloadUrl200Response',) as GetEmailOriginalDownloadUrl200Response;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetEmailOriginalDownload200Response',) as GetEmailOriginalDownload200Response;
     
     }
     return null;
   }
 
-  /// Get a short-lived Action Cable ticket for local email monitoring
+  /// Get a live email subscription ticket
   ///
-  /// Requires mailbox read permission. Connect to the returned websocket_url with email_subscription_token=TICKET using actioncable-v1-json within 60 seconds. Subscribe to EmailReceivedChannel with the returned account_id/mailbox_id. Frames contain EmailReceivedEvent in message. Live only: after confirmation and on reconnect, catch up using existing ascending email arrival cursors.
+  /// Requires mailbox read permission. Connect to websocket_url with email_subscription_token=TOKEN within 60 seconds, then subscribe to EmailReceivedChannel. Catch up with the email list cursor after every connect.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -1021,7 +1753,7 @@ class DefaultApi {
   /// * [String] mailboxId (required):
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   Future<Response> getEmailSubscriptionWithHttpInfo(String mailboxId, { String? accountId, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
     final path = r'/v1/mailboxes/{mailbox_id}/email/subscription'
@@ -1053,16 +1785,16 @@ class DefaultApi {
     );
   }
 
-  /// Get a short-lived Action Cable ticket for local email monitoring
+  /// Get a live email subscription ticket
   ///
-  /// Requires mailbox read permission. Connect to the returned websocket_url with email_subscription_token=TICKET using actioncable-v1-json within 60 seconds. Subscribe to EmailReceivedChannel with the returned account_id/mailbox_id. Frames contain EmailReceivedEvent in message. Live only: after confirmation and on reconnect, catch up using existing ascending email arrival cursors.
+  /// Requires mailbox read permission. Connect to websocket_url with email_subscription_token=TOKEN within 60 seconds, then subscribe to EmailReceivedChannel. Catch up with the email list cursor after every connect.
   ///
   /// Parameters:
   ///
   /// * [String] mailboxId (required):
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   Future<GetEmailSubscription200Response?> getEmailSubscription(String mailboxId, { String? accountId, Future<void>? abortTrigger, }) async {
     final response = await getEmailSubscriptionWithHttpInfo(mailboxId, accountId: accountId, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
@@ -1078,9 +1810,9 @@ class DefaultApi {
     return null;
   }
 
-  /// Read a mailbox webhook endpoint
+  /// Read the email webhook
   ///
-  /// Requires mailbox admin permission. Returns null when disabled; never includes the signing secret.
+  /// Requires mailbox-admin permission. webhook is null when no webhook is set. The signing secret is never returned here.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -1089,7 +1821,7 @@ class DefaultApi {
   /// * [String] mailboxId (required):
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   Future<Response> getEmailWebhookWithHttpInfo(String mailboxId, { String? accountId, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
     final path = r'/v1/mailboxes/{mailbox_id}/email/webhook'
@@ -1121,16 +1853,16 @@ class DefaultApi {
     );
   }
 
-  /// Read a mailbox webhook endpoint
+  /// Read the email webhook
   ///
-  /// Requires mailbox admin permission. Returns null when disabled; never includes the signing secret.
+  /// Requires mailbox-admin permission. webhook is null when no webhook is set. The signing secret is never returned here.
   ///
   /// Parameters:
   ///
   /// * [String] mailboxId (required):
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   Future<GetEmailWebhook200Response?> getEmailWebhook(String mailboxId, { String? accountId, Future<void>? abortTrigger, }) async {
     final response = await getEmailWebhookWithHttpInfo(mailboxId, accountId: accountId, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
@@ -1146,26 +1878,27 @@ class DefaultApi {
     return null;
   }
 
-  /// Read mailbox activity and optionally its incoming address
+  /// Read file metadata
   ///
-  /// Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
+  /// Reading metadata never marks the file read.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
+  /// * [String] mailboxId (required):
   ///
-  /// * [bool] includeEmail:
-  ///   Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address.
+  /// * [String] fileId (required):
   ///
   /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
-  Future<Response> getMailboxWithHttpInfo(String id, { bool? includeEmail, String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+  Future<Response> getFileWithHttpInfo(String mailboxId, String fileId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
-    final path = r'/v1/mailboxes/{id}'
-      .replaceAll('{id}', id);
+    final path = r'/v1/mailboxes/{mailbox_id}/files/{file_id}'
+      .replaceAll('{mailbox_id}', mailboxId)
+      .replaceAll('{file_id}', fileId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1174,8 +1907,170 @@ class DefaultApi {
     final headerParams = <String, String>{};
     final formParams = <String, String>{};
 
-    if (includeEmail != null) {
-      queryParams.addAll(_queryParams('', 'include_email', includeEmail));
+    if (accountId != null) {
+      queryParams.addAll(_queryParams('', 'account_id', accountId));
+    }
+    if (reason != null) {
+      queryParams.addAll(_queryParams('', 'reason', reason));
+    }
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Read file metadata
+  ///
+  /// Reading metadata never marks the file read.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] fileId (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  ///
+  /// * [String] reason:
+  Future<GetFileByPath200Response?> getFile(String mailboxId, String fileId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+    final response = await getFileWithHttpInfo(mailboxId, fileId, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetFileByPath200Response',) as GetFileByPath200Response;
+    
+    }
+    return null;
+  }
+
+  /// Find a file by path
+  ///
+  /// Returns file metadata only. Read content with the download endpoint. The disposition and content_url parameters return INVALID_ARGUMENT.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] path (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  ///
+  /// * [String] reason:
+  Future<Response> getFileByPathWithHttpInfo(String mailboxId, String path, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/files/by_path'
+      .replaceAll('{mailbox_id}', mailboxId);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+      queryParams.addAll(_queryParams('', 'path', path));
+    if (accountId != null) {
+      queryParams.addAll(_queryParams('', 'account_id', accountId));
+    }
+    if (reason != null) {
+      queryParams.addAll(_queryParams('', 'reason', reason));
+    }
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Find a file by path
+  ///
+  /// Returns file metadata only. Read content with the download endpoint. The disposition and content_url parameters return INVALID_ARGUMENT.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] path (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  ///
+  /// * [String] reason:
+  Future<GetFileByPath200Response?> getFileByPath(String mailboxId, String path, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+    final response = await getFileByPathWithHttpInfo(mailboxId, path, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetFileByPath200Response',) as GetFileByPath200Response;
+    
+    }
+    return null;
+  }
+
+  /// Get a download link for a file
+  ///
+  /// Returns a temporary link and marks this version read. Send version_id for an older version.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] fileId (required):
+  ///
+  /// * [String] versionId:
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  ///
+  /// * [String] reason:
+  Future<Response> getFileDownloadWithHttpInfo(String mailboxId, String fileId, { String? versionId, String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/files/{file_id}/download'
+      .replaceAll('{mailbox_id}', mailboxId)
+      .replaceAll('{file_id}', fileId);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    if (versionId != null) {
+      queryParams.addAll(_queryParams('', 'version_id', versionId));
     }
     if (accountId != null) {
       queryParams.addAll(_queryParams('', 'account_id', accountId));
@@ -1199,22 +2094,99 @@ class DefaultApi {
     );
   }
 
-  /// Read mailbox activity and optionally its incoming address
+  /// Get a download link for a file
   ///
-  /// Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
+  /// Returns a temporary link and marks this version read. Send version_id for an older version.
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
+  /// * [String] mailboxId (required):
   ///
-  /// * [bool] includeEmail:
-  ///   Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address.
+  /// * [String] fileId (required):
+  ///
+  /// * [String] versionId:
   ///
   /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
-  Future<CreateMailbox201Response?> getMailbox(String id, { bool? includeEmail, String? accountId, String? reason, Future<void>? abortTrigger, }) async {
-    final response = await getMailboxWithHttpInfo(id, includeEmail: includeEmail, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
+  Future<GetFileDownload200Response?> getFileDownload(String mailboxId, String fileId, { String? versionId, String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+    final response = await getFileDownloadWithHttpInfo(mailboxId, fileId, versionId: versionId, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetFileDownload200Response',) as GetFileDownload200Response;
+    
+    }
+    return null;
+  }
+
+  /// Read a mailbox
+  ///
+  /// Reading never changes the mailbox. Read address settings, emails and files through their own endpoints.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  ///
+  /// * [String] reason:
+  Future<Response> getMailboxWithHttpInfo(String mailboxId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}'
+      .replaceAll('{mailbox_id}', mailboxId);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    if (accountId != null) {
+      queryParams.addAll(_queryParams('', 'account_id', accountId));
+    }
+    if (reason != null) {
+      queryParams.addAll(_queryParams('', 'reason', reason));
+    }
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Read a mailbox
+  ///
+  /// Reading never changes the mailbox. Read address settings, emails and files through their own endpoints.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  ///
+  /// * [String] reason:
+  Future<CreateMailbox201Response?> getMailbox(String mailboxId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+    final response = await getMailboxWithHttpInfo(mailboxId, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -1228,25 +2200,24 @@ class DefaultApi {
     return null;
   }
 
-  /// Read a mailbox email address and limits
+  /// Read address settings
   ///
-  /// Requires upload/write access. Anyone knowing the address can send; reading files requires mailbox authorization. Original message.eml, decoded message.json, and attachments are stored together.
+  /// Requires mailbox write permission.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
-  ///   Authorized mailbox prefix ID
+  /// * [String] mailboxId (required):
   ///
   /// * [String] accountId:
-  ///   Explicitly granted account; omission uses credential default
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
-  Future<Response> getMailboxEmailSettingsWithHttpInfo(String id, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+  Future<Response> getMailboxEmailSettingsWithHttpInfo(String mailboxId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
-    final path = r'/v1/mailboxes/{id}/email'
-      .replaceAll('{id}', id);
+    final path = r'/v1/mailboxes/{mailbox_id}/email'
+      .replaceAll('{mailbox_id}', mailboxId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1277,21 +2248,20 @@ class DefaultApi {
     );
   }
 
-  /// Read a mailbox email address and limits
+  /// Read address settings
   ///
-  /// Requires upload/write access. Anyone knowing the address can send; reading files requires mailbox authorization. Original message.eml, decoded message.json, and attachments are stored together.
+  /// Requires mailbox write permission.
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
-  ///   Authorized mailbox prefix ID
+  /// * [String] mailboxId (required):
   ///
   /// * [String] accountId:
-  ///   Explicitly granted account; omission uses credential default
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
-  Future<GetMailboxEmailSettings200Response?> getMailboxEmailSettings(String id, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
-    final response = await getMailboxEmailSettingsWithHttpInfo(id, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
+  Future<GetMailboxEmailSettings200Response?> getMailboxEmailSettings(String mailboxId, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+    final response = await getMailboxEmailSettingsWithHttpInfo(mailboxId, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -1305,84 +2275,19 @@ class DefaultApi {
     return null;
   }
 
-  /// Read stored file metadata
+  /// Read the connection and selected account
   ///
-  /// Note: This method returns the HTTP [Response].
-  ///
-  /// Parameters:
-  ///
-  /// * [String] id (required):
-  ///
-  /// * [String] fileId (required):
-  ///
-  /// * [String] accountId:
-  Future<Response> getMailboxFileWithHttpInfo(String id, String fileId, { String? accountId, Future<void>? abortTrigger, }) async {
-    // ignore: prefer_const_declarations
-    final path = r'/v1/mailboxes/{id}/files/{file_id}'
-      .replaceAll('{id}', id)
-      .replaceAll('{file_id}', fileId);
-
-    // ignore: prefer_final_locals
-    Object? postBody;
-
-    final queryParams = <QueryParam>[];
-    final headerParams = <String, String>{};
-    final formParams = <String, String>{};
-
-    if (accountId != null) {
-      queryParams.addAll(_queryParams('', 'account_id', accountId));
-    }
-
-    const contentTypes = <String>[];
-
-
-    return apiClient.invokeAPI(
-      path,
-      'GET',
-      queryParams,
-      postBody,
-      headerParams,
-      formParams,
-      contentTypes.isEmpty ? null : contentTypes.first,
-      abortTrigger: abortTrigger,
-    );
-  }
-
-  /// Read stored file metadata
-  ///
-  /// Parameters:
-  ///
-  /// * [String] id (required):
-  ///
-  /// * [String] fileId (required):
-  ///
-  /// * [String] accountId:
-  Future<MailboxFileResponse?> getMailboxFile(String id, String fileId, { String? accountId, Future<void>? abortTrigger, }) async {
-    final response = await getMailboxFileWithHttpInfo(id, fileId, accountId: accountId, abortTrigger: abortTrigger,);
-    if (response.statusCode >= HttpStatus.badRequest) {
-      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
-    }
-    // When a remote server returns no body with a status of 204, we shall not decode it.
-    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
-    // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'MailboxFileResponse',) as MailboxFileResponse;
-    
-    }
-    return null;
-  }
-
-  /// Read current account identity and granted accounts
+  /// Works with every API key, including mailbox-scoped keys. Read quotas with GET /v1/account/limits.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
   /// * [String] accountId:
-  ///   Select a granted account for this request only; omit for the credential's default account.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
-  Future<Response> getRevdokuStatusWithHttpInfo({ String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+  Future<Response> getStatusWithHttpInfo({ String? accountId, String? reason, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
     final path = r'/v1/status';
 
@@ -1415,16 +2320,18 @@ class DefaultApi {
     );
   }
 
-  /// Read current account identity and granted accounts
+  /// Read the connection and selected account
+  ///
+  /// Works with every API key, including mailbox-scoped keys. Read quotas with GET /v1/account/limits.
   ///
   /// Parameters:
   ///
   /// * [String] accountId:
-  ///   Select a granted account for this request only; omit for the credential's default account.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
-  Future<GetRevdokuStatus200Response?> getRevdokuStatus({ String? accountId, String? reason, Future<void>? abortTrigger, }) async {
-    final response = await getRevdokuStatusWithHttpInfo(accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
+  Future<GetStatus200Response?> getStatus({ String? accountId, String? reason, Future<void>? abortTrigger, }) async {
+    final response = await getStatusWithHttpInfo(accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -1432,77 +2339,7 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetRevdokuStatus200Response',) as GetRevdokuStatus200Response;
-    
-    }
-    return null;
-  }
-
-  /// List account email domains, DNS records, receiving state and usage
-  ///
-  /// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-  ///
-  /// Note: This method returns the HTTP [Response].
-  ///
-  /// Parameters:
-  ///
-  /// * [String] accountId:
-  ///   Explicit granted account for this call; omission uses the credential account.
-  ///
-  /// * [String] reason:
-  Future<Response> listAccountEmailDomainsWithHttpInfo({ String? accountId, String? reason, Future<void>? abortTrigger, }) async {
-    // ignore: prefer_const_declarations
-    final path = r'/v1/account/email_domains';
-
-    // ignore: prefer_final_locals
-    Object? postBody;
-
-    final queryParams = <QueryParam>[];
-    final headerParams = <String, String>{};
-    final formParams = <String, String>{};
-
-    if (accountId != null) {
-      queryParams.addAll(_queryParams('', 'account_id', accountId));
-    }
-    if (reason != null) {
-      queryParams.addAll(_queryParams('', 'reason', reason));
-    }
-
-    const contentTypes = <String>[];
-
-
-    return apiClient.invokeAPI(
-      path,
-      'GET',
-      queryParams,
-      postBody,
-      headerParams,
-      formParams,
-      contentTypes.isEmpty ? null : contentTypes.first,
-      abortTrigger: abortTrigger,
-    );
-  }
-
-  /// List account email domains, DNS records, receiving state and usage
-  ///
-  /// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-  ///
-  /// Parameters:
-  ///
-  /// * [String] accountId:
-  ///   Explicit granted account for this call; omission uses the credential account.
-  ///
-  /// * [String] reason:
-  Future<EmailDomainListResponse?> listAccountEmailDomains({ String? accountId, String? reason, Future<void>? abortTrigger, }) async {
-    final response = await listAccountEmailDomainsWithHttpInfo(accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
-    if (response.statusCode >= HttpStatus.badRequest) {
-      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
-    }
-    // When a remote server returns no body with a status of 204, we shall not decode it.
-    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
-    // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'EmailDomainListResponse',) as EmailDomainListResponse;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetStatus200Response',) as GetStatus200Response;
     
     }
     return null;
@@ -1516,8 +2353,9 @@ class DefaultApi {
   ///
   /// * [int] limit:
   ///
-  /// * [int] offset:
-  Future<Response> listAccountsWithHttpInfo({ int? limit, int? offset, Future<void>? abortTrigger, }) async {
+  /// * [String] cursor:
+  ///   pagination.next_cursor from the previous page.
+  Future<Response> listAccountsWithHttpInfo({ int? limit, String? cursor, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
     final path = r'/v1/accounts';
 
@@ -1531,8 +2369,8 @@ class DefaultApi {
     if (limit != null) {
       queryParams.addAll(_queryParams('', 'limit', limit));
     }
-    if (offset != null) {
-      queryParams.addAll(_queryParams('', 'offset', offset));
+    if (cursor != null) {
+      queryParams.addAll(_queryParams('', 'cursor', cursor));
     }
 
     const contentTypes = <String>[];
@@ -1556,9 +2394,10 @@ class DefaultApi {
   ///
   /// * [int] limit:
   ///
-  /// * [int] offset:
-  Future<ListAccounts200Response?> listAccounts({ int? limit, int? offset, Future<void>? abortTrigger, }) async {
-    final response = await listAccountsWithHttpInfo(limit: limit, offset: offset, abortTrigger: abortTrigger,);
+  /// * [String] cursor:
+  ///   pagination.next_cursor from the previous page.
+  Future<ListAccounts200Response?> listAccounts({ int? limit, String? cursor, Future<void>? abortTrigger, }) async {
+    final response = await listAccountsWithHttpInfo(limit: limit, cursor: cursor, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -1572,55 +2411,24 @@ class DefaultApi {
     return null;
   }
 
-  /// List received emails
+  /// List custom email domains
   ///
-  /// Requires mailbox read permission. Ascending arrival order supports incremental polling: retain next_cursor even after an empty page. Reuse account, mailbox and filters. Late receipt timestamps are included. Descending order browses history. Edits/read changes/restorations do not replay earlier arrivals. Listing does not mark read.
+  /// Requires a full-account owner or administrator credential.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
-  /// * [String] mailboxId (required):
-  ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [int] limit:
-  ///   Maximum messages on this page.
   ///
   /// * [String] cursor:
-  ///   Opaque next_cursor from a previous page.
-  ///
-  /// * [String] order:
-  ///   Arrival order.
-  ///
-  /// * [String] sender:
-  ///   Exact sender address, case insensitive.
-  ///
-  /// * [String] subject:
-  ///   Case insensitive subject substring.
-  ///
-  /// * [DateTime] receivedAfter:
-  ///   Exclusive receipt-time lower bound.
-  ///
-  /// * [DateTime] receivedBefore:
-  ///   Exclusive receipt-time upper bound.
-  ///
-  /// * [bool] read:
-  ///   Current shared read status.
-  ///
-  /// * [bool] hasAttachments:
-  ///   Saved attachment presence.
-  ///
-  /// * [String] conversationId:
-  ///   An email ID in the selected conversation.
-  ///
-  /// * [bool] includeStorage:
-  ///   Include backing file identifiers for file-browser integration.
-  Future<Response> listEmailsWithHttpInfo(String mailboxId, { String? accountId, int? limit, String? cursor, String? order, String? sender, String? subject, DateTime? receivedAfter, DateTime? receivedBefore, bool? read, bool? hasAttachments, String? conversationId, bool? includeStorage, Future<void>? abortTrigger, }) async {
+  ///   pagination.next_cursor from the previous page.
+  Future<Response> listEmailDomainsWithHttpInfo({ String? accountId, int? limit, String? cursor, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
-    final path = r'/v1/mailboxes/{mailbox_id}/emails'
-      .replaceAll('{mailbox_id}', mailboxId);
+    final path = r'/v1/account/email_domains';
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1638,8 +2446,123 @@ class DefaultApi {
     if (cursor != null) {
       queryParams.addAll(_queryParams('', 'cursor', cursor));
     }
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// List custom email domains
+  ///
+  /// Requires a full-account owner or administrator credential.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  ///
+  /// * [int] limit:
+  ///
+  /// * [String] cursor:
+  ///   pagination.next_cursor from the previous page.
+  Future<ListEmailDomains200Response?> listEmailDomains({ String? accountId, int? limit, String? cursor, Future<void>? abortTrigger, }) async {
+    final response = await listEmailDomainsWithHttpInfo(accountId: accountId, limit: limit, cursor: cursor, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListEmailDomains200Response',) as ListEmailDomains200Response;
+    
+    }
+    return null;
+  }
+
+  /// List emails
+  ///
+  /// Requires mailbox read permission. Lists received email by default. To poll, list in ascending order, save pagination.next_cursor after every page (including an empty page) and send it next time with the same filters. Listing never marks email read.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  ///
+  /// * [String] reason:
+  ///
+  /// * [int] limit:
+  ///
+  /// * [String] cursor:
+  ///   pagination.next_cursor from the previous page.
+  ///
+  /// * [String] order:
+  ///   Arrival order. Use asc to poll.
+  ///
+  /// * [String] direction:
+  ///
+  /// * [String] sender:
+  ///   Exact sender address, case insensitive.
+  ///
+  /// * [String] subject:
+  ///   Case-insensitive subject text.
+  ///
+  /// * [DateTime] receivedAfter:
+  ///
+  /// * [DateTime] receivedBefore:
+  ///
+  /// * [bool] read:
+  ///
+  /// * [bool] hasAttachments:
+  ///
+  /// * [String] conversationId:
+  ///   Return the emails of this conversation.
+  ///
+  /// * [bool] includeStorage:
+  ///   Include backing file IDs for file-browser integrations.
+  Future<Response> listEmailsWithHttpInfo(String mailboxId, { String? accountId, String? reason, int? limit, String? cursor, String? order, String? direction, String? sender, String? subject, DateTime? receivedAfter, DateTime? receivedBefore, bool? read, bool? hasAttachments, String? conversationId, bool? includeStorage, Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/emails'
+      .replaceAll('{mailbox_id}', mailboxId);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    if (accountId != null) {
+      queryParams.addAll(_queryParams('', 'account_id', accountId));
+    }
+    if (reason != null) {
+      queryParams.addAll(_queryParams('', 'reason', reason));
+    }
+    if (limit != null) {
+      queryParams.addAll(_queryParams('', 'limit', limit));
+    }
+    if (cursor != null) {
+      queryParams.addAll(_queryParams('', 'cursor', cursor));
+    }
     if (order != null) {
       queryParams.addAll(_queryParams('', 'order', order));
+    }
+    if (direction != null) {
+      queryParams.addAll(_queryParams('', 'direction', direction));
     }
     if (sender != null) {
       queryParams.addAll(_queryParams('', 'sender', sender));
@@ -1681,51 +2604,50 @@ class DefaultApi {
     );
   }
 
-  /// List received emails
+  /// List emails
   ///
-  /// Requires mailbox read permission. Ascending arrival order supports incremental polling: retain next_cursor even after an empty page. Reuse account, mailbox and filters. Late receipt timestamps are included. Descending order browses history. Edits/read changes/restorations do not replay earlier arrivals. Listing does not mark read.
+  /// Requires mailbox read permission. Lists received email by default. To poll, list in ascending order, save pagination.next_cursor after every page (including an empty page) and send it next time with the same filters. Listing never marks email read.
   ///
   /// Parameters:
   ///
   /// * [String] mailboxId (required):
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  ///
+  /// * [String] reason:
   ///
   /// * [int] limit:
-  ///   Maximum messages on this page.
   ///
   /// * [String] cursor:
-  ///   Opaque next_cursor from a previous page.
+  ///   pagination.next_cursor from the previous page.
   ///
   /// * [String] order:
-  ///   Arrival order.
+  ///   Arrival order. Use asc to poll.
+  ///
+  /// * [String] direction:
   ///
   /// * [String] sender:
   ///   Exact sender address, case insensitive.
   ///
   /// * [String] subject:
-  ///   Case insensitive subject substring.
+  ///   Case-insensitive subject text.
   ///
   /// * [DateTime] receivedAfter:
-  ///   Exclusive receipt-time lower bound.
   ///
   /// * [DateTime] receivedBefore:
-  ///   Exclusive receipt-time upper bound.
   ///
   /// * [bool] read:
-  ///   Current shared read status.
   ///
   /// * [bool] hasAttachments:
-  ///   Saved attachment presence.
   ///
   /// * [String] conversationId:
-  ///   An email ID in the selected conversation.
+  ///   Return the emails of this conversation.
   ///
   /// * [bool] includeStorage:
-  ///   Include backing file identifiers for file-browser integration.
-  Future<ListEmails200Response?> listEmails(String mailboxId, { String? accountId, int? limit, String? cursor, String? order, String? sender, String? subject, DateTime? receivedAfter, DateTime? receivedBefore, bool? read, bool? hasAttachments, String? conversationId, bool? includeStorage, Future<void>? abortTrigger, }) async {
-    final response = await listEmailsWithHttpInfo(mailboxId, accountId: accountId, limit: limit, cursor: cursor, order: order, sender: sender, subject: subject, receivedAfter: receivedAfter, receivedBefore: receivedBefore, read: read, hasAttachments: hasAttachments, conversationId: conversationId, includeStorage: includeStorage, abortTrigger: abortTrigger,);
+  ///   Include backing file IDs for file-browser integrations.
+  Future<ListEmails200Response?> listEmails(String mailboxId, { String? accountId, String? reason, int? limit, String? cursor, String? order, String? direction, String? sender, String? subject, DateTime? receivedAfter, DateTime? receivedBefore, bool? read, bool? hasAttachments, String? conversationId, bool? includeStorage, Future<void>? abortTrigger, }) async {
+    final response = await listEmailsWithHttpInfo(mailboxId, accountId: accountId, reason: reason, limit: limit, cursor: cursor, order: order, direction: direction, sender: sender, subject: subject, receivedAfter: receivedAfter, receivedBefore: receivedBefore, read: read, hasAttachments: hasAttachments, conversationId: conversationId, includeStorage: includeStorage, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -1739,31 +2661,32 @@ class DefaultApi {
     return null;
   }
 
-  /// List files or related email without marking read
+  /// List file versions
+  ///
+  /// Newest first.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
+  /// * [String] mailboxId (required):
   ///
-  /// * [int] limit:
-  ///   Default and maximum 100.
+  /// * [String] fileId (required):
   ///
-  /// * [int] offset:
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
   ///
-  /// * [String] q:
+  /// * [int] limit:
   ///
-  /// * [String] folder:
-  ///
-  /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  Future<Response> listMailboxFilesWithHttpInfo(String id, { int? limit, int? offset, String? reason, String? q, String? folder, String? accountId, Future<void>? abortTrigger, }) async {
+  /// * [String] cursor:
+  ///   pagination.next_cursor from the previous page.
+  Future<Response> listFileVersionsWithHttpInfo(String mailboxId, String fileId, { String? accountId, String? reason, int? limit, String? cursor, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
-    final path = r'/v1/mailboxes/{id}/files'
-      .replaceAll('{id}', id);
+    final path = r'/v1/mailboxes/{mailbox_id}/files/{file_id}/versions'
+      .replaceAll('{mailbox_id}', mailboxId)
+      .replaceAll('{file_id}', fileId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1772,23 +2695,17 @@ class DefaultApi {
     final headerParams = <String, String>{};
     final formParams = <String, String>{};
 
-    if (limit != null) {
-      queryParams.addAll(_queryParams('', 'limit', limit));
-    }
-    if (offset != null) {
-      queryParams.addAll(_queryParams('', 'offset', offset));
+    if (accountId != null) {
+      queryParams.addAll(_queryParams('', 'account_id', accountId));
     }
     if (reason != null) {
       queryParams.addAll(_queryParams('', 'reason', reason));
     }
-    if (q != null) {
-      queryParams.addAll(_queryParams('', 'q', q));
+    if (limit != null) {
+      queryParams.addAll(_queryParams('', 'limit', limit));
     }
-    if (folder != null) {
-      queryParams.addAll(_queryParams('', 'folder', folder));
-    }
-    if (accountId != null) {
-      queryParams.addAll(_queryParams('', 'account_id', accountId));
+    if (cursor != null) {
+      queryParams.addAll(_queryParams('', 'cursor', cursor));
     }
 
     const contentTypes = <String>[];
@@ -1806,27 +2723,27 @@ class DefaultApi {
     );
   }
 
-  /// List files or related email without marking read
+  /// List file versions
+  ///
+  /// Newest first.
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
+  /// * [String] mailboxId (required):
   ///
-  /// * [int] limit:
-  ///   Default and maximum 100.
+  /// * [String] fileId (required):
   ///
-  /// * [int] offset:
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
   /// * [String] reason:
   ///
-  /// * [String] q:
+  /// * [int] limit:
   ///
-  /// * [String] folder:
-  ///
-  /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  Future<ListMailboxFiles200Response?> listMailboxFiles(String id, { int? limit, int? offset, String? reason, String? q, String? folder, String? accountId, Future<void>? abortTrigger, }) async {
-    final response = await listMailboxFilesWithHttpInfo(id, limit: limit, offset: offset, reason: reason, q: q, folder: folder, accountId: accountId, abortTrigger: abortTrigger,);
+  /// * [String] cursor:
+  ///   pagination.next_cursor from the previous page.
+  Future<ListFileVersions200Response?> listFileVersions(String mailboxId, String fileId, { String? accountId, String? reason, int? limit, String? cursor, Future<void>? abortTrigger, }) async {
+    final response = await listFileVersionsWithHttpInfo(mailboxId, fileId, accountId: accountId, reason: reason, limit: limit, cursor: cursor, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -1834,33 +2751,144 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListMailboxFiles200Response',) as ListMailboxFiles200Response;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListFileVersions200Response',) as ListFileVersions200Response;
     
     }
     return null;
   }
 
-  /// List accessible mailboxes
+  /// List files
   ///
-  /// List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
+  /// Lists current files, including stored emails under _email/. Listing never marks files read.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  ///
+  /// * [String] reason:
+  ///
+  /// * [String] q:
+  ///   Case-insensitive text in the path.
+  ///
+  /// * [String] folder:
+  ///   List one folder. An empty value lists the root.
+  ///
+  /// * [int] limit:
+  ///
+  /// * [String] cursor:
+  ///   pagination.next_cursor from the previous page.
+  Future<Response> listFilesWithHttpInfo(String mailboxId, { String? accountId, String? reason, String? q, String? folder, int? limit, String? cursor, Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/files'
+      .replaceAll('{mailbox_id}', mailboxId);
+
+    // ignore: prefer_final_locals
+    Object? postBody;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    if (accountId != null) {
+      queryParams.addAll(_queryParams('', 'account_id', accountId));
+    }
+    if (reason != null) {
+      queryParams.addAll(_queryParams('', 'reason', reason));
+    }
+    if (q != null) {
+      queryParams.addAll(_queryParams('', 'q', q));
+    }
+    if (folder != null) {
+      queryParams.addAll(_queryParams('', 'folder', folder));
+    }
+    if (limit != null) {
+      queryParams.addAll(_queryParams('', 'limit', limit));
+    }
+    if (cursor != null) {
+      queryParams.addAll(_queryParams('', 'cursor', cursor));
+    }
+
+    const contentTypes = <String>[];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'GET',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// List files
+  ///
+  /// Lists current files, including stored emails under _email/. Listing never marks files read.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] accountId:
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+  ///
+  /// * [String] reason:
+  ///
+  /// * [String] q:
+  ///   Case-insensitive text in the path.
+  ///
+  /// * [String] folder:
+  ///   List one folder. An empty value lists the root.
+  ///
+  /// * [int] limit:
+  ///
+  /// * [String] cursor:
+  ///   pagination.next_cursor from the previous page.
+  Future<ListFiles200Response?> listFiles(String mailboxId, { String? accountId, String? reason, String? q, String? folder, int? limit, String? cursor, Future<void>? abortTrigger, }) async {
+    final response = await listFilesWithHttpInfo(mailboxId, accountId: accountId, reason: reason, q: q, folder: folder, limit: limit, cursor: cursor, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListFiles200Response',) as ListFiles200Response;
+    
+    }
+    return null;
+  }
+
+  /// List mailboxes
+  ///
+  /// Lists active mailboxes by default, newest first. Counts and pages cover only mailboxes this credential can access. Reads no email content.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
-  /// * [String] q:
-  ///   Case-insensitive contains-filter on the permitted email address or ID.
+  /// * [String] reason:
   ///
   /// * [String] status:
-  ///   Archive status: active, archived or all. Defaults to active.
+  ///
+  /// * [String] q:
+  ///   Case-insensitive text in the permitted address or the mailbox ID.
   ///
   /// * [int] limit:
   ///
-  /// * [int] offset:
-  Future<Response> listMailboxesWithHttpInfo({ String? accountId, String? q, String? status, int? limit, int? offset, Future<void>? abortTrigger, }) async {
+  /// * [String] cursor:
+  ///   pagination.next_cursor from the previous page.
+  Future<Response> listMailboxesWithHttpInfo({ String? accountId, String? reason, String? status, String? q, int? limit, String? cursor, Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
     final path = r'/v1/mailboxes';
 
@@ -1874,17 +2902,20 @@ class DefaultApi {
     if (accountId != null) {
       queryParams.addAll(_queryParams('', 'account_id', accountId));
     }
-    if (q != null) {
-      queryParams.addAll(_queryParams('', 'q', q));
+    if (reason != null) {
+      queryParams.addAll(_queryParams('', 'reason', reason));
     }
     if (status != null) {
       queryParams.addAll(_queryParams('', 'status', status));
     }
+    if (q != null) {
+      queryParams.addAll(_queryParams('', 'q', q));
+    }
     if (limit != null) {
       queryParams.addAll(_queryParams('', 'limit', limit));
     }
-    if (offset != null) {
-      queryParams.addAll(_queryParams('', 'offset', offset));
+    if (cursor != null) {
+      queryParams.addAll(_queryParams('', 'cursor', cursor));
     }
 
     const contentTypes = <String>[];
@@ -1902,26 +2933,28 @@ class DefaultApi {
     );
   }
 
-  /// List accessible mailboxes
+  /// List mailboxes
   ///
-  /// List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
+  /// Lists active mailboxes by default, newest first. Counts and pages cover only mailboxes this credential can access. Reads no email content.
   ///
   /// Parameters:
   ///
   /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
+  ///   Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
   ///
-  /// * [String] q:
-  ///   Case-insensitive contains-filter on the permitted email address or ID.
+  /// * [String] reason:
   ///
   /// * [String] status:
-  ///   Archive status: active, archived or all. Defaults to active.
+  ///
+  /// * [String] q:
+  ///   Case-insensitive text in the permitted address or the mailbox ID.
   ///
   /// * [int] limit:
   ///
-  /// * [int] offset:
-  Future<ListMailboxes200Response?> listMailboxes({ String? accountId, String? q, String? status, int? limit, int? offset, Future<void>? abortTrigger, }) async {
-    final response = await listMailboxesWithHttpInfo(accountId: accountId, q: q, status: status, limit: limit, offset: offset, abortTrigger: abortTrigger,);
+  /// * [String] cursor:
+  ///   pagination.next_cursor from the previous page.
+  Future<ListMailboxes200Response?> listMailboxes({ String? accountId, String? reason, String? status, String? q, int? limit, String? cursor, Future<void>? abortTrigger, }) async {
+    final response = await listMailboxesWithHttpInfo(accountId: accountId, reason: reason, status: status, q: q, limit: limit, cursor: cursor, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -1935,7 +2968,76 @@ class DefaultApi {
     return null;
   }
 
-  /// Prepare a single file upload
+  /// Move a file
+  ///
+  /// Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] fileId (required):
+  ///
+  /// * [MoveFileRequest] moveFileRequest (required):
+  Future<Response> moveFileWithHttpInfo(String mailboxId, String fileId, MoveFileRequest moveFileRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/files/{file_id}/move'
+      .replaceAll('{mailbox_id}', mailboxId)
+      .replaceAll('{file_id}', fileId);
+
+    // ignore: prefer_final_locals
+    Object? postBody = moveFileRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Move a file
+  ///
+  /// Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] fileId (required):
+  ///
+  /// * [MoveFileRequest] moveFileRequest (required):
+  Future<RenameFile200Response?> moveFile(String mailboxId, String fileId, MoveFileRequest moveFileRequest, { Future<void>? abortTrigger, }) async {
+    final response = await moveFileWithHttpInfo(mailboxId, fileId, moveFileRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'RenameFile200Response',) as RenameFile200Response;
+    
+    }
+    return null;
+  }
+
+  /// Prepare a file upload (step 1 of 3)
+  ///
+  /// Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/mailboxes/{mailbox_id}/files (step 3). Identical content at the same path returns skipped=true and duplicate=true without an upload.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -1968,12 +3070,14 @@ class DefaultApi {
     );
   }
 
-  /// Prepare a single file upload
+  /// Prepare a file upload (step 1 of 3)
+  ///
+  /// Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/mailboxes/{mailbox_id}/files (step 3). Identical content at the same path returns skipped=true and duplicate=true without an upload.
   ///
   /// Parameters:
   ///
   /// * [PrepareFileUploadRequest] prepareFileUploadRequest (required):
-  Future<PreparedFileUploadResponse?> prepareFileUpload(PrepareFileUploadRequest prepareFileUploadRequest, { Future<void>? abortTrigger, }) async {
+  Future<PrepareFileUpload201Response?> prepareFileUpload(PrepareFileUploadRequest prepareFileUploadRequest, { Future<void>? abortTrigger, }) async {
     final response = await prepareFileUploadWithHttpInfo(prepareFileUploadRequest, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
@@ -1982,93 +3086,33 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'PreparedFileUploadResponse',) as PreparedFileUploadResponse;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'PrepareFileUpload201Response',) as PrepareFileUpload201Response;
     
     }
     return null;
   }
 
-  /// Remove unused receiving domain after confirmation
+  /// Rename or move a file in the same mailbox
   ///
-  /// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-  ///
-  /// Note: This method returns the HTTP [Response].
-  ///
-  /// Parameters:
-  ///
-  /// * [String] id (required):
-  ///
-  /// * [RemoveAccountEmailDomainRequest] removeAccountEmailDomainRequest (required):
-  Future<Response> removeAccountEmailDomainWithHttpInfo(String id, RemoveAccountEmailDomainRequest removeAccountEmailDomainRequest, { Future<void>? abortTrigger, }) async {
-    // ignore: prefer_const_declarations
-    final path = r'/v1/account/email_domains/{id}'
-      .replaceAll('{id}', id);
-
-    // ignore: prefer_final_locals
-    Object? postBody = removeAccountEmailDomainRequest;
-
-    final queryParams = <QueryParam>[];
-    final headerParams = <String, String>{};
-    final formParams = <String, String>{};
-
-    const contentTypes = <String>['application/json'];
-
-
-    return apiClient.invokeAPI(
-      path,
-      'DELETE',
-      queryParams,
-      postBody,
-      headerParams,
-      formParams,
-      contentTypes.isEmpty ? null : contentTypes.first,
-      abortTrigger: abortTrigger,
-    );
-  }
-
-  /// Remove unused receiving domain after confirmation
-  ///
-  /// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-  ///
-  /// Parameters:
-  ///
-  /// * [String] id (required):
-  ///
-  /// * [RemoveAccountEmailDomainRequest] removeAccountEmailDomainRequest (required):
-  Future<EmailDomainListResponse?> removeAccountEmailDomain(String id, RemoveAccountEmailDomainRequest removeAccountEmailDomainRequest, { Future<void>? abortTrigger, }) async {
-    final response = await removeAccountEmailDomainWithHttpInfo(id, removeAccountEmailDomainRequest, abortTrigger: abortTrigger,);
-    if (response.statusCode >= HttpStatus.badRequest) {
-      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
-    }
-    // When a remote server returns no body with a status of 204, we shall not decode it.
-    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
-    // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'EmailDomainListResponse',) as EmailDomainListResponse;
-    
-    }
-    return null;
-  }
-
-  /// Replace a mailbox email address after confirmation
-  ///
-  /// Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
+  /// Changes the path without uploading the content again.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
-  ///   Authorized mailbox prefix ID
+  /// * [String] mailboxId (required):
   ///
-  /// * [RotateMailboxEmailAddressRequest] rotateMailboxEmailAddressRequest (required):
-  Future<Response> rotateMailboxEmailAddressWithHttpInfo(String id, RotateMailboxEmailAddressRequest rotateMailboxEmailAddressRequest, { Future<void>? abortTrigger, }) async {
+  /// * [String] fileId (required):
+  ///
+  /// * [RenameFileRequest] renameFileRequest (required):
+  Future<Response> renameFileWithHttpInfo(String mailboxId, String fileId, RenameFileRequest renameFileRequest, { Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
-    final path = r'/v1/mailboxes/{id}/email/rotate'
-      .replaceAll('{id}', id);
+    final path = r'/v1/mailboxes/{mailbox_id}/files/{file_id}/rename'
+      .replaceAll('{mailbox_id}', mailboxId)
+      .replaceAll('{file_id}', fileId);
 
     // ignore: prefer_final_locals
-    Object? postBody = rotateMailboxEmailAddressRequest;
+    Object? postBody = renameFileRequest;
 
     final queryParams = <QueryParam>[];
     final headerParams = <String, String>{};
@@ -2089,18 +3133,19 @@ class DefaultApi {
     );
   }
 
-  /// Replace a mailbox email address after confirmation
+  /// Rename or move a file in the same mailbox
   ///
-  /// Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
+  /// Changes the path without uploading the content again.
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
-  ///   Authorized mailbox prefix ID
+  /// * [String] mailboxId (required):
   ///
-  /// * [RotateMailboxEmailAddressRequest] rotateMailboxEmailAddressRequest (required):
-  Future<GetMailboxEmailSettings200Response?> rotateMailboxEmailAddress(String id, RotateMailboxEmailAddressRequest rotateMailboxEmailAddressRequest, { Future<void>? abortTrigger, }) async {
-    final response = await rotateMailboxEmailAddressWithHttpInfo(id, rotateMailboxEmailAddressRequest, abortTrigger: abortTrigger,);
+  /// * [String] fileId (required):
+  ///
+  /// * [RenameFileRequest] renameFileRequest (required):
+  Future<RenameFile200Response?> renameFile(String mailboxId, String fileId, RenameFileRequest renameFileRequest, { Future<void>? abortTrigger, }) async {
+    final response = await renameFileWithHttpInfo(mailboxId, fileId, renameFileRequest, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -2108,25 +3153,225 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetMailboxEmailSettings200Response',) as GetMailboxEmailSettings200Response;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'RenameFile200Response',) as RenameFile200Response;
     
     }
     return null;
   }
 
-  /// Save an uploaded file or a new version
+  /// Email a sign-in code
+  ///
+  /// Sends a six-digit code to an existing account email. The response is the same for every address, so it never reveals whether an account exists. Create new accounts in the browser at https://app.revdoku.com/users/sign_up.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
+  /// * [RequestSignInCodeRequest] requestSignInCodeRequest (required):
+  Future<Response> requestSignInCodeWithHttpInfo(RequestSignInCodeRequest requestSignInCodeRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/agent_auth/request_code';
+
+    // ignore: prefer_final_locals
+    Object? postBody = requestSignInCodeRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Email a sign-in code
+  ///
+  /// Sends a six-digit code to an existing account email. The response is the same for every address, so it never reveals whether an account exists. Create new accounts in the browser at https://app.revdoku.com/users/sign_up.
+  ///
+  /// Parameters:
+  ///
+  /// * [RequestSignInCodeRequest] requestSignInCodeRequest (required):
+  Future<RequestSignInCode200Response?> requestSignInCode(RequestSignInCodeRequest requestSignInCodeRequest, { Future<void>? abortTrigger, }) async {
+    final response = await requestSignInCodeWithHttpInfo(requestSignInCodeRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'RequestSignInCode200Response',) as RequestSignInCode200Response;
+    
+    }
+    return null;
+  }
+
+  /// Restore a file version
+  ///
+  /// Creates a new current version with the content of the selected version. History is kept. Requires a plan with version restore.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] fileId (required):
+  ///
+  /// * [String] versionId (required):
+  ///
+  /// * [ActionRequest] actionRequest (required):
+  Future<Response> restoreFileVersionWithHttpInfo(String mailboxId, String fileId, String versionId, ActionRequest actionRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/files/{file_id}/versions/{version_id}/restore'
+      .replaceAll('{mailbox_id}', mailboxId)
+      .replaceAll('{file_id}', fileId)
+      .replaceAll('{version_id}', versionId);
+
+    // ignore: prefer_final_locals
+    Object? postBody = actionRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Restore a file version
+  ///
+  /// Creates a new current version with the content of the selected version. History is kept. Requires a plan with version restore.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] fileId (required):
+  ///
+  /// * [String] versionId (required):
+  ///
+  /// * [ActionRequest] actionRequest (required):
+  Future<RestoreFileVersion201Response?> restoreFileVersion(String mailboxId, String fileId, String versionId, ActionRequest actionRequest, { Future<void>? abortTrigger, }) async {
+    final response = await restoreFileVersionWithHttpInfo(mailboxId, fileId, versionId, actionRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'RestoreFileVersion201Response',) as RestoreFileVersion201Response;
+    
+    }
+    return null;
+  }
+
+  /// Save uploaded files
+  ///
+  /// Saves up to limit files whose bytes were uploaded. Call it after each batch to keep each request short. DIRECT_UPLOAD_NOT_FOUND names a file whose bytes are missing in error.details.path; upload it again and retry.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] sessionId (required):
+  ///   mailbox_upload_session.id from the create response.
+  ///
+  /// * [SaveUploadSessionBatchRequest] saveUploadSessionBatchRequest:
+  Future<Response> saveUploadSessionBatchWithHttpInfo(String mailboxId, String sessionId, { SaveUploadSessionBatchRequest? saveUploadSessionBatchRequest, Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize_batch'
+      .replaceAll('{mailbox_id}', mailboxId)
+      .replaceAll('{session_id}', sessionId);
+
+    // ignore: prefer_final_locals
+    Object? postBody = saveUploadSessionBatchRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Save uploaded files
+  ///
+  /// Saves up to limit files whose bytes were uploaded. Call it after each batch to keep each request short. DIRECT_UPLOAD_NOT_FOUND names a file whose bytes are missing in error.details.path; upload it again and retry.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] sessionId (required):
+  ///   mailbox_upload_session.id from the create response.
+  ///
+  /// * [SaveUploadSessionBatchRequest] saveUploadSessionBatchRequest:
+  Future<CreateUploadSession201Response?> saveUploadSessionBatch(String mailboxId, String sessionId, { SaveUploadSessionBatchRequest? saveUploadSessionBatchRequest, Future<void>? abortTrigger, }) async {
+    final response = await saveUploadSessionBatchWithHttpInfo(mailboxId, sessionId, saveUploadSessionBatchRequest: saveUploadSessionBatchRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateUploadSession201Response',) as CreateUploadSession201Response;
+    
+    }
+    return null;
+  }
+
+  /// Save an uploaded file (step 3 of 3)
+  ///
+  /// Saves the uploaded blob at path. An existing path gets a new version.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
   ///
   /// * [SaveUploadedFileRequest] saveUploadedFileRequest (required):
-  Future<Response> saveUploadedFileWithHttpInfo(String id, SaveUploadedFileRequest saveUploadedFileRequest, { Future<void>? abortTrigger, }) async {
+  Future<Response> saveUploadedFileWithHttpInfo(String mailboxId, SaveUploadedFileRequest saveUploadedFileRequest, { Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
-    final path = r'/v1/mailboxes/{id}/files'
-      .replaceAll('{id}', id);
+    final path = r'/v1/mailboxes/{mailbox_id}/files'
+      .replaceAll('{mailbox_id}', mailboxId);
 
     // ignore: prefer_final_locals
     Object? postBody = saveUploadedFileRequest;
@@ -2150,15 +3395,17 @@ class DefaultApi {
     );
   }
 
-  /// Save an uploaded file or a new version
+  /// Save an uploaded file (step 3 of 3)
+  ///
+  /// Saves the uploaded blob at path. An existing path gets a new version.
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
+  /// * [String] mailboxId (required):
   ///
   /// * [SaveUploadedFileRequest] saveUploadedFileRequest (required):
-  Future<SavedFileResponse?> saveUploadedFile(String id, SaveUploadedFileRequest saveUploadedFileRequest, { Future<void>? abortTrigger, }) async {
-    final response = await saveUploadedFileWithHttpInfo(id, saveUploadedFileRequest, abortTrigger: abortTrigger,);
+  Future<SaveUploadedFile201Response?> saveUploadedFile(String mailboxId, SaveUploadedFileRequest saveUploadedFileRequest, { Future<void>? abortTrigger, }) async {
+    final response = await saveUploadedFileWithHttpInfo(mailboxId, saveUploadedFileRequest, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -2166,15 +3413,77 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'SavedFileResponse',) as SavedFileResponse;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'SaveUploadedFile201Response',) as SaveUploadedFile201Response;
     
     }
     return null;
   }
 
-  /// Configure one received-email webhook per mailbox
+  /// Send a reply
   ///
-  /// Requires mailbox admin permission. Public HTTPS, including explicit ports such as 8443. Generates an encrypted signing secret, returned here. Same-URL updates retain it; replacing the URL rotates it and cancels pending old-version deliveries. Events are signed and retried up to eight attempts on transient failure; duplicates are possible. Worker-crash recovery is bounded to 24 hours from event creation. Exhausted and permanent failures require operator review.
+  /// Requires mailbox write permission. Recipients must have emailed this mailbox and passed sender authentication. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [SendEmailRequest] sendEmailRequest (required):
+  Future<Response> sendEmailWithHttpInfo(String mailboxId, SendEmailRequest sendEmailRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/emails'
+      .replaceAll('{mailbox_id}', mailboxId);
+
+    // ignore: prefer_final_locals
+    Object? postBody = sendEmailRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Send a reply
+  ///
+  /// Requires mailbox write permission. Recipients must have emailed this mailbox and passed sender authentication. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [SendEmailRequest] sendEmailRequest (required):
+  Future<SendEmail202Response?> sendEmail(String mailboxId, SendEmailRequest sendEmailRequest, { Future<void>? abortTrigger, }) async {
+    final response = await sendEmailWithHttpInfo(mailboxId, sendEmailRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'SendEmail202Response',) as SendEmail202Response;
+    
+    }
+    return null;
+  }
+
+  /// Set the email webhook
+  ///
+  /// Requires mailbox-admin permission and a public HTTPS URL. A new URL or rotate_secret=true creates a new signing secret, returns it once and cancels pending deliveries. The same URL without rotate_secret returns the webhook without a secret.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -2210,9 +3519,9 @@ class DefaultApi {
     );
   }
 
-  /// Configure one received-email webhook per mailbox
+  /// Set the email webhook
   ///
-  /// Requires mailbox admin permission. Public HTTPS, including explicit ports such as 8443. Generates an encrypted signing secret, returned here. Same-URL updates retain it; replacing the URL rotates it and cancels pending old-version deliveries. Events are signed and retried up to eight attempts on transient failure; duplicates are possible. Worker-crash recovery is bounded to 24 hours from event creation. Exhausted and permanent failures require operator review.
+  /// Requires mailbox-admin permission and a public HTTPS URL. A new URL or rotate_secret=true creates a new signing secret, returns it once and cancels pending deliveries. The same URL without rotate_secret returns the webhook without a secret.
   ///
   /// Parameters:
   ///
@@ -2234,9 +3543,7 @@ class DefaultApi {
     return null;
   }
 
-  /// Mark a received email read or unread
-  ///
-  /// Requires mailbox read permission, including for locked/read-only content. Only read status can change. Receipt and audit event commit atomically. Repeated state changes are idempotent.
+  /// Unarchive a mailbox
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -2244,181 +3551,14 @@ class DefaultApi {
   ///
   /// * [String] mailboxId (required):
   ///
-  /// * [String] emailId (required):
-  ///
-  /// * [UpdateEmailRequest] updateEmailRequest (required):
-  ///
-  /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  ///
-  /// * [bool] includeStorage:
-  ///   Include the related file identifiers in the updated email response.
-  Future<Response> updateEmailWithHttpInfo(String mailboxId, String emailId, UpdateEmailRequest updateEmailRequest, { String? accountId, bool? includeStorage, Future<void>? abortTrigger, }) async {
+  /// * [ActionRequest] actionRequest (required):
+  Future<Response> unarchiveMailboxWithHttpInfo(String mailboxId, ActionRequest actionRequest, { Future<void>? abortTrigger, }) async {
     // ignore: prefer_const_declarations
-    final path = r'/v1/mailboxes/{mailbox_id}/emails/{email_id}'
-      .replaceAll('{mailbox_id}', mailboxId)
-      .replaceAll('{email_id}', emailId);
+    final path = r'/v1/mailboxes/{mailbox_id}/unarchive'
+      .replaceAll('{mailbox_id}', mailboxId);
 
     // ignore: prefer_final_locals
-    Object? postBody = updateEmailRequest;
-
-    final queryParams = <QueryParam>[];
-    final headerParams = <String, String>{};
-    final formParams = <String, String>{};
-
-    if (accountId != null) {
-      queryParams.addAll(_queryParams('', 'account_id', accountId));
-    }
-    if (includeStorage != null) {
-      queryParams.addAll(_queryParams('', 'include_storage', includeStorage));
-    }
-
-    const contentTypes = <String>['application/json'];
-
-
-    return apiClient.invokeAPI(
-      path,
-      'PATCH',
-      queryParams,
-      postBody,
-      headerParams,
-      formParams,
-      contentTypes.isEmpty ? null : contentTypes.first,
-      abortTrigger: abortTrigger,
-    );
-  }
-
-  /// Mark a received email read or unread
-  ///
-  /// Requires mailbox read permission, including for locked/read-only content. Only read status can change. Receipt and audit event commit atomically. Repeated state changes are idempotent.
-  ///
-  /// Parameters:
-  ///
-  /// * [String] mailboxId (required):
-  ///
-  /// * [String] emailId (required):
-  ///
-  /// * [UpdateEmailRequest] updateEmailRequest (required):
-  ///
-  /// * [String] accountId:
-  ///   Select another granted account; otherwise use the credential default.
-  ///
-  /// * [bool] includeStorage:
-  ///   Include the related file identifiers in the updated email response.
-  Future<UpdateEmail200Response?> updateEmail(String mailboxId, String emailId, UpdateEmailRequest updateEmailRequest, { String? accountId, bool? includeStorage, Future<void>? abortTrigger, }) async {
-    final response = await updateEmailWithHttpInfo(mailboxId, emailId, updateEmailRequest, accountId: accountId, includeStorage: includeStorage, abortTrigger: abortTrigger,);
-    if (response.statusCode >= HttpStatus.badRequest) {
-      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
-    }
-    // When a remote server returns no body with a status of 204, we shall not decode it.
-    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
-    // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'UpdateEmail200Response',) as UpdateEmail200Response;
-    
-    }
-    return null;
-  }
-
-  /// Replace the allowed senders for a mailbox
-  ///
-  /// Requires account owner/administrator and mailbox-admin permission. Read sender_allowlist.version from GET /mailboxes/{id}/email first. Entries match exact authenticated From addresses or domains, with no wildcards or implicit subdomains. A stale or missing version returns EMAIL_ALLOWLIST_CHANGED; invalid entries return EMAIL_ALLOWLIST_INVALID. Disabled policies retain the supplied entries. Locks and read-only account state apply.
-  ///
-  /// Note: This method returns the HTTP [Response].
-  ///
-  /// Parameters:
-  ///
-  /// * [String] id (required):
-  ///   Authorized mailbox prefix ID
-  ///
-  /// * [UpdateMailboxEmailAllowlistRequest] updateMailboxEmailAllowlistRequest (required):
-  ///
-  /// * [String] accountId:
-  ///   Explicitly granted account; omission uses credential default
-  ///
-  /// * [String] reason:
-  Future<Response> updateMailboxEmailAllowlistWithHttpInfo(String id, UpdateMailboxEmailAllowlistRequest updateMailboxEmailAllowlistRequest, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
-    // ignore: prefer_const_declarations
-    final path = r'/v1/mailboxes/{id}/email/allowlist'
-      .replaceAll('{id}', id);
-
-    // ignore: prefer_final_locals
-    Object? postBody = updateMailboxEmailAllowlistRequest;
-
-    final queryParams = <QueryParam>[];
-    final headerParams = <String, String>{};
-    final formParams = <String, String>{};
-
-    if (accountId != null) {
-      queryParams.addAll(_queryParams('', 'account_id', accountId));
-    }
-    if (reason != null) {
-      queryParams.addAll(_queryParams('', 'reason', reason));
-    }
-
-    const contentTypes = <String>['application/json'];
-
-
-    return apiClient.invokeAPI(
-      path,
-      'PATCH',
-      queryParams,
-      postBody,
-      headerParams,
-      formParams,
-      contentTypes.isEmpty ? null : contentTypes.first,
-      abortTrigger: abortTrigger,
-    );
-  }
-
-  /// Replace the allowed senders for a mailbox
-  ///
-  /// Requires account owner/administrator and mailbox-admin permission. Read sender_allowlist.version from GET /mailboxes/{id}/email first. Entries match exact authenticated From addresses or domains, with no wildcards or implicit subdomains. A stale or missing version returns EMAIL_ALLOWLIST_CHANGED; invalid entries return EMAIL_ALLOWLIST_INVALID. Disabled policies retain the supplied entries. Locks and read-only account state apply.
-  ///
-  /// Parameters:
-  ///
-  /// * [String] id (required):
-  ///   Authorized mailbox prefix ID
-  ///
-  /// * [UpdateMailboxEmailAllowlistRequest] updateMailboxEmailAllowlistRequest (required):
-  ///
-  /// * [String] accountId:
-  ///   Explicitly granted account; omission uses credential default
-  ///
-  /// * [String] reason:
-  Future<UpdateMailboxEmailAllowlist200Response?> updateMailboxEmailAllowlist(String id, UpdateMailboxEmailAllowlistRequest updateMailboxEmailAllowlistRequest, { String? accountId, String? reason, Future<void>? abortTrigger, }) async {
-    final response = await updateMailboxEmailAllowlistWithHttpInfo(id, updateMailboxEmailAllowlistRequest, accountId: accountId, reason: reason, abortTrigger: abortTrigger,);
-    if (response.statusCode >= HttpStatus.badRequest) {
-      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
-    }
-    // When a remote server returns no body with a status of 204, we shall not decode it.
-    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
-    // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'UpdateMailboxEmailAllowlist200Response',) as UpdateMailboxEmailAllowlist200Response;
-    
-    }
-    return null;
-  }
-
-  /// Queue exact ownership, SES and MX verification
-  ///
-  /// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-  ///
-  /// Note: This method returns the HTTP [Response].
-  ///
-  /// Parameters:
-  ///
-  /// * [String] id (required):
-  ///
-  /// * [VerifyAccountEmailDomainRequest] verifyAccountEmailDomainRequest:
-  Future<Response> verifyAccountEmailDomainWithHttpInfo(String id, { VerifyAccountEmailDomainRequest? verifyAccountEmailDomainRequest, Future<void>? abortTrigger, }) async {
-    // ignore: prefer_const_declarations
-    final path = r'/v1/account/email_domains/{id}/verify'
-      .replaceAll('{id}', id);
-
-    // ignore: prefer_final_locals
-    Object? postBody = verifyAccountEmailDomainRequest;
+    Object? postBody = actionRequest;
 
     final queryParams = <QueryParam>[];
     final headerParams = <String, String>{};
@@ -2439,17 +3579,15 @@ class DefaultApi {
     );
   }
 
-  /// Queue exact ownership, SES and MX verification
-  ///
-  /// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
+  /// Unarchive a mailbox
   ///
   /// Parameters:
   ///
-  /// * [String] id (required):
+  /// * [String] mailboxId (required):
   ///
-  /// * [VerifyAccountEmailDomainRequest] verifyAccountEmailDomainRequest:
-  Future<EmailDomainListResponse?> verifyAccountEmailDomain(String id, { VerifyAccountEmailDomainRequest? verifyAccountEmailDomainRequest, Future<void>? abortTrigger, }) async {
-    final response = await verifyAccountEmailDomainWithHttpInfo(id, verifyAccountEmailDomainRequest: verifyAccountEmailDomainRequest, abortTrigger: abortTrigger,);
+  /// * [ActionRequest] actionRequest (required):
+  Future<CreateMailbox201Response?> unarchiveMailbox(String mailboxId, ActionRequest actionRequest, { Future<void>? abortTrigger, }) async {
+    final response = await unarchiveMailboxWithHttpInfo(mailboxId, actionRequest, abortTrigger: abortTrigger,);
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -2457,7 +3595,327 @@ class DefaultApi {
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
     if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'EmailDomainListResponse',) as EmailDomainListResponse;
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateMailbox201Response',) as CreateMailbox201Response;
+    
+    }
+    return null;
+  }
+
+  /// Mark an email read or unread
+  ///
+  /// Only read status can change.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] emailId (required):
+  ///
+  /// * [UpdateEmailRequest] updateEmailRequest (required):
+  ///
+  /// * [bool] includeStorage:
+  ///   Include backing file IDs for file-browser integrations.
+  Future<Response> updateEmailWithHttpInfo(String mailboxId, String emailId, UpdateEmailRequest updateEmailRequest, { bool? includeStorage, Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/emails/{email_id}'
+      .replaceAll('{mailbox_id}', mailboxId)
+      .replaceAll('{email_id}', emailId);
+
+    // ignore: prefer_final_locals
+    Object? postBody = updateEmailRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    if (includeStorage != null) {
+      queryParams.addAll(_queryParams('', 'include_storage', includeStorage));
+    }
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'PATCH',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Mark an email read or unread
+  ///
+  /// Only read status can change.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [String] emailId (required):
+  ///
+  /// * [UpdateEmailRequest] updateEmailRequest (required):
+  ///
+  /// * [bool] includeStorage:
+  ///   Include backing file IDs for file-browser integrations.
+  Future<SendEmail202Response?> updateEmail(String mailboxId, String emailId, UpdateEmailRequest updateEmailRequest, { bool? includeStorage, Future<void>? abortTrigger, }) async {
+    final response = await updateEmailWithHttpInfo(mailboxId, emailId, updateEmailRequest, includeStorage: includeStorage, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'SendEmail202Response',) as SendEmail202Response;
+    
+    }
+    return null;
+  }
+
+  /// Replace the allowed senders
+  ///
+  /// Requires an account owner or administrator with mailbox-admin permission. Send sender_allowlist.version from the settings read as expected_version.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [UpdateEmailAllowlistRequest] updateEmailAllowlistRequest (required):
+  Future<Response> updateEmailAllowlistWithHttpInfo(String mailboxId, UpdateEmailAllowlistRequest updateEmailAllowlistRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}/email/allowlist'
+      .replaceAll('{mailbox_id}', mailboxId);
+
+    // ignore: prefer_final_locals
+    Object? postBody = updateEmailAllowlistRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'PATCH',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Replace the allowed senders
+  ///
+  /// Requires an account owner or administrator with mailbox-admin permission. Send sender_allowlist.version from the settings read as expected_version.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [UpdateEmailAllowlistRequest] updateEmailAllowlistRequest (required):
+  Future<UpdateEmailAllowlist200Response?> updateEmailAllowlist(String mailboxId, UpdateEmailAllowlistRequest updateEmailAllowlistRequest, { Future<void>? abortTrigger, }) async {
+    final response = await updateEmailAllowlistWithHttpInfo(mailboxId, updateEmailAllowlistRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'UpdateEmailAllowlist200Response',) as UpdateEmailAllowlist200Response;
+    
+    }
+    return null;
+  }
+
+  /// Update a mailbox description or metadata
+  ///
+  /// metadata must be a JSON object. It replaces the stored object; {} clears it. Send expected_metadata_version from your last read; a stale value changes nothing and returns MAILBOX_METADATA_CONFLICT.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [UpdateMailboxRequest] updateMailboxRequest (required):
+  Future<Response> updateMailboxWithHttpInfo(String mailboxId, UpdateMailboxRequest updateMailboxRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/mailboxes/{mailbox_id}'
+      .replaceAll('{mailbox_id}', mailboxId);
+
+    // ignore: prefer_final_locals
+    Object? postBody = updateMailboxRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'PATCH',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Update a mailbox description or metadata
+  ///
+  /// metadata must be a JSON object. It replaces the stored object; {} clears it. Send expected_metadata_version from your last read; a stale value changes nothing and returns MAILBOX_METADATA_CONFLICT.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] mailboxId (required):
+  ///
+  /// * [UpdateMailboxRequest] updateMailboxRequest (required):
+  Future<CreateMailbox201Response?> updateMailbox(String mailboxId, UpdateMailboxRequest updateMailboxRequest, { Future<void>? abortTrigger, }) async {
+    final response = await updateMailboxWithHttpInfo(mailboxId, updateMailboxRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateMailbox201Response',) as CreateMailbox201Response;
+    
+    }
+    return null;
+  }
+
+  /// Check DNS and provider setup again
+  ///
+  /// Queues the check and returns the current state. Read the domain again to see the result.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [String] domainId (required):
+  ///
+  /// * [VerifyEmailDomainRequest] verifyEmailDomainRequest (required):
+  Future<Response> verifyEmailDomainWithHttpInfo(String domainId, VerifyEmailDomainRequest verifyEmailDomainRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/account/email_domains/{domain_id}/verify'
+      .replaceAll('{domain_id}', domainId);
+
+    // ignore: prefer_final_locals
+    Object? postBody = verifyEmailDomainRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Check DNS and provider setup again
+  ///
+  /// Queues the check and returns the current state. Read the domain again to see the result.
+  ///
+  /// Parameters:
+  ///
+  /// * [String] domainId (required):
+  ///
+  /// * [VerifyEmailDomainRequest] verifyEmailDomainRequest (required):
+  Future<CreateEmailDomain201Response?> verifyEmailDomain(String domainId, VerifyEmailDomainRequest verifyEmailDomainRequest, { Future<void>? abortTrigger, }) async {
+    final response = await verifyEmailDomainWithHttpInfo(domainId, verifyEmailDomainRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateEmailDomain201Response',) as CreateEmailDomain201Response;
+    
+    }
+    return null;
+  }
+
+  /// Exchange a sign-in code for an API key
+  ///
+  /// Creates an AI agent connection for an account owner or administrator. Accounts with two-factor authentication must use browser sign-in.
+  ///
+  /// Note: This method returns the HTTP [Response].
+  ///
+  /// Parameters:
+  ///
+  /// * [VerifySignInCodeRequest] verifySignInCodeRequest (required):
+  Future<Response> verifySignInCodeWithHttpInfo(VerifySignInCodeRequest verifySignInCodeRequest, { Future<void>? abortTrigger, }) async {
+    // ignore: prefer_const_declarations
+    final path = r'/v1/agent_auth/verify_code';
+
+    // ignore: prefer_final_locals
+    Object? postBody = verifySignInCodeRequest;
+
+    final queryParams = <QueryParam>[];
+    final headerParams = <String, String>{};
+    final formParams = <String, String>{};
+
+    const contentTypes = <String>['application/json'];
+
+
+    return apiClient.invokeAPI(
+      path,
+      'POST',
+      queryParams,
+      postBody,
+      headerParams,
+      formParams,
+      contentTypes.isEmpty ? null : contentTypes.first,
+      abortTrigger: abortTrigger,
+    );
+  }
+
+  /// Exchange a sign-in code for an API key
+  ///
+  /// Creates an AI agent connection for an account owner or administrator. Accounts with two-factor authentication must use browser sign-in.
+  ///
+  /// Parameters:
+  ///
+  /// * [VerifySignInCodeRequest] verifySignInCodeRequest (required):
+  Future<VerifySignInCode201Response?> verifySignInCode(VerifySignInCodeRequest verifySignInCodeRequest, { Future<void>? abortTrigger, }) async {
+    final response = await verifySignInCodeWithHttpInfo(verifySignInCodeRequest, abortTrigger: abortTrigger,);
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, await _decodeBodyBytes(response));
+    }
+    // When a remote server returns no body with a status of 204, we shall not decode it.
+    // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
+    // FormatException when trying to decode an empty string.
+    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'VerifySignInCode201Response',) as VerifySignInCode201Response;
     
     }
     return null;

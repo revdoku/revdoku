@@ -14,6 +14,7 @@ public struct ApiErrorError: Codable, JSONEncodable, Hashable {
 
     public static let codeRule = StringRule(minLength: 1, maxLength: nil, pattern: nil)
     public static let messageRule = StringRule(minLength: 1, maxLength: nil, pattern: nil)
+    /** Stable error identifier. See ErrorCode for the documented values. Invalid input always returns INVALID_ARGUMENT with HTTP 422. */
     public var code: String
     public var message: String
     /** Structured error details: an object or an array of field/message validation errors. */

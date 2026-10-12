@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -41,6 +41,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
   AccountLimits.JSON_PROPERTY_MAX_RECEIVED_EMAILS_PER_MONTH,
   AccountLimits.JSON_PROPERTY_MAX_RECEIVED_EMAIL_BYTES_PER_MONTH,
   AccountLimits.JSON_PROPERTY_MAX_RECEIVED_EMAIL_MESSAGE_BYTES,
+  AccountLimits.JSON_PROPERTY_MAX_SENT_EMAILS_PER_MONTH,
   AccountLimits.JSON_PROPERTY_MAX_EMAIL_ADDRESS_ROTATIONS_PER_MONTH,
   AccountLimits.JSON_PROPERTY_MAX_ACCOUNT_MEMBERS,
   AccountLimits.JSON_PROPERTY_MAX_API_KEYS,
@@ -98,6 +99,10 @@ public class AccountLimits {
   public static final String JSON_PROPERTY_MAX_RECEIVED_EMAIL_MESSAGE_BYTES = "max_received_email_message_bytes";
   @javax.annotation.Nullable
   private Long maxReceivedEmailMessageBytes;
+
+  public static final String JSON_PROPERTY_MAX_SENT_EMAILS_PER_MONTH = "max_sent_emails_per_month";
+  @javax.annotation.Nullable
+  private Integer maxSentEmailsPerMonth;
 
   public static final String JSON_PROPERTY_MAX_EMAIL_ADDRESS_ROTATIONS_PER_MONTH = "max_email_address_rotations_per_month";
   @javax.annotation.Nullable
@@ -430,6 +435,31 @@ public class AccountLimits {
   }
 
 
+  public AccountLimits maxSentEmailsPerMonth(@javax.annotation.Nullable Integer maxSentEmailsPerMonth) {
+    this.maxSentEmailsPerMonth = maxSentEmailsPerMonth;
+    return this;
+  }
+
+  /**
+   * Sent-email recipients per billing period, shared by the billing group. Each recipient counts once.
+   * minimum: 0
+   * @return maxSentEmailsPerMonth
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_MAX_SENT_EMAILS_PER_MONTH, required = false)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public Integer getMaxSentEmailsPerMonth() {
+    return maxSentEmailsPerMonth;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_MAX_SENT_EMAILS_PER_MONTH, required = false)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setMaxSentEmailsPerMonth(@javax.annotation.Nullable Integer maxSentEmailsPerMonth) {
+    this.maxSentEmailsPerMonth = maxSentEmailsPerMonth;
+  }
+
+
   public AccountLimits maxEmailAddressRotationsPerMonth(@javax.annotation.Nullable Integer maxEmailAddressRotationsPerMonth) {
     this.maxEmailAddressRotationsPerMonth = maxEmailAddressRotationsPerMonth;
     return this;
@@ -629,6 +659,7 @@ public class AccountLimits {
         Objects.equals(this.maxReceivedEmailsPerMonth, accountLimits.maxReceivedEmailsPerMonth) &&
         Objects.equals(this.maxReceivedEmailBytesPerMonth, accountLimits.maxReceivedEmailBytesPerMonth) &&
         Objects.equals(this.maxReceivedEmailMessageBytes, accountLimits.maxReceivedEmailMessageBytes) &&
+        Objects.equals(this.maxSentEmailsPerMonth, accountLimits.maxSentEmailsPerMonth) &&
         Objects.equals(this.maxEmailAddressRotationsPerMonth, accountLimits.maxEmailAddressRotationsPerMonth) &&
         Objects.equals(this.maxAccountMembers, accountLimits.maxAccountMembers) &&
         Objects.equals(this.maxApiKeys, accountLimits.maxApiKeys) &&
@@ -640,7 +671,7 @@ public class AccountLimits {
 
   @Override
   public int hashCode() {
-    return Objects.hash(maxMailboxes, maxMailboxCreationsPerMonth, maxFilesPerMailbox, maxCurrentFiles, maxStorageBytes, maxFileSizeBytes, maxPdfSizeBytes, maxFileVersionsPerFile, maxEmailDomains, maxReceivedEmailsPerMonth, maxReceivedEmailBytesPerMonth, maxReceivedEmailMessageBytes, maxEmailAddressRotationsPerMonth, maxAccountMembers, maxApiKeys, maxAgentConnections, apiRateLimitRequestsPerMinute, auditRetentionDays, maxEmailAliasesPerMailbox);
+    return Objects.hash(maxMailboxes, maxMailboxCreationsPerMonth, maxFilesPerMailbox, maxCurrentFiles, maxStorageBytes, maxFileSizeBytes, maxPdfSizeBytes, maxFileVersionsPerFile, maxEmailDomains, maxReceivedEmailsPerMonth, maxReceivedEmailBytesPerMonth, maxReceivedEmailMessageBytes, maxSentEmailsPerMonth, maxEmailAddressRotationsPerMonth, maxAccountMembers, maxApiKeys, maxAgentConnections, apiRateLimitRequestsPerMinute, auditRetentionDays, maxEmailAliasesPerMailbox);
   }
 
   @Override
@@ -659,6 +690,7 @@ public class AccountLimits {
     sb.append("    maxReceivedEmailsPerMonth: ").append(toIndentedString(maxReceivedEmailsPerMonth)).append("\n");
     sb.append("    maxReceivedEmailBytesPerMonth: ").append(toIndentedString(maxReceivedEmailBytesPerMonth)).append("\n");
     sb.append("    maxReceivedEmailMessageBytes: ").append(toIndentedString(maxReceivedEmailMessageBytes)).append("\n");
+    sb.append("    maxSentEmailsPerMonth: ").append(toIndentedString(maxSentEmailsPerMonth)).append("\n");
     sb.append("    maxEmailAddressRotationsPerMonth: ").append(toIndentedString(maxEmailAddressRotationsPerMonth)).append("\n");
     sb.append("    maxAccountMembers: ").append(toIndentedString(maxAccountMembers)).append("\n");
     sb.append("    maxApiKeys: ").append(toIndentedString(maxApiKeys)).append("\n");

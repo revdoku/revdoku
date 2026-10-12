@@ -1,7 +1,7 @@
 /*
- * Revdoku public agent API
+ * Revdoku API
  *
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -13,20 +13,21 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateMailboxRequest {
+    #[serde(rename = "mailbox", skip_serializing_if = "Option::is_none")]
+    pub mailbox: Option<Box<models::MailboxCreate>>,
+    /// Select another granted account for this request.
     #[serde(rename = "account_id", skip_serializing_if = "Option::is_none")]
     pub account_id: Option<String>,
-    #[serde(rename = "mailbox")]
-    pub mailbox: Box<models::MailboxCreateOptions>,
     /// Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
     #[serde(rename = "reason", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
     pub reason: Option<Option<String>>,
 }
 
 impl CreateMailboxRequest {
-    pub fn new(mailbox: models::MailboxCreateOptions) -> CreateMailboxRequest {
+    pub fn new() -> CreateMailboxRequest {
         CreateMailboxRequest {
+            mailbox: None,
             account_id: None,
-            mailbox: Box::new(mailbox),
             reason: None,
         }
     }

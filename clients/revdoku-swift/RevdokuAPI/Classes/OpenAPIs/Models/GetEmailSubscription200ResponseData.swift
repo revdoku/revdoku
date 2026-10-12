@@ -12,9 +12,9 @@ import AnyCodable
 
 public struct GetEmailSubscription200ResponseData: Codable, JSONEncodable, Hashable {
 
-    public var subscription: GetEmailSubscription200ResponseDataSubscription
+    public var subscription: EmailSubscription
 
-    public init(subscription: GetEmailSubscription200ResponseDataSubscription) {
+    public init(subscription: EmailSubscription) {
         self.subscription = subscription
     }
 

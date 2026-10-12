@@ -15,6 +15,7 @@ public struct MailboxAction: Codable, JSONEncodable, Hashable {
     public var allowed: Bool
     public var blockedReason: String?
     public var requiredAction: String?
+    /** Delete only: send this value as confirmation in DELETE /v1/mailboxes/{mailbox_id} after the user confirms. */
     public var confirmation: String?
 
     public init(allowed: Bool, blockedReason: String? = nil, requiredAction: String? = nil, confirmation: String? = nil) {

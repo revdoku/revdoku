@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -26,8 +26,6 @@ module RevdokuApi
 
     attr_accessor :content_type
 
-    attr_accessor :service_name
-
     attr_accessor :direct_upload
 
     attr_accessor :file
@@ -50,7 +48,6 @@ module RevdokuApi
         :'byte_size' => :'byte_size',
         :'checksum' => :'checksum',
         :'content_type' => :'content_type',
-        :'service_name' => :'service_name',
         :'direct_upload' => :'direct_upload',
         :'file' => :'file',
         :'version' => :'version',
@@ -79,7 +76,6 @@ module RevdokuApi
         :'byte_size' => :'Integer',
         :'checksum' => :'String',
         :'content_type' => :'String',
-        :'service_name' => :'String',
         :'direct_upload' => :'StorageUpload',
         :'file' => :'MailboxFile',
         :'version' => :'FileVersion',
@@ -132,10 +128,6 @@ module RevdokuApi
         self.content_type = attributes[:'content_type']
       end
 
-      if attributes.key?(:'service_name')
-        self.service_name = attributes[:'service_name']
-      end
-
       if attributes.key?(:'direct_upload')
         self.direct_upload = attributes[:'direct_upload']
       end
@@ -177,7 +169,6 @@ module RevdokuApi
           byte_size == o.byte_size &&
           checksum == o.checksum &&
           content_type == o.content_type &&
-          service_name == o.service_name &&
           direct_upload == o.direct_upload &&
           file == o.file &&
           version == o.version &&
@@ -196,7 +187,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [signed_id, filename, byte_size, checksum, content_type, service_name, direct_upload, file, version, skipped, duplicate, reason, details].hash
+      [signed_id, filename, byte_size, checksum, content_type, direct_upload, file, version, skipped, duplicate, reason, details].hash
     end
 
     # Builds the object from hash

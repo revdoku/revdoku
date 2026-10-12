@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.revdoku.api.model.ListEmails200ResponseData;
+import com.revdoku.api.model.EmailList;
 import java.util.Arrays;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
@@ -41,7 +41,7 @@ public class ListEmails200Response {
 
   public static final String JSON_PROPERTY_DATA = "data";
   @javax.annotation.Nonnull
-  private ListEmails200ResponseData data;
+  private EmailList data;
 
   public ListEmails200Response() { 
   }
@@ -70,7 +70,7 @@ public class ListEmails200Response {
   }
 
 
-  public ListEmails200Response data(@javax.annotation.Nonnull ListEmails200ResponseData data) {
+  public ListEmails200Response data(@javax.annotation.Nonnull EmailList data) {
     this.data = data;
     return this;
   }
@@ -82,14 +82,14 @@ public class ListEmails200Response {
   @javax.annotation.Nonnull
   @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public ListEmails200ResponseData getData() {
+  public EmailList getData() {
     return data;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setData(@javax.annotation.Nonnull ListEmails200ResponseData data) {
+  public void setData(@javax.annotation.Nonnull EmailList data) {
     this.data = data;
   }
 

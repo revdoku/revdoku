@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
 
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -22,8 +22,8 @@ Gem::Specification.new do |s|
   s.authors     = ["Revdoku"]
   s.email       = ["support@revdoku.com"]
   s.homepage    = "https://revdoku.com"
-  s.summary     = "Revdoku public agent API Ruby Gem"
-  s.description = "Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API."
+  s.summary     = "Revdoku API Ruby Gem"
+  s.description = "Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up."
   s.license     = "MIT"
   s.required_ruby_version = ">= 3.1"
   s.metadata    = { "source_code_uri" => "https://github.com/revdoku/revdoku-ruby", "bug_tracker_uri" => "https://github.com/revdoku/revdoku-ruby/issues" }

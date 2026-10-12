@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -21,7 +21,7 @@ var _ MappedNullable = &ListEmails200Response{}
 // ListEmails200Response struct for ListEmails200Response
 type ListEmails200Response struct {
 	Success bool `json:"success"`
-	Data ListEmails200ResponseData `json:"data"`
+	Data EmailList `json:"data"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -31,7 +31,7 @@ type _ListEmails200Response ListEmails200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewListEmails200Response(success bool, data ListEmails200ResponseData) *ListEmails200Response {
+func NewListEmails200Response(success bool, data EmailList) *ListEmails200Response {
 	this := ListEmails200Response{}
 	this.Success = success
 	this.Data = data
@@ -71,9 +71,9 @@ func (o *ListEmails200Response) SetSuccess(v bool) {
 }
 
 // GetData returns the Data field value
-func (o *ListEmails200Response) GetData() ListEmails200ResponseData {
+func (o *ListEmails200Response) GetData() EmailList {
 	if o == nil {
-		var ret ListEmails200ResponseData
+		var ret EmailList
 		return ret
 	}
 
@@ -82,7 +82,7 @@ func (o *ListEmails200Response) GetData() ListEmails200ResponseData {
 
 // GetDataOk returns a tuple with the Data field value
 // and a boolean to check if the value has been set.
-func (o *ListEmails200Response) GetDataOk() (*ListEmails200ResponseData, bool) {
+func (o *ListEmails200Response) GetDataOk() (*EmailList, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -90,7 +90,7 @@ func (o *ListEmails200Response) GetDataOk() (*ListEmails200ResponseData, bool) {
 }
 
 // SetData sets field value
-func (o *ListEmails200Response) SetData(v ListEmails200ResponseData) {
+func (o *ListEmails200Response) SetData(v EmailList) {
 	o.Data = v
 }
 

@@ -37,6 +37,7 @@ class MailboxAction {
   ///
   String? requiredAction;
 
+  /// Delete only: send this value as confirmation in DELETE /v1/mailboxes/{mailbox_id} after the user confirms.
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated

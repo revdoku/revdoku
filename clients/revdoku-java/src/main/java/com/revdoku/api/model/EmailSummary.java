@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.revdoku.api.model.DecodedEmailAddress;
+import com.revdoku.api.model.EmailDelivery;
 import com.revdoku.api.model.EmailForwarding;
 import com.revdoku.api.model.EmailSummaryFiles;
 import java.time.OffsetDateTime;
@@ -39,10 +40,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * EmailSummary
  */
 @JsonPropertyOrder({
-  EmailSummary.JSON_PROPERTY_SCHEMA_VERSION,
   EmailSummary.JSON_PROPERTY_SUBJECT,
-  EmailSummary.JSON_PROPERTY_FROM,
-  EmailSummary.JSON_PROPERTY_TO,
   EmailSummary.JSON_PROPERTY_FROM_ADDRESSES,
   EmailSummary.JSON_PROPERTY_TO_ADDRESSES,
   EmailSummary.JSON_PROPERTY_CC_ADDRESSES,
@@ -50,13 +48,14 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
   EmailSummary.JSON_PROPERTY_MESSAGE_ID,
   EmailSummary.JSON_PROPERTY_IN_REPLY_TO,
   EmailSummary.JSON_PROPERTY_REFERENCES,
-  EmailSummary.JSON_PROPERTY_THREAD_ID,
   EmailSummary.JSON_PROPERTY_DELIVERED_TO,
   EmailSummary.JSON_PROPERTY_RECEIVED_AT,
   EmailSummary.JSON_PROPERTY_BODY_STATUS,
   EmailSummary.JSON_PROPERTY_OMITTED_ATTACHMENT_COUNT,
   EmailSummary.JSON_PROPERTY_ID,
   EmailSummary.JSON_PROPERTY_CONVERSATION_ID,
+  EmailSummary.JSON_PROPERTY_DIRECTION,
+  EmailSummary.JSON_PROPERTY_DELIVERY,
   EmailSummary.JSON_PROPERTY_FILE_ID,
   EmailSummary.JSON_PROPERTY_VERSION_ID,
   EmailSummary.JSON_PROPERTY_ATTACHMENT_COUNT,
@@ -65,57 +64,12 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
   EmailSummary.JSON_PROPERTY_READ_BY,
   EmailSummary.JSON_PROPERTY_READ_BY_API_KEY,
   EmailSummary.JSON_PROPERTY_FILES,
-  EmailSummary.JSON_PROPERTY_FORWARDING,
-  EmailSummary.JSON_PROPERTY_CC,
-  EmailSummary.JSON_PROPERTY_REPLY_TO
+  EmailSummary.JSON_PROPERTY_FORWARDING
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class EmailSummary {
-  /**
-   * Gets or Sets schemaVersion
-   */
-  public enum SchemaVersionEnum {
-    NUMBER_1(Integer.valueOf(1));
-
-    private Integer value;
-
-    SchemaVersionEnum(Integer value) {
-      this.value = value;
-    }
-
-    @JsonValue
-    public Integer getValue() {
-      return value;
-    }
-
-    @Override
-    public String toString() {
-      return String.valueOf(value);
-    }
-
-    @JsonCreator
-    public static SchemaVersionEnum fromValue(Integer value) {
-      for (SchemaVersionEnum b : SchemaVersionEnum.values()) {
-        if (b.value.equals(value)) {
-          return b;
-        }
-      }
-      throw new IllegalArgumentException("Unexpected value '" + value + "'");
-    }
-  }
-
-  public static final String JSON_PROPERTY_SCHEMA_VERSION = "schema_version";
-  @javax.annotation.Nullable
-  private SchemaVersionEnum schemaVersion;
-
   public static final String JSON_PROPERTY_SUBJECT = "subject";
   private JsonNullable<String> subject = JsonNullable.<String>undefined();
-
-  public static final String JSON_PROPERTY_FROM = "from";
-  private JsonNullable<String> from = JsonNullable.<String>undefined();
-
-  public static final String JSON_PROPERTY_TO = "to";
-  private JsonNullable<String> to = JsonNullable.<String>undefined();
 
   public static final String JSON_PROPERTY_FROM_ADDRESSES = "from_addresses";
   @javax.annotation.Nullable
@@ -143,9 +97,6 @@ public class EmailSummary {
   public static final String JSON_PROPERTY_REFERENCES = "references";
   @javax.annotation.Nullable
   private List<String> references = new ArrayList<>();
-
-  public static final String JSON_PROPERTY_THREAD_ID = "thread_id";
-  private JsonNullable<String> threadId = JsonNullable.<String>undefined();
 
   public static final String JSON_PROPERTY_DELIVERED_TO = "delivered_to";
   @javax.annotation.Nullable
@@ -210,6 +161,49 @@ public class EmailSummary {
   @javax.annotation.Nonnull
   private String conversationId;
 
+  /**
+   * received for incoming email; sent for email sent from this mailbox.
+   */
+  public enum DirectionEnum {
+    RECEIVED(String.valueOf("received")),
+    
+    SENT(String.valueOf("sent"));
+
+    private String value;
+
+    DirectionEnum(String value) {
+      this.value = value;
+    }
+
+    @JsonValue
+    public String getValue() {
+      return value;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(value);
+    }
+
+    @JsonCreator
+    public static DirectionEnum fromValue(String value) {
+      for (DirectionEnum b : DirectionEnum.values()) {
+        if (b.value.equals(value)) {
+          return b;
+        }
+      }
+      throw new IllegalArgumentException("Unexpected value '" + value + "'");
+    }
+  }
+
+  public static final String JSON_PROPERTY_DIRECTION = "direction";
+  @javax.annotation.Nonnull
+  private DirectionEnum direction;
+
+  public static final String JSON_PROPERTY_DELIVERY = "delivery";
+  @javax.annotation.Nullable
+  private EmailDelivery delivery;
+
   public static final String JSON_PROPERTY_FILE_ID = "file_id";
   @javax.annotation.Nullable
   private String fileId;
@@ -246,38 +240,8 @@ public class EmailSummary {
   @javax.annotation.Nullable
   private EmailForwarding forwarding;
 
-  public static final String JSON_PROPERTY_CC = "cc";
-  private JsonNullable<String> cc = JsonNullable.<String>undefined();
-
-  public static final String JSON_PROPERTY_REPLY_TO = "reply_to";
-  private JsonNullable<String> replyTo = JsonNullable.<String>undefined();
-
   public EmailSummary() { 
   }
-
-  public EmailSummary schemaVersion(@javax.annotation.Nullable SchemaVersionEnum schemaVersion) {
-    this.schemaVersion = schemaVersion;
-    return this;
-  }
-
-  /**
-   * Get schemaVersion
-   * @return schemaVersion
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_SCHEMA_VERSION, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public SchemaVersionEnum getSchemaVersion() {
-    return schemaVersion;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_SCHEMA_VERSION, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setSchemaVersion(@javax.annotation.Nullable SchemaVersionEnum schemaVersion) {
-    this.schemaVersion = schemaVersion;
-  }
-
 
   public EmailSummary subject(@javax.annotation.Nullable String subject) {
     this.subject = JsonNullable.<String>of(subject);
@@ -308,70 +272,6 @@ public class EmailSummary {
 
   public void setSubject(@javax.annotation.Nullable String subject) {
     this.subject = JsonNullable.<String>of(subject);
-  }
-
-
-  public EmailSummary from(@javax.annotation.Nullable String from) {
-    this.from = JsonNullable.<String>of(from);
-    return this;
-  }
-
-  /**
-   * Get from
-   * @return from
-   */
-  @javax.annotation.Nullable
-  @JsonIgnore
-  public String getFrom() {
-        return from.orElse(null);
-  }
-
-  @JsonProperty(value = JSON_PROPERTY_FROM, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-
-  public JsonNullable<String> getFrom_JsonNullable() {
-    return from;
-  }
-  
-  @JsonProperty(JSON_PROPERTY_FROM)
-  public void setFrom_JsonNullable(JsonNullable<String> from) {
-    this.from = from;
-  }
-
-  public void setFrom(@javax.annotation.Nullable String from) {
-    this.from = JsonNullable.<String>of(from);
-  }
-
-
-  public EmailSummary to(@javax.annotation.Nullable String to) {
-    this.to = JsonNullable.<String>of(to);
-    return this;
-  }
-
-  /**
-   * Get to
-   * @return to
-   */
-  @javax.annotation.Nullable
-  @JsonIgnore
-  public String getTo() {
-        return to.orElse(null);
-  }
-
-  @JsonProperty(value = JSON_PROPERTY_TO, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-
-  public JsonNullable<String> getTo_JsonNullable() {
-    return to;
-  }
-  
-  @JsonProperty(JSON_PROPERTY_TO)
-  public void setTo_JsonNullable(JsonNullable<String> to) {
-    this.to = to;
-  }
-
-  public void setTo(@javax.annotation.Nullable String to) {
-    this.to = JsonNullable.<String>of(to);
   }
 
 
@@ -599,38 +499,6 @@ public class EmailSummary {
   }
 
 
-  public EmailSummary threadId(@javax.annotation.Nullable String threadId) {
-    this.threadId = JsonNullable.<String>of(threadId);
-    return this;
-  }
-
-  /**
-   * thr_ plus SHA-256 of thread_anchor_message_id. Best-effort header-derived grouping hint, not authoritative conversation membership or an access grant. Missing ancestry or reused IDs can split/merge hints. Scope lookups to accessible mailboxes.
-   * @return threadId
-   */
-  @javax.annotation.Nullable
-  @JsonIgnore
-  public String getThreadId() {
-        return threadId.orElse(null);
-  }
-
-  @JsonProperty(value = JSON_PROPERTY_THREAD_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-
-  public JsonNullable<String> getThreadId_JsonNullable() {
-    return threadId;
-  }
-  
-  @JsonProperty(JSON_PROPERTY_THREAD_ID)
-  public void setThreadId_JsonNullable(JsonNullable<String> threadId) {
-    this.threadId = threadId;
-  }
-
-  public void setThreadId(@javax.annotation.Nullable String threadId) {
-    this.threadId = JsonNullable.<String>of(threadId);
-  }
-
-
   public EmailSummary deliveredTo(@javax.annotation.Nullable String deliveredTo) {
     this.deliveredTo = deliveredTo;
     return this;
@@ -661,7 +529,7 @@ public class EmailSummary {
   }
 
   /**
-   * Get receivedAt
+   * Receipt time. For sent emails, the time Revdoku accepted the send.
    * @return receivedAt
    */
   @javax.annotation.Nonnull
@@ -758,7 +626,7 @@ public class EmailSummary {
   }
 
   /**
-   * Get conversationId
+   * Email ID that identifies the conversation. Replies are linked by email headers. Filter a list with conversation_id.
    * @return conversationId
    */
   @javax.annotation.Nonnull
@@ -773,6 +641,54 @@ public class EmailSummary {
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public void setConversationId(@javax.annotation.Nonnull String conversationId) {
     this.conversationId = conversationId;
+  }
+
+
+  public EmailSummary direction(@javax.annotation.Nonnull DirectionEnum direction) {
+    this.direction = direction;
+    return this;
+  }
+
+  /**
+   * received for incoming email; sent for email sent from this mailbox.
+   * @return direction
+   */
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_DIRECTION, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public DirectionEnum getDirection() {
+    return direction;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_DIRECTION, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setDirection(@javax.annotation.Nonnull DirectionEnum direction) {
+    this.direction = direction;
+  }
+
+
+  public EmailSummary delivery(@javax.annotation.Nullable EmailDelivery delivery) {
+    this.delivery = delivery;
+    return this;
+  }
+
+  /**
+   * Get delivery
+   * @return delivery
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_DELIVERY, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public EmailDelivery getDelivery() {
+    return delivery;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_DELIVERY, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setDelivery(@javax.annotation.Nullable EmailDelivery delivery) {
+    this.delivery = delivery;
   }
 
 
@@ -993,70 +909,6 @@ public class EmailSummary {
   }
 
 
-  public EmailSummary cc(@javax.annotation.Nullable String cc) {
-    this.cc = JsonNullable.<String>of(cc);
-    return this;
-  }
-
-  /**
-   * Decoded Cc header; use the corresponding parsed address array for individual addresses.
-   * @return cc
-   */
-  @javax.annotation.Nullable
-  @JsonIgnore
-  public String getCc() {
-        return cc.orElse(null);
-  }
-
-  @JsonProperty(value = JSON_PROPERTY_CC, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-
-  public JsonNullable<String> getCc_JsonNullable() {
-    return cc;
-  }
-  
-  @JsonProperty(JSON_PROPERTY_CC)
-  public void setCc_JsonNullable(JsonNullable<String> cc) {
-    this.cc = cc;
-  }
-
-  public void setCc(@javax.annotation.Nullable String cc) {
-    this.cc = JsonNullable.<String>of(cc);
-  }
-
-
-  public EmailSummary replyTo(@javax.annotation.Nullable String replyTo) {
-    this.replyTo = JsonNullable.<String>of(replyTo);
-    return this;
-  }
-
-  /**
-   * Decoded Reply-To header; use the corresponding parsed address array for individual addresses.
-   * @return replyTo
-   */
-  @javax.annotation.Nullable
-  @JsonIgnore
-  public String getReplyTo() {
-        return replyTo.orElse(null);
-  }
-
-  @JsonProperty(value = JSON_PROPERTY_REPLY_TO, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-
-  public JsonNullable<String> getReplyTo_JsonNullable() {
-    return replyTo;
-  }
-  
-  @JsonProperty(JSON_PROPERTY_REPLY_TO)
-  public void setReplyTo_JsonNullable(JsonNullable<String> replyTo) {
-    this.replyTo = replyTo;
-  }
-
-  public void setReplyTo(@javax.annotation.Nullable String replyTo) {
-    this.replyTo = JsonNullable.<String>of(replyTo);
-  }
-
-
   /**
    * Return true if this EmailSummary object is equal to o.
    */
@@ -1069,10 +921,7 @@ public class EmailSummary {
       return false;
     }
     EmailSummary emailSummary = (EmailSummary) o;
-    return Objects.equals(this.schemaVersion, emailSummary.schemaVersion) &&
-        equalsNullable(this.subject, emailSummary.subject) &&
-        equalsNullable(this.from, emailSummary.from) &&
-        equalsNullable(this.to, emailSummary.to) &&
+    return equalsNullable(this.subject, emailSummary.subject) &&
         Objects.equals(this.fromAddresses, emailSummary.fromAddresses) &&
         Objects.equals(this.toAddresses, emailSummary.toAddresses) &&
         Objects.equals(this.ccAddresses, emailSummary.ccAddresses) &&
@@ -1080,13 +929,14 @@ public class EmailSummary {
         equalsNullable(this.messageId, emailSummary.messageId) &&
         Objects.equals(this.inReplyTo, emailSummary.inReplyTo) &&
         Objects.equals(this.references, emailSummary.references) &&
-        equalsNullable(this.threadId, emailSummary.threadId) &&
         Objects.equals(this.deliveredTo, emailSummary.deliveredTo) &&
         Objects.equals(this.receivedAt, emailSummary.receivedAt) &&
         Objects.equals(this.bodyStatus, emailSummary.bodyStatus) &&
         Objects.equals(this.omittedAttachmentCount, emailSummary.omittedAttachmentCount) &&
         Objects.equals(this.id, emailSummary.id) &&
         Objects.equals(this.conversationId, emailSummary.conversationId) &&
+        Objects.equals(this.direction, emailSummary.direction) &&
+        Objects.equals(this.delivery, emailSummary.delivery) &&
         Objects.equals(this.fileId, emailSummary.fileId) &&
         Objects.equals(this.versionId, emailSummary.versionId) &&
         Objects.equals(this.attachmentCount, emailSummary.attachmentCount) &&
@@ -1095,9 +945,7 @@ public class EmailSummary {
         Objects.equals(this.readBy, emailSummary.readBy) &&
         Objects.equals(this.readByApiKey, emailSummary.readByApiKey) &&
         Objects.equals(this.files, emailSummary.files) &&
-        Objects.equals(this.forwarding, emailSummary.forwarding) &&
-        equalsNullable(this.cc, emailSummary.cc) &&
-        equalsNullable(this.replyTo, emailSummary.replyTo);
+        Objects.equals(this.forwarding, emailSummary.forwarding);
   }
 
   private static <T> boolean equalsNullable(JsonNullable<T> a, JsonNullable<T> b) {
@@ -1106,7 +954,7 @@ public class EmailSummary {
 
   @Override
   public int hashCode() {
-    return Objects.hash(schemaVersion, hashCodeNullable(subject), hashCodeNullable(from), hashCodeNullable(to), fromAddresses, toAddresses, ccAddresses, replyToAddresses, hashCodeNullable(messageId), inReplyTo, references, hashCodeNullable(threadId), deliveredTo, receivedAt, bodyStatus, omittedAttachmentCount, id, conversationId, fileId, versionId, attachmentCount, read, readAt, readBy, readByApiKey, files, forwarding, hashCodeNullable(cc), hashCodeNullable(replyTo));
+    return Objects.hash(hashCodeNullable(subject), fromAddresses, toAddresses, ccAddresses, replyToAddresses, hashCodeNullable(messageId), inReplyTo, references, deliveredTo, receivedAt, bodyStatus, omittedAttachmentCount, id, conversationId, direction, delivery, fileId, versionId, attachmentCount, read, readAt, readBy, readByApiKey, files, forwarding);
   }
 
   private static <T> int hashCodeNullable(JsonNullable<T> a) {
@@ -1120,10 +968,7 @@ public class EmailSummary {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class EmailSummary {\n");
-    sb.append("    schemaVersion: ").append(toIndentedString(schemaVersion)).append("\n");
     sb.append("    subject: ").append(toIndentedString(subject)).append("\n");
-    sb.append("    from: ").append(toIndentedString(from)).append("\n");
-    sb.append("    to: ").append(toIndentedString(to)).append("\n");
     sb.append("    fromAddresses: ").append(toIndentedString(fromAddresses)).append("\n");
     sb.append("    toAddresses: ").append(toIndentedString(toAddresses)).append("\n");
     sb.append("    ccAddresses: ").append(toIndentedString(ccAddresses)).append("\n");
@@ -1131,13 +976,14 @@ public class EmailSummary {
     sb.append("    messageId: ").append(toIndentedString(messageId)).append("\n");
     sb.append("    inReplyTo: ").append(toIndentedString(inReplyTo)).append("\n");
     sb.append("    references: ").append(toIndentedString(references)).append("\n");
-    sb.append("    threadId: ").append(toIndentedString(threadId)).append("\n");
     sb.append("    deliveredTo: ").append(toIndentedString(deliveredTo)).append("\n");
     sb.append("    receivedAt: ").append(toIndentedString(receivedAt)).append("\n");
     sb.append("    bodyStatus: ").append(toIndentedString(bodyStatus)).append("\n");
     sb.append("    omittedAttachmentCount: ").append(toIndentedString(omittedAttachmentCount)).append("\n");
     sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    conversationId: ").append(toIndentedString(conversationId)).append("\n");
+    sb.append("    direction: ").append(toIndentedString(direction)).append("\n");
+    sb.append("    delivery: ").append(toIndentedString(delivery)).append("\n");
     sb.append("    fileId: ").append(toIndentedString(fileId)).append("\n");
     sb.append("    versionId: ").append(toIndentedString(versionId)).append("\n");
     sb.append("    attachmentCount: ").append(toIndentedString(attachmentCount)).append("\n");
@@ -1147,8 +993,6 @@ public class EmailSummary {
     sb.append("    readByApiKey: ").append(toIndentedString(readByApiKey)).append("\n");
     sb.append("    files: ").append(toIndentedString(files)).append("\n");
     sb.append("    forwarding: ").append(toIndentedString(forwarding)).append("\n");
-    sb.append("    cc: ").append(toIndentedString(cc)).append("\n");
-    sb.append("    replyTo: ").append(toIndentedString(replyTo)).append("\n");
     sb.append("}");
     return sb.toString();
   }

@@ -14,46 +14,15 @@ class EmailDomainList {
   /// Returns a new [EmailDomainList] instance.
   EmailDomainList({
     this.domains = const [],
-    this.enabled,
-    this.configured,
-    this.limit,
-    this.usage,
+    required this.enabled,
     this.guidance,
+    required this.pagination,
   });
 
   List<EmailDomain> domains;
 
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  bool? enabled;
-
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  bool? configured;
-
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  int? limit;
-
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  EmailUsage? usage;
+  /// Whether this account can use custom email domains.
+  bool enabled;
 
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
@@ -63,46 +32,34 @@ class EmailDomainList {
   ///
   String? guidance;
 
+  Pagination pagination;
+
   @override
   bool operator ==(Object other) => identical(this, other) || other is EmailDomainList &&
     _deepEquality.equals(other.domains, domains) &&
     other.enabled == enabled &&
-    other.configured == configured &&
-    other.limit == limit &&
-    other.usage == usage &&
-    other.guidance == guidance;
+    other.guidance == guidance &&
+    other.pagination == pagination;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
     (domains.hashCode) +
-    (enabled == null ? 0 : enabled!.hashCode) +
-    (configured == null ? 0 : configured!.hashCode) +
-    (limit == null ? 0 : limit!.hashCode) +
-    (usage == null ? 0 : usage!.hashCode) +
-    (guidance == null ? 0 : guidance!.hashCode);
+    (enabled.hashCode) +
+    (guidance == null ? 0 : guidance!.hashCode) +
+    (pagination.hashCode);
 
   @override
-  String toString() => 'EmailDomainList[domains=$domains, enabled=$enabled, configured=$configured, limit=$limit, usage=$usage, guidance=$guidance]';
+  String toString() => 'EmailDomainList[domains=$domains, enabled=$enabled, guidance=$guidance, pagination=$pagination]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
       json[r'domains'] = this.domains;
-    if (this.enabled != null) {
       json[r'enabled'] = this.enabled;
-    }
-    if (this.configured != null) {
-      json[r'configured'] = this.configured;
-    }
-    if (this.limit != null) {
-      json[r'limit'] = this.limit;
-    }
-    if (this.usage != null) {
-      json[r'usage'] = this.usage;
-    }
     if (this.guidance != null) {
       json[r'guidance'] = this.guidance;
     }
+      json[r'pagination'] = this.pagination;
     return json;
   }
 
@@ -119,16 +76,18 @@ class EmailDomainList {
       assert(() {
         assert(json.containsKey(r'domains'), 'Required key "EmailDomainList[domains]" is missing from JSON.');
         assert(json[r'domains'] != null, 'Required key "EmailDomainList[domains]" has a null value in JSON.');
+        assert(json.containsKey(r'enabled'), 'Required key "EmailDomainList[enabled]" is missing from JSON.');
+        assert(json[r'enabled'] != null, 'Required key "EmailDomainList[enabled]" has a null value in JSON.');
+        assert(json.containsKey(r'pagination'), 'Required key "EmailDomainList[pagination]" is missing from JSON.');
+        assert(json[r'pagination'] != null, 'Required key "EmailDomainList[pagination]" has a null value in JSON.');
         return true;
       }());
 
       return EmailDomainList(
         domains: EmailDomain.listFromJson(json[r'domains']),
-        enabled: mapValueOfType<bool>(json, r'enabled'),
-        configured: mapValueOfType<bool>(json, r'configured'),
-        limit: mapValueOfType<int>(json, r'limit'),
-        usage: EmailUsage.fromJson(json[r'usage']),
+        enabled: mapValueOfType<bool>(json, r'enabled')!,
         guidance: mapValueOfType<String>(json, r'guidance'),
+        pagination: Pagination.fromJson(json[r'pagination'])!,
       );
     }
     return null;
@@ -177,6 +136,8 @@ class EmailDomainList {
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
     'domains',
+    'enabled',
+    'pagination',
   };
 }
 

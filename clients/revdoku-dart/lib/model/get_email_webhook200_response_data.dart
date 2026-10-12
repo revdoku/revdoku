@@ -16,7 +16,7 @@ class GetEmailWebhook200ResponseData {
     required this.webhook,
   });
 
-  GetEmailWebhook200ResponseDataWebhook? webhook;
+  Webhook? webhook;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is GetEmailWebhook200ResponseData &&
@@ -56,7 +56,7 @@ class GetEmailWebhook200ResponseData {
       }());
 
       return GetEmailWebhook200ResponseData(
-        webhook: GetEmailWebhook200ResponseDataWebhook.fromJson(json[r'webhook']),
+        webhook: Webhook.fromJson(json[r'webhook']),
       );
     }
     return null;

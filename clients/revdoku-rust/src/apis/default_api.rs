@@ -1,7 +1,7 @@
 /*
- * Revdoku public agent API
+ * Revdoku API
  *
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -15,28 +15,58 @@ use crate::{apis::ResponseContent, models};
 use super::{Error, configuration, ContentType};
 
 
-/// struct for typed errors of method [`check_email_hostname`]
+/// struct for typed errors of method [`add_upload_session_files`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum CheckEmailHostnameError {
-    Status403(models::ApiError),
-    Status409(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
-    Status503(models::ApiError),
+pub enum AddUploadSessionFilesError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
 
-/// struct for typed errors of method [`create_account_email_domain`]
+/// struct for typed errors of method [`append_text`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum CreateAccountEmailDomainError {
-    Status403(models::ApiError),
-    Status409(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
-    Status503(models::ApiError),
+pub enum AppendTextError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`archive_mailbox`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum ArchiveMailboxError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`change_mailbox_address`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum ChangeMailboxAddressError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`check_email_domain`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CheckEmailDomainError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`copy_file`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CopyFileError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`create_browser_link`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CreateBrowserLinkError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
@@ -45,7 +75,22 @@ pub enum CreateAccountEmailDomainError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum CreateClientAccountError {
-    Status403(models::ApiError),
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`create_email_alias`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CreateEmailAliasError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`create_email_domain`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CreateEmailDomainError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
@@ -55,22 +100,15 @@ pub enum CreateClientAccountError {
 #[serde(untagged)]
 pub enum CreateMailboxError {
     Status401(models::ApiError),
-    Status403(models::ApiError),
-    Status409(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
-    Status503(models::ApiError),
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
 
-/// struct for typed errors of method [`create_mailbox_email_alias`]
+/// struct for typed errors of method [`create_upload_session`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum CreateMailboxEmailAliasError {
-    Status403(models::ApiError),
-    Status409(models::ApiError),
-    Status422(models::ApiError),
+pub enum CreateUploadSessionError {
+    DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
 
@@ -78,9 +116,23 @@ pub enum CreateMailboxEmailAliasError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum DeleteEmailError {
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status423(models::ApiError),
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`delete_email_alias`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum DeleteEmailAliasError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`delete_email_domain`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum DeleteEmailDomainError {
+    DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
 
@@ -88,23 +140,38 @@ pub enum DeleteEmailError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum DeleteEmailWebhookError {
-    Status401(models::ApiError),
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
 
-/// struct for typed errors of method [`delete_mailbox_email_alias`]
+/// struct for typed errors of method [`delete_file`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum DeleteMailboxEmailAliasError {
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status409(models::ApiError),
-    Status423(models::ApiError),
+pub enum DeleteFileError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`delete_mailbox`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum DeleteMailboxError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`exchange_connection_grant`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum ExchangeConnectionGrantError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`finalize_upload_session`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum FinalizeUploadSessionError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
@@ -113,19 +180,6 @@ pub enum DeleteMailboxEmailAliasError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum GetAccountError {
-    DefaultResponse(models::ApiError),
-    UnknownValue(serde_json::Value),
-}
-
-/// struct for typed errors of method [`get_account_email_domain`]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum GetAccountEmailDomainError {
-    Status403(models::ApiError),
-    Status409(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
-    Status503(models::ApiError),
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
@@ -142,45 +196,30 @@ pub enum GetAccountLimitsError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum GetEmailError {
-    Status401(models::ApiError),
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status409(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
-    Status503(models::ApiError),
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
 
-/// struct for typed errors of method [`get_email_attachment_download_url`]
+/// struct for typed errors of method [`get_email_attachment_download`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum GetEmailAttachmentDownloadUrlError {
-    Status401(models::ApiError),
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status409(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
-    Status503(models::ApiError),
-    Status413(models::ApiError),
+pub enum GetEmailAttachmentDownloadError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
 
-/// struct for typed errors of method [`get_email_original_download_url`]
+/// struct for typed errors of method [`get_email_domain`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum GetEmailOriginalDownloadUrlError {
-    Status401(models::ApiError),
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status409(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
-    Status503(models::ApiError),
-    Status413(models::ApiError),
+pub enum GetEmailDomainError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`get_email_original_download`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum GetEmailOriginalDownloadError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
@@ -189,11 +228,6 @@ pub enum GetEmailOriginalDownloadUrlError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum GetEmailSubscriptionError {
-    Status401(models::ApiError),
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
@@ -202,11 +236,30 @@ pub enum GetEmailSubscriptionError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum GetEmailWebhookError {
-    Status401(models::ApiError),
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`get_file`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum GetFileError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`get_file_by_path`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum GetFileByPathError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`get_file_download`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum GetFileDownloadError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
@@ -215,8 +268,6 @@ pub enum GetEmailWebhookError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum GetMailboxError {
-    Status403(models::ApiError),
-    Status422(models::ApiError),
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
@@ -225,37 +276,14 @@ pub enum GetMailboxError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum GetMailboxEmailSettingsError {
-    Status403(models::ApiError),
-    Status404(models::ApiError),
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
 
-/// struct for typed errors of method [`get_mailbox_file`]
+/// struct for typed errors of method [`get_status`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum GetMailboxFileError {
-    DefaultResponse(models::ApiError),
-    UnknownValue(serde_json::Value),
-}
-
-/// struct for typed errors of method [`get_revdoku_status`]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum GetRevdokuStatusError {
-    DefaultResponse(models::ApiError),
-    UnknownValue(serde_json::Value),
-}
-
-/// struct for typed errors of method [`list_account_email_domains`]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum ListAccountEmailDomainsError {
-    Status403(models::ApiError),
-    Status409(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
-    Status503(models::ApiError),
+pub enum GetStatusError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
@@ -268,26 +296,34 @@ pub enum ListAccountsError {
     UnknownValue(serde_json::Value),
 }
 
-/// struct for typed errors of method [`list_emails`]
+/// struct for typed errors of method [`list_email_domains`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum ListEmailsError {
-    Status401(models::ApiError),
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status409(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
-    Status503(models::ApiError),
+pub enum ListEmailDomainsError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
 
-/// struct for typed errors of method [`list_mailbox_files`]
+/// struct for typed errors of method [`list_emails`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum ListMailboxFilesError {
-    Status404(models::ApiError),
+pub enum ListEmailsError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`list_file_versions`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum ListFileVersionsError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`list_files`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum ListFilesError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
@@ -300,6 +336,14 @@ pub enum ListMailboxesError {
     UnknownValue(serde_json::Value),
 }
 
+/// struct for typed errors of method [`move_file`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum MoveFileError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
 /// struct for typed errors of method [`prepare_file_upload`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -308,29 +352,34 @@ pub enum PrepareFileUploadError {
     UnknownValue(serde_json::Value),
 }
 
-/// struct for typed errors of method [`remove_account_email_domain`]
+/// struct for typed errors of method [`rename_file`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum RemoveAccountEmailDomainError {
-    Status403(models::ApiError),
-    Status409(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
-    Status503(models::ApiError),
+pub enum RenameFileError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
 
-/// struct for typed errors of method [`rotate_mailbox_email_address`]
+/// struct for typed errors of method [`request_sign_in_code`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum RotateMailboxEmailAddressError {
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status409(models::ApiError),
-    Status422(models::ApiError),
-    Status423(models::ApiError),
-    Status429(models::ApiError),
+pub enum RequestSignInCodeError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`restore_file_version`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum RestoreFileVersionError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`save_upload_session_batch`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SaveUploadSessionBatchError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
@@ -343,15 +392,26 @@ pub enum SaveUploadedFileError {
     UnknownValue(serde_json::Value),
 }
 
+/// struct for typed errors of method [`send_email`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SendEmailError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
 /// struct for typed errors of method [`set_email_webhook`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum SetEmailWebhookError {
-    Status401(models::ApiError),
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`unarchive_mailbox`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum UnarchiveMailboxError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
@@ -360,48 +420,216 @@ pub enum SetEmailWebhookError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum UpdateEmailError {
-    Status401(models::ApiError),
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status409(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
-    Status503(models::ApiError),
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
 
-/// struct for typed errors of method [`update_mailbox_email_allowlist`]
+/// struct for typed errors of method [`update_email_allowlist`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum UpdateMailboxEmailAllowlistError {
-    Status403(models::ApiError),
-    Status404(models::ApiError),
-    Status409(models::ApiError),
-    Status422(models::ApiError),
-    Status423(models::ApiError),
+pub enum UpdateEmailAllowlistError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
 
-/// struct for typed errors of method [`verify_account_email_domain`]
+/// struct for typed errors of method [`update_mailbox`]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum VerifyAccountEmailDomainError {
-    Status403(models::ApiError),
-    Status409(models::ApiError),
-    Status422(models::ApiError),
-    Status429(models::ApiError),
-    Status503(models::ApiError),
+pub enum UpdateMailboxError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`verify_email_domain`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum VerifyEmailDomainError {
+    DefaultResponse(models::ApiError),
+    UnknownValue(serde_json::Value),
+}
+
+/// struct for typed errors of method [`verify_sign_in_code`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum VerifySignInCodeError {
     DefaultResponse(models::ApiError),
     UnknownValue(serde_json::Value),
 }
 
 
-/// Requires full-account owner/administrator access. Checks the exact hostname for conflicting MX or CNAME records without creating a claim or changing DNS. If the root already receives email elsewhere, use an unused subdomain such as mailbox.yourdomain.com. Cookie-authenticated requests require CSRF.
-pub async fn check_email_hostname(configuration: &configuration::Configuration, create_account_email_domain_request: models::CreateAccountEmailDomainRequest) -> Result<models::EmailDomainCheckResponse, Error<CheckEmailHostnameError>> {
+/// Returns upload.url and upload.headers for each file that needs bytes. Repeating a path returns a fresh target, for example after a failed PUT. Files with identical content are skipped.
+pub async fn add_upload_session_files(configuration: &configuration::Configuration, mailbox_id: &str, session_id: &str, add_upload_session_files_request: models::AddUploadSessionFilesRequest) -> Result<models::CreateUploadSession201Response, Error<AddUploadSessionFilesError>> {
     // add a prefix to parameters to efficiently prevent name collisions
-    let p_body_create_account_email_domain_request = create_account_email_domain_request;
+    let p_path_mailbox_id = mailbox_id;
+    let p_path_session_id = session_id;
+    let p_body_add_upload_session_files_request = add_upload_session_files_request;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/uploads", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id), session_id=crate::apis::urlencode(p_path_session_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_add_upload_session_files_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::CreateUploadSession201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::CreateUploadSession201Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<AddUploadSessionFilesError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Appends UTF-8 text to an existing text file and creates a new version. A missing file returns MAILBOX_FILE_NOT_FOUND.
+pub async fn append_text(configuration: &configuration::Configuration, mailbox_id: &str, append_text_request: models::AppendTextRequest) -> Result<models::AppendText200Response, Error<AppendTextError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_body_append_text_request = append_text_request;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/files/append_text", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_append_text_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::AppendText200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::AppendText200Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<AppendTextError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Archived mailboxes keep their files and emails and become read-only.
+pub async fn archive_mailbox(configuration: &configuration::Configuration, mailbox_id: &str, action_request: models::ActionRequest) -> Result<models::CreateMailbox201Response, Error<ArchiveMailboxError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_body_action_request = action_request;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/archive", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_action_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::CreateMailbox201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::CreateMailbox201Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<ArchiveMailboxError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. The old address stops receiving unless keep_old_as_alias is true.
+pub async fn change_mailbox_address(configuration: &configuration::Configuration, mailbox_id: &str, change_mailbox_address_request: models::ChangeMailboxAddressRequest) -> Result<models::GetMailboxEmailSettings200Response, Error<ChangeMailboxAddressError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_body_change_mailbox_address_request = change_mailbox_address_request;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/email/rotate", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_change_mailbox_address_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::GetMailboxEmailSettings200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::GetMailboxEmailSettings200Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<ChangeMailboxAddressError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Makes no claim and changes no DNS. If the root domain already receives email, use an unused subdomain such as inbox.example.com.
+pub async fn check_email_domain(configuration: &configuration::Configuration, create_email_domain_request: models::CreateEmailDomainRequest) -> Result<models::CheckEmailDomain200Response, Error<CheckEmailDomainError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_body_create_email_domain_request = create_email_domain_request;
 
     let uri_str = format!("{}/v1/account/email_domains/check", configuration.base_path);
     let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
@@ -412,7 +640,7 @@ pub async fn check_email_hostname(configuration: &configuration::Configuration, 
     if let Some(ref token) = configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token.to_owned());
     };
-    req_builder = req_builder.json(&p_body_create_account_email_domain_request);
+    req_builder = req_builder.json(&p_body_create_email_domain_request);
 
     let req = req_builder.build()?;
     let resp = configuration.client.execute(req).await?;
@@ -429,22 +657,24 @@ pub async fn check_email_hostname(configuration: &configuration::Configuration, 
         let content = resp.text().await?;
         match content_type {
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::EmailDomainCheckResponse`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::EmailDomainCheckResponse`")))),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::CheckEmailDomain200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::CheckEmailDomain200Response`")))),
         }
     } else {
         let content = resp.text().await?;
-        let entity: Option<CheckEmailHostnameError> = serde_json::from_str(&content).ok();
+        let entity: Option<CheckEmailDomainError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent { status, content, entity }))
     }
 }
 
-/// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-pub async fn create_account_email_domain(configuration: &configuration::Configuration, create_account_email_domain_request: models::CreateAccountEmailDomainRequest) -> Result<models::EmailDomainListResponse, Error<CreateAccountEmailDomainError>> {
+/// Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+pub async fn copy_file(configuration: &configuration::Configuration, mailbox_id: &str, file_id: &str, move_file_request: models::MoveFileRequest) -> Result<models::RenameFile200Response, Error<CopyFileError>> {
     // add a prefix to parameters to efficiently prevent name collisions
-    let p_body_create_account_email_domain_request = create_account_email_domain_request;
+    let p_path_mailbox_id = mailbox_id;
+    let p_path_file_id = file_id;
+    let p_body_move_file_request = move_file_request;
 
-    let uri_str = format!("{}/v1/account/email_domains", configuration.base_path);
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/files/{file_id}/copy", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id), file_id=crate::apis::urlencode(p_path_file_id));
     let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
 
     if let Some(ref user_agent) = configuration.user_agent {
@@ -453,7 +683,7 @@ pub async fn create_account_email_domain(configuration: &configuration::Configur
     if let Some(ref token) = configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token.to_owned());
     };
-    req_builder = req_builder.json(&p_body_create_account_email_domain_request);
+    req_builder = req_builder.json(&p_body_move_file_request);
 
     let req = req_builder.build()?;
     let resp = configuration.client.execute(req).await?;
@@ -470,16 +700,58 @@ pub async fn create_account_email_domain(configuration: &configuration::Configur
         let content = resp.text().await?;
         match content_type {
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::EmailDomainListResponse`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::EmailDomainListResponse`")))),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::RenameFile200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::RenameFile200Response`")))),
         }
     } else {
         let content = resp.text().await?;
-        let entity: Option<CreateAccountEmailDomainError> = serde_json::from_str(&content).ok();
+        let entity: Option<CopyFileError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent { status, content, entity }))
     }
 }
 
+/// Returns a dashboard URL for a path such as /mailboxes. The user signs in normally; the link grants no access.
+pub async fn create_browser_link(configuration: &configuration::Configuration, create_browser_link_request: models::CreateBrowserLinkRequest) -> Result<models::CreateBrowserLink201Response, Error<CreateBrowserLinkError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_body_create_browser_link_request = create_browser_link_request;
+
+    let uri_str = format!("{}/v1/agent_auth/browser_login_link", configuration.base_path);
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_create_browser_link_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::CreateBrowserLink201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::CreateBrowserLink201Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<CreateBrowserLinkError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Requires an agency owner credential with client-account access. The credential default does not change; send the new account_id on later requests.
 pub async fn create_client_account(configuration: &configuration::Configuration, create_client_account_request: models::CreateClientAccountRequest) -> Result<models::CreateClientAccount201Response, Error<CreateClientAccountError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_body_create_client_account_request = create_client_account_request;
@@ -520,7 +792,90 @@ pub async fn create_client_account(configuration: &configuration::Configuration,
     }
 }
 
-/// Creates a mailbox with file storage and waits for receiving confirmation. On Free, email.username is a prefix with a permanent 12-character random suffix. An exact name requires a paid plan. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id. Creation quotas apply.
+/// Requires a paid plan and a full-account owner or administrator with mailbox-admin permission. The primary address stays unchanged.
+pub async fn create_email_alias(configuration: &configuration::Configuration, mailbox_id: &str, create_email_alias_request: models::CreateEmailAliasRequest) -> Result<models::GetMailboxEmailSettings200Response, Error<CreateEmailAliasError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_body_create_email_alias_request = create_email_alias_request;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/email/aliases", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_create_email_alias_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::GetMailboxEmailSettings200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::GetMailboxEmailSettings200Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<CreateEmailAliasError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Claims an exact hostname and returns the DNS records to publish. Never change DNS without the domain owner's authorization.
+pub async fn create_email_domain(configuration: &configuration::Configuration, create_email_domain_request: models::CreateEmailDomainRequest) -> Result<models::CreateEmailDomain201Response, Error<CreateEmailDomainError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_body_create_email_domain_request = create_email_domain_request;
+
+    let uri_str = format!("{}/v1/account/email_domains", configuration.base_path);
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_create_email_domain_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::CreateEmailDomain201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::CreateEmailDomain201Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<CreateEmailDomainError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Waits until the address can receive email. On Free, email.username is a prefix with a permanent random suffix; an exact name requires a paid plan. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. Never retry a creation automatically.
 pub async fn create_mailbox(configuration: &configuration::Configuration, create_mailbox_request: models::CreateMailboxRequest) -> Result<models::CreateMailbox201Response, Error<CreateMailboxError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_body_create_mailbox_request = create_mailbox_request;
@@ -561,30 +916,22 @@ pub async fn create_mailbox(configuration: &configuration::Configuration, create
     }
 }
 
-/// Requires a paid plan, a full-account owner/administrator with mailbox-admin access and an available alias slot. Free returns EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
-pub async fn create_mailbox_email_alias(configuration: &configuration::Configuration, id: &str, create_mailbox_email_alias_request: models::CreateMailboxEmailAliasRequest, account_id: Option<&str>, reason: Option<&str>) -> Result<models::GetMailboxEmailSettings200Response, Error<CreateMailboxEmailAliasError>> {
+/// Starts an upload session for many files and returns storage targets for the first files. The session locks the mailbox for other writers; incoming email still arrives. Send files in batches with POST .../uploads, PUT the bytes to each upload.url, save each batch with POST .../finalize_batch, then call POST .../finalize. Unsaved uploads are discarded when the session expires.
+pub async fn create_upload_session(configuration: &configuration::Configuration, mailbox_id: &str, create_upload_session_request: models::CreateUploadSessionRequest) -> Result<models::CreateUploadSession201Response, Error<CreateUploadSessionError>> {
     // add a prefix to parameters to efficiently prevent name collisions
-    let p_path_id = id;
-    let p_body_create_mailbox_email_alias_request = create_mailbox_email_alias_request;
-    let p_query_account_id = account_id;
-    let p_query_reason = reason;
+    let p_path_mailbox_id = mailbox_id;
+    let p_body_create_upload_session_request = create_upload_session_request;
 
-    let uri_str = format!("{}/v1/mailboxes/{id}/email/aliases", configuration.base_path, id=crate::apis::urlencode(p_path_id));
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/upload_sessions", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id));
     let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
 
-    if let Some(ref param_value) = p_query_account_id {
-        req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
-    }
-    if let Some(ref param_value) = p_query_reason {
-        req_builder = req_builder.query(&[("reason", &param_value.to_string())]);
-    }
     if let Some(ref user_agent) = configuration.user_agent {
         req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
     }
     if let Some(ref token) = configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token.to_owned());
     };
-    req_builder = req_builder.json(&p_body_create_mailbox_email_alias_request);
+    req_builder = req_builder.json(&p_body_create_upload_session_request);
 
     let req = req_builder.build()?;
     let resp = configuration.client.execute(req).await?;
@@ -601,18 +948,18 @@ pub async fn create_mailbox_email_alias(configuration: &configuration::Configura
         let content = resp.text().await?;
         match content_type {
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::GetMailboxEmailSettings200Response`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::GetMailboxEmailSettings200Response`")))),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::CreateUploadSession201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::CreateUploadSession201Response`")))),
         }
     } else {
         let content = resp.text().await?;
-        let entity: Option<CreateMailboxEmailAliasError> = serde_json::from_str(&content).ok();
+        let entity: Option<CreateUploadSessionError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent { status, content, entity }))
     }
 }
 
-/// Requires mailbox-admin permission. Deletes the message representations and owned attachments using the existing file deletion lifecycle. Separately copied files are unaffected. No email trash or restore operation. A repeated delete returns 404.
-pub async fn delete_email(configuration: &configuration::Configuration, mailbox_id: &str, email_id: &str, account_id: Option<&str>, reason: Option<&str>) -> Result<(), Error<DeleteEmailError>> {
+/// Requires mailbox-admin permission. Deletes the stored message and its attachments. There is no trash.
+pub async fn delete_email(configuration: &configuration::Configuration, mailbox_id: &str, email_id: &str, account_id: Option<&str>, reason: Option<&str>) -> Result<models::DeleteEmailDomain200Response, Error<DeleteEmailError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_path_mailbox_id = mailbox_id;
     let p_path_email_id = email_id;
@@ -639,9 +986,20 @@ pub async fn delete_email(configuration: &configuration::Configuration, mailbox_
     let resp = configuration.client.execute(req).await?;
 
     let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
 
     if !status.is_client_error() && !status.is_server_error() {
-        Ok(())
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::DeleteEmailDomain200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::DeleteEmailDomain200Response`")))),
+        }
     } else {
         let content = resp.text().await?;
         let entity: Option<DeleteEmailError> = serde_json::from_str(&content).ok();
@@ -649,8 +1007,99 @@ pub async fn delete_email(configuration: &configuration::Configuration, mailbox_
     }
 }
 
-/// Requires mailbox admin permission. Cancels queued attempts; a request already in flight may finish.
-pub async fn delete_email_webhook(configuration: &configuration::Configuration, mailbox_id: &str, account_id: Option<&str>) -> Result<(), Error<DeleteEmailWebhookError>> {
+/// Stops new and queued deliveries to the alias. Saved emails stay.
+pub async fn delete_email_alias(configuration: &configuration::Configuration, mailbox_id: &str, alias_id: &str, account_id: Option<&str>, reason: Option<&str>) -> Result<models::DeleteEmailDomain200Response, Error<DeleteEmailAliasError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_path_alias_id = alias_id;
+    let p_query_account_id = account_id;
+    let p_query_reason = reason;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/email/aliases/{alias_id}", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id), alias_id=crate::apis::urlencode(p_path_alias_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::DELETE, &uri_str);
+
+    if let Some(ref param_value) = p_query_account_id {
+        req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
+    }
+    if let Some(ref param_value) = p_query_reason {
+        req_builder = req_builder.query(&[("reason", &param_value.to_string())]);
+    }
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::DeleteEmailDomain200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::DeleteEmailDomain200Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<DeleteEmailAliasError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Send the domain hostname and confirm=true. A domain that mailbox addresses still use returns EMAIL_DOMAIN_IN_USE.
+pub async fn delete_email_domain(configuration: &configuration::Configuration, domain_id: &str, delete_email_domain_request: models::DeleteEmailDomainRequest) -> Result<models::DeleteEmailDomain200Response, Error<DeleteEmailDomainError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_domain_id = domain_id;
+    let p_body_delete_email_domain_request = delete_email_domain_request;
+
+    let uri_str = format!("{}/v1/account/email_domains/{domain_id}", configuration.base_path, domain_id=crate::apis::urlencode(p_path_domain_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::DELETE, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_delete_email_domain_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::DeleteEmailDomain200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::DeleteEmailDomain200Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<DeleteEmailDomainError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Cancels queued deliveries. A delivery already in progress can finish. Returns the mailbox ID, also when no webhook is set.
+pub async fn delete_email_webhook(configuration: &configuration::Configuration, mailbox_id: &str, account_id: Option<&str>) -> Result<models::DeleteEmailDomain200Response, Error<DeleteEmailWebhookError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_path_mailbox_id = mailbox_id;
     let p_query_account_id = account_id;
@@ -672,9 +1121,20 @@ pub async fn delete_email_webhook(configuration: &configuration::Configuration, 
     let resp = configuration.client.execute(req).await?;
 
     let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
 
     if !status.is_client_error() && !status.is_server_error() {
-        Ok(())
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::DeleteEmailDomain200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::DeleteEmailDomain200Response`")))),
+        }
     } else {
         let content = resp.text().await?;
         let entity: Option<DeleteEmailWebhookError> = serde_json::from_str(&content).ok();
@@ -682,15 +1142,15 @@ pub async fn delete_email_webhook(configuration: &configuration::Configuration, 
     }
 }
 
-/// Requires a full-account owner/administrator with mailbox-admin access. Immediately revokes this alias, including queued deliveries. Retains existing messages and the permanent address reservation. Returns updated mailbox settings.
-pub async fn delete_mailbox_email_alias(configuration: &configuration::Configuration, id: &str, alias_id: &str, account_id: Option<&str>, reason: Option<&str>) -> Result<models::GetMailboxEmailSettings200Response, Error<DeleteMailboxEmailAliasError>> {
+/// Requires mailbox-admin permission. Files under _email/ return EMAIL_PATH_READ_ONLY; delete the email instead.
+pub async fn delete_file(configuration: &configuration::Configuration, mailbox_id: &str, file_id: &str, account_id: Option<&str>, reason: Option<&str>) -> Result<models::DeleteEmailDomain200Response, Error<DeleteFileError>> {
     // add a prefix to parameters to efficiently prevent name collisions
-    let p_path_id = id;
-    let p_path_alias_id = alias_id;
+    let p_path_mailbox_id = mailbox_id;
+    let p_path_file_id = file_id;
     let p_query_account_id = account_id;
     let p_query_reason = reason;
 
-    let uri_str = format!("{}/v1/mailboxes/{id}/email/aliases/{alias_id}", configuration.base_path, id=crate::apis::urlencode(p_path_id), alias_id=crate::apis::urlencode(p_path_alias_id));
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/files/{file_id}", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id), file_id=crate::apis::urlencode(p_path_file_id));
     let mut req_builder = configuration.client.request(reqwest::Method::DELETE, &uri_str);
 
     if let Some(ref param_value) = p_query_account_id {
@@ -721,21 +1181,144 @@ pub async fn delete_mailbox_email_alias(configuration: &configuration::Configura
         let content = resp.text().await?;
         match content_type {
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::GetMailboxEmailSettings200Response`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::GetMailboxEmailSettings200Response`")))),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::DeleteEmailDomain200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::DeleteEmailDomain200Response`")))),
         }
     } else {
         let content = resp.text().await?;
-        let entity: Option<DeleteMailboxEmailAliasError> = serde_json::from_str(&content).ok();
+        let entity: Option<DeleteFileError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent { status, content, entity }))
     }
 }
 
-pub async fn get_account(configuration: &configuration::Configuration, id: &str) -> Result<models::GetAccount200Response, Error<GetAccountError>> {
+/// Archive the mailbox first. Send delete.confirmation from the mailbox read after the user confirms. Large mailboxes finish deleting in the background.
+pub async fn delete_mailbox(configuration: &configuration::Configuration, mailbox_id: &str, delete_mailbox_request: models::DeleteMailboxRequest) -> Result<models::DeleteEmailDomain200Response, Error<DeleteMailboxError>> {
     // add a prefix to parameters to efficiently prevent name collisions
-    let p_path_id = id;
+    let p_path_mailbox_id = mailbox_id;
+    let p_body_delete_mailbox_request = delete_mailbox_request;
 
-    let uri_str = format!("{}/v1/accounts/{id}", configuration.base_path, id=crate::apis::urlencode(p_path_id));
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::DELETE, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_delete_mailbox_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::DeleteEmailDomain200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::DeleteEmailDomain200Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<DeleteMailboxError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// The dashboard creates the one-time code when a signed-in administrator copies a connection prompt.
+pub async fn exchange_connection_grant(configuration: &configuration::Configuration, exchange_connection_grant_request: models::ExchangeConnectionGrantRequest) -> Result<models::VerifySignInCode201Response, Error<ExchangeConnectionGrantError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_body_exchange_connection_grant_request = exchange_connection_grant_request;
+
+    let uri_str = format!("{}/v1/agent_auth/exchange_grant", configuration.base_path);
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    req_builder = req_builder.json(&p_body_exchange_connection_grant_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::VerifySignInCode201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::VerifySignInCode201Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<ExchangeConnectionGrantError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// complete=true saves the remaining uploaded files, creates one mailbox version and releases the lock. A 202 response with finalize_pending=true means more files remain: call finalize again after Retry-After. complete=false cancels the session and discards its unsaved files. Finalizing a finished session returns it unchanged.
+pub async fn finalize_upload_session(configuration: &configuration::Configuration, mailbox_id: &str, session_id: &str, finalize_upload_session_request: Option<models::FinalizeUploadSessionRequest>) -> Result<models::CreateUploadSession201Response, Error<FinalizeUploadSessionError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_path_session_id = session_id;
+    let p_body_finalize_upload_session_request = finalize_upload_session_request;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id), session_id=crate::apis::urlencode(p_path_session_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_finalize_upload_session_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::CreateUploadSession201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::CreateUploadSession201Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<FinalizeUploadSessionError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+pub async fn get_account(configuration: &configuration::Configuration, account_id: &str) -> Result<models::CreateClientAccount201Response, Error<GetAccountError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_account_id = account_id;
+
+    let uri_str = format!("{}/v1/accounts/{account_id}", configuration.base_path, account_id=crate::apis::urlencode(p_path_account_id));
     let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
 
     if let Some(ref user_agent) = configuration.user_agent {
@@ -760,8 +1343,8 @@ pub async fn get_account(configuration: &configuration::Configuration, id: &str)
         let content = resp.text().await?;
         match content_type {
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::GetAccount200Response`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::GetAccount200Response`")))),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::CreateClientAccount201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::CreateClientAccount201Response`")))),
         }
     } else {
         let content = resp.text().await?;
@@ -770,55 +1353,7 @@ pub async fn get_account(configuration: &configuration::Configuration, id: &str)
     }
 }
 
-/// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-pub async fn get_account_email_domain(configuration: &configuration::Configuration, id: &str, account_id: Option<&str>, reason: Option<&str>) -> Result<models::EmailDomainResponse, Error<GetAccountEmailDomainError>> {
-    // add a prefix to parameters to efficiently prevent name collisions
-    let p_path_id = id;
-    let p_query_account_id = account_id;
-    let p_query_reason = reason;
-
-    let uri_str = format!("{}/v1/account/email_domains/{id}", configuration.base_path, id=crate::apis::urlencode(p_path_id));
-    let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
-
-    if let Some(ref param_value) = p_query_account_id {
-        req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
-    }
-    if let Some(ref param_value) = p_query_reason {
-        req_builder = req_builder.query(&[("reason", &param_value.to_string())]);
-    }
-    if let Some(ref user_agent) = configuration.user_agent {
-        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
-    }
-    if let Some(ref token) = configuration.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token.to_owned());
-    };
-
-    let req = req_builder.build()?;
-    let resp = configuration.client.execute(req).await?;
-
-    let status = resp.status();
-    let content_type = resp
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("application/octet-stream");
-    let content_type = super::ContentType::from(content_type);
-
-    if !status.is_client_error() && !status.is_server_error() {
-        let content = resp.text().await?;
-        match content_type {
-            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::EmailDomainResponse`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::EmailDomainResponse`")))),
-        }
-    } else {
-        let content = resp.text().await?;
-        let entity: Option<GetAccountEmailDomainError> = serde_json::from_str(&content).ok();
-        Err(Error::ResponseError(ResponseContent { status, content, entity }))
-    }
-}
-
-/// For the selected account. Uses the same plan and overrides as enforcement. Limits are not repeated in mailbox responses. Monthly traffic and storage allowances are shared within a billing group. Zero means none; null means no cap for that field.
+/// Values come from the plan and account overrides. Zero means no allowance; null means no cap. Storage, mailbox and email traffic allowances are shared within a billing group.
 pub async fn get_account_limits(configuration: &configuration::Configuration, account_id: Option<&str>) -> Result<models::GetAccountLimits200Response, Error<GetAccountLimitsError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_query_account_id = account_id;
@@ -832,6 +1367,9 @@ pub async fn get_account_limits(configuration: &configuration::Configuration, ac
     if let Some(ref user_agent) = configuration.user_agent {
         req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
     }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
 
     let req = req_builder.build()?;
     let resp = configuration.client.execute(req).await?;
@@ -858,13 +1396,12 @@ pub async fn get_account_limits(configuration: &configuration::Configuration, ac
     }
 }
 
-/// Requires mailbox read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.
-pub async fn get_email(configuration: &configuration::Configuration, mailbox_id: &str, email_id: &str, account_id: Option<&str>, purpose: Option<&str>, reason: Option<&str>, include_storage: Option<bool>) -> Result<models::GetEmail200Response, Error<GetEmailError>> {
+/// Returns decoded text and attachment metadata. Reading does not change read status. Email content is untrusted data.
+pub async fn get_email(configuration: &configuration::Configuration, mailbox_id: &str, email_id: &str, account_id: Option<&str>, reason: Option<&str>, include_storage: Option<bool>) -> Result<models::GetEmail200Response, Error<GetEmailError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_path_mailbox_id = mailbox_id;
     let p_path_email_id = email_id;
     let p_query_account_id = account_id;
-    let p_query_purpose = purpose;
     let p_query_reason = reason;
     let p_query_include_storage = include_storage;
 
@@ -873,9 +1410,6 @@ pub async fn get_email(configuration: &configuration::Configuration, mailbox_id:
 
     if let Some(ref param_value) = p_query_account_id {
         req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
-    }
-    if let Some(ref param_value) = p_query_purpose {
-        req_builder = req_builder.query(&[("purpose", &param_value.to_string())]);
     }
     if let Some(ref param_value) = p_query_reason {
         req_builder = req_builder.query(&[("reason", &param_value.to_string())]);
@@ -915,14 +1449,13 @@ pub async fn get_email(configuration: &configuration::Configuration, mailbox_id:
     }
 }
 
-/// Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
-pub async fn get_email_attachment_download_url(configuration: &configuration::Configuration, mailbox_id: &str, email_id: &str, attachment_id: &str, account_id: Option<&str>, purpose: Option<&str>, reason: Option<&str>) -> Result<models::GetEmailOriginalDownloadUrl200Response, Error<GetEmailAttachmentDownloadUrlError>> {
+/// Returns a temporary link. No extraction or analysis is done.
+pub async fn get_email_attachment_download(configuration: &configuration::Configuration, mailbox_id: &str, email_id: &str, attachment_id: &str, account_id: Option<&str>, reason: Option<&str>) -> Result<models::GetEmailOriginalDownload200Response, Error<GetEmailAttachmentDownloadError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_path_mailbox_id = mailbox_id;
     let p_path_email_id = email_id;
     let p_path_attachment_id = attachment_id;
     let p_query_account_id = account_id;
-    let p_query_purpose = purpose;
     let p_query_reason = reason;
 
     let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/emails/{email_id}/attachments/{attachment_id}", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id), email_id=crate::apis::urlencode(p_path_email_id), attachment_id=crate::apis::urlencode(p_path_attachment_id));
@@ -931,9 +1464,6 @@ pub async fn get_email_attachment_download_url(configuration: &configuration::Co
     if let Some(ref param_value) = p_query_account_id {
         req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
     }
-    if let Some(ref param_value) = p_query_purpose {
-        req_builder = req_builder.query(&[("purpose", &param_value.to_string())]);
-    }
     if let Some(ref param_value) = p_query_reason {
         req_builder = req_builder.query(&[("reason", &param_value.to_string())]);
     }
@@ -959,23 +1489,65 @@ pub async fn get_email_attachment_download_url(configuration: &configuration::Co
         let content = resp.text().await?;
         match content_type {
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::GetEmailOriginalDownloadUrl200Response`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::GetEmailOriginalDownloadUrl200Response`")))),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::GetEmailOriginalDownload200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::GetEmailOriginalDownload200Response`")))),
         }
     } else {
         let content = resp.text().await?;
-        let entity: Option<GetEmailAttachmentDownloadUrlError> = serde_json::from_str(&content).ok();
+        let entity: Option<GetEmailAttachmentDownloadError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent { status, content, entity }))
     }
 }
 
-/// Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
-pub async fn get_email_original_download_url(configuration: &configuration::Configuration, mailbox_id: &str, email_id: &str, account_id: Option<&str>, purpose: Option<&str>, reason: Option<&str>) -> Result<models::GetEmailOriginalDownloadUrl200Response, Error<GetEmailOriginalDownloadUrlError>> {
+pub async fn get_email_domain(configuration: &configuration::Configuration, domain_id: &str, account_id: Option<&str>) -> Result<models::CreateEmailDomain201Response, Error<GetEmailDomainError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_domain_id = domain_id;
+    let p_query_account_id = account_id;
+
+    let uri_str = format!("{}/v1/account/email_domains/{domain_id}", configuration.base_path, domain_id=crate::apis::urlencode(p_path_domain_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
+
+    if let Some(ref param_value) = p_query_account_id {
+        req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
+    }
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::CreateEmailDomain201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::CreateEmailDomain201Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<GetEmailDomainError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Returns a temporary link to the original .eml file. Downloads do not change read status.
+pub async fn get_email_original_download(configuration: &configuration::Configuration, mailbox_id: &str, email_id: &str, account_id: Option<&str>, reason: Option<&str>) -> Result<models::GetEmailOriginalDownload200Response, Error<GetEmailOriginalDownloadError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_path_mailbox_id = mailbox_id;
     let p_path_email_id = email_id;
     let p_query_account_id = account_id;
-    let p_query_purpose = purpose;
     let p_query_reason = reason;
 
     let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/emails/{email_id}/raw", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id), email_id=crate::apis::urlencode(p_path_email_id));
@@ -984,9 +1556,6 @@ pub async fn get_email_original_download_url(configuration: &configuration::Conf
     if let Some(ref param_value) = p_query_account_id {
         req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
     }
-    if let Some(ref param_value) = p_query_purpose {
-        req_builder = req_builder.query(&[("purpose", &param_value.to_string())]);
-    }
     if let Some(ref param_value) = p_query_reason {
         req_builder = req_builder.query(&[("reason", &param_value.to_string())]);
     }
@@ -1012,17 +1581,17 @@ pub async fn get_email_original_download_url(configuration: &configuration::Conf
         let content = resp.text().await?;
         match content_type {
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::GetEmailOriginalDownloadUrl200Response`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::GetEmailOriginalDownloadUrl200Response`")))),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::GetEmailOriginalDownload200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::GetEmailOriginalDownload200Response`")))),
         }
     } else {
         let content = resp.text().await?;
-        let entity: Option<GetEmailOriginalDownloadUrlError> = serde_json::from_str(&content).ok();
+        let entity: Option<GetEmailOriginalDownloadError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent { status, content, entity }))
     }
 }
 
-/// Requires mailbox read permission. Connect to the returned websocket_url with email_subscription_token=TICKET using actioncable-v1-json within 60 seconds. Subscribe to EmailReceivedChannel with the returned account_id/mailbox_id. Frames contain EmailReceivedEvent in message. Live only: after confirmation and on reconnect, catch up using existing ascending email arrival cursors.
+/// Requires mailbox read permission. Connect to websocket_url with email_subscription_token=TOKEN within 60 seconds, then subscribe to EmailReceivedChannel. Catch up with the email list cursor after every connect.
 pub async fn get_email_subscription(configuration: &configuration::Configuration, mailbox_id: &str, account_id: Option<&str>) -> Result<models::GetEmailSubscription200Response, Error<GetEmailSubscriptionError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_path_mailbox_id = mailbox_id;
@@ -1066,7 +1635,7 @@ pub async fn get_email_subscription(configuration: &configuration::Configuration
     }
 }
 
-/// Requires mailbox admin permission. Returns null when disabled; never includes the signing secret.
+/// Requires mailbox-admin permission. webhook is null when no webhook is set. The signing secret is never returned here.
 pub async fn get_email_webhook(configuration: &configuration::Configuration, mailbox_id: &str, account_id: Option<&str>) -> Result<models::GetEmailWebhook200Response, Error<GetEmailWebhookError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_path_mailbox_id = mailbox_id;
@@ -1110,20 +1679,168 @@ pub async fn get_email_webhook(configuration: &configuration::Configuration, mai
     }
 }
 
-/// Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
-pub async fn get_mailbox(configuration: &configuration::Configuration, id: &str, include_email: Option<bool>, account_id: Option<&str>, reason: Option<&str>) -> Result<models::CreateMailbox201Response, Error<GetMailboxError>> {
+/// Reading metadata never marks the file read.
+pub async fn get_file(configuration: &configuration::Configuration, mailbox_id: &str, file_id: &str, account_id: Option<&str>, reason: Option<&str>) -> Result<models::GetFileByPath200Response, Error<GetFileError>> {
     // add a prefix to parameters to efficiently prevent name collisions
-    let p_path_id = id;
-    let p_query_include_email = include_email;
+    let p_path_mailbox_id = mailbox_id;
+    let p_path_file_id = file_id;
     let p_query_account_id = account_id;
     let p_query_reason = reason;
 
-    let uri_str = format!("{}/v1/mailboxes/{id}", configuration.base_path, id=crate::apis::urlencode(p_path_id));
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/files/{file_id}", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id), file_id=crate::apis::urlencode(p_path_file_id));
     let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
 
-    if let Some(ref param_value) = p_query_include_email {
-        req_builder = req_builder.query(&[("include_email", &param_value.to_string())]);
+    if let Some(ref param_value) = p_query_account_id {
+        req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
     }
+    if let Some(ref param_value) = p_query_reason {
+        req_builder = req_builder.query(&[("reason", &param_value.to_string())]);
+    }
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::GetFileByPath200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::GetFileByPath200Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<GetFileError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Returns file metadata only. Read content with the download endpoint. The disposition and content_url parameters return INVALID_ARGUMENT.
+pub async fn get_file_by_path(configuration: &configuration::Configuration, mailbox_id: &str, path: &str, account_id: Option<&str>, reason: Option<&str>) -> Result<models::GetFileByPath200Response, Error<GetFileByPathError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_query_path = path;
+    let p_query_account_id = account_id;
+    let p_query_reason = reason;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/files/by_path", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
+
+    req_builder = req_builder.query(&[("path", &p_query_path.to_string())]);
+    if let Some(ref param_value) = p_query_account_id {
+        req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
+    }
+    if let Some(ref param_value) = p_query_reason {
+        req_builder = req_builder.query(&[("reason", &param_value.to_string())]);
+    }
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::GetFileByPath200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::GetFileByPath200Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<GetFileByPathError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Returns a temporary link and marks this version read. Send version_id for an older version.
+pub async fn get_file_download(configuration: &configuration::Configuration, mailbox_id: &str, file_id: &str, version_id: Option<&str>, account_id: Option<&str>, reason: Option<&str>) -> Result<models::GetFileDownload200Response, Error<GetFileDownloadError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_path_file_id = file_id;
+    let p_query_version_id = version_id;
+    let p_query_account_id = account_id;
+    let p_query_reason = reason;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/files/{file_id}/download", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id), file_id=crate::apis::urlencode(p_path_file_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
+
+    if let Some(ref param_value) = p_query_version_id {
+        req_builder = req_builder.query(&[("version_id", &param_value.to_string())]);
+    }
+    if let Some(ref param_value) = p_query_account_id {
+        req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
+    }
+    if let Some(ref param_value) = p_query_reason {
+        req_builder = req_builder.query(&[("reason", &param_value.to_string())]);
+    }
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::GetFileDownload200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::GetFileDownload200Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<GetFileDownloadError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Reading never changes the mailbox. Read address settings, emails and files through their own endpoints.
+pub async fn get_mailbox(configuration: &configuration::Configuration, mailbox_id: &str, account_id: Option<&str>, reason: Option<&str>) -> Result<models::CreateMailbox201Response, Error<GetMailboxError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_query_account_id = account_id;
+    let p_query_reason = reason;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
+
     if let Some(ref param_value) = p_query_account_id {
         req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
     }
@@ -1162,14 +1879,14 @@ pub async fn get_mailbox(configuration: &configuration::Configuration, id: &str,
     }
 }
 
-/// Requires upload/write access. Anyone knowing the address can send; reading files requires mailbox authorization. Original message.eml, decoded message.json, and attachments are stored together.
-pub async fn get_mailbox_email_settings(configuration: &configuration::Configuration, id: &str, account_id: Option<&str>, reason: Option<&str>) -> Result<models::GetMailboxEmailSettings200Response, Error<GetMailboxEmailSettingsError>> {
+/// Requires mailbox write permission.
+pub async fn get_mailbox_email_settings(configuration: &configuration::Configuration, mailbox_id: &str, account_id: Option<&str>, reason: Option<&str>) -> Result<models::GetMailboxEmailSettings200Response, Error<GetMailboxEmailSettingsError>> {
     // add a prefix to parameters to efficiently prevent name collisions
-    let p_path_id = id;
+    let p_path_mailbox_id = mailbox_id;
     let p_query_account_id = account_id;
     let p_query_reason = reason;
 
-    let uri_str = format!("{}/v1/mailboxes/{id}/email", configuration.base_path, id=crate::apis::urlencode(p_path_id));
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/email", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id));
     let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
 
     if let Some(ref param_value) = p_query_account_id {
@@ -1210,51 +1927,8 @@ pub async fn get_mailbox_email_settings(configuration: &configuration::Configura
     }
 }
 
-pub async fn get_mailbox_file(configuration: &configuration::Configuration, id: &str, file_id: &str, account_id: Option<&str>) -> Result<models::MailboxFileResponse, Error<GetMailboxFileError>> {
-    // add a prefix to parameters to efficiently prevent name collisions
-    let p_path_id = id;
-    let p_path_file_id = file_id;
-    let p_query_account_id = account_id;
-
-    let uri_str = format!("{}/v1/mailboxes/{id}/files/{file_id}", configuration.base_path, id=crate::apis::urlencode(p_path_id), file_id=crate::apis::urlencode(p_path_file_id));
-    let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
-
-    if let Some(ref param_value) = p_query_account_id {
-        req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
-    }
-    if let Some(ref user_agent) = configuration.user_agent {
-        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
-    }
-    if let Some(ref token) = configuration.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token.to_owned());
-    };
-
-    let req = req_builder.build()?;
-    let resp = configuration.client.execute(req).await?;
-
-    let status = resp.status();
-    let content_type = resp
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("application/octet-stream");
-    let content_type = super::ContentType::from(content_type);
-
-    if !status.is_client_error() && !status.is_server_error() {
-        let content = resp.text().await?;
-        match content_type {
-            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::MailboxFileResponse`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::MailboxFileResponse`")))),
-        }
-    } else {
-        let content = resp.text().await?;
-        let entity: Option<GetMailboxFileError> = serde_json::from_str(&content).ok();
-        Err(Error::ResponseError(ResponseContent { status, content, entity }))
-    }
-}
-
-pub async fn get_revdoku_status(configuration: &configuration::Configuration, account_id: Option<&str>, reason: Option<&str>) -> Result<models::GetRevdokuStatus200Response, Error<GetRevdokuStatusError>> {
+/// Works with every API key, including mailbox-scoped keys. Read quotas with GET /v1/account/limits.
+pub async fn get_status(configuration: &configuration::Configuration, account_id: Option<&str>, reason: Option<&str>) -> Result<models::GetStatus200Response, Error<GetStatusError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_query_account_id = account_id;
     let p_query_reason = reason;
@@ -1290,67 +1964,20 @@ pub async fn get_revdoku_status(configuration: &configuration::Configuration, ac
         let content = resp.text().await?;
         match content_type {
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::GetRevdokuStatus200Response`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::GetRevdokuStatus200Response`")))),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::GetStatus200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::GetStatus200Response`")))),
         }
     } else {
         let content = resp.text().await?;
-        let entity: Option<GetRevdokuStatusError> = serde_json::from_str(&content).ok();
+        let entity: Option<GetStatusError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent { status, content, entity }))
     }
 }
 
-/// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-pub async fn list_account_email_domains(configuration: &configuration::Configuration, account_id: Option<&str>, reason: Option<&str>) -> Result<models::EmailDomainListResponse, Error<ListAccountEmailDomainsError>> {
-    // add a prefix to parameters to efficiently prevent name collisions
-    let p_query_account_id = account_id;
-    let p_query_reason = reason;
-
-    let uri_str = format!("{}/v1/account/email_domains", configuration.base_path);
-    let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
-
-    if let Some(ref param_value) = p_query_account_id {
-        req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
-    }
-    if let Some(ref param_value) = p_query_reason {
-        req_builder = req_builder.query(&[("reason", &param_value.to_string())]);
-    }
-    if let Some(ref user_agent) = configuration.user_agent {
-        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
-    }
-    if let Some(ref token) = configuration.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token.to_owned());
-    };
-
-    let req = req_builder.build()?;
-    let resp = configuration.client.execute(req).await?;
-
-    let status = resp.status();
-    let content_type = resp
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("application/octet-stream");
-    let content_type = super::ContentType::from(content_type);
-
-    if !status.is_client_error() && !status.is_server_error() {
-        let content = resp.text().await?;
-        match content_type {
-            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::EmailDomainListResponse`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::EmailDomainListResponse`")))),
-        }
-    } else {
-        let content = resp.text().await?;
-        let entity: Option<ListAccountEmailDomainsError> = serde_json::from_str(&content).ok();
-        Err(Error::ResponseError(ResponseContent { status, content, entity }))
-    }
-}
-
-pub async fn list_accounts(configuration: &configuration::Configuration, limit: Option<i32>, offset: Option<i32>) -> Result<models::ListAccounts200Response, Error<ListAccountsError>> {
+pub async fn list_accounts(configuration: &configuration::Configuration, limit: Option<i32>, cursor: Option<&str>) -> Result<models::ListAccounts200Response, Error<ListAccountsError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_query_limit = limit;
-    let p_query_offset = offset;
+    let p_query_cursor = cursor;
 
     let uri_str = format!("{}/v1/accounts", configuration.base_path);
     let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
@@ -1358,8 +1985,8 @@ pub async fn list_accounts(configuration: &configuration::Configuration, limit: 
     if let Some(ref param_value) = p_query_limit {
         req_builder = req_builder.query(&[("limit", &param_value.to_string())]);
     }
-    if let Some(ref param_value) = p_query_offset {
-        req_builder = req_builder.query(&[("offset", &param_value.to_string())]);
+    if let Some(ref param_value) = p_query_cursor {
+        req_builder = req_builder.query(&[("cursor", &param_value.to_string())]);
     }
     if let Some(ref user_agent) = configuration.user_agent {
         req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
@@ -1393,14 +2020,67 @@ pub async fn list_accounts(configuration: &configuration::Configuration, limit: 
     }
 }
 
-/// Requires mailbox read permission. Ascending arrival order supports incremental polling: retain next_cursor even after an empty page. Reuse account, mailbox and filters. Late receipt timestamps are included. Descending order browses history. Edits/read changes/restorations do not replay earlier arrivals. Listing does not mark read.
-pub async fn list_emails(configuration: &configuration::Configuration, mailbox_id: &str, account_id: Option<&str>, limit: Option<i32>, cursor: Option<&str>, order: Option<&str>, sender: Option<&str>, subject: Option<&str>, received_after: Option<chrono::DateTime<chrono::FixedOffset>>, received_before: Option<chrono::DateTime<chrono::FixedOffset>>, read: Option<bool>, has_attachments: Option<bool>, conversation_id: Option<&str>, include_storage: Option<bool>) -> Result<models::ListEmails200Response, Error<ListEmailsError>> {
+/// Requires a full-account owner or administrator credential.
+pub async fn list_email_domains(configuration: &configuration::Configuration, account_id: Option<&str>, limit: Option<i32>, cursor: Option<&str>) -> Result<models::ListEmailDomains200Response, Error<ListEmailDomainsError>> {
     // add a prefix to parameters to efficiently prevent name collisions
-    let p_path_mailbox_id = mailbox_id;
     let p_query_account_id = account_id;
     let p_query_limit = limit;
     let p_query_cursor = cursor;
+
+    let uri_str = format!("{}/v1/account/email_domains", configuration.base_path);
+    let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
+
+    if let Some(ref param_value) = p_query_account_id {
+        req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
+    }
+    if let Some(ref param_value) = p_query_limit {
+        req_builder = req_builder.query(&[("limit", &param_value.to_string())]);
+    }
+    if let Some(ref param_value) = p_query_cursor {
+        req_builder = req_builder.query(&[("cursor", &param_value.to_string())]);
+    }
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::ListEmailDomains200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::ListEmailDomains200Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<ListEmailDomainsError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Requires mailbox read permission. Lists received email by default. To poll, list in ascending order, save pagination.next_cursor after every page (including an empty page) and send it next time with the same filters. Listing never marks email read.
+pub async fn list_emails(configuration: &configuration::Configuration, mailbox_id: &str, account_id: Option<&str>, reason: Option<&str>, limit: Option<i32>, cursor: Option<&str>, order: Option<&str>, direction: Option<&str>, sender: Option<&str>, subject: Option<&str>, received_after: Option<chrono::DateTime<chrono::FixedOffset>>, received_before: Option<chrono::DateTime<chrono::FixedOffset>>, read: Option<bool>, has_attachments: Option<bool>, conversation_id: Option<&str>, include_storage: Option<bool>) -> Result<models::ListEmails200Response, Error<ListEmailsError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_query_account_id = account_id;
+    let p_query_reason = reason;
+    let p_query_limit = limit;
+    let p_query_cursor = cursor;
     let p_query_order = order;
+    let p_query_direction = direction;
     let p_query_sender = sender;
     let p_query_subject = subject;
     let p_query_received_after = received_after;
@@ -1416,6 +2096,9 @@ pub async fn list_emails(configuration: &configuration::Configuration, mailbox_i
     if let Some(ref param_value) = p_query_account_id {
         req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
     }
+    if let Some(ref param_value) = p_query_reason {
+        req_builder = req_builder.query(&[("reason", &param_value.to_string())]);
+    }
     if let Some(ref param_value) = p_query_limit {
         req_builder = req_builder.query(&[("limit", &param_value.to_string())]);
     }
@@ -1424,6 +2107,9 @@ pub async fn list_emails(configuration: &configuration::Configuration, mailbox_i
     }
     if let Some(ref param_value) = p_query_order {
         req_builder = req_builder.query(&[("order", &param_value.to_string())]);
+    }
+    if let Some(ref param_value) = p_query_direction {
+        req_builder = req_builder.query(&[("direction", &param_value.to_string())]);
     }
     if let Some(ref param_value) = p_query_sender {
         req_builder = req_builder.query(&[("sender", &param_value.to_string())]);
@@ -1481,36 +2167,30 @@ pub async fn list_emails(configuration: &configuration::Configuration, mailbox_i
     }
 }
 
-pub async fn list_mailbox_files(configuration: &configuration::Configuration, id: &str, limit: Option<i32>, offset: Option<i32>, reason: Option<&str>, q: Option<&str>, folder: Option<&str>, account_id: Option<&str>) -> Result<models::ListMailboxFiles200Response, Error<ListMailboxFilesError>> {
+/// Newest first.
+pub async fn list_file_versions(configuration: &configuration::Configuration, mailbox_id: &str, file_id: &str, account_id: Option<&str>, reason: Option<&str>, limit: Option<i32>, cursor: Option<&str>) -> Result<models::ListFileVersions200Response, Error<ListFileVersionsError>> {
     // add a prefix to parameters to efficiently prevent name collisions
-    let p_path_id = id;
-    let p_query_limit = limit;
-    let p_query_offset = offset;
-    let p_query_reason = reason;
-    let p_query_q = q;
-    let p_query_folder = folder;
+    let p_path_mailbox_id = mailbox_id;
+    let p_path_file_id = file_id;
     let p_query_account_id = account_id;
+    let p_query_reason = reason;
+    let p_query_limit = limit;
+    let p_query_cursor = cursor;
 
-    let uri_str = format!("{}/v1/mailboxes/{id}/files", configuration.base_path, id=crate::apis::urlencode(p_path_id));
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/files/{file_id}/versions", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id), file_id=crate::apis::urlencode(p_path_file_id));
     let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
 
-    if let Some(ref param_value) = p_query_limit {
-        req_builder = req_builder.query(&[("limit", &param_value.to_string())]);
-    }
-    if let Some(ref param_value) = p_query_offset {
-        req_builder = req_builder.query(&[("offset", &param_value.to_string())]);
+    if let Some(ref param_value) = p_query_account_id {
+        req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
     }
     if let Some(ref param_value) = p_query_reason {
         req_builder = req_builder.query(&[("reason", &param_value.to_string())]);
     }
-    if let Some(ref param_value) = p_query_q {
-        req_builder = req_builder.query(&[("q", &param_value.to_string())]);
+    if let Some(ref param_value) = p_query_limit {
+        req_builder = req_builder.query(&[("limit", &param_value.to_string())]);
     }
-    if let Some(ref param_value) = p_query_folder {
-        req_builder = req_builder.query(&[("folder", &param_value.to_string())]);
-    }
-    if let Some(ref param_value) = p_query_account_id {
-        req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
+    if let Some(ref param_value) = p_query_cursor {
+        req_builder = req_builder.query(&[("cursor", &param_value.to_string())]);
     }
     if let Some(ref user_agent) = configuration.user_agent {
         req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
@@ -1534,24 +2214,89 @@ pub async fn list_mailbox_files(configuration: &configuration::Configuration, id
         let content = resp.text().await?;
         match content_type {
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::ListMailboxFiles200Response`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::ListMailboxFiles200Response`")))),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::ListFileVersions200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::ListFileVersions200Response`")))),
         }
     } else {
         let content = resp.text().await?;
-        let entity: Option<ListMailboxFilesError> = serde_json::from_str(&content).ok();
+        let entity: Option<ListFileVersionsError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent { status, content, entity }))
     }
 }
 
-/// List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
-pub async fn list_mailboxes(configuration: &configuration::Configuration, account_id: Option<&str>, q: Option<&str>, status: Option<&str>, limit: Option<i32>, offset: Option<i32>) -> Result<models::ListMailboxes200Response, Error<ListMailboxesError>> {
+/// Lists current files, including stored emails under _email/. Listing never marks files read.
+pub async fn list_files(configuration: &configuration::Configuration, mailbox_id: &str, account_id: Option<&str>, reason: Option<&str>, q: Option<&str>, folder: Option<&str>, limit: Option<i32>, cursor: Option<&str>) -> Result<models::ListFiles200Response, Error<ListFilesError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_query_account_id = account_id;
+    let p_query_reason = reason;
+    let p_query_q = q;
+    let p_query_folder = folder;
+    let p_query_limit = limit;
+    let p_query_cursor = cursor;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/files", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
+
+    if let Some(ref param_value) = p_query_account_id {
+        req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
+    }
+    if let Some(ref param_value) = p_query_reason {
+        req_builder = req_builder.query(&[("reason", &param_value.to_string())]);
+    }
+    if let Some(ref param_value) = p_query_q {
+        req_builder = req_builder.query(&[("q", &param_value.to_string())]);
+    }
+    if let Some(ref param_value) = p_query_folder {
+        req_builder = req_builder.query(&[("folder", &param_value.to_string())]);
+    }
+    if let Some(ref param_value) = p_query_limit {
+        req_builder = req_builder.query(&[("limit", &param_value.to_string())]);
+    }
+    if let Some(ref param_value) = p_query_cursor {
+        req_builder = req_builder.query(&[("cursor", &param_value.to_string())]);
+    }
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::ListFiles200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::ListFiles200Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<ListFilesError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Lists active mailboxes by default, newest first. Counts and pages cover only mailboxes this credential can access. Reads no email content.
+pub async fn list_mailboxes(configuration: &configuration::Configuration, account_id: Option<&str>, reason: Option<&str>, status: Option<&str>, q: Option<&str>, limit: Option<i32>, cursor: Option<&str>) -> Result<models::ListMailboxes200Response, Error<ListMailboxesError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_query_account_id = account_id;
-    let p_query_q = q;
+    let p_query_reason = reason;
     let p_query_status = status;
+    let p_query_q = q;
     let p_query_limit = limit;
-    let p_query_offset = offset;
+    let p_query_cursor = cursor;
 
     let uri_str = format!("{}/v1/mailboxes", configuration.base_path);
     let mut req_builder = configuration.client.request(reqwest::Method::GET, &uri_str);
@@ -1559,17 +2304,20 @@ pub async fn list_mailboxes(configuration: &configuration::Configuration, accoun
     if let Some(ref param_value) = p_query_account_id {
         req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
     }
-    if let Some(ref param_value) = p_query_q {
-        req_builder = req_builder.query(&[("q", &param_value.to_string())]);
+    if let Some(ref param_value) = p_query_reason {
+        req_builder = req_builder.query(&[("reason", &param_value.to_string())]);
     }
     if let Some(ref param_value) = p_query_status {
         req_builder = req_builder.query(&[("status", &param_value.to_string())]);
     }
+    if let Some(ref param_value) = p_query_q {
+        req_builder = req_builder.query(&[("q", &param_value.to_string())]);
+    }
     if let Some(ref param_value) = p_query_limit {
         req_builder = req_builder.query(&[("limit", &param_value.to_string())]);
     }
-    if let Some(ref param_value) = p_query_offset {
-        req_builder = req_builder.query(&[("offset", &param_value.to_string())]);
+    if let Some(ref param_value) = p_query_cursor {
+        req_builder = req_builder.query(&[("cursor", &param_value.to_string())]);
     }
     if let Some(ref user_agent) = configuration.user_agent {
         req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
@@ -1603,7 +2351,51 @@ pub async fn list_mailboxes(configuration: &configuration::Configuration, accoun
     }
 }
 
-pub async fn prepare_file_upload(configuration: &configuration::Configuration, prepare_file_upload_request: models::PrepareFileUploadRequest) -> Result<models::PreparedFileUploadResponse, Error<PrepareFileUploadError>> {
+/// Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+pub async fn move_file(configuration: &configuration::Configuration, mailbox_id: &str, file_id: &str, move_file_request: models::MoveFileRequest) -> Result<models::RenameFile200Response, Error<MoveFileError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_path_file_id = file_id;
+    let p_body_move_file_request = move_file_request;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/files/{file_id}/move", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id), file_id=crate::apis::urlencode(p_path_file_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_move_file_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::RenameFile200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::RenameFile200Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<MoveFileError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/mailboxes/{mailbox_id}/files (step 3). Identical content at the same path returns skipped=true and duplicate=true without an upload.
+pub async fn prepare_file_upload(configuration: &configuration::Configuration, prepare_file_upload_request: models::PrepareFileUploadRequest) -> Result<models::PrepareFileUpload201Response, Error<PrepareFileUploadError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_body_prepare_file_upload_request = prepare_file_upload_request;
 
@@ -1633,8 +2425,8 @@ pub async fn prepare_file_upload(configuration: &configuration::Configuration, p
         let content = resp.text().await?;
         match content_type {
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::PreparedFileUploadResponse`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::PreparedFileUploadResponse`")))),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::PrepareFileUpload201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::PrepareFileUpload201Response`")))),
         }
     } else {
         let content = resp.text().await?;
@@ -1643,55 +2435,14 @@ pub async fn prepare_file_upload(configuration: &configuration::Configuration, p
     }
 }
 
-/// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-pub async fn remove_account_email_domain(configuration: &configuration::Configuration, id: &str, remove_account_email_domain_request: models::RemoveAccountEmailDomainRequest) -> Result<models::EmailDomainListResponse, Error<RemoveAccountEmailDomainError>> {
+/// Changes the path without uploading the content again.
+pub async fn rename_file(configuration: &configuration::Configuration, mailbox_id: &str, file_id: &str, rename_file_request: models::RenameFileRequest) -> Result<models::RenameFile200Response, Error<RenameFileError>> {
     // add a prefix to parameters to efficiently prevent name collisions
-    let p_path_id = id;
-    let p_body_remove_account_email_domain_request = remove_account_email_domain_request;
+    let p_path_mailbox_id = mailbox_id;
+    let p_path_file_id = file_id;
+    let p_body_rename_file_request = rename_file_request;
 
-    let uri_str = format!("{}/v1/account/email_domains/{id}", configuration.base_path, id=crate::apis::urlencode(p_path_id));
-    let mut req_builder = configuration.client.request(reqwest::Method::DELETE, &uri_str);
-
-    if let Some(ref user_agent) = configuration.user_agent {
-        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
-    }
-    if let Some(ref token) = configuration.bearer_access_token {
-        req_builder = req_builder.bearer_auth(token.to_owned());
-    };
-    req_builder = req_builder.json(&p_body_remove_account_email_domain_request);
-
-    let req = req_builder.build()?;
-    let resp = configuration.client.execute(req).await?;
-
-    let status = resp.status();
-    let content_type = resp
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("application/octet-stream");
-    let content_type = super::ContentType::from(content_type);
-
-    if !status.is_client_error() && !status.is_server_error() {
-        let content = resp.text().await?;
-        match content_type {
-            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::EmailDomainListResponse`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::EmailDomainListResponse`")))),
-        }
-    } else {
-        let content = resp.text().await?;
-        let entity: Option<RemoveAccountEmailDomainError> = serde_json::from_str(&content).ok();
-        Err(Error::ResponseError(ResponseContent { status, content, entity }))
-    }
-}
-
-/// Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
-pub async fn rotate_mailbox_email_address(configuration: &configuration::Configuration, id: &str, rotate_mailbox_email_address_request: models::RotateMailboxEmailAddressRequest) -> Result<models::GetMailboxEmailSettings200Response, Error<RotateMailboxEmailAddressError>> {
-    // add a prefix to parameters to efficiently prevent name collisions
-    let p_path_id = id;
-    let p_body_rotate_mailbox_email_address_request = rotate_mailbox_email_address_request;
-
-    let uri_str = format!("{}/v1/mailboxes/{id}/email/rotate", configuration.base_path, id=crate::apis::urlencode(p_path_id));
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/files/{file_id}/rename", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id), file_id=crate::apis::urlencode(p_path_file_id));
     let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
 
     if let Some(ref user_agent) = configuration.user_agent {
@@ -1700,7 +2451,7 @@ pub async fn rotate_mailbox_email_address(configuration: &configuration::Configu
     if let Some(ref token) = configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token.to_owned());
     };
-    req_builder = req_builder.json(&p_body_rotate_mailbox_email_address_request);
+    req_builder = req_builder.json(&p_body_rename_file_request);
 
     let req = req_builder.build()?;
     let resp = configuration.client.execute(req).await?;
@@ -1717,22 +2468,148 @@ pub async fn rotate_mailbox_email_address(configuration: &configuration::Configu
         let content = resp.text().await?;
         match content_type {
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::GetMailboxEmailSettings200Response`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::GetMailboxEmailSettings200Response`")))),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::RenameFile200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::RenameFile200Response`")))),
         }
     } else {
         let content = resp.text().await?;
-        let entity: Option<RotateMailboxEmailAddressError> = serde_json::from_str(&content).ok();
+        let entity: Option<RenameFileError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent { status, content, entity }))
     }
 }
 
-pub async fn save_uploaded_file(configuration: &configuration::Configuration, id: &str, save_uploaded_file_request: models::SaveUploadedFileRequest) -> Result<models::SavedFileResponse, Error<SaveUploadedFileError>> {
+/// Sends a six-digit code to an existing account email. The response is the same for every address, so it never reveals whether an account exists. Create new accounts in the browser at https://app.revdoku.com/users/sign_up.
+pub async fn request_sign_in_code(configuration: &configuration::Configuration, request_sign_in_code_request: models::RequestSignInCodeRequest) -> Result<models::RequestSignInCode200Response, Error<RequestSignInCodeError>> {
     // add a prefix to parameters to efficiently prevent name collisions
-    let p_path_id = id;
+    let p_body_request_sign_in_code_request = request_sign_in_code_request;
+
+    let uri_str = format!("{}/v1/agent_auth/request_code", configuration.base_path);
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    req_builder = req_builder.json(&p_body_request_sign_in_code_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::RequestSignInCode200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::RequestSignInCode200Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<RequestSignInCodeError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Creates a new current version with the content of the selected version. History is kept. Requires a plan with version restore.
+pub async fn restore_file_version(configuration: &configuration::Configuration, mailbox_id: &str, file_id: &str, version_id: &str, action_request: models::ActionRequest) -> Result<models::RestoreFileVersion201Response, Error<RestoreFileVersionError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_path_file_id = file_id;
+    let p_path_version_id = version_id;
+    let p_body_action_request = action_request;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/files/{file_id}/versions/{version_id}/restore", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id), file_id=crate::apis::urlencode(p_path_file_id), version_id=crate::apis::urlencode(p_path_version_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_action_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::RestoreFileVersion201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::RestoreFileVersion201Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<RestoreFileVersionError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Saves up to limit files whose bytes were uploaded. Call it after each batch to keep each request short. DIRECT_UPLOAD_NOT_FOUND names a file whose bytes are missing in error.details.path; upload it again and retry.
+pub async fn save_upload_session_batch(configuration: &configuration::Configuration, mailbox_id: &str, session_id: &str, save_upload_session_batch_request: Option<models::SaveUploadSessionBatchRequest>) -> Result<models::CreateUploadSession201Response, Error<SaveUploadSessionBatchError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_path_session_id = session_id;
+    let p_body_save_upload_session_batch_request = save_upload_session_batch_request;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize_batch", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id), session_id=crate::apis::urlencode(p_path_session_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_save_upload_session_batch_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::CreateUploadSession201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::CreateUploadSession201Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<SaveUploadSessionBatchError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Saves the uploaded blob at path. An existing path gets a new version.
+pub async fn save_uploaded_file(configuration: &configuration::Configuration, mailbox_id: &str, save_uploaded_file_request: models::SaveUploadedFileRequest) -> Result<models::SaveUploadedFile201Response, Error<SaveUploadedFileError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
     let p_body_save_uploaded_file_request = save_uploaded_file_request;
 
-    let uri_str = format!("{}/v1/mailboxes/{id}/files", configuration.base_path, id=crate::apis::urlencode(p_path_id));
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/files", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id));
     let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
 
     if let Some(ref user_agent) = configuration.user_agent {
@@ -1758,8 +2635,8 @@ pub async fn save_uploaded_file(configuration: &configuration::Configuration, id
         let content = resp.text().await?;
         match content_type {
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::SavedFileResponse`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::SavedFileResponse`")))),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::SaveUploadedFile201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::SaveUploadedFile201Response`")))),
         }
     } else {
         let content = resp.text().await?;
@@ -1768,7 +2645,49 @@ pub async fn save_uploaded_file(configuration: &configuration::Configuration, id
     }
 }
 
-/// Requires mailbox admin permission. Public HTTPS, including explicit ports such as 8443. Generates an encrypted signing secret, returned here. Same-URL updates retain it; replacing the URL rotates it and cancels pending old-version deliveries. Events are signed and retried up to eight attempts on transient failure; duplicates are possible. Worker-crash recovery is bounded to 24 hours from event creation. Exhausted and permanent failures require operator review.
+/// Requires mailbox write permission. Recipients must have emailed this mailbox and passed sender authentication. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.
+pub async fn send_email(configuration: &configuration::Configuration, mailbox_id: &str, send_email_request: models::SendEmailRequest) -> Result<models::SendEmail202Response, Error<SendEmailError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_body_send_email_request = send_email_request;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/emails", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_send_email_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::SendEmail202Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::SendEmail202Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<SendEmailError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Requires mailbox-admin permission and a public HTTPS URL. A new URL or rotate_secret=true creates a new signing secret, returns it once and cancels pending deliveries. The same URL without rotate_secret returns the webhook without a secret.
 pub async fn set_email_webhook(configuration: &configuration::Configuration, mailbox_id: &str, set_email_webhook_request: models::SetEmailWebhookRequest) -> Result<models::SetEmailWebhook200Response, Error<SetEmailWebhookError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_path_mailbox_id = mailbox_id;
@@ -1810,21 +2729,58 @@ pub async fn set_email_webhook(configuration: &configuration::Configuration, mai
     }
 }
 
-/// Requires mailbox read permission, including for locked/read-only content. Only read status can change. Receipt and audit event commit atomically. Repeated state changes are idempotent.
-pub async fn update_email(configuration: &configuration::Configuration, mailbox_id: &str, email_id: &str, update_email_request: models::UpdateEmailRequest, account_id: Option<&str>, include_storage: Option<bool>) -> Result<models::UpdateEmail200Response, Error<UpdateEmailError>> {
+pub async fn unarchive_mailbox(configuration: &configuration::Configuration, mailbox_id: &str, action_request: models::ActionRequest) -> Result<models::CreateMailbox201Response, Error<UnarchiveMailboxError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_mailbox_id = mailbox_id;
+    let p_body_action_request = action_request;
+
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/unarchive", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_action_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::CreateMailbox201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::CreateMailbox201Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<UnarchiveMailboxError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Only read status can change.
+pub async fn update_email(configuration: &configuration::Configuration, mailbox_id: &str, email_id: &str, update_email_request: models::UpdateEmailRequest, include_storage: Option<bool>) -> Result<models::SendEmail202Response, Error<UpdateEmailError>> {
     // add a prefix to parameters to efficiently prevent name collisions
     let p_path_mailbox_id = mailbox_id;
     let p_path_email_id = email_id;
     let p_body_update_email_request = update_email_request;
-    let p_query_account_id = account_id;
     let p_query_include_storage = include_storage;
 
     let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/emails/{email_id}", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id), email_id=crate::apis::urlencode(p_path_email_id));
     let mut req_builder = configuration.client.request(reqwest::Method::PATCH, &uri_str);
 
-    if let Some(ref param_value) = p_query_account_id {
-        req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
-    }
     if let Some(ref param_value) = p_query_include_storage {
         req_builder = req_builder.query(&[("include_storage", &param_value.to_string())]);
     }
@@ -1851,8 +2807,8 @@ pub async fn update_email(configuration: &configuration::Configuration, mailbox_
         let content = resp.text().await?;
         match content_type {
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::UpdateEmail200Response`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::UpdateEmail200Response`")))),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::SendEmail202Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::SendEmail202Response`")))),
         }
     } else {
         let content = resp.text().await?;
@@ -1861,30 +2817,22 @@ pub async fn update_email(configuration: &configuration::Configuration, mailbox_
     }
 }
 
-/// Requires account owner/administrator and mailbox-admin permission. Read sender_allowlist.version from GET /mailboxes/{id}/email first. Entries match exact authenticated From addresses or domains, with no wildcards or implicit subdomains. A stale or missing version returns EMAIL_ALLOWLIST_CHANGED; invalid entries return EMAIL_ALLOWLIST_INVALID. Disabled policies retain the supplied entries. Locks and read-only account state apply.
-pub async fn update_mailbox_email_allowlist(configuration: &configuration::Configuration, id: &str, update_mailbox_email_allowlist_request: models::UpdateMailboxEmailAllowlistRequest, account_id: Option<&str>, reason: Option<&str>) -> Result<models::UpdateMailboxEmailAllowlist200Response, Error<UpdateMailboxEmailAllowlistError>> {
+/// Requires an account owner or administrator with mailbox-admin permission. Send sender_allowlist.version from the settings read as expected_version.
+pub async fn update_email_allowlist(configuration: &configuration::Configuration, mailbox_id: &str, update_email_allowlist_request: models::UpdateEmailAllowlistRequest) -> Result<models::UpdateEmailAllowlist200Response, Error<UpdateEmailAllowlistError>> {
     // add a prefix to parameters to efficiently prevent name collisions
-    let p_path_id = id;
-    let p_body_update_mailbox_email_allowlist_request = update_mailbox_email_allowlist_request;
-    let p_query_account_id = account_id;
-    let p_query_reason = reason;
+    let p_path_mailbox_id = mailbox_id;
+    let p_body_update_email_allowlist_request = update_email_allowlist_request;
 
-    let uri_str = format!("{}/v1/mailboxes/{id}/email/allowlist", configuration.base_path, id=crate::apis::urlencode(p_path_id));
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}/email/allowlist", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id));
     let mut req_builder = configuration.client.request(reqwest::Method::PATCH, &uri_str);
 
-    if let Some(ref param_value) = p_query_account_id {
-        req_builder = req_builder.query(&[("account_id", &param_value.to_string())]);
-    }
-    if let Some(ref param_value) = p_query_reason {
-        req_builder = req_builder.query(&[("reason", &param_value.to_string())]);
-    }
     if let Some(ref user_agent) = configuration.user_agent {
         req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
     }
     if let Some(ref token) = configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token.to_owned());
     };
-    req_builder = req_builder.json(&p_body_update_mailbox_email_allowlist_request);
+    req_builder = req_builder.json(&p_body_update_email_allowlist_request);
 
     let req = req_builder.build()?;
     let resp = configuration.client.execute(req).await?;
@@ -1901,23 +2849,65 @@ pub async fn update_mailbox_email_allowlist(configuration: &configuration::Confi
         let content = resp.text().await?;
         match content_type {
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::UpdateMailboxEmailAllowlist200Response`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::UpdateMailboxEmailAllowlist200Response`")))),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::UpdateEmailAllowlist200Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::UpdateEmailAllowlist200Response`")))),
         }
     } else {
         let content = resp.text().await?;
-        let entity: Option<UpdateMailboxEmailAllowlistError> = serde_json::from_str(&content).ok();
+        let entity: Option<UpdateEmailAllowlistError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent { status, content, entity }))
     }
 }
 
-/// Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-pub async fn verify_account_email_domain(configuration: &configuration::Configuration, id: &str, verify_account_email_domain_request: Option<models::VerifyAccountEmailDomainRequest>) -> Result<models::EmailDomainListResponse, Error<VerifyAccountEmailDomainError>> {
+/// metadata must be a JSON object. It replaces the stored object; {} clears it. Send expected_metadata_version from your last read; a stale value changes nothing and returns MAILBOX_METADATA_CONFLICT.
+pub async fn update_mailbox(configuration: &configuration::Configuration, mailbox_id: &str, update_mailbox_request: models::UpdateMailboxRequest) -> Result<models::CreateMailbox201Response, Error<UpdateMailboxError>> {
     // add a prefix to parameters to efficiently prevent name collisions
-    let p_path_id = id;
-    let p_body_verify_account_email_domain_request = verify_account_email_domain_request;
+    let p_path_mailbox_id = mailbox_id;
+    let p_body_update_mailbox_request = update_mailbox_request;
 
-    let uri_str = format!("{}/v1/account/email_domains/{id}/verify", configuration.base_path, id=crate::apis::urlencode(p_path_id));
+    let uri_str = format!("{}/v1/mailboxes/{mailbox_id}", configuration.base_path, mailbox_id=crate::apis::urlencode(p_path_mailbox_id));
+    let mut req_builder = configuration.client.request(reqwest::Method::PATCH, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    if let Some(ref token) = configuration.bearer_access_token {
+        req_builder = req_builder.bearer_auth(token.to_owned());
+    };
+    req_builder = req_builder.json(&p_body_update_mailbox_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::CreateMailbox201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::CreateMailbox201Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<UpdateMailboxError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Queues the check and returns the current state. Read the domain again to see the result.
+pub async fn verify_email_domain(configuration: &configuration::Configuration, domain_id: &str, verify_email_domain_request: models::VerifyEmailDomainRequest) -> Result<models::CreateEmailDomain201Response, Error<VerifyEmailDomainError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_path_domain_id = domain_id;
+    let p_body_verify_email_domain_request = verify_email_domain_request;
+
+    let uri_str = format!("{}/v1/account/email_domains/{domain_id}/verify", configuration.base_path, domain_id=crate::apis::urlencode(p_path_domain_id));
     let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
 
     if let Some(ref user_agent) = configuration.user_agent {
@@ -1926,7 +2916,7 @@ pub async fn verify_account_email_domain(configuration: &configuration::Configur
     if let Some(ref token) = configuration.bearer_access_token {
         req_builder = req_builder.bearer_auth(token.to_owned());
     };
-    req_builder = req_builder.json(&p_body_verify_account_email_domain_request);
+    req_builder = req_builder.json(&p_body_verify_email_domain_request);
 
     let req = req_builder.build()?;
     let resp = configuration.client.execute(req).await?;
@@ -1943,12 +2933,50 @@ pub async fn verify_account_email_domain(configuration: &configuration::Configur
         let content = resp.text().await?;
         match content_type {
             ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
-            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::EmailDomainListResponse`"))),
-            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::EmailDomainListResponse`")))),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::CreateEmailDomain201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::CreateEmailDomain201Response`")))),
         }
     } else {
         let content = resp.text().await?;
-        let entity: Option<VerifyAccountEmailDomainError> = serde_json::from_str(&content).ok();
+        let entity: Option<VerifyEmailDomainError> = serde_json::from_str(&content).ok();
+        Err(Error::ResponseError(ResponseContent { status, content, entity }))
+    }
+}
+
+/// Creates an AI agent connection for an account owner or administrator. Accounts with two-factor authentication must use browser sign-in.
+pub async fn verify_sign_in_code(configuration: &configuration::Configuration, verify_sign_in_code_request: models::VerifySignInCodeRequest) -> Result<models::VerifySignInCode201Response, Error<VerifySignInCodeError>> {
+    // add a prefix to parameters to efficiently prevent name collisions
+    let p_body_verify_sign_in_code_request = verify_sign_in_code_request;
+
+    let uri_str = format!("{}/v1/agent_auth/verify_code", configuration.base_path);
+    let mut req_builder = configuration.client.request(reqwest::Method::POST, &uri_str);
+
+    if let Some(ref user_agent) = configuration.user_agent {
+        req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
+    }
+    req_builder = req_builder.json(&p_body_verify_sign_in_code_request);
+
+    let req = req_builder.build()?;
+    let resp = configuration.client.execute(req).await?;
+
+    let status = resp.status();
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let content_type = super::ContentType::from(content_type);
+
+    if !status.is_client_error() && !status.is_server_error() {
+        let content = resp.text().await?;
+        match content_type {
+            ContentType::Json => serde_json::from_str(&content).map_err(Error::from),
+            ContentType::Text => return Err(Error::from(serde_json::Error::custom("Received `text/plain` content type response that cannot be converted to `models::VerifySignInCode201Response`"))),
+            ContentType::Unsupported(unknown_type) => return Err(Error::from(serde_json::Error::custom(format!("Received `{unknown_type}` content type response that cannot be converted to `models::VerifySignInCode201Response`")))),
+        }
+    } else {
+        let content = resp.text().await?;
+        let entity: Option<VerifySignInCodeError> = serde_json::from_str(&content).ok();
         Err(Error::ResponseError(ResponseContent { status, content, entity }))
     }
 }

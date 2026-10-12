@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -35,8 +35,11 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonPropertyOrder({
   SaveUploadedFileRequest.JSON_PROPERTY_PATH,
   SaveUploadedFileRequest.JSON_PROPERTY_SIGNED_BLOB_ID,
+  SaveUploadedFileRequest.JSON_PROPERTY_NAME,
+  SaveUploadedFileRequest.JSON_PROPERTY_ROLE,
+  SaveUploadedFileRequest.JSON_PROPERTY_EXISTING_FILE_POLICY,
+  SaveUploadedFileRequest.JSON_PROPERTY_EXPECTED_MAILBOX_VERSION,
   SaveUploadedFileRequest.JSON_PROPERTY_ACCOUNT_ID,
-  SaveUploadedFileRequest.JSON_PROPERTY_EXPECTED_MAILBOX_REVISION_ID,
   SaveUploadedFileRequest.JSON_PROPERTY_REASON
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
@@ -49,13 +52,103 @@ public class SaveUploadedFileRequest {
   @javax.annotation.Nonnull
   private String signedBlobId;
 
+  public static final String JSON_PROPERTY_NAME = "name";
+  @javax.annotation.Nullable
+  private String name;
+
+  /**
+   * Gets or Sets role
+   */
+  public enum RoleEnum {
+    SOURCE(String.valueOf("source")),
+    
+    REFERENCE(String.valueOf("reference")),
+    
+    GENERATED(String.valueOf("generated")),
+    
+    AGENT_OUTPUT(String.valueOf("agent_output")),
+    
+    EXPORT(String.valueOf("export")),
+    
+    ARTIFACT(String.valueOf("artifact"));
+
+    private String value;
+
+    RoleEnum(String value) {
+      this.value = value;
+    }
+
+    @JsonValue
+    public String getValue() {
+      return value;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(value);
+    }
+
+    @JsonCreator
+    public static RoleEnum fromValue(String value) {
+      for (RoleEnum b : RoleEnum.values()) {
+        if (b.value.equals(value)) {
+          return b;
+        }
+      }
+      throw new IllegalArgumentException("Unexpected value '" + value + "'");
+    }
+  }
+
+  public static final String JSON_PROPERTY_ROLE = "role";
+  @javax.annotation.Nullable
+  private RoleEnum role = RoleEnum.SOURCE;
+
+  /**
+   * Gets or Sets existingFilePolicy
+   */
+  public enum ExistingFilePolicyEnum {
+    REPLACE(String.valueOf("replace")),
+    
+    SKIP(String.valueOf("skip"));
+
+    private String value;
+
+    ExistingFilePolicyEnum(String value) {
+      this.value = value;
+    }
+
+    @JsonValue
+    public String getValue() {
+      return value;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(value);
+    }
+
+    @JsonCreator
+    public static ExistingFilePolicyEnum fromValue(String value) {
+      for (ExistingFilePolicyEnum b : ExistingFilePolicyEnum.values()) {
+        if (b.value.equals(value)) {
+          return b;
+        }
+      }
+      throw new IllegalArgumentException("Unexpected value '" + value + "'");
+    }
+  }
+
+  public static final String JSON_PROPERTY_EXISTING_FILE_POLICY = "existing_file_policy";
+  @javax.annotation.Nullable
+  private ExistingFilePolicyEnum existingFilePolicy = ExistingFilePolicyEnum.REPLACE;
+
+  public static final String JSON_PROPERTY_EXPECTED_MAILBOX_VERSION = "expected_mailbox_version";
+  @javax.annotation.Nullable
+  private String expectedMailboxVersion;
+
   public static final String JSON_PROPERTY_ACCOUNT_ID = "account_id";
   @javax.annotation.Nullable
   private String accountId;
-
-  public static final String JSON_PROPERTY_EXPECTED_MAILBOX_REVISION_ID = "expected_mailbox_revision_id";
-  @javax.annotation.Nullable
-  private String expectedMailboxRevisionId;
 
   public static final String JSON_PROPERTY_REASON = "reason";
   private JsonNullable<String> reason = JsonNullable.<String>undefined();
@@ -69,7 +162,7 @@ public class SaveUploadedFileRequest {
   }
 
   /**
-   * Get path
+   * Destination path. An existing path receives a new version. Paths under _email/ return EMAIL_PATH_READ_ONLY.
    * @return path
    */
   @javax.annotation.Nonnull
@@ -93,7 +186,7 @@ public class SaveUploadedFileRequest {
   }
 
   /**
-   * Get signedBlobId
+   * data.signed_id from POST /v1/direct_uploads.
    * @return signedBlobId
    */
   @javax.annotation.Nonnull
@@ -108,6 +201,102 @@ public class SaveUploadedFileRequest {
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public void setSignedBlobId(@javax.annotation.Nonnull String signedBlobId) {
     this.signedBlobId = signedBlobId;
+  }
+
+
+  public SaveUploadedFileRequest name(@javax.annotation.Nullable String name) {
+    this.name = name;
+    return this;
+  }
+
+  /**
+   * Display name; defaults to the last path segment.
+   * @return name
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_NAME, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public String getName() {
+    return name;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_NAME, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setName(@javax.annotation.Nullable String name) {
+    this.name = name;
+  }
+
+
+  public SaveUploadedFileRequest role(@javax.annotation.Nullable RoleEnum role) {
+    this.role = role;
+    return this;
+  }
+
+  /**
+   * Get role
+   * @return role
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_ROLE, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public RoleEnum getRole() {
+    return role;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_ROLE, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setRole(@javax.annotation.Nullable RoleEnum role) {
+    this.role = role;
+  }
+
+
+  public SaveUploadedFileRequest existingFilePolicy(@javax.annotation.Nullable ExistingFilePolicyEnum existingFilePolicy) {
+    this.existingFilePolicy = existingFilePolicy;
+    return this;
+  }
+
+  /**
+   * Get existingFilePolicy
+   * @return existingFilePolicy
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_EXISTING_FILE_POLICY, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public ExistingFilePolicyEnum getExistingFilePolicy() {
+    return existingFilePolicy;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_EXISTING_FILE_POLICY, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setExistingFilePolicy(@javax.annotation.Nullable ExistingFilePolicyEnum existingFilePolicy) {
+    this.existingFilePolicy = existingFilePolicy;
+  }
+
+
+  public SaveUploadedFileRequest expectedMailboxVersion(@javax.annotation.Nullable String expectedMailboxVersion) {
+    this.expectedMailboxVersion = expectedMailboxVersion;
+    return this;
+  }
+
+  /**
+   * Mailbox version_id from your last read. A different current version returns MAILBOX_VERSION_CONFLICT and saves nothing.
+   * @return expectedMailboxVersion
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_EXPECTED_MAILBOX_VERSION, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public String getExpectedMailboxVersion() {
+    return expectedMailboxVersion;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_EXPECTED_MAILBOX_VERSION, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setExpectedMailboxVersion(@javax.annotation.Nullable String expectedMailboxVersion) {
+    this.expectedMailboxVersion = expectedMailboxVersion;
   }
 
 
@@ -132,30 +321,6 @@ public class SaveUploadedFileRequest {
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
   public void setAccountId(@javax.annotation.Nullable String accountId) {
     this.accountId = accountId;
-  }
-
-
-  public SaveUploadedFileRequest expectedMailboxRevisionId(@javax.annotation.Nullable String expectedMailboxRevisionId) {
-    this.expectedMailboxRevisionId = expectedMailboxRevisionId;
-    return this;
-  }
-
-  /**
-   * Get expectedMailboxRevisionId
-   * @return expectedMailboxRevisionId
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_EXPECTED_MAILBOX_REVISION_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public String getExpectedMailboxRevisionId() {
-    return expectedMailboxRevisionId;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_EXPECTED_MAILBOX_REVISION_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setExpectedMailboxRevisionId(@javax.annotation.Nullable String expectedMailboxRevisionId) {
-    this.expectedMailboxRevisionId = expectedMailboxRevisionId;
   }
 
 
@@ -205,8 +370,11 @@ public class SaveUploadedFileRequest {
     SaveUploadedFileRequest saveUploadedFileRequest = (SaveUploadedFileRequest) o;
     return Objects.equals(this.path, saveUploadedFileRequest.path) &&
         Objects.equals(this.signedBlobId, saveUploadedFileRequest.signedBlobId) &&
+        Objects.equals(this.name, saveUploadedFileRequest.name) &&
+        Objects.equals(this.role, saveUploadedFileRequest.role) &&
+        Objects.equals(this.existingFilePolicy, saveUploadedFileRequest.existingFilePolicy) &&
+        Objects.equals(this.expectedMailboxVersion, saveUploadedFileRequest.expectedMailboxVersion) &&
         Objects.equals(this.accountId, saveUploadedFileRequest.accountId) &&
-        Objects.equals(this.expectedMailboxRevisionId, saveUploadedFileRequest.expectedMailboxRevisionId) &&
         equalsNullable(this.reason, saveUploadedFileRequest.reason);
   }
 
@@ -216,7 +384,7 @@ public class SaveUploadedFileRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(path, signedBlobId, accountId, expectedMailboxRevisionId, hashCodeNullable(reason));
+    return Objects.hash(path, signedBlobId, name, role, existingFilePolicy, expectedMailboxVersion, accountId, hashCodeNullable(reason));
   }
 
   private static <T> int hashCodeNullable(JsonNullable<T> a) {
@@ -232,8 +400,11 @@ public class SaveUploadedFileRequest {
     sb.append("class SaveUploadedFileRequest {\n");
     sb.append("    path: ").append(toIndentedString(path)).append("\n");
     sb.append("    signedBlobId: ").append(toIndentedString(signedBlobId)).append("\n");
+    sb.append("    name: ").append(toIndentedString(name)).append("\n");
+    sb.append("    role: ").append(toIndentedString(role)).append("\n");
+    sb.append("    existingFilePolicy: ").append(toIndentedString(existingFilePolicy)).append("\n");
+    sb.append("    expectedMailboxVersion: ").append(toIndentedString(expectedMailboxVersion)).append("\n");
     sb.append("    accountId: ").append(toIndentedString(accountId)).append("\n");
-    sb.append("    expectedMailboxRevisionId: ").append(toIndentedString(expectedMailboxRevisionId)).append("\n");
     sb.append("    reason: ").append(toIndentedString(reason)).append("\n");
     sb.append("}");
     return sb.toString();

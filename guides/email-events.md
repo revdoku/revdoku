@@ -9,13 +9,13 @@ Read contents through the existing email API.
 | --- | --- | --- |
 | GET /v1/mailboxes/:mailbox_id/email/webhook | Mailbox admin | Endpoint, or webhook: null; excludes the signing secret. |
 | PUT /v1/mailboxes/:mailbox_id/email/webhook | Mailbox admin | Set one URL; returns the endpoint and signing secret. |
-| DELETE /v1/mailboxes/:mailbox_id/email/webhook | Mailbox admin | Disable delivery; 204 No Content. |
+| DELETE /v1/mailboxes/:mailbox_id/email/webhook | Mailbox admin | Disable delivery; 200 with data.deleted and data.id (the mailbox ID). |
 | GET /v1/mailboxes/:mailbox_id/email/subscription | Mailbox read | Signed WebSocket ticket valid for 60 seconds. |
 
 Use your normal bearer API key. Select another granted account with account_id in
 the query for GET/DELETE, or in the JSON body for PUT. Endpoints must use public
 HTTPS, including explicit ports such as 8443, with no URL user/password or fragment. Local/private addresses
-and redirects are rejected. Invalid configuration returns INVALID_EMAIL_WEBHOOK (422).
+and redirects are rejected. Invalid configuration returns INVALID_ARGUMENT (422).
 
 | PUT field | Meaning |
 | --- | --- |
@@ -27,8 +27,9 @@ and redirects are rejected. Invalid configuration returns INVALID_EMAIL_WEBHOOK 
 
 1. Implement an HTTPS POST receiver.
 2. PUT {"webhook_url":"https://example.org/email-events"} to configure it. Securely save
-   data.webhook.signing_secret. Repeating PUT with the same URL retains the secret;
-   replacing the URL rotates it and cancels pending old-endpoint deliveries.
+   data.webhook.signing_secret. Repeating PUT with the same URL retains the secret
+   and does not return it again; replacing the URL rotates it and cancels pending
+   old-endpoint deliveries.
 3. Verify the exact request bytes before parsing JSON.
 4. Deduplicate the event ID, durably accept the event, and return any 2xx.
 5. Fetch /v1/mailboxes/:mailbox_id/emails/:email_id with your own API key.

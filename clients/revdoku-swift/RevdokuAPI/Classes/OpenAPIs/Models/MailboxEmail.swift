@@ -10,70 +10,48 @@ import Foundation
 import AnyCodable
 #endif
 
-/** Mailbox reads include stored and unread email counts, lifetime receipts, receiving state and the permitted address. Creation and include_email reads also include additional address settings. */
+/** Receiving and sending state of a mailbox. Counts read the email index without reading content. */
 public struct MailboxEmail: Codable, JSONEncodable, Hashable {
 
-    public static let receivedCountRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
     public static let messageCountRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
     public static let unreadCountRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
-    /** Primary mailbox display label when authorized. Omitted without address permission. The address remains a valid label when receiving is unavailable. */
+    /** Primary address. Present when the credential has write access to the mailbox. Use it as the mailbox label. */
     public var address: String?
-    /** Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails. */
-    public var receivedCount: Int64
-    public var lastReceivedAt: Date?
-    /** Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion. */
-    public var lastReceivedPath: String?
-    /** Why receiving is unavailable; omitted when receiving_enabled is true. */
-    public var blockedReason: String?
-    public var availableDomains: [MailboxEmailAvailableDomainsInner]?
-    public var assignment: MailboxEmailAssignment?
-    public var customization: MailboxEmailCustomization?
-    /** Whether the mailbox can receive email now. Display an authorized address even when this is false. */
-    public var receivingEnabled: Bool
-    public var senderAllowlist: EmailSenderAllowlist?
-    public var username: String?
-    /** Always false. Sending is not implemented. */
-    public var sendingEnabled: Bool
-    public var aliases: [MailboxEmailAliasesInner]?
     /** Emails currently stored. Null while the email index is being prepared. */
     public var messageCount: Int64?
     /** Stored emails with shared unread status. Null while the email index is being prepared. */
     public var unreadCount: Int64?
+    /** Receipt time of the latest saved email; null before the first email. */
+    public var lastReceivedAt: Date?
+    /** Whether the mailbox can receive email now. */
+    public var receivingEnabled: Bool
+    /** Why receiving is unavailable. Omitted when receiving_enabled is true. */
+    public var blockedReason: String?
+    /** Whether the mailbox can send replies now. */
+    public var sendingEnabled: Bool
+    /** Why sending is unavailable. Omitted when sending_enabled is true. */
+    public var sendingBlockedReason: String?
 
-    public init(address: String? = nil, receivedCount: Int64, lastReceivedAt: Date?, lastReceivedPath: String?, blockedReason: String? = nil, availableDomains: [MailboxEmailAvailableDomainsInner]? = nil, assignment: MailboxEmailAssignment? = nil, customization: MailboxEmailCustomization? = nil, receivingEnabled: Bool, senderAllowlist: EmailSenderAllowlist? = nil, username: String? = nil, sendingEnabled: Bool, aliases: [MailboxEmailAliasesInner]? = nil, messageCount: Int64?, unreadCount: Int64?) {
+    public init(address: String? = nil, messageCount: Int64?, unreadCount: Int64?, lastReceivedAt: Date?, receivingEnabled: Bool, blockedReason: String? = nil, sendingEnabled: Bool, sendingBlockedReason: String? = nil) {
         self.address = address
-        self.receivedCount = receivedCount
-        self.lastReceivedAt = lastReceivedAt
-        self.lastReceivedPath = lastReceivedPath
-        self.blockedReason = blockedReason
-        self.availableDomains = availableDomains
-        self.assignment = assignment
-        self.customization = customization
-        self.receivingEnabled = receivingEnabled
-        self.senderAllowlist = senderAllowlist
-        self.username = username
-        self.sendingEnabled = sendingEnabled
-        self.aliases = aliases
         self.messageCount = messageCount
         self.unreadCount = unreadCount
+        self.lastReceivedAt = lastReceivedAt
+        self.receivingEnabled = receivingEnabled
+        self.blockedReason = blockedReason
+        self.sendingEnabled = sendingEnabled
+        self.sendingBlockedReason = sendingBlockedReason
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case address
-        case receivedCount = "received_count"
-        case lastReceivedAt = "last_received_at"
-        case lastReceivedPath = "last_received_path"
-        case blockedReason = "blocked_reason"
-        case availableDomains = "available_domains"
-        case assignment
-        case customization
-        case receivingEnabled = "receiving_enabled"
-        case senderAllowlist = "sender_allowlist"
-        case username
-        case sendingEnabled = "sending_enabled"
-        case aliases
         case messageCount = "message_count"
         case unreadCount = "unread_count"
+        case lastReceivedAt = "last_received_at"
+        case receivingEnabled = "receiving_enabled"
+        case blockedReason = "blocked_reason"
+        case sendingEnabled = "sending_enabled"
+        case sendingBlockedReason = "sending_blocked_reason"
     }
 
     // Encodable protocol methods
@@ -81,20 +59,13 @@ public struct MailboxEmail: Codable, JSONEncodable, Hashable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(address, forKey: .address)
-        try container.encode(receivedCount, forKey: .receivedCount)
-        try container.encode(lastReceivedAt, forKey: .lastReceivedAt)
-        try container.encode(lastReceivedPath, forKey: .lastReceivedPath)
-        try container.encodeIfPresent(blockedReason, forKey: .blockedReason)
-        try container.encodeIfPresent(availableDomains, forKey: .availableDomains)
-        try container.encodeIfPresent(assignment, forKey: .assignment)
-        try container.encodeIfPresent(customization, forKey: .customization)
-        try container.encode(receivingEnabled, forKey: .receivingEnabled)
-        try container.encodeIfPresent(senderAllowlist, forKey: .senderAllowlist)
-        try container.encodeIfPresent(username, forKey: .username)
-        try container.encode(sendingEnabled, forKey: .sendingEnabled)
-        try container.encodeIfPresent(aliases, forKey: .aliases)
         try container.encode(messageCount, forKey: .messageCount)
         try container.encode(unreadCount, forKey: .unreadCount)
+        try container.encode(lastReceivedAt, forKey: .lastReceivedAt)
+        try container.encode(receivingEnabled, forKey: .receivingEnabled)
+        try container.encodeIfPresent(blockedReason, forKey: .blockedReason)
+        try container.encode(sendingEnabled, forKey: .sendingEnabled)
+        try container.encodeIfPresent(sendingBlockedReason, forKey: .sendingBlockedReason)
     }
 }
 

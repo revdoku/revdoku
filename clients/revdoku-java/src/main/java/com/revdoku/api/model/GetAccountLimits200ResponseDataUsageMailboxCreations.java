@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -23,6 +23,10 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
+import org.openapitools.jackson.nullable.JsonNullable;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.openapitools.jackson.nullable.JsonNullable;
+import java.util.NoSuchElementException;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
@@ -30,108 +34,119 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * GetAccountLimits200ResponseDataUsageMailboxCreations
  */
 @JsonPropertyOrder({
+  GetAccountLimits200ResponseDataUsageMailboxCreations.JSON_PROPERTY_MONTHLY_LIMIT,
   GetAccountLimits200ResponseDataUsageMailboxCreations.JSON_PROPERTY_USED,
   GetAccountLimits200ResponseDataUsageMailboxCreations.JSON_PROPERTY_REMAINING,
-  GetAccountLimits200ResponseDataUsageMailboxCreations.JSON_PROPERTY_MONTHLY_LIMIT,
   GetAccountLimits200ResponseDataUsageMailboxCreations.JSON_PROPERTY_RESETS_AT
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class GetAccountLimits200ResponseDataUsageMailboxCreations {
+  public static final String JSON_PROPERTY_MONTHLY_LIMIT = "monthly_limit";
+  private JsonNullable<Integer> monthlyLimit = JsonNullable.<Integer>undefined();
+
   public static final String JSON_PROPERTY_USED = "used";
-  @javax.annotation.Nonnull
+  @javax.annotation.Nullable
   private Integer used;
 
   public static final String JSON_PROPERTY_REMAINING = "remaining";
-  @javax.annotation.Nonnull
-  private Integer remaining;
-
-  public static final String JSON_PROPERTY_MONTHLY_LIMIT = "monthly_limit";
-  @javax.annotation.Nonnull
-  private Integer monthlyLimit;
+  private JsonNullable<Integer> remaining = JsonNullable.<Integer>undefined();
 
   public static final String JSON_PROPERTY_RESETS_AT = "resets_at";
-  @javax.annotation.Nonnull
+  @javax.annotation.Nullable
   private OffsetDateTime resetsAt;
 
   public GetAccountLimits200ResponseDataUsageMailboxCreations() { 
   }
 
-  public GetAccountLimits200ResponseDataUsageMailboxCreations used(@javax.annotation.Nonnull Integer used) {
+  public GetAccountLimits200ResponseDataUsageMailboxCreations monthlyLimit(@javax.annotation.Nullable Integer monthlyLimit) {
+    this.monthlyLimit = JsonNullable.<Integer>of(monthlyLimit);
+    return this;
+  }
+
+  /**
+   * Get monthlyLimit
+   * @return monthlyLimit
+   */
+  @javax.annotation.Nullable
+  @JsonIgnore
+  public Integer getMonthlyLimit() {
+        return monthlyLimit.orElse(null);
+  }
+
+  @JsonProperty(value = JSON_PROPERTY_MONTHLY_LIMIT, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public JsonNullable<Integer> getMonthlyLimit_JsonNullable() {
+    return monthlyLimit;
+  }
+  
+  @JsonProperty(JSON_PROPERTY_MONTHLY_LIMIT)
+  public void setMonthlyLimit_JsonNullable(JsonNullable<Integer> monthlyLimit) {
+    this.monthlyLimit = monthlyLimit;
+  }
+
+  public void setMonthlyLimit(@javax.annotation.Nullable Integer monthlyLimit) {
+    this.monthlyLimit = JsonNullable.<Integer>of(monthlyLimit);
+  }
+
+
+  public GetAccountLimits200ResponseDataUsageMailboxCreations used(@javax.annotation.Nullable Integer used) {
     this.used = used;
     return this;
   }
 
   /**
    * Get used
-   * minimum: 0
    * @return used
    */
-  @javax.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_USED, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_USED, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
   public Integer getUsed() {
     return used;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_USED, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setUsed(@javax.annotation.Nonnull Integer used) {
+  @JsonProperty(value = JSON_PROPERTY_USED, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setUsed(@javax.annotation.Nullable Integer used) {
     this.used = used;
   }
 
 
-  public GetAccountLimits200ResponseDataUsageMailboxCreations remaining(@javax.annotation.Nonnull Integer remaining) {
-    this.remaining = remaining;
+  public GetAccountLimits200ResponseDataUsageMailboxCreations remaining(@javax.annotation.Nullable Integer remaining) {
+    this.remaining = JsonNullable.<Integer>of(remaining);
     return this;
   }
 
   /**
    * Get remaining
-   * minimum: 0
    * @return remaining
    */
-  @javax.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_REMAINING, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  @javax.annotation.Nullable
+  @JsonIgnore
   public Integer getRemaining() {
-    return remaining;
+        return remaining.orElse(null);
   }
 
+  @JsonProperty(value = JSON_PROPERTY_REMAINING, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
 
-  @JsonProperty(value = JSON_PROPERTY_REMAINING, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setRemaining(@javax.annotation.Nonnull Integer remaining) {
+  public JsonNullable<Integer> getRemaining_JsonNullable() {
+    return remaining;
+  }
+  
+  @JsonProperty(JSON_PROPERTY_REMAINING)
+  public void setRemaining_JsonNullable(JsonNullable<Integer> remaining) {
     this.remaining = remaining;
   }
 
-
-  public GetAccountLimits200ResponseDataUsageMailboxCreations monthlyLimit(@javax.annotation.Nonnull Integer monthlyLimit) {
-    this.monthlyLimit = monthlyLimit;
-    return this;
-  }
-
-  /**
-   * Get monthlyLimit
-   * minimum: 0
-   * @return monthlyLimit
-   */
-  @javax.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_MONTHLY_LIMIT, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public Integer getMonthlyLimit() {
-    return monthlyLimit;
+  public void setRemaining(@javax.annotation.Nullable Integer remaining) {
+    this.remaining = JsonNullable.<Integer>of(remaining);
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_MONTHLY_LIMIT, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setMonthlyLimit(@javax.annotation.Nonnull Integer monthlyLimit) {
-    this.monthlyLimit = monthlyLimit;
-  }
-
-
-  public GetAccountLimits200ResponseDataUsageMailboxCreations resetsAt(@javax.annotation.Nonnull OffsetDateTime resetsAt) {
+  public GetAccountLimits200ResponseDataUsageMailboxCreations resetsAt(@javax.annotation.Nullable OffsetDateTime resetsAt) {
     this.resetsAt = resetsAt;
     return this;
   }
@@ -140,17 +155,17 @@ public class GetAccountLimits200ResponseDataUsageMailboxCreations {
    * Get resetsAt
    * @return resetsAt
    */
-  @javax.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_RESETS_AT, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_RESETS_AT, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
   public OffsetDateTime getResetsAt() {
     return resetsAt;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_RESETS_AT, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setResetsAt(@javax.annotation.Nonnull OffsetDateTime resetsAt) {
+  @JsonProperty(value = JSON_PROPERTY_RESETS_AT, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setResetsAt(@javax.annotation.Nullable OffsetDateTime resetsAt) {
     this.resetsAt = resetsAt;
   }
 
@@ -167,24 +182,35 @@ public class GetAccountLimits200ResponseDataUsageMailboxCreations {
       return false;
     }
     GetAccountLimits200ResponseDataUsageMailboxCreations getAccountLimits200ResponseDataUsageMailboxCreations = (GetAccountLimits200ResponseDataUsageMailboxCreations) o;
-    return Objects.equals(this.used, getAccountLimits200ResponseDataUsageMailboxCreations.used) &&
-        Objects.equals(this.remaining, getAccountLimits200ResponseDataUsageMailboxCreations.remaining) &&
-        Objects.equals(this.monthlyLimit, getAccountLimits200ResponseDataUsageMailboxCreations.monthlyLimit) &&
+    return equalsNullable(this.monthlyLimit, getAccountLimits200ResponseDataUsageMailboxCreations.monthlyLimit) &&
+        Objects.equals(this.used, getAccountLimits200ResponseDataUsageMailboxCreations.used) &&
+        equalsNullable(this.remaining, getAccountLimits200ResponseDataUsageMailboxCreations.remaining) &&
         Objects.equals(this.resetsAt, getAccountLimits200ResponseDataUsageMailboxCreations.resetsAt);
+  }
+
+  private static <T> boolean equalsNullable(JsonNullable<T> a, JsonNullable<T> b) {
+    return a == b || (a != null && b != null && a.isPresent() && b.isPresent() && Objects.deepEquals(a.get(), b.get()));
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(used, remaining, monthlyLimit, resetsAt);
+    return Objects.hash(hashCodeNullable(monthlyLimit), used, hashCodeNullable(remaining), resetsAt);
+  }
+
+  private static <T> int hashCodeNullable(JsonNullable<T> a) {
+    if (a == null) {
+      return 1;
+    }
+    return a.isPresent() ? Arrays.deepHashCode(new Object[]{a.get()}) : 31;
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class GetAccountLimits200ResponseDataUsageMailboxCreations {\n");
+    sb.append("    monthlyLimit: ").append(toIndentedString(monthlyLimit)).append("\n");
     sb.append("    used: ").append(toIndentedString(used)).append("\n");
     sb.append("    remaining: ").append(toIndentedString(remaining)).append("\n");
-    sb.append("    monthlyLimit: ").append(toIndentedString(monthlyLimit)).append("\n");
     sb.append("    resetsAt: ").append(toIndentedString(resetsAt)).append("\n");
     sb.append("}");
     return sb.toString();

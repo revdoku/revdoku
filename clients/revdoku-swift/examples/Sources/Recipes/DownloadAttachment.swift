@@ -14,15 +14,15 @@ public func downloadAttachment() async throws {
     let email = try requiredEnvironment("REVDOKU_EMAIL_ID")
     let attachment = try requiredEnvironment("REVDOKU_ATTACHMENT_ID")
     let output = try requiredEnvironment("REVDOKU_DOWNLOAD_PATH")
-    let response: GetEmailOriginalDownloadUrl200Response = try await withCheckedThrowingContinuation { continuation in
-        DefaultAPI.getEmailAttachmentDownloadUrl(mailboxId: mailbox, emailId: email, attachmentId: attachment, accountId: accountID()) { result, error in
+    let response: GetEmailOriginalDownload200Response = try await withCheckedThrowingContinuation { continuation in
+        DefaultAPI.getEmailAttachmentDownload(mailboxId: mailbox, emailId: email, attachmentId: attachment, accountId: accountID()) { result, error in
             if let error = error { continuation.resume(throwing: error) }
             else if let result = result { continuation.resume(returning: result) }
             else { continuation.resume(throwing: ExampleError.missingResponse) }
         }
     }
     let download = response.data.download
-    guard download.authentication == ._none, let url = URL(string: download.url), url.scheme == "https",
+    guard let url = URL(string: download.url), url.scheme == "https",
           url.host != nil, url.user == nil, url.password == nil else { throw ExampleError.invalidDownload }
     // This separate session sends no API token and follows no redirects.
     let session = URLSession(configuration: .ephemeral, delegate: NoDownloadRedirects(), delegateQueue: nil)

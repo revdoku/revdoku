@@ -15,26 +15,25 @@ public struct CreateClientAccountRequest: Codable, JSONEncodable, Hashable {
     public static let nameRule = StringRule(minLength: 1, maxLength: nil, pattern: nil)
     public static let clientNameRule = StringRule(minLength: nil, maxLength: 100, pattern: nil)
     public static let reasonRule = StringRule(minLength: nil, maxLength: 2000, pattern: nil)
-    /** Account name. */
     public var name: String
-    /** Optional granted Agency account id. Does not change the credential default. */
-    public var accountId: String?
-    /** Optional client person or business, separate from the account name. Omit when unknown. */
+    /** Optional client person or business name. */
     public var clientName: String?
+    /** Granted agency account that owns the new client account. */
+    public var accountId: String?
     /** Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. */
     public var reason: String?
 
-    public init(name: String, accountId: String? = nil, clientName: String? = nil, reason: String? = nil) {
+    public init(name: String, clientName: String? = nil, accountId: String? = nil, reason: String? = nil) {
         self.name = name
-        self.accountId = accountId
         self.clientName = clientName
+        self.accountId = accountId
         self.reason = reason
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case name
-        case accountId = "account_id"
         case clientName = "client_name"
+        case accountId = "account_id"
         case reason
     }
 
@@ -43,8 +42,8 @@ public struct CreateClientAccountRequest: Codable, JSONEncodable, Hashable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(name, forKey: .name)
-        try container.encodeIfPresent(accountId, forKey: .accountId)
         try container.encodeIfPresent(clientName, forKey: .clientName)
+        try container.encodeIfPresent(accountId, forKey: .accountId)
         try container.encodeIfPresent(reason, forKey: .reason)
     }
 }

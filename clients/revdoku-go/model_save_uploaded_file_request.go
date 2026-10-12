@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -20,10 +20,17 @@ var _ MappedNullable = &SaveUploadedFileRequest{}
 
 // SaveUploadedFileRequest struct for SaveUploadedFileRequest
 type SaveUploadedFileRequest struct {
+	// Destination path. An existing path receives a new version. Paths under _email/ return EMAIL_PATH_READ_ONLY.
 	Path string `json:"path"`
+	// data.signed_id from POST /v1/direct_uploads.
 	SignedBlobId string `json:"signed_blob_id"`
+	// Display name; defaults to the last path segment.
+	Name *string `json:"name,omitempty"`
+	Role *string `json:"role,omitempty"`
+	ExistingFilePolicy *string `json:"existing_file_policy,omitempty"`
+	// Mailbox version_id from your last read. A different current version returns MAILBOX_VERSION_CONFLICT and saves nothing.
+	ExpectedMailboxVersion *string `json:"expected_mailbox_version,omitempty"`
 	AccountId *string `json:"account_id,omitempty"`
-	ExpectedMailboxRevisionId *string `json:"expected_mailbox_revision_id,omitempty"`
 	// Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
 	Reason NullableString `json:"reason,omitempty"`
 	AdditionalProperties map[string]interface{}
@@ -39,6 +46,10 @@ func NewSaveUploadedFileRequest(path string, signedBlobId string) *SaveUploadedF
 	this := SaveUploadedFileRequest{}
 	this.Path = path
 	this.SignedBlobId = signedBlobId
+	var role string = "source"
+	this.Role = &role
+	var existingFilePolicy string = "replace"
+	this.ExistingFilePolicy = &existingFilePolicy
 	return &this
 }
 
@@ -47,6 +58,10 @@ func NewSaveUploadedFileRequest(path string, signedBlobId string) *SaveUploadedF
 // but it doesn't guarantee that properties required by API are set
 func NewSaveUploadedFileRequestWithDefaults() *SaveUploadedFileRequest {
 	this := SaveUploadedFileRequest{}
+	var role string = "source"
+	this.Role = &role
+	var existingFilePolicy string = "replace"
+	this.ExistingFilePolicy = &existingFilePolicy
 	return &this
 }
 
@@ -98,6 +113,134 @@ func (o *SaveUploadedFileRequest) SetSignedBlobId(v string) {
 	o.SignedBlobId = v
 }
 
+// GetName returns the Name field value if set, zero value otherwise.
+func (o *SaveUploadedFileRequest) GetName() string {
+	if o == nil || IsNil(o.Name) {
+		var ret string
+		return ret
+	}
+	return *o.Name
+}
+
+// GetNameOk returns a tuple with the Name field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SaveUploadedFileRequest) GetNameOk() (*string, bool) {
+	if o == nil || IsNil(o.Name) {
+		return nil, false
+	}
+	return o.Name, true
+}
+
+// HasName returns a boolean if a field has been set.
+func (o *SaveUploadedFileRequest) HasName() bool {
+	if o != nil && !IsNil(o.Name) {
+		return true
+	}
+
+	return false
+}
+
+// SetName gets a reference to the given string and assigns it to the Name field.
+func (o *SaveUploadedFileRequest) SetName(v string) {
+	o.Name = &v
+}
+
+// GetRole returns the Role field value if set, zero value otherwise.
+func (o *SaveUploadedFileRequest) GetRole() string {
+	if o == nil || IsNil(o.Role) {
+		var ret string
+		return ret
+	}
+	return *o.Role
+}
+
+// GetRoleOk returns a tuple with the Role field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SaveUploadedFileRequest) GetRoleOk() (*string, bool) {
+	if o == nil || IsNil(o.Role) {
+		return nil, false
+	}
+	return o.Role, true
+}
+
+// HasRole returns a boolean if a field has been set.
+func (o *SaveUploadedFileRequest) HasRole() bool {
+	if o != nil && !IsNil(o.Role) {
+		return true
+	}
+
+	return false
+}
+
+// SetRole gets a reference to the given string and assigns it to the Role field.
+func (o *SaveUploadedFileRequest) SetRole(v string) {
+	o.Role = &v
+}
+
+// GetExistingFilePolicy returns the ExistingFilePolicy field value if set, zero value otherwise.
+func (o *SaveUploadedFileRequest) GetExistingFilePolicy() string {
+	if o == nil || IsNil(o.ExistingFilePolicy) {
+		var ret string
+		return ret
+	}
+	return *o.ExistingFilePolicy
+}
+
+// GetExistingFilePolicyOk returns a tuple with the ExistingFilePolicy field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SaveUploadedFileRequest) GetExistingFilePolicyOk() (*string, bool) {
+	if o == nil || IsNil(o.ExistingFilePolicy) {
+		return nil, false
+	}
+	return o.ExistingFilePolicy, true
+}
+
+// HasExistingFilePolicy returns a boolean if a field has been set.
+func (o *SaveUploadedFileRequest) HasExistingFilePolicy() bool {
+	if o != nil && !IsNil(o.ExistingFilePolicy) {
+		return true
+	}
+
+	return false
+}
+
+// SetExistingFilePolicy gets a reference to the given string and assigns it to the ExistingFilePolicy field.
+func (o *SaveUploadedFileRequest) SetExistingFilePolicy(v string) {
+	o.ExistingFilePolicy = &v
+}
+
+// GetExpectedMailboxVersion returns the ExpectedMailboxVersion field value if set, zero value otherwise.
+func (o *SaveUploadedFileRequest) GetExpectedMailboxVersion() string {
+	if o == nil || IsNil(o.ExpectedMailboxVersion) {
+		var ret string
+		return ret
+	}
+	return *o.ExpectedMailboxVersion
+}
+
+// GetExpectedMailboxVersionOk returns a tuple with the ExpectedMailboxVersion field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SaveUploadedFileRequest) GetExpectedMailboxVersionOk() (*string, bool) {
+	if o == nil || IsNil(o.ExpectedMailboxVersion) {
+		return nil, false
+	}
+	return o.ExpectedMailboxVersion, true
+}
+
+// HasExpectedMailboxVersion returns a boolean if a field has been set.
+func (o *SaveUploadedFileRequest) HasExpectedMailboxVersion() bool {
+	if o != nil && !IsNil(o.ExpectedMailboxVersion) {
+		return true
+	}
+
+	return false
+}
+
+// SetExpectedMailboxVersion gets a reference to the given string and assigns it to the ExpectedMailboxVersion field.
+func (o *SaveUploadedFileRequest) SetExpectedMailboxVersion(v string) {
+	o.ExpectedMailboxVersion = &v
+}
+
 // GetAccountId returns the AccountId field value if set, zero value otherwise.
 func (o *SaveUploadedFileRequest) GetAccountId() string {
 	if o == nil || IsNil(o.AccountId) {
@@ -128,38 +271,6 @@ func (o *SaveUploadedFileRequest) HasAccountId() bool {
 // SetAccountId gets a reference to the given string and assigns it to the AccountId field.
 func (o *SaveUploadedFileRequest) SetAccountId(v string) {
 	o.AccountId = &v
-}
-
-// GetExpectedMailboxRevisionId returns the ExpectedMailboxRevisionId field value if set, zero value otherwise.
-func (o *SaveUploadedFileRequest) GetExpectedMailboxRevisionId() string {
-	if o == nil || IsNil(o.ExpectedMailboxRevisionId) {
-		var ret string
-		return ret
-	}
-	return *o.ExpectedMailboxRevisionId
-}
-
-// GetExpectedMailboxRevisionIdOk returns a tuple with the ExpectedMailboxRevisionId field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SaveUploadedFileRequest) GetExpectedMailboxRevisionIdOk() (*string, bool) {
-	if o == nil || IsNil(o.ExpectedMailboxRevisionId) {
-		return nil, false
-	}
-	return o.ExpectedMailboxRevisionId, true
-}
-
-// HasExpectedMailboxRevisionId returns a boolean if a field has been set.
-func (o *SaveUploadedFileRequest) HasExpectedMailboxRevisionId() bool {
-	if o != nil && !IsNil(o.ExpectedMailboxRevisionId) {
-		return true
-	}
-
-	return false
-}
-
-// SetExpectedMailboxRevisionId gets a reference to the given string and assigns it to the ExpectedMailboxRevisionId field.
-func (o *SaveUploadedFileRequest) SetExpectedMailboxRevisionId(v string) {
-	o.ExpectedMailboxRevisionId = &v
 }
 
 // GetReason returns the Reason field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -216,11 +327,20 @@ func (o SaveUploadedFileRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["path"] = o.Path
 	toSerialize["signed_blob_id"] = o.SignedBlobId
+	if !IsNil(o.Name) {
+		toSerialize["name"] = o.Name
+	}
+	if !IsNil(o.Role) {
+		toSerialize["role"] = o.Role
+	}
+	if !IsNil(o.ExistingFilePolicy) {
+		toSerialize["existing_file_policy"] = o.ExistingFilePolicy
+	}
+	if !IsNil(o.ExpectedMailboxVersion) {
+		toSerialize["expected_mailbox_version"] = o.ExpectedMailboxVersion
+	}
 	if !IsNil(o.AccountId) {
 		toSerialize["account_id"] = o.AccountId
-	}
-	if !IsNil(o.ExpectedMailboxRevisionId) {
-		toSerialize["expected_mailbox_revision_id"] = o.ExpectedMailboxRevisionId
 	}
 	if o.Reason.IsSet() {
 		toSerialize["reason"] = o.Reason.Get()
@@ -271,8 +391,11 @@ func (o *SaveUploadedFileRequest) UnmarshalJSON(data []byte) (err error) {
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "path")
 		delete(additionalProperties, "signed_blob_id")
+		delete(additionalProperties, "name")
+		delete(additionalProperties, "role")
+		delete(additionalProperties, "existing_file_policy")
+		delete(additionalProperties, "expected_mailbox_version")
 		delete(additionalProperties, "account_id")
-		delete(additionalProperties, "expected_mailbox_revision_id")
 		delete(additionalProperties, "reason")
 		o.AdditionalProperties = additionalProperties
 	}

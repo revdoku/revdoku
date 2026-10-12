@@ -1,7 +1,4 @@
-use revdoku_api::{
-    apis::{configuration::Configuration, default_api},
-    models::email_download::Authentication,
-};
+use revdoku_api::apis::{configuration::Configuration, default_api};
 use std::{fs::OpenOptions, io::Write, time::Duration};
 
 #[tokio::main]
@@ -27,21 +24,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         bearer_access_token: Some(values[0].clone()),
         ..Configuration::default()
     };
-    let download = default_api::get_email_attachment_download_url(
+    let download = default_api::get_email_attachment_download(
         &config,
         &values[1],
         &values[2],
         &values[3],
         account.as_deref(),
         None,
-        None,
     )
     .await?
     .data
     .download;
     let url = reqwest::Url::parse(&download.url)?;
-    if download.authentication != Authentication::None
-        || url.scheme() != "https"
+    if url.scheme() != "https"
         || url.host_str().is_none()
         || !url.username().is_empty()
         || url.password().is_some()

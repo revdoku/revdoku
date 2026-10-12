@@ -1,8 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -68,6 +68,10 @@ export interface AccountLimits {
      */
     maxReceivedEmailMessageBytes: number | null;
     /**
+     * Sent-email recipients per billing period, shared by the billing group. Each recipient counts once.
+     */
+    maxSentEmailsPerMonth: number | null;
+    /**
      * 
      */
     maxEmailAddressRotationsPerMonth: number | null;
@@ -113,6 +117,7 @@ export function instanceOfAccountLimits(value: object): value is AccountLimits {
     if ((!('maxReceivedEmailsPerMonth' in (value as Record<string, any>)) && !('max_received_emails_per_month' in (value as Record<string, any>))) || ((value as Record<string, any>)['maxReceivedEmailsPerMonth'] === undefined && (value as Record<string, any>)['max_received_emails_per_month'] === undefined)) return false;
     if ((!('maxReceivedEmailBytesPerMonth' in (value as Record<string, any>)) && !('max_received_email_bytes_per_month' in (value as Record<string, any>))) || ((value as Record<string, any>)['maxReceivedEmailBytesPerMonth'] === undefined && (value as Record<string, any>)['max_received_email_bytes_per_month'] === undefined)) return false;
     if ((!('maxReceivedEmailMessageBytes' in (value as Record<string, any>)) && !('max_received_email_message_bytes' in (value as Record<string, any>))) || ((value as Record<string, any>)['maxReceivedEmailMessageBytes'] === undefined && (value as Record<string, any>)['max_received_email_message_bytes'] === undefined)) return false;
+    if ((!('maxSentEmailsPerMonth' in (value as Record<string, any>)) && !('max_sent_emails_per_month' in (value as Record<string, any>))) || ((value as Record<string, any>)['maxSentEmailsPerMonth'] === undefined && (value as Record<string, any>)['max_sent_emails_per_month'] === undefined)) return false;
     if ((!('maxEmailAddressRotationsPerMonth' in (value as Record<string, any>)) && !('max_email_address_rotations_per_month' in (value as Record<string, any>))) || ((value as Record<string, any>)['maxEmailAddressRotationsPerMonth'] === undefined && (value as Record<string, any>)['max_email_address_rotations_per_month'] === undefined)) return false;
     if ((!('maxAccountMembers' in (value as Record<string, any>)) && !('max_account_members' in (value as Record<string, any>))) || ((value as Record<string, any>)['maxAccountMembers'] === undefined && (value as Record<string, any>)['max_account_members'] === undefined)) return false;
     if ((!('maxApiKeys' in (value as Record<string, any>)) && !('max_api_keys' in (value as Record<string, any>))) || ((value as Record<string, any>)['maxApiKeys'] === undefined && (value as Record<string, any>)['max_api_keys'] === undefined)) return false;
@@ -145,6 +150,7 @@ export function AccountLimitsFromJSONTyped(json: any, ignoreDiscriminator: boole
         'maxReceivedEmailsPerMonth': json['max_received_emails_per_month'],
         'maxReceivedEmailBytesPerMonth': json['max_received_email_bytes_per_month'],
         'maxReceivedEmailMessageBytes': json['max_received_email_message_bytes'],
+        'maxSentEmailsPerMonth': json['max_sent_emails_per_month'],
         'maxEmailAddressRotationsPerMonth': json['max_email_address_rotations_per_month'],
         'maxAccountMembers': json['max_account_members'],
         'maxApiKeys': json['max_api_keys'],
@@ -178,6 +184,7 @@ export function AccountLimitsToJSONTyped(value?: AccountLimits | null, ignoreDis
         'max_received_emails_per_month': value['maxReceivedEmailsPerMonth'],
         'max_received_email_bytes_per_month': value['maxReceivedEmailBytesPerMonth'],
         'max_received_email_message_bytes': value['maxReceivedEmailMessageBytes'],
+        'max_sent_emails_per_month': value['maxSentEmailsPerMonth'],
         'max_email_address_rotations_per_month': value['maxEmailAddressRotationsPerMonth'],
         'max_account_members': value['maxAccountMembers'],
         'max_api_keys': value['maxApiKeys'],

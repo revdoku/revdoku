@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -34,8 +34,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  */
 @JsonPropertyOrder({
   CreateClientAccountRequest.JSON_PROPERTY_NAME,
-  CreateClientAccountRequest.JSON_PROPERTY_ACCOUNT_ID,
   CreateClientAccountRequest.JSON_PROPERTY_CLIENT_NAME,
+  CreateClientAccountRequest.JSON_PROPERTY_ACCOUNT_ID,
   CreateClientAccountRequest.JSON_PROPERTY_REASON
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
@@ -44,13 +44,13 @@ public class CreateClientAccountRequest {
   @javax.annotation.Nonnull
   private String name;
 
-  public static final String JSON_PROPERTY_ACCOUNT_ID = "account_id";
-  @javax.annotation.Nullable
-  private String accountId;
-
   public static final String JSON_PROPERTY_CLIENT_NAME = "client_name";
   @javax.annotation.Nullable
   private String clientName;
+
+  public static final String JSON_PROPERTY_ACCOUNT_ID = "account_id";
+  @javax.annotation.Nullable
+  private String accountId;
 
   public static final String JSON_PROPERTY_REASON = "reason";
   private JsonNullable<String> reason = JsonNullable.<String>undefined();
@@ -64,7 +64,7 @@ public class CreateClientAccountRequest {
   }
 
   /**
-   * Account name.
+   * Get name
    * @return name
    */
   @javax.annotation.Nonnull
@@ -82,37 +82,13 @@ public class CreateClientAccountRequest {
   }
 
 
-  public CreateClientAccountRequest accountId(@javax.annotation.Nullable String accountId) {
-    this.accountId = accountId;
-    return this;
-  }
-
-  /**
-   * Optional granted Agency account id. Does not change the credential default.
-   * @return accountId
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_ACCOUNT_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public String getAccountId() {
-    return accountId;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_ACCOUNT_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setAccountId(@javax.annotation.Nullable String accountId) {
-    this.accountId = accountId;
-  }
-
-
   public CreateClientAccountRequest clientName(@javax.annotation.Nullable String clientName) {
     this.clientName = clientName;
     return this;
   }
 
   /**
-   * Optional client person or business, separate from the account name. Omit when unknown.
+   * Optional client person or business name.
    * @return clientName
    */
   @javax.annotation.Nullable
@@ -127,6 +103,30 @@ public class CreateClientAccountRequest {
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
   public void setClientName(@javax.annotation.Nullable String clientName) {
     this.clientName = clientName;
+  }
+
+
+  public CreateClientAccountRequest accountId(@javax.annotation.Nullable String accountId) {
+    this.accountId = accountId;
+    return this;
+  }
+
+  /**
+   * Granted agency account that owns the new client account.
+   * @return accountId
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_ACCOUNT_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public String getAccountId() {
+    return accountId;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_ACCOUNT_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setAccountId(@javax.annotation.Nullable String accountId) {
+    this.accountId = accountId;
   }
 
 
@@ -175,8 +175,8 @@ public class CreateClientAccountRequest {
     }
     CreateClientAccountRequest createClientAccountRequest = (CreateClientAccountRequest) o;
     return Objects.equals(this.name, createClientAccountRequest.name) &&
-        Objects.equals(this.accountId, createClientAccountRequest.accountId) &&
         Objects.equals(this.clientName, createClientAccountRequest.clientName) &&
+        Objects.equals(this.accountId, createClientAccountRequest.accountId) &&
         equalsNullable(this.reason, createClientAccountRequest.reason);
   }
 
@@ -186,7 +186,7 @@ public class CreateClientAccountRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, accountId, clientName, hashCodeNullable(reason));
+    return Objects.hash(name, clientName, accountId, hashCodeNullable(reason));
   }
 
   private static <T> int hashCodeNullable(JsonNullable<T> a) {
@@ -201,8 +201,8 @@ public class CreateClientAccountRequest {
     StringBuilder sb = new StringBuilder();
     sb.append("class CreateClientAccountRequest {\n");
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
-    sb.append("    accountId: ").append(toIndentedString(accountId)).append("\n");
     sb.append("    clientName: ").append(toIndentedString(clientName)).append("\n");
+    sb.append("    accountId: ").append(toIndentedString(accountId)).append("\n");
     sb.append("    reason: ").append(toIndentedString(reason)).append("\n");
     sb.append("}");
     return sb.toString();

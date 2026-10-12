@@ -15,9 +15,9 @@ public class ReadEmails {
         String cursor = null;
         var seen = new HashSet<String>();
         while (true) {
-            var page = api.listEmails(mailbox, account, 100, cursor, "asc", null, null, null, null, false, null, null, null).getData();
+            var page = api.listEmails(mailbox, account, null, 100, cursor, "asc", null, null, null, null, null, false, null, null, null).getData();
             for (var summary : page.getEmails()) {
-                var email = api.getEmail(mailbox, summary.getId(), account, null, null, null).getData().getEmail();
+                var email = api.getEmail(mailbox, summary.getId(), account, null, null).getData().getEmail();
                 var output = new LinkedHashMap<String, Object>();
                 output.put("id", email.getId());
                 output.put("subject", email.getSubject());

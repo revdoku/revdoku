@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -17,17 +17,21 @@ module RevdokuApi
   class SetEmailWebhookRequest < ApiModelBase
     attr_accessor :webhook_url
 
+    attr_accessor :rotate_secret
+
+    # Select another granted account for this request.
     attr_accessor :account_id
 
-    # Rotate the secret for the same endpoint and cancel pending deliveries.
-    attr_accessor :rotate_secret
+    # Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
+    attr_accessor :reason
 
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
         :'webhook_url' => :'webhook_url',
+        :'rotate_secret' => :'rotate_secret',
         :'account_id' => :'account_id',
-        :'rotate_secret' => :'rotate_secret'
+        :'reason' => :'reason'
       }
     end
 
@@ -45,14 +49,16 @@ module RevdokuApi
     def self.openapi_types
       {
         :'webhook_url' => :'String',
+        :'rotate_secret' => :'Boolean',
         :'account_id' => :'String',
-        :'rotate_secret' => :'Boolean'
+        :'reason' => :'String'
       }
     end
 
     # List of attributes with nullable: true
     def self.openapi_nullable
       Set.new([
+        :'reason'
       ])
     end
 
@@ -78,14 +84,18 @@ module RevdokuApi
         self.webhook_url = nil
       end
 
-      if attributes.key?(:'account_id')
-        self.account_id = attributes[:'account_id']
-      end
-
       if attributes.key?(:'rotate_secret')
         self.rotate_secret = attributes[:'rotate_secret']
       else
         self.rotate_secret = false
+      end
+
+      if attributes.key?(:'account_id')
+        self.account_id = attributes[:'account_id']
+      end
+
+      if attributes.key?(:'reason')
+        self.reason = attributes[:'reason']
       end
     end
 
@@ -103,14 +113,25 @@ module RevdokuApi
       @webhook_url = webhook_url
     end
 
+    # Custom attribute writer method with validation
+    # @param [Object] reason Value to be assigned
+    def reason=(reason)
+      if !reason.nil? && reason.to_s.length > 2000
+        fail ArgumentError, 'invalid value for "reason", the character length must be smaller than or equal to 2000.'
+      end
+
+      @reason = reason
+    end
+
     # Checks equality by comparing each attribute.
     # @param [Object] Object to be compared
     def ==(o)
       return true if self.equal?(o)
       self.class == o.class &&
           webhook_url == o.webhook_url &&
+          rotate_secret == o.rotate_secret &&
           account_id == o.account_id &&
-          rotate_secret == o.rotate_secret
+          reason == o.reason
     end
 
     # @see the `==` method
@@ -122,7 +143,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [webhook_url, account_id, rotate_secret].hash
+      [webhook_url, rotate_secret, account_id, reason].hash
     end
 
     # Builds the object from hash

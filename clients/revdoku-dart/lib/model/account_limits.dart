@@ -25,6 +25,7 @@ class AccountLimits {
     required this.maxReceivedEmailsPerMonth,
     required this.maxReceivedEmailBytesPerMonth,
     required this.maxReceivedEmailMessageBytes,
+    required this.maxSentEmailsPerMonth,
     required this.maxEmailAddressRotationsPerMonth,
     required this.maxAccountMembers,
     required this.maxApiKeys,
@@ -70,6 +71,11 @@ class AccountLimits {
   /// Minimum value: 0
   int? maxReceivedEmailMessageBytes;
 
+  /// Sent-email recipients per billing period, shared by the billing group. Each recipient counts once.
+  ///
+  /// Minimum value: 0
+  int? maxSentEmailsPerMonth;
+
   /// Minimum value: 0
   int? maxEmailAddressRotationsPerMonth;
 
@@ -107,6 +113,7 @@ class AccountLimits {
     other.maxReceivedEmailsPerMonth == maxReceivedEmailsPerMonth &&
     other.maxReceivedEmailBytesPerMonth == maxReceivedEmailBytesPerMonth &&
     other.maxReceivedEmailMessageBytes == maxReceivedEmailMessageBytes &&
+    other.maxSentEmailsPerMonth == maxSentEmailsPerMonth &&
     other.maxEmailAddressRotationsPerMonth == maxEmailAddressRotationsPerMonth &&
     other.maxAccountMembers == maxAccountMembers &&
     other.maxApiKeys == maxApiKeys &&
@@ -130,6 +137,7 @@ class AccountLimits {
     (maxReceivedEmailsPerMonth == null ? 0 : maxReceivedEmailsPerMonth!.hashCode) +
     (maxReceivedEmailBytesPerMonth == null ? 0 : maxReceivedEmailBytesPerMonth!.hashCode) +
     (maxReceivedEmailMessageBytes == null ? 0 : maxReceivedEmailMessageBytes!.hashCode) +
+    (maxSentEmailsPerMonth == null ? 0 : maxSentEmailsPerMonth!.hashCode) +
     (maxEmailAddressRotationsPerMonth == null ? 0 : maxEmailAddressRotationsPerMonth!.hashCode) +
     (maxAccountMembers == null ? 0 : maxAccountMembers!.hashCode) +
     (maxApiKeys == null ? 0 : maxApiKeys!.hashCode) +
@@ -139,7 +147,7 @@ class AccountLimits {
     (maxEmailAliasesPerMailbox.hashCode);
 
   @override
-  String toString() => 'AccountLimits[maxMailboxes=$maxMailboxes, maxMailboxCreationsPerMonth=$maxMailboxCreationsPerMonth, maxFilesPerMailbox=$maxFilesPerMailbox, maxCurrentFiles=$maxCurrentFiles, maxStorageBytes=$maxStorageBytes, maxFileSizeBytes=$maxFileSizeBytes, maxPdfSizeBytes=$maxPdfSizeBytes, maxFileVersionsPerFile=$maxFileVersionsPerFile, maxEmailDomains=$maxEmailDomains, maxReceivedEmailsPerMonth=$maxReceivedEmailsPerMonth, maxReceivedEmailBytesPerMonth=$maxReceivedEmailBytesPerMonth, maxReceivedEmailMessageBytes=$maxReceivedEmailMessageBytes, maxEmailAddressRotationsPerMonth=$maxEmailAddressRotationsPerMonth, maxAccountMembers=$maxAccountMembers, maxApiKeys=$maxApiKeys, maxAgentConnections=$maxAgentConnections, apiRateLimitRequestsPerMinute=$apiRateLimitRequestsPerMinute, auditRetentionDays=$auditRetentionDays, maxEmailAliasesPerMailbox=$maxEmailAliasesPerMailbox]';
+  String toString() => 'AccountLimits[maxMailboxes=$maxMailboxes, maxMailboxCreationsPerMonth=$maxMailboxCreationsPerMonth, maxFilesPerMailbox=$maxFilesPerMailbox, maxCurrentFiles=$maxCurrentFiles, maxStorageBytes=$maxStorageBytes, maxFileSizeBytes=$maxFileSizeBytes, maxPdfSizeBytes=$maxPdfSizeBytes, maxFileVersionsPerFile=$maxFileVersionsPerFile, maxEmailDomains=$maxEmailDomains, maxReceivedEmailsPerMonth=$maxReceivedEmailsPerMonth, maxReceivedEmailBytesPerMonth=$maxReceivedEmailBytesPerMonth, maxReceivedEmailMessageBytes=$maxReceivedEmailMessageBytes, maxSentEmailsPerMonth=$maxSentEmailsPerMonth, maxEmailAddressRotationsPerMonth=$maxEmailAddressRotationsPerMonth, maxAccountMembers=$maxAccountMembers, maxApiKeys=$maxApiKeys, maxAgentConnections=$maxAgentConnections, apiRateLimitRequestsPerMinute=$apiRateLimitRequestsPerMinute, auditRetentionDays=$auditRetentionDays, maxEmailAliasesPerMailbox=$maxEmailAliasesPerMailbox]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -203,6 +211,11 @@ class AccountLimits {
     } else {
       json[r'max_received_email_message_bytes'] = null;
     }
+    if (this.maxSentEmailsPerMonth != null) {
+      json[r'max_sent_emails_per_month'] = this.maxSentEmailsPerMonth;
+    } else {
+      json[r'max_sent_emails_per_month'] = null;
+    }
     if (this.maxEmailAddressRotationsPerMonth != null) {
       json[r'max_email_address_rotations_per_month'] = this.maxEmailAddressRotationsPerMonth;
     } else {
@@ -260,6 +273,7 @@ class AccountLimits {
         assert(json.containsKey(r'max_received_emails_per_month'), 'Required key "AccountLimits[max_received_emails_per_month]" is missing from JSON.');
         assert(json.containsKey(r'max_received_email_bytes_per_month'), 'Required key "AccountLimits[max_received_email_bytes_per_month]" is missing from JSON.');
         assert(json.containsKey(r'max_received_email_message_bytes'), 'Required key "AccountLimits[max_received_email_message_bytes]" is missing from JSON.');
+        assert(json.containsKey(r'max_sent_emails_per_month'), 'Required key "AccountLimits[max_sent_emails_per_month]" is missing from JSON.');
         assert(json.containsKey(r'max_email_address_rotations_per_month'), 'Required key "AccountLimits[max_email_address_rotations_per_month]" is missing from JSON.');
         assert(json.containsKey(r'max_account_members'), 'Required key "AccountLimits[max_account_members]" is missing from JSON.');
         assert(json.containsKey(r'max_api_keys'), 'Required key "AccountLimits[max_api_keys]" is missing from JSON.');
@@ -284,6 +298,7 @@ class AccountLimits {
         maxReceivedEmailsPerMonth: mapValueOfType<int>(json, r'max_received_emails_per_month'),
         maxReceivedEmailBytesPerMonth: mapValueOfType<int>(json, r'max_received_email_bytes_per_month'),
         maxReceivedEmailMessageBytes: mapValueOfType<int>(json, r'max_received_email_message_bytes'),
+        maxSentEmailsPerMonth: mapValueOfType<int>(json, r'max_sent_emails_per_month'),
         maxEmailAddressRotationsPerMonth: mapValueOfType<int>(json, r'max_email_address_rotations_per_month'),
         maxAccountMembers: mapValueOfType<int>(json, r'max_account_members'),
         maxApiKeys: mapValueOfType<int>(json, r'max_api_keys'),
@@ -350,6 +365,7 @@ class AccountLimits {
     'max_received_emails_per_month',
     'max_received_email_bytes_per_month',
     'max_received_email_message_bytes',
+    'max_sent_emails_per_month',
     'max_email_address_rotations_per_month',
     'max_account_members',
     'max_api_keys',

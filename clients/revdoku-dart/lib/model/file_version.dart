@@ -13,23 +13,19 @@ part of revdoku.api;
 class FileVersion {
   /// Returns a new [FileVersion] instance.
   FileVersion({
-    this.id,
-    this.fileId,
+    required this.id,
+    required this.fileId,
     this.name,
     this.mimeType,
     this.sha256,
     this.reason,
-    this.metaKey,
     this.createdBySystem,
     this.deleted,
     this.ready,
     this.hasText,
-    this.normalizationRequired,
-    this.metaReady,
-    this.versionNumber,
+    required this.versionNumber,
     this.byteSize,
     this.createdAt,
-    this.metaCreatedAt,
     this.createdBy,
     this.updatedBy,
     this.createdByAgent = const {},
@@ -42,21 +38,9 @@ class FileVersion {
     this.readByApiKey,
   });
 
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  String? id;
+  String id;
 
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  String? fileId;
+  String fileId;
 
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
@@ -90,16 +74,9 @@ class FileVersion {
   /// source code must fall back to having a nullable type.
   /// Consider adding a "default:" property in the specification file to hide this note.
   ///
-  String? metaKey;
-
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
   String? createdBySystem;
 
+  /// True for the version that records a deletion.
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated
@@ -124,29 +101,7 @@ class FileVersion {
   ///
   bool? hasText;
 
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  bool? normalizationRequired;
-
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  bool? metaReady;
-
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  int? versionNumber;
+  int versionNumber;
 
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
@@ -163,14 +118,6 @@ class FileVersion {
   /// Consider adding a "default:" property in the specification file to hide this note.
   ///
   DateTime? createdAt;
-
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  DateTime? metaCreatedAt;
 
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
@@ -218,17 +165,13 @@ class FileVersion {
     other.mimeType == mimeType &&
     other.sha256 == sha256 &&
     other.reason == reason &&
-    other.metaKey == metaKey &&
     other.createdBySystem == createdBySystem &&
     other.deleted == deleted &&
     other.ready == ready &&
     other.hasText == hasText &&
-    other.normalizationRequired == normalizationRequired &&
-    other.metaReady == metaReady &&
     other.versionNumber == versionNumber &&
     other.byteSize == byteSize &&
     other.createdAt == createdAt &&
-    other.metaCreatedAt == metaCreatedAt &&
     other.createdBy == createdBy &&
     other.updatedBy == updatedBy &&
     _deepEquality.equals(other.createdByAgent, createdByAgent) &&
@@ -243,23 +186,19 @@ class FileVersion {
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (fileId == null ? 0 : fileId!.hashCode) +
+    (id.hashCode) +
+    (fileId.hashCode) +
     (name == null ? 0 : name!.hashCode) +
     (mimeType == null ? 0 : mimeType!.hashCode) +
     (sha256 == null ? 0 : sha256!.hashCode) +
     (reason == null ? 0 : reason!.hashCode) +
-    (metaKey == null ? 0 : metaKey!.hashCode) +
     (createdBySystem == null ? 0 : createdBySystem!.hashCode) +
     (deleted == null ? 0 : deleted!.hashCode) +
     (ready == null ? 0 : ready!.hashCode) +
     (hasText == null ? 0 : hasText!.hashCode) +
-    (normalizationRequired == null ? 0 : normalizationRequired!.hashCode) +
-    (metaReady == null ? 0 : metaReady!.hashCode) +
-    (versionNumber == null ? 0 : versionNumber!.hashCode) +
+    (versionNumber.hashCode) +
     (byteSize == null ? 0 : byteSize!.hashCode) +
     (createdAt == null ? 0 : createdAt!.hashCode) +
-    (metaCreatedAt == null ? 0 : metaCreatedAt!.hashCode) +
     (createdBy == null ? 0 : createdBy!.hashCode) +
     (updatedBy == null ? 0 : updatedBy!.hashCode) +
     (createdByAgent.hashCode) +
@@ -272,16 +211,12 @@ class FileVersion {
     (readByApiKey == null ? 0 : readByApiKey!.hashCode);
 
   @override
-  String toString() => 'FileVersion[id=$id, fileId=$fileId, name=$name, mimeType=$mimeType, sha256=$sha256, reason=$reason, metaKey=$metaKey, createdBySystem=$createdBySystem, deleted=$deleted, ready=$ready, hasText=$hasText, normalizationRequired=$normalizationRequired, metaReady=$metaReady, versionNumber=$versionNumber, byteSize=$byteSize, createdAt=$createdAt, metaCreatedAt=$metaCreatedAt, createdBy=$createdBy, updatedBy=$updatedBy, createdByAgent=$createdByAgent, updatedByAgent=$updatedByAgent, createdByApiKey=$createdByApiKey, updatedByApiKey=$updatedByApiKey, read=$read, readAt=$readAt, readBy=$readBy, readByApiKey=$readByApiKey]';
+  String toString() => 'FileVersion[id=$id, fileId=$fileId, name=$name, mimeType=$mimeType, sha256=$sha256, reason=$reason, createdBySystem=$createdBySystem, deleted=$deleted, ready=$ready, hasText=$hasText, versionNumber=$versionNumber, byteSize=$byteSize, createdAt=$createdAt, createdBy=$createdBy, updatedBy=$updatedBy, createdByAgent=$createdByAgent, updatedByAgent=$updatedByAgent, createdByApiKey=$createdByApiKey, updatedByApiKey=$updatedByApiKey, read=$read, readAt=$readAt, readBy=$readBy, readByApiKey=$readByApiKey]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-    if (this.id != null) {
       json[r'id'] = this.id;
-    }
-    if (this.fileId != null) {
       json[r'file_id'] = this.fileId;
-    }
     if (this.name != null) {
       json[r'name'] = this.name;
     }
@@ -296,9 +231,6 @@ class FileVersion {
     } else {
       json[r'reason'] = null;
     }
-    if (this.metaKey != null) {
-      json[r'meta_key'] = this.metaKey;
-    }
     if (this.createdBySystem != null) {
       json[r'created_by_system'] = this.createdBySystem;
     }
@@ -311,23 +243,12 @@ class FileVersion {
     if (this.hasText != null) {
       json[r'has_text'] = this.hasText;
     }
-    if (this.normalizationRequired != null) {
-      json[r'normalization_required'] = this.normalizationRequired;
-    }
-    if (this.metaReady != null) {
-      json[r'meta_ready'] = this.metaReady;
-    }
-    if (this.versionNumber != null) {
       json[r'version_number'] = this.versionNumber;
-    }
     if (this.byteSize != null) {
       json[r'byte_size'] = this.byteSize;
     }
     if (this.createdAt != null) {
       json[r'created_at'] = this.createdAt!.toUtc().toIso8601String();
-    }
-    if (this.metaCreatedAt != null) {
-      json[r'meta_created_at'] = this.metaCreatedAt!.toUtc().toIso8601String();
     }
     if (this.createdBy != null) {
       json[r'created_by'] = this.createdBy;
@@ -371,27 +292,29 @@ class FileVersion {
       // Note 1: the values aren't checked for validity beyond being non-null.
       // Note 2: this code is stripped in release mode!
       assert(() {
+        assert(json.containsKey(r'id'), 'Required key "FileVersion[id]" is missing from JSON.');
+        assert(json[r'id'] != null, 'Required key "FileVersion[id]" has a null value in JSON.');
+        assert(json.containsKey(r'file_id'), 'Required key "FileVersion[file_id]" is missing from JSON.');
+        assert(json[r'file_id'] != null, 'Required key "FileVersion[file_id]" has a null value in JSON.');
+        assert(json.containsKey(r'version_number'), 'Required key "FileVersion[version_number]" is missing from JSON.');
+        assert(json[r'version_number'] != null, 'Required key "FileVersion[version_number]" has a null value in JSON.');
         return true;
       }());
 
       return FileVersion(
-        id: mapValueOfType<String>(json, r'id'),
-        fileId: mapValueOfType<String>(json, r'file_id'),
+        id: mapValueOfType<String>(json, r'id')!,
+        fileId: mapValueOfType<String>(json, r'file_id')!,
         name: mapValueOfType<String>(json, r'name'),
         mimeType: mapValueOfType<String>(json, r'mime_type'),
         sha256: mapValueOfType<String>(json, r'sha256'),
         reason: mapValueOfType<String>(json, r'reason'),
-        metaKey: mapValueOfType<String>(json, r'meta_key'),
         createdBySystem: mapValueOfType<String>(json, r'created_by_system'),
         deleted: mapValueOfType<bool>(json, r'deleted'),
         ready: mapValueOfType<bool>(json, r'ready'),
         hasText: mapValueOfType<bool>(json, r'has_text'),
-        normalizationRequired: mapValueOfType<bool>(json, r'normalization_required'),
-        metaReady: mapValueOfType<bool>(json, r'meta_ready'),
-        versionNumber: mapValueOfType<int>(json, r'version_number'),
+        versionNumber: mapValueOfType<int>(json, r'version_number')!,
         byteSize: mapValueOfType<int>(json, r'byte_size'),
         createdAt: mapDateTime(json, r'created_at', r''),
-        metaCreatedAt: mapDateTime(json, r'meta_created_at', r''),
         createdBy: FileActor.fromJson(json[r'created_by']),
         updatedBy: FileActor.fromJson(json[r'updated_by']),
         createdByAgent: mapCastOfType<String, Object?>(json, r'created_by_agent') ?? const {},
@@ -449,6 +372,9 @@ class FileVersion {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
+    'id',
+    'file_id',
+    'version_number',
   };
 }
 

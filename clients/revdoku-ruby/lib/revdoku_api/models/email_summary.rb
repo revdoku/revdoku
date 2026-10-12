@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -15,13 +15,7 @@ require 'time'
 
 module RevdokuApi
   class EmailSummary < ApiModelBase
-    attr_accessor :schema_version
-
     attr_accessor :subject
-
-    attr_accessor :from
-
-    attr_accessor :to
 
     # Parsed From authors in header order, retaining multiple authors. Empty when absent/unparseable. Display names are not identity keys.
     attr_accessor :from_addresses
@@ -44,11 +38,9 @@ module RevdokuApi
     # Ordered References IDs without angle brackets, preserving case. Empty when absent/unparseable.
     attr_accessor :references
 
-    # thr_ plus SHA-256 of thread_anchor_message_id. Best-effort header-derived grouping hint, not authoritative conversation membership or an access grant. Missing ancestry or reused IDs can split/merge hints. Scope lookups to accessible mailboxes.
-    attr_accessor :thread_id
-
     attr_accessor :delivered_to
 
+    # Receipt time. For sent emails, the time Revdoku accepted the send.
     attr_accessor :received_at
 
     attr_accessor :body_status
@@ -57,7 +49,13 @@ module RevdokuApi
 
     attr_accessor :id
 
+    # Email ID that identifies the conversation. Replies are linked by email headers. Filter a list with conversation_id.
     attr_accessor :conversation_id
+
+    # received for incoming email; sent for email sent from this mailbox.
+    attr_accessor :direction
+
+    attr_accessor :delivery
 
     # Included only with include_storage=true for file-browser integration.
     attr_accessor :file_id
@@ -78,12 +76,6 @@ module RevdokuApi
     attr_accessor :files
 
     attr_accessor :forwarding
-
-    # Decoded Cc header; use the corresponding parsed address array for individual addresses.
-    attr_accessor :cc
-
-    # Decoded Reply-To header; use the corresponding parsed address array for individual addresses.
-    attr_accessor :reply_to
 
     class EnumAttributeValidator
       attr_reader :datatype
@@ -110,10 +102,7 @@ module RevdokuApi
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
-        :'schema_version' => :'schema_version',
         :'subject' => :'subject',
-        :'from' => :'from',
-        :'to' => :'to',
         :'from_addresses' => :'from_addresses',
         :'to_addresses' => :'to_addresses',
         :'cc_addresses' => :'cc_addresses',
@@ -121,13 +110,14 @@ module RevdokuApi
         :'message_id' => :'message_id',
         :'in_reply_to' => :'in_reply_to',
         :'references' => :'references',
-        :'thread_id' => :'thread_id',
         :'delivered_to' => :'delivered_to',
         :'received_at' => :'received_at',
         :'body_status' => :'body_status',
         :'omitted_attachment_count' => :'omitted_attachment_count',
         :'id' => :'id',
         :'conversation_id' => :'conversation_id',
+        :'direction' => :'direction',
+        :'delivery' => :'delivery',
         :'file_id' => :'file_id',
         :'version_id' => :'version_id',
         :'attachment_count' => :'attachment_count',
@@ -136,9 +126,7 @@ module RevdokuApi
         :'read_by' => :'read_by',
         :'read_by_api_key' => :'read_by_api_key',
         :'files' => :'files',
-        :'forwarding' => :'forwarding',
-        :'cc' => :'cc',
-        :'reply_to' => :'reply_to'
+        :'forwarding' => :'forwarding'
       }
     end
 
@@ -155,10 +143,7 @@ module RevdokuApi
     # Attribute type mapping.
     def self.openapi_types
       {
-        :'schema_version' => :'Integer',
         :'subject' => :'String',
-        :'from' => :'String',
-        :'to' => :'String',
         :'from_addresses' => :'Array<DecodedEmailAddress>',
         :'to_addresses' => :'Array<DecodedEmailAddress>',
         :'cc_addresses' => :'Array<DecodedEmailAddress>',
@@ -166,13 +151,14 @@ module RevdokuApi
         :'message_id' => :'String',
         :'in_reply_to' => :'Array<String>',
         :'references' => :'Array<String>',
-        :'thread_id' => :'String',
         :'delivered_to' => :'String',
         :'received_at' => :'Time',
         :'body_status' => :'String',
         :'omitted_attachment_count' => :'Integer',
         :'id' => :'String',
         :'conversation_id' => :'String',
+        :'direction' => :'String',
+        :'delivery' => :'EmailDelivery',
         :'file_id' => :'String',
         :'version_id' => :'String',
         :'attachment_count' => :'Integer',
@@ -181,9 +167,7 @@ module RevdokuApi
         :'read_by' => :'Object',
         :'read_by_api_key' => :'Object',
         :'files' => :'EmailSummaryFiles',
-        :'forwarding' => :'EmailForwarding',
-        :'cc' => :'String',
-        :'reply_to' => :'String'
+        :'forwarding' => :'EmailForwarding'
       }
     end
 
@@ -191,15 +175,10 @@ module RevdokuApi
     def self.openapi_nullable
       Set.new([
         :'subject',
-        :'from',
-        :'to',
         :'message_id',
-        :'thread_id',
         :'read_at',
         :'read_by',
         :'read_by_api_key',
-        :'cc',
-        :'reply_to'
       ])
     end
 
@@ -219,20 +198,8 @@ module RevdokuApi
         h[k.to_sym] = v
       }
 
-      if attributes.key?(:'schema_version')
-        self.schema_version = attributes[:'schema_version']
-      end
-
       if attributes.key?(:'subject')
         self.subject = attributes[:'subject']
-      end
-
-      if attributes.key?(:'from')
-        self.from = attributes[:'from']
-      end
-
-      if attributes.key?(:'to')
-        self.to = attributes[:'to']
       end
 
       if attributes.key?(:'from_addresses')
@@ -275,10 +242,6 @@ module RevdokuApi
         end
       end
 
-      if attributes.key?(:'thread_id')
-        self.thread_id = attributes[:'thread_id']
-      end
-
       if attributes.key?(:'delivered_to')
         self.delivered_to = attributes[:'delivered_to']
       end
@@ -307,6 +270,16 @@ module RevdokuApi
         self.conversation_id = attributes[:'conversation_id']
       else
         self.conversation_id = nil
+      end
+
+      if attributes.key?(:'direction')
+        self.direction = attributes[:'direction']
+      else
+        self.direction = nil
+      end
+
+      if attributes.key?(:'delivery')
+        self.delivery = attributes[:'delivery']
       end
 
       if attributes.key?(:'file_id')
@@ -354,35 +327,6 @@ module RevdokuApi
       if attributes.key?(:'forwarding')
         self.forwarding = attributes[:'forwarding']
       end
-
-      if attributes.key?(:'cc')
-        self.cc = attributes[:'cc']
-      end
-
-      if attributes.key?(:'reply_to')
-        self.reply_to = attributes[:'reply_to']
-      end
-    end
-
-    # Custom attribute writer method checking allowed values (enum).
-    # @param [Object] schema_version Object to be assigned
-    def schema_version=(schema_version)
-      validator = EnumAttributeValidator.new('Integer', [1])
-      unless validator.valid?(schema_version)
-        fail ArgumentError, "invalid value for \"schema_version\", must be one of #{validator.allowable_values}."
-      end
-      @schema_version = schema_version
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] thread_id Value to be assigned
-    def thread_id=(thread_id)
-      pattern = Regexp.new(/^thr_[0-9a-f]{64}$/)
-      if !thread_id.nil? && thread_id !~ pattern
-        fail ArgumentError, "invalid value for \"thread_id\", must conform to the pattern #{pattern}."
-      end
-
-      @thread_id = thread_id
     end
 
     # Custom attribute writer method with validation
@@ -449,6 +393,16 @@ module RevdokuApi
       @conversation_id = conversation_id
     end
 
+    # Custom attribute writer method checking allowed values (enum).
+    # @param [Object] direction Object to be assigned
+    def direction=(direction)
+      validator = EnumAttributeValidator.new('String', ["received", "sent"])
+      unless validator.valid?(direction)
+        fail ArgumentError, "invalid value for \"direction\", must be one of #{validator.allowable_values}."
+      end
+      @direction = direction
+    end
+
     # Custom attribute writer method with validation
     # @param [Object] file_id Value to be assigned
     def file_id=(file_id)
@@ -462,21 +416,6 @@ module RevdokuApi
       end
 
       @file_id = file_id
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] version_id Value to be assigned
-    def version_id=(version_id)
-      if version_id.nil?
-        fail ArgumentError, 'version_id cannot be nil'
-      end
-
-      pattern = Regexp.new(/^dfrev_/)
-      if version_id !~ pattern
-        fail ArgumentError, "invalid value for \"version_id\", must conform to the pattern #{pattern}."
-      end
-
-      @version_id = version_id
     end
 
     # Custom attribute writer method with validation
@@ -508,10 +447,7 @@ module RevdokuApi
     def ==(o)
       return true if self.equal?(o)
       self.class == o.class &&
-          schema_version == o.schema_version &&
           subject == o.subject &&
-          from == o.from &&
-          to == o.to &&
           from_addresses == o.from_addresses &&
           to_addresses == o.to_addresses &&
           cc_addresses == o.cc_addresses &&
@@ -519,13 +455,14 @@ module RevdokuApi
           message_id == o.message_id &&
           in_reply_to == o.in_reply_to &&
           references == o.references &&
-          thread_id == o.thread_id &&
           delivered_to == o.delivered_to &&
           received_at == o.received_at &&
           body_status == o.body_status &&
           omitted_attachment_count == o.omitted_attachment_count &&
           id == o.id &&
           conversation_id == o.conversation_id &&
+          direction == o.direction &&
+          delivery == o.delivery &&
           file_id == o.file_id &&
           version_id == o.version_id &&
           attachment_count == o.attachment_count &&
@@ -534,9 +471,7 @@ module RevdokuApi
           read_by == o.read_by &&
           read_by_api_key == o.read_by_api_key &&
           files == o.files &&
-          forwarding == o.forwarding &&
-          cc == o.cc &&
-          reply_to == o.reply_to
+          forwarding == o.forwarding
     end
 
     # @see the `==` method
@@ -548,7 +483,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [schema_version, subject, from, to, from_addresses, to_addresses, cc_addresses, reply_to_addresses, message_id, in_reply_to, references, thread_id, delivered_to, received_at, body_status, omitted_attachment_count, id, conversation_id, file_id, version_id, attachment_count, read, read_at, read_by, read_by_api_key, files, forwarding, cc, reply_to].hash
+      [subject, from_addresses, to_addresses, cc_addresses, reply_to_addresses, message_id, in_reply_to, references, delivered_to, received_at, body_status, omitted_attachment_count, id, conversation_id, direction, delivery, file_id, version_id, attachment_count, read, read_at, read_by, read_by_api_key, files, forwarding].hash
     end
 
     # Builds the object from hash

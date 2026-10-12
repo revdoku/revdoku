@@ -22,7 +22,7 @@ func main() {
 	config := revdoku.NewConfiguration()
 	config.AddDefaultHeader("Authorization", "Bearer "+os.Getenv("REVDOKU_API_KEY"))
 	api := revdoku.NewAPIClient(config)
-	request := api.DefaultAPI.GetEmailAttachmentDownloadUrl(context.Background(), os.Getenv("REVDOKU_BUCKET_ID"), os.Getenv("REVDOKU_EMAIL_ID"), os.Getenv("REVDOKU_ATTACHMENT_ID"))
+	request := api.DefaultAPI.GetEmailAttachmentDownload(context.Background(), os.Getenv("REVDOKU_BUCKET_ID"), os.Getenv("REVDOKU_EMAIL_ID"), os.Getenv("REVDOKU_ATTACHMENT_ID"))
 	if account := os.Getenv("REVDOKU_ACCOUNT_ID"); account != "" {
 		request = request.AccountId(account)
 	}
@@ -32,7 +32,7 @@ func main() {
 	}
 	download := result.Data.Download
 	uri, err := url.Parse(download.Url)
-	if err != nil || uri.Scheme != "https" || uri.Hostname() == "" || uri.User != nil || download.Authentication != "none" {
+	if err != nil || uri.Scheme != "https" || uri.Hostname() == "" || uri.User != nil {
 		log.Fatal("Expected an HTTPS download without API authentication")
 	}
 	// This separate client sends no bearer token and follows no redirects.

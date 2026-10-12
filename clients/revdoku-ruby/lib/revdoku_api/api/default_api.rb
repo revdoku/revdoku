@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -19,28 +19,355 @@ module RevdokuApi
     def initialize(api_client = ApiClient.default)
       @api_client = api_client
     end
-    # Check a domain hostname and existing DNS routing
-    # Requires full-account owner/administrator access. Checks the exact hostname for conflicting MX or CNAME records without creating a claim or changing DNS. If the root already receives email elsewhere, use an unused subdomain such as mailbox.yourdomain.com. Cookie-authenticated requests require CSRF.
-    # @param create_account_email_domain_request [CreateAccountEmailDomainRequest] 
+    # Get storage targets for a batch
+    # Returns upload.url and upload.headers for each file that needs bytes. Repeating a path returns a fresh target, for example after a failed PUT. Files with identical content are skipped.
+    # @param mailbox_id [String] 
+    # @param session_id [String] mailbox_upload_session.id from the create response.
+    # @param add_upload_session_files_request [AddUploadSessionFilesRequest] 
     # @param [Hash] opts the optional parameters
-    # @return [EmailDomainCheckResponse]
-    def check_email_hostname(create_account_email_domain_request, opts = {})
-      data, _status_code, _headers = check_email_hostname_with_http_info(create_account_email_domain_request, opts)
+    # @return [CreateUploadSession201Response]
+    def add_upload_session_files(mailbox_id, session_id, add_upload_session_files_request, opts = {})
+      data, _status_code, _headers = add_upload_session_files_with_http_info(mailbox_id, session_id, add_upload_session_files_request, opts)
       data
     end
 
-    # Check a domain hostname and existing DNS routing
-    # Requires full-account owner/administrator access. Checks the exact hostname for conflicting MX or CNAME records without creating a claim or changing DNS. If the root already receives email elsewhere, use an unused subdomain such as mailbox.yourdomain.com. Cookie-authenticated requests require CSRF.
-    # @param create_account_email_domain_request [CreateAccountEmailDomainRequest] 
+    # Get storage targets for a batch
+    # Returns upload.url and upload.headers for each file that needs bytes. Repeating a path returns a fresh target, for example after a failed PUT. Files with identical content are skipped.
+    # @param mailbox_id [String] 
+    # @param session_id [String] mailbox_upload_session.id from the create response.
+    # @param add_upload_session_files_request [AddUploadSessionFilesRequest] 
     # @param [Hash] opts the optional parameters
-    # @return [Array<(EmailDomainCheckResponse, Integer, Hash)>] EmailDomainCheckResponse data, response status code and response headers
-    def check_email_hostname_with_http_info(create_account_email_domain_request, opts = {})
+    # @return [Array<(CreateUploadSession201Response, Integer, Hash)>] CreateUploadSession201Response data, response status code and response headers
+    def add_upload_session_files_with_http_info(mailbox_id, session_id, add_upload_session_files_request, opts = {})
       if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.check_email_hostname ...'
+        @api_client.config.logger.debug 'Calling API: DefaultApi.add_upload_session_files ...'
       end
-      # verify the required parameter 'create_account_email_domain_request' is set
-      if @api_client.config.client_side_validation && create_account_email_domain_request.nil?
-        fail ArgumentError, "Missing the required parameter 'create_account_email_domain_request' when calling DefaultApi.check_email_hostname"
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.add_upload_session_files"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.add_upload_session_files, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'session_id' is set
+      if @api_client.config.client_side_validation && session_id.nil?
+        fail ArgumentError, "Missing the required parameter 'session_id' when calling DefaultApi.add_upload_session_files"
+      end
+      pattern = Regexp.new(/^bus_/)
+      if @api_client.config.client_side_validation && session_id !~ pattern
+        fail ArgumentError, "invalid value for 'session_id' when calling DefaultApi.add_upload_session_files, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'add_upload_session_files_request' is set
+      if @api_client.config.client_side_validation && add_upload_session_files_request.nil?
+        fail ArgumentError, "Missing the required parameter 'add_upload_session_files_request' when calling DefaultApi.add_upload_session_files"
+      end
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/uploads'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s)).sub('{session_id}', CGI.escape(session_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(add_upload_session_files_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'CreateUploadSession201Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.add_upload_session_files",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#add_upload_session_files\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Append text to a file
+    # Appends UTF-8 text to an existing text file and creates a new version. A missing file returns MAILBOX_FILE_NOT_FOUND.
+    # @param mailbox_id [String] 
+    # @param append_text_request [AppendTextRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [AppendText200Response]
+    def append_text(mailbox_id, append_text_request, opts = {})
+      data, _status_code, _headers = append_text_with_http_info(mailbox_id, append_text_request, opts)
+      data
+    end
+
+    # Append text to a file
+    # Appends UTF-8 text to an existing text file and creates a new version. A missing file returns MAILBOX_FILE_NOT_FOUND.
+    # @param mailbox_id [String] 
+    # @param append_text_request [AppendTextRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(AppendText200Response, Integer, Hash)>] AppendText200Response data, response status code and response headers
+    def append_text_with_http_info(mailbox_id, append_text_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.append_text ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.append_text"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.append_text, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'append_text_request' is set
+      if @api_client.config.client_side_validation && append_text_request.nil?
+        fail ArgumentError, "Missing the required parameter 'append_text_request' when calling DefaultApi.append_text"
+      end
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/files/append_text'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(append_text_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'AppendText200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.append_text",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#append_text\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Archive a mailbox
+    # Archived mailboxes keep their files and emails and become read-only.
+    # @param mailbox_id [String] 
+    # @param action_request [ActionRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [CreateMailbox201Response]
+    def archive_mailbox(mailbox_id, action_request, opts = {})
+      data, _status_code, _headers = archive_mailbox_with_http_info(mailbox_id, action_request, opts)
+      data
+    end
+
+    # Archive a mailbox
+    # Archived mailboxes keep their files and emails and become read-only.
+    # @param mailbox_id [String] 
+    # @param action_request [ActionRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(CreateMailbox201Response, Integer, Hash)>] CreateMailbox201Response data, response status code and response headers
+    def archive_mailbox_with_http_info(mailbox_id, action_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.archive_mailbox ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.archive_mailbox"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.archive_mailbox, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'action_request' is set
+      if @api_client.config.client_side_validation && action_request.nil?
+        fail ArgumentError, "Missing the required parameter 'action_request' when calling DefaultApi.archive_mailbox"
+      end
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/archive'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(action_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'CreateMailbox201Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.archive_mailbox",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#archive_mailbox\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Change the primary address
+    # Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. The old address stops receiving unless keep_old_as_alias is true.
+    # @param mailbox_id [String] 
+    # @param change_mailbox_address_request [ChangeMailboxAddressRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [GetMailboxEmailSettings200Response]
+    def change_mailbox_address(mailbox_id, change_mailbox_address_request, opts = {})
+      data, _status_code, _headers = change_mailbox_address_with_http_info(mailbox_id, change_mailbox_address_request, opts)
+      data
+    end
+
+    # Change the primary address
+    # Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. The old address stops receiving unless keep_old_as_alias is true.
+    # @param mailbox_id [String] 
+    # @param change_mailbox_address_request [ChangeMailboxAddressRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(GetMailboxEmailSettings200Response, Integer, Hash)>] GetMailboxEmailSettings200Response data, response status code and response headers
+    def change_mailbox_address_with_http_info(mailbox_id, change_mailbox_address_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.change_mailbox_address ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.change_mailbox_address"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.change_mailbox_address, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'change_mailbox_address_request' is set
+      if @api_client.config.client_side_validation && change_mailbox_address_request.nil?
+        fail ArgumentError, "Missing the required parameter 'change_mailbox_address_request' when calling DefaultApi.change_mailbox_address"
+      end
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/email/rotate'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(change_mailbox_address_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'GetMailboxEmailSettings200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.change_mailbox_address",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#change_mailbox_address\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Check a hostname for conflicting DNS
+    # Makes no claim and changes no DNS. If the root domain already receives email, use an unused subdomain such as inbox.example.com.
+    # @param create_email_domain_request [CreateEmailDomainRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [CheckEmailDomain200Response]
+    def check_email_domain(create_email_domain_request, opts = {})
+      data, _status_code, _headers = check_email_domain_with_http_info(create_email_domain_request, opts)
+      data
+    end
+
+    # Check a hostname for conflicting DNS
+    # Makes no claim and changes no DNS. If the root domain already receives email, use an unused subdomain such as inbox.example.com.
+    # @param create_email_domain_request [CreateEmailDomainRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(CheckEmailDomain200Response, Integer, Hash)>] CheckEmailDomain200Response data, response status code and response headers
+    def check_email_domain_with_http_info(create_email_domain_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.check_email_domain ...'
+      end
+      # verify the required parameter 'create_email_domain_request' is set
+      if @api_client.config.client_side_validation && create_email_domain_request.nil?
+        fail ArgumentError, "Missing the required parameter 'create_email_domain_request' when calling DefaultApi.check_email_domain"
       end
       # resource path
       local_var_path = '/v1/account/email_domains/check'
@@ -62,16 +389,16 @@ module RevdokuApi
       form_params = opts[:form_params] || {}
 
       # http body (model)
-      post_body = opts[:debug_body] || @api_client.object_to_http_body(create_account_email_domain_request)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(create_email_domain_request)
 
       # return_type
-      return_type = opts[:debug_return_type] || 'EmailDomainCheckResponse'
+      return_type = opts[:debug_return_type] || 'CheckEmailDomain200Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
 
       new_options = opts.merge(
-        :operation => :"DefaultApi.check_email_hostname",
+        :operation => :"DefaultApi.check_email_domain",
         :header_params => header_params,
         :query_params => query_params,
         :form_params => form_params,
@@ -82,36 +409,58 @@ module RevdokuApi
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
       if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#check_email_hostname\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+        @api_client.config.logger.debug "API called: DefaultApi#check_email_domain\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end
 
-    # Claim an exact email domain
-    # Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-    # @param create_account_email_domain_request [CreateAccountEmailDomainRequest] 
+    # Copy a file
+    # Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
+    # @param move_file_request [MoveFileRequest] 
     # @param [Hash] opts the optional parameters
-    # @return [EmailDomainListResponse]
-    def create_account_email_domain(create_account_email_domain_request, opts = {})
-      data, _status_code, _headers = create_account_email_domain_with_http_info(create_account_email_domain_request, opts)
+    # @return [RenameFile200Response]
+    def copy_file(mailbox_id, file_id, move_file_request, opts = {})
+      data, _status_code, _headers = copy_file_with_http_info(mailbox_id, file_id, move_file_request, opts)
       data
     end
 
-    # Claim an exact email domain
-    # Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-    # @param create_account_email_domain_request [CreateAccountEmailDomainRequest] 
+    # Copy a file
+    # Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
+    # @param move_file_request [MoveFileRequest] 
     # @param [Hash] opts the optional parameters
-    # @return [Array<(EmailDomainListResponse, Integer, Hash)>] EmailDomainListResponse data, response status code and response headers
-    def create_account_email_domain_with_http_info(create_account_email_domain_request, opts = {})
+    # @return [Array<(RenameFile200Response, Integer, Hash)>] RenameFile200Response data, response status code and response headers
+    def copy_file_with_http_info(mailbox_id, file_id, move_file_request, opts = {})
       if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.create_account_email_domain ...'
+        @api_client.config.logger.debug 'Calling API: DefaultApi.copy_file ...'
       end
-      # verify the required parameter 'create_account_email_domain_request' is set
-      if @api_client.config.client_side_validation && create_account_email_domain_request.nil?
-        fail ArgumentError, "Missing the required parameter 'create_account_email_domain_request' when calling DefaultApi.create_account_email_domain"
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.copy_file"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.copy_file, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'file_id' is set
+      if @api_client.config.client_side_validation && file_id.nil?
+        fail ArgumentError, "Missing the required parameter 'file_id' when calling DefaultApi.copy_file"
+      end
+      pattern = Regexp.new(/^df_/)
+      if @api_client.config.client_side_validation && file_id !~ pattern
+        fail ArgumentError, "invalid value for 'file_id' when calling DefaultApi.copy_file, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'move_file_request' is set
+      if @api_client.config.client_side_validation && move_file_request.nil?
+        fail ArgumentError, "Missing the required parameter 'move_file_request' when calling DefaultApi.copy_file"
       end
       # resource path
-      local_var_path = '/v1/account/email_domains'
+      local_var_path = '/v1/mailboxes/{mailbox_id}/files/{file_id}/copy'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s)).sub('{file_id}', CGI.escape(file_id.to_s))
 
       # query parameters
       query_params = opts[:query_params] || {}
@@ -130,16 +479,16 @@ module RevdokuApi
       form_params = opts[:form_params] || {}
 
       # http body (model)
-      post_body = opts[:debug_body] || @api_client.object_to_http_body(create_account_email_domain_request)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(move_file_request)
 
       # return_type
-      return_type = opts[:debug_return_type] || 'EmailDomainListResponse'
+      return_type = opts[:debug_return_type] || 'RenameFile200Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
 
       new_options = opts.merge(
-        :operation => :"DefaultApi.create_account_email_domain",
+        :operation => :"DefaultApi.copy_file",
         :header_params => header_params,
         :query_params => query_params,
         :form_params => form_params,
@@ -150,12 +499,81 @@ module RevdokuApi
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
       if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#create_account_email_domain\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+        @api_client.config.logger.debug "API called: DefaultApi#copy_file\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end
 
-    # Create a client account within an authorized agency
+    # Create a dashboard link for the user
+    # Returns a dashboard URL for a path such as /mailboxes. The user signs in normally; the link grants no access.
+    # @param create_browser_link_request [CreateBrowserLinkRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [CreateBrowserLink201Response]
+    def create_browser_link(create_browser_link_request, opts = {})
+      data, _status_code, _headers = create_browser_link_with_http_info(create_browser_link_request, opts)
+      data
+    end
+
+    # Create a dashboard link for the user
+    # Returns a dashboard URL for a path such as /mailboxes. The user signs in normally; the link grants no access.
+    # @param create_browser_link_request [CreateBrowserLinkRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(CreateBrowserLink201Response, Integer, Hash)>] CreateBrowserLink201Response data, response status code and response headers
+    def create_browser_link_with_http_info(create_browser_link_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.create_browser_link ...'
+      end
+      # verify the required parameter 'create_browser_link_request' is set
+      if @api_client.config.client_side_validation && create_browser_link_request.nil?
+        fail ArgumentError, "Missing the required parameter 'create_browser_link_request' when calling DefaultApi.create_browser_link"
+      end
+      # resource path
+      local_var_path = '/v1/agent_auth/browser_login_link'
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(create_browser_link_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'CreateBrowserLink201Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.create_browser_link",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#create_browser_link\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Create a client account
+    # Requires an agency owner credential with client-account access. The credential default does not change; send the new account_id on later requests.
     # @param create_client_account_request [CreateClientAccountRequest] 
     # @param [Hash] opts the optional parameters
     # @return [CreateClientAccount201Response]
@@ -164,7 +582,8 @@ module RevdokuApi
       data
     end
 
-    # Create a client account within an authorized agency
+    # Create a client account
+    # Requires an agency owner credential with client-account access. The credential default does not change; send the new account_id on later requests.
     # @param create_client_account_request [CreateClientAccountRequest] 
     # @param [Hash] opts the optional parameters
     # @return [Array<(CreateClientAccount201Response, Integer, Hash)>] CreateClientAccount201Response data, response status code and response headers
@@ -221,8 +640,155 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Create a mailbox with a ready receiving address
-    # Creates a mailbox with file storage and waits for receiving confirmation. On Free, email.username is a prefix with a permanent 12-character random suffix. An exact name requires a paid plan. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id. Creation quotas apply.
+    # Add an alias address
+    # Requires a paid plan and a full-account owner or administrator with mailbox-admin permission. The primary address stays unchanged.
+    # @param mailbox_id [String] 
+    # @param create_email_alias_request [CreateEmailAliasRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [GetMailboxEmailSettings200Response]
+    def create_email_alias(mailbox_id, create_email_alias_request, opts = {})
+      data, _status_code, _headers = create_email_alias_with_http_info(mailbox_id, create_email_alias_request, opts)
+      data
+    end
+
+    # Add an alias address
+    # Requires a paid plan and a full-account owner or administrator with mailbox-admin permission. The primary address stays unchanged.
+    # @param mailbox_id [String] 
+    # @param create_email_alias_request [CreateEmailAliasRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(GetMailboxEmailSettings200Response, Integer, Hash)>] GetMailboxEmailSettings200Response data, response status code and response headers
+    def create_email_alias_with_http_info(mailbox_id, create_email_alias_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.create_email_alias ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.create_email_alias"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.create_email_alias, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'create_email_alias_request' is set
+      if @api_client.config.client_side_validation && create_email_alias_request.nil?
+        fail ArgumentError, "Missing the required parameter 'create_email_alias_request' when calling DefaultApi.create_email_alias"
+      end
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/email/aliases'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(create_email_alias_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'GetMailboxEmailSettings200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.create_email_alias",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#create_email_alias\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Connect a custom email domain
+    # Claims an exact hostname and returns the DNS records to publish. Never change DNS without the domain owner's authorization.
+    # @param create_email_domain_request [CreateEmailDomainRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [CreateEmailDomain201Response]
+    def create_email_domain(create_email_domain_request, opts = {})
+      data, _status_code, _headers = create_email_domain_with_http_info(create_email_domain_request, opts)
+      data
+    end
+
+    # Connect a custom email domain
+    # Claims an exact hostname and returns the DNS records to publish. Never change DNS without the domain owner&#39;s authorization.
+    # @param create_email_domain_request [CreateEmailDomainRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(CreateEmailDomain201Response, Integer, Hash)>] CreateEmailDomain201Response data, response status code and response headers
+    def create_email_domain_with_http_info(create_email_domain_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.create_email_domain ...'
+      end
+      # verify the required parameter 'create_email_domain_request' is set
+      if @api_client.config.client_side_validation && create_email_domain_request.nil?
+        fail ArgumentError, "Missing the required parameter 'create_email_domain_request' when calling DefaultApi.create_email_domain"
+      end
+      # resource path
+      local_var_path = '/v1/account/email_domains'
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(create_email_domain_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'CreateEmailDomain201Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.create_email_domain",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#create_email_domain\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Create a mailbox
+    # Waits until the address can receive email. On Free, email.username is a prefix with a permanent random suffix; an exact name requires a paid plan. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. Never retry a creation automatically.
     # @param create_mailbox_request [CreateMailboxRequest] 
     # @param [Hash] opts the optional parameters
     # @return [CreateMailbox201Response]
@@ -231,8 +797,8 @@ module RevdokuApi
       data
     end
 
-    # Create a mailbox with a ready receiving address
-    # Creates a mailbox with file storage and waits for receiving confirmation. On Free, email.username is a prefix with a permanent 12-character random suffix. An exact name requires a paid plan. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id. Creation quotas apply.
+    # Create a mailbox
+    # Waits until the address can receive email. On Free, email.username is a prefix with a permanent random suffix; an exact name requires a paid plan. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. Never retry a creation automatically.
     # @param create_mailbox_request [CreateMailboxRequest] 
     # @param [Hash] opts the optional parameters
     # @return [Array<(CreateMailbox201Response, Integer, Hash)>] CreateMailbox201Response data, response status code and response headers
@@ -289,50 +855,45 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Add an email alias to a mailbox
-    # Requires a paid plan, a full-account owner/administrator with mailbox-admin access and an available alias slot. Free returns EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
-    # @param id [String] Authorized mailbox prefix ID
-    # @param create_mailbox_email_alias_request [CreateMailboxEmailAliasRequest] 
+    # Start a batch upload
+    # Starts an upload session for many files and returns storage targets for the first files. The session locks the mailbox for other writers; incoming email still arrives. Send files in batches with POST .../uploads, PUT the bytes to each upload.url, save each batch with POST .../finalize_batch, then call POST .../finalize. Unsaved uploads are discarded when the session expires.
+    # @param mailbox_id [String] 
+    # @param create_upload_session_request [CreateUploadSessionRequest] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [String] :reason 
-    # @return [GetMailboxEmailSettings200Response]
-    def create_mailbox_email_alias(id, create_mailbox_email_alias_request, opts = {})
-      data, _status_code, _headers = create_mailbox_email_alias_with_http_info(id, create_mailbox_email_alias_request, opts)
+    # @return [CreateUploadSession201Response]
+    def create_upload_session(mailbox_id, create_upload_session_request, opts = {})
+      data, _status_code, _headers = create_upload_session_with_http_info(mailbox_id, create_upload_session_request, opts)
       data
     end
 
-    # Add an email alias to a mailbox
-    # Requires a paid plan, a full-account owner/administrator with mailbox-admin access and an available alias slot. Free returns EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
-    # @param id [String] Authorized mailbox prefix ID
-    # @param create_mailbox_email_alias_request [CreateMailboxEmailAliasRequest] 
+    # Start a batch upload
+    # Starts an upload session for many files and returns storage targets for the first files. The session locks the mailbox for other writers; incoming email still arrives. Send files in batches with POST .../uploads, PUT the bytes to each upload.url, save each batch with POST .../finalize_batch, then call POST .../finalize. Unsaved uploads are discarded when the session expires.
+    # @param mailbox_id [String] 
+    # @param create_upload_session_request [CreateUploadSessionRequest] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [String] :reason 
-    # @return [Array<(GetMailboxEmailSettings200Response, Integer, Hash)>] GetMailboxEmailSettings200Response data, response status code and response headers
-    def create_mailbox_email_alias_with_http_info(id, create_mailbox_email_alias_request, opts = {})
+    # @return [Array<(CreateUploadSession201Response, Integer, Hash)>] CreateUploadSession201Response data, response status code and response headers
+    def create_upload_session_with_http_info(mailbox_id, create_upload_session_request, opts = {})
       if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.create_mailbox_email_alias ...'
+        @api_client.config.logger.debug 'Calling API: DefaultApi.create_upload_session ...'
       end
-      # verify the required parameter 'id' is set
-      if @api_client.config.client_side_validation && id.nil?
-        fail ArgumentError, "Missing the required parameter 'id' when calling DefaultApi.create_mailbox_email_alias"
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.create_upload_session"
       end
-      # verify the required parameter 'create_mailbox_email_alias_request' is set
-      if @api_client.config.client_side_validation && create_mailbox_email_alias_request.nil?
-        fail ArgumentError, "Missing the required parameter 'create_mailbox_email_alias_request' when calling DefaultApi.create_mailbox_email_alias"
-      end
-      if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
-        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.create_mailbox_email_alias, the character length must be smaller than or equal to 2000.'
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.create_upload_session, must conform to the pattern #{pattern}."
       end
 
+      # verify the required parameter 'create_upload_session_request' is set
+      if @api_client.config.client_side_validation && create_upload_session_request.nil?
+        fail ArgumentError, "Missing the required parameter 'create_upload_session_request' when calling DefaultApi.create_upload_session"
+      end
       # resource path
-      local_var_path = '/v1/mailboxes/{id}/email/aliases'.sub('{id}', CGI.escape(id.to_s))
+      local_var_path = '/v1/mailboxes/{mailbox_id}/upload_sessions'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
 
       # query parameters
       query_params = opts[:query_params] || {}
-      query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
-      query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
 
       # header parameters
       header_params = opts[:header_params] || {}
@@ -348,16 +909,16 @@ module RevdokuApi
       form_params = opts[:form_params] || {}
 
       # http body (model)
-      post_body = opts[:debug_body] || @api_client.object_to_http_body(create_mailbox_email_alias_request)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(create_upload_session_request)
 
       # return_type
-      return_type = opts[:debug_return_type] || 'GetMailboxEmailSettings200Response'
+      return_type = opts[:debug_return_type] || 'CreateUploadSession201Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
 
       new_options = opts.merge(
-        :operation => :"DefaultApi.create_mailbox_email_alias",
+        :operation => :"DefaultApi.create_upload_session",
         :header_params => header_params,
         :query_params => query_params,
         :form_params => form_params,
@@ -368,32 +929,32 @@ module RevdokuApi
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
       if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#create_mailbox_email_alias\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+        @api_client.config.logger.debug "API called: DefaultApi#create_upload_session\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end
 
-    # Delete one received email
-    # Requires mailbox-admin permission. Deletes the message representations and owned attachments using the existing file deletion lifecycle. Separately copied files are unaffected. No email trash or restore operation. A repeated delete returns 404.
+    # Delete an email
+    # Requires mailbox-admin permission. Deletes the stored message and its attachments. There is no trash.
     # @param mailbox_id [String] 
     # @param email_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
-    # @return [nil]
+    # @return [DeleteEmailDomain200Response]
     def delete_email(mailbox_id, email_id, opts = {})
-      delete_email_with_http_info(mailbox_id, email_id, opts)
-      nil
+      data, _status_code, _headers = delete_email_with_http_info(mailbox_id, email_id, opts)
+      data
     end
 
-    # Delete one received email
-    # Requires mailbox-admin permission. Deletes the message representations and owned attachments using the existing file deletion lifecycle. Separately copied files are unaffected. No email trash or restore operation. A repeated delete returns 404.
+    # Delete an email
+    # Requires mailbox-admin permission. Deletes the stored message and its attachments. There is no trash.
     # @param mailbox_id [String] 
     # @param email_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
-    # @return [Array<(nil, Integer, Hash)>] nil, response status code and response headers
+    # @return [Array<(DeleteEmailDomain200Response, Integer, Hash)>] DeleteEmailDomain200Response data, response status code and response headers
     def delete_email_with_http_info(mailbox_id, email_id, opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: DefaultApi.delete_email ...'
@@ -402,10 +963,20 @@ module RevdokuApi
       if @api_client.config.client_side_validation && mailbox_id.nil?
         fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.delete_email"
       end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.delete_email, must conform to the pattern #{pattern}."
+      end
+
       # verify the required parameter 'email_id' is set
       if @api_client.config.client_side_validation && email_id.nil?
         fail ArgumentError, "Missing the required parameter 'email_id' when calling DefaultApi.delete_email"
       end
+      pattern = Regexp.new(/^eml_/)
+      if @api_client.config.client_side_validation && email_id !~ pattern
+        fail ArgumentError, "invalid value for 'email_id' when calling DefaultApi.delete_email, must conform to the pattern #{pattern}."
+      end
+
       if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
         fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.delete_email, the character length must be smaller than or equal to 2000.'
       end
@@ -430,7 +1001,7 @@ module RevdokuApi
       post_body = opts[:debug_body]
 
       # return_type
-      return_type = opts[:debug_return_type]
+      return_type = opts[:debug_return_type] || 'DeleteEmailDomain200Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
@@ -452,23 +1023,181 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Disable a mailbox webhook
-    # Requires mailbox admin permission. Cancels queued attempts; a request already in flight may finish.
+    # Remove an alias address
+    # Stops new and queued deliveries to the alias. Saved emails stay.
     # @param mailbox_id [String] 
+    # @param alias_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @return [nil]
-    def delete_email_webhook(mailbox_id, opts = {})
-      delete_email_webhook_with_http_info(mailbox_id, opts)
-      nil
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @return [DeleteEmailDomain200Response]
+    def delete_email_alias(mailbox_id, alias_id, opts = {})
+      data, _status_code, _headers = delete_email_alias_with_http_info(mailbox_id, alias_id, opts)
+      data
     end
 
-    # Disable a mailbox webhook
-    # Requires mailbox admin permission. Cancels queued attempts; a request already in flight may finish.
+    # Remove an alias address
+    # Stops new and queued deliveries to the alias. Saved emails stay.
+    # @param mailbox_id [String] 
+    # @param alias_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @return [Array<(DeleteEmailDomain200Response, Integer, Hash)>] DeleteEmailDomain200Response data, response status code and response headers
+    def delete_email_alias_with_http_info(mailbox_id, alias_id, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.delete_email_alias ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.delete_email_alias"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.delete_email_alias, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'alias_id' is set
+      if @api_client.config.client_side_validation && alias_id.nil?
+        fail ArgumentError, "Missing the required parameter 'alias_id' when calling DefaultApi.delete_email_alias"
+      end
+      if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
+        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.delete_email_alias, the character length must be smaller than or equal to 2000.'
+      end
+
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/email/aliases/{alias_id}'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s)).sub('{alias_id}', CGI.escape(alias_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+      query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
+      query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'DeleteEmailDomain200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.delete_email_alias",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:DELETE, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#delete_email_alias\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Remove an unused custom email domain
+    # Send the domain hostname and confirm=true. A domain that mailbox addresses still use returns EMAIL_DOMAIN_IN_USE.
+    # @param domain_id [String] 
+    # @param delete_email_domain_request [DeleteEmailDomainRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [DeleteEmailDomain200Response]
+    def delete_email_domain(domain_id, delete_email_domain_request, opts = {})
+      data, _status_code, _headers = delete_email_domain_with_http_info(domain_id, delete_email_domain_request, opts)
+      data
+    end
+
+    # Remove an unused custom email domain
+    # Send the domain hostname and confirm&#x3D;true. A domain that mailbox addresses still use returns EMAIL_DOMAIN_IN_USE.
+    # @param domain_id [String] 
+    # @param delete_email_domain_request [DeleteEmailDomainRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(DeleteEmailDomain200Response, Integer, Hash)>] DeleteEmailDomain200Response data, response status code and response headers
+    def delete_email_domain_with_http_info(domain_id, delete_email_domain_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.delete_email_domain ...'
+      end
+      # verify the required parameter 'domain_id' is set
+      if @api_client.config.client_side_validation && domain_id.nil?
+        fail ArgumentError, "Missing the required parameter 'domain_id' when calling DefaultApi.delete_email_domain"
+      end
+      # verify the required parameter 'delete_email_domain_request' is set
+      if @api_client.config.client_side_validation && delete_email_domain_request.nil?
+        fail ArgumentError, "Missing the required parameter 'delete_email_domain_request' when calling DefaultApi.delete_email_domain"
+      end
+      # resource path
+      local_var_path = '/v1/account/email_domains/{domain_id}'.sub('{domain_id}', CGI.escape(domain_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(delete_email_domain_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'DeleteEmailDomain200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.delete_email_domain",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:DELETE, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#delete_email_domain\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Remove the email webhook
+    # Cancels queued deliveries. A delivery already in progress can finish. Returns the mailbox ID, also when no webhook is set.
     # @param mailbox_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @return [Array<(nil, Integer, Hash)>] nil, response status code and response headers
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @return [DeleteEmailDomain200Response]
+    def delete_email_webhook(mailbox_id, opts = {})
+      data, _status_code, _headers = delete_email_webhook_with_http_info(mailbox_id, opts)
+      data
+    end
+
+    # Remove the email webhook
+    # Cancels queued deliveries. A delivery already in progress can finish. Returns the mailbox ID, also when no webhook is set.
+    # @param mailbox_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @return [Array<(DeleteEmailDomain200Response, Integer, Hash)>] DeleteEmailDomain200Response data, response status code and response headers
     def delete_email_webhook_with_http_info(mailbox_id, opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: DefaultApi.delete_email_webhook ...'
@@ -477,6 +1206,11 @@ module RevdokuApi
       if @api_client.config.client_side_validation && mailbox_id.nil?
         fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.delete_email_webhook"
       end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.delete_email_webhook, must conform to the pattern #{pattern}."
+      end
+
       # resource path
       local_var_path = '/v1/mailboxes/{mailbox_id}/email/webhook'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
 
@@ -496,7 +1230,7 @@ module RevdokuApi
       post_body = opts[:debug_body]
 
       # return_type
-      return_type = opts[:debug_return_type]
+      return_type = opts[:debug_return_type] || 'DeleteEmailDomain200Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
@@ -518,45 +1252,55 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Remove one email alias
-    # Requires a full-account owner/administrator with mailbox-admin access. Immediately revokes this alias, including queued deliveries. Retains existing messages and the permanent address reservation. Returns updated mailbox settings.
-    # @param id [String] Authorized mailbox prefix ID
-    # @param alias_id [String] Alias ID from mailbox settings
+    # Delete a file
+    # Requires mailbox-admin permission. Files under _email/ return EMAIL_PATH_READ_ONLY; delete the email instead.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
-    # @return [GetMailboxEmailSettings200Response]
-    def delete_mailbox_email_alias(id, alias_id, opts = {})
-      data, _status_code, _headers = delete_mailbox_email_alias_with_http_info(id, alias_id, opts)
+    # @return [DeleteEmailDomain200Response]
+    def delete_file(mailbox_id, file_id, opts = {})
+      data, _status_code, _headers = delete_file_with_http_info(mailbox_id, file_id, opts)
       data
     end
 
-    # Remove one email alias
-    # Requires a full-account owner/administrator with mailbox-admin access. Immediately revokes this alias, including queued deliveries. Retains existing messages and the permanent address reservation. Returns updated mailbox settings.
-    # @param id [String] Authorized mailbox prefix ID
-    # @param alias_id [String] Alias ID from mailbox settings
+    # Delete a file
+    # Requires mailbox-admin permission. Files under _email/ return EMAIL_PATH_READ_ONLY; delete the email instead.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
-    # @return [Array<(GetMailboxEmailSettings200Response, Integer, Hash)>] GetMailboxEmailSettings200Response data, response status code and response headers
-    def delete_mailbox_email_alias_with_http_info(id, alias_id, opts = {})
+    # @return [Array<(DeleteEmailDomain200Response, Integer, Hash)>] DeleteEmailDomain200Response data, response status code and response headers
+    def delete_file_with_http_info(mailbox_id, file_id, opts = {})
       if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.delete_mailbox_email_alias ...'
+        @api_client.config.logger.debug 'Calling API: DefaultApi.delete_file ...'
       end
-      # verify the required parameter 'id' is set
-      if @api_client.config.client_side_validation && id.nil?
-        fail ArgumentError, "Missing the required parameter 'id' when calling DefaultApi.delete_mailbox_email_alias"
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.delete_file"
       end
-      # verify the required parameter 'alias_id' is set
-      if @api_client.config.client_side_validation && alias_id.nil?
-        fail ArgumentError, "Missing the required parameter 'alias_id' when calling DefaultApi.delete_mailbox_email_alias"
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.delete_file, must conform to the pattern #{pattern}."
       end
+
+      # verify the required parameter 'file_id' is set
+      if @api_client.config.client_side_validation && file_id.nil?
+        fail ArgumentError, "Missing the required parameter 'file_id' when calling DefaultApi.delete_file"
+      end
+      pattern = Regexp.new(/^df_/)
+      if @api_client.config.client_side_validation && file_id !~ pattern
+        fail ArgumentError, "invalid value for 'file_id' when calling DefaultApi.delete_file, must conform to the pattern #{pattern}."
+      end
+
       if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
-        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.delete_mailbox_email_alias, the character length must be smaller than or equal to 2000.'
+        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.delete_file, the character length must be smaller than or equal to 2000.'
       end
 
       # resource path
-      local_var_path = '/v1/mailboxes/{id}/email/aliases/{alias_id}'.sub('{id}', CGI.escape(id.to_s)).sub('{alias_id}', CGI.escape(alias_id.to_s))
+      local_var_path = '/v1/mailboxes/{mailbox_id}/files/{file_id}'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s)).sub('{file_id}', CGI.escape(file_id.to_s))
 
       # query parameters
       query_params = opts[:query_params] || {}
@@ -575,13 +1319,13 @@ module RevdokuApi
       post_body = opts[:debug_body]
 
       # return_type
-      return_type = opts[:debug_return_type] || 'GetMailboxEmailSettings200Response'
+      return_type = opts[:debug_return_type] || 'DeleteEmailDomain200Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
 
       new_options = opts.merge(
-        :operation => :"DefaultApi.delete_mailbox_email_alias",
+        :operation => :"DefaultApi.delete_file",
         :header_params => header_params,
         :query_params => query_params,
         :form_params => form_params,
@@ -592,34 +1336,272 @@ module RevdokuApi
 
       data, status_code, headers = @api_client.call_api(:DELETE, local_var_path, new_options)
       if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#delete_mailbox_email_alias\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+        @api_client.config.logger.debug "API called: DefaultApi#delete_file\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Permanently delete an archived mailbox
+    # Archive the mailbox first. Send delete.confirmation from the mailbox read after the user confirms. Large mailboxes finish deleting in the background.
+    # @param mailbox_id [String] 
+    # @param delete_mailbox_request [DeleteMailboxRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [DeleteEmailDomain200Response]
+    def delete_mailbox(mailbox_id, delete_mailbox_request, opts = {})
+      data, _status_code, _headers = delete_mailbox_with_http_info(mailbox_id, delete_mailbox_request, opts)
+      data
+    end
+
+    # Permanently delete an archived mailbox
+    # Archive the mailbox first. Send delete.confirmation from the mailbox read after the user confirms. Large mailboxes finish deleting in the background.
+    # @param mailbox_id [String] 
+    # @param delete_mailbox_request [DeleteMailboxRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(DeleteEmailDomain200Response, Integer, Hash)>] DeleteEmailDomain200Response data, response status code and response headers
+    def delete_mailbox_with_http_info(mailbox_id, delete_mailbox_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.delete_mailbox ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.delete_mailbox"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.delete_mailbox, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'delete_mailbox_request' is set
+      if @api_client.config.client_side_validation && delete_mailbox_request.nil?
+        fail ArgumentError, "Missing the required parameter 'delete_mailbox_request' when calling DefaultApi.delete_mailbox"
+      end
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(delete_mailbox_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'DeleteEmailDomain200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.delete_mailbox",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:DELETE, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#delete_mailbox\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Exchange a one-time dashboard connection code for an API key
+    # The dashboard creates the one-time code when a signed-in administrator copies a connection prompt.
+    # @param exchange_connection_grant_request [ExchangeConnectionGrantRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [VerifySignInCode201Response]
+    def exchange_connection_grant(exchange_connection_grant_request, opts = {})
+      data, _status_code, _headers = exchange_connection_grant_with_http_info(exchange_connection_grant_request, opts)
+      data
+    end
+
+    # Exchange a one-time dashboard connection code for an API key
+    # The dashboard creates the one-time code when a signed-in administrator copies a connection prompt.
+    # @param exchange_connection_grant_request [ExchangeConnectionGrantRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(VerifySignInCode201Response, Integer, Hash)>] VerifySignInCode201Response data, response status code and response headers
+    def exchange_connection_grant_with_http_info(exchange_connection_grant_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.exchange_connection_grant ...'
+      end
+      # verify the required parameter 'exchange_connection_grant_request' is set
+      if @api_client.config.client_side_validation && exchange_connection_grant_request.nil?
+        fail ArgumentError, "Missing the required parameter 'exchange_connection_grant_request' when calling DefaultApi.exchange_connection_grant"
+      end
+      # resource path
+      local_var_path = '/v1/agent_auth/exchange_grant'
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(exchange_connection_grant_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'VerifySignInCode201Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || []
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.exchange_connection_grant",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#exchange_connection_grant\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Finish or cancel a batch upload
+    # complete=true saves the remaining uploaded files, creates one mailbox version and releases the lock. A 202 response with finalize_pending=true means more files remain: call finalize again after Retry-After. complete=false cancels the session and discards its unsaved files. Finalizing a finished session returns it unchanged.
+    # @param mailbox_id [String] 
+    # @param session_id [String] mailbox_upload_session.id from the create response.
+    # @param [Hash] opts the optional parameters
+    # @option opts [FinalizeUploadSessionRequest] :finalize_upload_session_request 
+    # @return [CreateUploadSession201Response]
+    def finalize_upload_session(mailbox_id, session_id, opts = {})
+      data, _status_code, _headers = finalize_upload_session_with_http_info(mailbox_id, session_id, opts)
+      data
+    end
+
+    # Finish or cancel a batch upload
+    # complete&#x3D;true saves the remaining uploaded files, creates one mailbox version and releases the lock. A 202 response with finalize_pending&#x3D;true means more files remain: call finalize again after Retry-After. complete&#x3D;false cancels the session and discards its unsaved files. Finalizing a finished session returns it unchanged.
+    # @param mailbox_id [String] 
+    # @param session_id [String] mailbox_upload_session.id from the create response.
+    # @param [Hash] opts the optional parameters
+    # @option opts [FinalizeUploadSessionRequest] :finalize_upload_session_request 
+    # @return [Array<(CreateUploadSession201Response, Integer, Hash)>] CreateUploadSession201Response data, response status code and response headers
+    def finalize_upload_session_with_http_info(mailbox_id, session_id, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.finalize_upload_session ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.finalize_upload_session"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.finalize_upload_session, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'session_id' is set
+      if @api_client.config.client_side_validation && session_id.nil?
+        fail ArgumentError, "Missing the required parameter 'session_id' when calling DefaultApi.finalize_upload_session"
+      end
+      pattern = Regexp.new(/^bus_/)
+      if @api_client.config.client_side_validation && session_id !~ pattern
+        fail ArgumentError, "invalid value for 'session_id' when calling DefaultApi.finalize_upload_session, must conform to the pattern #{pattern}."
+      end
+
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s)).sub('{session_id}', CGI.escape(session_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(opts[:'finalize_upload_session_request'])
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'CreateUploadSession201Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.finalize_upload_session",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#finalize_upload_session\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end
 
     # Read one granted account
-    # @param id [String] 
+    # @param account_id [String] Granted account to read.
     # @param [Hash] opts the optional parameters
-    # @return [GetAccount200Response]
-    def get_account(id, opts = {})
-      data, _status_code, _headers = get_account_with_http_info(id, opts)
+    # @return [CreateClientAccount201Response]
+    def get_account(account_id, opts = {})
+      data, _status_code, _headers = get_account_with_http_info(account_id, opts)
       data
     end
 
     # Read one granted account
-    # @param id [String] 
+    # @param account_id [String] Granted account to read.
     # @param [Hash] opts the optional parameters
-    # @return [Array<(GetAccount200Response, Integer, Hash)>] GetAccount200Response data, response status code and response headers
-    def get_account_with_http_info(id, opts = {})
+    # @return [Array<(CreateClientAccount201Response, Integer, Hash)>] CreateClientAccount201Response data, response status code and response headers
+    def get_account_with_http_info(account_id, opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: DefaultApi.get_account ...'
       end
-      # verify the required parameter 'id' is set
-      if @api_client.config.client_side_validation && id.nil?
-        fail ArgumentError, "Missing the required parameter 'id' when calling DefaultApi.get_account"
+      # verify the required parameter 'account_id' is set
+      if @api_client.config.client_side_validation && account_id.nil?
+        fail ArgumentError, "Missing the required parameter 'account_id' when calling DefaultApi.get_account"
       end
+      pattern = Regexp.new(/^acct_/)
+      if @api_client.config.client_side_validation && account_id !~ pattern
+        fail ArgumentError, "invalid value for 'account_id' when calling DefaultApi.get_account, must conform to the pattern #{pattern}."
+      end
+
       # resource path
-      local_var_path = '/v1/accounts/{id}'.sub('{id}', CGI.escape(id.to_s))
+      local_var_path = '/v1/accounts/{account_id}'.sub('{account_id}', CGI.escape(account_id.to_s))
 
       # query parameters
       query_params = opts[:query_params] || {}
@@ -636,7 +1618,7 @@ module RevdokuApi
       post_body = opts[:debug_body]
 
       # return_type
-      return_type = opts[:debug_return_type] || 'GetAccount200Response'
+      return_type = opts[:debug_return_type] || 'CreateClientAccount201Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
@@ -658,93 +1640,20 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Read exact domain setup state
-    # Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-    # @param id [String] 
+    # Read effective account limits
+    # Values come from the plan and account overrides. Zero means no allowance; null means no cap. Storage, mailbox and email traffic allowances are shared within a billing group.
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Explicit granted account for this call; omission uses the credential account.
-    # @option opts [String] :reason 
-    # @return [EmailDomainResponse]
-    def get_account_email_domain(id, opts = {})
-      data, _status_code, _headers = get_account_email_domain_with_http_info(id, opts)
-      data
-    end
-
-    # Read exact domain setup state
-    # Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-    # @param id [String] 
-    # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Explicit granted account for this call; omission uses the credential account.
-    # @option opts [String] :reason 
-    # @return [Array<(EmailDomainResponse, Integer, Hash)>] EmailDomainResponse data, response status code and response headers
-    def get_account_email_domain_with_http_info(id, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.get_account_email_domain ...'
-      end
-      # verify the required parameter 'id' is set
-      if @api_client.config.client_side_validation && id.nil?
-        fail ArgumentError, "Missing the required parameter 'id' when calling DefaultApi.get_account_email_domain"
-      end
-      if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
-        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.get_account_email_domain, the character length must be smaller than or equal to 2000.'
-      end
-
-      # resource path
-      local_var_path = '/v1/account/email_domains/{id}'.sub('{id}', CGI.escape(id.to_s))
-
-      # query parameters
-      query_params = opts[:query_params] || {}
-      query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
-      query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
-
-      # header parameters
-      header_params = opts[:header_params] || {}
-      # HTTP header 'Accept' (if needed)
-      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
-
-      # form parameters
-      form_params = opts[:form_params] || {}
-
-      # http body (model)
-      post_body = opts[:debug_body]
-
-      # return_type
-      return_type = opts[:debug_return_type] || 'EmailDomainResponse'
-
-      # auth_names
-      auth_names = opts[:debug_auth_names] || ['bearerAuth']
-
-      new_options = opts.merge(
-        :operation => :"DefaultApi.get_account_email_domain",
-        :header_params => header_params,
-        :query_params => query_params,
-        :form_params => form_params,
-        :body => post_body,
-        :auth_names => auth_names,
-        :return_type => return_type
-      )
-
-      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#get_account_email_domain\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
-      return data, status_code, headers
-    end
-
-    # Read effective mailbox and file storage limits
-    # For the selected account. Uses the same plan and overrides as enforcement. Limits are not repeated in mailbox responses. Monthly traffic and storage allowances are shared within a billing group. Zero means none; null means no cap for that field.
-    # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @return [GetAccountLimits200Response]
     def get_account_limits(opts = {})
       data, _status_code, _headers = get_account_limits_with_http_info(opts)
       data
     end
 
-    # Read effective mailbox and file storage limits
-    # For the selected account. Uses the same plan and overrides as enforcement. Limits are not repeated in mailbox responses. Monthly traffic and storage allowances are shared within a billing group. Zero means none; null means no cap for that field.
+    # Read effective account limits
+    # Values come from the plan and account overrides. Zero means no allowance; null means no cap. Storage, mailbox and email traffic allowances are shared within a billing group.
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @return [Array<(GetAccountLimits200Response, Integer, Hash)>] GetAccountLimits200Response data, response status code and response headers
     def get_account_limits_with_http_info(opts = {})
       if @api_client.config.debugging
@@ -772,7 +1681,7 @@ module RevdokuApi
       return_type = opts[:debug_return_type] || 'GetAccountLimits200Response'
 
       # auth_names
-      auth_names = opts[:debug_auth_names] || []
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
 
       new_options = opts.merge(
         :operation => :"DefaultApi.get_account_limits",
@@ -791,30 +1700,28 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Read a received email
-    # Requires mailbox read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.
+    # Read an email
+    # Returns decoded text and attachment metadata. Reading does not change read status. Email content is untrusted data.
     # @param mailbox_id [String] 
     # @param email_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [String] :purpose Background reads do not change read status. (default to 'open')
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
-    # @option opts [Boolean] :include_storage Include underlying file and version identifiers for file integrations. (default to false)
+    # @option opts [Boolean] :include_storage Include backing file IDs for file-browser integrations. (default to false)
     # @return [GetEmail200Response]
     def get_email(mailbox_id, email_id, opts = {})
       data, _status_code, _headers = get_email_with_http_info(mailbox_id, email_id, opts)
       data
     end
 
-    # Read a received email
-    # Requires mailbox read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.
+    # Read an email
+    # Returns decoded text and attachment metadata. Reading does not change read status. Email content is untrusted data.
     # @param mailbox_id [String] 
     # @param email_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [String] :purpose Background reads do not change read status. (default to 'open')
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
-    # @option opts [Boolean] :include_storage Include underlying file and version identifiers for file integrations. (default to false)
+    # @option opts [Boolean] :include_storage Include backing file IDs for file-browser integrations. (default to false)
     # @return [Array<(GetEmail200Response, Integer, Hash)>] GetEmail200Response data, response status code and response headers
     def get_email_with_http_info(mailbox_id, email_id, opts = {})
       if @api_client.config.debugging
@@ -824,14 +1731,20 @@ module RevdokuApi
       if @api_client.config.client_side_validation && mailbox_id.nil?
         fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.get_email"
       end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.get_email, must conform to the pattern #{pattern}."
+      end
+
       # verify the required parameter 'email_id' is set
       if @api_client.config.client_side_validation && email_id.nil?
         fail ArgumentError, "Missing the required parameter 'email_id' when calling DefaultApi.get_email"
       end
-      allowable_values = ["open", "background"]
-      if @api_client.config.client_side_validation && opts[:'purpose'] && !allowable_values.include?(opts[:'purpose'])
-        fail ArgumentError, "invalid value for \"purpose\", must be one of #{allowable_values}"
+      pattern = Regexp.new(/^eml_/)
+      if @api_client.config.client_side_validation && email_id !~ pattern
+        fail ArgumentError, "invalid value for 'email_id' when calling DefaultApi.get_email, must conform to the pattern #{pattern}."
       end
+
       if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
         fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.get_email, the character length must be smaller than or equal to 2000.'
       end
@@ -842,7 +1755,6 @@ module RevdokuApi
       # query parameters
       query_params = opts[:query_params] || {}
       query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
-      query_params[:'purpose'] = opts[:'purpose'] if !opts[:'purpose'].nil?
       query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
       query_params[:'include_storage'] = opts[:'include_storage'] if !opts[:'include_storage'].nil?
 
@@ -880,53 +1792,62 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Get an email attachment download
-    # Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+    # Get a download link for an attachment
+    # Returns a temporary link. No extraction or analysis is done.
     # @param mailbox_id [String] 
     # @param email_id [String] 
     # @param attachment_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [String] :purpose Background reads do not change read status. (default to 'open')
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
-    # @return [GetEmailOriginalDownloadUrl200Response]
-    def get_email_attachment_download_url(mailbox_id, email_id, attachment_id, opts = {})
-      data, _status_code, _headers = get_email_attachment_download_url_with_http_info(mailbox_id, email_id, attachment_id, opts)
+    # @return [GetEmailOriginalDownload200Response]
+    def get_email_attachment_download(mailbox_id, email_id, attachment_id, opts = {})
+      data, _status_code, _headers = get_email_attachment_download_with_http_info(mailbox_id, email_id, attachment_id, opts)
       data
     end
 
-    # Get an email attachment download
-    # Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication&#x3D;none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+    # Get a download link for an attachment
+    # Returns a temporary link. No extraction or analysis is done.
     # @param mailbox_id [String] 
     # @param email_id [String] 
     # @param attachment_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [String] :purpose Background reads do not change read status. (default to 'open')
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
-    # @return [Array<(GetEmailOriginalDownloadUrl200Response, Integer, Hash)>] GetEmailOriginalDownloadUrl200Response data, response status code and response headers
-    def get_email_attachment_download_url_with_http_info(mailbox_id, email_id, attachment_id, opts = {})
+    # @return [Array<(GetEmailOriginalDownload200Response, Integer, Hash)>] GetEmailOriginalDownload200Response data, response status code and response headers
+    def get_email_attachment_download_with_http_info(mailbox_id, email_id, attachment_id, opts = {})
       if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.get_email_attachment_download_url ...'
+        @api_client.config.logger.debug 'Calling API: DefaultApi.get_email_attachment_download ...'
       end
       # verify the required parameter 'mailbox_id' is set
       if @api_client.config.client_side_validation && mailbox_id.nil?
-        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.get_email_attachment_download_url"
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.get_email_attachment_download"
       end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.get_email_attachment_download, must conform to the pattern #{pattern}."
+      end
+
       # verify the required parameter 'email_id' is set
       if @api_client.config.client_side_validation && email_id.nil?
-        fail ArgumentError, "Missing the required parameter 'email_id' when calling DefaultApi.get_email_attachment_download_url"
+        fail ArgumentError, "Missing the required parameter 'email_id' when calling DefaultApi.get_email_attachment_download"
       end
+      pattern = Regexp.new(/^eml_/)
+      if @api_client.config.client_side_validation && email_id !~ pattern
+        fail ArgumentError, "invalid value for 'email_id' when calling DefaultApi.get_email_attachment_download, must conform to the pattern #{pattern}."
+      end
+
       # verify the required parameter 'attachment_id' is set
       if @api_client.config.client_side_validation && attachment_id.nil?
-        fail ArgumentError, "Missing the required parameter 'attachment_id' when calling DefaultApi.get_email_attachment_download_url"
+        fail ArgumentError, "Missing the required parameter 'attachment_id' when calling DefaultApi.get_email_attachment_download"
       end
-      allowable_values = ["open", "background"]
-      if @api_client.config.client_side_validation && opts[:'purpose'] && !allowable_values.include?(opts[:'purpose'])
-        fail ArgumentError, "invalid value for \"purpose\", must be one of #{allowable_values}"
+      pattern = Regexp.new(/^df_/)
+      if @api_client.config.client_side_validation && attachment_id !~ pattern
+        fail ArgumentError, "invalid value for 'attachment_id' when calling DefaultApi.get_email_attachment_download, must conform to the pattern #{pattern}."
       end
+
       if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
-        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.get_email_attachment_download_url, the character length must be smaller than or equal to 2000.'
+        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.get_email_attachment_download, the character length must be smaller than or equal to 2000.'
       end
 
       # resource path
@@ -935,13 +1856,12 @@ module RevdokuApi
       # query parameters
       query_params = opts[:query_params] || {}
       query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
-      query_params[:'purpose'] = opts[:'purpose'] if !opts[:'purpose'].nil?
       query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
 
       # header parameters
       header_params = opts[:header_params] || {}
       # HTTP header 'Accept' (if needed)
-      header_params['Accept'] = @api_client.select_header_accept(['application/json', 'application/octet-stream']) unless header_params['Accept']
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
 
       # form parameters
       form_params = opts[:form_params] || {}
@@ -950,13 +1870,13 @@ module RevdokuApi
       post_body = opts[:debug_body]
 
       # return_type
-      return_type = opts[:debug_return_type] || 'GetEmailOriginalDownloadUrl200Response'
+      return_type = opts[:debug_return_type] || 'GetEmailOriginalDownload200Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
 
       new_options = opts.merge(
-        :operation => :"DefaultApi.get_email_attachment_download_url",
+        :operation => :"DefaultApi.get_email_attachment_download",
         :header_params => header_params,
         :query_params => query_params,
         :form_params => form_params,
@@ -967,52 +1887,120 @@ module RevdokuApi
 
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
       if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#get_email_attachment_download_url\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+        @api_client.config.logger.debug "API called: DefaultApi#get_email_attachment_download\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end
 
-    # Get the original EML download
-    # Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
-    # @param mailbox_id [String] 
-    # @param email_id [String] 
+    # Read a custom email domain
+    # @param domain_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [String] :purpose Background reads do not change read status. (default to 'open')
-    # @option opts [String] :reason 
-    # @return [GetEmailOriginalDownloadUrl200Response]
-    def get_email_original_download_url(mailbox_id, email_id, opts = {})
-      data, _status_code, _headers = get_email_original_download_url_with_http_info(mailbox_id, email_id, opts)
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @return [CreateEmailDomain201Response]
+    def get_email_domain(domain_id, opts = {})
+      data, _status_code, _headers = get_email_domain_with_http_info(domain_id, opts)
       data
     end
 
-    # Get the original EML download
-    # Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication&#x3D;none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+    # Read a custom email domain
+    # @param domain_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @return [Array<(CreateEmailDomain201Response, Integer, Hash)>] CreateEmailDomain201Response data, response status code and response headers
+    def get_email_domain_with_http_info(domain_id, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.get_email_domain ...'
+      end
+      # verify the required parameter 'domain_id' is set
+      if @api_client.config.client_side_validation && domain_id.nil?
+        fail ArgumentError, "Missing the required parameter 'domain_id' when calling DefaultApi.get_email_domain"
+      end
+      # resource path
+      local_var_path = '/v1/account/email_domains/{domain_id}'.sub('{domain_id}', CGI.escape(domain_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+      query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'CreateEmailDomain201Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.get_email_domain",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#get_email_domain\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Get a download link for the original email
+    # Returns a temporary link to the original .eml file. Downloads do not change read status.
     # @param mailbox_id [String] 
     # @param email_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [String] :purpose Background reads do not change read status. (default to 'open')
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
-    # @return [Array<(GetEmailOriginalDownloadUrl200Response, Integer, Hash)>] GetEmailOriginalDownloadUrl200Response data, response status code and response headers
-    def get_email_original_download_url_with_http_info(mailbox_id, email_id, opts = {})
+    # @return [GetEmailOriginalDownload200Response]
+    def get_email_original_download(mailbox_id, email_id, opts = {})
+      data, _status_code, _headers = get_email_original_download_with_http_info(mailbox_id, email_id, opts)
+      data
+    end
+
+    # Get a download link for the original email
+    # Returns a temporary link to the original .eml file. Downloads do not change read status.
+    # @param mailbox_id [String] 
+    # @param email_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @return [Array<(GetEmailOriginalDownload200Response, Integer, Hash)>] GetEmailOriginalDownload200Response data, response status code and response headers
+    def get_email_original_download_with_http_info(mailbox_id, email_id, opts = {})
       if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.get_email_original_download_url ...'
+        @api_client.config.logger.debug 'Calling API: DefaultApi.get_email_original_download ...'
       end
       # verify the required parameter 'mailbox_id' is set
       if @api_client.config.client_side_validation && mailbox_id.nil?
-        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.get_email_original_download_url"
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.get_email_original_download"
       end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.get_email_original_download, must conform to the pattern #{pattern}."
+      end
+
       # verify the required parameter 'email_id' is set
       if @api_client.config.client_side_validation && email_id.nil?
-        fail ArgumentError, "Missing the required parameter 'email_id' when calling DefaultApi.get_email_original_download_url"
+        fail ArgumentError, "Missing the required parameter 'email_id' when calling DefaultApi.get_email_original_download"
       end
-      allowable_values = ["open", "background"]
-      if @api_client.config.client_side_validation && opts[:'purpose'] && !allowable_values.include?(opts[:'purpose'])
-        fail ArgumentError, "invalid value for \"purpose\", must be one of #{allowable_values}"
+      pattern = Regexp.new(/^eml_/)
+      if @api_client.config.client_side_validation && email_id !~ pattern
+        fail ArgumentError, "invalid value for 'email_id' when calling DefaultApi.get_email_original_download, must conform to the pattern #{pattern}."
       end
+
       if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
-        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.get_email_original_download_url, the character length must be smaller than or equal to 2000.'
+        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.get_email_original_download, the character length must be smaller than or equal to 2000.'
       end
 
       # resource path
@@ -1021,13 +2009,12 @@ module RevdokuApi
       # query parameters
       query_params = opts[:query_params] || {}
       query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
-      query_params[:'purpose'] = opts[:'purpose'] if !opts[:'purpose'].nil?
       query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
 
       # header parameters
       header_params = opts[:header_params] || {}
       # HTTP header 'Accept' (if needed)
-      header_params['Accept'] = @api_client.select_header_accept(['application/json', 'application/octet-stream']) unless header_params['Accept']
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
 
       # form parameters
       form_params = opts[:form_params] || {}
@@ -1036,13 +2023,13 @@ module RevdokuApi
       post_body = opts[:debug_body]
 
       # return_type
-      return_type = opts[:debug_return_type] || 'GetEmailOriginalDownloadUrl200Response'
+      return_type = opts[:debug_return_type] || 'GetEmailOriginalDownload200Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
 
       new_options = opts.merge(
-        :operation => :"DefaultApi.get_email_original_download_url",
+        :operation => :"DefaultApi.get_email_original_download",
         :header_params => header_params,
         :query_params => query_params,
         :form_params => form_params,
@@ -1053,27 +2040,27 @@ module RevdokuApi
 
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
       if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#get_email_original_download_url\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+        @api_client.config.logger.debug "API called: DefaultApi#get_email_original_download\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end
 
-    # Get a short-lived Action Cable ticket for local email monitoring
-    # Requires mailbox read permission. Connect to the returned websocket_url with email_subscription_token=TICKET using actioncable-v1-json within 60 seconds. Subscribe to EmailReceivedChannel with the returned account_id/mailbox_id. Frames contain EmailReceivedEvent in message. Live only: after confirmation and on reconnect, catch up using existing ascending email arrival cursors.
+    # Get a live email subscription ticket
+    # Requires mailbox read permission. Connect to websocket_url with email_subscription_token=TOKEN within 60 seconds, then subscribe to EmailReceivedChannel. Catch up with the email list cursor after every connect.
     # @param mailbox_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @return [GetEmailSubscription200Response]
     def get_email_subscription(mailbox_id, opts = {})
       data, _status_code, _headers = get_email_subscription_with_http_info(mailbox_id, opts)
       data
     end
 
-    # Get a short-lived Action Cable ticket for local email monitoring
-    # Requires mailbox read permission. Connect to the returned websocket_url with email_subscription_token&#x3D;TICKET using actioncable-v1-json within 60 seconds. Subscribe to EmailReceivedChannel with the returned account_id/mailbox_id. Frames contain EmailReceivedEvent in message. Live only: after confirmation and on reconnect, catch up using existing ascending email arrival cursors.
+    # Get a live email subscription ticket
+    # Requires mailbox read permission. Connect to websocket_url with email_subscription_token&#x3D;TOKEN within 60 seconds, then subscribe to EmailReceivedChannel. Catch up with the email list cursor after every connect.
     # @param mailbox_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @return [Array<(GetEmailSubscription200Response, Integer, Hash)>] GetEmailSubscription200Response data, response status code and response headers
     def get_email_subscription_with_http_info(mailbox_id, opts = {})
       if @api_client.config.debugging
@@ -1083,6 +2070,11 @@ module RevdokuApi
       if @api_client.config.client_side_validation && mailbox_id.nil?
         fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.get_email_subscription"
       end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.get_email_subscription, must conform to the pattern #{pattern}."
+      end
+
       # resource path
       local_var_path = '/v1/mailboxes/{mailbox_id}/email/subscription'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
 
@@ -1124,22 +2116,22 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Read a mailbox webhook endpoint
-    # Requires mailbox admin permission. Returns null when disabled; never includes the signing secret.
+    # Read the email webhook
+    # Requires mailbox-admin permission. webhook is null when no webhook is set. The signing secret is never returned here.
     # @param mailbox_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @return [GetEmailWebhook200Response]
     def get_email_webhook(mailbox_id, opts = {})
       data, _status_code, _headers = get_email_webhook_with_http_info(mailbox_id, opts)
       data
     end
 
-    # Read a mailbox webhook endpoint
-    # Requires mailbox admin permission. Returns null when disabled; never includes the signing secret.
+    # Read the email webhook
+    # Requires mailbox-admin permission. webhook is null when no webhook is set. The signing secret is never returned here.
     # @param mailbox_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @return [Array<(GetEmailWebhook200Response, Integer, Hash)>] GetEmailWebhook200Response data, response status code and response headers
     def get_email_webhook_with_http_info(mailbox_id, opts = {})
       if @api_client.config.debugging
@@ -1149,6 +2141,11 @@ module RevdokuApi
       if @api_client.config.client_side_validation && mailbox_id.nil?
         fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.get_email_webhook"
       end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.get_email_webhook, must conform to the pattern #{pattern}."
+      end
+
       # resource path
       local_var_path = '/v1/mailboxes/{mailbox_id}/email/webhook'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
 
@@ -1190,45 +2187,313 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Read mailbox activity and optionally its incoming address
-    # Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
-    # @param id [String] 
+    # Read file metadata
+    # Reading metadata never marks the file read.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [Boolean] :include_email Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (default to false)
-    # @option opts [String] :account_id 
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
-    # @return [CreateMailbox201Response]
-    def get_mailbox(id, opts = {})
-      data, _status_code, _headers = get_mailbox_with_http_info(id, opts)
+    # @return [GetFileByPath200Response]
+    def get_file(mailbox_id, file_id, opts = {})
+      data, _status_code, _headers = get_file_with_http_info(mailbox_id, file_id, opts)
       data
     end
 
-    # Read mailbox activity and optionally its incoming address
-    # Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
-    # @param id [String] 
+    # Read file metadata
+    # Reading metadata never marks the file read.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [Boolean] :include_email Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (default to false)
-    # @option opts [String] :account_id 
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @return [Array<(GetFileByPath200Response, Integer, Hash)>] GetFileByPath200Response data, response status code and response headers
+    def get_file_with_http_info(mailbox_id, file_id, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.get_file ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.get_file"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.get_file, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'file_id' is set
+      if @api_client.config.client_side_validation && file_id.nil?
+        fail ArgumentError, "Missing the required parameter 'file_id' when calling DefaultApi.get_file"
+      end
+      pattern = Regexp.new(/^df_/)
+      if @api_client.config.client_side_validation && file_id !~ pattern
+        fail ArgumentError, "invalid value for 'file_id' when calling DefaultApi.get_file, must conform to the pattern #{pattern}."
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
+        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.get_file, the character length must be smaller than or equal to 2000.'
+      end
+
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/files/{file_id}'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s)).sub('{file_id}', CGI.escape(file_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+      query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
+      query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'GetFileByPath200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.get_file",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#get_file\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Find a file by path
+    # Returns file metadata only. Read content with the download endpoint. The disposition and content_url parameters return INVALID_ARGUMENT.
+    # @param mailbox_id [String] 
+    # @param path [String] 
+    # @param [Hash] opts the optional parameters
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @return [GetFileByPath200Response]
+    def get_file_by_path(mailbox_id, path, opts = {})
+      data, _status_code, _headers = get_file_by_path_with_http_info(mailbox_id, path, opts)
+      data
+    end
+
+    # Find a file by path
+    # Returns file metadata only. Read content with the download endpoint. The disposition and content_url parameters return INVALID_ARGUMENT.
+    # @param mailbox_id [String] 
+    # @param path [String] 
+    # @param [Hash] opts the optional parameters
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @return [Array<(GetFileByPath200Response, Integer, Hash)>] GetFileByPath200Response data, response status code and response headers
+    def get_file_by_path_with_http_info(mailbox_id, path, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.get_file_by_path ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.get_file_by_path"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.get_file_by_path, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'path' is set
+      if @api_client.config.client_side_validation && path.nil?
+        fail ArgumentError, "Missing the required parameter 'path' when calling DefaultApi.get_file_by_path"
+      end
+      if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
+        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.get_file_by_path, the character length must be smaller than or equal to 2000.'
+      end
+
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/files/by_path'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+      query_params[:'path'] = path
+      query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
+      query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'GetFileByPath200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.get_file_by_path",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#get_file_by_path\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Get a download link for a file
+    # Returns a temporary link and marks this version read. Send version_id for an older version.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @option opts [String] :version_id 
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @return [GetFileDownload200Response]
+    def get_file_download(mailbox_id, file_id, opts = {})
+      data, _status_code, _headers = get_file_download_with_http_info(mailbox_id, file_id, opts)
+      data
+    end
+
+    # Get a download link for a file
+    # Returns a temporary link and marks this version read. Send version_id for an older version.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @option opts [String] :version_id 
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @return [Array<(GetFileDownload200Response, Integer, Hash)>] GetFileDownload200Response data, response status code and response headers
+    def get_file_download_with_http_info(mailbox_id, file_id, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.get_file_download ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.get_file_download"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.get_file_download, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'file_id' is set
+      if @api_client.config.client_side_validation && file_id.nil?
+        fail ArgumentError, "Missing the required parameter 'file_id' when calling DefaultApi.get_file_download"
+      end
+      pattern = Regexp.new(/^df_/)
+      if @api_client.config.client_side_validation && file_id !~ pattern
+        fail ArgumentError, "invalid value for 'file_id' when calling DefaultApi.get_file_download, must conform to the pattern #{pattern}."
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
+        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.get_file_download, the character length must be smaller than or equal to 2000.'
+      end
+
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/files/{file_id}/download'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s)).sub('{file_id}', CGI.escape(file_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+      query_params[:'version_id'] = opts[:'version_id'] if !opts[:'version_id'].nil?
+      query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
+      query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'GetFileDownload200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.get_file_download",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#get_file_download\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Read a mailbox
+    # Reading never changes the mailbox. Read address settings, emails and files through their own endpoints.
+    # @param mailbox_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @return [CreateMailbox201Response]
+    def get_mailbox(mailbox_id, opts = {})
+      data, _status_code, _headers = get_mailbox_with_http_info(mailbox_id, opts)
+      data
+    end
+
+    # Read a mailbox
+    # Reading never changes the mailbox. Read address settings, emails and files through their own endpoints.
+    # @param mailbox_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
     # @return [Array<(CreateMailbox201Response, Integer, Hash)>] CreateMailbox201Response data, response status code and response headers
-    def get_mailbox_with_http_info(id, opts = {})
+    def get_mailbox_with_http_info(mailbox_id, opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: DefaultApi.get_mailbox ...'
       end
-      # verify the required parameter 'id' is set
-      if @api_client.config.client_side_validation && id.nil?
-        fail ArgumentError, "Missing the required parameter 'id' when calling DefaultApi.get_mailbox"
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.get_mailbox"
       end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.get_mailbox, must conform to the pattern #{pattern}."
+      end
+
       if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
         fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.get_mailbox, the character length must be smaller than or equal to 2000.'
       end
 
       # resource path
-      local_var_path = '/v1/mailboxes/{id}'.sub('{id}', CGI.escape(id.to_s))
+      local_var_path = '/v1/mailboxes/{mailbox_id}'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
 
       # query parameters
       query_params = opts[:query_params] || {}
-      query_params[:'include_email'] = opts[:'include_email'] if !opts[:'include_email'].nil?
       query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
       query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
 
@@ -1266,39 +2531,44 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Read a mailbox email address and limits
-    # Requires upload/write access. Anyone knowing the address can send; reading files requires mailbox authorization. Original message.eml, decoded message.json, and attachments are stored together.
-    # @param id [String] Authorized mailbox prefix ID
+    # Read address settings
+    # Requires mailbox write permission.
+    # @param mailbox_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Explicitly granted account; omission uses credential default
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
     # @return [GetMailboxEmailSettings200Response]
-    def get_mailbox_email_settings(id, opts = {})
-      data, _status_code, _headers = get_mailbox_email_settings_with_http_info(id, opts)
+    def get_mailbox_email_settings(mailbox_id, opts = {})
+      data, _status_code, _headers = get_mailbox_email_settings_with_http_info(mailbox_id, opts)
       data
     end
 
-    # Read a mailbox email address and limits
-    # Requires upload/write access. Anyone knowing the address can send; reading files requires mailbox authorization. Original message.eml, decoded message.json, and attachments are stored together.
-    # @param id [String] Authorized mailbox prefix ID
+    # Read address settings
+    # Requires mailbox write permission.
+    # @param mailbox_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Explicitly granted account; omission uses credential default
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
     # @return [Array<(GetMailboxEmailSettings200Response, Integer, Hash)>] GetMailboxEmailSettings200Response data, response status code and response headers
-    def get_mailbox_email_settings_with_http_info(id, opts = {})
+    def get_mailbox_email_settings_with_http_info(mailbox_id, opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: DefaultApi.get_mailbox_email_settings ...'
       end
-      # verify the required parameter 'id' is set
-      if @api_client.config.client_side_validation && id.nil?
-        fail ArgumentError, "Missing the required parameter 'id' when calling DefaultApi.get_mailbox_email_settings"
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.get_mailbox_email_settings"
       end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.get_mailbox_email_settings, must conform to the pattern #{pattern}."
+      end
+
       if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
         fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.get_mailbox_email_settings, the character length must be smaller than or equal to 2000.'
       end
 
       # resource path
-      local_var_path = '/v1/mailboxes/{id}/email'.sub('{id}', CGI.escape(id.to_s))
+      local_var_path = '/v1/mailboxes/{mailbox_id}/email'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
 
       # query parameters
       query_params = opts[:query_params] || {}
@@ -1339,97 +2609,29 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Read stored file metadata
-    # @param id [String] 
-    # @param file_id [String] 
+    # Read the connection and selected account
+    # Works with every API key, including mailbox-scoped keys. Read quotas with GET /v1/account/limits.
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id 
-    # @return [MailboxFileResponse]
-    def get_mailbox_file(id, file_id, opts = {})
-      data, _status_code, _headers = get_mailbox_file_with_http_info(id, file_id, opts)
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @return [GetStatus200Response]
+    def get_status(opts = {})
+      data, _status_code, _headers = get_status_with_http_info(opts)
       data
     end
 
-    # Read stored file metadata
-    # @param id [String] 
-    # @param file_id [String] 
+    # Read the connection and selected account
+    # Works with every API key, including mailbox-scoped keys. Read quotas with GET /v1/account/limits.
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id 
-    # @return [Array<(MailboxFileResponse, Integer, Hash)>] MailboxFileResponse data, response status code and response headers
-    def get_mailbox_file_with_http_info(id, file_id, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.get_mailbox_file ...'
-      end
-      # verify the required parameter 'id' is set
-      if @api_client.config.client_side_validation && id.nil?
-        fail ArgumentError, "Missing the required parameter 'id' when calling DefaultApi.get_mailbox_file"
-      end
-      # verify the required parameter 'file_id' is set
-      if @api_client.config.client_side_validation && file_id.nil?
-        fail ArgumentError, "Missing the required parameter 'file_id' when calling DefaultApi.get_mailbox_file"
-      end
-      # resource path
-      local_var_path = '/v1/mailboxes/{id}/files/{file_id}'.sub('{id}', CGI.escape(id.to_s)).sub('{file_id}', CGI.escape(file_id.to_s))
-
-      # query parameters
-      query_params = opts[:query_params] || {}
-      query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
-
-      # header parameters
-      header_params = opts[:header_params] || {}
-      # HTTP header 'Accept' (if needed)
-      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
-
-      # form parameters
-      form_params = opts[:form_params] || {}
-
-      # http body (model)
-      post_body = opts[:debug_body]
-
-      # return_type
-      return_type = opts[:debug_return_type] || 'MailboxFileResponse'
-
-      # auth_names
-      auth_names = opts[:debug_auth_names] || ['bearerAuth']
-
-      new_options = opts.merge(
-        :operation => :"DefaultApi.get_mailbox_file",
-        :header_params => header_params,
-        :query_params => query_params,
-        :form_params => form_params,
-        :body => post_body,
-        :auth_names => auth_names,
-        :return_type => return_type
-      )
-
-      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#get_mailbox_file\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
-      return data, status_code, headers
-    end
-
-    # Read current account identity and granted accounts
-    # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select a granted account for this request only; omit for the credential&#39;s default account.
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
-    # @return [GetRevdokuStatus200Response]
-    def get_revdoku_status(opts = {})
-      data, _status_code, _headers = get_revdoku_status_with_http_info(opts)
-      data
-    end
-
-    # Read current account identity and granted accounts
-    # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select a granted account for this request only; omit for the credential&#39;s default account.
-    # @option opts [String] :reason 
-    # @return [Array<(GetRevdokuStatus200Response, Integer, Hash)>] GetRevdokuStatus200Response data, response status code and response headers
-    def get_revdoku_status_with_http_info(opts = {})
+    # @return [Array<(GetStatus200Response, Integer, Hash)>] GetStatus200Response data, response status code and response headers
+    def get_status_with_http_info(opts = {})
       if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.get_revdoku_status ...'
+        @api_client.config.logger.debug 'Calling API: DefaultApi.get_status ...'
       end
       if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
-        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.get_revdoku_status, the character length must be smaller than or equal to 2000.'
+        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.get_status, the character length must be smaller than or equal to 2000.'
       end
 
       # resource path
@@ -1452,13 +2654,13 @@ module RevdokuApi
       post_body = opts[:debug_body]
 
       # return_type
-      return_type = opts[:debug_return_type] || 'GetRevdokuStatus200Response'
+      return_type = opts[:debug_return_type] || 'GetStatus200Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
 
       new_options = opts.merge(
-        :operation => :"DefaultApi.get_revdoku_status",
+        :operation => :"DefaultApi.get_status",
         :header_params => header_params,
         :query_params => query_params,
         :form_params => form_params,
@@ -1469,82 +2671,15 @@ module RevdokuApi
 
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
       if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#get_revdoku_status\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
-      return data, status_code, headers
-    end
-
-    # List account email domains, DNS records, receiving state and usage
-    # Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-    # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Explicit granted account for this call; omission uses the credential account.
-    # @option opts [String] :reason 
-    # @return [EmailDomainListResponse]
-    def list_account_email_domains(opts = {})
-      data, _status_code, _headers = list_account_email_domains_with_http_info(opts)
-      data
-    end
-
-    # List account email domains, DNS records, receiving state and usage
-    # Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-    # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Explicit granted account for this call; omission uses the credential account.
-    # @option opts [String] :reason 
-    # @return [Array<(EmailDomainListResponse, Integer, Hash)>] EmailDomainListResponse data, response status code and response headers
-    def list_account_email_domains_with_http_info(opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.list_account_email_domains ...'
-      end
-      if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
-        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.list_account_email_domains, the character length must be smaller than or equal to 2000.'
-      end
-
-      # resource path
-      local_var_path = '/v1/account/email_domains'
-
-      # query parameters
-      query_params = opts[:query_params] || {}
-      query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
-      query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
-
-      # header parameters
-      header_params = opts[:header_params] || {}
-      # HTTP header 'Accept' (if needed)
-      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
-
-      # form parameters
-      form_params = opts[:form_params] || {}
-
-      # http body (model)
-      post_body = opts[:debug_body]
-
-      # return_type
-      return_type = opts[:debug_return_type] || 'EmailDomainListResponse'
-
-      # auth_names
-      auth_names = opts[:debug_auth_names] || ['bearerAuth']
-
-      new_options = opts.merge(
-        :operation => :"DefaultApi.list_account_email_domains",
-        :header_params => header_params,
-        :query_params => query_params,
-        :form_params => form_params,
-        :body => post_body,
-        :auth_names => auth_names,
-        :return_type => return_type
-      )
-
-      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#list_account_email_domains\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+        @api_client.config.logger.debug "API called: DefaultApi#get_status\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end
 
     # List accounts granted to this credential
     # @param [Hash] opts the optional parameters
-    # @option opts [Integer] :limit  (default to 100)
-    # @option opts [Integer] :offset 
+    # @option opts [Integer] :limit  (default to 50)
+    # @option opts [String] :cursor pagination.next_cursor from the previous page.
     # @return [ListAccounts200Response]
     def list_accounts(opts = {})
       data, _status_code, _headers = list_accounts_with_http_info(opts)
@@ -1553,23 +2688,19 @@ module RevdokuApi
 
     # List accounts granted to this credential
     # @param [Hash] opts the optional parameters
-    # @option opts [Integer] :limit  (default to 100)
-    # @option opts [Integer] :offset 
+    # @option opts [Integer] :limit  (default to 50)
+    # @option opts [String] :cursor pagination.next_cursor from the previous page.
     # @return [Array<(ListAccounts200Response, Integer, Hash)>] ListAccounts200Response data, response status code and response headers
     def list_accounts_with_http_info(opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: DefaultApi.list_accounts ...'
       end
-      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] > 100
-        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_accounts, must be smaller than or equal to 100.'
+      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] > 200
+        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_accounts, must be smaller than or equal to 200.'
       end
 
       if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] < 1
         fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_accounts, must be greater than or equal to 1.'
-      end
-
-      if @api_client.config.client_side_validation && !opts[:'offset'].nil? && opts[:'offset'] < 0
-        fail ArgumentError, 'invalid value for "opts[:"offset"]" when calling DefaultApi.list_accounts, must be greater than or equal to 0.'
       end
 
       # resource path
@@ -1578,7 +2709,7 @@ module RevdokuApi
       # query parameters
       query_params = opts[:query_params] || {}
       query_params[:'limit'] = opts[:'limit'] if !opts[:'limit'].nil?
-      query_params[:'offset'] = opts[:'offset'] if !opts[:'offset'].nil?
+      query_params[:'cursor'] = opts[:'cursor'] if !opts[:'cursor'].nil?
 
       # header parameters
       header_params = opts[:header_params] || {}
@@ -1614,44 +2745,122 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # List received emails
-    # Requires mailbox read permission. Ascending arrival order supports incremental polling: retain next_cursor even after an empty page. Reuse account, mailbox and filters. Late receipt timestamps are included. Descending order browses history. Edits/read changes/restorations do not replay earlier arrivals. Listing does not mark read.
+    # List custom email domains
+    # Requires a full-account owner or administrator credential.
+    # @param [Hash] opts the optional parameters
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [Integer] :limit  (default to 50)
+    # @option opts [String] :cursor pagination.next_cursor from the previous page.
+    # @return [ListEmailDomains200Response]
+    def list_email_domains(opts = {})
+      data, _status_code, _headers = list_email_domains_with_http_info(opts)
+      data
+    end
+
+    # List custom email domains
+    # Requires a full-account owner or administrator credential.
+    # @param [Hash] opts the optional parameters
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [Integer] :limit  (default to 50)
+    # @option opts [String] :cursor pagination.next_cursor from the previous page.
+    # @return [Array<(ListEmailDomains200Response, Integer, Hash)>] ListEmailDomains200Response data, response status code and response headers
+    def list_email_domains_with_http_info(opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.list_email_domains ...'
+      end
+      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] > 200
+        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_email_domains, must be smaller than or equal to 200.'
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] < 1
+        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_email_domains, must be greater than or equal to 1.'
+      end
+
+      # resource path
+      local_var_path = '/v1/account/email_domains'
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+      query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
+      query_params[:'limit'] = opts[:'limit'] if !opts[:'limit'].nil?
+      query_params[:'cursor'] = opts[:'cursor'] if !opts[:'cursor'].nil?
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'ListEmailDomains200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.list_email_domains",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#list_email_domains\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # List emails
+    # Requires mailbox read permission. Lists received email by default. To poll, list in ascending order, save pagination.next_cursor after every page (including an empty page) and send it next time with the same filters. Listing never marks email read.
     # @param mailbox_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [Integer] :limit Maximum messages on this page. (default to 50)
-    # @option opts [String] :cursor Opaque next_cursor from a previous page.
-    # @option opts [String] :order Arrival order. (default to 'asc')
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @option opts [Integer] :limit  (default to 50)
+    # @option opts [String] :cursor pagination.next_cursor from the previous page.
+    # @option opts [String] :order Arrival order. Use asc to poll. (default to 'asc')
+    # @option opts [String] :direction  (default to 'received')
     # @option opts [String] :sender Exact sender address, case insensitive.
-    # @option opts [String] :subject Case insensitive subject substring.
-    # @option opts [Time] :received_after Exclusive receipt-time lower bound.
-    # @option opts [Time] :received_before Exclusive receipt-time upper bound.
-    # @option opts [Boolean] :read Current shared read status.
-    # @option opts [Boolean] :has_attachments Saved attachment presence.
-    # @option opts [String] :conversation_id An email ID in the selected conversation.
-    # @option opts [Boolean] :include_storage Include backing file identifiers for file-browser integration. (default to false)
+    # @option opts [String] :subject Case-insensitive subject text.
+    # @option opts [Time] :received_after 
+    # @option opts [Time] :received_before 
+    # @option opts [Boolean] :read 
+    # @option opts [Boolean] :has_attachments 
+    # @option opts [String] :conversation_id Return the emails of this conversation.
+    # @option opts [Boolean] :include_storage Include backing file IDs for file-browser integrations. (default to false)
     # @return [ListEmails200Response]
     def list_emails(mailbox_id, opts = {})
       data, _status_code, _headers = list_emails_with_http_info(mailbox_id, opts)
       data
     end
 
-    # List received emails
-    # Requires mailbox read permission. Ascending arrival order supports incremental polling: retain next_cursor even after an empty page. Reuse account, mailbox and filters. Late receipt timestamps are included. Descending order browses history. Edits/read changes/restorations do not replay earlier arrivals. Listing does not mark read.
+    # List emails
+    # Requires mailbox read permission. Lists received email by default. To poll, list in ascending order, save pagination.next_cursor after every page (including an empty page) and send it next time with the same filters. Listing never marks email read.
     # @param mailbox_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [Integer] :limit Maximum messages on this page. (default to 50)
-    # @option opts [String] :cursor Opaque next_cursor from a previous page.
-    # @option opts [String] :order Arrival order. (default to 'asc')
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @option opts [Integer] :limit  (default to 50)
+    # @option opts [String] :cursor pagination.next_cursor from the previous page.
+    # @option opts [String] :order Arrival order. Use asc to poll. (default to 'asc')
+    # @option opts [String] :direction  (default to 'received')
     # @option opts [String] :sender Exact sender address, case insensitive.
-    # @option opts [String] :subject Case insensitive subject substring.
-    # @option opts [Time] :received_after Exclusive receipt-time lower bound.
-    # @option opts [Time] :received_before Exclusive receipt-time upper bound.
-    # @option opts [Boolean] :read Current shared read status.
-    # @option opts [Boolean] :has_attachments Saved attachment presence.
-    # @option opts [String] :conversation_id An email ID in the selected conversation.
-    # @option opts [Boolean] :include_storage Include backing file identifiers for file-browser integration. (default to false)
+    # @option opts [String] :subject Case-insensitive subject text.
+    # @option opts [Time] :received_after 
+    # @option opts [Time] :received_before 
+    # @option opts [Boolean] :read 
+    # @option opts [Boolean] :has_attachments 
+    # @option opts [String] :conversation_id Return the emails of this conversation.
+    # @option opts [Boolean] :include_storage Include backing file IDs for file-browser integrations. (default to false)
     # @return [Array<(ListEmails200Response, Integer, Hash)>] ListEmails200Response data, response status code and response headers
     def list_emails_with_http_info(mailbox_id, opts = {})
       if @api_client.config.debugging
@@ -1661,8 +2870,17 @@ module RevdokuApi
       if @api_client.config.client_side_validation && mailbox_id.nil?
         fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.list_emails"
       end
-      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] > 100
-        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_emails, must be smaller than or equal to 100.'
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.list_emails, must conform to the pattern #{pattern}."
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
+        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.list_emails, the character length must be smaller than or equal to 2000.'
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] > 200
+        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_emails, must be smaller than or equal to 200.'
       end
 
       if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] < 1
@@ -1673,15 +2891,26 @@ module RevdokuApi
       if @api_client.config.client_side_validation && opts[:'order'] && !allowable_values.include?(opts[:'order'])
         fail ArgumentError, "invalid value for \"order\", must be one of #{allowable_values}"
       end
+      allowable_values = ["received", "sent", "all"]
+      if @api_client.config.client_side_validation && opts[:'direction'] && !allowable_values.include?(opts[:'direction'])
+        fail ArgumentError, "invalid value for \"direction\", must be one of #{allowable_values}"
+      end
+      pattern = Regexp.new(/^eml_/)
+      if @api_client.config.client_side_validation && !opts[:'conversation_id'].nil? && opts[:'conversation_id'] !~ pattern
+        fail ArgumentError, "invalid value for 'opts[:\"conversation_id\"]' when calling DefaultApi.list_emails, must conform to the pattern #{pattern}."
+      end
+
       # resource path
       local_var_path = '/v1/mailboxes/{mailbox_id}/emails'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
 
       # query parameters
       query_params = opts[:query_params] || {}
       query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
+      query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
       query_params[:'limit'] = opts[:'limit'] if !opts[:'limit'].nil?
       query_params[:'cursor'] = opts[:'cursor'] if !opts[:'cursor'].nil?
       query_params[:'order'] = opts[:'order'] if !opts[:'order'].nil?
+      query_params[:'direction'] = opts[:'direction'] if !opts[:'direction'].nil?
       query_params[:'sender'] = opts[:'sender'] if !opts[:'sender'].nil?
       query_params[:'subject'] = opts[:'subject'] if !opts[:'subject'].nil?
       query_params[:'received_after'] = opts[:'received_after'] if !opts[:'received_after'].nil?
@@ -1725,62 +2954,74 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # List files or related email without marking read
-    # @param id [String] 
+    # List file versions
+    # Newest first.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [Integer] :limit Default and maximum 100. (default to 100)
-    # @option opts [Integer] :offset 
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
-    # @option opts [String] :q 
-    # @option opts [String] :folder 
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @return [ListMailboxFiles200Response]
-    def list_mailbox_files(id, opts = {})
-      data, _status_code, _headers = list_mailbox_files_with_http_info(id, opts)
+    # @option opts [Integer] :limit  (default to 50)
+    # @option opts [String] :cursor pagination.next_cursor from the previous page.
+    # @return [ListFileVersions200Response]
+    def list_file_versions(mailbox_id, file_id, opts = {})
+      data, _status_code, _headers = list_file_versions_with_http_info(mailbox_id, file_id, opts)
       data
     end
 
-    # List files or related email without marking read
-    # @param id [String] 
+    # List file versions
+    # Newest first.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [Integer] :limit Default and maximum 100. (default to 100)
-    # @option opts [Integer] :offset 
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
     # @option opts [String] :reason 
-    # @option opts [String] :q 
-    # @option opts [String] :folder 
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @return [Array<(ListMailboxFiles200Response, Integer, Hash)>] ListMailboxFiles200Response data, response status code and response headers
-    def list_mailbox_files_with_http_info(id, opts = {})
+    # @option opts [Integer] :limit  (default to 50)
+    # @option opts [String] :cursor pagination.next_cursor from the previous page.
+    # @return [Array<(ListFileVersions200Response, Integer, Hash)>] ListFileVersions200Response data, response status code and response headers
+    def list_file_versions_with_http_info(mailbox_id, file_id, opts = {})
       if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.list_mailbox_files ...'
+        @api_client.config.logger.debug 'Calling API: DefaultApi.list_file_versions ...'
       end
-      # verify the required parameter 'id' is set
-      if @api_client.config.client_side_validation && id.nil?
-        fail ArgumentError, "Missing the required parameter 'id' when calling DefaultApi.list_mailbox_files"
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.list_file_versions"
       end
-      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] > 100
-        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_mailbox_files, must be smaller than or equal to 100.'
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.list_file_versions, must conform to the pattern #{pattern}."
       end
 
-      if @api_client.config.client_side_validation && !opts[:'offset'].nil? && opts[:'offset'] < 0
-        fail ArgumentError, 'invalid value for "opts[:"offset"]" when calling DefaultApi.list_mailbox_files, must be greater than or equal to 0.'
+      # verify the required parameter 'file_id' is set
+      if @api_client.config.client_side_validation && file_id.nil?
+        fail ArgumentError, "Missing the required parameter 'file_id' when calling DefaultApi.list_file_versions"
+      end
+      pattern = Regexp.new(/^df_/)
+      if @api_client.config.client_side_validation && file_id !~ pattern
+        fail ArgumentError, "invalid value for 'file_id' when calling DefaultApi.list_file_versions, must conform to the pattern #{pattern}."
       end
 
       if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
-        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.list_mailbox_files, the character length must be smaller than or equal to 2000.'
+        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.list_file_versions, the character length must be smaller than or equal to 2000.'
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] > 200
+        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_file_versions, must be smaller than or equal to 200.'
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] < 1
+        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_file_versions, must be greater than or equal to 1.'
       end
 
       # resource path
-      local_var_path = '/v1/mailboxes/{id}/files'.sub('{id}', CGI.escape(id.to_s))
+      local_var_path = '/v1/mailboxes/{mailbox_id}/files/{file_id}/versions'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s)).sub('{file_id}', CGI.escape(file_id.to_s))
 
       # query parameters
       query_params = opts[:query_params] || {}
-      query_params[:'limit'] = opts[:'limit'] if !opts[:'limit'].nil?
-      query_params[:'offset'] = opts[:'offset'] if !opts[:'offset'].nil?
-      query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
-      query_params[:'q'] = opts[:'q'] if !opts[:'q'].nil?
-      query_params[:'folder'] = opts[:'folder'] if !opts[:'folder'].nil?
       query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
+      query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
+      query_params[:'limit'] = opts[:'limit'] if !opts[:'limit'].nil?
+      query_params[:'cursor'] = opts[:'cursor'] if !opts[:'cursor'].nil?
 
       # header parameters
       header_params = opts[:header_params] || {}
@@ -1794,13 +3035,13 @@ module RevdokuApi
       post_body = opts[:debug_body]
 
       # return_type
-      return_type = opts[:debug_return_type] || 'ListMailboxFiles200Response'
+      return_type = opts[:debug_return_type] || 'ListFileVersions200Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
 
       new_options = opts.merge(
-        :operation => :"DefaultApi.list_mailbox_files",
+        :operation => :"DefaultApi.list_file_versions",
         :header_params => header_params,
         :query_params => query_params,
         :form_params => form_params,
@@ -1811,56 +3052,156 @@ module RevdokuApi
 
       data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
       if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#list_mailbox_files\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+        @api_client.config.logger.debug "API called: DefaultApi#list_file_versions\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end
 
-    # List accessible mailboxes
-    # List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
+    # List files
+    # Lists current files, including stored emails under _email/. Listing never marks files read.
+    # @param mailbox_id [String] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [String] :q Case-insensitive contains-filter on the permitted email address or ID.
-    # @option opts [String] :status Archive status: active, archived or all. Defaults to active. (default to 'active')
-    # @option opts [Integer] :limit  (default to 100)
-    # @option opts [Integer] :offset  (default to 0)
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @option opts [String] :q Case-insensitive text in the path.
+    # @option opts [String] :folder List one folder. An empty value lists the root.
+    # @option opts [Integer] :limit  (default to 50)
+    # @option opts [String] :cursor pagination.next_cursor from the previous page.
+    # @return [ListFiles200Response]
+    def list_files(mailbox_id, opts = {})
+      data, _status_code, _headers = list_files_with_http_info(mailbox_id, opts)
+      data
+    end
+
+    # List files
+    # Lists current files, including stored emails under _email/. Listing never marks files read.
+    # @param mailbox_id [String] 
+    # @param [Hash] opts the optional parameters
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @option opts [String] :q Case-insensitive text in the path.
+    # @option opts [String] :folder List one folder. An empty value lists the root.
+    # @option opts [Integer] :limit  (default to 50)
+    # @option opts [String] :cursor pagination.next_cursor from the previous page.
+    # @return [Array<(ListFiles200Response, Integer, Hash)>] ListFiles200Response data, response status code and response headers
+    def list_files_with_http_info(mailbox_id, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.list_files ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.list_files"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.list_files, must conform to the pattern #{pattern}."
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
+        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.list_files, the character length must be smaller than or equal to 2000.'
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] > 200
+        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_files, must be smaller than or equal to 200.'
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] < 1
+        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_files, must be greater than or equal to 1.'
+      end
+
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/files'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+      query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
+      query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
+      query_params[:'q'] = opts[:'q'] if !opts[:'q'].nil?
+      query_params[:'folder'] = opts[:'folder'] if !opts[:'folder'].nil?
+      query_params[:'limit'] = opts[:'limit'] if !opts[:'limit'].nil?
+      query_params[:'cursor'] = opts[:'cursor'] if !opts[:'cursor'].nil?
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body]
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'ListFiles200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.list_files",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:GET, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#list_files\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # List mailboxes
+    # Lists active mailboxes by default, newest first. Counts and pages cover only mailboxes this credential can access. Reads no email content.
+    # @param [Hash] opts the optional parameters
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @option opts [String] :status  (default to 'active')
+    # @option opts [String] :q Case-insensitive text in the permitted address or the mailbox ID.
+    # @option opts [Integer] :limit  (default to 50)
+    # @option opts [String] :cursor pagination.next_cursor from the previous page.
     # @return [ListMailboxes200Response]
     def list_mailboxes(opts = {})
       data, _status_code, _headers = list_mailboxes_with_http_info(opts)
       data
     end
 
-    # List accessible mailboxes
-    # List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
+    # List mailboxes
+    # Lists active mailboxes by default, newest first. Counts and pages cover only mailboxes this credential can access. Reads no email content.
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [String] :q Case-insensitive contains-filter on the permitted email address or ID.
-    # @option opts [String] :status Archive status: active, archived or all. Defaults to active. (default to 'active')
-    # @option opts [Integer] :limit  (default to 100)
-    # @option opts [Integer] :offset  (default to 0)
+    # @option opts [String] :account_id Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead.
+    # @option opts [String] :reason 
+    # @option opts [String] :status  (default to 'active')
+    # @option opts [String] :q Case-insensitive text in the permitted address or the mailbox ID.
+    # @option opts [Integer] :limit  (default to 50)
+    # @option opts [String] :cursor pagination.next_cursor from the previous page.
     # @return [Array<(ListMailboxes200Response, Integer, Hash)>] ListMailboxes200Response data, response status code and response headers
     def list_mailboxes_with_http_info(opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: DefaultApi.list_mailboxes ...'
       end
-      if @api_client.config.client_side_validation && !opts[:'q'].nil? && opts[:'q'].to_s.length > 500
-        fail ArgumentError, 'invalid value for "opts[:"q"]" when calling DefaultApi.list_mailboxes, the character length must be smaller than or equal to 500.'
+      if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
+        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.list_mailboxes, the character length must be smaller than or equal to 2000.'
       end
 
       allowable_values = ["active", "archived", "all"]
       if @api_client.config.client_side_validation && opts[:'status'] && !allowable_values.include?(opts[:'status'])
         fail ArgumentError, "invalid value for \"status\", must be one of #{allowable_values}"
       end
-      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] > 100
-        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_mailboxes, must be smaller than or equal to 100.'
+      if @api_client.config.client_side_validation && !opts[:'q'].nil? && opts[:'q'].to_s.length > 500
+        fail ArgumentError, 'invalid value for "opts[:"q"]" when calling DefaultApi.list_mailboxes, the character length must be smaller than or equal to 500.'
+      end
+
+      if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] > 200
+        fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_mailboxes, must be smaller than or equal to 200.'
       end
 
       if @api_client.config.client_side_validation && !opts[:'limit'].nil? && opts[:'limit'] < 1
         fail ArgumentError, 'invalid value for "opts[:"limit"]" when calling DefaultApi.list_mailboxes, must be greater than or equal to 1.'
-      end
-
-      if @api_client.config.client_side_validation && !opts[:'offset'].nil? && opts[:'offset'] < 0
-        fail ArgumentError, 'invalid value for "opts[:"offset"]" when calling DefaultApi.list_mailboxes, must be greater than or equal to 0.'
       end
 
       # resource path
@@ -1869,10 +3210,11 @@ module RevdokuApi
       # query parameters
       query_params = opts[:query_params] || {}
       query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
-      query_params[:'q'] = opts[:'q'] if !opts[:'q'].nil?
+      query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
       query_params[:'status'] = opts[:'status'] if !opts[:'status'].nil?
+      query_params[:'q'] = opts[:'q'] if !opts[:'q'].nil?
       query_params[:'limit'] = opts[:'limit'] if !opts[:'limit'].nil?
-      query_params[:'offset'] = opts[:'offset'] if !opts[:'offset'].nil?
+      query_params[:'cursor'] = opts[:'cursor'] if !opts[:'cursor'].nil?
 
       # header parameters
       header_params = opts[:header_params] || {}
@@ -1908,19 +3250,111 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Prepare a single file upload
+    # Move a file
+    # Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
+    # @param move_file_request [MoveFileRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [RenameFile200Response]
+    def move_file(mailbox_id, file_id, move_file_request, opts = {})
+      data, _status_code, _headers = move_file_with_http_info(mailbox_id, file_id, move_file_request, opts)
+      data
+    end
+
+    # Move a file
+    # Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
+    # @param move_file_request [MoveFileRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(RenameFile200Response, Integer, Hash)>] RenameFile200Response data, response status code and response headers
+    def move_file_with_http_info(mailbox_id, file_id, move_file_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.move_file ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.move_file"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.move_file, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'file_id' is set
+      if @api_client.config.client_side_validation && file_id.nil?
+        fail ArgumentError, "Missing the required parameter 'file_id' when calling DefaultApi.move_file"
+      end
+      pattern = Regexp.new(/^df_/)
+      if @api_client.config.client_side_validation && file_id !~ pattern
+        fail ArgumentError, "invalid value for 'file_id' when calling DefaultApi.move_file, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'move_file_request' is set
+      if @api_client.config.client_side_validation && move_file_request.nil?
+        fail ArgumentError, "Missing the required parameter 'move_file_request' when calling DefaultApi.move_file"
+      end
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/files/{file_id}/move'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s)).sub('{file_id}', CGI.escape(file_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(move_file_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'RenameFile200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.move_file",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#move_file\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Prepare a file upload (step 1 of 3)
+    # Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/mailboxes/{mailbox_id}/files (step 3). Identical content at the same path returns skipped=true and duplicate=true without an upload.
     # @param prepare_file_upload_request [PrepareFileUploadRequest] 
     # @param [Hash] opts the optional parameters
-    # @return [PreparedFileUploadResponse]
+    # @return [PrepareFileUpload201Response]
     def prepare_file_upload(prepare_file_upload_request, opts = {})
       data, _status_code, _headers = prepare_file_upload_with_http_info(prepare_file_upload_request, opts)
       data
     end
 
-    # Prepare a single file upload
+    # Prepare a file upload (step 1 of 3)
+    # Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/mailboxes/{mailbox_id}/files (step 3). Identical content at the same path returns skipped&#x3D;true and duplicate&#x3D;true without an upload.
     # @param prepare_file_upload_request [PrepareFileUploadRequest] 
     # @param [Hash] opts the optional parameters
-    # @return [Array<(PreparedFileUploadResponse, Integer, Hash)>] PreparedFileUploadResponse data, response status code and response headers
+    # @return [Array<(PrepareFileUpload201Response, Integer, Hash)>] PrepareFileUpload201Response data, response status code and response headers
     def prepare_file_upload_with_http_info(prepare_file_upload_request, opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: DefaultApi.prepare_file_upload ...'
@@ -1952,7 +3386,7 @@ module RevdokuApi
       post_body = opts[:debug_body] || @api_client.object_to_http_body(prepare_file_upload_request)
 
       # return_type
-      return_type = opts[:debug_return_type] || 'PreparedFileUploadResponse'
+      return_type = opts[:debug_return_type] || 'PrepareFileUpload201Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
@@ -1974,37 +3408,53 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Remove unused receiving domain after confirmation
-    # Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-    # @param id [String] 
-    # @param remove_account_email_domain_request [RemoveAccountEmailDomainRequest] 
+    # Rename or move a file in the same mailbox
+    # Changes the path without uploading the content again.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
+    # @param rename_file_request [RenameFileRequest] 
     # @param [Hash] opts the optional parameters
-    # @return [EmailDomainListResponse]
-    def remove_account_email_domain(id, remove_account_email_domain_request, opts = {})
-      data, _status_code, _headers = remove_account_email_domain_with_http_info(id, remove_account_email_domain_request, opts)
+    # @return [RenameFile200Response]
+    def rename_file(mailbox_id, file_id, rename_file_request, opts = {})
+      data, _status_code, _headers = rename_file_with_http_info(mailbox_id, file_id, rename_file_request, opts)
       data
     end
 
-    # Remove unused receiving domain after confirmation
-    # Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-    # @param id [String] 
-    # @param remove_account_email_domain_request [RemoveAccountEmailDomainRequest] 
+    # Rename or move a file in the same mailbox
+    # Changes the path without uploading the content again.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
+    # @param rename_file_request [RenameFileRequest] 
     # @param [Hash] opts the optional parameters
-    # @return [Array<(EmailDomainListResponse, Integer, Hash)>] EmailDomainListResponse data, response status code and response headers
-    def remove_account_email_domain_with_http_info(id, remove_account_email_domain_request, opts = {})
+    # @return [Array<(RenameFile200Response, Integer, Hash)>] RenameFile200Response data, response status code and response headers
+    def rename_file_with_http_info(mailbox_id, file_id, rename_file_request, opts = {})
       if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.remove_account_email_domain ...'
+        @api_client.config.logger.debug 'Calling API: DefaultApi.rename_file ...'
       end
-      # verify the required parameter 'id' is set
-      if @api_client.config.client_side_validation && id.nil?
-        fail ArgumentError, "Missing the required parameter 'id' when calling DefaultApi.remove_account_email_domain"
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.rename_file"
       end
-      # verify the required parameter 'remove_account_email_domain_request' is set
-      if @api_client.config.client_side_validation && remove_account_email_domain_request.nil?
-        fail ArgumentError, "Missing the required parameter 'remove_account_email_domain_request' when calling DefaultApi.remove_account_email_domain"
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.rename_file, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'file_id' is set
+      if @api_client.config.client_side_validation && file_id.nil?
+        fail ArgumentError, "Missing the required parameter 'file_id' when calling DefaultApi.rename_file"
+      end
+      pattern = Regexp.new(/^df_/)
+      if @api_client.config.client_side_validation && file_id !~ pattern
+        fail ArgumentError, "invalid value for 'file_id' when calling DefaultApi.rename_file, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'rename_file_request' is set
+      if @api_client.config.client_side_validation && rename_file_request.nil?
+        fail ArgumentError, "Missing the required parameter 'rename_file_request' when calling DefaultApi.rename_file"
       end
       # resource path
-      local_var_path = '/v1/account/email_domains/{id}'.sub('{id}', CGI.escape(id.to_s))
+      local_var_path = '/v1/mailboxes/{mailbox_id}/files/{file_id}/rename'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s)).sub('{file_id}', CGI.escape(file_id.to_s))
 
       # query parameters
       query_params = opts[:query_params] || {}
@@ -2023,90 +3473,16 @@ module RevdokuApi
       form_params = opts[:form_params] || {}
 
       # http body (model)
-      post_body = opts[:debug_body] || @api_client.object_to_http_body(remove_account_email_domain_request)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(rename_file_request)
 
       # return_type
-      return_type = opts[:debug_return_type] || 'EmailDomainListResponse'
+      return_type = opts[:debug_return_type] || 'RenameFile200Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
 
       new_options = opts.merge(
-        :operation => :"DefaultApi.remove_account_email_domain",
-        :header_params => header_params,
-        :query_params => query_params,
-        :form_params => form_params,
-        :body => post_body,
-        :auth_names => auth_names,
-        :return_type => return_type
-      )
-
-      data, status_code, headers = @api_client.call_api(:DELETE, local_var_path, new_options)
-      if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#remove_account_email_domain\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
-      end
-      return data, status_code, headers
-    end
-
-    # Replace a mailbox email address after confirmation
-    # Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
-    # @param id [String] Authorized mailbox prefix ID
-    # @param rotate_mailbox_email_address_request [RotateMailboxEmailAddressRequest] 
-    # @param [Hash] opts the optional parameters
-    # @return [GetMailboxEmailSettings200Response]
-    def rotate_mailbox_email_address(id, rotate_mailbox_email_address_request, opts = {})
-      data, _status_code, _headers = rotate_mailbox_email_address_with_http_info(id, rotate_mailbox_email_address_request, opts)
-      data
-    end
-
-    # Replace a mailbox email address after confirmation
-    # Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
-    # @param id [String] Authorized mailbox prefix ID
-    # @param rotate_mailbox_email_address_request [RotateMailboxEmailAddressRequest] 
-    # @param [Hash] opts the optional parameters
-    # @return [Array<(GetMailboxEmailSettings200Response, Integer, Hash)>] GetMailboxEmailSettings200Response data, response status code and response headers
-    def rotate_mailbox_email_address_with_http_info(id, rotate_mailbox_email_address_request, opts = {})
-      if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.rotate_mailbox_email_address ...'
-      end
-      # verify the required parameter 'id' is set
-      if @api_client.config.client_side_validation && id.nil?
-        fail ArgumentError, "Missing the required parameter 'id' when calling DefaultApi.rotate_mailbox_email_address"
-      end
-      # verify the required parameter 'rotate_mailbox_email_address_request' is set
-      if @api_client.config.client_side_validation && rotate_mailbox_email_address_request.nil?
-        fail ArgumentError, "Missing the required parameter 'rotate_mailbox_email_address_request' when calling DefaultApi.rotate_mailbox_email_address"
-      end
-      # resource path
-      local_var_path = '/v1/mailboxes/{id}/email/rotate'.sub('{id}', CGI.escape(id.to_s))
-
-      # query parameters
-      query_params = opts[:query_params] || {}
-
-      # header parameters
-      header_params = opts[:header_params] || {}
-      # HTTP header 'Accept' (if needed)
-      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
-      # HTTP header 'Content-Type'
-      content_type = @api_client.select_header_content_type(['application/json'])
-      if !content_type.nil?
-          header_params['Content-Type'] = content_type
-      end
-
-      # form parameters
-      form_params = opts[:form_params] || {}
-
-      # http body (model)
-      post_body = opts[:debug_body] || @api_client.object_to_http_body(rotate_mailbox_email_address_request)
-
-      # return_type
-      return_type = opts[:debug_return_type] || 'GetMailboxEmailSettings200Response'
-
-      # auth_names
-      auth_names = opts[:debug_auth_names] || ['bearerAuth']
-
-      new_options = opts.merge(
-        :operation => :"DefaultApi.rotate_mailbox_email_address",
+        :operation => :"DefaultApi.rename_file",
         :header_params => header_params,
         :query_params => query_params,
         :form_params => form_params,
@@ -2117,40 +3493,297 @@ module RevdokuApi
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
       if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#rotate_mailbox_email_address\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+        @api_client.config.logger.debug "API called: DefaultApi#rename_file\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end
 
-    # Save an uploaded file or a new version
-    # @param id [String] 
-    # @param save_uploaded_file_request [SaveUploadedFileRequest] 
+    # Email a sign-in code
+    # Sends a six-digit code to an existing account email. The response is the same for every address, so it never reveals whether an account exists. Create new accounts in the browser at https://app.revdoku.com/users/sign_up.
+    # @param request_sign_in_code_request [RequestSignInCodeRequest] 
     # @param [Hash] opts the optional parameters
-    # @return [SavedFileResponse]
-    def save_uploaded_file(id, save_uploaded_file_request, opts = {})
-      data, _status_code, _headers = save_uploaded_file_with_http_info(id, save_uploaded_file_request, opts)
+    # @return [RequestSignInCode200Response]
+    def request_sign_in_code(request_sign_in_code_request, opts = {})
+      data, _status_code, _headers = request_sign_in_code_with_http_info(request_sign_in_code_request, opts)
       data
     end
 
-    # Save an uploaded file or a new version
-    # @param id [String] 
+    # Email a sign-in code
+    # Sends a six-digit code to an existing account email. The response is the same for every address, so it never reveals whether an account exists. Create new accounts in the browser at https://app.revdoku.com/users/sign_up.
+    # @param request_sign_in_code_request [RequestSignInCodeRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(RequestSignInCode200Response, Integer, Hash)>] RequestSignInCode200Response data, response status code and response headers
+    def request_sign_in_code_with_http_info(request_sign_in_code_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.request_sign_in_code ...'
+      end
+      # verify the required parameter 'request_sign_in_code_request' is set
+      if @api_client.config.client_side_validation && request_sign_in_code_request.nil?
+        fail ArgumentError, "Missing the required parameter 'request_sign_in_code_request' when calling DefaultApi.request_sign_in_code"
+      end
+      # resource path
+      local_var_path = '/v1/agent_auth/request_code'
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(request_sign_in_code_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'RequestSignInCode200Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || []
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.request_sign_in_code",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#request_sign_in_code\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Restore a file version
+    # Creates a new current version with the content of the selected version. History is kept. Requires a plan with version restore.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
+    # @param version_id [String] 
+    # @param action_request [ActionRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [RestoreFileVersion201Response]
+    def restore_file_version(mailbox_id, file_id, version_id, action_request, opts = {})
+      data, _status_code, _headers = restore_file_version_with_http_info(mailbox_id, file_id, version_id, action_request, opts)
+      data
+    end
+
+    # Restore a file version
+    # Creates a new current version with the content of the selected version. History is kept. Requires a plan with version restore.
+    # @param mailbox_id [String] 
+    # @param file_id [String] 
+    # @param version_id [String] 
+    # @param action_request [ActionRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(RestoreFileVersion201Response, Integer, Hash)>] RestoreFileVersion201Response data, response status code and response headers
+    def restore_file_version_with_http_info(mailbox_id, file_id, version_id, action_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.restore_file_version ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.restore_file_version"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.restore_file_version, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'file_id' is set
+      if @api_client.config.client_side_validation && file_id.nil?
+        fail ArgumentError, "Missing the required parameter 'file_id' when calling DefaultApi.restore_file_version"
+      end
+      pattern = Regexp.new(/^df_/)
+      if @api_client.config.client_side_validation && file_id !~ pattern
+        fail ArgumentError, "invalid value for 'file_id' when calling DefaultApi.restore_file_version, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'version_id' is set
+      if @api_client.config.client_side_validation && version_id.nil?
+        fail ArgumentError, "Missing the required parameter 'version_id' when calling DefaultApi.restore_file_version"
+      end
+      # verify the required parameter 'action_request' is set
+      if @api_client.config.client_side_validation && action_request.nil?
+        fail ArgumentError, "Missing the required parameter 'action_request' when calling DefaultApi.restore_file_version"
+      end
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/files/{file_id}/versions/{version_id}/restore'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s)).sub('{file_id}', CGI.escape(file_id.to_s)).sub('{version_id}', CGI.escape(version_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(action_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'RestoreFileVersion201Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.restore_file_version",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#restore_file_version\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Save uploaded files
+    # Saves up to limit files whose bytes were uploaded. Call it after each batch to keep each request short. DIRECT_UPLOAD_NOT_FOUND names a file whose bytes are missing in error.details.path; upload it again and retry.
+    # @param mailbox_id [String] 
+    # @param session_id [String] mailbox_upload_session.id from the create response.
+    # @param [Hash] opts the optional parameters
+    # @option opts [SaveUploadSessionBatchRequest] :save_upload_session_batch_request 
+    # @return [CreateUploadSession201Response]
+    def save_upload_session_batch(mailbox_id, session_id, opts = {})
+      data, _status_code, _headers = save_upload_session_batch_with_http_info(mailbox_id, session_id, opts)
+      data
+    end
+
+    # Save uploaded files
+    # Saves up to limit files whose bytes were uploaded. Call it after each batch to keep each request short. DIRECT_UPLOAD_NOT_FOUND names a file whose bytes are missing in error.details.path; upload it again and retry.
+    # @param mailbox_id [String] 
+    # @param session_id [String] mailbox_upload_session.id from the create response.
+    # @param [Hash] opts the optional parameters
+    # @option opts [SaveUploadSessionBatchRequest] :save_upload_session_batch_request 
+    # @return [Array<(CreateUploadSession201Response, Integer, Hash)>] CreateUploadSession201Response data, response status code and response headers
+    def save_upload_session_batch_with_http_info(mailbox_id, session_id, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.save_upload_session_batch ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.save_upload_session_batch"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.save_upload_session_batch, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'session_id' is set
+      if @api_client.config.client_side_validation && session_id.nil?
+        fail ArgumentError, "Missing the required parameter 'session_id' when calling DefaultApi.save_upload_session_batch"
+      end
+      pattern = Regexp.new(/^bus_/)
+      if @api_client.config.client_side_validation && session_id !~ pattern
+        fail ArgumentError, "invalid value for 'session_id' when calling DefaultApi.save_upload_session_batch, must conform to the pattern #{pattern}."
+      end
+
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize_batch'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s)).sub('{session_id}', CGI.escape(session_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(opts[:'save_upload_session_batch_request'])
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'CreateUploadSession201Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.save_upload_session_batch",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#save_upload_session_batch\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Save an uploaded file (step 3 of 3)
+    # Saves the uploaded blob at path. An existing path gets a new version.
+    # @param mailbox_id [String] 
     # @param save_uploaded_file_request [SaveUploadedFileRequest] 
     # @param [Hash] opts the optional parameters
-    # @return [Array<(SavedFileResponse, Integer, Hash)>] SavedFileResponse data, response status code and response headers
-    def save_uploaded_file_with_http_info(id, save_uploaded_file_request, opts = {})
+    # @return [SaveUploadedFile201Response]
+    def save_uploaded_file(mailbox_id, save_uploaded_file_request, opts = {})
+      data, _status_code, _headers = save_uploaded_file_with_http_info(mailbox_id, save_uploaded_file_request, opts)
+      data
+    end
+
+    # Save an uploaded file (step 3 of 3)
+    # Saves the uploaded blob at path. An existing path gets a new version.
+    # @param mailbox_id [String] 
+    # @param save_uploaded_file_request [SaveUploadedFileRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(SaveUploadedFile201Response, Integer, Hash)>] SaveUploadedFile201Response data, response status code and response headers
+    def save_uploaded_file_with_http_info(mailbox_id, save_uploaded_file_request, opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: DefaultApi.save_uploaded_file ...'
       end
-      # verify the required parameter 'id' is set
-      if @api_client.config.client_side_validation && id.nil?
-        fail ArgumentError, "Missing the required parameter 'id' when calling DefaultApi.save_uploaded_file"
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.save_uploaded_file"
       end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.save_uploaded_file, must conform to the pattern #{pattern}."
+      end
+
       # verify the required parameter 'save_uploaded_file_request' is set
       if @api_client.config.client_side_validation && save_uploaded_file_request.nil?
         fail ArgumentError, "Missing the required parameter 'save_uploaded_file_request' when calling DefaultApi.save_uploaded_file"
       end
       # resource path
-      local_var_path = '/v1/mailboxes/{id}/files'.sub('{id}', CGI.escape(id.to_s))
+      local_var_path = '/v1/mailboxes/{mailbox_id}/files'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
 
       # query parameters
       query_params = opts[:query_params] || {}
@@ -2172,7 +3805,7 @@ module RevdokuApi
       post_body = opts[:debug_body] || @api_client.object_to_http_body(save_uploaded_file_request)
 
       # return_type
-      return_type = opts[:debug_return_type] || 'SavedFileResponse'
+      return_type = opts[:debug_return_type] || 'SaveUploadedFile201Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
@@ -2194,8 +3827,87 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Configure one received-email webhook per mailbox
-    # Requires mailbox admin permission. Public HTTPS, including explicit ports such as 8443. Generates an encrypted signing secret, returned here. Same-URL updates retain it; replacing the URL rotates it and cancels pending old-version deliveries. Events are signed and retried up to eight attempts on transient failure; duplicates are possible. Worker-crash recovery is bounded to 24 hours from event creation. Exhausted and permanent failures require operator review.
+    # Send a reply
+    # Requires mailbox write permission. Recipients must have emailed this mailbox and passed sender authentication. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.
+    # @param mailbox_id [String] 
+    # @param send_email_request [SendEmailRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [SendEmail202Response]
+    def send_email(mailbox_id, send_email_request, opts = {})
+      data, _status_code, _headers = send_email_with_http_info(mailbox_id, send_email_request, opts)
+      data
+    end
+
+    # Send a reply
+    # Requires mailbox write permission. Recipients must have emailed this mailbox and passed sender authentication. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction&#x3D;sent before you send again.
+    # @param mailbox_id [String] 
+    # @param send_email_request [SendEmailRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(SendEmail202Response, Integer, Hash)>] SendEmail202Response data, response status code and response headers
+    def send_email_with_http_info(mailbox_id, send_email_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.send_email ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.send_email"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.send_email, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'send_email_request' is set
+      if @api_client.config.client_side_validation && send_email_request.nil?
+        fail ArgumentError, "Missing the required parameter 'send_email_request' when calling DefaultApi.send_email"
+      end
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/emails'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(send_email_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'SendEmail202Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.send_email",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#send_email\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Set the email webhook
+    # Requires mailbox-admin permission and a public HTTPS URL. A new URL or rotate_secret=true creates a new signing secret, returns it once and cancels pending deliveries. The same URL without rotate_secret returns the webhook without a secret.
     # @param mailbox_id [String] 
     # @param set_email_webhook_request [SetEmailWebhookRequest] 
     # @param [Hash] opts the optional parameters
@@ -2205,8 +3917,8 @@ module RevdokuApi
       data
     end
 
-    # Configure one received-email webhook per mailbox
-    # Requires mailbox admin permission. Public HTTPS, including explicit ports such as 8443. Generates an encrypted signing secret, returned here. Same-URL updates retain it; replacing the URL rotates it and cancels pending old-version deliveries. Events are signed and retried up to eight attempts on transient failure; duplicates are possible. Worker-crash recovery is bounded to 24 hours from event creation. Exhausted and permanent failures require operator review.
+    # Set the email webhook
+    # Requires mailbox-admin permission and a public HTTPS URL. A new URL or rotate_secret&#x3D;true creates a new signing secret, returns it once and cancels pending deliveries. The same URL without rotate_secret returns the webhook without a secret.
     # @param mailbox_id [String] 
     # @param set_email_webhook_request [SetEmailWebhookRequest] 
     # @param [Hash] opts the optional parameters
@@ -2219,6 +3931,11 @@ module RevdokuApi
       if @api_client.config.client_side_validation && mailbox_id.nil?
         fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.set_email_webhook"
       end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.set_email_webhook, must conform to the pattern #{pattern}."
+      end
+
       # verify the required parameter 'set_email_webhook_request' is set
       if @api_client.config.client_side_validation && set_email_webhook_request.nil?
         fail ArgumentError, "Missing the required parameter 'set_email_webhook_request' when calling DefaultApi.set_email_webhook"
@@ -2268,29 +3985,104 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Mark a received email read or unread
-    # Requires mailbox read permission, including for locked/read-only content. Only read status can change. Receipt and audit event commit atomically. Repeated state changes are idempotent.
+    # Unarchive a mailbox
+    # @param mailbox_id [String] 
+    # @param action_request [ActionRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [CreateMailbox201Response]
+    def unarchive_mailbox(mailbox_id, action_request, opts = {})
+      data, _status_code, _headers = unarchive_mailbox_with_http_info(mailbox_id, action_request, opts)
+      data
+    end
+
+    # Unarchive a mailbox
+    # @param mailbox_id [String] 
+    # @param action_request [ActionRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(CreateMailbox201Response, Integer, Hash)>] CreateMailbox201Response data, response status code and response headers
+    def unarchive_mailbox_with_http_info(mailbox_id, action_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.unarchive_mailbox ...'
+      end
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.unarchive_mailbox"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.unarchive_mailbox, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'action_request' is set
+      if @api_client.config.client_side_validation && action_request.nil?
+        fail ArgumentError, "Missing the required parameter 'action_request' when calling DefaultApi.unarchive_mailbox"
+      end
+      # resource path
+      local_var_path = '/v1/mailboxes/{mailbox_id}/unarchive'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(action_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'CreateMailbox201Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.unarchive_mailbox",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#unarchive_mailbox\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Mark an email read or unread
+    # Only read status can change.
     # @param mailbox_id [String] 
     # @param email_id [String] 
     # @param update_email_request [UpdateEmailRequest] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [Boolean] :include_storage Include the related file identifiers in the updated email response. (default to false)
-    # @return [UpdateEmail200Response]
+    # @option opts [Boolean] :include_storage Include backing file IDs for file-browser integrations. (default to false)
+    # @return [SendEmail202Response]
     def update_email(mailbox_id, email_id, update_email_request, opts = {})
       data, _status_code, _headers = update_email_with_http_info(mailbox_id, email_id, update_email_request, opts)
       data
     end
 
-    # Mark a received email read or unread
-    # Requires mailbox read permission, including for locked/read-only content. Only read status can change. Receipt and audit event commit atomically. Repeated state changes are idempotent.
+    # Mark an email read or unread
+    # Only read status can change.
     # @param mailbox_id [String] 
     # @param email_id [String] 
     # @param update_email_request [UpdateEmailRequest] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Select another granted account; otherwise use the credential default.
-    # @option opts [Boolean] :include_storage Include the related file identifiers in the updated email response. (default to false)
-    # @return [Array<(UpdateEmail200Response, Integer, Hash)>] UpdateEmail200Response data, response status code and response headers
+    # @option opts [Boolean] :include_storage Include backing file IDs for file-browser integrations. (default to false)
+    # @return [Array<(SendEmail202Response, Integer, Hash)>] SendEmail202Response data, response status code and response headers
     def update_email_with_http_info(mailbox_id, email_id, update_email_request, opts = {})
       if @api_client.config.debugging
         @api_client.config.logger.debug 'Calling API: DefaultApi.update_email ...'
@@ -2299,10 +4091,20 @@ module RevdokuApi
       if @api_client.config.client_side_validation && mailbox_id.nil?
         fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.update_email"
       end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.update_email, must conform to the pattern #{pattern}."
+      end
+
       # verify the required parameter 'email_id' is set
       if @api_client.config.client_side_validation && email_id.nil?
         fail ArgumentError, "Missing the required parameter 'email_id' when calling DefaultApi.update_email"
       end
+      pattern = Regexp.new(/^eml_/)
+      if @api_client.config.client_side_validation && email_id !~ pattern
+        fail ArgumentError, "invalid value for 'email_id' when calling DefaultApi.update_email, must conform to the pattern #{pattern}."
+      end
+
       # verify the required parameter 'update_email_request' is set
       if @api_client.config.client_side_validation && update_email_request.nil?
         fail ArgumentError, "Missing the required parameter 'update_email_request' when calling DefaultApi.update_email"
@@ -2312,7 +4114,6 @@ module RevdokuApi
 
       # query parameters
       query_params = opts[:query_params] || {}
-      query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
       query_params[:'include_storage'] = opts[:'include_storage'] if !opts[:'include_storage'].nil?
 
       # header parameters
@@ -2332,7 +4133,7 @@ module RevdokuApi
       post_body = opts[:debug_body] || @api_client.object_to_http_body(update_email_request)
 
       # return_type
-      return_type = opts[:debug_return_type] || 'UpdateEmail200Response'
+      return_type = opts[:debug_return_type] || 'SendEmail202Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
@@ -2354,50 +4155,45 @@ module RevdokuApi
       return data, status_code, headers
     end
 
-    # Replace the allowed senders for a mailbox
-    # Requires account owner/administrator and mailbox-admin permission. Read sender_allowlist.version from GET /mailboxes/{id}/email first. Entries match exact authenticated From addresses or domains, with no wildcards or implicit subdomains. A stale or missing version returns EMAIL_ALLOWLIST_CHANGED; invalid entries return EMAIL_ALLOWLIST_INVALID. Disabled policies retain the supplied entries. Locks and read-only account state apply.
-    # @param id [String] Authorized mailbox prefix ID
-    # @param update_mailbox_email_allowlist_request [UpdateMailboxEmailAllowlistRequest] 
+    # Replace the allowed senders
+    # Requires an account owner or administrator with mailbox-admin permission. Send sender_allowlist.version from the settings read as expected_version.
+    # @param mailbox_id [String] 
+    # @param update_email_allowlist_request [UpdateEmailAllowlistRequest] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Explicitly granted account; omission uses credential default
-    # @option opts [String] :reason 
-    # @return [UpdateMailboxEmailAllowlist200Response]
-    def update_mailbox_email_allowlist(id, update_mailbox_email_allowlist_request, opts = {})
-      data, _status_code, _headers = update_mailbox_email_allowlist_with_http_info(id, update_mailbox_email_allowlist_request, opts)
+    # @return [UpdateEmailAllowlist200Response]
+    def update_email_allowlist(mailbox_id, update_email_allowlist_request, opts = {})
+      data, _status_code, _headers = update_email_allowlist_with_http_info(mailbox_id, update_email_allowlist_request, opts)
       data
     end
 
-    # Replace the allowed senders for a mailbox
-    # Requires account owner/administrator and mailbox-admin permission. Read sender_allowlist.version from GET /mailboxes/{id}/email first. Entries match exact authenticated From addresses or domains, with no wildcards or implicit subdomains. A stale or missing version returns EMAIL_ALLOWLIST_CHANGED; invalid entries return EMAIL_ALLOWLIST_INVALID. Disabled policies retain the supplied entries. Locks and read-only account state apply.
-    # @param id [String] Authorized mailbox prefix ID
-    # @param update_mailbox_email_allowlist_request [UpdateMailboxEmailAllowlistRequest] 
+    # Replace the allowed senders
+    # Requires an account owner or administrator with mailbox-admin permission. Send sender_allowlist.version from the settings read as expected_version.
+    # @param mailbox_id [String] 
+    # @param update_email_allowlist_request [UpdateEmailAllowlistRequest] 
     # @param [Hash] opts the optional parameters
-    # @option opts [String] :account_id Explicitly granted account; omission uses credential default
-    # @option opts [String] :reason 
-    # @return [Array<(UpdateMailboxEmailAllowlist200Response, Integer, Hash)>] UpdateMailboxEmailAllowlist200Response data, response status code and response headers
-    def update_mailbox_email_allowlist_with_http_info(id, update_mailbox_email_allowlist_request, opts = {})
+    # @return [Array<(UpdateEmailAllowlist200Response, Integer, Hash)>] UpdateEmailAllowlist200Response data, response status code and response headers
+    def update_email_allowlist_with_http_info(mailbox_id, update_email_allowlist_request, opts = {})
       if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.update_mailbox_email_allowlist ...'
+        @api_client.config.logger.debug 'Calling API: DefaultApi.update_email_allowlist ...'
       end
-      # verify the required parameter 'id' is set
-      if @api_client.config.client_side_validation && id.nil?
-        fail ArgumentError, "Missing the required parameter 'id' when calling DefaultApi.update_mailbox_email_allowlist"
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.update_email_allowlist"
       end
-      # verify the required parameter 'update_mailbox_email_allowlist_request' is set
-      if @api_client.config.client_side_validation && update_mailbox_email_allowlist_request.nil?
-        fail ArgumentError, "Missing the required parameter 'update_mailbox_email_allowlist_request' when calling DefaultApi.update_mailbox_email_allowlist"
-      end
-      if @api_client.config.client_side_validation && !opts[:'reason'].nil? && opts[:'reason'].to_s.length > 2000
-        fail ArgumentError, 'invalid value for "opts[:"reason"]" when calling DefaultApi.update_mailbox_email_allowlist, the character length must be smaller than or equal to 2000.'
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.update_email_allowlist, must conform to the pattern #{pattern}."
       end
 
+      # verify the required parameter 'update_email_allowlist_request' is set
+      if @api_client.config.client_side_validation && update_email_allowlist_request.nil?
+        fail ArgumentError, "Missing the required parameter 'update_email_allowlist_request' when calling DefaultApi.update_email_allowlist"
+      end
       # resource path
-      local_var_path = '/v1/mailboxes/{id}/email/allowlist'.sub('{id}', CGI.escape(id.to_s))
+      local_var_path = '/v1/mailboxes/{mailbox_id}/email/allowlist'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
 
       # query parameters
       query_params = opts[:query_params] || {}
-      query_params[:'account_id'] = opts[:'account_id'] if !opts[:'account_id'].nil?
-      query_params[:'reason'] = opts[:'reason'] if !opts[:'reason'].nil?
 
       # header parameters
       header_params = opts[:header_params] || {}
@@ -2413,16 +4209,16 @@ module RevdokuApi
       form_params = opts[:form_params] || {}
 
       # http body (model)
-      post_body = opts[:debug_body] || @api_client.object_to_http_body(update_mailbox_email_allowlist_request)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(update_email_allowlist_request)
 
       # return_type
-      return_type = opts[:debug_return_type] || 'UpdateMailboxEmailAllowlist200Response'
+      return_type = opts[:debug_return_type] || 'UpdateEmailAllowlist200Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
 
       new_options = opts.merge(
-        :operation => :"DefaultApi.update_mailbox_email_allowlist",
+        :operation => :"DefaultApi.update_email_allowlist",
         :header_params => header_params,
         :query_params => query_params,
         :form_params => form_params,
@@ -2433,38 +4229,47 @@ module RevdokuApi
 
       data, status_code, headers = @api_client.call_api(:PATCH, local_var_path, new_options)
       if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#update_mailbox_email_allowlist\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+        @api_client.config.logger.debug "API called: DefaultApi#update_email_allowlist\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end
 
-    # Queue exact ownership, SES and MX verification
-    # Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-    # @param id [String] 
+    # Update a mailbox description or metadata
+    # metadata must be a JSON object. It replaces the stored object; {} clears it. Send expected_metadata_version from your last read; a stale value changes nothing and returns MAILBOX_METADATA_CONFLICT.
+    # @param mailbox_id [String] 
+    # @param update_mailbox_request [UpdateMailboxRequest] 
     # @param [Hash] opts the optional parameters
-    # @option opts [VerifyAccountEmailDomainRequest] :verify_account_email_domain_request 
-    # @return [EmailDomainListResponse]
-    def verify_account_email_domain(id, opts = {})
-      data, _status_code, _headers = verify_account_email_domain_with_http_info(id, opts)
+    # @return [CreateMailbox201Response]
+    def update_mailbox(mailbox_id, update_mailbox_request, opts = {})
+      data, _status_code, _headers = update_mailbox_with_http_info(mailbox_id, update_mailbox_request, opts)
       data
     end
 
-    # Queue exact ownership, SES and MX verification
-    # Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-    # @param id [String] 
+    # Update a mailbox description or metadata
+    # metadata must be a JSON object. It replaces the stored object; {} clears it. Send expected_metadata_version from your last read; a stale value changes nothing and returns MAILBOX_METADATA_CONFLICT.
+    # @param mailbox_id [String] 
+    # @param update_mailbox_request [UpdateMailboxRequest] 
     # @param [Hash] opts the optional parameters
-    # @option opts [VerifyAccountEmailDomainRequest] :verify_account_email_domain_request 
-    # @return [Array<(EmailDomainListResponse, Integer, Hash)>] EmailDomainListResponse data, response status code and response headers
-    def verify_account_email_domain_with_http_info(id, opts = {})
+    # @return [Array<(CreateMailbox201Response, Integer, Hash)>] CreateMailbox201Response data, response status code and response headers
+    def update_mailbox_with_http_info(mailbox_id, update_mailbox_request, opts = {})
       if @api_client.config.debugging
-        @api_client.config.logger.debug 'Calling API: DefaultApi.verify_account_email_domain ...'
+        @api_client.config.logger.debug 'Calling API: DefaultApi.update_mailbox ...'
       end
-      # verify the required parameter 'id' is set
-      if @api_client.config.client_side_validation && id.nil?
-        fail ArgumentError, "Missing the required parameter 'id' when calling DefaultApi.verify_account_email_domain"
+      # verify the required parameter 'mailbox_id' is set
+      if @api_client.config.client_side_validation && mailbox_id.nil?
+        fail ArgumentError, "Missing the required parameter 'mailbox_id' when calling DefaultApi.update_mailbox"
+      end
+      pattern = Regexp.new(/^bkt_/)
+      if @api_client.config.client_side_validation && mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for 'mailbox_id' when calling DefaultApi.update_mailbox, must conform to the pattern #{pattern}."
+      end
+
+      # verify the required parameter 'update_mailbox_request' is set
+      if @api_client.config.client_side_validation && update_mailbox_request.nil?
+        fail ArgumentError, "Missing the required parameter 'update_mailbox_request' when calling DefaultApi.update_mailbox"
       end
       # resource path
-      local_var_path = '/v1/account/email_domains/{id}/verify'.sub('{id}', CGI.escape(id.to_s))
+      local_var_path = '/v1/mailboxes/{mailbox_id}'.sub('{mailbox_id}', CGI.escape(mailbox_id.to_s))
 
       # query parameters
       query_params = opts[:query_params] || {}
@@ -2483,16 +4288,90 @@ module RevdokuApi
       form_params = opts[:form_params] || {}
 
       # http body (model)
-      post_body = opts[:debug_body] || @api_client.object_to_http_body(opts[:'verify_account_email_domain_request'])
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(update_mailbox_request)
 
       # return_type
-      return_type = opts[:debug_return_type] || 'EmailDomainListResponse'
+      return_type = opts[:debug_return_type] || 'CreateMailbox201Response'
 
       # auth_names
       auth_names = opts[:debug_auth_names] || ['bearerAuth']
 
       new_options = opts.merge(
-        :operation => :"DefaultApi.verify_account_email_domain",
+        :operation => :"DefaultApi.update_mailbox",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:PATCH, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#update_mailbox\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Check DNS and provider setup again
+    # Queues the check and returns the current state. Read the domain again to see the result.
+    # @param domain_id [String] 
+    # @param verify_email_domain_request [VerifyEmailDomainRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [CreateEmailDomain201Response]
+    def verify_email_domain(domain_id, verify_email_domain_request, opts = {})
+      data, _status_code, _headers = verify_email_domain_with_http_info(domain_id, verify_email_domain_request, opts)
+      data
+    end
+
+    # Check DNS and provider setup again
+    # Queues the check and returns the current state. Read the domain again to see the result.
+    # @param domain_id [String] 
+    # @param verify_email_domain_request [VerifyEmailDomainRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(CreateEmailDomain201Response, Integer, Hash)>] CreateEmailDomain201Response data, response status code and response headers
+    def verify_email_domain_with_http_info(domain_id, verify_email_domain_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.verify_email_domain ...'
+      end
+      # verify the required parameter 'domain_id' is set
+      if @api_client.config.client_side_validation && domain_id.nil?
+        fail ArgumentError, "Missing the required parameter 'domain_id' when calling DefaultApi.verify_email_domain"
+      end
+      # verify the required parameter 'verify_email_domain_request' is set
+      if @api_client.config.client_side_validation && verify_email_domain_request.nil?
+        fail ArgumentError, "Missing the required parameter 'verify_email_domain_request' when calling DefaultApi.verify_email_domain"
+      end
+      # resource path
+      local_var_path = '/v1/account/email_domains/{domain_id}/verify'.sub('{domain_id}', CGI.escape(domain_id.to_s))
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(verify_email_domain_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'CreateEmailDomain201Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || ['bearerAuth']
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.verify_email_domain",
         :header_params => header_params,
         :query_params => query_params,
         :form_params => form_params,
@@ -2503,7 +4382,75 @@ module RevdokuApi
 
       data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
       if @api_client.config.debugging
-        @api_client.config.logger.debug "API called: DefaultApi#verify_account_email_domain\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+        @api_client.config.logger.debug "API called: DefaultApi#verify_email_domain\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
+      end
+      return data, status_code, headers
+    end
+
+    # Exchange a sign-in code for an API key
+    # Creates an AI agent connection for an account owner or administrator. Accounts with two-factor authentication must use browser sign-in.
+    # @param verify_sign_in_code_request [VerifySignInCodeRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [VerifySignInCode201Response]
+    def verify_sign_in_code(verify_sign_in_code_request, opts = {})
+      data, _status_code, _headers = verify_sign_in_code_with_http_info(verify_sign_in_code_request, opts)
+      data
+    end
+
+    # Exchange a sign-in code for an API key
+    # Creates an AI agent connection for an account owner or administrator. Accounts with two-factor authentication must use browser sign-in.
+    # @param verify_sign_in_code_request [VerifySignInCodeRequest] 
+    # @param [Hash] opts the optional parameters
+    # @return [Array<(VerifySignInCode201Response, Integer, Hash)>] VerifySignInCode201Response data, response status code and response headers
+    def verify_sign_in_code_with_http_info(verify_sign_in_code_request, opts = {})
+      if @api_client.config.debugging
+        @api_client.config.logger.debug 'Calling API: DefaultApi.verify_sign_in_code ...'
+      end
+      # verify the required parameter 'verify_sign_in_code_request' is set
+      if @api_client.config.client_side_validation && verify_sign_in_code_request.nil?
+        fail ArgumentError, "Missing the required parameter 'verify_sign_in_code_request' when calling DefaultApi.verify_sign_in_code"
+      end
+      # resource path
+      local_var_path = '/v1/agent_auth/verify_code'
+
+      # query parameters
+      query_params = opts[:query_params] || {}
+
+      # header parameters
+      header_params = opts[:header_params] || {}
+      # HTTP header 'Accept' (if needed)
+      header_params['Accept'] = @api_client.select_header_accept(['application/json']) unless header_params['Accept']
+      # HTTP header 'Content-Type'
+      content_type = @api_client.select_header_content_type(['application/json'])
+      if !content_type.nil?
+          header_params['Content-Type'] = content_type
+      end
+
+      # form parameters
+      form_params = opts[:form_params] || {}
+
+      # http body (model)
+      post_body = opts[:debug_body] || @api_client.object_to_http_body(verify_sign_in_code_request)
+
+      # return_type
+      return_type = opts[:debug_return_type] || 'VerifySignInCode201Response'
+
+      # auth_names
+      auth_names = opts[:debug_auth_names] || []
+
+      new_options = opts.merge(
+        :operation => :"DefaultApi.verify_sign_in_code",
+        :header_params => header_params,
+        :query_params => query_params,
+        :form_params => form_params,
+        :body => post_body,
+        :auth_names => auth_names,
+        :return_type => return_type
+      )
+
+      data, status_code, headers = @api_client.call_api(:POST, local_var_path, new_options)
+      if @api_client.config.debugging
+        @api_client.config.logger.debug "API called: DefaultApi#verify_sign_in_code\nData: #{data.inspect}\nStatus code: #{status_code}\nHeaders: #{headers}"
       end
       return data, status_code, headers
     end

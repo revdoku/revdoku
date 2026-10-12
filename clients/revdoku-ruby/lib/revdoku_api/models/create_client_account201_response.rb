@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -15,15 +15,15 @@ require 'time'
 
 module RevdokuApi
   class CreateClientAccount201Response < ApiModelBase
-    attr_accessor :data
-
     attr_accessor :success
+
+    attr_accessor :data
 
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
-        :'data' => :'data',
-        :'success' => :'success'
+        :'success' => :'success',
+        :'data' => :'data'
       }
     end
 
@@ -40,8 +40,8 @@ module RevdokuApi
     # Attribute type mapping.
     def self.openapi_types
       {
-        :'data' => :'CreateClientAccount201ResponseData',
-        :'success' => :'Boolean'
+        :'success' => :'Boolean',
+        :'data' => :'CreateClientAccount201ResponseData'
       }
     end
 
@@ -67,27 +67,17 @@ module RevdokuApi
         h[k.to_sym] = v
       }
 
-      if attributes.key?(:'data')
-        self.data = attributes[:'data']
-      else
-        self.data = nil
-      end
-
       if attributes.key?(:'success')
         self.success = attributes[:'success']
       else
         self.success = nil
       end
-    end
 
-    # Custom attribute writer method with validation
-    # @param [Object] data Value to be assigned
-    def data=(data)
-      if data.nil?
-        fail ArgumentError, 'data cannot be nil'
+      if attributes.key?(:'data')
+        self.data = attributes[:'data']
+      else
+        self.data = nil
       end
-
-      @data = data
     end
 
     # Custom attribute writer method with validation
@@ -100,13 +90,23 @@ module RevdokuApi
       @success = success
     end
 
+    # Custom attribute writer method with validation
+    # @param [Object] data Value to be assigned
+    def data=(data)
+      if data.nil?
+        fail ArgumentError, 'data cannot be nil'
+      end
+
+      @data = data
+    end
+
     # Checks equality by comparing each attribute.
     # @param [Object] Object to be compared
     def ==(o)
       return true if self.equal?(o)
       self.class == o.class &&
-          data == o.data &&
-          success == o.success
+          success == o.success &&
+          data == o.data
     end
 
     # @see the `==` method
@@ -118,7 +118,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [data, success].hash
+      [success, data].hash
     end
 
     # Builds the object from hash

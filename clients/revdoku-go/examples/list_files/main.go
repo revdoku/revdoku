@@ -16,11 +16,15 @@ func main() {
 	config := revdoku.NewConfiguration()
 	config.AddDefaultHeader("Authorization", "Bearer "+key)
 	api := revdoku.NewAPIClient(config)
-	var offset int32
+	cursor := ""
+	seen := map[string]bool{}
 	for {
-		request := api.DefaultAPI.ListMailboxFiles(context.Background(), mailbox).Limit(100).Offset(offset)
+		request := api.DefaultAPI.ListFiles(context.Background(), mailbox).Limit(100)
 		if account := os.Getenv("REVDOKU_ACCOUNT_ID"); account != "" {
 			request = request.AccountId(account)
+		}
+		if cursor != "" {
+			request = request.Cursor(cursor)
 		}
 		result, _, err := request.Execute()
 		if err != nil {
@@ -34,10 +38,10 @@ func main() {
 		if !result.Data.Pagination.HasMore {
 			break
 		}
-		next := result.Data.Pagination.NextOffset.Get()
-		if next == nil || *next <= offset {
+		cursor = result.Data.Pagination.GetNextCursor()
+		if cursor == "" || seen[cursor] {
 			log.Fatal("File pagination did not advance")
 		}
-		offset = *next
+		seen[cursor] = true
 	}
 }

@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -12,6 +12,7 @@ package revdoku
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 // checks if the CreateClientAccount201ResponseData type satisfies the MappedNullable interface at compile time
@@ -19,7 +20,7 @@ var _ MappedNullable = &CreateClientAccount201ResponseData{}
 
 // CreateClientAccount201ResponseData struct for CreateClientAccount201ResponseData
 type CreateClientAccount201ResponseData struct {
-	Account *AccountIdentity `json:"account,omitempty"`
+	Account AccountIdentity `json:"account"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -29,8 +30,9 @@ type _CreateClientAccount201ResponseData CreateClientAccount201ResponseData
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCreateClientAccount201ResponseData() *CreateClientAccount201ResponseData {
+func NewCreateClientAccount201ResponseData(account AccountIdentity) *CreateClientAccount201ResponseData {
 	this := CreateClientAccount201ResponseData{}
+	this.Account = account
 	return &this
 }
 
@@ -42,36 +44,28 @@ func NewCreateClientAccount201ResponseDataWithDefaults() *CreateClientAccount201
 	return &this
 }
 
-// GetAccount returns the Account field value if set, zero value otherwise.
+// GetAccount returns the Account field value
 func (o *CreateClientAccount201ResponseData) GetAccount() AccountIdentity {
-	if o == nil || IsNil(o.Account) {
+	if o == nil {
 		var ret AccountIdentity
 		return ret
 	}
-	return *o.Account
+
+	return o.Account
 }
 
-// GetAccountOk returns a tuple with the Account field value if set, nil otherwise
+// GetAccountOk returns a tuple with the Account field value
 // and a boolean to check if the value has been set.
 func (o *CreateClientAccount201ResponseData) GetAccountOk() (*AccountIdentity, bool) {
-	if o == nil || IsNil(o.Account) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Account, true
+	return &o.Account, true
 }
 
-// HasAccount returns a boolean if a field has been set.
-func (o *CreateClientAccount201ResponseData) HasAccount() bool {
-	if o != nil && !IsNil(o.Account) {
-		return true
-	}
-
-	return false
-}
-
-// SetAccount gets a reference to the given AccountIdentity and assigns it to the Account field.
+// SetAccount sets field value
 func (o *CreateClientAccount201ResponseData) SetAccount(v AccountIdentity) {
-	o.Account = &v
+	o.Account = v
 }
 
 func (o CreateClientAccount201ResponseData) MarshalJSON() ([]byte, error) {
@@ -84,9 +78,7 @@ func (o CreateClientAccount201ResponseData) MarshalJSON() ([]byte, error) {
 
 func (o CreateClientAccount201ResponseData) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Account) {
-		toSerialize["account"] = o.Account
-	}
+	toSerialize["account"] = o.Account
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -96,6 +88,27 @@ func (o CreateClientAccount201ResponseData) ToMap() (map[string]interface{}, err
 }
 
 func (o *CreateClientAccount201ResponseData) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"account",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
 	varCreateClientAccount201ResponseData := _CreateClientAccount201ResponseData{}
 
 	err = json.Unmarshal(data, &varCreateClientAccount201ResponseData)

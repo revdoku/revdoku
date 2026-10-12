@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -49,7 +49,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
   MailboxFile.JSON_PROPERTY_ROLE,
   MailboxFile.JSON_PROPERTY_CREATED_BY_SYSTEM,
   MailboxFile.JSON_PROPERTY_DELETED,
-  MailboxFile.JSON_PROPERTY_METADATA,
   MailboxFile.JSON_PROPERTY_VERSION_REASONS,
   MailboxFile.JSON_PROPERTY_LOCK,
   MailboxFile.JSON_PROPERTY_CURRENT_FILE_VERSION,
@@ -95,10 +94,6 @@ public class MailboxFile {
   public static final String JSON_PROPERTY_DELETED = "deleted";
   @javax.annotation.Nullable
   private Boolean deleted;
-
-  public static final String JSON_PROPERTY_METADATA = "metadata";
-  @javax.annotation.Nullable
-  private Map<String, Object> metadata = new HashMap<>();
 
   public static final String JSON_PROPERTY_VERSION_REASONS = "version_reasons";
   @javax.annotation.Nullable
@@ -324,38 +319,6 @@ public class MailboxFile {
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
   public void setDeleted(@javax.annotation.Nullable Boolean deleted) {
     this.deleted = deleted;
-  }
-
-
-  public MailboxFile metadata(@javax.annotation.Nullable Map<String, Object> metadata) {
-    this.metadata = metadata;
-    return this;
-  }
-
-  public MailboxFile putMetadataItem(String key, Object metadataItem) {
-    if (this.metadata == null) {
-      this.metadata = new HashMap<>();
-    }
-    this.metadata.put(key, metadataItem);
-    return this;
-  }
-
-  /**
-   * Get metadata
-   * @return metadata
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_METADATA, required = false)
-  @JsonInclude(content = JsonInclude.Include.ALWAYS, value = JsonInclude.Include.USE_DEFAULTS)
-  public Map<String, Object> getMetadata() {
-    return metadata;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_METADATA, required = false)
-  @JsonInclude(content = JsonInclude.Include.ALWAYS, value = JsonInclude.Include.USE_DEFAULTS)
-  public void setMetadata(@javax.annotation.Nullable Map<String, Object> metadata) {
-    this.metadata = metadata;
   }
 
 
@@ -818,7 +781,6 @@ public class MailboxFile {
         Objects.equals(this.role, mailboxFile.role) &&
         Objects.equals(this.createdBySystem, mailboxFile.createdBySystem) &&
         Objects.equals(this.deleted, mailboxFile.deleted) &&
-        Objects.equals(this.metadata, mailboxFile.metadata) &&
         Objects.equals(this.versionReasons, mailboxFile.versionReasons) &&
         Objects.equals(this.lock, mailboxFile.lock) &&
         equalsNullable(this.currentFileVersion, mailboxFile.currentFileVersion) &&
@@ -842,7 +804,7 @@ public class MailboxFile {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, mailboxId, basename, path, role, createdBySystem, deleted, metadata, versionReasons, lock, hashCodeNullable(currentFileVersion), createdBy, createdAt, updatedAt, deletedAt, createdByAgent, updatedByAgent, createdByApiKey, updatedByApiKey, read, hashCodeNullable(readAt), hashCodeNullable(readBy), hashCodeNullable(readByApiKey));
+    return Objects.hash(id, mailboxId, basename, path, role, createdBySystem, deleted, versionReasons, lock, hashCodeNullable(currentFileVersion), createdBy, createdAt, updatedAt, deletedAt, createdByAgent, updatedByAgent, createdByApiKey, updatedByApiKey, read, hashCodeNullable(readAt), hashCodeNullable(readBy), hashCodeNullable(readByApiKey));
   }
 
   private static <T> int hashCodeNullable(JsonNullable<T> a) {
@@ -863,7 +825,6 @@ public class MailboxFile {
     sb.append("    role: ").append(toIndentedString(role)).append("\n");
     sb.append("    createdBySystem: ").append(toIndentedString(createdBySystem)).append("\n");
     sb.append("    deleted: ").append(toIndentedString(deleted)).append("\n");
-    sb.append("    metadata: ").append(toIndentedString(metadata)).append("\n");
     sb.append("    versionReasons: ").append(toIndentedString(versionReasons)).append("\n");
     sb.append("    lock: ").append(toIndentedString(lock)).append("\n");
     sb.append("    currentFileVersion: ").append(toIndentedString(currentFileVersion)).append("\n");

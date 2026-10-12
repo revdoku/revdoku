@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -35,13 +35,13 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class CreateClientAccount201ResponseData {
   public static final String JSON_PROPERTY_ACCOUNT = "account";
-  @javax.annotation.Nullable
+  @javax.annotation.Nonnull
   private AccountIdentity account;
 
   public CreateClientAccount201ResponseData() { 
   }
 
-  public CreateClientAccount201ResponseData account(@javax.annotation.Nullable AccountIdentity account) {
+  public CreateClientAccount201ResponseData account(@javax.annotation.Nonnull AccountIdentity account) {
     this.account = account;
     return this;
   }
@@ -50,17 +50,17 @@ public class CreateClientAccount201ResponseData {
    * Get account
    * @return account
    */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_ACCOUNT, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_ACCOUNT, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public AccountIdentity getAccount() {
     return account;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_ACCOUNT, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setAccount(@javax.annotation.Nullable AccountIdentity account) {
+  @JsonProperty(value = JSON_PROPERTY_ACCOUNT, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setAccount(@javax.annotation.Nonnull AccountIdentity account) {
     this.account = account;
   }
 

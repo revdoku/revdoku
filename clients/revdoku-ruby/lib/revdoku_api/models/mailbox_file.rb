@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -28,8 +28,6 @@ module RevdokuApi
     attr_accessor :created_by_system
 
     attr_accessor :deleted
-
-    attr_accessor :metadata
 
     attr_accessor :version_reasons
 
@@ -71,7 +69,6 @@ module RevdokuApi
         :'role' => :'role',
         :'created_by_system' => :'created_by_system',
         :'deleted' => :'deleted',
-        :'metadata' => :'metadata',
         :'version_reasons' => :'version_reasons',
         :'lock' => :'lock',
         :'current_file_version' => :'current_file_version',
@@ -110,7 +107,6 @@ module RevdokuApi
         :'role' => :'String',
         :'created_by_system' => :'String',
         :'deleted' => :'Boolean',
-        :'metadata' => :'Hash<String, Object>',
         :'version_reasons' => :'Array<FileVersionReason>',
         :'lock' => :'Hash<String, Object>',
         :'current_file_version' => :'FileVersion',
@@ -185,12 +181,6 @@ module RevdokuApi
 
       if attributes.key?(:'deleted')
         self.deleted = attributes[:'deleted']
-      end
-
-      if attributes.key?(:'metadata')
-        if (value = attributes[:'metadata']).is_a?(Hash)
-          self.metadata = value
-        end
       end
 
       if attributes.key?(:'version_reasons')
@@ -277,6 +267,21 @@ module RevdokuApi
     end
 
     # Custom attribute writer method with validation
+    # @param [Object] mailbox_id Value to be assigned
+    def mailbox_id=(mailbox_id)
+      if mailbox_id.nil?
+        fail ArgumentError, 'mailbox_id cannot be nil'
+      end
+
+      pattern = Regexp.new(/^bkt_/)
+      if mailbox_id !~ pattern
+        fail ArgumentError, "invalid value for \"mailbox_id\", must conform to the pattern #{pattern}."
+      end
+
+      @mailbox_id = mailbox_id
+    end
+
+    # Custom attribute writer method with validation
     # @param [Object] path Value to be assigned
     def path=(path)
       if path.nil?
@@ -298,7 +303,6 @@ module RevdokuApi
           role == o.role &&
           created_by_system == o.created_by_system &&
           deleted == o.deleted &&
-          metadata == o.metadata &&
           version_reasons == o.version_reasons &&
           lock == o.lock &&
           current_file_version == o.current_file_version &&
@@ -325,7 +329,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [id, mailbox_id, basename, path, role, created_by_system, deleted, metadata, version_reasons, lock, current_file_version, created_by, created_at, updated_at, deleted_at, created_by_agent, updated_by_agent, created_by_api_key, updated_by_api_key, read, read_at, read_by, read_by_api_key].hash
+      [id, mailbox_id, basename, path, role, created_by_system, deleted, version_reasons, lock, current_file_version, created_by, created_at, updated_at, deleted_at, created_by_agent, updated_by_agent, created_by_api_key, updated_by_api_key, read, read_at, read_by, read_by_api_key].hash
     end
 
     # Builds the object from hash

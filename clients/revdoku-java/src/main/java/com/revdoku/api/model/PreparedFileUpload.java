@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -39,7 +39,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
   PreparedFileUpload.JSON_PROPERTY_BYTE_SIZE,
   PreparedFileUpload.JSON_PROPERTY_CHECKSUM,
   PreparedFileUpload.JSON_PROPERTY_CONTENT_TYPE,
-  PreparedFileUpload.JSON_PROPERTY_SERVICE_NAME,
   PreparedFileUpload.JSON_PROPERTY_DIRECT_UPLOAD,
   PreparedFileUpload.JSON_PROPERTY_FILE,
   PreparedFileUpload.JSON_PROPERTY_VERSION,
@@ -69,10 +68,6 @@ public class PreparedFileUpload {
   public static final String JSON_PROPERTY_CONTENT_TYPE = "content_type";
   @javax.annotation.Nullable
   private String contentType;
-
-  public static final String JSON_PROPERTY_SERVICE_NAME = "service_name";
-  @javax.annotation.Nullable
-  private String serviceName;
 
   public static final String JSON_PROPERTY_DIRECT_UPLOAD = "direct_upload";
   @javax.annotation.Nullable
@@ -222,30 +217,6 @@ public class PreparedFileUpload {
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
   public void setContentType(@javax.annotation.Nullable String contentType) {
     this.contentType = contentType;
-  }
-
-
-  public PreparedFileUpload serviceName(@javax.annotation.Nullable String serviceName) {
-    this.serviceName = serviceName;
-    return this;
-  }
-
-  /**
-   * Get serviceName
-   * @return serviceName
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_SERVICE_NAME, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public String getServiceName() {
-    return serviceName;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_SERVICE_NAME, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setServiceName(@javax.annotation.Nullable String serviceName) {
-    this.serviceName = serviceName;
   }
 
 
@@ -442,7 +413,6 @@ public class PreparedFileUpload {
         Objects.equals(this.byteSize, preparedFileUpload.byteSize) &&
         Objects.equals(this.checksum, preparedFileUpload.checksum) &&
         Objects.equals(this.contentType, preparedFileUpload.contentType) &&
-        Objects.equals(this.serviceName, preparedFileUpload.serviceName) &&
         Objects.equals(this.directUpload, preparedFileUpload.directUpload) &&
         Objects.equals(this._file, preparedFileUpload._file) &&
         Objects.equals(this.version, preparedFileUpload.version) &&
@@ -454,7 +424,7 @@ public class PreparedFileUpload {
 
   @Override
   public int hashCode() {
-    return Objects.hash(signedId, filename, byteSize, checksum, contentType, serviceName, directUpload, _file, version, skipped, duplicate, reason, details);
+    return Objects.hash(signedId, filename, byteSize, checksum, contentType, directUpload, _file, version, skipped, duplicate, reason, details);
   }
 
   @Override
@@ -466,7 +436,6 @@ public class PreparedFileUpload {
     sb.append("    byteSize: ").append(toIndentedString(byteSize)).append("\n");
     sb.append("    checksum: ").append(toIndentedString(checksum)).append("\n");
     sb.append("    contentType: ").append(toIndentedString(contentType)).append("\n");
-    sb.append("    serviceName: ").append(toIndentedString(serviceName)).append("\n");
     sb.append("    directUpload: ").append(toIndentedString(directUpload)).append("\n");
     sb.append("    _file: ").append(toIndentedString(_file)).append("\n");
     sb.append("    version: ").append(toIndentedString(version)).append("\n");

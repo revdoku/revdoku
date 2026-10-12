@@ -1,8 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -36,7 +36,7 @@ import {
 } from './MailboxAction';
 
 /**
- * Public mailbox details, including the permitted address, stored and unread email counts, lifetime receipts and receiving state. Keep IDs for API operations. Use the address as the dashboard link label.
+ * A mailbox: one receiving address with private file storage. Use email.address as the label and id in API calls.
  * @export
  * @interface Mailbox
  */
@@ -54,13 +54,13 @@ export interface Mailbox {
      */
     description?: string | null;
     /**
-     * 
+     * Your application data. PATCH replaces the whole object.
      */
     metadata?: { [key: string]: any; };
     /**
-     * 
+     * Send as expected_metadata_version on PATCH. Changes only when description or metadata changes.
      */
-    metadataVersion?: string;
+    metadataVersion: string;
     /**
      * 
      */
@@ -68,7 +68,7 @@ export interface Mailbox {
     /**
      * 
      */
-    archived?: boolean;
+    archived: boolean;
     /**
      * 
      */
@@ -82,9 +82,17 @@ export interface Mailbox {
      */
     storageBytes?: number;
     /**
-     * 
+     * Current files, including stored emails and attachments.
      */
     filesCount?: number;
+    /**
+     * Current mailbox file-tree version. Send as expected_mailbox_version on file writes to detect concurrent changes.
+     */
+    versionId: string | null;
+    /**
+     * 
+     */
+    versionNumber: number;
     /**
      * 
      */
@@ -94,29 +102,21 @@ export interface Mailbox {
      */
     updatedAt?: Date | null;
     /**
-     * 
+     * Opens the mailbox for signed-in members. It does not grant access.
      */
     dashboardUrl?: string;
     /**
      * 
      */
-    currentMailboxRevisionId?: string | null;
+    archive: MailboxAction;
     /**
      * 
      */
-    currentMailboxRevisionNumber?: number;
+    unarchive: MailboxAction;
     /**
      * 
      */
-    archive?: MailboxAction;
-    /**
-     * 
-     */
-    unarchive?: MailboxAction;
-    /**
-     * 
-     */
-    _delete?: MailboxAction;
+    _delete: MailboxAction;
 }
 
 /**
@@ -125,7 +125,14 @@ export interface Mailbox {
 export function instanceOfMailbox(value: object): value is Mailbox {
     if (!('id' in value) || value['id'] === undefined) return false;
     if ((!('accountId' in (value as Record<string, any>)) && !('account_id' in (value as Record<string, any>))) || ((value as Record<string, any>)['accountId'] === undefined && (value as Record<string, any>)['account_id'] === undefined)) return false;
+    if ((!('metadataVersion' in (value as Record<string, any>)) && !('metadata_version' in (value as Record<string, any>))) || ((value as Record<string, any>)['metadataVersion'] === undefined && (value as Record<string, any>)['metadata_version'] === undefined)) return false;
     if (!('email' in value) || value['email'] === undefined) return false;
+    if (!('archived' in value) || value['archived'] === undefined) return false;
+    if ((!('versionId' in (value as Record<string, any>)) && !('version_id' in (value as Record<string, any>))) || ((value as Record<string, any>)['versionId'] === undefined && (value as Record<string, any>)['version_id'] === undefined)) return false;
+    if ((!('versionNumber' in (value as Record<string, any>)) && !('version_number' in (value as Record<string, any>))) || ((value as Record<string, any>)['versionNumber'] === undefined && (value as Record<string, any>)['version_number'] === undefined)) return false;
+    if (!('archive' in value) || value['archive'] === undefined) return false;
+    if (!('unarchive' in value) || value['unarchive'] === undefined) return false;
+    if ((!('_delete' in (value as Record<string, any>)) && !('delete' in (value as Record<string, any>))) || ((value as Record<string, any>)['_delete'] === undefined && (value as Record<string, any>)['delete'] === undefined)) return false;
     return true;
 }
 
@@ -143,21 +150,21 @@ export function MailboxFromJSONTyped(json: any, ignoreDiscriminator: boolean): M
         'accountId': json['account_id'],
         'description': json['description'] === undefined ? undefined : json['description'] === null ? null : json['description'],
         'metadata': json['metadata'] == null ? undefined : json['metadata'],
-        'metadataVersion': json['metadata_version'] == null ? undefined : json['metadata_version'],
+        'metadataVersion': json['metadata_version'],
         'email': MailboxEmailFromJSON(json['email']),
-        'archived': json['archived'] == null ? undefined : json['archived'],
+        'archived': json['archived'],
         'archivedAt': json['archived_at'] === undefined ? undefined : json['archived_at'] === null ? null : (parseDateTime(json['archived_at'])),
         'lock': json['lock'] == null ? undefined : MailboxLockFromJSON(json['lock']),
         'storageBytes': json['storage_bytes'] == null ? undefined : json['storage_bytes'],
         'filesCount': json['files_count'] == null ? undefined : json['files_count'],
+        'versionId': json['version_id'],
+        'versionNumber': json['version_number'],
         'createdAt': json['created_at'] === undefined ? undefined : json['created_at'] === null ? null : (parseDateTime(json['created_at'])),
         'updatedAt': json['updated_at'] === undefined ? undefined : json['updated_at'] === null ? null : (parseDateTime(json['updated_at'])),
         'dashboardUrl': json['dashboard_url'] == null ? undefined : json['dashboard_url'],
-        'currentMailboxRevisionId': json['current_mailbox_revision_id'] === undefined ? undefined : json['current_mailbox_revision_id'] === null ? null : json['current_mailbox_revision_id'],
-        'currentMailboxRevisionNumber': json['current_mailbox_revision_number'] == null ? undefined : json['current_mailbox_revision_number'],
-        'archive': json['archive'] == null ? undefined : MailboxActionFromJSON(json['archive']),
-        'unarchive': json['unarchive'] == null ? undefined : MailboxActionFromJSON(json['unarchive']),
-        '_delete': json['delete'] == null ? undefined : MailboxActionFromJSON(json['delete']),
+        'archive': MailboxActionFromJSON(json['archive']),
+        'unarchive': MailboxActionFromJSON(json['unarchive']),
+        '_delete': MailboxActionFromJSON(json['delete']),
     };
 }
 
@@ -183,11 +190,11 @@ export function MailboxToJSONTyped(value?: Mailbox | null, ignoreDiscriminator: 
         'lock': MailboxLockToJSON(value['lock']),
         'storage_bytes': value['storageBytes'],
         'files_count': value['filesCount'],
+        'version_id': value['versionId'],
+        'version_number': value['versionNumber'],
         'created_at': value['createdAt'] == null ? value['createdAt'] : serializeDateTime(value['createdAt']),
         'updated_at': value['updatedAt'] == null ? value['updatedAt'] : serializeDateTime(value['updatedAt']),
         'dashboard_url': value['dashboardUrl'],
-        'current_mailbox_revision_id': value['currentMailboxRevisionId'],
-        'current_mailbox_revision_number': value['currentMailboxRevisionNumber'],
         'archive': MailboxActionToJSON(value['archive']),
         'unarchive': MailboxActionToJSON(value['unarchive']),
         'delete': MailboxActionToJSON(value['_delete']),

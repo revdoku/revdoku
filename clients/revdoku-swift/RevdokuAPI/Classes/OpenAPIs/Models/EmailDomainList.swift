@@ -13,28 +13,23 @@ import AnyCodable
 public struct EmailDomainList: Codable, JSONEncodable, Hashable {
 
     public var domains: [EmailDomain]
-    public var enabled: Bool?
-    public var configured: Bool?
-    public var limit: Int?
-    public var usage: EmailUsage?
+    /** Whether this account can use custom email domains. */
+    public var enabled: Bool
     public var guidance: String?
+    public var pagination: Pagination
 
-    public init(domains: [EmailDomain], enabled: Bool? = nil, configured: Bool? = nil, limit: Int? = nil, usage: EmailUsage? = nil, guidance: String? = nil) {
+    public init(domains: [EmailDomain], enabled: Bool, guidance: String? = nil, pagination: Pagination) {
         self.domains = domains
         self.enabled = enabled
-        self.configured = configured
-        self.limit = limit
-        self.usage = usage
         self.guidance = guidance
+        self.pagination = pagination
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case domains
         case enabled
-        case configured
-        case limit
-        case usage
         case guidance
+        case pagination
     }
 
     // Encodable protocol methods
@@ -42,11 +37,9 @@ public struct EmailDomainList: Codable, JSONEncodable, Hashable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(domains, forKey: .domains)
-        try container.encodeIfPresent(enabled, forKey: .enabled)
-        try container.encodeIfPresent(configured, forKey: .configured)
-        try container.encodeIfPresent(limit, forKey: .limit)
-        try container.encodeIfPresent(usage, forKey: .usage)
+        try container.encode(enabled, forKey: .enabled)
         try container.encodeIfPresent(guidance, forKey: .guidance)
+        try container.encode(pagination, forKey: .pagination)
     }
 }
 

@@ -12,26 +12,22 @@ import AnyCodable
 
 public struct EmailSummary: Codable, JSONEncodable, Hashable {
 
-    public enum SchemaVersion: Int, Codable, CaseIterable {
-        case _1 = 1
-    }
     public enum BodyStatus: String, Codable, CaseIterable {
         case complete = "complete"
         case empty = "empty"
         case truncated = "truncated"
         case unavailable = "unavailable"
     }
-    public static let threadIdRule = StringRule(minLength: nil, maxLength: nil, pattern: "/^thr_[0-9a-f]{64}$/")
+    public enum Direction: String, Codable, CaseIterable {
+        case received = "received"
+        case sent = "sent"
+    }
     public static let omittedAttachmentCountRule = NumericRule<Int>(minimum: 1, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
     public static let idRule = StringRule(minLength: nil, maxLength: nil, pattern: "/^eml_/")
     public static let conversationIdRule = StringRule(minLength: nil, maxLength: nil, pattern: "/^eml_/")
     public static let fileIdRule = StringRule(minLength: nil, maxLength: nil, pattern: "/^df_/")
-    public static let versionIdRule = StringRule(minLength: nil, maxLength: nil, pattern: "/^dfrev_/")
     public static let attachmentCountRule = NumericRule<Int>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
-    public var schemaVersion: SchemaVersion?
     public var subject: String?
-    public var from: String?
-    public var to: String?
     /** Parsed From authors in header order, retaining multiple authors. Empty when absent/unparseable. Display names are not identity keys. */
     public var fromAddresses: [DecodedEmailAddress]?
     /** Parsed To recipients in header order, with named groups flattened. Empty when absent/unparseable; not trusted delivery routing. */
@@ -46,14 +42,17 @@ public struct EmailSummary: Codable, JSONEncodable, Hashable {
     public var inReplyTo: [String]?
     /** Ordered References IDs without angle brackets, preserving case. Empty when absent/unparseable. */
     public var references: [String]?
-    /** thr_ plus SHA-256 of thread_anchor_message_id. Best-effort header-derived grouping hint, not authoritative conversation membership or an access grant. Missing ancestry or reused IDs can split/merge hints. Scope lookups to accessible mailboxes. */
-    public var threadId: String?
     public var deliveredTo: String?
+    /** Receipt time. For sent emails, the time Revdoku accepted the send. */
     public var receivedAt: Date
     public var bodyStatus: BodyStatus?
     public var omittedAttachmentCount: Int?
     public var id: String
+    /** Email ID that identifies the conversation. Replies are linked by email headers. Filter a list with conversation_id. */
     public var conversationId: String
+    /** received for incoming email; sent for email sent from this mailbox. */
+    public var direction: Direction
+    public var delivery: EmailDelivery?
     /** Included only with include_storage=true for file-browser integration. */
     public var fileId: String?
     /** Included only with include_storage=true for file-browser integration. */
@@ -65,16 +64,9 @@ public struct EmailSummary: Codable, JSONEncodable, Hashable {
     public var readByApiKey: AnyCodable?
     public var files: EmailSummaryFiles?
     public var forwarding: EmailForwarding?
-    /** Decoded Cc header; use the corresponding parsed address array for individual addresses. */
-    public var cc: String?
-    /** Decoded Reply-To header; use the corresponding parsed address array for individual addresses. */
-    public var replyTo: String?
 
-    public init(schemaVersion: SchemaVersion? = nil, subject: String? = nil, from: String? = nil, to: String? = nil, fromAddresses: [DecodedEmailAddress]? = nil, toAddresses: [DecodedEmailAddress]? = nil, ccAddresses: [DecodedEmailAddress]? = nil, replyToAddresses: [DecodedEmailAddress]? = nil, messageId: String? = nil, inReplyTo: [String]? = nil, references: [String]? = nil, threadId: String? = nil, deliveredTo: String? = nil, receivedAt: Date, bodyStatus: BodyStatus? = nil, omittedAttachmentCount: Int? = nil, id: String, conversationId: String, fileId: String? = nil, versionId: String? = nil, attachmentCount: Int, read: Bool, readAt: Date?, readBy: AnyCodable?, readByApiKey: AnyCodable?, files: EmailSummaryFiles? = nil, forwarding: EmailForwarding? = nil, cc: String? = nil, replyTo: String? = nil) {
-        self.schemaVersion = schemaVersion
+    public init(subject: String? = nil, fromAddresses: [DecodedEmailAddress]? = nil, toAddresses: [DecodedEmailAddress]? = nil, ccAddresses: [DecodedEmailAddress]? = nil, replyToAddresses: [DecodedEmailAddress]? = nil, messageId: String? = nil, inReplyTo: [String]? = nil, references: [String]? = nil, deliveredTo: String? = nil, receivedAt: Date, bodyStatus: BodyStatus? = nil, omittedAttachmentCount: Int? = nil, id: String, conversationId: String, direction: Direction, delivery: EmailDelivery? = nil, fileId: String? = nil, versionId: String? = nil, attachmentCount: Int, read: Bool, readAt: Date?, readBy: AnyCodable?, readByApiKey: AnyCodable?, files: EmailSummaryFiles? = nil, forwarding: EmailForwarding? = nil) {
         self.subject = subject
-        self.from = from
-        self.to = to
         self.fromAddresses = fromAddresses
         self.toAddresses = toAddresses
         self.ccAddresses = ccAddresses
@@ -82,13 +74,14 @@ public struct EmailSummary: Codable, JSONEncodable, Hashable {
         self.messageId = messageId
         self.inReplyTo = inReplyTo
         self.references = references
-        self.threadId = threadId
         self.deliveredTo = deliveredTo
         self.receivedAt = receivedAt
         self.bodyStatus = bodyStatus
         self.omittedAttachmentCount = omittedAttachmentCount
         self.id = id
         self.conversationId = conversationId
+        self.direction = direction
+        self.delivery = delivery
         self.fileId = fileId
         self.versionId = versionId
         self.attachmentCount = attachmentCount
@@ -98,15 +91,10 @@ public struct EmailSummary: Codable, JSONEncodable, Hashable {
         self.readByApiKey = readByApiKey
         self.files = files
         self.forwarding = forwarding
-        self.cc = cc
-        self.replyTo = replyTo
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
-        case schemaVersion = "schema_version"
         case subject
-        case from
-        case to
         case fromAddresses = "from_addresses"
         case toAddresses = "to_addresses"
         case ccAddresses = "cc_addresses"
@@ -114,13 +102,14 @@ public struct EmailSummary: Codable, JSONEncodable, Hashable {
         case messageId = "message_id"
         case inReplyTo = "in_reply_to"
         case references
-        case threadId = "thread_id"
         case deliveredTo = "delivered_to"
         case receivedAt = "received_at"
         case bodyStatus = "body_status"
         case omittedAttachmentCount = "omitted_attachment_count"
         case id
         case conversationId = "conversation_id"
+        case direction
+        case delivery
         case fileId = "file_id"
         case versionId = "version_id"
         case attachmentCount = "attachment_count"
@@ -130,18 +119,13 @@ public struct EmailSummary: Codable, JSONEncodable, Hashable {
         case readByApiKey = "read_by_api_key"
         case files
         case forwarding
-        case cc
-        case replyTo = "reply_to"
     }
 
     // Encodable protocol methods
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encodeIfPresent(schemaVersion, forKey: .schemaVersion)
         try container.encodeIfPresent(subject, forKey: .subject)
-        try container.encodeIfPresent(from, forKey: .from)
-        try container.encodeIfPresent(to, forKey: .to)
         try container.encodeIfPresent(fromAddresses, forKey: .fromAddresses)
         try container.encodeIfPresent(toAddresses, forKey: .toAddresses)
         try container.encodeIfPresent(ccAddresses, forKey: .ccAddresses)
@@ -149,13 +133,14 @@ public struct EmailSummary: Codable, JSONEncodable, Hashable {
         try container.encodeIfPresent(messageId, forKey: .messageId)
         try container.encodeIfPresent(inReplyTo, forKey: .inReplyTo)
         try container.encodeIfPresent(references, forKey: .references)
-        try container.encodeIfPresent(threadId, forKey: .threadId)
         try container.encodeIfPresent(deliveredTo, forKey: .deliveredTo)
         try container.encode(receivedAt, forKey: .receivedAt)
         try container.encodeIfPresent(bodyStatus, forKey: .bodyStatus)
         try container.encodeIfPresent(omittedAttachmentCount, forKey: .omittedAttachmentCount)
         try container.encode(id, forKey: .id)
         try container.encode(conversationId, forKey: .conversationId)
+        try container.encode(direction, forKey: .direction)
+        try container.encodeIfPresent(delivery, forKey: .delivery)
         try container.encodeIfPresent(fileId, forKey: .fileId)
         try container.encodeIfPresent(versionId, forKey: .versionId)
         try container.encode(attachmentCount, forKey: .attachmentCount)
@@ -165,8 +150,6 @@ public struct EmailSummary: Codable, JSONEncodable, Hashable {
         try container.encode(readByApiKey, forKey: .readByApiKey)
         try container.encodeIfPresent(files, forKey: .files)
         try container.encodeIfPresent(forwarding, forKey: .forwarding)
-        try container.encodeIfPresent(cc, forKey: .cc)
-        try container.encodeIfPresent(replyTo, forKey: .replyTo)
     }
 }
 

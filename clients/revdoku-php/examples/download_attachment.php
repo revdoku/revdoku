@@ -8,10 +8,10 @@ foreach (['REVDOKU_API_KEY', 'REVDOKU_BUCKET_ID', 'REVDOKU_EMAIL_ID', 'REVDOKU_A
     if (!getenv($name)) throw new RuntimeException('Set ' . $name);
 }
 $api = new DefaultApi(null, (new Configuration())->setAccessToken(getenv('REVDOKU_API_KEY')));
-$download = $api->getEmailAttachmentDownloadUrl(getenv('REVDOKU_BUCKET_ID'), getenv('REVDOKU_EMAIL_ID'),
+$download = $api->getEmailAttachmentDownload(getenv('REVDOKU_BUCKET_ID'), getenv('REVDOKU_EMAIL_ID'),
     getenv('REVDOKU_ATTACHMENT_ID'), account_id: getenv('REVDOKU_ACCOUNT_ID') ?: null)->getData()->getDownload();
 $url = parse_url((string) $download->getUrl());
-if ($download->getAuthentication() !== 'none' || !$url || ($url['scheme'] ?? '') !== 'https' || empty($url['host']) || isset($url['user']) || isset($url['pass'])) {
+if (!$url || ($url['scheme'] ?? '') !== 'https' || empty($url['host']) || isset($url['user']) || isset($url['pass'])) {
     throw new RuntimeException('Expected an HTTPS download without API authentication');
 }
 // Separate client: no API token and no redirects on the signed download.

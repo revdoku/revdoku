@@ -1,8 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { ListEmails200ResponseData } from './ListEmails200ResponseData';
+import type { EmailList } from './EmailList';
 import {
-    ListEmails200ResponseDataFromJSON,
-    ListEmails200ResponseDataFromJSONTyped,
-    ListEmails200ResponseDataToJSON,
-    ListEmails200ResponseDataToJSONTyped,
-} from './ListEmails200ResponseData';
+    EmailListFromJSON,
+    EmailListFromJSONTyped,
+    EmailListToJSON,
+    EmailListToJSONTyped,
+} from './EmailList';
 
 /**
  * 
@@ -34,7 +34,7 @@ export interface ListEmails200Response {
     /**
      * 
      */
-    data: ListEmails200ResponseData;
+    data: EmailList;
 }
 
 /**
@@ -57,7 +57,7 @@ export function ListEmails200ResponseFromJSONTyped(json: any, ignoreDiscriminato
     return {
         
         'success': json['success'],
-        'data': ListEmails200ResponseDataFromJSON(json['data']),
+        'data': EmailListFromJSON(json['data']),
     };
 }
 
@@ -73,7 +73,7 @@ export function ListEmails200ResponseToJSONTyped(value?: ListEmails200Response |
     return {
         
         'success': value['success'],
-        'data': ListEmails200ResponseDataToJSON(value['data']),
+        'data': EmailListToJSON(value['data']),
     };
 }
 

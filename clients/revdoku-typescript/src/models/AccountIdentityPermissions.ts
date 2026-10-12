@@ -1,8 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -22,16 +22,37 @@ export interface AccountIdentityPermissions {
     /**
      * 
      */
-    scope?: string;
+    scope?: AccountIdentityPermissionsScopeEnum;
     /**
      * 
      */
-    mailboxAccess?: string;
+    mailboxAccess?: AccountIdentityPermissionsMailboxAccessEnum;
     /**
      * 
      */
     canCreateMailboxes?: boolean;
 }
+
+
+/**
+ * @export
+ */
+export const AccountIdentityPermissionsScopeEnum = {
+    MailboxRead: 'mailbox_read',
+    MailboxWrite: 'mailbox_write',
+    MailboxAdmin: 'mailbox_admin',
+} as const;
+export type AccountIdentityPermissionsScopeEnum = typeof AccountIdentityPermissionsScopeEnum[keyof typeof AccountIdentityPermissionsScopeEnum];
+
+/**
+ * @export
+ */
+export const AccountIdentityPermissionsMailboxAccessEnum = {
+    All: 'all',
+    Selected: 'selected',
+} as const;
+export type AccountIdentityPermissionsMailboxAccessEnum = typeof AccountIdentityPermissionsMailboxAccessEnum[keyof typeof AccountIdentityPermissionsMailboxAccessEnum];
+
 
 /**
  * Check if a given object implements the AccountIdentityPermissions interface.

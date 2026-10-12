@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.revdoku.api.model.GetEmailWebhook200ResponseDataWebhook;
+import com.revdoku.api.model.Webhook;
 import java.util.Arrays;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
@@ -36,12 +36,12 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 public class GetEmailWebhook200ResponseData {
   public static final String JSON_PROPERTY_WEBHOOK = "webhook";
   @javax.annotation.Nullable
-  private GetEmailWebhook200ResponseDataWebhook webhook;
+  private Webhook webhook;
 
   public GetEmailWebhook200ResponseData() { 
   }
 
-  public GetEmailWebhook200ResponseData webhook(@javax.annotation.Nullable GetEmailWebhook200ResponseDataWebhook webhook) {
+  public GetEmailWebhook200ResponseData webhook(@javax.annotation.Nullable Webhook webhook) {
     this.webhook = webhook;
     return this;
   }
@@ -53,14 +53,14 @@ public class GetEmailWebhook200ResponseData {
   @javax.annotation.Nullable
   @JsonProperty(value = JSON_PROPERTY_WEBHOOK, required = false)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public GetEmailWebhook200ResponseDataWebhook getWebhook() {
+  public Webhook getWebhook() {
     return webhook;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_WEBHOOK, required = false)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setWebhook(@javax.annotation.Nullable GetEmailWebhook200ResponseDataWebhook webhook) {
+  public void setWebhook(@javax.annotation.Nullable Webhook webhook) {
     this.webhook = webhook;
   }
 

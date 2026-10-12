@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -17,19 +17,50 @@ module RevdokuApi
   class PrepareFileUploadRequest < ApiModelBase
     attr_accessor :mailbox_id
 
-    attr_accessor :account_id
-
+    # Destination path in the mailbox. Paths under _email/ return EMAIL_PATH_READ_ONLY.
     attr_accessor :path
 
+    # skip returns the existing file without an upload when the path exists.
+    attr_accessor :existing_file_policy
+
     attr_accessor :blob
+
+    attr_accessor :account_id
+
+    # Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
+    attr_accessor :reason
+
+    class EnumAttributeValidator
+      attr_reader :datatype
+      attr_reader :allowable_values
+
+      def initialize(datatype, allowable_values)
+        @allowable_values = allowable_values.map do |value|
+          case datatype.to_s
+          when /Integer/i
+            value.to_i
+          when /Float/i
+            value.to_f
+          else
+            value
+          end
+        end
+      end
+
+      def valid?(value)
+        !value || allowable_values.include?(value)
+      end
+    end
 
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
         :'mailbox_id' => :'mailbox_id',
-        :'account_id' => :'account_id',
         :'path' => :'path',
-        :'blob' => :'blob'
+        :'existing_file_policy' => :'existing_file_policy',
+        :'blob' => :'blob',
+        :'account_id' => :'account_id',
+        :'reason' => :'reason'
       }
     end
 
@@ -47,15 +78,18 @@ module RevdokuApi
     def self.openapi_types
       {
         :'mailbox_id' => :'String',
-        :'account_id' => :'String',
         :'path' => :'String',
-        :'blob' => :'UploadBlob'
+        :'existing_file_policy' => :'String',
+        :'blob' => :'UploadBlob',
+        :'account_id' => :'String',
+        :'reason' => :'String'
       }
     end
 
     # List of attributes with nullable: true
     def self.openapi_nullable
       Set.new([
+        :'reason'
       ])
     end
 
@@ -81,20 +115,30 @@ module RevdokuApi
         self.mailbox_id = nil
       end
 
-      if attributes.key?(:'account_id')
-        self.account_id = attributes[:'account_id']
-      end
-
       if attributes.key?(:'path')
         self.path = attributes[:'path']
       else
         self.path = nil
       end
 
+      if attributes.key?(:'existing_file_policy')
+        self.existing_file_policy = attributes[:'existing_file_policy']
+      else
+        self.existing_file_policy = 'replace'
+      end
+
       if attributes.key?(:'blob')
         self.blob = attributes[:'blob']
       else
         self.blob = nil
+      end
+
+      if attributes.key?(:'account_id')
+        self.account_id = attributes[:'account_id']
+      end
+
+      if attributes.key?(:'reason')
+        self.reason = attributes[:'reason']
       end
     end
 
@@ -118,6 +162,16 @@ module RevdokuApi
       @path = path
     end
 
+    # Custom attribute writer method checking allowed values (enum).
+    # @param [Object] existing_file_policy Object to be assigned
+    def existing_file_policy=(existing_file_policy)
+      validator = EnumAttributeValidator.new('String', ["replace", "skip"])
+      unless validator.valid?(existing_file_policy)
+        fail ArgumentError, "invalid value for \"existing_file_policy\", must be one of #{validator.allowable_values}."
+      end
+      @existing_file_policy = existing_file_policy
+    end
+
     # Custom attribute writer method with validation
     # @param [Object] blob Value to be assigned
     def blob=(blob)
@@ -128,15 +182,27 @@ module RevdokuApi
       @blob = blob
     end
 
+    # Custom attribute writer method with validation
+    # @param [Object] reason Value to be assigned
+    def reason=(reason)
+      if !reason.nil? && reason.to_s.length > 2000
+        fail ArgumentError, 'invalid value for "reason", the character length must be smaller than or equal to 2000.'
+      end
+
+      @reason = reason
+    end
+
     # Checks equality by comparing each attribute.
     # @param [Object] Object to be compared
     def ==(o)
       return true if self.equal?(o)
       self.class == o.class &&
           mailbox_id == o.mailbox_id &&
-          account_id == o.account_id &&
           path == o.path &&
-          blob == o.blob
+          existing_file_policy == o.existing_file_policy &&
+          blob == o.blob &&
+          account_id == o.account_id &&
+          reason == o.reason
     end
 
     # @see the `==` method
@@ -148,7 +214,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [mailbox_id, account_id, path, blob].hash
+      [mailbox_id, path, existing_file_policy, blob, account_id, reason].hash
     end
 
     # Builds the object from hash

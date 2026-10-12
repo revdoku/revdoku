@@ -1,5 +1,6 @@
 import com.revdoku.api.ApiClient;
 import com.revdoku.api.endpoints.DefaultApi;
+import java.util.HashSet;
 
 public class ListFiles {
     public static void main(String[] args) throws Exception {
@@ -9,14 +10,14 @@ public class ListFiles {
         String account = System.getenv("REVDOKU_ACCOUNT_ID");
         var client = new ApiClient().setRequestInterceptor(request -> request.header("Authorization", "Bearer " + key));
         var api = new DefaultApi(client);
-        int offset = 0;
+        String cursor = null;
+        var seen = new HashSet<String>();
         while (true) {
-            var page = api.listMailboxFiles(mailbox, 100, offset, null, null, null, account == null || account.isEmpty() ? null : account).getData();
+            var page = api.listFiles(mailbox, account == null || account.isEmpty() ? null : account, null, null, null, 100, cursor).getData();
             for (var file : page.getFiles()) System.out.println(client.getObjectMapper().writeValueAsString(file));
             if (!page.getPagination().getHasMore()) break;
-            Integer next = page.getPagination().getNextOffset();
-            if (next == null || next <= offset) throw new IllegalStateException("File pagination did not advance");
-            offset = next;
+            cursor = page.getPagination().getNextCursor();
+            if (cursor == null || cursor.isEmpty() || !seen.add(cursor)) throw new IllegalStateException("File pagination did not advance");
         }
     }
 }

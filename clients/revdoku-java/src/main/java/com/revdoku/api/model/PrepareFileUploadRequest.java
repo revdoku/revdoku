@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -23,6 +23,10 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.revdoku.api.model.UploadBlob;
 import java.util.Arrays;
+import org.openapitools.jackson.nullable.JsonNullable;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.openapitools.jackson.nullable.JsonNullable;
+import java.util.NoSuchElementException;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
@@ -31,9 +35,11 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  */
 @JsonPropertyOrder({
   PrepareFileUploadRequest.JSON_PROPERTY_MAILBOX_ID,
-  PrepareFileUploadRequest.JSON_PROPERTY_ACCOUNT_ID,
   PrepareFileUploadRequest.JSON_PROPERTY_PATH,
-  PrepareFileUploadRequest.JSON_PROPERTY_BLOB
+  PrepareFileUploadRequest.JSON_PROPERTY_EXISTING_FILE_POLICY,
+  PrepareFileUploadRequest.JSON_PROPERTY_BLOB,
+  PrepareFileUploadRequest.JSON_PROPERTY_ACCOUNT_ID,
+  PrepareFileUploadRequest.JSON_PROPERTY_REASON
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class PrepareFileUploadRequest {
@@ -41,17 +47,59 @@ public class PrepareFileUploadRequest {
   @javax.annotation.Nonnull
   private String mailboxId;
 
-  public static final String JSON_PROPERTY_ACCOUNT_ID = "account_id";
-  @javax.annotation.Nullable
-  private String accountId;
-
   public static final String JSON_PROPERTY_PATH = "path";
   @javax.annotation.Nonnull
   private String path;
 
+  /**
+   * skip returns the existing file without an upload when the path exists.
+   */
+  public enum ExistingFilePolicyEnum {
+    REPLACE(String.valueOf("replace")),
+    
+    SKIP(String.valueOf("skip"));
+
+    private String value;
+
+    ExistingFilePolicyEnum(String value) {
+      this.value = value;
+    }
+
+    @JsonValue
+    public String getValue() {
+      return value;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(value);
+    }
+
+    @JsonCreator
+    public static ExistingFilePolicyEnum fromValue(String value) {
+      for (ExistingFilePolicyEnum b : ExistingFilePolicyEnum.values()) {
+        if (b.value.equals(value)) {
+          return b;
+        }
+      }
+      throw new IllegalArgumentException("Unexpected value '" + value + "'");
+    }
+  }
+
+  public static final String JSON_PROPERTY_EXISTING_FILE_POLICY = "existing_file_policy";
+  @javax.annotation.Nullable
+  private ExistingFilePolicyEnum existingFilePolicy = ExistingFilePolicyEnum.REPLACE;
+
   public static final String JSON_PROPERTY_BLOB = "blob";
   @javax.annotation.Nonnull
   private UploadBlob blob;
+
+  public static final String JSON_PROPERTY_ACCOUNT_ID = "account_id";
+  @javax.annotation.Nullable
+  private String accountId;
+
+  public static final String JSON_PROPERTY_REASON = "reason";
+  private JsonNullable<String> reason = JsonNullable.<String>undefined();
 
   public PrepareFileUploadRequest() { 
   }
@@ -80,37 +128,13 @@ public class PrepareFileUploadRequest {
   }
 
 
-  public PrepareFileUploadRequest accountId(@javax.annotation.Nullable String accountId) {
-    this.accountId = accountId;
-    return this;
-  }
-
-  /**
-   * Get accountId
-   * @return accountId
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_ACCOUNT_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public String getAccountId() {
-    return accountId;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_ACCOUNT_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setAccountId(@javax.annotation.Nullable String accountId) {
-    this.accountId = accountId;
-  }
-
-
   public PrepareFileUploadRequest path(@javax.annotation.Nonnull String path) {
     this.path = path;
     return this;
   }
 
   /**
-   * Get path
+   * Destination path in the mailbox. Paths under _email/ return EMAIL_PATH_READ_ONLY.
    * @return path
    */
   @javax.annotation.Nonnull
@@ -125,6 +149,30 @@ public class PrepareFileUploadRequest {
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public void setPath(@javax.annotation.Nonnull String path) {
     this.path = path;
+  }
+
+
+  public PrepareFileUploadRequest existingFilePolicy(@javax.annotation.Nullable ExistingFilePolicyEnum existingFilePolicy) {
+    this.existingFilePolicy = existingFilePolicy;
+    return this;
+  }
+
+  /**
+   * skip returns the existing file without an upload when the path exists.
+   * @return existingFilePolicy
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_EXISTING_FILE_POLICY, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public ExistingFilePolicyEnum getExistingFilePolicy() {
+    return existingFilePolicy;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_EXISTING_FILE_POLICY, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setExistingFilePolicy(@javax.annotation.Nullable ExistingFilePolicyEnum existingFilePolicy) {
+    this.existingFilePolicy = existingFilePolicy;
   }
 
 
@@ -152,6 +200,62 @@ public class PrepareFileUploadRequest {
   }
 
 
+  public PrepareFileUploadRequest accountId(@javax.annotation.Nullable String accountId) {
+    this.accountId = accountId;
+    return this;
+  }
+
+  /**
+   * Get accountId
+   * @return accountId
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_ACCOUNT_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public String getAccountId() {
+    return accountId;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_ACCOUNT_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setAccountId(@javax.annotation.Nullable String accountId) {
+    this.accountId = accountId;
+  }
+
+
+  public PrepareFileUploadRequest reason(@javax.annotation.Nullable String reason) {
+    this.reason = JsonNullable.<String>of(reason);
+    return this;
+  }
+
+  /**
+   * Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
+   * @return reason
+   */
+  @javax.annotation.Nullable
+  @JsonIgnore
+  public String getReason() {
+        return reason.orElse(null);
+  }
+
+  @JsonProperty(value = JSON_PROPERTY_REASON, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public JsonNullable<String> getReason_JsonNullable() {
+    return reason;
+  }
+  
+  @JsonProperty(JSON_PROPERTY_REASON)
+  public void setReason_JsonNullable(JsonNullable<String> reason) {
+    this.reason = reason;
+  }
+
+  public void setReason(@javax.annotation.Nullable String reason) {
+    this.reason = JsonNullable.<String>of(reason);
+  }
+
+
   /**
    * Return true if this PrepareFileUploadRequest object is equal to o.
    */
@@ -165,14 +269,27 @@ public class PrepareFileUploadRequest {
     }
     PrepareFileUploadRequest prepareFileUploadRequest = (PrepareFileUploadRequest) o;
     return Objects.equals(this.mailboxId, prepareFileUploadRequest.mailboxId) &&
-        Objects.equals(this.accountId, prepareFileUploadRequest.accountId) &&
         Objects.equals(this.path, prepareFileUploadRequest.path) &&
-        Objects.equals(this.blob, prepareFileUploadRequest.blob);
+        Objects.equals(this.existingFilePolicy, prepareFileUploadRequest.existingFilePolicy) &&
+        Objects.equals(this.blob, prepareFileUploadRequest.blob) &&
+        Objects.equals(this.accountId, prepareFileUploadRequest.accountId) &&
+        equalsNullable(this.reason, prepareFileUploadRequest.reason);
+  }
+
+  private static <T> boolean equalsNullable(JsonNullable<T> a, JsonNullable<T> b) {
+    return a == b || (a != null && b != null && a.isPresent() && b.isPresent() && Objects.deepEquals(a.get(), b.get()));
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(mailboxId, accountId, path, blob);
+    return Objects.hash(mailboxId, path, existingFilePolicy, blob, accountId, hashCodeNullable(reason));
+  }
+
+  private static <T> int hashCodeNullable(JsonNullable<T> a) {
+    if (a == null) {
+      return 1;
+    }
+    return a.isPresent() ? Arrays.deepHashCode(new Object[]{a.get()}) : 31;
   }
 
   @Override
@@ -180,9 +297,11 @@ public class PrepareFileUploadRequest {
     StringBuilder sb = new StringBuilder();
     sb.append("class PrepareFileUploadRequest {\n");
     sb.append("    mailboxId: ").append(toIndentedString(mailboxId)).append("\n");
-    sb.append("    accountId: ").append(toIndentedString(accountId)).append("\n");
     sb.append("    path: ").append(toIndentedString(path)).append("\n");
+    sb.append("    existingFilePolicy: ").append(toIndentedString(existingFilePolicy)).append("\n");
     sb.append("    blob: ").append(toIndentedString(blob)).append("\n");
+    sb.append("    accountId: ").append(toIndentedString(accountId)).append("\n");
+    sb.append("    reason: ").append(toIndentedString(reason)).append("\n");
     sb.append("}");
     return sb.toString();
   }

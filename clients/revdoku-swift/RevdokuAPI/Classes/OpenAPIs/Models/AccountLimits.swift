@@ -24,6 +24,7 @@ public struct AccountLimits: Codable, JSONEncodable, Hashable {
     public static let maxReceivedEmailsPerMonthRule = NumericRule<Int>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
     public static let maxReceivedEmailBytesPerMonthRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
     public static let maxReceivedEmailMessageBytesRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
+    public static let maxSentEmailsPerMonthRule = NumericRule<Int>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
     public static let maxEmailAddressRotationsPerMonthRule = NumericRule<Int>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
     public static let maxAccountMembersRule = NumericRule<Int>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
     public static let maxApiKeysRule = NumericRule<Int>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
@@ -43,6 +44,8 @@ public struct AccountLimits: Codable, JSONEncodable, Hashable {
     public var maxReceivedEmailsPerMonth: Int?
     public var maxReceivedEmailBytesPerMonth: Int64?
     public var maxReceivedEmailMessageBytes: Int64?
+    /** Sent-email recipients per billing period, shared by the billing group. Each recipient counts once. */
+    public var maxSentEmailsPerMonth: Int?
     public var maxEmailAddressRotationsPerMonth: Int?
     public var maxAccountMembers: Int?
     public var maxApiKeys: Int?
@@ -52,7 +55,7 @@ public struct AccountLimits: Codable, JSONEncodable, Hashable {
     /** Active retained email addresses per mailbox; Free always has zero. */
     public var maxEmailAliasesPerMailbox: Int
 
-    public init(maxMailboxes: Int?, maxMailboxCreationsPerMonth: Int?, maxFilesPerMailbox: Int?, maxCurrentFiles: Int?, maxStorageBytes: Int64?, maxFileSizeBytes: Int64?, maxPdfSizeBytes: Int64?, maxFileVersionsPerFile: Int?, maxEmailDomains: Int?, maxReceivedEmailsPerMonth: Int?, maxReceivedEmailBytesPerMonth: Int64?, maxReceivedEmailMessageBytes: Int64?, maxEmailAddressRotationsPerMonth: Int?, maxAccountMembers: Int?, maxApiKeys: Int?, maxAgentConnections: Int?, apiRateLimitRequestsPerMinute: Int?, auditRetentionDays: Int?, maxEmailAliasesPerMailbox: Int) {
+    public init(maxMailboxes: Int?, maxMailboxCreationsPerMonth: Int?, maxFilesPerMailbox: Int?, maxCurrentFiles: Int?, maxStorageBytes: Int64?, maxFileSizeBytes: Int64?, maxPdfSizeBytes: Int64?, maxFileVersionsPerFile: Int?, maxEmailDomains: Int?, maxReceivedEmailsPerMonth: Int?, maxReceivedEmailBytesPerMonth: Int64?, maxReceivedEmailMessageBytes: Int64?, maxSentEmailsPerMonth: Int?, maxEmailAddressRotationsPerMonth: Int?, maxAccountMembers: Int?, maxApiKeys: Int?, maxAgentConnections: Int?, apiRateLimitRequestsPerMinute: Int?, auditRetentionDays: Int?, maxEmailAliasesPerMailbox: Int) {
         self.maxMailboxes = maxMailboxes
         self.maxMailboxCreationsPerMonth = maxMailboxCreationsPerMonth
         self.maxFilesPerMailbox = maxFilesPerMailbox
@@ -65,6 +68,7 @@ public struct AccountLimits: Codable, JSONEncodable, Hashable {
         self.maxReceivedEmailsPerMonth = maxReceivedEmailsPerMonth
         self.maxReceivedEmailBytesPerMonth = maxReceivedEmailBytesPerMonth
         self.maxReceivedEmailMessageBytes = maxReceivedEmailMessageBytes
+        self.maxSentEmailsPerMonth = maxSentEmailsPerMonth
         self.maxEmailAddressRotationsPerMonth = maxEmailAddressRotationsPerMonth
         self.maxAccountMembers = maxAccountMembers
         self.maxApiKeys = maxApiKeys
@@ -87,6 +91,7 @@ public struct AccountLimits: Codable, JSONEncodable, Hashable {
         case maxReceivedEmailsPerMonth = "max_received_emails_per_month"
         case maxReceivedEmailBytesPerMonth = "max_received_email_bytes_per_month"
         case maxReceivedEmailMessageBytes = "max_received_email_message_bytes"
+        case maxSentEmailsPerMonth = "max_sent_emails_per_month"
         case maxEmailAddressRotationsPerMonth = "max_email_address_rotations_per_month"
         case maxAccountMembers = "max_account_members"
         case maxApiKeys = "max_api_keys"
@@ -112,6 +117,7 @@ public struct AccountLimits: Codable, JSONEncodable, Hashable {
         try container.encode(maxReceivedEmailsPerMonth, forKey: .maxReceivedEmailsPerMonth)
         try container.encode(maxReceivedEmailBytesPerMonth, forKey: .maxReceivedEmailBytesPerMonth)
         try container.encode(maxReceivedEmailMessageBytes, forKey: .maxReceivedEmailMessageBytes)
+        try container.encode(maxSentEmailsPerMonth, forKey: .maxSentEmailsPerMonth)
         try container.encode(maxEmailAddressRotationsPerMonth, forKey: .maxEmailAddressRotationsPerMonth)
         try container.encode(maxAccountMembers, forKey: .maxAccountMembers)
         try container.encode(maxApiKeys, forKey: .maxApiKeys)

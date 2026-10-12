@@ -1,7 +1,7 @@
 /*
- * Revdoku public agent API
+ * Revdoku API
  *
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -17,18 +17,17 @@ pub struct MailboxLock {
     pub locked: bool,
     #[serde(rename = "locked_until", skip_serializing_if = "Option::is_none")]
     pub locked_until: Option<chrono::DateTime<chrono::FixedOffset>>,
+    /// For example mailbox_delete while a permanent delete runs.
     #[serde(rename = "kind", skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
-    #[serde(rename = "mailbox_upload_session_id", skip_serializing_if = "Option::is_none")]
-    pub mailbox_upload_session_id: Option<String>,
     #[serde(rename = "message", skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[serde(rename = "progress", skip_serializing_if = "Option::is_none")]
     pub progress: Option<std::collections::HashMap<String, serde_json::Value>>,
     #[serde(rename = "locked_by", skip_serializing_if = "Option::is_none")]
-    pub locked_by: Option<Box<models::MailboxLockLockedBy>>,
+    pub locked_by: Option<Box<models::FileActor>>,
     #[serde(rename = "locked_by_api_key", skip_serializing_if = "Option::is_none")]
-    pub locked_by_api_key: Option<Box<models::MailboxLockLockedByApiKey>>,
+    pub locked_by_api_key: Option<Box<models::FileKey>>,
 }
 
 impl MailboxLock {
@@ -37,7 +36,6 @@ impl MailboxLock {
             locked,
             locked_until: None,
             kind: None,
-            mailbox_upload_session_id: None,
             message: None,
             progress: None,
             locked_by: None,

@@ -1,8 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -13,13 +13,13 @@
  */
 
 import { mapValues } from '../runtime';
-import type { GetEmailSubscription200ResponseDataSubscription } from './GetEmailSubscription200ResponseDataSubscription';
+import type { EmailSubscription } from './EmailSubscription';
 import {
-    GetEmailSubscription200ResponseDataSubscriptionFromJSON,
-    GetEmailSubscription200ResponseDataSubscriptionFromJSONTyped,
-    GetEmailSubscription200ResponseDataSubscriptionToJSON,
-    GetEmailSubscription200ResponseDataSubscriptionToJSONTyped,
-} from './GetEmailSubscription200ResponseDataSubscription';
+    EmailSubscriptionFromJSON,
+    EmailSubscriptionFromJSONTyped,
+    EmailSubscriptionToJSON,
+    EmailSubscriptionToJSONTyped,
+} from './EmailSubscription';
 
 /**
  * 
@@ -30,7 +30,7 @@ export interface GetEmailSubscription200ResponseData {
     /**
      * 
      */
-    subscription: GetEmailSubscription200ResponseDataSubscription;
+    subscription: EmailSubscription;
 }
 
 /**
@@ -51,7 +51,7 @@ export function GetEmailSubscription200ResponseDataFromJSONTyped(json: any, igno
     }
     return {
         
-        'subscription': GetEmailSubscription200ResponseDataSubscriptionFromJSON(json['subscription']),
+        'subscription': EmailSubscriptionFromJSON(json['subscription']),
     };
 }
 
@@ -66,7 +66,7 @@ export function GetEmailSubscription200ResponseDataToJSONTyped(value?: GetEmailS
 
     return {
         
-        'subscription': GetEmailSubscription200ResponseDataSubscriptionToJSON(value['subscription']),
+        'subscription': EmailSubscriptionToJSON(value['subscription']),
     };
 }
 

@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -17,25 +17,20 @@ module RevdokuApi
   class EmailDomainList < ApiModelBase
     attr_accessor :domains
 
+    # Whether this account can use custom email domains.
     attr_accessor :enabled
 
-    attr_accessor :configured
-
-    attr_accessor :limit
-
-    attr_accessor :usage
-
     attr_accessor :guidance
+
+    attr_accessor :pagination
 
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
         :'domains' => :'domains',
         :'enabled' => :'enabled',
-        :'configured' => :'configured',
-        :'limit' => :'limit',
-        :'usage' => :'usage',
-        :'guidance' => :'guidance'
+        :'guidance' => :'guidance',
+        :'pagination' => :'pagination'
       }
     end
 
@@ -54,10 +49,8 @@ module RevdokuApi
       {
         :'domains' => :'Array<EmailDomain>',
         :'enabled' => :'Boolean',
-        :'configured' => :'Boolean',
-        :'limit' => :'Integer',
-        :'usage' => :'EmailUsage',
-        :'guidance' => :'String'
+        :'guidance' => :'String',
+        :'pagination' => :'Pagination'
       }
     end
 
@@ -93,22 +86,18 @@ module RevdokuApi
 
       if attributes.key?(:'enabled')
         self.enabled = attributes[:'enabled']
-      end
-
-      if attributes.key?(:'configured')
-        self.configured = attributes[:'configured']
-      end
-
-      if attributes.key?(:'limit')
-        self.limit = attributes[:'limit']
-      end
-
-      if attributes.key?(:'usage')
-        self.usage = attributes[:'usage']
+      else
+        self.enabled = nil
       end
 
       if attributes.key?(:'guidance')
         self.guidance = attributes[:'guidance']
+      end
+
+      if attributes.key?(:'pagination')
+        self.pagination = attributes[:'pagination']
+      else
+        self.pagination = nil
       end
     end
 
@@ -122,6 +111,26 @@ module RevdokuApi
       @domains = domains
     end
 
+    # Custom attribute writer method with validation
+    # @param [Object] enabled Value to be assigned
+    def enabled=(enabled)
+      if enabled.nil?
+        fail ArgumentError, 'enabled cannot be nil'
+      end
+
+      @enabled = enabled
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] pagination Value to be assigned
+    def pagination=(pagination)
+      if pagination.nil?
+        fail ArgumentError, 'pagination cannot be nil'
+      end
+
+      @pagination = pagination
+    end
+
     # Checks equality by comparing each attribute.
     # @param [Object] Object to be compared
     def ==(o)
@@ -129,10 +138,8 @@ module RevdokuApi
       self.class == o.class &&
           domains == o.domains &&
           enabled == o.enabled &&
-          configured == o.configured &&
-          limit == o.limit &&
-          usage == o.usage &&
-          guidance == o.guidance
+          guidance == o.guidance &&
+          pagination == o.pagination
     end
 
     # @see the `==` method
@@ -144,7 +151,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [domains, enabled, configured, limit, usage, guidance].hash
+      [domains, enabled, guidance, pagination].hash
     end
 
     # Builds the object from hash

@@ -26,8 +26,7 @@ public func readEmails() async throws {
             print(String(decoding: try JSONEncoder().encode(detail.data.email), as: UTF8.self))
         }
         if !response.data.pagination.hasMore { break }
-        let next = response.data.pagination.nextCursor
-        guard !next.isEmpty, seen.insert(next).inserted else { throw ExampleError.pagination }
+        guard let next = response.data.pagination.nextCursor, !next.isEmpty, seen.insert(next).inserted else { throw ExampleError.pagination }
         cursor = next
     }
     // Reading does not change shared read/unread status.

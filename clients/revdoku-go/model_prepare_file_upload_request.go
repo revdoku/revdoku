@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -21,9 +21,14 @@ var _ MappedNullable = &PrepareFileUploadRequest{}
 // PrepareFileUploadRequest struct for PrepareFileUploadRequest
 type PrepareFileUploadRequest struct {
 	MailboxId string `json:"mailbox_id"`
-	AccountId *string `json:"account_id,omitempty"`
+	// Destination path in the mailbox. Paths under _email/ return EMAIL_PATH_READ_ONLY.
 	Path string `json:"path"`
+	// skip returns the existing file without an upload when the path exists.
+	ExistingFilePolicy *string `json:"existing_file_policy,omitempty"`
 	Blob UploadBlob `json:"blob"`
+	AccountId *string `json:"account_id,omitempty"`
+	// Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
+	Reason NullableString `json:"reason,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -37,6 +42,8 @@ func NewPrepareFileUploadRequest(mailboxId string, path string, blob UploadBlob)
 	this := PrepareFileUploadRequest{}
 	this.MailboxId = mailboxId
 	this.Path = path
+	var existingFilePolicy string = "replace"
+	this.ExistingFilePolicy = &existingFilePolicy
 	this.Blob = blob
 	return &this
 }
@@ -46,6 +53,8 @@ func NewPrepareFileUploadRequest(mailboxId string, path string, blob UploadBlob)
 // but it doesn't guarantee that properties required by API are set
 func NewPrepareFileUploadRequestWithDefaults() *PrepareFileUploadRequest {
 	this := PrepareFileUploadRequest{}
+	var existingFilePolicy string = "replace"
+	this.ExistingFilePolicy = &existingFilePolicy
 	return &this
 }
 
@@ -71,6 +80,86 @@ func (o *PrepareFileUploadRequest) GetMailboxIdOk() (*string, bool) {
 // SetMailboxId sets field value
 func (o *PrepareFileUploadRequest) SetMailboxId(v string) {
 	o.MailboxId = v
+}
+
+// GetPath returns the Path field value
+func (o *PrepareFileUploadRequest) GetPath() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Path
+}
+
+// GetPathOk returns a tuple with the Path field value
+// and a boolean to check if the value has been set.
+func (o *PrepareFileUploadRequest) GetPathOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Path, true
+}
+
+// SetPath sets field value
+func (o *PrepareFileUploadRequest) SetPath(v string) {
+	o.Path = v
+}
+
+// GetExistingFilePolicy returns the ExistingFilePolicy field value if set, zero value otherwise.
+func (o *PrepareFileUploadRequest) GetExistingFilePolicy() string {
+	if o == nil || IsNil(o.ExistingFilePolicy) {
+		var ret string
+		return ret
+	}
+	return *o.ExistingFilePolicy
+}
+
+// GetExistingFilePolicyOk returns a tuple with the ExistingFilePolicy field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *PrepareFileUploadRequest) GetExistingFilePolicyOk() (*string, bool) {
+	if o == nil || IsNil(o.ExistingFilePolicy) {
+		return nil, false
+	}
+	return o.ExistingFilePolicy, true
+}
+
+// HasExistingFilePolicy returns a boolean if a field has been set.
+func (o *PrepareFileUploadRequest) HasExistingFilePolicy() bool {
+	if o != nil && !IsNil(o.ExistingFilePolicy) {
+		return true
+	}
+
+	return false
+}
+
+// SetExistingFilePolicy gets a reference to the given string and assigns it to the ExistingFilePolicy field.
+func (o *PrepareFileUploadRequest) SetExistingFilePolicy(v string) {
+	o.ExistingFilePolicy = &v
+}
+
+// GetBlob returns the Blob field value
+func (o *PrepareFileUploadRequest) GetBlob() UploadBlob {
+	if o == nil {
+		var ret UploadBlob
+		return ret
+	}
+
+	return o.Blob
+}
+
+// GetBlobOk returns a tuple with the Blob field value
+// and a boolean to check if the value has been set.
+func (o *PrepareFileUploadRequest) GetBlobOk() (*UploadBlob, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Blob, true
+}
+
+// SetBlob sets field value
+func (o *PrepareFileUploadRequest) SetBlob(v UploadBlob) {
+	o.Blob = v
 }
 
 // GetAccountId returns the AccountId field value if set, zero value otherwise.
@@ -105,52 +194,46 @@ func (o *PrepareFileUploadRequest) SetAccountId(v string) {
 	o.AccountId = &v
 }
 
-// GetPath returns the Path field value
-func (o *PrepareFileUploadRequest) GetPath() string {
-	if o == nil {
+// GetReason returns the Reason field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *PrepareFileUploadRequest) GetReason() string {
+	if o == nil || IsNil(o.Reason.Get()) {
 		var ret string
 		return ret
 	}
-
-	return o.Path
+	return *o.Reason.Get()
 }
 
-// GetPathOk returns a tuple with the Path field value
+// GetReasonOk returns a tuple with the Reason field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *PrepareFileUploadRequest) GetPathOk() (*string, bool) {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *PrepareFileUploadRequest) GetReasonOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Path, true
+	return o.Reason.Get(), o.Reason.IsSet()
 }
 
-// SetPath sets field value
-func (o *PrepareFileUploadRequest) SetPath(v string) {
-	o.Path = v
-}
-
-// GetBlob returns the Blob field value
-func (o *PrepareFileUploadRequest) GetBlob() UploadBlob {
-	if o == nil {
-		var ret UploadBlob
-		return ret
+// HasReason returns a boolean if a field has been set.
+func (o *PrepareFileUploadRequest) HasReason() bool {
+	if o != nil && o.Reason.IsSet() {
+		return true
 	}
 
-	return o.Blob
+	return false
 }
 
-// GetBlobOk returns a tuple with the Blob field value
-// and a boolean to check if the value has been set.
-func (o *PrepareFileUploadRequest) GetBlobOk() (*UploadBlob, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Blob, true
+// SetReason gets a reference to the given NullableString and assigns it to the Reason field.
+func (o *PrepareFileUploadRequest) SetReason(v string) {
+	o.Reason.Set(&v)
+}
+// SetReasonNil sets the value for Reason to be an explicit nil
+func (o *PrepareFileUploadRequest) SetReasonNil() {
+	o.Reason.Set(nil)
 }
 
-// SetBlob sets field value
-func (o *PrepareFileUploadRequest) SetBlob(v UploadBlob) {
-	o.Blob = v
+// UnsetReason ensures that no value is present for Reason, not even an explicit nil
+func (o *PrepareFileUploadRequest) UnsetReason() {
+	o.Reason.Unset()
 }
 
 func (o PrepareFileUploadRequest) MarshalJSON() ([]byte, error) {
@@ -164,11 +247,17 @@ func (o PrepareFileUploadRequest) MarshalJSON() ([]byte, error) {
 func (o PrepareFileUploadRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["mailbox_id"] = o.MailboxId
+	toSerialize["path"] = o.Path
+	if !IsNil(o.ExistingFilePolicy) {
+		toSerialize["existing_file_policy"] = o.ExistingFilePolicy
+	}
+	toSerialize["blob"] = o.Blob
 	if !IsNil(o.AccountId) {
 		toSerialize["account_id"] = o.AccountId
 	}
-	toSerialize["path"] = o.Path
-	toSerialize["blob"] = o.Blob
+	if o.Reason.IsSet() {
+		toSerialize["reason"] = o.Reason.Get()
+	}
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -215,9 +304,11 @@ func (o *PrepareFileUploadRequest) UnmarshalJSON(data []byte) (err error) {
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "mailbox_id")
-		delete(additionalProperties, "account_id")
 		delete(additionalProperties, "path")
+		delete(additionalProperties, "existing_file_policy")
 		delete(additionalProperties, "blob")
+		delete(additionalProperties, "account_id")
+		delete(additionalProperties, "reason")
 		o.AdditionalProperties = additionalProperties
 	}
 

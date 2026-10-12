@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -21,9 +21,11 @@ var _ MappedNullable = &SetEmailWebhookRequest{}
 // SetEmailWebhookRequest struct for SetEmailWebhookRequest
 type SetEmailWebhookRequest struct {
 	WebhookUrl string `json:"webhook_url"`
-	AccountId *string `json:"account_id,omitempty"`
-	// Rotate the secret for the same endpoint and cancel pending deliveries.
 	RotateSecret *bool `json:"rotate_secret,omitempty"`
+	// Select another granted account for this request.
+	AccountId *string `json:"account_id,omitempty"`
+	// Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
+	Reason NullableString `json:"reason,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -75,38 +77,6 @@ func (o *SetEmailWebhookRequest) SetWebhookUrl(v string) {
 	o.WebhookUrl = v
 }
 
-// GetAccountId returns the AccountId field value if set, zero value otherwise.
-func (o *SetEmailWebhookRequest) GetAccountId() string {
-	if o == nil || IsNil(o.AccountId) {
-		var ret string
-		return ret
-	}
-	return *o.AccountId
-}
-
-// GetAccountIdOk returns a tuple with the AccountId field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *SetEmailWebhookRequest) GetAccountIdOk() (*string, bool) {
-	if o == nil || IsNil(o.AccountId) {
-		return nil, false
-	}
-	return o.AccountId, true
-}
-
-// HasAccountId returns a boolean if a field has been set.
-func (o *SetEmailWebhookRequest) HasAccountId() bool {
-	if o != nil && !IsNil(o.AccountId) {
-		return true
-	}
-
-	return false
-}
-
-// SetAccountId gets a reference to the given string and assigns it to the AccountId field.
-func (o *SetEmailWebhookRequest) SetAccountId(v string) {
-	o.AccountId = &v
-}
-
 // GetRotateSecret returns the RotateSecret field value if set, zero value otherwise.
 func (o *SetEmailWebhookRequest) GetRotateSecret() bool {
 	if o == nil || IsNil(o.RotateSecret) {
@@ -139,6 +109,80 @@ func (o *SetEmailWebhookRequest) SetRotateSecret(v bool) {
 	o.RotateSecret = &v
 }
 
+// GetAccountId returns the AccountId field value if set, zero value otherwise.
+func (o *SetEmailWebhookRequest) GetAccountId() string {
+	if o == nil || IsNil(o.AccountId) {
+		var ret string
+		return ret
+	}
+	return *o.AccountId
+}
+
+// GetAccountIdOk returns a tuple with the AccountId field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SetEmailWebhookRequest) GetAccountIdOk() (*string, bool) {
+	if o == nil || IsNil(o.AccountId) {
+		return nil, false
+	}
+	return o.AccountId, true
+}
+
+// HasAccountId returns a boolean if a field has been set.
+func (o *SetEmailWebhookRequest) HasAccountId() bool {
+	if o != nil && !IsNil(o.AccountId) {
+		return true
+	}
+
+	return false
+}
+
+// SetAccountId gets a reference to the given string and assigns it to the AccountId field.
+func (o *SetEmailWebhookRequest) SetAccountId(v string) {
+	o.AccountId = &v
+}
+
+// GetReason returns the Reason field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *SetEmailWebhookRequest) GetReason() string {
+	if o == nil || IsNil(o.Reason.Get()) {
+		var ret string
+		return ret
+	}
+	return *o.Reason.Get()
+}
+
+// GetReasonOk returns a tuple with the Reason field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *SetEmailWebhookRequest) GetReasonOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Reason.Get(), o.Reason.IsSet()
+}
+
+// HasReason returns a boolean if a field has been set.
+func (o *SetEmailWebhookRequest) HasReason() bool {
+	if o != nil && o.Reason.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetReason gets a reference to the given NullableString and assigns it to the Reason field.
+func (o *SetEmailWebhookRequest) SetReason(v string) {
+	o.Reason.Set(&v)
+}
+// SetReasonNil sets the value for Reason to be an explicit nil
+func (o *SetEmailWebhookRequest) SetReasonNil() {
+	o.Reason.Set(nil)
+}
+
+// UnsetReason ensures that no value is present for Reason, not even an explicit nil
+func (o *SetEmailWebhookRequest) UnsetReason() {
+	o.Reason.Unset()
+}
+
 func (o SetEmailWebhookRequest) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -150,11 +194,14 @@ func (o SetEmailWebhookRequest) MarshalJSON() ([]byte, error) {
 func (o SetEmailWebhookRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["webhook_url"] = o.WebhookUrl
+	if !IsNil(o.RotateSecret) {
+		toSerialize["rotate_secret"] = o.RotateSecret
+	}
 	if !IsNil(o.AccountId) {
 		toSerialize["account_id"] = o.AccountId
 	}
-	if !IsNil(o.RotateSecret) {
-		toSerialize["rotate_secret"] = o.RotateSecret
+	if o.Reason.IsSet() {
+		toSerialize["reason"] = o.Reason.Get()
 	}
 
 	for key, value := range o.AdditionalProperties {
@@ -200,8 +247,9 @@ func (o *SetEmailWebhookRequest) UnmarshalJSON(data []byte) (err error) {
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "webhook_url")
-		delete(additionalProperties, "account_id")
 		delete(additionalProperties, "rotate_secret")
+		delete(additionalProperties, "account_id")
+		delete(additionalProperties, "reason")
 		o.AdditionalProperties = additionalProperties
 	}
 

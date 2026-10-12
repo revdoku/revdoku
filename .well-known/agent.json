@@ -31,7 +31,7 @@
     "List messages with polling cursors, read decoded email, and download originals and attachments with email tools",
     "Store documents, data, and source files in private cloud mailboxes",
     "Share mailbox files with authorized people and AI connections",
-    "Read, write, and append shared files; coordinate edits with locks and revision checks",
+    "Read, write, and append shared files; detect concurrent edits with version checks",
     "Inspect versions and change history; restore earlier files"
   ],
   "discovery": {

@@ -13,21 +13,26 @@ import AnyCodable
 public struct SetEmailWebhookRequest: Codable, JSONEncodable, Hashable {
 
     public static let webhookUrlRule = StringRule(minLength: nil, maxLength: 2048, pattern: nil)
+    public static let reasonRule = StringRule(minLength: nil, maxLength: 2000, pattern: nil)
     public var webhookUrl: String
-    public var accountId: String?
-    /** Rotate the secret for the same endpoint and cancel pending deliveries. */
     public var rotateSecret: Bool? = false
+    /** Select another granted account for this request. */
+    public var accountId: String?
+    /** Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. */
+    public var reason: String?
 
-    public init(webhookUrl: String, accountId: String? = nil, rotateSecret: Bool? = false) {
+    public init(webhookUrl: String, rotateSecret: Bool? = false, accountId: String? = nil, reason: String? = nil) {
         self.webhookUrl = webhookUrl
-        self.accountId = accountId
         self.rotateSecret = rotateSecret
+        self.accountId = accountId
+        self.reason = reason
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case webhookUrl = "webhook_url"
-        case accountId = "account_id"
         case rotateSecret = "rotate_secret"
+        case accountId = "account_id"
+        case reason
     }
 
     // Encodable protocol methods
@@ -35,8 +40,9 @@ public struct SetEmailWebhookRequest: Codable, JSONEncodable, Hashable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(webhookUrl, forKey: .webhookUrl)
-        try container.encodeIfPresent(accountId, forKey: .accountId)
         try container.encodeIfPresent(rotateSecret, forKey: .rotateSecret)
+        try container.encodeIfPresent(accountId, forKey: .accountId)
+        try container.encodeIfPresent(reason, forKey: .reason)
     }
 }
 

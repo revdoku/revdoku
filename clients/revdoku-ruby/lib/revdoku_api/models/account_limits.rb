@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -39,6 +39,9 @@ module RevdokuApi
 
     attr_accessor :max_received_email_message_bytes
 
+    # Sent-email recipients per billing period, shared by the billing group. Each recipient counts once.
+    attr_accessor :max_sent_emails_per_month
+
     attr_accessor :max_email_address_rotations_per_month
 
     attr_accessor :max_account_members
@@ -69,6 +72,7 @@ module RevdokuApi
         :'max_received_emails_per_month' => :'max_received_emails_per_month',
         :'max_received_email_bytes_per_month' => :'max_received_email_bytes_per_month',
         :'max_received_email_message_bytes' => :'max_received_email_message_bytes',
+        :'max_sent_emails_per_month' => :'max_sent_emails_per_month',
         :'max_email_address_rotations_per_month' => :'max_email_address_rotations_per_month',
         :'max_account_members' => :'max_account_members',
         :'max_api_keys' => :'max_api_keys',
@@ -104,6 +108,7 @@ module RevdokuApi
         :'max_received_emails_per_month' => :'Integer',
         :'max_received_email_bytes_per_month' => :'Integer',
         :'max_received_email_message_bytes' => :'Integer',
+        :'max_sent_emails_per_month' => :'Integer',
         :'max_email_address_rotations_per_month' => :'Integer',
         :'max_account_members' => :'Integer',
         :'max_api_keys' => :'Integer',
@@ -129,6 +134,7 @@ module RevdokuApi
         :'max_received_emails_per_month',
         :'max_received_email_bytes_per_month',
         :'max_received_email_message_bytes',
+        :'max_sent_emails_per_month',
         :'max_email_address_rotations_per_month',
         :'max_account_members',
         :'max_api_keys',
@@ -224,6 +230,12 @@ module RevdokuApi
         self.max_received_email_message_bytes = attributes[:'max_received_email_message_bytes']
       else
         self.max_received_email_message_bytes = nil
+      end
+
+      if attributes.key?(:'max_sent_emails_per_month')
+        self.max_sent_emails_per_month = attributes[:'max_sent_emails_per_month']
+      else
+        self.max_sent_emails_per_month = nil
       end
 
       if attributes.key?(:'max_email_address_rotations_per_month')
@@ -390,6 +402,16 @@ module RevdokuApi
     end
 
     # Custom attribute writer method with validation
+    # @param [Object] max_sent_emails_per_month Value to be assigned
+    def max_sent_emails_per_month=(max_sent_emails_per_month)
+      if !max_sent_emails_per_month.nil? && max_sent_emails_per_month < 0
+        fail ArgumentError, 'invalid value for "max_sent_emails_per_month", must be greater than or equal to 0.'
+      end
+
+      @max_sent_emails_per_month = max_sent_emails_per_month
+    end
+
+    # Custom attribute writer method with validation
     # @param [Object] max_email_address_rotations_per_month Value to be assigned
     def max_email_address_rotations_per_month=(max_email_address_rotations_per_month)
       if !max_email_address_rotations_per_month.nil? && max_email_address_rotations_per_month < 0
@@ -480,6 +502,7 @@ module RevdokuApi
           max_received_emails_per_month == o.max_received_emails_per_month &&
           max_received_email_bytes_per_month == o.max_received_email_bytes_per_month &&
           max_received_email_message_bytes == o.max_received_email_message_bytes &&
+          max_sent_emails_per_month == o.max_sent_emails_per_month &&
           max_email_address_rotations_per_month == o.max_email_address_rotations_per_month &&
           max_account_members == o.max_account_members &&
           max_api_keys == o.max_api_keys &&
@@ -498,7 +521,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [max_mailboxes, max_mailbox_creations_per_month, max_files_per_mailbox, max_current_files, max_storage_bytes, max_file_size_bytes, max_pdf_size_bytes, max_file_versions_per_file, max_email_domains, max_received_emails_per_month, max_received_email_bytes_per_month, max_received_email_message_bytes, max_email_address_rotations_per_month, max_account_members, max_api_keys, max_agent_connections, api_rate_limit_requests_per_minute, audit_retention_days, max_email_aliases_per_mailbox].hash
+      [max_mailboxes, max_mailbox_creations_per_month, max_files_per_mailbox, max_current_files, max_storage_bytes, max_file_size_bytes, max_pdf_size_bytes, max_file_versions_per_file, max_email_domains, max_received_emails_per_month, max_received_email_bytes_per_month, max_received_email_message_bytes, max_sent_emails_per_month, max_email_address_rotations_per_month, max_account_members, max_api_keys, max_agent_connections, api_rate_limit_requests_per_minute, audit_retention_days, max_email_aliases_per_mailbox].hash
     end
 
     # Builds the object from hash

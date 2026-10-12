@@ -13,10 +13,7 @@ part of revdoku.api;
 class EmailSummary {
   /// Returns a new [EmailSummary] instance.
   EmailSummary({
-    this.schemaVersion,
     this.subject,
-    this.from,
-    this.to,
     this.fromAddresses = const [],
     this.toAddresses = const [],
     this.ccAddresses = const [],
@@ -24,13 +21,14 @@ class EmailSummary {
     this.messageId,
     this.inReplyTo = const [],
     this.references = const [],
-    this.threadId,
     this.deliveredTo,
     required this.receivedAt,
     this.bodyStatus,
     this.omittedAttachmentCount,
     required this.id,
     required this.conversationId,
+    required this.direction,
+    this.delivery,
     this.fileId,
     this.versionId,
     required this.attachmentCount,
@@ -40,17 +38,9 @@ class EmailSummary {
     required this.readByApiKey,
     this.files,
     this.forwarding,
-    this.cc,
-    this.replyTo,
   });
 
-  EmailSummarySchemaVersionEnum? schemaVersion;
-
   String? subject;
-
-  String? from;
-
-  String? to;
 
   /// Parsed From authors in header order, retaining multiple authors. Empty when absent/unparseable. Display names are not identity keys.
   List<DecodedEmailAddress> fromAddresses;
@@ -73,9 +63,6 @@ class EmailSummary {
   /// Ordered References IDs without angle brackets, preserving case. Empty when absent/unparseable.
   List<String> references;
 
-  /// thr_ plus SHA-256 of thread_anchor_message_id. Best-effort header-derived grouping hint, not authoritative conversation membership or an access grant. Missing ancestry or reused IDs can split/merge hints. Scope lookups to accessible mailboxes.
-  String? threadId;
-
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated
@@ -84,6 +71,7 @@ class EmailSummary {
   ///
   String? deliveredTo;
 
+  /// Receipt time. For sent emails, the time Revdoku accepted the send.
   DateTime receivedAt;
 
   EmailSummaryBodyStatusEnum? bodyStatus;
@@ -99,7 +87,19 @@ class EmailSummary {
 
   String id;
 
+  /// Email ID that identifies the conversation. Replies are linked by email headers. Filter a list with conversation_id.
   String conversationId;
+
+  /// received for incoming email; sent for email sent from this mailbox.
+  EmailSummaryDirectionEnum direction;
+
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  EmailDelivery? delivery;
 
   /// Included only with include_storage=true for file-browser integration.
   ///
@@ -146,18 +146,9 @@ class EmailSummary {
   ///
   EmailForwarding? forwarding;
 
-  /// Decoded Cc header; use the corresponding parsed address array for individual addresses.
-  String? cc;
-
-  /// Decoded Reply-To header; use the corresponding parsed address array for individual addresses.
-  String? replyTo;
-
   @override
   bool operator ==(Object other) => identical(this, other) || other is EmailSummary &&
-    other.schemaVersion == schemaVersion &&
     other.subject == subject &&
-    other.from == from &&
-    other.to == to &&
     _deepEquality.equals(other.fromAddresses, fromAddresses) &&
     _deepEquality.equals(other.toAddresses, toAddresses) &&
     _deepEquality.equals(other.ccAddresses, ccAddresses) &&
@@ -165,13 +156,14 @@ class EmailSummary {
     other.messageId == messageId &&
     _deepEquality.equals(other.inReplyTo, inReplyTo) &&
     _deepEquality.equals(other.references, references) &&
-    other.threadId == threadId &&
     other.deliveredTo == deliveredTo &&
     other.receivedAt == receivedAt &&
     other.bodyStatus == bodyStatus &&
     other.omittedAttachmentCount == omittedAttachmentCount &&
     other.id == id &&
     other.conversationId == conversationId &&
+    other.direction == direction &&
+    other.delivery == delivery &&
     other.fileId == fileId &&
     other.versionId == versionId &&
     other.attachmentCount == attachmentCount &&
@@ -180,17 +172,12 @@ class EmailSummary {
     other.readBy == readBy &&
     other.readByApiKey == readByApiKey &&
     other.files == files &&
-    other.forwarding == forwarding &&
-    other.cc == cc &&
-    other.replyTo == replyTo;
+    other.forwarding == forwarding;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (schemaVersion == null ? 0 : schemaVersion!.hashCode) +
     (subject == null ? 0 : subject!.hashCode) +
-    (from == null ? 0 : from!.hashCode) +
-    (to == null ? 0 : to!.hashCode) +
     (fromAddresses.hashCode) +
     (toAddresses.hashCode) +
     (ccAddresses.hashCode) +
@@ -198,13 +185,14 @@ class EmailSummary {
     (messageId == null ? 0 : messageId!.hashCode) +
     (inReplyTo.hashCode) +
     (references.hashCode) +
-    (threadId == null ? 0 : threadId!.hashCode) +
     (deliveredTo == null ? 0 : deliveredTo!.hashCode) +
     (receivedAt.hashCode) +
     (bodyStatus == null ? 0 : bodyStatus!.hashCode) +
     (omittedAttachmentCount == null ? 0 : omittedAttachmentCount!.hashCode) +
     (id.hashCode) +
     (conversationId.hashCode) +
+    (direction.hashCode) +
+    (delivery == null ? 0 : delivery!.hashCode) +
     (fileId == null ? 0 : fileId!.hashCode) +
     (versionId == null ? 0 : versionId!.hashCode) +
     (attachmentCount.hashCode) +
@@ -213,32 +201,17 @@ class EmailSummary {
     (readBy == null ? 0 : readBy!.hashCode) +
     (readByApiKey == null ? 0 : readByApiKey!.hashCode) +
     (files == null ? 0 : files!.hashCode) +
-    (forwarding == null ? 0 : forwarding!.hashCode) +
-    (cc == null ? 0 : cc!.hashCode) +
-    (replyTo == null ? 0 : replyTo!.hashCode);
+    (forwarding == null ? 0 : forwarding!.hashCode);
 
   @override
-  String toString() => 'EmailSummary[schemaVersion=$schemaVersion, subject=$subject, from=$from, to=$to, fromAddresses=$fromAddresses, toAddresses=$toAddresses, ccAddresses=$ccAddresses, replyToAddresses=$replyToAddresses, messageId=$messageId, inReplyTo=$inReplyTo, references=$references, threadId=$threadId, deliveredTo=$deliveredTo, receivedAt=$receivedAt, bodyStatus=$bodyStatus, omittedAttachmentCount=$omittedAttachmentCount, id=$id, conversationId=$conversationId, fileId=$fileId, versionId=$versionId, attachmentCount=$attachmentCount, read=$read, readAt=$readAt, readBy=$readBy, readByApiKey=$readByApiKey, files=$files, forwarding=$forwarding, cc=$cc, replyTo=$replyTo]';
+  String toString() => 'EmailSummary[subject=$subject, fromAddresses=$fromAddresses, toAddresses=$toAddresses, ccAddresses=$ccAddresses, replyToAddresses=$replyToAddresses, messageId=$messageId, inReplyTo=$inReplyTo, references=$references, deliveredTo=$deliveredTo, receivedAt=$receivedAt, bodyStatus=$bodyStatus, omittedAttachmentCount=$omittedAttachmentCount, id=$id, conversationId=$conversationId, direction=$direction, delivery=$delivery, fileId=$fileId, versionId=$versionId, attachmentCount=$attachmentCount, read=$read, readAt=$readAt, readBy=$readBy, readByApiKey=$readByApiKey, files=$files, forwarding=$forwarding]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-    if (this.schemaVersion != null) {
-      json[r'schema_version'] = this.schemaVersion;
-    }
     if (this.subject != null) {
       json[r'subject'] = this.subject;
     } else {
       json[r'subject'] = null;
-    }
-    if (this.from != null) {
-      json[r'from'] = this.from;
-    } else {
-      json[r'from'] = null;
-    }
-    if (this.to != null) {
-      json[r'to'] = this.to;
-    } else {
-      json[r'to'] = null;
     }
       json[r'from_addresses'] = this.fromAddresses;
       json[r'to_addresses'] = this.toAddresses;
@@ -251,11 +224,6 @@ class EmailSummary {
     }
       json[r'in_reply_to'] = this.inReplyTo;
       json[r'references'] = this.references;
-    if (this.threadId != null) {
-      json[r'thread_id'] = this.threadId;
-    } else {
-      json[r'thread_id'] = null;
-    }
     if (this.deliveredTo != null) {
       json[r'delivered_to'] = this.deliveredTo;
     }
@@ -268,6 +236,10 @@ class EmailSummary {
     }
       json[r'id'] = this.id;
       json[r'conversation_id'] = this.conversationId;
+      json[r'direction'] = this.direction;
+    if (this.delivery != null) {
+      json[r'delivery'] = this.delivery;
+    }
     if (this.fileId != null) {
       json[r'file_id'] = this.fileId;
     }
@@ -297,16 +269,6 @@ class EmailSummary {
     if (this.forwarding != null) {
       json[r'forwarding'] = this.forwarding;
     }
-    if (this.cc != null) {
-      json[r'cc'] = this.cc;
-    } else {
-      json[r'cc'] = null;
-    }
-    if (this.replyTo != null) {
-      json[r'reply_to'] = this.replyTo;
-    } else {
-      json[r'reply_to'] = null;
-    }
     return json;
   }
 
@@ -327,6 +289,8 @@ class EmailSummary {
         assert(json[r'id'] != null, 'Required key "EmailSummary[id]" has a null value in JSON.');
         assert(json.containsKey(r'conversation_id'), 'Required key "EmailSummary[conversation_id]" is missing from JSON.');
         assert(json[r'conversation_id'] != null, 'Required key "EmailSummary[conversation_id]" has a null value in JSON.');
+        assert(json.containsKey(r'direction'), 'Required key "EmailSummary[direction]" is missing from JSON.');
+        assert(json[r'direction'] != null, 'Required key "EmailSummary[direction]" has a null value in JSON.');
         assert(json.containsKey(r'attachment_count'), 'Required key "EmailSummary[attachment_count]" is missing from JSON.');
         assert(json[r'attachment_count'] != null, 'Required key "EmailSummary[attachment_count]" has a null value in JSON.');
         assert(json.containsKey(r'read'), 'Required key "EmailSummary[read]" is missing from JSON.');
@@ -338,10 +302,7 @@ class EmailSummary {
       }());
 
       return EmailSummary(
-        schemaVersion: EmailSummarySchemaVersionEnum.fromJson(json[r'schema_version']),
         subject: mapValueOfType<String>(json, r'subject'),
-        from: mapValueOfType<String>(json, r'from'),
-        to: mapValueOfType<String>(json, r'to'),
         fromAddresses: DecodedEmailAddress.listFromJson(json[r'from_addresses']),
         toAddresses: DecodedEmailAddress.listFromJson(json[r'to_addresses']),
         ccAddresses: DecodedEmailAddress.listFromJson(json[r'cc_addresses']),
@@ -353,13 +314,14 @@ class EmailSummary {
         references: json[r'references'] is Iterable
             ? (json[r'references'] as Iterable).cast<String>().toList(growable: false)
             : const [],
-        threadId: mapValueOfType<String>(json, r'thread_id'),
         deliveredTo: mapValueOfType<String>(json, r'delivered_to'),
         receivedAt: mapDateTime(json, r'received_at', r'')!,
         bodyStatus: EmailSummaryBodyStatusEnum.fromJson(json[r'body_status']),
         omittedAttachmentCount: mapValueOfType<int>(json, r'omitted_attachment_count'),
         id: mapValueOfType<String>(json, r'id')!,
         conversationId: mapValueOfType<String>(json, r'conversation_id')!,
+        direction: EmailSummaryDirectionEnum.fromJson(json[r'direction'])!,
+        delivery: EmailDelivery.fromJson(json[r'delivery']),
         fileId: mapValueOfType<String>(json, r'file_id'),
         versionId: mapValueOfType<String>(json, r'version_id'),
         attachmentCount: mapValueOfType<int>(json, r'attachment_count')!,
@@ -369,8 +331,6 @@ class EmailSummary {
         readByApiKey: mapValueOfType<Object>(json, r'read_by_api_key'),
         files: EmailSummaryFiles.fromJson(json[r'files']),
         forwarding: EmailForwarding.fromJson(json[r'forwarding']),
-        cc: mapValueOfType<String>(json, r'cc'),
-        replyTo: mapValueOfType<String>(json, r'reply_to'),
       );
     }
     return null;
@@ -421,6 +381,7 @@ class EmailSummary {
     'received_at',
     'id',
     'conversation_id',
+    'direction',
     'attachment_count',
     'read',
     'read_at',
@@ -428,82 +389,6 @@ class EmailSummary {
     'read_by_api_key',
   };
 }
-
-
-enum EmailSummarySchemaVersionEnum {
-  number1._(1),
-  ;
-
-  /// Instantiate a new enum with the provided value.
-  const EmailSummarySchemaVersionEnum._(this._value);
-
-  /// The underlying value of this enum member.
-  final int _value;
-
-  @override
-  String toString() => _value.toString();
-
-  /// Encodes this enum as a value suitable for JSON.
-  int toJson() => _value;
-
-  /// Returns the instance of [EmailSummarySchemaVersionEnum] that was successfully decoded
-  /// from the passed [value] on success, null otherwise.
-  static EmailSummarySchemaVersionEnum? fromJson(dynamic value) => EmailSummarySchemaVersionEnumTypeTransformer().decode(value);
-
-  /// Returns a [List] containing instances of [EmailSummarySchemaVersionEnum]
-  /// that were successfully decoded from the passed [JSON][json].
-  static List<EmailSummarySchemaVersionEnum> listFromJson(dynamic json, {bool growable = false,}) {
-    final result = <EmailSummarySchemaVersionEnum>[];
-    if (json is List && json.isNotEmpty) {
-      for (final row in json) {
-        final value = EmailSummarySchemaVersionEnum.fromJson(row);
-        if (value != null) {
-          result.add(value);
-        }
-      }
-    }
-    return result.toList(growable: growable);
-  }
-}
-
-/// Transformation class that can [encode] an instance of [EmailSummarySchemaVersionEnum] to int,
-/// and [decode] dynamic data back to [EmailSummarySchemaVersionEnum].
-class EmailSummarySchemaVersionEnumTypeTransformer {
-  factory EmailSummarySchemaVersionEnumTypeTransformer() => _instance ??= const EmailSummarySchemaVersionEnumTypeTransformer._();
-
-  const EmailSummarySchemaVersionEnumTypeTransformer._();
-
-  int encode(EmailSummarySchemaVersionEnum data) => data._value;
-
-  /// Returns the instance of [EmailSummarySchemaVersionEnum] that was successfully decoded
-  /// from the passed [data] value on success, null otherwise.
-  ///
-  /// If [allowNull] is true and the [dynamic value][data] cannot be decoded successfully,
-  /// then null is returned. However, if [allowNull] is false and the [dynamic value][data]
-  /// cannot be decoded successfully, then an [UnimplementedError] is thrown.
-  ///
-  /// The [allowNull] is very handy when an API changes and a new enum value is added or removed,
-  /// and users are still using an old app with the old code.
-  EmailSummarySchemaVersionEnum? decode(dynamic data, {bool allowNull = true}) {
-    if (data is EmailSummarySchemaVersionEnum) {
-      return data;
-    }
-    if (data != null) {
-      switch (data) {
-        case 1: return EmailSummarySchemaVersionEnum.number1;
-        default:
-          if (!allowNull) {
-            throw ArgumentError('Unknown enum value to decode: $data');
-          }
-      }
-    }
-    return null;
-  }
-
-  /// The singleton instance of this transformer.
-  static EmailSummarySchemaVersionEnumTypeTransformer? _instance;
-}
-
 
 
 enum EmailSummaryBodyStatusEnum {
@@ -584,6 +469,84 @@ class EmailSummaryBodyStatusEnumTypeTransformer {
 
   /// The singleton instance of this transformer.
   static EmailSummaryBodyStatusEnumTypeTransformer? _instance;
+}
+
+
+/// received for incoming email; sent for email sent from this mailbox.
+enum EmailSummaryDirectionEnum {
+  received._(r'received'),
+  sent._(r'sent'),
+  ;
+
+  /// Instantiate a new enum with the provided value.
+  const EmailSummaryDirectionEnum._(this._value);
+
+  /// The underlying value of this enum member.
+  final String _value;
+
+  @override
+  String toString() => _value;
+
+  /// Encodes this enum as a value suitable for JSON.
+  String toJson() => _value;
+
+  /// Returns the instance of [EmailSummaryDirectionEnum] that was successfully decoded
+  /// from the passed [value] on success, null otherwise.
+  static EmailSummaryDirectionEnum? fromJson(dynamic value) => EmailSummaryDirectionEnumTypeTransformer().decode(value);
+
+  /// Returns a [List] containing instances of [EmailSummaryDirectionEnum]
+  /// that were successfully decoded from the passed [JSON][json].
+  static List<EmailSummaryDirectionEnum> listFromJson(dynamic json, {bool growable = false,}) {
+    final result = <EmailSummaryDirectionEnum>[];
+    if (json is List && json.isNotEmpty) {
+      for (final row in json) {
+        final value = EmailSummaryDirectionEnum.fromJson(row);
+        if (value != null) {
+          result.add(value);
+        }
+      }
+    }
+    return result.toList(growable: growable);
+  }
+}
+
+/// Transformation class that can [encode] an instance of [EmailSummaryDirectionEnum] to String,
+/// and [decode] dynamic data back to [EmailSummaryDirectionEnum].
+class EmailSummaryDirectionEnumTypeTransformer {
+  factory EmailSummaryDirectionEnumTypeTransformer() => _instance ??= const EmailSummaryDirectionEnumTypeTransformer._();
+
+  const EmailSummaryDirectionEnumTypeTransformer._();
+
+  String encode(EmailSummaryDirectionEnum data) => data._value;
+
+  /// Returns the instance of [EmailSummaryDirectionEnum] that was successfully decoded
+  /// from the passed [data] value on success, null otherwise.
+  ///
+  /// If [allowNull] is true and the [dynamic value][data] cannot be decoded successfully,
+  /// then null is returned. However, if [allowNull] is false and the [dynamic value][data]
+  /// cannot be decoded successfully, then an [UnimplementedError] is thrown.
+  ///
+  /// The [allowNull] is very handy when an API changes and a new enum value is added or removed,
+  /// and users are still using an old app with the old code.
+  EmailSummaryDirectionEnum? decode(dynamic data, {bool allowNull = true}) {
+    if (data is EmailSummaryDirectionEnum) {
+      return data;
+    }
+    if (data != null) {
+      switch (data) {
+        case r'received': return EmailSummaryDirectionEnum.received;
+        case r'sent': return EmailSummaryDirectionEnum.sent;
+        default:
+          if (!allowNull) {
+            throw ArgumentError('Unknown enum value to decode: $data');
+          }
+      }
+    }
+    return null;
+  }
+
+  /// The singleton instance of this transformer.
+  static EmailSummaryDirectionEnumTypeTransformer? _instance;
 }
 
 

@@ -35,7 +35,7 @@ If you already have a task, start with that task.
 5. After setup, send a fresh relevant message through that source.
    A Gmail verification email alone does not prove that forwarding works.
 6. Read the message in Revdoku, or ask your connected AI for the result you chose.
-   With the API, [list and read the message](https://revdoku.com/api.md#2-list-messages).
+   With the API, [list and read the message](https://revdoku.com/api.md#emails).
 
 AI agents: show the actual authorized address as a `mailto:` link with the full address as its text.
 Encode the address in the URL. Ask the user to send an email there.
@@ -79,7 +79,7 @@ application customer an mailbox, follow the
 | Local development | WebSocket connection with a short-lived ticket |
 | Delivery status and retries | Dashboard → Analytics → Webhooks (account administrators) |
 
-Both send a small `email.received` event after the email and attachments are stored. Read content through the email API. Receivers must remain running; an idle AI chat cannot receive background notifications. See the [event API](https://revdoku.com/api.md#email-webhooks-and-live-subscriptions) and [runnable examples](https://github.com/revdoku/revdoku/tree/main/examples).
+Both send a small `email.received` event after the email and attachments are stored. Read content through the email API. Receivers must remain running; an idle AI chat cannot receive background notifications. See the [event API](https://revdoku.com/api.md#webhooks-and-live-subscriptions) and [runnable examples](https://github.com/revdoku/revdoku/tree/main/examples).
 
 ## Create another mailbox
 
@@ -105,7 +105,7 @@ Content-Type: application/json
       "email": {
         "address": "maple.river7k2xq9@revdokumail.com",
         "receiving_enabled": true,
-        "sending_enabled": false
+        "sending_enabled": true
       }
     }
   }
@@ -120,7 +120,7 @@ Content-Type: application/json
 Creation waits for receiving confirmation. Use the returned address after a
 successful response. On `EMAIL_NOT_READY`, save the returned mailbox ID and inspect
 that existing mailbox. After a lost response, reconcile existing mailboxes before
-any further creation. See [creation errors](https://revdoku.com/api.md#creation-result).
+any further creation. See [creation errors](https://revdoku.com/api.md#create-a-mailbox).
 
 Runnable examples use standard HTTP clients:
 [JavaScript](https://github.com/revdoku/revdoku/tree/main/examples/javascript),
@@ -134,12 +134,14 @@ can send to it; reading saved mail requires mailbox access.
 
 | Task | REST | CLI | MCP |
 | --- | --- | --- | --- |
-| Inspect an existing receiving address (write access) | `GET /v1/mailboxes/:id/email` | `revdoku mailbox --mailbox-id ID` | `mailbox_get` with `include_email: true` |
+| Inspect an existing receiving address (write access) | `GET /v1/mailboxes/:id/email` | `revdoku mailbox --mailbox-id ID` | `mailbox_get` (`email.address`) |
 | List received messages | `GET /v1/mailboxes/:id/emails` | `revdoku emails --mailbox-id ID` | `mailbox_email_list` |
 | Read one message | `GET /v1/mailboxes/:id/emails/:email_id` | `revdoku email EMAIL_ID --mailbox-id ID` | `mailbox_email_get` |
 | Mark read/unread | `PATCH /v1/mailboxes/:id/emails/:email_id` | `revdoku email-status EMAIL_ID --read true --mailbox-id ID` | `mailbox_email_update` |
-| Download an attachment | [Attachment endpoint](https://revdoku.com/api.md#attachments-and-download-links) | `revdoku email-download EMAIL_ID --attachment-id ID --mailbox-id ID` | `mailbox_email_download` |
+| Download an attachment | [Attachment endpoint](https://revdoku.com/api.md#download-links) | `revdoku email-download EMAIL_ID --attachment-id ID --mailbox-id ID` | `mailbox_email_download` |
 | Delete one message | `DELETE /v1/mailboxes/:id/emails/:email_id` | `revdoku email-delete EMAIL_ID --confirm-delete EMAIL_ID --mailbox-id ID` | `mailbox_email_delete` |
+| Reply to a sender | `POST /v1/mailboxes/:id/emails` | `revdoku email-send --in-reply-to EMAIL_ID --text TEXT --mailbox-id ID` | `mailbox_email_send` |
+| List sent messages | `GET /v1/mailboxes/:id/emails?direction=sent` | `revdoku emails --direction sent --mailbox-id ID` | `mailbox_email_list` with `direction: "sent"` |
 
 ### Poll for arrivals
 
@@ -147,6 +149,20 @@ can send to it; reading saved mail requires mailbox access.
 2. Save `pagination.next_cursor`, including when the page is empty.
 3. Pass that cursor on the next request using the same account, mailbox and filters.
 4. Use a delay and a deadline when waiting for new mail.
+
+### Reply to a sender
+
+A mailbox sends email from its own address. Sending requires mailbox write access.
+Recipients must be addresses that emailed this mailbox and passed sender authentication.
+
+1. List received messages and choose the message to answer.
+2. Send the reply with `in_reply_to` set to its email ID. The reply goes to the
+   original sender, with `Re:` and the original subject.
+3. Read the sent email again and check `delivery.status`.
+4. If the result is unknown or `delivery.status` is `uncertain`, do not send again.
+   List sent messages and check first.
+
+See [Send and reply](https://revdoku.com/api.md#send-a-reply) for fields, limits and errors.
 
 ### Message and attachment behavior
 
@@ -178,11 +194,11 @@ older messages may use `_email/in/`.
 | Task | CLI command | API reference |
 | --- | --- | --- |
 | Upload files or a folder | `revdoku upload ./project-files` | [Uploads](https://revdoku.com/api.md#upload-a-file) |
-| List files | `revdoku files --mailbox-id ID` | [File operations](https://revdoku.com/api.md#file-path-operations) |
-| Read a file | `revdoku read notes.txt --mailbox-id ID` | [File operations](https://revdoku.com/api.md#file-path-operations) |
-| Append text | `revdoku append notes.txt --mailbox-id ID --content-file additions.txt` | [File operations](https://revdoku.com/api.md#file-path-operations) |
-| View history | `revdoku versions --mailbox-id ID` | [Version history](https://revdoku.com/api.md#mailbox-version-history) |
-| Restore a version | `revdoku restore VERSION_ID --mailbox-id ID` | [Version history](https://revdoku.com/api.md#mailbox-version-history) |
+| List files | `revdoku files --mailbox-id ID` | [File operations](https://revdoku.com/api.md#files) |
+| Read a file | `revdoku read notes.txt --mailbox-id ID` | [File operations](https://revdoku.com/api.md#files) |
+| Append text | `revdoku append notes.txt --mailbox-id ID --content-file additions.txt` | [File operations](https://revdoku.com/api.md#files) |
+| View a file's history | `revdoku versions notes.txt --mailbox-id ID` | [Files](https://revdoku.com/api.md#files) |
+| Restore a file version | `revdoku restore notes.txt --version-id VERSION_ID --mailbox-id ID` | [Files](https://revdoku.com/api.md#files) |
 
 - CLI and REST uploads support binary files. Hosted MCP file writes support text.
 - Hosted MCP cannot read local folders; use the CLI to upload them.
@@ -202,7 +218,7 @@ older messages may use `_email/in/`.
 | MCP | `account_limits` |
 
 The response groups effective quotas under `limits`. Mailbox responses describe
-the mailbox; they do not repeat account quotas. See [limit fields](https://revdoku.com/api.md#account-limits).
+the mailbox; they do not repeat account quotas. See [limit fields](https://revdoku.com/api.md#limits).
 Full-account browser sessions and unrestricted admin connections also receive
 optional `usage.mailbox_creations` with used, remaining, monthly limit and UTC
 reset time. Selected-mailbox/read-only connections retain their normal limits
@@ -213,7 +229,7 @@ response. Deleting or archiving mailboxes does not refund creation capacity.
 | Task | REST | CLI | MCP |
 | --- | --- | --- | --- |
 | List granted accounts | `GET /v1/accounts` | `revdoku accounts` | `account_list` |
-| Read an account | `GET /v1/accounts/:id` | `revdoku account get ID` | `account_get` |
+| Read an account | `GET /v1/accounts/:account_id` | `revdoku account get ID` | `account_list` (default account: `revdoku_status`) |
 | Choose an account for a request | `account_id` in query/body | `--account-id ID` | `account_id: ID` |
 
 Omitting the selector uses the credential's default account. Selecting an account
@@ -230,9 +246,9 @@ request when working across accounts.
 | Edit control | Purpose |
 | --- | --- |
 | File lock | Coordinate edits to specific files; release your lock afterward. |
-| Mailbox lock | Blocks incoming mail, including queued saves. Prefer file locks and revision checks while an mailbox receives mail. |
-| `expected_mailbox_revision_id` | Detect that another writer changed the mailbox since your last read. |
-| `MAILBOX_REVISION_CONFLICT` | Reread current content and reconcile before retrying the edit. |
+| Mailbox lock | Coordinate broad edits. Incoming mail keeps arriving while the lock is held. Prefer file locks and version checks. |
+| `expected_mailbox_version` | Send the mailbox `version_id` from your last read to detect that another writer changed the mailbox. |
+| `MAILBOX_VERSION_CONFLICT` | Reread current content and reconcile before retrying the edit. |
 | `reason` | Optional explanation saved in activity/history. Maximum 2,000 characters; omit secrets and file contents. |
 
 ## Custom email domains

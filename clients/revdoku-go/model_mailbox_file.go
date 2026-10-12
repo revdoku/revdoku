@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -22,13 +22,12 @@ var _ MappedNullable = &MailboxFile{}
 // MailboxFile struct for MailboxFile
 type MailboxFile struct {
 	Id string `json:"id"`
-	MailboxId *string `json:"mailbox_id,omitempty"`
+	MailboxId *string `json:"mailbox_id,omitempty" validate:"regexp=^bkt_"`
 	Basename *string `json:"basename,omitempty"`
 	Path string `json:"path"`
 	Role *string `json:"role,omitempty"`
 	CreatedBySystem *string `json:"created_by_system,omitempty"`
 	Deleted *bool `json:"deleted,omitempty"`
-	Metadata map[string]interface{} `json:"metadata,omitempty"`
 	VersionReasons []FileVersionReason `json:"version_reasons,omitempty"`
 	Lock map[string]interface{} `json:"lock,omitempty"`
 	CurrentFileVersion NullableFileVersion `json:"current_file_version,omitempty"`
@@ -274,38 +273,6 @@ func (o *MailboxFile) HasDeleted() bool {
 // SetDeleted gets a reference to the given bool and assigns it to the Deleted field.
 func (o *MailboxFile) SetDeleted(v bool) {
 	o.Deleted = &v
-}
-
-// GetMetadata returns the Metadata field value if set, zero value otherwise.
-func (o *MailboxFile) GetMetadata() map[string]interface{} {
-	if o == nil || IsNil(o.Metadata) {
-		var ret map[string]interface{}
-		return ret
-	}
-	return o.Metadata
-}
-
-// GetMetadataOk returns a tuple with the Metadata field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *MailboxFile) GetMetadataOk() (map[string]interface{}, bool) {
-	if o == nil || IsNil(o.Metadata) {
-		return map[string]interface{}{}, false
-	}
-	return o.Metadata, true
-}
-
-// HasMetadata returns a boolean if a field has been set.
-func (o *MailboxFile) HasMetadata() bool {
-	if o != nil && !IsNil(o.Metadata) {
-		return true
-	}
-
-	return false
-}
-
-// SetMetadata gets a reference to the given map[string]interface{} and assigns it to the Metadata field.
-func (o *MailboxFile) SetMetadata(v map[string]interface{}) {
-	o.Metadata = v
 }
 
 // GetVersionReasons returns the VersionReasons field value if set, zero value otherwise.
@@ -855,9 +822,6 @@ func (o MailboxFile) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Deleted) {
 		toSerialize["deleted"] = o.Deleted
 	}
-	if !IsNil(o.Metadata) {
-		toSerialize["metadata"] = o.Metadata
-	}
 	if !IsNil(o.VersionReasons) {
 		toSerialize["version_reasons"] = o.VersionReasons
 	}
@@ -954,7 +918,6 @@ func (o *MailboxFile) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "role")
 		delete(additionalProperties, "created_by_system")
 		delete(additionalProperties, "deleted")
-		delete(additionalProperties, "metadata")
 		delete(additionalProperties, "version_reasons")
 		delete(additionalProperties, "lock")
 		delete(additionalProperties, "current_file_version")

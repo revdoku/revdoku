@@ -10,7 +10,6 @@ import Foundation
 import AnyCodable
 #endif
 
-/** Present only for full-account administrator credentials and full-account browser sessions. */
 public struct GetAccountLimits200ResponseDataUsage: Codable, JSONEncodable, Hashable {
 
     public var mailboxCreations: GetAccountLimits200ResponseDataUsageMailboxCreations?

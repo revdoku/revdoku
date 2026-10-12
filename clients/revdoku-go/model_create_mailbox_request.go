@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -12,7 +12,6 @@ package revdoku
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 // checks if the CreateMailboxRequest type satisfies the MappedNullable interface at compile time
@@ -20,8 +19,9 @@ var _ MappedNullable = &CreateMailboxRequest{}
 
 // CreateMailboxRequest struct for CreateMailboxRequest
 type CreateMailboxRequest struct {
+	Mailbox *MailboxCreate `json:"mailbox,omitempty"`
+	// Select another granted account for this request.
 	AccountId *string `json:"account_id,omitempty"`
-	Mailbox MailboxCreateOptions `json:"mailbox"`
 	// Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
 	Reason NullableString `json:"reason,omitempty"`
 	AdditionalProperties map[string]interface{}
@@ -33,9 +33,8 @@ type _CreateMailboxRequest CreateMailboxRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCreateMailboxRequest(mailbox MailboxCreateOptions) *CreateMailboxRequest {
+func NewCreateMailboxRequest() *CreateMailboxRequest {
 	this := CreateMailboxRequest{}
-	this.Mailbox = mailbox
 	return &this
 }
 
@@ -45,6 +44,38 @@ func NewCreateMailboxRequest(mailbox MailboxCreateOptions) *CreateMailboxRequest
 func NewCreateMailboxRequestWithDefaults() *CreateMailboxRequest {
 	this := CreateMailboxRequest{}
 	return &this
+}
+
+// GetMailbox returns the Mailbox field value if set, zero value otherwise.
+func (o *CreateMailboxRequest) GetMailbox() MailboxCreate {
+	if o == nil || IsNil(o.Mailbox) {
+		var ret MailboxCreate
+		return ret
+	}
+	return *o.Mailbox
+}
+
+// GetMailboxOk returns a tuple with the Mailbox field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CreateMailboxRequest) GetMailboxOk() (*MailboxCreate, bool) {
+	if o == nil || IsNil(o.Mailbox) {
+		return nil, false
+	}
+	return o.Mailbox, true
+}
+
+// HasMailbox returns a boolean if a field has been set.
+func (o *CreateMailboxRequest) HasMailbox() bool {
+	if o != nil && !IsNil(o.Mailbox) {
+		return true
+	}
+
+	return false
+}
+
+// SetMailbox gets a reference to the given MailboxCreate and assigns it to the Mailbox field.
+func (o *CreateMailboxRequest) SetMailbox(v MailboxCreate) {
+	o.Mailbox = &v
 }
 
 // GetAccountId returns the AccountId field value if set, zero value otherwise.
@@ -77,30 +108,6 @@ func (o *CreateMailboxRequest) HasAccountId() bool {
 // SetAccountId gets a reference to the given string and assigns it to the AccountId field.
 func (o *CreateMailboxRequest) SetAccountId(v string) {
 	o.AccountId = &v
-}
-
-// GetMailbox returns the Mailbox field value
-func (o *CreateMailboxRequest) GetMailbox() MailboxCreateOptions {
-	if o == nil {
-		var ret MailboxCreateOptions
-		return ret
-	}
-
-	return o.Mailbox
-}
-
-// GetMailboxOk returns a tuple with the Mailbox field value
-// and a boolean to check if the value has been set.
-func (o *CreateMailboxRequest) GetMailboxOk() (*MailboxCreateOptions, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Mailbox, true
-}
-
-// SetMailbox sets field value
-func (o *CreateMailboxRequest) SetMailbox(v MailboxCreateOptions) {
-	o.Mailbox = v
 }
 
 // GetReason returns the Reason field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -155,10 +162,12 @@ func (o CreateMailboxRequest) MarshalJSON() ([]byte, error) {
 
 func (o CreateMailboxRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	if !IsNil(o.Mailbox) {
+		toSerialize["mailbox"] = o.Mailbox
+	}
 	if !IsNil(o.AccountId) {
 		toSerialize["account_id"] = o.AccountId
 	}
-	toSerialize["mailbox"] = o.Mailbox
 	if o.Reason.IsSet() {
 		toSerialize["reason"] = o.Reason.Get()
 	}
@@ -171,27 +180,6 @@ func (o CreateMailboxRequest) ToMap() (map[string]interface{}, error) {
 }
 
 func (o *CreateMailboxRequest) UnmarshalJSON(data []byte) (err error) {
-	// This validates that all required properties are included in the JSON object
-	// by unmarshalling the object into a generic map with string keys and checking
-	// that every required field exists as a key in the generic map.
-	requiredProperties := []string{
-		"mailbox",
-	}
-
-	allProperties := make(map[string]interface{})
-
-	err = json.Unmarshal(data, &allProperties)
-
-	if err != nil {
-		return err;
-	}
-
-	for _, requiredProperty := range(requiredProperties) {
-		if _, exists := allProperties[requiredProperty]; !exists {
-			return fmt.Errorf("no value given for required property %v", requiredProperty)
-		}
-	}
-
 	varCreateMailboxRequest := _CreateMailboxRequest{}
 
 	err = json.Unmarshal(data, &varCreateMailboxRequest)
@@ -205,8 +193,8 @@ func (o *CreateMailboxRequest) UnmarshalJSON(data []byte) (err error) {
 	additionalProperties := make(map[string]interface{})
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "account_id")
 		delete(additionalProperties, "mailbox")
+		delete(additionalProperties, "account_id")
 		delete(additionalProperties, "reason")
 		o.AdditionalProperties = additionalProperties
 	}

@@ -1,7 +1,7 @@
 /*
- * Revdoku public agent API
+ * Revdoku API
  *
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -15,19 +15,23 @@ use serde::{Deserialize, Serialize};
 pub struct SetEmailWebhookRequest {
     #[serde(rename = "webhook_url")]
     pub webhook_url: String,
-    #[serde(rename = "account_id", skip_serializing_if = "Option::is_none")]
-    pub account_id: Option<String>,
-    /// Rotate the secret for the same endpoint and cancel pending deliveries.
     #[serde(rename = "rotate_secret", skip_serializing_if = "Option::is_none")]
     pub rotate_secret: Option<bool>,
+    /// Select another granted account for this request.
+    #[serde(rename = "account_id", skip_serializing_if = "Option::is_none")]
+    pub account_id: Option<String>,
+    /// Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
+    #[serde(rename = "reason", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
+    pub reason: Option<Option<String>>,
 }
 
 impl SetEmailWebhookRequest {
     pub fn new(webhook_url: String) -> SetEmailWebhookRequest {
         SetEmailWebhookRequest {
             webhook_url,
-            account_id: None,
             rotate_secret: None,
+            account_id: None,
+            reason: None,
         }
     }
 }

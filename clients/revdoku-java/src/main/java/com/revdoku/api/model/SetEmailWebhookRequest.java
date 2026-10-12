@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -23,6 +23,10 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.net.URI;
 import java.util.Arrays;
+import org.openapitools.jackson.nullable.JsonNullable;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.openapitools.jackson.nullable.JsonNullable;
+import java.util.NoSuchElementException;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
@@ -31,8 +35,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  */
 @JsonPropertyOrder({
   SetEmailWebhookRequest.JSON_PROPERTY_WEBHOOK_URL,
+  SetEmailWebhookRequest.JSON_PROPERTY_ROTATE_SECRET,
   SetEmailWebhookRequest.JSON_PROPERTY_ACCOUNT_ID,
-  SetEmailWebhookRequest.JSON_PROPERTY_ROTATE_SECRET
+  SetEmailWebhookRequest.JSON_PROPERTY_REASON
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class SetEmailWebhookRequest {
@@ -40,13 +45,16 @@ public class SetEmailWebhookRequest {
   @javax.annotation.Nonnull
   private URI webhookUrl;
 
+  public static final String JSON_PROPERTY_ROTATE_SECRET = "rotate_secret";
+  @javax.annotation.Nullable
+  private Boolean rotateSecret = false;
+
   public static final String JSON_PROPERTY_ACCOUNT_ID = "account_id";
   @javax.annotation.Nullable
   private String accountId;
 
-  public static final String JSON_PROPERTY_ROTATE_SECRET = "rotate_secret";
-  @javax.annotation.Nullable
-  private Boolean rotateSecret = false;
+  public static final String JSON_PROPERTY_REASON = "reason";
+  private JsonNullable<String> reason = JsonNullable.<String>undefined();
 
   public SetEmailWebhookRequest() { 
   }
@@ -75,37 +83,13 @@ public class SetEmailWebhookRequest {
   }
 
 
-  public SetEmailWebhookRequest accountId(@javax.annotation.Nullable String accountId) {
-    this.accountId = accountId;
-    return this;
-  }
-
-  /**
-   * Get accountId
-   * @return accountId
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_ACCOUNT_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public String getAccountId() {
-    return accountId;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_ACCOUNT_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setAccountId(@javax.annotation.Nullable String accountId) {
-    this.accountId = accountId;
-  }
-
-
   public SetEmailWebhookRequest rotateSecret(@javax.annotation.Nullable Boolean rotateSecret) {
     this.rotateSecret = rotateSecret;
     return this;
   }
 
   /**
-   * Rotate the secret for the same endpoint and cancel pending deliveries.
+   * Get rotateSecret
    * @return rotateSecret
    */
   @javax.annotation.Nullable
@@ -123,6 +107,62 @@ public class SetEmailWebhookRequest {
   }
 
 
+  public SetEmailWebhookRequest accountId(@javax.annotation.Nullable String accountId) {
+    this.accountId = accountId;
+    return this;
+  }
+
+  /**
+   * Select another granted account for this request.
+   * @return accountId
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_ACCOUNT_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public String getAccountId() {
+    return accountId;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_ACCOUNT_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setAccountId(@javax.annotation.Nullable String accountId) {
+    this.accountId = accountId;
+  }
+
+
+  public SetEmailWebhookRequest reason(@javax.annotation.Nullable String reason) {
+    this.reason = JsonNullable.<String>of(reason);
+    return this;
+  }
+
+  /**
+   * Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
+   * @return reason
+   */
+  @javax.annotation.Nullable
+  @JsonIgnore
+  public String getReason() {
+        return reason.orElse(null);
+  }
+
+  @JsonProperty(value = JSON_PROPERTY_REASON, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+
+  public JsonNullable<String> getReason_JsonNullable() {
+    return reason;
+  }
+  
+  @JsonProperty(JSON_PROPERTY_REASON)
+  public void setReason_JsonNullable(JsonNullable<String> reason) {
+    this.reason = reason;
+  }
+
+  public void setReason(@javax.annotation.Nullable String reason) {
+    this.reason = JsonNullable.<String>of(reason);
+  }
+
+
   /**
    * Return true if this setEmailWebhook_request object is equal to o.
    */
@@ -136,13 +176,25 @@ public class SetEmailWebhookRequest {
     }
     SetEmailWebhookRequest setEmailWebhookRequest = (SetEmailWebhookRequest) o;
     return Objects.equals(this.webhookUrl, setEmailWebhookRequest.webhookUrl) &&
+        Objects.equals(this.rotateSecret, setEmailWebhookRequest.rotateSecret) &&
         Objects.equals(this.accountId, setEmailWebhookRequest.accountId) &&
-        Objects.equals(this.rotateSecret, setEmailWebhookRequest.rotateSecret);
+        equalsNullable(this.reason, setEmailWebhookRequest.reason);
+  }
+
+  private static <T> boolean equalsNullable(JsonNullable<T> a, JsonNullable<T> b) {
+    return a == b || (a != null && b != null && a.isPresent() && b.isPresent() && Objects.deepEquals(a.get(), b.get()));
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(webhookUrl, accountId, rotateSecret);
+    return Objects.hash(webhookUrl, rotateSecret, accountId, hashCodeNullable(reason));
+  }
+
+  private static <T> int hashCodeNullable(JsonNullable<T> a) {
+    if (a == null) {
+      return 1;
+    }
+    return a.isPresent() ? Arrays.deepHashCode(new Object[]{a.get()}) : 31;
   }
 
   @Override
@@ -150,8 +202,9 @@ public class SetEmailWebhookRequest {
     StringBuilder sb = new StringBuilder();
     sb.append("class SetEmailWebhookRequest {\n");
     sb.append("    webhookUrl: ").append(toIndentedString(webhookUrl)).append("\n");
-    sb.append("    accountId: ").append(toIndentedString(accountId)).append("\n");
     sb.append("    rotateSecret: ").append(toIndentedString(rotateSecret)).append("\n");
+    sb.append("    accountId: ").append(toIndentedString(accountId)).append("\n");
+    sb.append("    reason: ").append(toIndentedString(reason)).append("\n");
     sb.append("}");
     return sb.toString();
   }

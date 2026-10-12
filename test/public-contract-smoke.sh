@@ -84,12 +84,14 @@ for target in codex claude-code cursor antigravity opencode grok-build hermes op
   require_text "$UNINSTALL_FILE" "$target"
 done
 require_text "$SKILL_FILE" 'scripts/revdoku.sh upload <path>'
-require_text "$SKILL_FILE" '`mailbox_lock_files`'
+require_text "$SKILL_FILE" '`mailbox_lock`'
+require_text "$SKILL_FILE" '`mailbox_file_reorganize`'
+reject_text "$SKILL_FILE" '`mailbox_lock_files`'
 require_text "$SKILL_FILE" '`mailbox_delete_permanently`'
 reject_text "$SKILL_FILE" 'github_sync'
 require_text "$SKILL_FILE" '`ACCOUNT_SUSPENDED`'
 require_text "$SKILL_FILE" 'support@revdoku.com'
-require_text "$API_FILE" '`GET` | `/v1/mailboxes/:id/versions`'
+require_text "$API_FILE" '| GET | `/v1/mailboxes/{mailbox_id}/files/{file_id}/versions` |'
 require_text "$API_FILE" 'https://api.revdoku.com/v1'
 require_text "$API_FILE" 'POST /v1/mailboxes'
 require_text "$API_FILE" '201 Created'
@@ -136,8 +138,11 @@ for file in "$API_FILE" "$SKILL_FILE" "$README_FILE"; do
 done
 
 require_text "$API_FILE" "body_status"
-require_text "$API_FILE" "last_received_path"
-require_text "$API_FILE" "include_email=true"
+require_text "$API_FILE" "last_received_at"
+require_text "$API_FILE" "/upload_sessions"
+# Public mailbox reads have no include_email option or storage-path activity.
+reject_text "$API_FILE" "last_received_path"
+reject_text "$API_FILE" "include_email=true"
 require_text "$SKILL_FILE" "body_status"
 
 reject_text "$README_FILE" "priceing"

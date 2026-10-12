@@ -10,33 +10,39 @@ import Foundation
 import AnyCodable
 #endif
 
-/** Public mailbox details, including the permitted address, stored and unread email counts, lifetime receipts and receiving state. Keep IDs for API operations. Use the address as the dashboard link label. */
+/** A mailbox: one receiving address with private file storage. Use email.address as the label and id in API calls. */
 public struct Mailbox: Codable, JSONEncodable, Hashable {
 
+    public static let idRule = StringRule(minLength: nil, maxLength: nil, pattern: "/^bkt_/")
     public static let storageBytesRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
     public static let filesCountRule = NumericRule<Int64>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
-    public static let currentMailboxRevisionNumberRule = NumericRule<Int>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
+    public static let versionNumberRule = NumericRule<Int>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
     public var id: String
     public var accountId: String
     public var description: String?
+    /** Your application data. PATCH replaces the whole object. */
     public var metadata: [String: AnyCodable]?
-    public var metadataVersion: String?
+    /** Send as expected_metadata_version on PATCH. Changes only when description or metadata changes. */
+    public var metadataVersion: String
     public var email: MailboxEmail
-    public var archived: Bool?
+    public var archived: Bool
     public var archivedAt: Date?
     public var lock: MailboxLock?
     public var storageBytes: Int64?
+    /** Current files, including stored emails and attachments. */
     public var filesCount: Int64?
+    /** Current mailbox file-tree version. Send as expected_mailbox_version on file writes to detect concurrent changes. */
+    public var versionId: String?
+    public var versionNumber: Int
     public var createdAt: Date?
     public var updatedAt: Date?
+    /** Opens the mailbox for signed-in members. It does not grant access. */
     public var dashboardUrl: String?
-    public var currentMailboxRevisionId: String?
-    public var currentMailboxRevisionNumber: Int?
-    public var archive: MailboxAction?
-    public var unarchive: MailboxAction?
-    public var delete: MailboxAction?
+    public var archive: MailboxAction
+    public var unarchive: MailboxAction
+    public var delete: MailboxAction
 
-    public init(id: String, accountId: String, description: String? = nil, metadata: [String: AnyCodable]? = nil, metadataVersion: String? = nil, email: MailboxEmail, archived: Bool? = nil, archivedAt: Date? = nil, lock: MailboxLock? = nil, storageBytes: Int64? = nil, filesCount: Int64? = nil, createdAt: Date? = nil, updatedAt: Date? = nil, dashboardUrl: String? = nil, currentMailboxRevisionId: String? = nil, currentMailboxRevisionNumber: Int? = nil, archive: MailboxAction? = nil, unarchive: MailboxAction? = nil, delete: MailboxAction? = nil) {
+    public init(id: String, accountId: String, description: String? = nil, metadata: [String: AnyCodable]? = nil, metadataVersion: String, email: MailboxEmail, archived: Bool, archivedAt: Date? = nil, lock: MailboxLock? = nil, storageBytes: Int64? = nil, filesCount: Int64? = nil, versionId: String?, versionNumber: Int, createdAt: Date? = nil, updatedAt: Date? = nil, dashboardUrl: String? = nil, archive: MailboxAction, unarchive: MailboxAction, delete: MailboxAction) {
         self.id = id
         self.accountId = accountId
         self.description = description
@@ -48,11 +54,11 @@ public struct Mailbox: Codable, JSONEncodable, Hashable {
         self.lock = lock
         self.storageBytes = storageBytes
         self.filesCount = filesCount
+        self.versionId = versionId
+        self.versionNumber = versionNumber
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.dashboardUrl = dashboardUrl
-        self.currentMailboxRevisionId = currentMailboxRevisionId
-        self.currentMailboxRevisionNumber = currentMailboxRevisionNumber
         self.archive = archive
         self.unarchive = unarchive
         self.delete = delete
@@ -70,11 +76,11 @@ public struct Mailbox: Codable, JSONEncodable, Hashable {
         case lock
         case storageBytes = "storage_bytes"
         case filesCount = "files_count"
+        case versionId = "version_id"
+        case versionNumber = "version_number"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
         case dashboardUrl = "dashboard_url"
-        case currentMailboxRevisionId = "current_mailbox_revision_id"
-        case currentMailboxRevisionNumber = "current_mailbox_revision_number"
         case archive
         case unarchive
         case delete
@@ -88,21 +94,21 @@ public struct Mailbox: Codable, JSONEncodable, Hashable {
         try container.encode(accountId, forKey: .accountId)
         try container.encodeIfPresent(description, forKey: .description)
         try container.encodeIfPresent(metadata, forKey: .metadata)
-        try container.encodeIfPresent(metadataVersion, forKey: .metadataVersion)
+        try container.encode(metadataVersion, forKey: .metadataVersion)
         try container.encode(email, forKey: .email)
-        try container.encodeIfPresent(archived, forKey: .archived)
+        try container.encode(archived, forKey: .archived)
         try container.encodeIfPresent(archivedAt, forKey: .archivedAt)
         try container.encodeIfPresent(lock, forKey: .lock)
         try container.encodeIfPresent(storageBytes, forKey: .storageBytes)
         try container.encodeIfPresent(filesCount, forKey: .filesCount)
+        try container.encode(versionId, forKey: .versionId)
+        try container.encode(versionNumber, forKey: .versionNumber)
         try container.encodeIfPresent(createdAt, forKey: .createdAt)
         try container.encodeIfPresent(updatedAt, forKey: .updatedAt)
         try container.encodeIfPresent(dashboardUrl, forKey: .dashboardUrl)
-        try container.encodeIfPresent(currentMailboxRevisionId, forKey: .currentMailboxRevisionId)
-        try container.encodeIfPresent(currentMailboxRevisionNumber, forKey: .currentMailboxRevisionNumber)
-        try container.encodeIfPresent(archive, forKey: .archive)
-        try container.encodeIfPresent(unarchive, forKey: .unarchive)
-        try container.encodeIfPresent(delete, forKey: .delete)
+        try container.encode(archive, forKey: .archive)
+        try container.encode(unarchive, forKey: .unarchive)
+        try container.encode(delete, forKey: .delete)
     }
 }
 

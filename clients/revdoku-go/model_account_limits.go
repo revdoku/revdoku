@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -33,6 +33,8 @@ type AccountLimits struct {
 	MaxReceivedEmailsPerMonth NullableInt32 `json:"max_received_emails_per_month"`
 	MaxReceivedEmailBytesPerMonth NullableInt64 `json:"max_received_email_bytes_per_month"`
 	MaxReceivedEmailMessageBytes NullableInt64 `json:"max_received_email_message_bytes"`
+	// Sent-email recipients per billing period, shared by the billing group. Each recipient counts once.
+	MaxSentEmailsPerMonth NullableInt32 `json:"max_sent_emails_per_month"`
 	MaxEmailAddressRotationsPerMonth NullableInt32 `json:"max_email_address_rotations_per_month"`
 	MaxAccountMembers NullableInt32 `json:"max_account_members"`
 	MaxApiKeys NullableInt32 `json:"max_api_keys"`
@@ -49,7 +51,7 @@ type _AccountLimits AccountLimits
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewAccountLimits(maxMailboxes NullableInt32, maxMailboxCreationsPerMonth NullableInt32, maxFilesPerMailbox NullableInt32, maxCurrentFiles NullableInt32, maxStorageBytes NullableInt64, maxFileSizeBytes NullableInt64, maxPdfSizeBytes NullableInt64, maxFileVersionsPerFile NullableInt32, maxEmailDomains NullableInt32, maxReceivedEmailsPerMonth NullableInt32, maxReceivedEmailBytesPerMonth NullableInt64, maxReceivedEmailMessageBytes NullableInt64, maxEmailAddressRotationsPerMonth NullableInt32, maxAccountMembers NullableInt32, maxApiKeys NullableInt32, maxAgentConnections NullableInt32, apiRateLimitRequestsPerMinute NullableInt32, auditRetentionDays NullableInt32, maxEmailAliasesPerMailbox int32) *AccountLimits {
+func NewAccountLimits(maxMailboxes NullableInt32, maxMailboxCreationsPerMonth NullableInt32, maxFilesPerMailbox NullableInt32, maxCurrentFiles NullableInt32, maxStorageBytes NullableInt64, maxFileSizeBytes NullableInt64, maxPdfSizeBytes NullableInt64, maxFileVersionsPerFile NullableInt32, maxEmailDomains NullableInt32, maxReceivedEmailsPerMonth NullableInt32, maxReceivedEmailBytesPerMonth NullableInt64, maxReceivedEmailMessageBytes NullableInt64, maxSentEmailsPerMonth NullableInt32, maxEmailAddressRotationsPerMonth NullableInt32, maxAccountMembers NullableInt32, maxApiKeys NullableInt32, maxAgentConnections NullableInt32, apiRateLimitRequestsPerMinute NullableInt32, auditRetentionDays NullableInt32, maxEmailAliasesPerMailbox int32) *AccountLimits {
 	this := AccountLimits{}
 	this.MaxMailboxes = maxMailboxes
 	this.MaxMailboxCreationsPerMonth = maxMailboxCreationsPerMonth
@@ -63,6 +65,7 @@ func NewAccountLimits(maxMailboxes NullableInt32, maxMailboxCreationsPerMonth Nu
 	this.MaxReceivedEmailsPerMonth = maxReceivedEmailsPerMonth
 	this.MaxReceivedEmailBytesPerMonth = maxReceivedEmailBytesPerMonth
 	this.MaxReceivedEmailMessageBytes = maxReceivedEmailMessageBytes
+	this.MaxSentEmailsPerMonth = maxSentEmailsPerMonth
 	this.MaxEmailAddressRotationsPerMonth = maxEmailAddressRotationsPerMonth
 	this.MaxAccountMembers = maxAccountMembers
 	this.MaxApiKeys = maxApiKeys
@@ -393,6 +396,32 @@ func (o *AccountLimits) SetMaxReceivedEmailMessageBytes(v int64) {
 	o.MaxReceivedEmailMessageBytes.Set(&v)
 }
 
+// GetMaxSentEmailsPerMonth returns the MaxSentEmailsPerMonth field value
+// If the value is explicit nil, the zero value for int32 will be returned
+func (o *AccountLimits) GetMaxSentEmailsPerMonth() int32 {
+	if o == nil || o.MaxSentEmailsPerMonth.Get() == nil {
+		var ret int32
+		return ret
+	}
+
+	return *o.MaxSentEmailsPerMonth.Get()
+}
+
+// GetMaxSentEmailsPerMonthOk returns a tuple with the MaxSentEmailsPerMonth field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *AccountLimits) GetMaxSentEmailsPerMonthOk() (*int32, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.MaxSentEmailsPerMonth.Get(), o.MaxSentEmailsPerMonth.IsSet()
+}
+
+// SetMaxSentEmailsPerMonth sets field value
+func (o *AccountLimits) SetMaxSentEmailsPerMonth(v int32) {
+	o.MaxSentEmailsPerMonth.Set(&v)
+}
+
 // GetMaxEmailAddressRotationsPerMonth returns the MaxEmailAddressRotationsPerMonth field value
 // If the value is explicit nil, the zero value for int32 will be returned
 func (o *AccountLimits) GetMaxEmailAddressRotationsPerMonth() int32 {
@@ -595,6 +624,7 @@ func (o AccountLimits) ToMap() (map[string]interface{}, error) {
 	toSerialize["max_received_emails_per_month"] = o.MaxReceivedEmailsPerMonth.Get()
 	toSerialize["max_received_email_bytes_per_month"] = o.MaxReceivedEmailBytesPerMonth.Get()
 	toSerialize["max_received_email_message_bytes"] = o.MaxReceivedEmailMessageBytes.Get()
+	toSerialize["max_sent_emails_per_month"] = o.MaxSentEmailsPerMonth.Get()
 	toSerialize["max_email_address_rotations_per_month"] = o.MaxEmailAddressRotationsPerMonth.Get()
 	toSerialize["max_account_members"] = o.MaxAccountMembers.Get()
 	toSerialize["max_api_keys"] = o.MaxApiKeys.Get()
@@ -622,6 +652,7 @@ func (o *AccountLimits) UnmarshalJSON(data []byte) (err error) {
 		"max_received_emails_per_month",
 		"max_received_email_bytes_per_month",
 		"max_received_email_message_bytes",
+		"max_sent_emails_per_month",
 		"max_email_address_rotations_per_month",
 		"max_account_members",
 		"max_api_keys",

@@ -24,6 +24,7 @@ class ApiErrorError {
     this.browserUrl,
   });
 
+  /// Stable error identifier. See ErrorCode for the documented values. Invalid input always returns INVALID_ARGUMENT with HTTP 422.
   String code;
 
   String message;

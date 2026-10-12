@@ -1,7 +1,7 @@
 /*
- * Revdoku public agent API
+ * Revdoku API
  *
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -27,8 +27,6 @@ pub struct MailboxFile {
     pub created_by_system: Option<String>,
     #[serde(rename = "deleted", skip_serializing_if = "Option::is_none")]
     pub deleted: Option<bool>,
-    #[serde(rename = "metadata", skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<std::collections::HashMap<String, serde_json::Value>>,
     #[serde(rename = "version_reasons", skip_serializing_if = "Option::is_none")]
     pub version_reasons: Option<Vec<models::FileVersionReason>>,
     #[serde(rename = "lock", skip_serializing_if = "Option::is_none")]
@@ -71,7 +69,6 @@ impl MailboxFile {
             role: None,
             created_by_system: None,
             deleted: None,
-            metadata: None,
             version_reasons: None,
             lock: None,
             current_file_version: None,

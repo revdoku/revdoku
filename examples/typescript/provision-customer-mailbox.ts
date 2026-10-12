@@ -70,7 +70,7 @@ try {
       throw new Error(`${result.error?.code || 'CREATION_UNCERTAIN'}: creation did not return a mailbox ID. Check the dashboard before retrying.`);
     }
   }
-  const response = await fetch(`https://api.revdoku.com/v1/mailboxes/${mailbox.mailbox_id}?account_id=${accountId}&include_email=true`, { headers, redirect: 'error', signal: AbortSignal.timeout(30000) });
+  const response = await fetch(`https://api.revdoku.com/v1/mailboxes/${mailbox.mailbox_id}?account_id=${accountId}`, { headers, redirect: 'error', signal: AbortSignal.timeout(30000) });
   const result = await response.json();
   if (!response.ok || result.data?.mailbox?.id !== mailbox.mailbox_id) throw new Error('Could not read the saved mailbox. No new mailbox was created.');
   const email = result.data.mailbox.email;

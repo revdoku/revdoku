@@ -31,7 +31,7 @@ class EmailDomainAssignedMailboxesInner {
   /// source code must fall back to having a nullable type.
   /// Consider adding a "default:" property in the specification file to hide this note.
   ///
-  MailboxEmail? email;
+  EmailDomainAssignedMailboxesInnerEmail? email;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is EmailDomainAssignedMailboxesInner &&
@@ -74,7 +74,7 @@ class EmailDomainAssignedMailboxesInner {
 
       return EmailDomainAssignedMailboxesInner(
         id: mapValueOfType<String>(json, r'id'),
-        email: MailboxEmail.fromJson(json[r'email']),
+        email: EmailDomainAssignedMailboxesInnerEmail.fromJson(json[r'email']),
       );
     }
     return null;

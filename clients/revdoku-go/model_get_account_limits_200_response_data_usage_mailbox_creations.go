@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -13,7 +13,6 @@ package revdoku
 import (
 	"encoding/json"
 	"time"
-	"fmt"
 )
 
 // checks if the GetAccountLimits200ResponseDataUsageMailboxCreations type satisfies the MappedNullable interface at compile time
@@ -21,10 +20,10 @@ var _ MappedNullable = &GetAccountLimits200ResponseDataUsageMailboxCreations{}
 
 // GetAccountLimits200ResponseDataUsageMailboxCreations struct for GetAccountLimits200ResponseDataUsageMailboxCreations
 type GetAccountLimits200ResponseDataUsageMailboxCreations struct {
-	Used int32 `json:"used"`
-	Remaining int32 `json:"remaining"`
-	MonthlyLimit int32 `json:"monthly_limit"`
-	ResetsAt time.Time `json:"resets_at"`
+	MonthlyLimit NullableInt32 `json:"monthly_limit,omitempty"`
+	Used *int32 `json:"used,omitempty"`
+	Remaining NullableInt32 `json:"remaining,omitempty"`
+	ResetsAt *time.Time `json:"resets_at,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -34,12 +33,8 @@ type _GetAccountLimits200ResponseDataUsageMailboxCreations GetAccountLimits200Re
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGetAccountLimits200ResponseDataUsageMailboxCreations(used int32, remaining int32, monthlyLimit int32, resetsAt time.Time) *GetAccountLimits200ResponseDataUsageMailboxCreations {
+func NewGetAccountLimits200ResponseDataUsageMailboxCreations() *GetAccountLimits200ResponseDataUsageMailboxCreations {
 	this := GetAccountLimits200ResponseDataUsageMailboxCreations{}
-	this.Used = used
-	this.Remaining = remaining
-	this.MonthlyLimit = monthlyLimit
-	this.ResetsAt = resetsAt
 	return &this
 }
 
@@ -51,100 +46,152 @@ func NewGetAccountLimits200ResponseDataUsageMailboxCreationsWithDefaults() *GetA
 	return &this
 }
 
-// GetUsed returns the Used field value
-func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) GetUsed() int32 {
-	if o == nil {
-		var ret int32
-		return ret
-	}
-
-	return o.Used
-}
-
-// GetUsedOk returns a tuple with the Used field value
-// and a boolean to check if the value has been set.
-func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) GetUsedOk() (*int32, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Used, true
-}
-
-// SetUsed sets field value
-func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) SetUsed(v int32) {
-	o.Used = v
-}
-
-// GetRemaining returns the Remaining field value
-func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) GetRemaining() int32 {
-	if o == nil {
-		var ret int32
-		return ret
-	}
-
-	return o.Remaining
-}
-
-// GetRemainingOk returns a tuple with the Remaining field value
-// and a boolean to check if the value has been set.
-func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) GetRemainingOk() (*int32, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Remaining, true
-}
-
-// SetRemaining sets field value
-func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) SetRemaining(v int32) {
-	o.Remaining = v
-}
-
-// GetMonthlyLimit returns the MonthlyLimit field value
+// GetMonthlyLimit returns the MonthlyLimit field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) GetMonthlyLimit() int32 {
-	if o == nil {
+	if o == nil || IsNil(o.MonthlyLimit.Get()) {
 		var ret int32
 		return ret
 	}
-
-	return o.MonthlyLimit
+	return *o.MonthlyLimit.Get()
 }
 
-// GetMonthlyLimitOk returns a tuple with the MonthlyLimit field value
+// GetMonthlyLimitOk returns a tuple with the MonthlyLimit field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) GetMonthlyLimitOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.MonthlyLimit, true
+	return o.MonthlyLimit.Get(), o.MonthlyLimit.IsSet()
 }
 
-// SetMonthlyLimit sets field value
-func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) SetMonthlyLimit(v int32) {
-	o.MonthlyLimit = v
-}
-
-// GetResetsAt returns the ResetsAt field value
-func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) GetResetsAt() time.Time {
-	if o == nil {
-		var ret time.Time
-		return ret
+// HasMonthlyLimit returns a boolean if a field has been set.
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) HasMonthlyLimit() bool {
+	if o != nil && o.MonthlyLimit.IsSet() {
+		return true
 	}
 
-	return o.ResetsAt
+	return false
 }
 
-// GetResetsAtOk returns a tuple with the ResetsAt field value
+// SetMonthlyLimit gets a reference to the given NullableInt32 and assigns it to the MonthlyLimit field.
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) SetMonthlyLimit(v int32) {
+	o.MonthlyLimit.Set(&v)
+}
+// SetMonthlyLimitNil sets the value for MonthlyLimit to be an explicit nil
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) SetMonthlyLimitNil() {
+	o.MonthlyLimit.Set(nil)
+}
+
+// UnsetMonthlyLimit ensures that no value is present for MonthlyLimit, not even an explicit nil
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) UnsetMonthlyLimit() {
+	o.MonthlyLimit.Unset()
+}
+
+// GetUsed returns the Used field value if set, zero value otherwise.
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) GetUsed() int32 {
+	if o == nil || IsNil(o.Used) {
+		var ret int32
+		return ret
+	}
+	return *o.Used
+}
+
+// GetUsedOk returns a tuple with the Used field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) GetResetsAtOk() (*time.Time, bool) {
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) GetUsedOk() (*int32, bool) {
+	if o == nil || IsNil(o.Used) {
+		return nil, false
+	}
+	return o.Used, true
+}
+
+// HasUsed returns a boolean if a field has been set.
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) HasUsed() bool {
+	if o != nil && !IsNil(o.Used) {
+		return true
+	}
+
+	return false
+}
+
+// SetUsed gets a reference to the given int32 and assigns it to the Used field.
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) SetUsed(v int32) {
+	o.Used = &v
+}
+
+// GetRemaining returns the Remaining field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) GetRemaining() int32 {
+	if o == nil || IsNil(o.Remaining.Get()) {
+		var ret int32
+		return ret
+	}
+	return *o.Remaining.Get()
+}
+
+// GetRemainingOk returns a tuple with the Remaining field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) GetRemainingOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ResetsAt, true
+	return o.Remaining.Get(), o.Remaining.IsSet()
 }
 
-// SetResetsAt sets field value
+// HasRemaining returns a boolean if a field has been set.
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) HasRemaining() bool {
+	if o != nil && o.Remaining.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetRemaining gets a reference to the given NullableInt32 and assigns it to the Remaining field.
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) SetRemaining(v int32) {
+	o.Remaining.Set(&v)
+}
+// SetRemainingNil sets the value for Remaining to be an explicit nil
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) SetRemainingNil() {
+	o.Remaining.Set(nil)
+}
+
+// UnsetRemaining ensures that no value is present for Remaining, not even an explicit nil
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) UnsetRemaining() {
+	o.Remaining.Unset()
+}
+
+// GetResetsAt returns the ResetsAt field value if set, zero value otherwise.
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) GetResetsAt() time.Time {
+	if o == nil || IsNil(o.ResetsAt) {
+		var ret time.Time
+		return ret
+	}
+	return *o.ResetsAt
+}
+
+// GetResetsAtOk returns a tuple with the ResetsAt field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) GetResetsAtOk() (*time.Time, bool) {
+	if o == nil || IsNil(o.ResetsAt) {
+		return nil, false
+	}
+	return o.ResetsAt, true
+}
+
+// HasResetsAt returns a boolean if a field has been set.
+func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) HasResetsAt() bool {
+	if o != nil && !IsNil(o.ResetsAt) {
+		return true
+	}
+
+	return false
+}
+
+// SetResetsAt gets a reference to the given time.Time and assigns it to the ResetsAt field.
 func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) SetResetsAt(v time.Time) {
-	o.ResetsAt = v
+	o.ResetsAt = &v
 }
 
 func (o GetAccountLimits200ResponseDataUsageMailboxCreations) MarshalJSON() ([]byte, error) {
@@ -157,10 +204,18 @@ func (o GetAccountLimits200ResponseDataUsageMailboxCreations) MarshalJSON() ([]b
 
 func (o GetAccountLimits200ResponseDataUsageMailboxCreations) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["used"] = o.Used
-	toSerialize["remaining"] = o.Remaining
-	toSerialize["monthly_limit"] = o.MonthlyLimit
-	toSerialize["resets_at"] = o.ResetsAt
+	if o.MonthlyLimit.IsSet() {
+		toSerialize["monthly_limit"] = o.MonthlyLimit.Get()
+	}
+	if !IsNil(o.Used) {
+		toSerialize["used"] = o.Used
+	}
+	if o.Remaining.IsSet() {
+		toSerialize["remaining"] = o.Remaining.Get()
+	}
+	if !IsNil(o.ResetsAt) {
+		toSerialize["resets_at"] = o.ResetsAt
+	}
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -170,30 +225,6 @@ func (o GetAccountLimits200ResponseDataUsageMailboxCreations) ToMap() (map[strin
 }
 
 func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) UnmarshalJSON(data []byte) (err error) {
-	// This validates that all required properties are included in the JSON object
-	// by unmarshalling the object into a generic map with string keys and checking
-	// that every required field exists as a key in the generic map.
-	requiredProperties := []string{
-		"used",
-		"remaining",
-		"monthly_limit",
-		"resets_at",
-	}
-
-	allProperties := make(map[string]interface{})
-
-	err = json.Unmarshal(data, &allProperties)
-
-	if err != nil {
-		return err;
-	}
-
-	for _, requiredProperty := range(requiredProperties) {
-		if _, exists := allProperties[requiredProperty]; !exists {
-			return fmt.Errorf("no value given for required property %v", requiredProperty)
-		}
-	}
-
 	varGetAccountLimits200ResponseDataUsageMailboxCreations := _GetAccountLimits200ResponseDataUsageMailboxCreations{}
 
 	err = json.Unmarshal(data, &varGetAccountLimits200ResponseDataUsageMailboxCreations)
@@ -207,9 +238,9 @@ func (o *GetAccountLimits200ResponseDataUsageMailboxCreations) UnmarshalJSON(dat
 	additionalProperties := make(map[string]interface{})
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
+		delete(additionalProperties, "monthly_limit")
 		delete(additionalProperties, "used")
 		delete(additionalProperties, "remaining")
-		delete(additionalProperties, "monthly_limit")
 		delete(additionalProperties, "resets_at")
 		o.AdditionalProperties = additionalProperties
 	}
