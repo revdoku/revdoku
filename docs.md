@@ -61,8 +61,15 @@ Authorization: Bearer YOUR_API_KEY
 ```
 
 Choose an authorized mailbox from `data.mailboxes`, then [read its messages](#receive-and-read-email).
-A read-only key is enough; address discovery needs write access. To give each
-application customer an mailbox, follow the
+
+When you create a key or approve an AI connection, choose its access:
+
+- **Read only** can list mailboxes and read saved email and files. It cannot
+  show the mailbox's email address.
+- **Read & write** (or **Full access**) is needed when your app or AI agent must
+  show the mailbox's email address. It can also reply to senders and save files.
+
+To give each application customer a mailbox, follow the
 [SaaS mailbox guide](https://github.com/revdoku/revdoku/blob/main/guides/saas-mailboxes.md).
 
 | Setting | Value |
