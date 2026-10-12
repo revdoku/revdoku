@@ -9,6 +9,7 @@ Verify the account and granted access with a read, then complete the requested t
 | Application backend | [REST API](https://revdoku.com/api/) with a normal API key |
 | Local coding assistant | Skill with bundled CLI |
 | Desktop or cloud assistant | [Hosted MCP setup](https://revdoku.com/connect/) |
+| Chat app that cannot add connectors | [No connector available](#no-connector-available) |
 
 Use an existing connection when its account and scope fit. Installation prompts
 are instructions for one of these methods; they do not require another credential.
@@ -16,7 +17,7 @@ are instructions for one of these methods; they do not require another credentia
 ## Public prompt
 
 ```text
-Connect Revdoku so you can create and manage email mailboxes for my AI agents, read emails and attachments, and store files. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access. Continue my task. If I have no task yet, help me choose a first email workflow using https://revdoku.com/docs.md#first-email-workflow. Reuse my mailbox. Show its actual address as a mailto link only when receiving is ready and access permits it. Ask me to send an email there, use the address for relevant notifications, or set up Gmail forwarding. After a relevant message arrives, help me get the result I chose. Offer recurring automation afterward without implying that this connection runs it.
+Connect Revdoku so you can create and manage email mailboxes for my AI agents, read emails and attachments, and store files. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access. Continue my task. If I have no task yet, help me choose a first email workflow using https://revdoku.com/docs.md#first-email-workflow. Reuse my mailbox. Show its actual address as a mailto link only when receiving is ready and access permits it. Ask me to send an email there, use the address for relevant notifications, or set up Gmail forwarding. After a relevant message arrives, help me get the result I chose, including a reply to its sender if I ask. Offer recurring automation afterward without implying that this connection runs it. If you cannot connect tools in this chat, do not send me to a terminal. Tell me to sign up or sign in, open https://app.revdoku.com/mailboxes, copy my mailbox address, and forward an email there. Then I can paste that email or attach its files here for you to work with.
 ```
 
 ## Account setup
@@ -27,8 +28,8 @@ Connect Revdoku so you can create and manage email mailboxes for my AI agents, r
 
 Signup creates the first mailbox. List the accessible mailboxes after connecting. Reuse that mailbox for the task, or create another only when needed.
 With write access, check `email.receiving_enabled` before sharing an address.
-Read-only connections verify access by listing authorized mailboxes and reading an
-existing message; ask the operator for the address when needed. Show the account
+Read-only connections cannot see the address. They verify access by listing authorized
+mailboxes and reading an existing message; ask the operator for the address when needed. Show the account
 ID and granted scope. Browser account switching does not change a tool credential's
 default: use an explicit `account_id` or CLI `--account-id` for the intended account.
 
@@ -50,6 +51,31 @@ Read a relevant message and produce the chosen result before offering recurring 
 - Follow the account setup flow above. Hosted MCP requires browser OAuth before connecting.
 - Use `revdoku upload` for files and folders. Share the dashboard link with authorized
   people; the link itself does not grant access.
+
+## Choose access
+
+On the Revdoku permission screen, select the mailbox for the task, then choose:
+
+| Option | Choose it when |
+| --- | --- |
+| **Read only** | The agent only reads saved email and files. It cannot see the mailbox address. |
+| **Read & write** | The agent must show the mailbox address, reply to senders, or save files. |
+| **Full access** | The agent must create or manage mailboxes, or delete email. |
+
+## No connector available
+
+Some desktop and web chat apps cannot add custom connectors, for example free
+ChatGPT accounts. If you have no shell access and cannot connect Revdoku in this
+chat, do not send the user to a terminal. Give them these steps instead:
+
+1. Sign up through [browser signup](https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect), or sign in.
+2. Open the [dashboard](https://app.revdoku.com/mailboxes) and copy the mailbox's email address.
+3. Forward an email to that address, or send one from their usual email app.
+4. Open the message in the dashboard, then paste its text or attach its files in this chat.
+
+Then work with the pasted email or files.
+
+Custom connectors depend on the user's plan: see [ChatGPT developer mode](https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps-in-chatgpt) and [Claude custom connectors](https://support.claude.com/en/articles/11175166).
 
 ## Local AI apps with shell access
 
@@ -89,8 +115,9 @@ updates the same mailbox. Use `revdoku files`, `revdoku read PATH`, and
 
 Endpoint: `https://mcp.revdoku.com`
 
-Authenticate with OAuth before calling account tools. Choose selected mailboxes and
-read access for reading tasks; choose broader access only for the requested task.
+Authenticate with OAuth before calling account tools. Select only the mailboxes
+the task needs, and [choose access](#choose-access) for the task: **Read only** to
+read saved email, **Read & write** when you must show the mailbox address.
 Call `account_list`, choose an account, pass its `account_id` on later calls, and
 list its authorized mailboxes. Read an existing message before making requested changes. Mailbox creation
 returns its incoming email address and receiving state. For an existing mailbox, use `mailbox_get(include_email: true)` with write access.
@@ -104,7 +131,8 @@ See the [email contract](https://revdoku.com/api.md#incoming-email-into-a-mailbo
 If the user has no account, follow Account setup above.
 
 If the host does not support MCP or the agent needs local/binary files, use the
-local CLI. A hosted agent cannot read the user's computer.
+local CLI when you have shell access. A hosted agent cannot read the user's computer.
+Without MCP or shell access, follow [No connector available](#no-connector-available).
 
 Private storage and collaboration follow the [Terms of Use](https://revdoku.com/terms/).
 ## Start free

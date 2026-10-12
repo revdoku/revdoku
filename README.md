@@ -20,7 +20,9 @@ and state on your machine; host tool permissions remain in control.
 
 | Start here | What you get |
 | --- | --- |
-| [Language SDKs, n8n and Zapier](./guides/api-packages.md) | Working installation paths, supported operations, and a first-email walkthrough. |
+| [TypeScript/JavaScript SDK: `@revdoku/api`](https://github.com/revdoku/revdoku-typescript) | The npm package repository. |
+| [Python SDK: `revdoku-api`](https://github.com/revdoku/revdoku-python) | The PyPI package repository. |
+| [API packages, n8n and Zapier](./guides/api-packages.md) | Working installation paths, supported operations, and a first-email walkthrough. |
 | [Standalone CLI](./cli/README.md) | Terminal installation and usage without an AI integration. |
 | [Versioned CLI downloads](https://github.com/revdoku/revdoku/releases/latest) | A portable Bash executable, installer, and SHA-256 checksums. |
 | [JavaScript examples](./examples/javascript/README.md) | Runnable Node.js examples with no runtime dependencies. |
@@ -183,7 +185,8 @@ user's file storage, sharing, or incoming-email goal.
 ## Public package
 
 This repository contains the Revdoku CLI, skill, API documentation, and
-Claude/Codex/Cursor plugin manifests. The hosted MCP implementation runs at
+Claude/Codex/Cursor plugin manifests. SDK source is only in the SDK repositories
+linked above. The hosted MCP implementation runs at
 `https://mcp.revdoku.com`. MCP manifests use OAuth, and every tool descriptor requires OAuth.
 
 See [CHANGELOG.md](./CHANGELOG.md), [api.md](./api.md), and the

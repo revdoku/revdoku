@@ -92,7 +92,7 @@ Direct uploads are unavailable for accounts with additional file encryption
 (`DIRECT_UPLOADS_DISABLED`). The email reading and download examples support
 these accounts. See the [account-mode details](../api.md#hipaa-and-high-security-accounts).
 
-## An mailbox for each customer
+## A mailbox for each customer
 
 Follow the [SaaS mailbox guide](../guides/saas-mailboxes.md). Set `REVDOKU_ACCOUNT_ID` explicitly, then run:
 
