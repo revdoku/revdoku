@@ -64,8 +64,9 @@ Authorization: Bearer YOUR_API_KEY
 | Authentication | `Authorization: Bearer YOUR_API_KEY` |
 | JSON requests | `Content-Type: application/json` |
 
-For Node.js, start with the [npm SDK](https://github.com/revdoku/revdoku-typescript).
-Runnable examples are in [examples](https://github.com/revdoku/revdoku/tree/main/examples).
+The TypeScript SDK (`@revdoku/api`) is not published on npm yet. Use the REST
+requests in this guide and the runnable [examples](https://github.com/revdoku/revdoku/tree/main/examples),
+or [build the SDK from source](https://github.com/revdoku/revdoku/blob/main/guides/api-packages.md).
 
 ## Authentication
 
@@ -139,6 +140,11 @@ Every list uses the same page rules.
 1. Request the first page with your filters.
 2. While `has_more` is `true`, request `cursor=next_cursor` with the same filters.
 3. Treat cursors as opaque strings. A cursor works only for the list and filters that issued it.
+
+A cursor continues after the last item of the previous page, so items added or
+deleted between requests do not repeat or skip other items. File lists without
+`folder` show the most recently changed files first; a file that changes while you
+page moves to the first page.
 
 ### Deletes
 
@@ -538,6 +544,12 @@ version returns `409 EMAIL_ALLOWLIST_CHANGED`; invalid entries return
 Reading metadata never marks a file read. A download link request marks that
 version read. Move and copy accept `target_path` for an exact path or
 `target_folder` to keep the file name.
+
+Paths keep Unicode letters, digits, punctuation and symbols in NFC form. Control,
+bidi and zero-width characters are removed. ASCII characters such as `#`, `%`, `?`
+and `*`, and characters that look like `/` or `\`, become `-`. Other space
+characters, such as a no-break space, become an ASCII space. Upload responses
+return the stored path; match rows by `input_index`, not by path.
 
 Stored email lives under `_email/`. These files are read-only for the file
 operations: uploads, appends, renames, moves, copies, restores and deletes that

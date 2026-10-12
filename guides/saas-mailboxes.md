@@ -43,7 +43,7 @@ billing-group capacity while retaining separate files and memberships.
 | --- | --- |
 | List/read messages, download attachments | `mailbox_read` with the mapped mailbox selected |
 | Discover an address or receiving state | Mailbox write access; store the address during provisioning for readers |
-| Create an mailbox | Account-wide `mailbox_admin` access and an eligible account membership |
+| Create a mailbox | Account-wide `mailbox_admin` access and an eligible account membership |
 | Configure a webhook or delete a message | Mailbox admin access |
 | Manage aliases/custom domains | Full-account owner/administrator with mailbox-admin access |
 
@@ -76,7 +76,7 @@ or multiple matches need human review; an empty list does not prove creation
 failed. A known mailbox ID is checked with GET. Structured 4xx rejection permits a
 later explicit new attempt. Use only confirmed addresses.
 
-Aliases share an mailbox's messages, restrictions and quotas; they provide no
+Aliases share a mailbox's messages, restrictions and quotas; they provide no
 isolation. Follow the [alias workflow](../api.md#aliases),
 check `max_email_aliases_per_mailbox`, and wait for routing confirmation. Keeping an
 old primary also uses rotation capacity. Removal stops new/queued deliveries;

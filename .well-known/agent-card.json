@@ -14,7 +14,7 @@
     {
       "id": "email",
       "name": "Email mailboxes for people and AI agents",
-      "description": "Create an mailbox with mailbox_create and check email.receiving_enabled. Use mailbox_email_list with a saved cursor, mailbox_email_get for decoded messages, and mailbox_email_download for originals and attachments. ",
+      "description": "Create a mailbox with mailbox_create and check email.receiving_enabled. Use mailbox_email_list with a saved cursor, mailbox_email_get for decoded messages, and mailbox_email_download for originals and attachments. ",
       "account_required": true
     },
     {
