@@ -20,7 +20,7 @@ and state on your machine; host tool permissions remain in control.
 
 | Start here | What you get |
 | --- | --- |
-| [Language SDKs, n8n and Zapier](./guides/api-packages.md) | Working installation paths, supported operations, and a first-email walkthrough. |
+| [TypeScript and Python SDKs, n8n and Zapier](./guides/api-packages.md) | Working installation paths, supported operations, and a first-email walkthrough. |
 | [Standalone CLI](./cli/README.md) | Terminal installation and usage without an AI integration. |
 | [Versioned CLI downloads](https://github.com/revdoku/revdoku/releases/latest) | A portable Bash executable, installer, and SHA-256 checksums. |
 | [JavaScript examples](./examples/javascript/README.md) | Runnable Node.js examples with no runtime dependencies. |

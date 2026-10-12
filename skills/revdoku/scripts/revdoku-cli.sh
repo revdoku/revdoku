@@ -717,7 +717,7 @@ http_status_retryable() {
 
 http_error_code_retryable() {
   case "${1:-}" in
-    DATABASE_BUSY_RETRY|MAILBOX_FILE_PATH_INDEX_BACKFILL_PENDING|MAILBOX_DELETE_BUSY|MAILBOX_DELETE_ENQUEUE_FAILED)
+    DATABASE_BUSY_RETRY|MAILBOX_DELETE_BUSY|MAILBOX_DELETE_ENQUEUE_FAILED)
       return 0
       ;;
     *)
@@ -1424,7 +1424,9 @@ create_mailbox() {
   local payload
   payload="$("$JQ_BIN" -nc --arg description "$DESCRIPTION" \
     --arg username "$EMAIL_USERNAME" --arg domain "$EMAIL_DOMAIN" \
+    --argjson metadata "$METADATA_JSON" \
     '{mailbox: (({description:$description} | with_entries(select(.value != ""))) +
+      (if ($metadata | length) > 0 then {metadata: $metadata} else {} end) +
       {email: ({username:$username,domain:$domain} | with_entries(select(.value != "")))})}')"
   http_json POST "/api/v1/mailboxes" "$payload"
 }
@@ -1830,12 +1832,23 @@ sha256_file() {
   fi
 }
 
+# The server stores paths in Unicode NFC. macOS can return decomposed (NFD)
+# names, so compose them before they become upload paths.
+nfc_text() {
+  local LC_ALL=C
+  case "$1" in
+    *[!\ -~]*) ;;
+    *) printf '%s' "$1"; return ;;
+  esac
+  perl -MUnicode::Normalize -CSA -e 'print NFC($ARGV[0])' -- "$1" 2>/dev/null || printf '%s' "$1"
+}
+
 relative_path_for() {
   local file="$1"
   if [[ -f "$ROOT_PATH" ]]; then
-    basename "$file"
+    nfc_text "$(basename "$file")"
   else
-    printf "%s/%s" "$(basename "$ROOT_PATH")" "${file#"$ROOT_PATH"/}"
+    nfc_text "$(printf "%s/%s" "$(basename "$ROOT_PATH")" "${file#"$ROOT_PATH"/}")"
   fi
 }
 
@@ -1874,7 +1887,7 @@ validate_upload_descriptors() {
     }
 }
 
-create_mailbox() {
+create_mailbox_id() {
   local payload response id
   payload="$(mailbox_payload)"
   response="$(http_json POST "/api/v1/mailboxes" "$payload")" || die "mailbox create failed"
@@ -2217,7 +2230,7 @@ mailbox_id_for_storage() {
     fi
     printf "%s" "$MAILBOX_ID"
   else
-    create_mailbox
+    create_mailbox_id
   fi
 }
 
