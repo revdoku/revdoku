@@ -40,7 +40,6 @@ const server = createServer(async (request, response) => {
     claimed = true;
     const url = new URL(`https://api.revdoku.com/v1/mailboxes/${encodeURIComponent(mailboxId)}/emails/${encodeURIComponent(event.data.email_id)}`);
     url.searchParams.set('account_id', event.data.account_id);
-    url.searchParams.set('purpose', 'background');
     const emailResponse = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` }, redirect: 'error', signal: AbortSignal.timeout(8000) });
     if (!emailResponse.ok) throw new Error(`Read email: HTTP ${emailResponse.status}`);
     const email = (await emailResponse.json()).data.email;

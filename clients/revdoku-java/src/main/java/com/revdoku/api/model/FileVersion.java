@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -44,17 +44,13 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
   FileVersion.JSON_PROPERTY_MIME_TYPE,
   FileVersion.JSON_PROPERTY_SHA256,
   FileVersion.JSON_PROPERTY_REASON,
-  FileVersion.JSON_PROPERTY_META_KEY,
   FileVersion.JSON_PROPERTY_CREATED_BY_SYSTEM,
   FileVersion.JSON_PROPERTY_DELETED,
   FileVersion.JSON_PROPERTY_READY,
   FileVersion.JSON_PROPERTY_HAS_TEXT,
-  FileVersion.JSON_PROPERTY_NORMALIZATION_REQUIRED,
-  FileVersion.JSON_PROPERTY_META_READY,
   FileVersion.JSON_PROPERTY_VERSION_NUMBER,
   FileVersion.JSON_PROPERTY_BYTE_SIZE,
   FileVersion.JSON_PROPERTY_CREATED_AT,
-  FileVersion.JSON_PROPERTY_META_CREATED_AT,
   FileVersion.JSON_PROPERTY_CREATED_BY,
   FileVersion.JSON_PROPERTY_UPDATED_BY,
   FileVersion.JSON_PROPERTY_CREATED_BY_AGENT,
@@ -69,11 +65,11 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class FileVersion {
   public static final String JSON_PROPERTY_ID = "id";
-  @javax.annotation.Nullable
+  @javax.annotation.Nonnull
   private String id;
 
   public static final String JSON_PROPERTY_FILE_ID = "file_id";
-  @javax.annotation.Nullable
+  @javax.annotation.Nonnull
   private String fileId;
 
   public static final String JSON_PROPERTY_NAME = "name";
@@ -91,10 +87,6 @@ public class FileVersion {
   public static final String JSON_PROPERTY_REASON = "reason";
   private JsonNullable<String> reason = JsonNullable.<String>undefined();
 
-  public static final String JSON_PROPERTY_META_KEY = "meta_key";
-  @javax.annotation.Nullable
-  private String metaKey;
-
   public static final String JSON_PROPERTY_CREATED_BY_SYSTEM = "created_by_system";
   @javax.annotation.Nullable
   private String createdBySystem;
@@ -111,16 +103,8 @@ public class FileVersion {
   @javax.annotation.Nullable
   private Boolean hasText;
 
-  public static final String JSON_PROPERTY_NORMALIZATION_REQUIRED = "normalization_required";
-  @javax.annotation.Nullable
-  private Boolean normalizationRequired;
-
-  public static final String JSON_PROPERTY_META_READY = "meta_ready";
-  @javax.annotation.Nullable
-  private Boolean metaReady;
-
   public static final String JSON_PROPERTY_VERSION_NUMBER = "version_number";
-  @javax.annotation.Nullable
+  @javax.annotation.Nonnull
   private Long versionNumber;
 
   public static final String JSON_PROPERTY_BYTE_SIZE = "byte_size";
@@ -130,10 +114,6 @@ public class FileVersion {
   public static final String JSON_PROPERTY_CREATED_AT = "created_at";
   @javax.annotation.Nullable
   private OffsetDateTime createdAt;
-
-  public static final String JSON_PROPERTY_META_CREATED_AT = "meta_created_at";
-  @javax.annotation.Nullable
-  private OffsetDateTime metaCreatedAt;
 
   public static final String JSON_PROPERTY_CREATED_BY = "created_by";
   @javax.annotation.Nullable
@@ -175,7 +155,7 @@ public class FileVersion {
   public FileVersion() { 
   }
 
-  public FileVersion id(@javax.annotation.Nullable String id) {
+  public FileVersion id(@javax.annotation.Nonnull String id) {
     this.id = id;
     return this;
   }
@@ -184,22 +164,22 @@ public class FileVersion {
    * Get id
    * @return id
    */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_ID, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public String getId() {
     return id;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setId(@javax.annotation.Nullable String id) {
+  @JsonProperty(value = JSON_PROPERTY_ID, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setId(@javax.annotation.Nonnull String id) {
     this.id = id;
   }
 
 
-  public FileVersion fileId(@javax.annotation.Nullable String fileId) {
+  public FileVersion fileId(@javax.annotation.Nonnull String fileId) {
     this.fileId = fileId;
     return this;
   }
@@ -208,17 +188,17 @@ public class FileVersion {
    * Get fileId
    * @return fileId
    */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_FILE_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_FILE_ID, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public String getFileId() {
     return fileId;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_FILE_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setFileId(@javax.annotation.Nullable String fileId) {
+  @JsonProperty(value = JSON_PROPERTY_FILE_ID, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setFileId(@javax.annotation.Nonnull String fileId) {
     this.fileId = fileId;
   }
 
@@ -327,30 +307,6 @@ public class FileVersion {
   }
 
 
-  public FileVersion metaKey(@javax.annotation.Nullable String metaKey) {
-    this.metaKey = metaKey;
-    return this;
-  }
-
-  /**
-   * Get metaKey
-   * @return metaKey
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_META_KEY, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public String getMetaKey() {
-    return metaKey;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_META_KEY, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setMetaKey(@javax.annotation.Nullable String metaKey) {
-    this.metaKey = metaKey;
-  }
-
-
   public FileVersion createdBySystem(@javax.annotation.Nullable String createdBySystem) {
     this.createdBySystem = createdBySystem;
     return this;
@@ -381,7 +337,7 @@ public class FileVersion {
   }
 
   /**
-   * Get deleted
+   * True for the version that records a deletion.
    * @return deleted
    */
   @javax.annotation.Nullable
@@ -447,55 +403,7 @@ public class FileVersion {
   }
 
 
-  public FileVersion normalizationRequired(@javax.annotation.Nullable Boolean normalizationRequired) {
-    this.normalizationRequired = normalizationRequired;
-    return this;
-  }
-
-  /**
-   * Get normalizationRequired
-   * @return normalizationRequired
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_NORMALIZATION_REQUIRED, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public Boolean getNormalizationRequired() {
-    return normalizationRequired;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_NORMALIZATION_REQUIRED, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setNormalizationRequired(@javax.annotation.Nullable Boolean normalizationRequired) {
-    this.normalizationRequired = normalizationRequired;
-  }
-
-
-  public FileVersion metaReady(@javax.annotation.Nullable Boolean metaReady) {
-    this.metaReady = metaReady;
-    return this;
-  }
-
-  /**
-   * Get metaReady
-   * @return metaReady
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_META_READY, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public Boolean getMetaReady() {
-    return metaReady;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_META_READY, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setMetaReady(@javax.annotation.Nullable Boolean metaReady) {
-    this.metaReady = metaReady;
-  }
-
-
-  public FileVersion versionNumber(@javax.annotation.Nullable Long versionNumber) {
+  public FileVersion versionNumber(@javax.annotation.Nonnull Long versionNumber) {
     this.versionNumber = versionNumber;
     return this;
   }
@@ -504,17 +412,17 @@ public class FileVersion {
    * Get versionNumber
    * @return versionNumber
    */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_VERSION_NUMBER, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_VERSION_NUMBER, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public Long getVersionNumber() {
     return versionNumber;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_VERSION_NUMBER, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setVersionNumber(@javax.annotation.Nullable Long versionNumber) {
+  @JsonProperty(value = JSON_PROPERTY_VERSION_NUMBER, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setVersionNumber(@javax.annotation.Nonnull Long versionNumber) {
     this.versionNumber = versionNumber;
   }
 
@@ -564,30 +472,6 @@ public class FileVersion {
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
   public void setCreatedAt(@javax.annotation.Nullable OffsetDateTime createdAt) {
     this.createdAt = createdAt;
-  }
-
-
-  public FileVersion metaCreatedAt(@javax.annotation.Nullable OffsetDateTime metaCreatedAt) {
-    this.metaCreatedAt = metaCreatedAt;
-    return this;
-  }
-
-  /**
-   * Get metaCreatedAt
-   * @return metaCreatedAt
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_META_CREATED_AT, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public OffsetDateTime getMetaCreatedAt() {
-    return metaCreatedAt;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_META_CREATED_AT, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setMetaCreatedAt(@javax.annotation.Nullable OffsetDateTime metaCreatedAt) {
-    this.metaCreatedAt = metaCreatedAt;
   }
 
 
@@ -905,17 +789,13 @@ public class FileVersion {
         Objects.equals(this.mimeType, fileVersion.mimeType) &&
         Objects.equals(this.sha256, fileVersion.sha256) &&
         equalsNullable(this.reason, fileVersion.reason) &&
-        Objects.equals(this.metaKey, fileVersion.metaKey) &&
         Objects.equals(this.createdBySystem, fileVersion.createdBySystem) &&
         Objects.equals(this.deleted, fileVersion.deleted) &&
         Objects.equals(this.ready, fileVersion.ready) &&
         Objects.equals(this.hasText, fileVersion.hasText) &&
-        Objects.equals(this.normalizationRequired, fileVersion.normalizationRequired) &&
-        Objects.equals(this.metaReady, fileVersion.metaReady) &&
         Objects.equals(this.versionNumber, fileVersion.versionNumber) &&
         Objects.equals(this.byteSize, fileVersion.byteSize) &&
         Objects.equals(this.createdAt, fileVersion.createdAt) &&
-        Objects.equals(this.metaCreatedAt, fileVersion.metaCreatedAt) &&
         Objects.equals(this.createdBy, fileVersion.createdBy) &&
         Objects.equals(this.updatedBy, fileVersion.updatedBy) &&
         Objects.equals(this.createdByAgent, fileVersion.createdByAgent) &&
@@ -934,7 +814,7 @@ public class FileVersion {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, fileId, name, mimeType, sha256, hashCodeNullable(reason), metaKey, createdBySystem, deleted, ready, hasText, normalizationRequired, metaReady, versionNumber, byteSize, createdAt, metaCreatedAt, createdBy, updatedBy, createdByAgent, updatedByAgent, createdByApiKey, updatedByApiKey, read, hashCodeNullable(readAt), hashCodeNullable(readBy), hashCodeNullable(readByApiKey));
+    return Objects.hash(id, fileId, name, mimeType, sha256, hashCodeNullable(reason), createdBySystem, deleted, ready, hasText, versionNumber, byteSize, createdAt, createdBy, updatedBy, createdByAgent, updatedByAgent, createdByApiKey, updatedByApiKey, read, hashCodeNullable(readAt), hashCodeNullable(readBy), hashCodeNullable(readByApiKey));
   }
 
   private static <T> int hashCodeNullable(JsonNullable<T> a) {
@@ -954,17 +834,13 @@ public class FileVersion {
     sb.append("    mimeType: ").append(toIndentedString(mimeType)).append("\n");
     sb.append("    sha256: ").append(toIndentedString(sha256)).append("\n");
     sb.append("    reason: ").append(toIndentedString(reason)).append("\n");
-    sb.append("    metaKey: ").append(toIndentedString(metaKey)).append("\n");
     sb.append("    createdBySystem: ").append(toIndentedString(createdBySystem)).append("\n");
     sb.append("    deleted: ").append(toIndentedString(deleted)).append("\n");
     sb.append("    ready: ").append(toIndentedString(ready)).append("\n");
     sb.append("    hasText: ").append(toIndentedString(hasText)).append("\n");
-    sb.append("    normalizationRequired: ").append(toIndentedString(normalizationRequired)).append("\n");
-    sb.append("    metaReady: ").append(toIndentedString(metaReady)).append("\n");
     sb.append("    versionNumber: ").append(toIndentedString(versionNumber)).append("\n");
     sb.append("    byteSize: ").append(toIndentedString(byteSize)).append("\n");
     sb.append("    createdAt: ").append(toIndentedString(createdAt)).append("\n");
-    sb.append("    metaCreatedAt: ").append(toIndentedString(metaCreatedAt)).append("\n");
     sb.append("    createdBy: ").append(toIndentedString(createdBy)).append("\n");
     sb.append("    updatedBy: ").append(toIndentedString(updatedBy)).append("\n");
     sb.append("    createdByAgent: ").append(toIndentedString(createdByAgent)).append("\n");

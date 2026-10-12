@@ -1,7 +1,7 @@
 /*
- * Revdoku public agent API
+ * Revdoku API
  *
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -37,6 +37,9 @@ pub struct AccountLimits {
     pub max_received_email_bytes_per_month: Option<i64>,
     #[serde(rename = "max_received_email_message_bytes", deserialize_with = "Option::deserialize")]
     pub max_received_email_message_bytes: Option<i64>,
+    /// Sent-email recipients per billing period, shared by the billing group. Each recipient counts once.
+    #[serde(rename = "max_sent_emails_per_month", deserialize_with = "Option::deserialize")]
+    pub max_sent_emails_per_month: Option<i32>,
     #[serde(rename = "max_email_address_rotations_per_month", deserialize_with = "Option::deserialize")]
     pub max_email_address_rotations_per_month: Option<i32>,
     #[serde(rename = "max_account_members", deserialize_with = "Option::deserialize")]
@@ -55,7 +58,7 @@ pub struct AccountLimits {
 }
 
 impl AccountLimits {
-    pub fn new(max_mailboxes: Option<i32>, max_mailbox_creations_per_month: Option<i32>, max_files_per_mailbox: Option<i32>, max_current_files: Option<i32>, max_storage_bytes: Option<i64>, max_file_size_bytes: Option<i64>, max_pdf_size_bytes: Option<i64>, max_file_versions_per_file: Option<i32>, max_email_domains: Option<i32>, max_received_emails_per_month: Option<i32>, max_received_email_bytes_per_month: Option<i64>, max_received_email_message_bytes: Option<i64>, max_email_address_rotations_per_month: Option<i32>, max_account_members: Option<i32>, max_api_keys: Option<i32>, max_agent_connections: Option<i32>, api_rate_limit_requests_per_minute: Option<i32>, audit_retention_days: Option<i32>, max_email_aliases_per_mailbox: i32) -> AccountLimits {
+    pub fn new(max_mailboxes: Option<i32>, max_mailbox_creations_per_month: Option<i32>, max_files_per_mailbox: Option<i32>, max_current_files: Option<i32>, max_storage_bytes: Option<i64>, max_file_size_bytes: Option<i64>, max_pdf_size_bytes: Option<i64>, max_file_versions_per_file: Option<i32>, max_email_domains: Option<i32>, max_received_emails_per_month: Option<i32>, max_received_email_bytes_per_month: Option<i64>, max_received_email_message_bytes: Option<i64>, max_sent_emails_per_month: Option<i32>, max_email_address_rotations_per_month: Option<i32>, max_account_members: Option<i32>, max_api_keys: Option<i32>, max_agent_connections: Option<i32>, api_rate_limit_requests_per_minute: Option<i32>, audit_retention_days: Option<i32>, max_email_aliases_per_mailbox: i32) -> AccountLimits {
         AccountLimits {
             max_mailboxes,
             max_mailbox_creations_per_month,
@@ -69,6 +72,7 @@ impl AccountLimits {
             max_received_emails_per_month,
             max_received_email_bytes_per_month,
             max_received_email_message_bytes,
+            max_sent_emails_per_month,
             max_email_address_rotations_per_month,
             max_account_members,
             max_api_keys,

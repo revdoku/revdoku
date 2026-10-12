@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -15,24 +15,59 @@ require 'time'
 
 module RevdokuApi
   class SaveUploadedFileRequest < ApiModelBase
+    # Destination path. An existing path receives a new version. Paths under _email/ return EMAIL_PATH_READ_ONLY.
     attr_accessor :path
 
+    # data.signed_id from POST /v1/direct_uploads.
     attr_accessor :signed_blob_id
+
+    # Display name; defaults to the last path segment.
+    attr_accessor :name
+
+    attr_accessor :role
+
+    attr_accessor :existing_file_policy
+
+    # Mailbox version_id from your last read. A different current version returns MAILBOX_VERSION_CONFLICT and saves nothing.
+    attr_accessor :expected_mailbox_version
 
     attr_accessor :account_id
 
-    attr_accessor :expected_mailbox_revision_id
-
     # Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
     attr_accessor :reason
+
+    class EnumAttributeValidator
+      attr_reader :datatype
+      attr_reader :allowable_values
+
+      def initialize(datatype, allowable_values)
+        @allowable_values = allowable_values.map do |value|
+          case datatype.to_s
+          when /Integer/i
+            value.to_i
+          when /Float/i
+            value.to_f
+          else
+            value
+          end
+        end
+      end
+
+      def valid?(value)
+        !value || allowable_values.include?(value)
+      end
+    end
 
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
         :'path' => :'path',
         :'signed_blob_id' => :'signed_blob_id',
+        :'name' => :'name',
+        :'role' => :'role',
+        :'existing_file_policy' => :'existing_file_policy',
+        :'expected_mailbox_version' => :'expected_mailbox_version',
         :'account_id' => :'account_id',
-        :'expected_mailbox_revision_id' => :'expected_mailbox_revision_id',
         :'reason' => :'reason'
       }
     end
@@ -52,8 +87,11 @@ module RevdokuApi
       {
         :'path' => :'String',
         :'signed_blob_id' => :'String',
+        :'name' => :'String',
+        :'role' => :'String',
+        :'existing_file_policy' => :'String',
+        :'expected_mailbox_version' => :'String',
         :'account_id' => :'String',
-        :'expected_mailbox_revision_id' => :'String',
         :'reason' => :'String'
       }
     end
@@ -93,12 +131,28 @@ module RevdokuApi
         self.signed_blob_id = nil
       end
 
-      if attributes.key?(:'account_id')
-        self.account_id = attributes[:'account_id']
+      if attributes.key?(:'name')
+        self.name = attributes[:'name']
       end
 
-      if attributes.key?(:'expected_mailbox_revision_id')
-        self.expected_mailbox_revision_id = attributes[:'expected_mailbox_revision_id']
+      if attributes.key?(:'role')
+        self.role = attributes[:'role']
+      else
+        self.role = 'source'
+      end
+
+      if attributes.key?(:'existing_file_policy')
+        self.existing_file_policy = attributes[:'existing_file_policy']
+      else
+        self.existing_file_policy = 'replace'
+      end
+
+      if attributes.key?(:'expected_mailbox_version')
+        self.expected_mailbox_version = attributes[:'expected_mailbox_version']
+      end
+
+      if attributes.key?(:'account_id')
+        self.account_id = attributes[:'account_id']
       end
 
       if attributes.key?(:'reason')
@@ -126,6 +180,26 @@ module RevdokuApi
       @signed_blob_id = signed_blob_id
     end
 
+    # Custom attribute writer method checking allowed values (enum).
+    # @param [Object] role Object to be assigned
+    def role=(role)
+      validator = EnumAttributeValidator.new('String', ["source", "reference", "generated", "agent_output", "export", "artifact"])
+      unless validator.valid?(role)
+        fail ArgumentError, "invalid value for \"role\", must be one of #{validator.allowable_values}."
+      end
+      @role = role
+    end
+
+    # Custom attribute writer method checking allowed values (enum).
+    # @param [Object] existing_file_policy Object to be assigned
+    def existing_file_policy=(existing_file_policy)
+      validator = EnumAttributeValidator.new('String', ["replace", "skip"])
+      unless validator.valid?(existing_file_policy)
+        fail ArgumentError, "invalid value for \"existing_file_policy\", must be one of #{validator.allowable_values}."
+      end
+      @existing_file_policy = existing_file_policy
+    end
+
     # Custom attribute writer method with validation
     # @param [Object] reason Value to be assigned
     def reason=(reason)
@@ -143,8 +217,11 @@ module RevdokuApi
       self.class == o.class &&
           path == o.path &&
           signed_blob_id == o.signed_blob_id &&
+          name == o.name &&
+          role == o.role &&
+          existing_file_policy == o.existing_file_policy &&
+          expected_mailbox_version == o.expected_mailbox_version &&
           account_id == o.account_id &&
-          expected_mailbox_revision_id == o.expected_mailbox_revision_id &&
           reason == o.reason
     end
 
@@ -157,7 +234,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [path, signed_blob_id, account_id, expected_mailbox_revision_id, reason].hash
+      [path, signed_blob_id, name, role, existing_file_policy, expected_mailbox_version, account_id, reason].hash
     end
 
     # Builds the object from hash

@@ -35,7 +35,7 @@ for (let page = 0; page < 100; page++) {
     const decoded = await detail.json();
     if (!detail.ok) throw new Error(`${decoded.error.code}: ${decoded.error.message}`);
     const mail = decoded.data.email;
-    console.log(JSON.stringify({ id: mail.id, from: mail.from, subject: mail.subject,
+    console.log(JSON.stringify({ id: mail.id, from: mail.from_addresses, subject: mail.subject,
       body_status: mail.body_status, attachments: mail.attachments }));
     if (process.argv.includes('--show-body')) console.log(mail.body_text ?? '[Download original for full content]');
     count++;

@@ -22,9 +22,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             &config,
             &mailbox,
             account.as_deref(),
+            None,
             Some(100),
             cursor.as_deref(),
             Some("asc"),
+            None,
             None,
             None,
             None,
@@ -44,7 +46,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 account.as_deref(),
                 None,
                 None,
-                None,
             )
             .await?
             .data
@@ -54,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if !page.pagination.has_more {
             break;
         }
-        let next = page.pagination.next_cursor;
+        let next = page.pagination.next_cursor.unwrap_or_default();
         if next.is_empty() || !seen.insert(next.clone()) {
             return Err("Email pagination did not advance".into());
         }

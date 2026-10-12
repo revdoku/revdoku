@@ -1,7 +1,7 @@
 /*
- * Revdoku public agent API
+ * Revdoku API
  *
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -11,7 +11,6 @@
 use crate::models;
 use serde::{Deserialize, Serialize};
 
-/// GetAccountLimits200ResponseDataUsage : Present only for full-account administrator credentials and full-account browser sessions.
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetAccountLimits200ResponseDataUsage {
     #[serde(rename = "mailbox_creations", skip_serializing_if = "Option::is_none")]
@@ -19,7 +18,6 @@ pub struct GetAccountLimits200ResponseDataUsage {
 }
 
 impl GetAccountLimits200ResponseDataUsage {
-    /// Present only for full-account administrator credentials and full-account browser sessions.
     pub fn new() -> GetAccountLimits200ResponseDataUsage {
         GetAccountLimits200ResponseDataUsage {
             mailbox_creations: None,

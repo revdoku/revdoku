@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -21,7 +21,7 @@ var _ MappedNullable = &ListAccounts200Response{}
 // ListAccounts200Response struct for ListAccounts200Response
 type ListAccounts200Response struct {
 	Success bool `json:"success"`
-	Data ListAccounts200ResponseData `json:"data"`
+	Data AccountList `json:"data"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -31,7 +31,7 @@ type _ListAccounts200Response ListAccounts200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewListAccounts200Response(success bool, data ListAccounts200ResponseData) *ListAccounts200Response {
+func NewListAccounts200Response(success bool, data AccountList) *ListAccounts200Response {
 	this := ListAccounts200Response{}
 	this.Success = success
 	this.Data = data
@@ -71,9 +71,9 @@ func (o *ListAccounts200Response) SetSuccess(v bool) {
 }
 
 // GetData returns the Data field value
-func (o *ListAccounts200Response) GetData() ListAccounts200ResponseData {
+func (o *ListAccounts200Response) GetData() AccountList {
 	if o == nil {
-		var ret ListAccounts200ResponseData
+		var ret AccountList
 		return ret
 	}
 
@@ -82,7 +82,7 @@ func (o *ListAccounts200Response) GetData() ListAccounts200ResponseData {
 
 // GetDataOk returns a tuple with the Data field value
 // and a boolean to check if the value has been set.
-func (o *ListAccounts200Response) GetDataOk() (*ListAccounts200ResponseData, bool) {
+func (o *ListAccounts200Response) GetDataOk() (*AccountList, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -90,7 +90,7 @@ func (o *ListAccounts200Response) GetDataOk() (*ListAccounts200ResponseData, boo
 }
 
 // SetData sets field value
-func (o *ListAccounts200Response) SetData(v ListAccounts200ResponseData) {
+func (o *ListAccounts200Response) SetData(v AccountList) {
 	o.Data = v
 }
 

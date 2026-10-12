@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -27,27 +27,20 @@ module RevdokuApi
 
     attr_accessor :reason
 
-    attr_accessor :meta_key
-
     attr_accessor :created_by_system
 
+    # True for the version that records a deletion.
     attr_accessor :deleted
 
     attr_accessor :ready
 
     attr_accessor :has_text
 
-    attr_accessor :normalization_required
-
-    attr_accessor :meta_ready
-
     attr_accessor :version_number
 
     attr_accessor :byte_size
 
     attr_accessor :created_at
-
-    attr_accessor :meta_created_at
 
     attr_accessor :created_by
 
@@ -78,17 +71,13 @@ module RevdokuApi
         :'mime_type' => :'mime_type',
         :'sha256' => :'sha256',
         :'reason' => :'reason',
-        :'meta_key' => :'meta_key',
         :'created_by_system' => :'created_by_system',
         :'deleted' => :'deleted',
         :'ready' => :'ready',
         :'has_text' => :'has_text',
-        :'normalization_required' => :'normalization_required',
-        :'meta_ready' => :'meta_ready',
         :'version_number' => :'version_number',
         :'byte_size' => :'byte_size',
         :'created_at' => :'created_at',
-        :'meta_created_at' => :'meta_created_at',
         :'created_by' => :'created_by',
         :'updated_by' => :'updated_by',
         :'created_by_agent' => :'created_by_agent',
@@ -121,17 +110,13 @@ module RevdokuApi
         :'mime_type' => :'String',
         :'sha256' => :'String',
         :'reason' => :'String',
-        :'meta_key' => :'String',
         :'created_by_system' => :'String',
         :'deleted' => :'Boolean',
         :'ready' => :'Boolean',
         :'has_text' => :'Boolean',
-        :'normalization_required' => :'Boolean',
-        :'meta_ready' => :'Boolean',
         :'version_number' => :'Integer',
         :'byte_size' => :'Integer',
         :'created_at' => :'Time',
-        :'meta_created_at' => :'Time',
         :'created_by' => :'FileActor',
         :'updated_by' => :'FileActor',
         :'created_by_agent' => :'Hash<String, Object>',
@@ -173,10 +158,14 @@ module RevdokuApi
 
       if attributes.key?(:'id')
         self.id = attributes[:'id']
+      else
+        self.id = nil
       end
 
       if attributes.key?(:'file_id')
         self.file_id = attributes[:'file_id']
+      else
+        self.file_id = nil
       end
 
       if attributes.key?(:'name')
@@ -195,10 +184,6 @@ module RevdokuApi
         self.reason = attributes[:'reason']
       end
 
-      if attributes.key?(:'meta_key')
-        self.meta_key = attributes[:'meta_key']
-      end
-
       if attributes.key?(:'created_by_system')
         self.created_by_system = attributes[:'created_by_system']
       end
@@ -215,16 +200,10 @@ module RevdokuApi
         self.has_text = attributes[:'has_text']
       end
 
-      if attributes.key?(:'normalization_required')
-        self.normalization_required = attributes[:'normalization_required']
-      end
-
-      if attributes.key?(:'meta_ready')
-        self.meta_ready = attributes[:'meta_ready']
-      end
-
       if attributes.key?(:'version_number')
         self.version_number = attributes[:'version_number']
+      else
+        self.version_number = nil
       end
 
       if attributes.key?(:'byte_size')
@@ -233,10 +212,6 @@ module RevdokuApi
 
       if attributes.key?(:'created_at')
         self.created_at = attributes[:'created_at']
-      end
-
-      if attributes.key?(:'meta_created_at')
-        self.meta_created_at = attributes[:'meta_created_at']
       end
 
       if attributes.key?(:'created_by')
@@ -288,6 +263,36 @@ module RevdokuApi
       end
     end
 
+    # Custom attribute writer method with validation
+    # @param [Object] id Value to be assigned
+    def id=(id)
+      if id.nil?
+        fail ArgumentError, 'id cannot be nil'
+      end
+
+      @id = id
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] file_id Value to be assigned
+    def file_id=(file_id)
+      if file_id.nil?
+        fail ArgumentError, 'file_id cannot be nil'
+      end
+
+      @file_id = file_id
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] version_number Value to be assigned
+    def version_number=(version_number)
+      if version_number.nil?
+        fail ArgumentError, 'version_number cannot be nil'
+      end
+
+      @version_number = version_number
+    end
+
     # Checks equality by comparing each attribute.
     # @param [Object] Object to be compared
     def ==(o)
@@ -299,17 +304,13 @@ module RevdokuApi
           mime_type == o.mime_type &&
           sha256 == o.sha256 &&
           reason == o.reason &&
-          meta_key == o.meta_key &&
           created_by_system == o.created_by_system &&
           deleted == o.deleted &&
           ready == o.ready &&
           has_text == o.has_text &&
-          normalization_required == o.normalization_required &&
-          meta_ready == o.meta_ready &&
           version_number == o.version_number &&
           byte_size == o.byte_size &&
           created_at == o.created_at &&
-          meta_created_at == o.meta_created_at &&
           created_by == o.created_by &&
           updated_by == o.updated_by &&
           created_by_agent == o.created_by_agent &&
@@ -331,7 +332,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [id, file_id, name, mime_type, sha256, reason, meta_key, created_by_system, deleted, ready, has_text, normalization_required, meta_ready, version_number, byte_size, created_at, meta_created_at, created_by, updated_by, created_by_agent, updated_by_agent, created_by_api_key, updated_by_api_key, read, read_at, read_by, read_by_api_key].hash
+      [id, file_id, name, mime_type, sha256, reason, created_by_system, deleted, ready, has_text, version_number, byte_size, created_at, created_by, updated_by, created_by_agent, updated_by_agent, created_by_api_key, updated_by_api_key, read, read_at, read_by, read_by_api_key].hash
     end
 
     # Builds the object from hash

@@ -1,4 +1,5 @@
 use revdoku_api::apis::{configuration::Configuration, default_api};
+use std::collections::HashSet;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -14,17 +15,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         bearer_access_token: Some(key),
         ..Configuration::default()
     };
-    let mut offset = 0;
+    let mut cursor: Option<String> = None;
+    let mut seen = HashSet::new();
     loop {
-        let page = default_api::list_mailbox_files(
+        let page = default_api::list_files(
             &config,
             &mailbox,
-            Some(100),
-            Some(offset),
-            None,
-            None,
-            None,
             account.as_deref(),
+            None,
+            None,
+            None,
+            Some(100),
+            cursor.as_deref(),
         )
         .await?
         .data;
@@ -34,11 +36,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if !page.pagination.has_more {
             break;
         }
-        let next = page.pagination.next_offset.ok_or("Missing next_offset")?;
-        if next <= offset {
+        let next = page.pagination.next_cursor.unwrap_or_default();
+        if next.is_empty() || !seen.insert(next.clone()) {
             return Err("File pagination did not advance".into());
         }
-        offset = next;
+        cursor = Some(next);
     }
     Ok(())
 }

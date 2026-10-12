@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.revdoku.api.model.MailboxEmail;
+import com.revdoku.api.model.MailboxEmailSettings;
 import java.util.Arrays;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
@@ -30,45 +30,21 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * GetMailboxEmailSettings200Response
  */
 @JsonPropertyOrder({
-  GetMailboxEmailSettings200Response.JSON_PROPERTY_DATA,
-  GetMailboxEmailSettings200Response.JSON_PROPERTY_SUCCESS
+  GetMailboxEmailSettings200Response.JSON_PROPERTY_SUCCESS,
+  GetMailboxEmailSettings200Response.JSON_PROPERTY_DATA
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class GetMailboxEmailSettings200Response {
-  public static final String JSON_PROPERTY_DATA = "data";
-  @javax.annotation.Nonnull
-  private MailboxEmail data;
-
   public static final String JSON_PROPERTY_SUCCESS = "success";
   @javax.annotation.Nonnull
   private Boolean success;
 
+  public static final String JSON_PROPERTY_DATA = "data";
+  @javax.annotation.Nonnull
+  private MailboxEmailSettings data;
+
   public GetMailboxEmailSettings200Response() { 
   }
-
-  public GetMailboxEmailSettings200Response data(@javax.annotation.Nonnull MailboxEmail data) {
-    this.data = data;
-    return this;
-  }
-
-  /**
-   * Get data
-   * @return data
-   */
-  @javax.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public MailboxEmail getData() {
-    return data;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setData(@javax.annotation.Nonnull MailboxEmail data) {
-    this.data = data;
-  }
-
 
   public GetMailboxEmailSettings200Response success(@javax.annotation.Nonnull Boolean success) {
     this.success = success;
@@ -94,6 +70,30 @@ public class GetMailboxEmailSettings200Response {
   }
 
 
+  public GetMailboxEmailSettings200Response data(@javax.annotation.Nonnull MailboxEmailSettings data) {
+    this.data = data;
+    return this;
+  }
+
+  /**
+   * Get data
+   * @return data
+   */
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public MailboxEmailSettings getData() {
+    return data;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setData(@javax.annotation.Nonnull MailboxEmailSettings data) {
+    this.data = data;
+  }
+
+
   /**
    * Return true if this getMailboxEmailSettings_200_response object is equal to o.
    */
@@ -106,21 +106,21 @@ public class GetMailboxEmailSettings200Response {
       return false;
     }
     GetMailboxEmailSettings200Response getMailboxEmailSettings200Response = (GetMailboxEmailSettings200Response) o;
-    return Objects.equals(this.data, getMailboxEmailSettings200Response.data) &&
-        Objects.equals(this.success, getMailboxEmailSettings200Response.success);
+    return Objects.equals(this.success, getMailboxEmailSettings200Response.success) &&
+        Objects.equals(this.data, getMailboxEmailSettings200Response.data);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(data, success);
+    return Objects.hash(success, data);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class GetMailboxEmailSettings200Response {\n");
-    sb.append("    data: ").append(toIndentedString(data)).append("\n");
     sb.append("    success: ").append(toIndentedString(success)).append("\n");
+    sb.append("    data: ").append(toIndentedString(data)).append("\n");
     sb.append("}");
     return sb.toString();
   }

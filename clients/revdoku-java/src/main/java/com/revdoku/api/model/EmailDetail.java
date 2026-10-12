@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -27,6 +27,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.revdoku.api.model.DecodedEmailAddress;
 import com.revdoku.api.model.EmailAttachment;
+import com.revdoku.api.model.EmailDelivery;
 import com.revdoku.api.model.EmailForwardingContent;
 import com.revdoku.api.model.EmailSummaryFiles;
 import java.time.OffsetDateTime;
@@ -44,10 +45,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * EmailDetail
  */
 @JsonPropertyOrder({
-  EmailDetail.JSON_PROPERTY_SCHEMA_VERSION,
   EmailDetail.JSON_PROPERTY_SUBJECT,
-  EmailDetail.JSON_PROPERTY_FROM,
-  EmailDetail.JSON_PROPERTY_TO,
   EmailDetail.JSON_PROPERTY_FROM_ADDRESSES,
   EmailDetail.JSON_PROPERTY_TO_ADDRESSES,
   EmailDetail.JSON_PROPERTY_CC_ADDRESSES,
@@ -55,13 +53,14 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
   EmailDetail.JSON_PROPERTY_MESSAGE_ID,
   EmailDetail.JSON_PROPERTY_IN_REPLY_TO,
   EmailDetail.JSON_PROPERTY_REFERENCES,
-  EmailDetail.JSON_PROPERTY_THREAD_ID,
   EmailDetail.JSON_PROPERTY_DELIVERED_TO,
   EmailDetail.JSON_PROPERTY_RECEIVED_AT,
   EmailDetail.JSON_PROPERTY_BODY_STATUS,
   EmailDetail.JSON_PROPERTY_OMITTED_ATTACHMENT_COUNT,
   EmailDetail.JSON_PROPERTY_ID,
   EmailDetail.JSON_PROPERTY_CONVERSATION_ID,
+  EmailDetail.JSON_PROPERTY_DIRECTION,
+  EmailDetail.JSON_PROPERTY_DELIVERY,
   EmailDetail.JSON_PROPERTY_FILE_ID,
   EmailDetail.JSON_PROPERTY_VERSION_ID,
   EmailDetail.JSON_PROPERTY_ATTACHMENT_COUNT,
@@ -71,58 +70,13 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
   EmailDetail.JSON_PROPERTY_READ_BY_API_KEY,
   EmailDetail.JSON_PROPERTY_FILES,
   EmailDetail.JSON_PROPERTY_FORWARDING,
-  EmailDetail.JSON_PROPERTY_CC,
-  EmailDetail.JSON_PROPERTY_REPLY_TO,
   EmailDetail.JSON_PROPERTY_BODY_TEXT,
   EmailDetail.JSON_PROPERTY_ATTACHMENTS
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class EmailDetail {
-  /**
-   * Gets or Sets schemaVersion
-   */
-  public enum SchemaVersionEnum {
-    NUMBER_1(Integer.valueOf(1));
-
-    private Integer value;
-
-    SchemaVersionEnum(Integer value) {
-      this.value = value;
-    }
-
-    @JsonValue
-    public Integer getValue() {
-      return value;
-    }
-
-    @Override
-    public String toString() {
-      return String.valueOf(value);
-    }
-
-    @JsonCreator
-    public static SchemaVersionEnum fromValue(Integer value) {
-      for (SchemaVersionEnum b : SchemaVersionEnum.values()) {
-        if (b.value.equals(value)) {
-          return b;
-        }
-      }
-      throw new IllegalArgumentException("Unexpected value '" + value + "'");
-    }
-  }
-
-  public static final String JSON_PROPERTY_SCHEMA_VERSION = "schema_version";
-  @javax.annotation.Nullable
-  private SchemaVersionEnum schemaVersion;
-
   public static final String JSON_PROPERTY_SUBJECT = "subject";
   private JsonNullable<String> subject = JsonNullable.<String>undefined();
-
-  public static final String JSON_PROPERTY_FROM = "from";
-  private JsonNullable<String> from = JsonNullable.<String>undefined();
-
-  public static final String JSON_PROPERTY_TO = "to";
-  private JsonNullable<String> to = JsonNullable.<String>undefined();
 
   public static final String JSON_PROPERTY_FROM_ADDRESSES = "from_addresses";
   @javax.annotation.Nullable
@@ -150,9 +104,6 @@ public class EmailDetail {
   public static final String JSON_PROPERTY_REFERENCES = "references";
   @javax.annotation.Nullable
   private List<String> references = new ArrayList<>();
-
-  public static final String JSON_PROPERTY_THREAD_ID = "thread_id";
-  private JsonNullable<String> threadId = JsonNullable.<String>undefined();
 
   public static final String JSON_PROPERTY_DELIVERED_TO = "delivered_to";
   @javax.annotation.Nullable
@@ -217,6 +168,49 @@ public class EmailDetail {
   @javax.annotation.Nonnull
   private String conversationId;
 
+  /**
+   * received for incoming email; sent for email sent from this mailbox.
+   */
+  public enum DirectionEnum {
+    RECEIVED(String.valueOf("received")),
+    
+    SENT(String.valueOf("sent"));
+
+    private String value;
+
+    DirectionEnum(String value) {
+      this.value = value;
+    }
+
+    @JsonValue
+    public String getValue() {
+      return value;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(value);
+    }
+
+    @JsonCreator
+    public static DirectionEnum fromValue(String value) {
+      for (DirectionEnum b : DirectionEnum.values()) {
+        if (b.value.equals(value)) {
+          return b;
+        }
+      }
+      throw new IllegalArgumentException("Unexpected value '" + value + "'");
+    }
+  }
+
+  public static final String JSON_PROPERTY_DIRECTION = "direction";
+  @javax.annotation.Nonnull
+  private DirectionEnum direction;
+
+  public static final String JSON_PROPERTY_DELIVERY = "delivery";
+  @javax.annotation.Nullable
+  private EmailDelivery delivery;
+
   public static final String JSON_PROPERTY_FILE_ID = "file_id";
   @javax.annotation.Nullable
   private String fileId;
@@ -253,12 +247,6 @@ public class EmailDetail {
   @javax.annotation.Nullable
   private EmailForwardingContent forwarding;
 
-  public static final String JSON_PROPERTY_CC = "cc";
-  private JsonNullable<String> cc = JsonNullable.<String>undefined();
-
-  public static final String JSON_PROPERTY_REPLY_TO = "reply_to";
-  private JsonNullable<String> replyTo = JsonNullable.<String>undefined();
-
   public static final String JSON_PROPERTY_BODY_TEXT = "body_text";
   @javax.annotation.Nullable
   private String bodyText;
@@ -269,30 +257,6 @@ public class EmailDetail {
 
   public EmailDetail() { 
   }
-
-  public EmailDetail schemaVersion(@javax.annotation.Nullable SchemaVersionEnum schemaVersion) {
-    this.schemaVersion = schemaVersion;
-    return this;
-  }
-
-  /**
-   * Get schemaVersion
-   * @return schemaVersion
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_SCHEMA_VERSION, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public SchemaVersionEnum getSchemaVersion() {
-    return schemaVersion;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_SCHEMA_VERSION, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setSchemaVersion(@javax.annotation.Nullable SchemaVersionEnum schemaVersion) {
-    this.schemaVersion = schemaVersion;
-  }
-
 
   public EmailDetail subject(@javax.annotation.Nullable String subject) {
     this.subject = JsonNullable.<String>of(subject);
@@ -323,70 +287,6 @@ public class EmailDetail {
 
   public void setSubject(@javax.annotation.Nullable String subject) {
     this.subject = JsonNullable.<String>of(subject);
-  }
-
-
-  public EmailDetail from(@javax.annotation.Nullable String from) {
-    this.from = JsonNullable.<String>of(from);
-    return this;
-  }
-
-  /**
-   * Get from
-   * @return from
-   */
-  @javax.annotation.Nullable
-  @JsonIgnore
-  public String getFrom() {
-        return from.orElse(null);
-  }
-
-  @JsonProperty(value = JSON_PROPERTY_FROM, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-
-  public JsonNullable<String> getFrom_JsonNullable() {
-    return from;
-  }
-  
-  @JsonProperty(JSON_PROPERTY_FROM)
-  public void setFrom_JsonNullable(JsonNullable<String> from) {
-    this.from = from;
-  }
-
-  public void setFrom(@javax.annotation.Nullable String from) {
-    this.from = JsonNullable.<String>of(from);
-  }
-
-
-  public EmailDetail to(@javax.annotation.Nullable String to) {
-    this.to = JsonNullable.<String>of(to);
-    return this;
-  }
-
-  /**
-   * Get to
-   * @return to
-   */
-  @javax.annotation.Nullable
-  @JsonIgnore
-  public String getTo() {
-        return to.orElse(null);
-  }
-
-  @JsonProperty(value = JSON_PROPERTY_TO, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-
-  public JsonNullable<String> getTo_JsonNullable() {
-    return to;
-  }
-  
-  @JsonProperty(JSON_PROPERTY_TO)
-  public void setTo_JsonNullable(JsonNullable<String> to) {
-    this.to = to;
-  }
-
-  public void setTo(@javax.annotation.Nullable String to) {
-    this.to = JsonNullable.<String>of(to);
   }
 
 
@@ -614,38 +514,6 @@ public class EmailDetail {
   }
 
 
-  public EmailDetail threadId(@javax.annotation.Nullable String threadId) {
-    this.threadId = JsonNullable.<String>of(threadId);
-    return this;
-  }
-
-  /**
-   * thr_ plus SHA-256 of thread_anchor_message_id. Best-effort header-derived grouping hint, not authoritative conversation membership or an access grant. Missing ancestry or reused IDs can split/merge hints. Scope lookups to accessible mailboxes.
-   * @return threadId
-   */
-  @javax.annotation.Nullable
-  @JsonIgnore
-  public String getThreadId() {
-        return threadId.orElse(null);
-  }
-
-  @JsonProperty(value = JSON_PROPERTY_THREAD_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-
-  public JsonNullable<String> getThreadId_JsonNullable() {
-    return threadId;
-  }
-  
-  @JsonProperty(JSON_PROPERTY_THREAD_ID)
-  public void setThreadId_JsonNullable(JsonNullable<String> threadId) {
-    this.threadId = threadId;
-  }
-
-  public void setThreadId(@javax.annotation.Nullable String threadId) {
-    this.threadId = JsonNullable.<String>of(threadId);
-  }
-
-
   public EmailDetail deliveredTo(@javax.annotation.Nullable String deliveredTo) {
     this.deliveredTo = deliveredTo;
     return this;
@@ -676,7 +544,7 @@ public class EmailDetail {
   }
 
   /**
-   * Get receivedAt
+   * Receipt time. For sent emails, the time Revdoku accepted the send.
    * @return receivedAt
    */
   @javax.annotation.Nonnull
@@ -773,7 +641,7 @@ public class EmailDetail {
   }
 
   /**
-   * Get conversationId
+   * Email ID that identifies the conversation. Replies are linked by email headers. Filter a list with conversation_id.
    * @return conversationId
    */
   @javax.annotation.Nonnull
@@ -788,6 +656,54 @@ public class EmailDetail {
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public void setConversationId(@javax.annotation.Nonnull String conversationId) {
     this.conversationId = conversationId;
+  }
+
+
+  public EmailDetail direction(@javax.annotation.Nonnull DirectionEnum direction) {
+    this.direction = direction;
+    return this;
+  }
+
+  /**
+   * received for incoming email; sent for email sent from this mailbox.
+   * @return direction
+   */
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_DIRECTION, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public DirectionEnum getDirection() {
+    return direction;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_DIRECTION, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setDirection(@javax.annotation.Nonnull DirectionEnum direction) {
+    this.direction = direction;
+  }
+
+
+  public EmailDetail delivery(@javax.annotation.Nullable EmailDelivery delivery) {
+    this.delivery = delivery;
+    return this;
+  }
+
+  /**
+   * Get delivery
+   * @return delivery
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_DELIVERY, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public EmailDelivery getDelivery() {
+    return delivery;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_DELIVERY, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setDelivery(@javax.annotation.Nullable EmailDelivery delivery) {
+    this.delivery = delivery;
   }
 
 
@@ -1008,70 +924,6 @@ public class EmailDetail {
   }
 
 
-  public EmailDetail cc(@javax.annotation.Nullable String cc) {
-    this.cc = JsonNullable.<String>of(cc);
-    return this;
-  }
-
-  /**
-   * Decoded Cc header; use the corresponding parsed address array for individual addresses.
-   * @return cc
-   */
-  @javax.annotation.Nullable
-  @JsonIgnore
-  public String getCc() {
-        return cc.orElse(null);
-  }
-
-  @JsonProperty(value = JSON_PROPERTY_CC, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-
-  public JsonNullable<String> getCc_JsonNullable() {
-    return cc;
-  }
-  
-  @JsonProperty(JSON_PROPERTY_CC)
-  public void setCc_JsonNullable(JsonNullable<String> cc) {
-    this.cc = cc;
-  }
-
-  public void setCc(@javax.annotation.Nullable String cc) {
-    this.cc = JsonNullable.<String>of(cc);
-  }
-
-
-  public EmailDetail replyTo(@javax.annotation.Nullable String replyTo) {
-    this.replyTo = JsonNullable.<String>of(replyTo);
-    return this;
-  }
-
-  /**
-   * Decoded Reply-To header; use the corresponding parsed address array for individual addresses.
-   * @return replyTo
-   */
-  @javax.annotation.Nullable
-  @JsonIgnore
-  public String getReplyTo() {
-        return replyTo.orElse(null);
-  }
-
-  @JsonProperty(value = JSON_PROPERTY_REPLY_TO, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-
-  public JsonNullable<String> getReplyTo_JsonNullable() {
-    return replyTo;
-  }
-  
-  @JsonProperty(JSON_PROPERTY_REPLY_TO)
-  public void setReplyTo_JsonNullable(JsonNullable<String> replyTo) {
-    this.replyTo = replyTo;
-  }
-
-  public void setReplyTo(@javax.annotation.Nullable String replyTo) {
-    this.replyTo = JsonNullable.<String>of(replyTo);
-  }
-
-
   public EmailDetail bodyText(@javax.annotation.Nullable String bodyText) {
     this.bodyText = bodyText;
     return this;
@@ -1183,10 +1035,7 @@ public class EmailDetail {
       return false;
     }
     EmailDetail emailDetail = (EmailDetail) o;
-    return Objects.equals(this.schemaVersion, emailDetail.schemaVersion) &&
-        equalsNullable(this.subject, emailDetail.subject) &&
-        equalsNullable(this.from, emailDetail.from) &&
-        equalsNullable(this.to, emailDetail.to) &&
+    return equalsNullable(this.subject, emailDetail.subject) &&
         Objects.equals(this.fromAddresses, emailDetail.fromAddresses) &&
         Objects.equals(this.toAddresses, emailDetail.toAddresses) &&
         Objects.equals(this.ccAddresses, emailDetail.ccAddresses) &&
@@ -1194,13 +1043,14 @@ public class EmailDetail {
         equalsNullable(this.messageId, emailDetail.messageId) &&
         Objects.equals(this.inReplyTo, emailDetail.inReplyTo) &&
         Objects.equals(this.references, emailDetail.references) &&
-        equalsNullable(this.threadId, emailDetail.threadId) &&
         Objects.equals(this.deliveredTo, emailDetail.deliveredTo) &&
         Objects.equals(this.receivedAt, emailDetail.receivedAt) &&
         Objects.equals(this.bodyStatus, emailDetail.bodyStatus) &&
         Objects.equals(this.omittedAttachmentCount, emailDetail.omittedAttachmentCount) &&
         Objects.equals(this.id, emailDetail.id) &&
         Objects.equals(this.conversationId, emailDetail.conversationId) &&
+        Objects.equals(this.direction, emailDetail.direction) &&
+        Objects.equals(this.delivery, emailDetail.delivery) &&
         Objects.equals(this.fileId, emailDetail.fileId) &&
         Objects.equals(this.versionId, emailDetail.versionId) &&
         Objects.equals(this.attachmentCount, emailDetail.attachmentCount) &&
@@ -1210,8 +1060,6 @@ public class EmailDetail {
         Objects.equals(this.readByApiKey, emailDetail.readByApiKey) &&
         Objects.equals(this.files, emailDetail.files) &&
         Objects.equals(this.forwarding, emailDetail.forwarding) &&
-        equalsNullable(this.cc, emailDetail.cc) &&
-        equalsNullable(this.replyTo, emailDetail.replyTo) &&
         Objects.equals(this.bodyText, emailDetail.bodyText) &&
         Objects.equals(this.attachments, emailDetail.attachments)&&
         Objects.equals(this.additionalProperties, emailDetail.additionalProperties);
@@ -1223,7 +1071,7 @@ public class EmailDetail {
 
   @Override
   public int hashCode() {
-    return Objects.hash(schemaVersion, hashCodeNullable(subject), hashCodeNullable(from), hashCodeNullable(to), fromAddresses, toAddresses, ccAddresses, replyToAddresses, hashCodeNullable(messageId), inReplyTo, references, hashCodeNullable(threadId), deliveredTo, receivedAt, bodyStatus, omittedAttachmentCount, id, conversationId, fileId, versionId, attachmentCount, read, readAt, readBy, readByApiKey, files, forwarding, hashCodeNullable(cc), hashCodeNullable(replyTo), bodyText, attachments, additionalProperties);
+    return Objects.hash(hashCodeNullable(subject), fromAddresses, toAddresses, ccAddresses, replyToAddresses, hashCodeNullable(messageId), inReplyTo, references, deliveredTo, receivedAt, bodyStatus, omittedAttachmentCount, id, conversationId, direction, delivery, fileId, versionId, attachmentCount, read, readAt, readBy, readByApiKey, files, forwarding, bodyText, attachments, additionalProperties);
   }
 
   private static <T> int hashCodeNullable(JsonNullable<T> a) {
@@ -1237,10 +1085,7 @@ public class EmailDetail {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class EmailDetail {\n");
-    sb.append("    schemaVersion: ").append(toIndentedString(schemaVersion)).append("\n");
     sb.append("    subject: ").append(toIndentedString(subject)).append("\n");
-    sb.append("    from: ").append(toIndentedString(from)).append("\n");
-    sb.append("    to: ").append(toIndentedString(to)).append("\n");
     sb.append("    fromAddresses: ").append(toIndentedString(fromAddresses)).append("\n");
     sb.append("    toAddresses: ").append(toIndentedString(toAddresses)).append("\n");
     sb.append("    ccAddresses: ").append(toIndentedString(ccAddresses)).append("\n");
@@ -1248,13 +1093,14 @@ public class EmailDetail {
     sb.append("    messageId: ").append(toIndentedString(messageId)).append("\n");
     sb.append("    inReplyTo: ").append(toIndentedString(inReplyTo)).append("\n");
     sb.append("    references: ").append(toIndentedString(references)).append("\n");
-    sb.append("    threadId: ").append(toIndentedString(threadId)).append("\n");
     sb.append("    deliveredTo: ").append(toIndentedString(deliveredTo)).append("\n");
     sb.append("    receivedAt: ").append(toIndentedString(receivedAt)).append("\n");
     sb.append("    bodyStatus: ").append(toIndentedString(bodyStatus)).append("\n");
     sb.append("    omittedAttachmentCount: ").append(toIndentedString(omittedAttachmentCount)).append("\n");
     sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    conversationId: ").append(toIndentedString(conversationId)).append("\n");
+    sb.append("    direction: ").append(toIndentedString(direction)).append("\n");
+    sb.append("    delivery: ").append(toIndentedString(delivery)).append("\n");
     sb.append("    fileId: ").append(toIndentedString(fileId)).append("\n");
     sb.append("    versionId: ").append(toIndentedString(versionId)).append("\n");
     sb.append("    attachmentCount: ").append(toIndentedString(attachmentCount)).append("\n");
@@ -1264,8 +1110,6 @@ public class EmailDetail {
     sb.append("    readByApiKey: ").append(toIndentedString(readByApiKey)).append("\n");
     sb.append("    files: ").append(toIndentedString(files)).append("\n");
     sb.append("    forwarding: ").append(toIndentedString(forwarding)).append("\n");
-    sb.append("    cc: ").append(toIndentedString(cc)).append("\n");
-    sb.append("    replyTo: ").append(toIndentedString(replyTo)).append("\n");
     sb.append("    bodyText: ").append(toIndentedString(bodyText)).append("\n");
     sb.append("    attachments: ").append(toIndentedString(attachments)).append("\n");
     sb.append("    additionalProperties: ").append(toIndentedString(additionalProperties)).append("\n");

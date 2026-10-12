@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -20,12 +20,11 @@ var _ MappedNullable = &CreateClientAccountRequest{}
 
 // CreateClientAccountRequest struct for CreateClientAccountRequest
 type CreateClientAccountRequest struct {
-	// Account name.
 	Name string `json:"name"`
-	// Optional granted Agency account id. Does not change the credential default.
-	AccountId *string `json:"account_id,omitempty"`
-	// Optional client person or business, separate from the account name. Omit when unknown.
+	// Optional client person or business name.
 	ClientName *string `json:"client_name,omitempty"`
+	// Granted agency account that owns the new client account.
+	AccountId *string `json:"account_id,omitempty"`
 	// Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
 	Reason NullableString `json:"reason,omitempty"`
 	AdditionalProperties map[string]interface{}
@@ -75,38 +74,6 @@ func (o *CreateClientAccountRequest) SetName(v string) {
 	o.Name = v
 }
 
-// GetAccountId returns the AccountId field value if set, zero value otherwise.
-func (o *CreateClientAccountRequest) GetAccountId() string {
-	if o == nil || IsNil(o.AccountId) {
-		var ret string
-		return ret
-	}
-	return *o.AccountId
-}
-
-// GetAccountIdOk returns a tuple with the AccountId field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *CreateClientAccountRequest) GetAccountIdOk() (*string, bool) {
-	if o == nil || IsNil(o.AccountId) {
-		return nil, false
-	}
-	return o.AccountId, true
-}
-
-// HasAccountId returns a boolean if a field has been set.
-func (o *CreateClientAccountRequest) HasAccountId() bool {
-	if o != nil && !IsNil(o.AccountId) {
-		return true
-	}
-
-	return false
-}
-
-// SetAccountId gets a reference to the given string and assigns it to the AccountId field.
-func (o *CreateClientAccountRequest) SetAccountId(v string) {
-	o.AccountId = &v
-}
-
 // GetClientName returns the ClientName field value if set, zero value otherwise.
 func (o *CreateClientAccountRequest) GetClientName() string {
 	if o == nil || IsNil(o.ClientName) {
@@ -137,6 +104,38 @@ func (o *CreateClientAccountRequest) HasClientName() bool {
 // SetClientName gets a reference to the given string and assigns it to the ClientName field.
 func (o *CreateClientAccountRequest) SetClientName(v string) {
 	o.ClientName = &v
+}
+
+// GetAccountId returns the AccountId field value if set, zero value otherwise.
+func (o *CreateClientAccountRequest) GetAccountId() string {
+	if o == nil || IsNil(o.AccountId) {
+		var ret string
+		return ret
+	}
+	return *o.AccountId
+}
+
+// GetAccountIdOk returns a tuple with the AccountId field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CreateClientAccountRequest) GetAccountIdOk() (*string, bool) {
+	if o == nil || IsNil(o.AccountId) {
+		return nil, false
+	}
+	return o.AccountId, true
+}
+
+// HasAccountId returns a boolean if a field has been set.
+func (o *CreateClientAccountRequest) HasAccountId() bool {
+	if o != nil && !IsNil(o.AccountId) {
+		return true
+	}
+
+	return false
+}
+
+// SetAccountId gets a reference to the given string and assigns it to the AccountId field.
+func (o *CreateClientAccountRequest) SetAccountId(v string) {
+	o.AccountId = &v
 }
 
 // GetReason returns the Reason field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -192,11 +191,11 @@ func (o CreateClientAccountRequest) MarshalJSON() ([]byte, error) {
 func (o CreateClientAccountRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["name"] = o.Name
-	if !IsNil(o.AccountId) {
-		toSerialize["account_id"] = o.AccountId
-	}
 	if !IsNil(o.ClientName) {
 		toSerialize["client_name"] = o.ClientName
+	}
+	if !IsNil(o.AccountId) {
+		toSerialize["account_id"] = o.AccountId
 	}
 	if o.Reason.IsSet() {
 		toSerialize["reason"] = o.Reason.Get()
@@ -245,8 +244,8 @@ func (o *CreateClientAccountRequest) UnmarshalJSON(data []byte) (err error) {
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "name")
-		delete(additionalProperties, "account_id")
 		delete(additionalProperties, "client_name")
+		delete(additionalProperties, "account_id")
 		delete(additionalProperties, "reason")
 		o.AdditionalProperties = additionalProperties
 	}

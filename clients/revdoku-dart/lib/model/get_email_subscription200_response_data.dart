@@ -16,7 +16,7 @@ class GetEmailSubscription200ResponseData {
     required this.subscription,
   });
 
-  GetEmailSubscription200ResponseDataSubscription subscription;
+  EmailSubscription subscription;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is GetEmailSubscription200ResponseData &&
@@ -53,7 +53,7 @@ class GetEmailSubscription200ResponseData {
       }());
 
       return GetEmailSubscription200ResponseData(
-        subscription: GetEmailSubscription200ResponseDataSubscription.fromJson(json[r'subscription'])!,
+        subscription: EmailSubscription.fromJson(json[r'subscription'])!,
       );
     }
     return null;

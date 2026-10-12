@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -15,9 +15,10 @@ require 'time'
 
 module RevdokuApi
   class CreateMailboxRequest < ApiModelBase
-    attr_accessor :account_id
-
     attr_accessor :mailbox
+
+    # Select another granted account for this request.
+    attr_accessor :account_id
 
     # Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
     attr_accessor :reason
@@ -25,8 +26,8 @@ module RevdokuApi
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
-        :'account_id' => :'account_id',
         :'mailbox' => :'mailbox',
+        :'account_id' => :'account_id',
         :'reason' => :'reason'
       }
     end
@@ -44,8 +45,8 @@ module RevdokuApi
     # Attribute type mapping.
     def self.openapi_types
       {
+        :'mailbox' => :'MailboxCreate',
         :'account_id' => :'String',
-        :'mailbox' => :'MailboxCreateOptions',
         :'reason' => :'String'
       }
     end
@@ -73,29 +74,17 @@ module RevdokuApi
         h[k.to_sym] = v
       }
 
-      if attributes.key?(:'account_id')
-        self.account_id = attributes[:'account_id']
-      end
-
       if attributes.key?(:'mailbox')
         self.mailbox = attributes[:'mailbox']
-      else
-        self.mailbox = nil
+      end
+
+      if attributes.key?(:'account_id')
+        self.account_id = attributes[:'account_id']
       end
 
       if attributes.key?(:'reason')
         self.reason = attributes[:'reason']
       end
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] mailbox Value to be assigned
-    def mailbox=(mailbox)
-      if mailbox.nil?
-        fail ArgumentError, 'mailbox cannot be nil'
-      end
-
-      @mailbox = mailbox
     end
 
     # Custom attribute writer method with validation
@@ -113,8 +102,8 @@ module RevdokuApi
     def ==(o)
       return true if self.equal?(o)
       self.class == o.class &&
-          account_id == o.account_id &&
           mailbox == o.mailbox &&
+          account_id == o.account_id &&
           reason == o.reason
     end
 
@@ -127,7 +116,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [account_id, mailbox, reason].hash
+      [mailbox, account_id, reason].hash
     end
 
     # Builds the object from hash

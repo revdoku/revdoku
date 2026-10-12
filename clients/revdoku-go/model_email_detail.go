@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -21,10 +21,7 @@ var _ MappedNullable = &EmailDetail{}
 
 // EmailDetail struct for EmailDetail
 type EmailDetail struct {
-	SchemaVersion *int32 `json:"schema_version,omitempty"`
 	Subject NullableString `json:"subject,omitempty"`
-	From NullableString `json:"from,omitempty"`
-	To NullableString `json:"to,omitempty"`
 	// Parsed From authors in header order, retaining multiple authors. Empty when absent/unparseable. Display names are not identity keys.
 	FromAddresses []DecodedEmailAddress `json:"from_addresses,omitempty"`
 	// Parsed To recipients in header order, with named groups flattened. Empty when absent/unparseable; not trusted delivery routing.
@@ -39,18 +36,21 @@ type EmailDetail struct {
 	InReplyTo []string `json:"in_reply_to,omitempty"`
 	// Ordered References IDs without angle brackets, preserving case. Empty when absent/unparseable.
 	References []string `json:"references,omitempty"`
-	// thr_ plus SHA-256 of thread_anchor_message_id. Best-effort header-derived grouping hint, not authoritative conversation membership or an access grant. Missing ancestry or reused IDs can split/merge hints. Scope lookups to accessible mailboxes.
-	ThreadId NullableString `json:"thread_id,omitempty" validate:"regexp=^thr_[0-9a-f]{64}$"`
 	DeliveredTo *string `json:"delivered_to,omitempty"`
+	// Receipt time. For sent emails, the time Revdoku accepted the send.
 	ReceivedAt time.Time `json:"received_at"`
 	BodyStatus string `json:"body_status"`
 	OmittedAttachmentCount *int32 `json:"omitted_attachment_count,omitempty"`
 	Id string `json:"id" validate:"regexp=^eml_"`
+	// Email ID that identifies the conversation. Replies are linked by email headers. Filter a list with conversation_id.
 	ConversationId string `json:"conversation_id" validate:"regexp=^eml_"`
+	// received for incoming email; sent for email sent from this mailbox.
+	Direction string `json:"direction"`
+	Delivery *EmailDelivery `json:"delivery,omitempty"`
 	// Included only with include_storage=true for file-browser integration.
 	FileId *string `json:"file_id,omitempty" validate:"regexp=^df_"`
 	// Included only with include_storage=true for file-browser integration.
-	VersionId *string `json:"version_id,omitempty" validate:"regexp=^dfrev_"`
+	VersionId *string `json:"version_id,omitempty"`
 	AttachmentCount int32 `json:"attachment_count"`
 	Read bool `json:"read"`
 	ReadAt NullableTime `json:"read_at"`
@@ -58,10 +58,6 @@ type EmailDetail struct {
 	ReadByApiKey map[string]interface{} `json:"read_by_api_key"`
 	Files *EmailSummaryFiles `json:"files,omitempty"`
 	Forwarding *EmailForwardingContent `json:"forwarding,omitempty"`
-	// Decoded Cc header; use the corresponding parsed address array for individual addresses.
-	Cc NullableString `json:"cc,omitempty"`
-	// Decoded Reply-To header; use the corresponding parsed address array for individual addresses.
-	ReplyTo NullableString `json:"reply_to,omitempty"`
 	BodyText NullableString `json:"body_text"`
 	Attachments []EmailAttachment `json:"attachments"`
 	AdditionalProperties map[string]interface{}
@@ -73,12 +69,13 @@ type _EmailDetail EmailDetail
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewEmailDetail(receivedAt time.Time, bodyStatus string, id string, conversationId string, attachmentCount int32, read bool, readAt NullableTime, readBy map[string]interface{}, readByApiKey map[string]interface{}, bodyText NullableString, attachments []EmailAttachment) *EmailDetail {
+func NewEmailDetail(receivedAt time.Time, bodyStatus string, id string, conversationId string, direction string, attachmentCount int32, read bool, readAt NullableTime, readBy map[string]interface{}, readByApiKey map[string]interface{}, bodyText NullableString, attachments []EmailAttachment) *EmailDetail {
 	this := EmailDetail{}
 	this.ReceivedAt = receivedAt
 	this.BodyStatus = bodyStatus
 	this.Id = id
 	this.ConversationId = conversationId
+	this.Direction = direction
 	this.AttachmentCount = attachmentCount
 	this.Read = read
 	this.ReadAt = readAt
@@ -95,38 +92,6 @@ func NewEmailDetail(receivedAt time.Time, bodyStatus string, id string, conversa
 func NewEmailDetailWithDefaults() *EmailDetail {
 	this := EmailDetail{}
 	return &this
-}
-
-// GetSchemaVersion returns the SchemaVersion field value if set, zero value otherwise.
-func (o *EmailDetail) GetSchemaVersion() int32 {
-	if o == nil || IsNil(o.SchemaVersion) {
-		var ret int32
-		return ret
-	}
-	return *o.SchemaVersion
-}
-
-// GetSchemaVersionOk returns a tuple with the SchemaVersion field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *EmailDetail) GetSchemaVersionOk() (*int32, bool) {
-	if o == nil || IsNil(o.SchemaVersion) {
-		return nil, false
-	}
-	return o.SchemaVersion, true
-}
-
-// HasSchemaVersion returns a boolean if a field has been set.
-func (o *EmailDetail) HasSchemaVersion() bool {
-	if o != nil && !IsNil(o.SchemaVersion) {
-		return true
-	}
-
-	return false
-}
-
-// SetSchemaVersion gets a reference to the given int32 and assigns it to the SchemaVersion field.
-func (o *EmailDetail) SetSchemaVersion(v int32) {
-	o.SchemaVersion = &v
 }
 
 // GetSubject returns the Subject field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -169,90 +134,6 @@ func (o *EmailDetail) SetSubjectNil() {
 // UnsetSubject ensures that no value is present for Subject, not even an explicit nil
 func (o *EmailDetail) UnsetSubject() {
 	o.Subject.Unset()
-}
-
-// GetFrom returns the From field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *EmailDetail) GetFrom() string {
-	if o == nil || IsNil(o.From.Get()) {
-		var ret string
-		return ret
-	}
-	return *o.From.Get()
-}
-
-// GetFromOk returns a tuple with the From field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *EmailDetail) GetFromOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return o.From.Get(), o.From.IsSet()
-}
-
-// HasFrom returns a boolean if a field has been set.
-func (o *EmailDetail) HasFrom() bool {
-	if o != nil && o.From.IsSet() {
-		return true
-	}
-
-	return false
-}
-
-// SetFrom gets a reference to the given NullableString and assigns it to the From field.
-func (o *EmailDetail) SetFrom(v string) {
-	o.From.Set(&v)
-}
-// SetFromNil sets the value for From to be an explicit nil
-func (o *EmailDetail) SetFromNil() {
-	o.From.Set(nil)
-}
-
-// UnsetFrom ensures that no value is present for From, not even an explicit nil
-func (o *EmailDetail) UnsetFrom() {
-	o.From.Unset()
-}
-
-// GetTo returns the To field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *EmailDetail) GetTo() string {
-	if o == nil || IsNil(o.To.Get()) {
-		var ret string
-		return ret
-	}
-	return *o.To.Get()
-}
-
-// GetToOk returns a tuple with the To field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *EmailDetail) GetToOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return o.To.Get(), o.To.IsSet()
-}
-
-// HasTo returns a boolean if a field has been set.
-func (o *EmailDetail) HasTo() bool {
-	if o != nil && o.To.IsSet() {
-		return true
-	}
-
-	return false
-}
-
-// SetTo gets a reference to the given NullableString and assigns it to the To field.
-func (o *EmailDetail) SetTo(v string) {
-	o.To.Set(&v)
-}
-// SetToNil sets the value for To to be an explicit nil
-func (o *EmailDetail) SetToNil() {
-	o.To.Set(nil)
-}
-
-// UnsetTo ensures that no value is present for To, not even an explicit nil
-func (o *EmailDetail) UnsetTo() {
-	o.To.Unset()
 }
 
 // GetFromAddresses returns the FromAddresses field value if set, zero value otherwise.
@@ -489,48 +370,6 @@ func (o *EmailDetail) SetReferences(v []string) {
 	o.References = v
 }
 
-// GetThreadId returns the ThreadId field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *EmailDetail) GetThreadId() string {
-	if o == nil || IsNil(o.ThreadId.Get()) {
-		var ret string
-		return ret
-	}
-	return *o.ThreadId.Get()
-}
-
-// GetThreadIdOk returns a tuple with the ThreadId field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *EmailDetail) GetThreadIdOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return o.ThreadId.Get(), o.ThreadId.IsSet()
-}
-
-// HasThreadId returns a boolean if a field has been set.
-func (o *EmailDetail) HasThreadId() bool {
-	if o != nil && o.ThreadId.IsSet() {
-		return true
-	}
-
-	return false
-}
-
-// SetThreadId gets a reference to the given NullableString and assigns it to the ThreadId field.
-func (o *EmailDetail) SetThreadId(v string) {
-	o.ThreadId.Set(&v)
-}
-// SetThreadIdNil sets the value for ThreadId to be an explicit nil
-func (o *EmailDetail) SetThreadIdNil() {
-	o.ThreadId.Set(nil)
-}
-
-// UnsetThreadId ensures that no value is present for ThreadId, not even an explicit nil
-func (o *EmailDetail) UnsetThreadId() {
-	o.ThreadId.Unset()
-}
-
 // GetDeliveredTo returns the DeliveredTo field value if set, zero value otherwise.
 func (o *EmailDetail) GetDeliveredTo() string {
 	if o == nil || IsNil(o.DeliveredTo) {
@@ -689,6 +528,62 @@ func (o *EmailDetail) GetConversationIdOk() (*string, bool) {
 // SetConversationId sets field value
 func (o *EmailDetail) SetConversationId(v string) {
 	o.ConversationId = v
+}
+
+// GetDirection returns the Direction field value
+func (o *EmailDetail) GetDirection() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Direction
+}
+
+// GetDirectionOk returns a tuple with the Direction field value
+// and a boolean to check if the value has been set.
+func (o *EmailDetail) GetDirectionOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Direction, true
+}
+
+// SetDirection sets field value
+func (o *EmailDetail) SetDirection(v string) {
+	o.Direction = v
+}
+
+// GetDelivery returns the Delivery field value if set, zero value otherwise.
+func (o *EmailDetail) GetDelivery() EmailDelivery {
+	if o == nil || IsNil(o.Delivery) {
+		var ret EmailDelivery
+		return ret
+	}
+	return *o.Delivery
+}
+
+// GetDeliveryOk returns a tuple with the Delivery field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *EmailDetail) GetDeliveryOk() (*EmailDelivery, bool) {
+	if o == nil || IsNil(o.Delivery) {
+		return nil, false
+	}
+	return o.Delivery, true
+}
+
+// HasDelivery returns a boolean if a field has been set.
+func (o *EmailDetail) HasDelivery() bool {
+	if o != nil && !IsNil(o.Delivery) {
+		return true
+	}
+
+	return false
+}
+
+// SetDelivery gets a reference to the given EmailDelivery and assigns it to the Delivery field.
+func (o *EmailDetail) SetDelivery(v EmailDelivery) {
+	o.Delivery = &v
 }
 
 // GetFileId returns the FileId field value if set, zero value otherwise.
@@ -945,90 +840,6 @@ func (o *EmailDetail) SetForwarding(v EmailForwardingContent) {
 	o.Forwarding = &v
 }
 
-// GetCc returns the Cc field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *EmailDetail) GetCc() string {
-	if o == nil || IsNil(o.Cc.Get()) {
-		var ret string
-		return ret
-	}
-	return *o.Cc.Get()
-}
-
-// GetCcOk returns a tuple with the Cc field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *EmailDetail) GetCcOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return o.Cc.Get(), o.Cc.IsSet()
-}
-
-// HasCc returns a boolean if a field has been set.
-func (o *EmailDetail) HasCc() bool {
-	if o != nil && o.Cc.IsSet() {
-		return true
-	}
-
-	return false
-}
-
-// SetCc gets a reference to the given NullableString and assigns it to the Cc field.
-func (o *EmailDetail) SetCc(v string) {
-	o.Cc.Set(&v)
-}
-// SetCcNil sets the value for Cc to be an explicit nil
-func (o *EmailDetail) SetCcNil() {
-	o.Cc.Set(nil)
-}
-
-// UnsetCc ensures that no value is present for Cc, not even an explicit nil
-func (o *EmailDetail) UnsetCc() {
-	o.Cc.Unset()
-}
-
-// GetReplyTo returns the ReplyTo field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *EmailDetail) GetReplyTo() string {
-	if o == nil || IsNil(o.ReplyTo.Get()) {
-		var ret string
-		return ret
-	}
-	return *o.ReplyTo.Get()
-}
-
-// GetReplyToOk returns a tuple with the ReplyTo field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *EmailDetail) GetReplyToOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return o.ReplyTo.Get(), o.ReplyTo.IsSet()
-}
-
-// HasReplyTo returns a boolean if a field has been set.
-func (o *EmailDetail) HasReplyTo() bool {
-	if o != nil && o.ReplyTo.IsSet() {
-		return true
-	}
-
-	return false
-}
-
-// SetReplyTo gets a reference to the given NullableString and assigns it to the ReplyTo field.
-func (o *EmailDetail) SetReplyTo(v string) {
-	o.ReplyTo.Set(&v)
-}
-// SetReplyToNil sets the value for ReplyTo to be an explicit nil
-func (o *EmailDetail) SetReplyToNil() {
-	o.ReplyTo.Set(nil)
-}
-
-// UnsetReplyTo ensures that no value is present for ReplyTo, not even an explicit nil
-func (o *EmailDetail) UnsetReplyTo() {
-	o.ReplyTo.Unset()
-}
-
 // GetBodyText returns the BodyText field value
 // If the value is explicit nil, the zero value for string will be returned
 func (o *EmailDetail) GetBodyText() string {
@@ -1089,17 +900,8 @@ func (o EmailDetail) MarshalJSON() ([]byte, error) {
 
 func (o EmailDetail) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.SchemaVersion) {
-		toSerialize["schema_version"] = o.SchemaVersion
-	}
 	if o.Subject.IsSet() {
 		toSerialize["subject"] = o.Subject.Get()
-	}
-	if o.From.IsSet() {
-		toSerialize["from"] = o.From.Get()
-	}
-	if o.To.IsSet() {
-		toSerialize["to"] = o.To.Get()
 	}
 	if !IsNil(o.FromAddresses) {
 		toSerialize["from_addresses"] = o.FromAddresses
@@ -1122,9 +924,6 @@ func (o EmailDetail) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.References) {
 		toSerialize["references"] = o.References
 	}
-	if o.ThreadId.IsSet() {
-		toSerialize["thread_id"] = o.ThreadId.Get()
-	}
 	if !IsNil(o.DeliveredTo) {
 		toSerialize["delivered_to"] = o.DeliveredTo
 	}
@@ -1135,6 +934,10 @@ func (o EmailDetail) ToMap() (map[string]interface{}, error) {
 	}
 	toSerialize["id"] = o.Id
 	toSerialize["conversation_id"] = o.ConversationId
+	toSerialize["direction"] = o.Direction
+	if !IsNil(o.Delivery) {
+		toSerialize["delivery"] = o.Delivery
+	}
 	if !IsNil(o.FileId) {
 		toSerialize["file_id"] = o.FileId
 	}
@@ -1156,12 +959,6 @@ func (o EmailDetail) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Forwarding) {
 		toSerialize["forwarding"] = o.Forwarding
 	}
-	if o.Cc.IsSet() {
-		toSerialize["cc"] = o.Cc.Get()
-	}
-	if o.ReplyTo.IsSet() {
-		toSerialize["reply_to"] = o.ReplyTo.Get()
-	}
 	toSerialize["body_text"] = o.BodyText.Get()
 	toSerialize["attachments"] = o.Attachments
 
@@ -1181,6 +978,7 @@ func (o *EmailDetail) UnmarshalJSON(data []byte) (err error) {
 		"body_status",
 		"id",
 		"conversation_id",
+		"direction",
 		"attachment_count",
 		"read",
 		"read_at",
@@ -1217,10 +1015,7 @@ func (o *EmailDetail) UnmarshalJSON(data []byte) (err error) {
 	additionalProperties := make(map[string]interface{})
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "schema_version")
 		delete(additionalProperties, "subject")
-		delete(additionalProperties, "from")
-		delete(additionalProperties, "to")
 		delete(additionalProperties, "from_addresses")
 		delete(additionalProperties, "to_addresses")
 		delete(additionalProperties, "cc_addresses")
@@ -1228,13 +1023,14 @@ func (o *EmailDetail) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "message_id")
 		delete(additionalProperties, "in_reply_to")
 		delete(additionalProperties, "references")
-		delete(additionalProperties, "thread_id")
 		delete(additionalProperties, "delivered_to")
 		delete(additionalProperties, "received_at")
 		delete(additionalProperties, "body_status")
 		delete(additionalProperties, "omitted_attachment_count")
 		delete(additionalProperties, "id")
 		delete(additionalProperties, "conversation_id")
+		delete(additionalProperties, "direction")
+		delete(additionalProperties, "delivery")
 		delete(additionalProperties, "file_id")
 		delete(additionalProperties, "version_id")
 		delete(additionalProperties, "attachment_count")
@@ -1244,8 +1040,6 @@ func (o *EmailDetail) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "read_by_api_key")
 		delete(additionalProperties, "files")
 		delete(additionalProperties, "forwarding")
-		delete(additionalProperties, "cc")
-		delete(additionalProperties, "reply_to")
 		delete(additionalProperties, "body_text")
 		delete(additionalProperties, "attachments")
 		o.AdditionalProperties = additionalProperties

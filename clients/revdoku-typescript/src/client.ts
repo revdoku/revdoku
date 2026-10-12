@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto';
-import { DefaultApi, ListEmailsRequest, ListMailboxesRequest, ListMailboxFilesRequest,
-  GetEmailRequest, GetEmailAttachmentDownloadUrlRequest } from './apis/DefaultApi';
+import { DefaultApi, ListEmailsRequest, ListMailboxesRequest, ListFilesRequest, GetMailboxRequest,
+  GetEmailRequest, GetEmailAttachmentDownloadRequest } from './apis/DefaultApi';
 import { Configuration, ResponseError, RequestOpts, InitOverrideFunction } from './runtime';
-import { MailboxCreateOptions } from './models/MailboxCreateOptions';
-import { SavedFileResponse } from './models/SavedFileResponse';
+import { MailboxCreate } from './models/MailboxCreate';
+import { SaveUploadedFile201Response } from './models/SaveUploadedFile201Response';
 
 export interface RevdokuOptions {
   apiKey?: string;
@@ -80,11 +80,11 @@ export class Revdoku {
     return this.api.listMailboxes(this.account(input), options);
   }
 
-  getMailbox(input: { mailboxId: string; accountId?: string }, options: RequestOptions = {}) {
-    return this.api.getMailbox({ id: input.mailboxId, accountId: input.accountId ?? this.accountId }, options);
+  getMailbox(input: GetMailboxRequest, options: RequestOptions = {}) {
+    return this.api.getMailbox(this.account(input), options);
   }
 
-  createMailbox(input: Omit<MailboxCreateOptions, 'email'> & {
+  createMailbox(input: Omit<MailboxCreate, 'email'> & {
     username?: string; domain?: string; accountId?: string;
   } = {}, options: RequestOptions = {}) {
     const { username, domain, accountId, ...mailbox } = input;
@@ -102,22 +102,20 @@ export class Revdoku {
     return this.api.getEmail(this.account(input), options);
   }
 
-  listFiles(input: Omit<ListMailboxFilesRequest, 'id'> & { mailboxId: string }, options: RequestOptions = {}) {
-    const { mailboxId, ...query } = input;
-    return this.api.listMailboxFiles(this.account({ ...query, id: mailboxId }), options);
+  listFiles(input: ListFilesRequest, options: RequestOptions = {}) {
+    return this.api.listFiles(this.account(input), options);
   }
 
-  getAttachmentDownloadUrl(input: GetEmailAttachmentDownloadUrlRequest, options: RequestOptions = {}) {
-    return this.api.getEmailAttachmentDownloadUrl(this.account(input), options);
+  getAttachmentDownload(input: GetEmailAttachmentDownloadRequest, options: RequestOptions = {}) {
+    return this.api.getEmailAttachmentDownload(this.account(input), options);
   }
 
   /** Returns attachment bytes. Does not change shared read status or write local files. */
-  async downloadAttachment(input: GetEmailAttachmentDownloadUrlRequest,
+  async downloadAttachment(input: GetEmailAttachmentDownloadRequest,
     options: RequestOptions & { maxBytes?: number } = {}): Promise<Uint8Array> {
     const maxBytes = options.maxBytes ?? 64 * 1024 * 1024;
     if (!Number.isSafeInteger(maxBytes) || maxBytes < 0) throw new Error('maxBytes must be a nonnegative safe integer');
-    const { data: { download } } = await this.getAttachmentDownloadUrl(input, options);
-    if (download.authentication !== 'none') throw new Error('Unexpected download authentication');
+    const { data: { download } } = await this.getAttachmentDownload(input, options);
     if (download.sizeBytes != null && (!Number.isSafeInteger(download.sizeBytes) || download.sizeBytes < 0))
       throw new Error('Invalid attachment size in download metadata');
     if (download.sizeBytes != null && download.sizeBytes > maxBytes) throw new Error('Attachment exceeds maxBytes');
@@ -149,10 +147,10 @@ export class Revdoku {
     return bytes;
   }
 
-  /** Uploads bytes and commits a file version. Pass a revision ID to protect concurrent edits. */
+  /** Uploads bytes and commits a file version. Pass the mailbox version_id to protect concurrent edits. */
   async uploadFile(input: { mailboxId: string; path: string; content: Uint8Array | string;
-    contentType?: string; accountId?: string; expectedMailboxRevisionId?: string },
-    options: RequestOptions = {}): Promise<SavedFileResponse> {
+    contentType?: string; accountId?: string; expectedMailboxVersion?: string },
+    options: RequestOptions = {}): Promise<SaveUploadedFile201Response> {
     if (!input.path || input.path.startsWith('/') || input.path.includes('\\') ||
       input.path.split('/').some(part => !part || part === '..' || part === '.'))
       throw new Error('path must be a mailbox-relative file path');
@@ -176,9 +174,9 @@ export class Revdoku {
       body: new Uint8Array(bytes).buffer, redirect: 'error', credentials: 'omit', signal: this.signal(options.signal) });
     await response.body?.cancel();
     if (!response.ok) throw new Error(`Storage upload failed: HTTP ${response.status}`);
-    return this.api.saveUploadedFile({ id: input.mailboxId, saveUploadedFileRequest: {
+    return this.api.saveUploadedFile({ mailboxId: input.mailboxId, saveUploadedFileRequest: {
       accountId, path: input.path, signedBlobId: prepared.data.signedId,
-      expectedMailboxRevisionId: input.expectedMailboxRevisionId
+      expectedMailboxVersion: input.expectedMailboxVersion
     } }, options);
   }
 }

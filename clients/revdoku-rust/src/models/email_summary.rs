@@ -1,7 +1,7 @@
 /*
- * Revdoku public agent API
+ * Revdoku API
  *
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -11,18 +11,10 @@
 use crate::models;
 use serde::{Deserialize, Serialize};
 
-use serde_repr::{Serialize_repr,Deserialize_repr};
-
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailSummary {
-    #[serde(rename = "schema_version", skip_serializing_if = "Option::is_none")]
-    pub schema_version: Option<SchemaVersion>,
     #[serde(rename = "subject", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
     pub subject: Option<Option<String>>,
-    #[serde(rename = "from", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
-    pub from: Option<Option<String>>,
-    #[serde(rename = "to", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
-    pub to: Option<Option<String>>,
     /// Parsed From authors in header order, retaining multiple authors. Empty when absent/unparseable. Display names are not identity keys.
     #[serde(rename = "from_addresses", skip_serializing_if = "Option::is_none")]
     pub from_addresses: Option<Vec<models::DecodedEmailAddress>>,
@@ -44,11 +36,9 @@ pub struct EmailSummary {
     /// Ordered References IDs without angle brackets, preserving case. Empty when absent/unparseable.
     #[serde(rename = "references", skip_serializing_if = "Option::is_none")]
     pub references: Option<Vec<String>>,
-    /// thr_ plus SHA-256 of thread_anchor_message_id. Best-effort header-derived grouping hint, not authoritative conversation membership or an access grant. Missing ancestry or reused IDs can split/merge hints. Scope lookups to accessible mailboxes.
-    #[serde(rename = "thread_id", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
-    pub thread_id: Option<Option<String>>,
     #[serde(rename = "delivered_to", skip_serializing_if = "Option::is_none")]
     pub delivered_to: Option<String>,
+    /// Receipt time. For sent emails, the time Revdoku accepted the send.
     #[serde(rename = "received_at")]
     pub received_at: chrono::DateTime<chrono::FixedOffset>,
     #[serde(rename = "body_status", skip_serializing_if = "Option::is_none")]
@@ -57,8 +47,14 @@ pub struct EmailSummary {
     pub omitted_attachment_count: Option<i32>,
     #[serde(rename = "id")]
     pub id: String,
+    /// Email ID that identifies the conversation. Replies are linked by email headers. Filter a list with conversation_id.
     #[serde(rename = "conversation_id")]
     pub conversation_id: String,
+    /// received for incoming email; sent for email sent from this mailbox.
+    #[serde(rename = "direction")]
+    pub direction: Direction,
+    #[serde(rename = "delivery", skip_serializing_if = "Option::is_none")]
+    pub delivery: Option<Box<models::EmailDelivery>>,
     /// Included only with include_storage=true for file-browser integration.
     #[serde(rename = "file_id", skip_serializing_if = "Option::is_none")]
     pub file_id: Option<String>,
@@ -79,21 +75,12 @@ pub struct EmailSummary {
     pub files: Option<Box<models::EmailSummaryFiles>>,
     #[serde(rename = "forwarding", skip_serializing_if = "Option::is_none")]
     pub forwarding: Option<Box<models::EmailForwarding>>,
-    /// Decoded Cc header; use the corresponding parsed address array for individual addresses.
-    #[serde(rename = "cc", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
-    pub cc: Option<Option<String>>,
-    /// Decoded Reply-To header; use the corresponding parsed address array for individual addresses.
-    #[serde(rename = "reply_to", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
-    pub reply_to: Option<Option<String>>,
 }
 
 impl EmailSummary {
-    pub fn new(received_at: chrono::DateTime<chrono::FixedOffset>, id: String, conversation_id: String, attachment_count: i32, read: bool, read_at: Option<chrono::DateTime<chrono::FixedOffset>>, read_by: Option<serde_json::Value>, read_by_api_key: Option<serde_json::Value>) -> EmailSummary {
+    pub fn new(received_at: chrono::DateTime<chrono::FixedOffset>, id: String, conversation_id: String, direction: Direction, attachment_count: i32, read: bool, read_at: Option<chrono::DateTime<chrono::FixedOffset>>, read_by: Option<serde_json::Value>, read_by_api_key: Option<serde_json::Value>) -> EmailSummary {
         EmailSummary {
-            schema_version: None,
             subject: None,
-            from: None,
-            to: None,
             from_addresses: None,
             to_addresses: None,
             cc_addresses: None,
@@ -101,13 +88,14 @@ impl EmailSummary {
             message_id: None,
             in_reply_to: None,
             references: None,
-            thread_id: None,
             delivered_to: None,
             received_at,
             body_status: None,
             omitted_attachment_count: None,
             id,
             conversation_id,
+            direction,
+            delivery: None,
             file_id: None,
             version_id: None,
             attachment_count,
@@ -117,29 +105,7 @@ impl EmailSummary {
             read_by_api_key,
             files: None,
             forwarding: None,
-            cc: None,
-            reply_to: None,
         }
-    }
-}
-/// 
-#[repr(i64)]
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize_repr, Deserialize_repr)]
-pub enum SchemaVersion {
-    Variant1 = 1,
-}
-
-impl std::fmt::Display for SchemaVersion {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Self::Variant1 => "1",
-        })
-    }
-}
-
-impl Default for SchemaVersion {
-    fn default() -> SchemaVersion {
-        Self::Variant1
     }
 }
 /// 
@@ -158,6 +124,20 @@ pub enum BodyStatus {
 impl Default for BodyStatus {
     fn default() -> BodyStatus {
         Self::Complete
+    }
+}
+/// received for incoming email; sent for email sent from this mailbox.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub enum Direction {
+    #[serde(rename = "received")]
+    Received,
+    #[serde(rename = "sent")]
+    Sent,
+}
+
+impl Default for Direction {
+    fn default() -> Direction {
+        Self::Received
     }
 }
 

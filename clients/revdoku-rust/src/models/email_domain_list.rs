@@ -1,7 +1,7 @@
 /*
- * Revdoku public agent API
+ * Revdoku API
  *
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -15,27 +15,22 @@ use serde::{Deserialize, Serialize};
 pub struct EmailDomainList {
     #[serde(rename = "domains")]
     pub domains: Vec<models::EmailDomain>,
-    #[serde(rename = "enabled", skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[serde(rename = "configured", skip_serializing_if = "Option::is_none")]
-    pub configured: Option<bool>,
-    #[serde(rename = "limit", skip_serializing_if = "Option::is_none")]
-    pub limit: Option<i32>,
-    #[serde(rename = "usage", skip_serializing_if = "Option::is_none")]
-    pub usage: Option<Box<models::EmailUsage>>,
+    /// Whether this account can use custom email domains.
+    #[serde(rename = "enabled")]
+    pub enabled: bool,
     #[serde(rename = "guidance", skip_serializing_if = "Option::is_none")]
     pub guidance: Option<String>,
+    #[serde(rename = "pagination")]
+    pub pagination: Box<models::Pagination>,
 }
 
 impl EmailDomainList {
-    pub fn new(domains: Vec<models::EmailDomain>) -> EmailDomainList {
+    pub fn new(domains: Vec<models::EmailDomain>, enabled: bool, pagination: models::Pagination) -> EmailDomainList {
         EmailDomainList {
             domains,
-            enabled: None,
-            configured: None,
-            limit: None,
-            usage: None,
+            enabled,
             guidance: None,
+            pagination: Box::new(pagination),
         }
     }
 }

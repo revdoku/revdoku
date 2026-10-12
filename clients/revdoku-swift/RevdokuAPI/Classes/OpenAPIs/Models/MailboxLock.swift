@@ -14,18 +14,17 @@ public struct MailboxLock: Codable, JSONEncodable, Hashable {
 
     public var locked: Bool
     public var lockedUntil: Date?
+    /** For example mailbox_delete while a permanent delete runs. */
     public var kind: String?
-    public var mailboxUploadSessionId: String?
     public var message: String?
     public var progress: [String: AnyCodable]?
-    public var lockedBy: MailboxLockLockedBy?
-    public var lockedByApiKey: MailboxLockLockedByApiKey?
+    public var lockedBy: FileActor?
+    public var lockedByApiKey: FileKey?
 
-    public init(locked: Bool, lockedUntil: Date? = nil, kind: String? = nil, mailboxUploadSessionId: String? = nil, message: String? = nil, progress: [String: AnyCodable]? = nil, lockedBy: MailboxLockLockedBy? = nil, lockedByApiKey: MailboxLockLockedByApiKey? = nil) {
+    public init(locked: Bool, lockedUntil: Date? = nil, kind: String? = nil, message: String? = nil, progress: [String: AnyCodable]? = nil, lockedBy: FileActor? = nil, lockedByApiKey: FileKey? = nil) {
         self.locked = locked
         self.lockedUntil = lockedUntil
         self.kind = kind
-        self.mailboxUploadSessionId = mailboxUploadSessionId
         self.message = message
         self.progress = progress
         self.lockedBy = lockedBy
@@ -36,26 +35,10 @@ public struct MailboxLock: Codable, JSONEncodable, Hashable {
         case locked
         case lockedUntil = "locked_until"
         case kind
-        case mailboxUploadSessionId = "mailbox_upload_session_id"
         case message
         case progress
         case lockedBy = "locked_by"
         case lockedByApiKey = "locked_by_api_key"
-    }
-
-    public var additionalProperties: [String: AnyCodable] = [:]
-
-    public subscript(key: String) -> AnyCodable? {
-        get {
-            if let value = additionalProperties[key] {
-                return value
-            }
-            return nil
-        }
-
-        set {
-            additionalProperties[key] = newValue
-        }
     }
 
     // Encodable protocol methods
@@ -65,39 +48,10 @@ public struct MailboxLock: Codable, JSONEncodable, Hashable {
         try container.encode(locked, forKey: .locked)
         try container.encodeIfPresent(lockedUntil, forKey: .lockedUntil)
         try container.encodeIfPresent(kind, forKey: .kind)
-        try container.encodeIfPresent(mailboxUploadSessionId, forKey: .mailboxUploadSessionId)
         try container.encodeIfPresent(message, forKey: .message)
         try container.encodeIfPresent(progress, forKey: .progress)
         try container.encodeIfPresent(lockedBy, forKey: .lockedBy)
         try container.encodeIfPresent(lockedByApiKey, forKey: .lockedByApiKey)
-        var additionalPropertiesContainer = encoder.container(keyedBy: String.self)
-        try additionalPropertiesContainer.encodeMap(additionalProperties)
-    }
-
-    // Decodable protocol methods
-
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        locked = try container.decode(Bool.self, forKey: .locked)
-        lockedUntil = try container.decodeIfPresent(Date.self, forKey: .lockedUntil)
-        kind = try container.decodeIfPresent(String.self, forKey: .kind)
-        mailboxUploadSessionId = try container.decodeIfPresent(String.self, forKey: .mailboxUploadSessionId)
-        message = try container.decodeIfPresent(String.self, forKey: .message)
-        progress = try container.decodeIfPresent([String: AnyCodable].self, forKey: .progress)
-        lockedBy = try container.decodeIfPresent(MailboxLockLockedBy.self, forKey: .lockedBy)
-        lockedByApiKey = try container.decodeIfPresent(MailboxLockLockedByApiKey.self, forKey: .lockedByApiKey)
-        var nonAdditionalPropertyKeys = Set<String>()
-        nonAdditionalPropertyKeys.insert("locked")
-        nonAdditionalPropertyKeys.insert("locked_until")
-        nonAdditionalPropertyKeys.insert("kind")
-        nonAdditionalPropertyKeys.insert("mailbox_upload_session_id")
-        nonAdditionalPropertyKeys.insert("message")
-        nonAdditionalPropertyKeys.insert("progress")
-        nonAdditionalPropertyKeys.insert("locked_by")
-        nonAdditionalPropertyKeys.insert("locked_by_api_key")
-        let additionalPropertiesContainer = try decoder.container(keyedBy: String.self)
-        additionalProperties = try additionalPropertiesContainer.decodeMap(AnyCodable.self, excludedKeys: nonAdditionalPropertyKeys)
     }
 }
 

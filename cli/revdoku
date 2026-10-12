@@ -18,7 +18,7 @@ CLIENT_VERSION_FILE="${REVDOKU_CLIENT_VERSION_FILE:-${REVDOKU_CONFIG_DIR}/client
 UPDATE_CHECK_STAMP="${REVDOKU_CONFIG_DIR}/.update_check"
 
 installed_client_version() {
-  printf '%s' '1.0.553'
+  printf '%s' '1.0.554'
 }
 
 BASE_URL="${REVDOKU_URL:-$DEFAULT_URL}"
@@ -38,7 +38,6 @@ GRANT_TOKEN=""
 ACCOUNT_ID=""
 CLIENT_ACCOUNT_NAME=""
 CLIENT_DISPLAY_NAME=""
-TAG_PATHS=()
 AGENT_NAME="${REVDOKU_AGENT_NAME:-}"
 AGENT_CLIENT="${REVDOKU_AGENT_CLIENT:-revdoku}"
 AGENT_VERSION="${REVDOKU_AGENT_VERSION:-}"
@@ -72,14 +71,22 @@ EMAIL_ID=""
 EMAIL_USERNAME=""
 EMAIL_DOMAIN=""
 EMAIL_ATTACHMENT_ID=""
-EMAIL_PURPOSE="open"
-EMAIL_LIMIT="100"
-FILE_OFFSET="0"
-EMAIL_CURSOR=""
+LIST_LIMIT=""
+LIST_CURSOR=""
+VERSION_ID=""
 EMAIL_SENDER=""
 EMAIL_SUBJECT=""
 EMAIL_CONVERSATION=""
 EMAIL_READ=""
+EMAIL_DIRECTION=""
+# Newline-separated lists; Bash 3 rejects empty arrays under set -u.
+EMAIL_TO=""
+EMAIL_CC=""
+EMAIL_ATTACHMENTS=""
+EMAIL_TEXT=""
+EMAIL_TEXT_FILE=""
+EMAIL_HTML_FILE=""
+EMAIL_IN_REPLY_TO=""
 MAILBOX_LIST_STATUS="active"
 MAILBOX_LIST_QUERY=""
 MAILBOX_LIST_OPTIONS="false"
@@ -207,21 +214,22 @@ Usage: revdoku <command> [PATH] [options]
   email-status ID       Set shared read status with --read true|false.
   email-download ID     Download original EML or --attachment-id ID.
   email-delete ID       Delete an email and attachments; confirm with --confirm-delete ID.
+  email-send            Send a reply from this mailbox. Does not retry.
   webhook               Show the mailbox webhook endpoint.
   webhook-set           Set --webhook-url HTTPS_URL; optionally --rotate-secret.
   webhook-delete        Disable the webhook; requires --confirm-delete MAILBOX_ID.
   email-subscription    Get a short-lived WebSocket ticket for a running client.
   files                 List mailbox files.
   read PATH             Read a mailbox file; --output FILE saves it locally.
-  versions              Show mailbox version history.
-  restore ID            Restore a mailbox version.
+  versions PATH         List one file's versions (PATH or a df_ file ID).
+  restore PATH          Restore one file version; requires --version-id ID.
   append PATH           Append text; --content TEXT or --content-file FILE.
   archive | unarchive    Manage a mailbox.
   delete                Preview permanent deletion; requires explicit account/mailbox.
   accounts              List accounts granted to this credential.
   account limits                 Read effective mailbox and storage quotas
   account get ID        Read one granted account.
-  account               Account, plan and storage status.
+  account               Account identity and effective limits.
   account create-client NAME     Create a client account within an authorized agency.
   dashboard             Print the dashboard URL; normal sign-in is required.
 
@@ -233,14 +241,23 @@ Options:
   --mailbox-id ID        Target mailbox; overrides the local .revdoku binding.
   --status active|archived|all          Mailbox list filter (default: active).
   --query TEXT                        Mailbox address or ID filter (ls).
-  --limit N --offset N                 Mailbox/file pagination (maximum 100).
-  --cursor CURSOR      --limit N       Email pagination (maximum 100).
+  --limit N   --cursor CURSOR          List page size (maximum 200) and next page.
+                                       Use pagination.next_cursor from the last page.
   --sender ADDRESS     --subject TEXT  Email filters.
+  --direction received|sent|all        Email direction filter (default received).
   --conversation-id ID                 Filter an email conversation.
+  --in-reply-to EMAIL_ID               email-send: reply to a received email.
+                                       Sets the default recipient and subject.
+  --to ADDRESS   --cc ADDRESS          email-send recipients; repeat (10 maximum).
+                                       Recipients must be addresses that emailed this
+                                       mailbox and passed sender authentication.
+  --subject TEXT                       email-send subject (optional for replies).
+  --text TEXT | --text-file PATH       email-send plain-text body (- reads stdin).
+  --html-file PATH     --attach FILE_ID   Optional HTML body; attach mailbox files.
   --read true|false                    Email filter or desired read status.
-  --background                        Read without marking the message read.
   --attachment-id ID   --output FILE   Download a selected email attachment.
-  --description TEXT     --tag-path LABEL     --metadata JSON
+  --version-id ID                      File version for read or restore.
+  --description TEXT   --metadata JSON
   --username NAME      --domain HOST          Mailbox creation address options.
   --dry-run            Preview an upload locally, without network requests.
   --confirm-delete TOKEN  Execute a reviewed deletion preview (expires in 10 minutes).
@@ -297,11 +314,6 @@ while [[ $# -gt 0 ]]; do
       DESCRIPTION="$2"
       shift 2
       ;;
-    --tag-path)
-      [[ $# -ge 2 ]] || die "--tag-path requires a value"
-      TAG_PATHS+=("$2")
-      shift 2
-      ;;
     --account-id)
       [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "--account-id requires an account id"
       ACCOUNT_ID="$2"
@@ -328,12 +340,12 @@ while [[ $# -gt 0 ]]; do
       MAILBOX_LIST_OPTIONS="true"
       shift 2
       ;;
-    --cursor|--limit|--offset|--sender|--subject|--conversation-id|--read|--attachment-id)
+    --cursor|--limit|--sender|--subject|--conversation-id|--read|--attachment-id|--version-id)
       [[ $# -ge 2 && -n "$2" ]] || die "$1 requires a value"
       case "$1" in
-        --cursor) EMAIL_CURSOR="$2" ;;
-        --offset) [[ "$2" =~ ^[0-9]+$ ]] || die "--offset requires a nonnegative integer"; FILE_OFFSET="$2" ;;
-        --limit) [[ "$2" =~ ^[0-9]+$ ]] || die "--limit requires a nonnegative integer"; EMAIL_LIMIT="$2" ;;
+        --cursor) LIST_CURSOR="$2" ;;
+        --limit) [[ "$2" =~ ^[1-9][0-9]*$ && "$2" -le 200 ]] || die "--limit must be from 1 to 200"; LIST_LIMIT="$2" ;;
+        --version-id) VERSION_ID="$2" ;;
         --sender) EMAIL_SENDER="$2" ;;
         --subject) EMAIL_SUBJECT="$2" ;;
         --conversation-id) EMAIL_CONVERSATION="$2" ;;
@@ -342,9 +354,23 @@ while [[ $# -gt 0 ]]; do
       esac
       shift 2
       ;;
-    --background)
-      EMAIL_PURPOSE="background"
-      shift
+    --to|--cc|--attach|--in-reply-to|--direction|--text|--text-file|--html-file)
+      [[ $# -ge 2 && -n "$2" ]] || die "$1 requires a value"
+      case "$1" in
+        --to|--cc|--attach|--in-reply-to|--direction)
+          [[ "$2" != *$'\n'* ]] || die "$1 requires a single value" ;;
+      esac
+      case "$1" in
+        --to) EMAIL_TO+="$2"$'\n' ;;
+        --cc) EMAIL_CC+="$2"$'\n' ;;
+        --attach) [[ "$2" =~ ^df_[A-Za-z0-9]+$ ]] || die "--attach requires a mailbox file id"; EMAIL_ATTACHMENTS+="$2"$'\n' ;;
+        --in-reply-to) [[ "$2" =~ ^eml_[A-Za-z0-9]+$ ]] || die "--in-reply-to requires an email id"; EMAIL_IN_REPLY_TO="$2" ;;
+        --direction) [[ "$2" =~ ^(received|sent|all)$ ]] || die "--direction must be received, sent or all"; EMAIL_DIRECTION="$2" ;;
+        --text) EMAIL_TEXT="$2" ;;
+        --text-file) EMAIL_TEXT_FILE="$2" ;;
+        --html-file) EMAIL_HTML_FILE="$2" ;;
+      esac
+      shift 2
       ;;
     --metadata)
       [[ $# -ge 2 ]] || die "--metadata requires a JSON object"
@@ -437,14 +463,15 @@ while [[ $# -gt 0 ]]; do
           grant)          [[ $# -ge 2 && "$2" != -* ]] || die "grant needs the one-time token right after it"; ACTION="exchange_grant"; GRANT_TOKEN="$2"; shift 2 ;;
           webhook|webhook-set|webhook-delete|email-subscription) ACTION="$1"; shift ;;
           emails)         ACTION="list_emails"; shift ;;
+          email-send)     ACTION="email-send"; shift ;;
           email|email-status|email-download|email-delete)
             [[ $# -ge 2 && "$2" != -* ]] || die "$1 requires an email id"
             ACTION="$1"; EMAIL_ID="$2"; shift 2 ;;
           files)          ACTION="list_files"; shift ;;
           mailbox)          ACTION="mailbox_status"; shift ;;
           read)           [[ $# -ge 2 && "$2" != -* ]] || die "read needs a mailbox PATH right after it, e.g. revdoku read notes.md --mailbox-id ID"; ACTION="read_file"; READ_FILE_PATH="$2"; shift 2 ;;
-          versions)       ACTION="list_versions"; shift ;;
-          restore)        [[ $# -ge 2 && "$2" != -* ]] || die "restore needs a version id right after it, e.g. revdoku restore VERSION_ID --mailbox-id ID"; ACTION="restore_version"; RESTORE_VERSION_ID="$2"; shift 2 ;;
+          versions)       [[ $# -ge 2 && "$2" != -* ]] || die "versions needs a mailbox PATH right after it, e.g. revdoku versions notes.md --mailbox-id ID"; ACTION="list_versions"; READ_FILE_PATH="$2"; shift 2 ;;
+          restore)        [[ $# -ge 2 && "$2" != -* ]] || die "restore needs a mailbox PATH right after it, e.g. revdoku restore notes.md --version-id ID --mailbox-id ID"; ACTION="restore_version"; READ_FILE_PATH="$2"; shift 2 ;;
           append)         [[ $# -ge 2 && "$2" != -* ]] || die "append needs a mailbox PATH right after it, e.g. revdoku append leads.csv --mailbox-id ID --content-file new.csv"; ACTION="append_text_file"; APPEND_TEXT_PATH="$2"; shift 2 ;;
           archive)        ACTION="archive_mailbox"; shift ;;
           unarchive)      ACTION="unarchive_mailbox"; shift ;;
@@ -508,8 +535,22 @@ fi
 if [[ ( -n "$WEBHOOK_URL" || "$ROTATE_SECRET" == "true" ) && "$ACTION" != "webhook-set" ]]; then
   die "--webhook-url and --rotate-secret require webhook-set"
 fi
+if [[ -n "$EMAIL_TO$EMAIL_CC$EMAIL_ATTACHMENTS$EMAIL_IN_REPLY_TO$EMAIL_TEXT$EMAIL_TEXT_FILE$EMAIL_HTML_FILE" && "$ACTION" != "email-send" ]]; then
+  die "--to, --cc, --attach, --in-reply-to, --text, --text-file and --html-file require email-send"
+fi
+[[ -z "$EMAIL_DIRECTION" || "$ACTION" == "list_emails" ]] || die "--direction requires emails"
 if [[ "$MAILBOX_LIST_OPTIONS" == "true" && "$ACTION" != "list_mailboxes" ]]; then
   die "--status and --query require ls or list"
+fi
+case "$ACTION" in
+  list_mailboxes|list_files|list_emails|list_versions) ;;
+  *) [[ -z "$LIST_LIMIT$LIST_CURSOR" ]] || die "--limit and --cursor require ls, files, emails or versions" ;;
+esac
+if [[ "$ACTION" == "restore_version" ]]; then
+  VERSION_ID="${VERSION_ID:-$RESTORE_VERSION_ID}"
+  [[ -n "$VERSION_ID" ]] || die "restore requires --version-id ID (see revdoku versions PATH)"
+elif [[ -n "$VERSION_ID" && "$ACTION" != "read_file" ]]; then
+  die "--version-id requires read or restore"
 fi
 if [[ -n "$EMAIL_USERNAME$EMAIL_DOMAIN" && "$ACTION" != "create_mailbox" ]]; then
   die "--username and --domain require create"
@@ -571,7 +612,7 @@ if [[ -z "$MAILBOX_ID" && -n "$BOUND_MAILBOX_ID" ]]; then
 fi
 [[ -z "$MAILBOX_ID" ]] || validate_id mailbox_id "$MAILBOX_ID"
 [[ -z "$ACCOUNT_ID" ]] || validate_id account_id "$ACCOUNT_ID"
-[[ -z "$RESTORE_VERSION_ID" ]] || validate_id version_id "$RESTORE_VERSION_ID"
+[[ -z "$VERSION_ID" ]] || validate_id version_id "$VERSION_ID"
 for header_value in "$API_KEY" "$AGENT_NAME" "$AGENT_CLIENT" "$AGENT_VERSION" "$AGENT_RUN_ID" "$AGENT_PROJECT" "$AGENT_TASK"; do
   [[ "$header_value" != *[[:cntrl:]]* ]] || die "control characters are not allowed in request headers"
 done
@@ -723,9 +764,6 @@ http_conflict_retry_allowed() {
     POST:*/upload_sessions|POST:*/upload_sessions/*/uploads|POST:*/upload_sessions/*/finalize|POST:*/upload_sessions/*/finalize_batch)
       return 0
       ;;
-    DELETE:/api/v1/mailboxes/*)
-      return 0
-      ;;
     *)
       return 1
       ;;
@@ -789,6 +827,12 @@ http_json() {
   if [[ "$method" == "POST" && "$path" == "/api/v1/mailboxes" ]]; then
     HTTP_TRANSIENT_MAX_ATTEMPTS=0
   fi
+  # Never send an email twice. Rate limits also return without a retry.
+  local send_once="false"
+  if [[ "$method" == "POST" && "$path" =~ ^/api/v1/mailboxes/[^/?]+/emails$ ]]; then
+    HTTP_TRANSIENT_MAX_ATTEMPTS=0
+    send_once="true"
+  fi
   if [[ -n "$ACCOUNT_ID" && "$auth" == "true" && "$path" == /api/v1/* ]]; then
     if [[ "$method" == "GET" || "$method" == "HEAD" ]]; then
       path="$(account_request_path "$path")"
@@ -819,11 +863,12 @@ http_json() {
   if [[ "$auth" == "true" ]]; then
     args+=(-H "Authorization: Bearer $API_KEY")
   fi
-  args+=(--data "$payload")
+  # Read the body from stdin: one command-line argument is limited to 128 KiB on Linux.
+  args+=(--data-binary @-)
 
   while true; do
     : > "$body_file"
-    if status="$(safe_curl "${args[@]}")"; then
+    if status="$(printf '%s' "$payload" | safe_curl "${args[@]}")"; then
       curl_status=0
     else
       curl_status=$?
@@ -871,7 +916,7 @@ http_json() {
     retry_after="$("$JQ_BIN" -r '.error.details.retry_after // empty' "$body_file" 2>/dev/null || true)"
     details_json="$("$JQ_BIN" -c '.error.details // {}' "$body_file" 2>/dev/null || printf '{}')"
 
-    if [[ "$method" != "DELETE" && "$status" == "429" && "$attempt" -lt 20 ]]; then
+    if [[ "$method" != "DELETE" && "$send_once" != "true" && "$status" == "429" && "$attempt" -lt 20 ]]; then
       [[ "$retry_after" =~ ^[0-9]+$ && "$retry_after" -gt 0 ]] || retry_after=5
       attempt=$((attempt + 1))
       echo "Rate limited while calling $path; retrying in ${retry_after}s..." >&2
@@ -1186,34 +1231,72 @@ if [[ "$DRY_RUN" != "true" ]]; then
     *) die "--upload-mode must be auto or direct" ;;
   esac
 fi # network authentication is skipped by upload --dry-run
-list_mailboxes() {
-  local query
-  query="$("$JQ_BIN" -rn --arg s "$MAILBOX_LIST_QUERY" '$s|@uri')"
-  http_json GET "/api/v1/mailboxes?status=${MAILBOX_LIST_STATUS}&limit=${EMAIL_LIMIT}&offset=${FILE_OFFSET}&q=${query}" "{}"
+# Build "name=value&..." from name/value pairs, omitting empty values.
+query_string() {
+  "$JQ_BIN" -rn '$ARGS.positional | [range(0; length; 2) as $i | {key: .[$i], value: .[$i + 1]}]
+    | map(select(.value != "") | (.key + "=" + (.value | @uri))) | join("&")' --args "$@"
 }
 
-list_versions() {
-  [[ -n "$MAILBOX_ID" ]] || die "versions requires --mailbox-id"
-  http_json GET "/api/v1/mailboxes/${MAILBOX_ID}/versions" "{}"
+list_mailboxes() {
+  http_json GET "/api/v1/mailboxes?$(query_string status "$MAILBOX_LIST_STATUS" q "$MAILBOX_LIST_QUERY" limit "$LIST_LIMIT" cursor "$LIST_CURSOR")" "{}"
 }
 
 list_files() {
   [[ -n "$MAILBOX_ID" ]] || die "files requires --mailbox-id (or a remembered selected mailbox)"
-  local path="/api/v1/mailboxes/${MAILBOX_ID}/files?limit=${EMAIL_LIMIT}&offset=${FILE_OFFSET}"
-  http_json GET "$path" "{}"
+  local query
+  query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
+  http_json GET "/api/v1/mailboxes/${MAILBOX_ID}/files${query:+?$query}" "{}"
+}
+
+# Prints the ID of the current file at READ_FILE_PATH, or the given df_ file ID.
+file_id_for_path() {
+  local response id
+  if [[ "$READ_FILE_PATH" =~ ^df_[A-Za-z0-9]+$ ]]; then
+    printf '%s' "$READ_FILE_PATH"
+    return 0
+  fi
+  response="$(http_json GET "/api/v1/mailboxes/${MAILBOX_ID}/files/by_path?$(query_string path "$READ_FILE_PATH")" "{}")" || return 1
+  id="$("$JQ_BIN" -r '.data.file.id // empty' <<<"$response")"
+  validate_id file_id "$id"
+  printf '%s' "$id"
+}
+
+list_versions() {
+  [[ -n "$MAILBOX_ID" ]] || die "versions requires --mailbox-id"
+  local file_id query
+  file_id="$(file_id_for_path)" || return 1
+  query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
+  http_json GET "/api/v1/mailboxes/${MAILBOX_ID}/files/${file_id}/versions${query:+?$query}" "{}"
+}
+
+restore_version() {
+  [[ -n "$MAILBOX_ID" ]] || die "restore requires --mailbox-id"
+  local file_id
+  file_id="$(file_id_for_path)" || return 1
+  http_json POST "/api/v1/mailboxes/${MAILBOX_ID}/files/${file_id}/versions/${VERSION_ID}/restore" "{}"
+}
+
+# Content reads use a temporary link. Downloading marks the version read.
+read_file() {
+  [[ -n "$MAILBOX_ID" && -n "$READ_FILE_PATH" ]] || die "read requires a mailbox and PATH"
+  local file_id query response
+  file_id="$(file_id_for_path)" || return 1
+  query="$(query_string version_id "$VERSION_ID")"
+  response="$(http_json GET "/api/v1/mailboxes/${MAILBOX_ID}/files/${file_id}/download${query:+?$query}" "{}")" || return 1
+  download_link "$response" "$READ_FILE_PATH"
+}
+
+# Fetch data.download.url from an API response. The link carries its own
+# authorization: never send the API key to it.
+download_link() {
+  local response="$1" label="$2" url
+  url="$("$JQ_BIN" -er '.data.download.url' <<<"$response")" || die "download response did not include url"
+  download_file_url "$url" "$label"
 }
 
 # Follow downloads one hop at a time so each destination is checked before use.
-read_file() {
-  [[ -n "$MAILBOX_ID" && -n "$READ_FILE_PATH" ]] || die "read requires a mailbox and PATH"
-  local encoded url
-  encoded="$("$JQ_BIN" -rn --arg s "$READ_FILE_PATH" '$s|@uri')"
-  url="$(api_url "$(reason_request_path "$(account_request_path "/api/v1/mailboxes/${MAILBOX_ID}/files/by_path?path=${encoded}&disposition=inline")")")"
-  download_file_url "$url" "$READ_FILE_PATH"
-}
-
 download_file_url() {
-  local url="$1" label="$2" body_file headers status location hop value auth_args=()
+  local url="$1" label="$2" body_file headers status location hop
   body_file="$(mktemp)"
   headers="$(mktemp)"
   for hop in 0 1 2 3 4 5; do
@@ -1221,13 +1304,8 @@ download_file_url() {
       rm -f "$body_file" "$headers"
       die "download destination is not approved"
     fi
-    auth_args=()
-    if [[ "$url" == "$BASE_URL/"* || "$url" == "$APP_URL/"* ]]; then
-      auth_args=(-H "Authorization: Bearer $API_KEY")
-      while IFS= read -r -d '' value; do auth_args+=("$value"); done < <(agent_header_args)
-    fi
     if ! status="$(safe_curl -sS --max-time 120 -D "$headers" -o "$body_file" -w "%{http_code}" \
-      ${auth_args[@]+"${auth_args[@]}"} -H "Accept: */*" --url "$url")"; then
+      -H "Accept: */*" --url "$url")"; then
       rm -f "$body_file" "$headers"
       die "network error while reading file"
     fi
@@ -1263,20 +1341,22 @@ download_file_url() {
 
 email_command() {
   [[ -n "$MAILBOX_ID" ]] || die "email commands require --mailbox-id or a bound folder"
-  local path="/api/v1/mailboxes/${MAILBOX_ID}/emails" query response url filename
+  local path="/api/v1/mailboxes/${MAILBOX_ID}/emails" query response
   if [[ "$ACTION" == "list_emails" ]]; then
-    [[ "$EMAIL_LIMIT" =~ ^[0-9]+$ ]] || die "--limit must be an integer"
-    query="$("$JQ_BIN" -rn --arg limit "$EMAIL_LIMIT" --arg cursor "$EMAIL_CURSOR" --arg sender "$EMAIL_SENDER" \
-      --arg subject "$EMAIL_SUBJECT" --arg conversation_id "$EMAIL_CONVERSATION" --arg read "$EMAIL_READ" \
-      '{limit:$limit,cursor:$cursor,sender:$sender,subject:$subject,conversation_id:$conversation_id,read:$read} | to_entries | map(select(.value != "") | (.key + "=" + (.value | @uri))) | join("&")')"
-    http_json GET "${path}?${query}" "{}"
+    query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR" direction "$EMAIL_DIRECTION" sender "$EMAIL_SENDER" \
+      subject "$EMAIL_SUBJECT" conversation_id "$EMAIL_CONVERSATION" read "$EMAIL_READ")"
+    http_json GET "${path}${query:+?$query}" "{}"
+    return
+  fi
+  if [[ "$ACTION" == "email-send" ]]; then
+    send_email "$path"
     return
   fi
   [[ "$EMAIL_ID" =~ ^eml_[A-Za-z0-9]+$ ]] || die "invalid email id"
   path="${path}/${EMAIL_ID}"
   case "$ACTION" in
     email)
-      http_json GET "${path}?purpose=${EMAIL_PURPOSE}" "{}"
+      http_json GET "$path" "{}"
       ;;
     email-status)
       [[ -n "$EMAIL_READ" ]] || die "email-status requires --read true|false"
@@ -1293,12 +1373,46 @@ email_command() {
       else
         path="${path}/raw"
       fi
-      response="$(http_json GET "${path}?purpose=${EMAIL_PURPOSE}" "{}")"
-      url="$("$JQ_BIN" -er '.data.download.url' <<<"$response")"
-      filename="$("$JQ_BIN" -r '.data.download.filename' <<<"$response")"
-      download_file_url "$url" "$filename"
+      response="$(http_json GET "$path" "{}")" || return 1
+      download_link "$response" "$("$JQ_BIN" -r '.data.download.filename // "download"' <<<"$response")"
       ;;
   esac
+}
+
+# Reply-only sending. The server checks recipients, limits and permissions.
+send_email() {
+  local path="$1" text_file html_file payload
+  [[ -n "$EMAIL_TEXT" || -n "$EMAIL_TEXT_FILE" ]] || die "email-send requires --text TEXT or --text-file PATH"
+  [[ -z "$EMAIL_TEXT" || -z "$EMAIL_TEXT_FILE" ]] || die "Use --text or --text-file, not both"
+  [[ -z "$EMAIL_TEXT_FILE" || "$EMAIL_TEXT_FILE" == "-" || -f "$EMAIL_TEXT_FILE" ]] || die "--text-file does not exist: $EMAIL_TEXT_FILE"
+  [[ -z "$EMAIL_HTML_FILE" || -f "$EMAIL_HTML_FILE" ]] || die "--html-file does not exist: $EMAIL_HTML_FILE"
+  # Bodies go through files: Linux limits one argument to 128 KiB.
+  text_file="$(mktemp)"; html_file="$(mktemp)"
+  # Expand now: the EXIT trap runs after these locals leave scope.
+  trap "rm -f $(printf '%q ' "$text_file" "$html_file")" EXIT
+  if [[ "$EMAIL_TEXT_FILE" == "-" ]]; then
+    cat > "$text_file"
+  elif [[ -n "$EMAIL_TEXT_FILE" ]]; then
+    cat "$EMAIL_TEXT_FILE" > "$text_file"
+  else
+    printf "%s" "$EMAIL_TEXT" > "$text_file"
+  fi
+  [[ -z "$EMAIL_HTML_FILE" ]] || cat "$EMAIL_HTML_FILE" > "$html_file"
+  payload="$("$JQ_BIN" -nc --rawfile text "$text_file" --rawfile html "$html_file" \
+    --arg to "$EMAIL_TO" --arg cc "$EMAIL_CC" --arg attachments "$EMAIL_ATTACHMENTS" \
+    --arg subject "$EMAIL_SUBJECT" --arg in_reply_to "$EMAIL_IN_REPLY_TO" '
+    def list: split("\n") | map(select(. != ""));
+    {to: ($to | list), cc: ($cc | list), subject: $subject, text: $text, html: (if $html == "" then null else $html end),
+      in_reply_to: $in_reply_to, attachment_ids: ($attachments | list)}
+    | with_entries(select(.value != null and .value != "" and .value != []))')" || payload=""
+  rm -f "$text_file" "$html_file"
+  [[ -n "$payload" ]] || die "Could not read the email body"
+  if ! http_json POST "$path" "$payload"; then
+    if [[ -z "$LAST_HTTP_STATUS" || "$LAST_HTTP_STATUS" == 5* ]]; then
+      echo "The send result is unknown. Do not send again until 'revdoku emails --direction sent --mailbox-id $MAILBOX_ID' confirms it was not sent." >&2
+    fi
+    return 1
+  fi
 }
 
 create_mailbox() {
@@ -1308,16 +1422,6 @@ create_mailbox() {
     '{mailbox: (({description:$description} | with_entries(select(.value != ""))) +
       {email: ({username:$username,domain:$domain} | with_entries(select(.value != "")))})}')"
   http_json POST "/api/v1/mailboxes" "$payload"
-}
-
-restore_version() {
-  local payload
-  [[ -n "$MAILBOX_ID" ]] || die "restore requires --mailbox-id"
-  [[ -n "$RESTORE_VERSION_ID" ]] || die "restore requires a mailbox version id"
-  payload="$("$JQ_BIN" -nc \
-    --arg version_id "$RESTORE_VERSION_ID" \
-    '{version_id:$version_id}')"
-  http_json POST "/api/v1/mailboxes/${MAILBOX_ID}/versions/restore" "$payload"
 }
 
 append_text_file() {
@@ -1370,7 +1474,7 @@ unarchive_mailbox() {
 }
 
 delete_mailbox() {
-  local mailbox_response account_response files_response versions_response state token directory path claimed now expires payload response
+  local mailbox_response account_response state token directory path claimed now expires payload response
   directory="$REVDOKU_CONFIG_DIR/delete-confirmations"
   [[ ! -L "$directory" ]] || die "refusing symlink confirmation storage"
   if [[ -d "$directory" ]]; then
@@ -1384,24 +1488,19 @@ delete_mailbox() {
     "$JQ_BIN" -e --argjson now "$now" --arg origin "$BASE_URL" --arg account "$ACCOUNT_ID" --arg mailbox "$MAILBOX_ID" \
       '.expires_at > $now and .state.origin == $origin and .state.account.id == $account and .state.mailbox.id == $mailbox' "$path" >/dev/null || die "deletion preview expired or targets differ; preview again"
   fi
-  versions_response="$(http_json GET "/api/v1/mailboxes/${MAILBOX_ID}/versions" "{}")" || return 1
-  files_response="$(http_json GET "/api/v1/mailboxes/${MAILBOX_ID}/source_files" "{}")" || return 1
   mailbox_response="$(http_json GET "/api/v1/mailboxes/${MAILBOX_ID}" "{}")" || return 1
   account_response="$(http_json GET "/api/v1/accounts/${ACCOUNT_ID}" "{}")" || return 1
-  state="$(printf '%s\n%s\n%s\n%s\n' "$mailbox_response" "$account_response" "$files_response" "$versions_response" | "$JQ_BIN" -csS --arg origin "$BASE_URL" '
+  # The preview binds the confirmation to the file-tree version, the settings
+  # version and the counts. Any change between preview and confirm stops it.
+  state="$(printf '%s\n%s\n' "$mailbox_response" "$account_response" | "$JQ_BIN" -csS --arg origin "$BASE_URL" '
     .[0].data.mailbox as $b | .[1].data.account as $account |
-    .[2].data.source_files as $files | .[3].data.versions as $versions |
     if (($b.metadata_version | type == "string" and length > 0) and
-        ($b | has("current_mailbox_revision_id")) and
-        ($b.current_mailbox_revision_id | . == null or type == "string") and
-        ($files | type == "array") and ($versions | type == "array") and
-        all($files[]; .source_file_versions | type == "array")) | not
+        ($b | has("version_id")) and ($b.version_id | . == null or type == "string") and
+        ($b.version_number | type == "number") and ($b.files_count | type == "number")) | not
     then error("Incomplete mailbox deletion state; update the client or review in the dashboard") else
     {origin:$origin, account:($account | {id,name}),
-     mailbox:($b | {id, email, account_id, archived, archived_at, metadata_version,
-       current_mailbox_revision_id, storage_bytes, delete,
-       source_file_count:($files | length), version_count:($versions | length),
-       file_version_count:([$files[].source_file_versions | length] | add // 0)})}
+     mailbox:($b | {id, email:{address:.email.address}, account_id, archived, archived_at, metadata_version,
+       version_id, version_number, files_count, storage_bytes, delete, dashboard_url})}
     end')" || return 1
   "$JQ_BIN" -e --arg account "$ACCOUNT_ID" --arg mailbox "$MAILBOX_ID" '
     .account.id == $account and .mailbox.id == $mailbox and
@@ -1420,8 +1519,8 @@ delete_mailbox() {
     "$JQ_BIN" -cn --argjson state "$state" --arg token "$token" --argjson expires "$expires" \
       '$state | del(.mailbox.delete.confirmation) | {success:true, data:(. + {
         preview:true, irreversible:true, confirmation_token:$token, expires_at:$expires,
-        dashboard_url:(.origin + "/mailboxes/view?id=" + .mailbox.id),
-        notice:"Permanently deletes this mailbox and its files and versions. Obtain user approval for this exact target before --confirm-delete."})}'
+        dashboard_url:.mailbox.dashboard_url,
+        notice:"Permanently deletes this mailbox, its emails, files and versions. Obtain user approval for this exact target before --confirm-delete."})}'
     return 0
   fi
 
@@ -1446,10 +1545,12 @@ connection_status() {
     data: {
       connected: (.data.connected // true),
       account: .data.account,
+      user: .data.user,
       default_account_id: .data.default_account_id,
       accounts: .data.accounts,
       connection: .data.connection,
-      features: .data.features
+      features: .data.features,
+      dashboard_url: .data.dashboard_url
     }
   }'
 }
@@ -1461,52 +1562,19 @@ create_client_account() {
 }
 
 account_status() {
-  local identity
-  identity="$(http_json GET "/api/v1/status" "{}")"
-  if [[ "$(printf '%s' "$identity" | "$JQ_BIN" -r '.data.account.account_kind // .data.account.kind')" == "client" ]]; then
-    printf '%s\n' "$identity"
-    return
-  fi
-  http_json GET "/api/v1/account/credits" "{}" | "$JQ_BIN" --argjson identity "$identity" -c '
-    .data.credits as $credits
-    | ($credits.account_limits // {}) as $limits
-    | {
-        success: (.success // true),
-        data: {
-          account: $identity.data.account,
-          default_account_id: $identity.data.default_account_id,
-          accounts: $identity.data.accounts,
-          plan: ($credits.plan // {}),
-          storage: {
-            used_bytes: $limits.used_storage_bytes,
-            used_human: $limits.used_storage_human,
-            available_bytes: $limits.available_storage_bytes,
-            available_human: $limits.available_storage_human,
-            max_mb: $limits.max_storage_mb,
-            max_human: $limits.max_storage_human,
-            max_file_size_mb: $limits.max_file_size_mb,
-            max_file_size_human: $limits.max_file_size_human
-          },
-          connections: {
-            max: $limits.max_account_connections,
-            max_account_members: $limits.max_account_members,
-            max_api_keys: $limits.max_api_keys,
-            max_agent_connections: $limits.max_agent_connections,
-            active_api_keys_count: $limits.active_api_keys_count,
-            active_agent_connections_count: $limits.active_agent_connections_count,
-            api_rate_limit_requests_per_minute: $limits.api_rate_limit_requests_per_minute
-          },
-          credits: {
-            balance: $credits.balance,
-            subscription: $credits.subscription,
-            purchased: $credits.purchased,
-            total: $credits.total,
-            purchased_expires_at: $credits.purchased_expires_at,
-            next_refill_at: $credits.next_refill_at,
-            one_time_credits_purchasable: $credits.one_time_credits_purchasable
-          }
-        }
-      }'
+  local identity limits
+  identity="$(http_json GET "/api/v1/status" "{}")" || return 1
+  limits="$(http_json GET "/api/v1/account/limits" "{}")" || return 1
+  "$JQ_BIN" -nc --argjson identity "$identity" --argjson limits "$limits" '{
+    success: true,
+    data: {
+      account: $identity.data.account,
+      default_account_id: $identity.data.default_account_id,
+      accounts: $identity.data.accounts,
+      limits: $limits.data.limits,
+      usage: $limits.data.usage
+    }
+  }'
 }
 
 print_terminal_link_hint() {
@@ -1571,7 +1639,7 @@ case "$ACTION" in
       webhook) http_json GET "/api/v1/mailboxes/$MAILBOX_ID/email/webhook" "{}" ;;
       webhook-set)
         [[ -n "$WEBHOOK_URL" ]] || die "Provide --webhook-url HTTPS_URL"
-        http_json PUT "/api/v1/mailboxes/$MAILBOX_ID/email/webhook" "$(jq -n --arg url "$WEBHOOK_URL" --argjson rotate "$ROTATE_SECRET" '{webhook_url:$url,rotate_secret:$rotate}')" ;;
+        http_json PUT "/api/v1/mailboxes/$MAILBOX_ID/email/webhook" "$("$JQ_BIN" -n --arg url "$WEBHOOK_URL" --argjson rotate "$ROTATE_SECRET" '{webhook_url:$url,rotate_secret:$rotate}')" ;;
       webhook-delete)
         [[ "$DELETE_CONFIRMATION" == "$MAILBOX_ID" ]] || die "Repeat with --confirm-delete $MAILBOX_ID to disable this webhook"
         http_json DELETE "/api/v1/mailboxes/$MAILBOX_ID/email/webhook" "{}" ;;
@@ -1590,7 +1658,7 @@ case "$ACTION" in
     http_json GET "/api/v1/accounts" "{}"
     exit 0
     ;;
-  list_emails|email|email-status|email-download|email-delete)
+  list_emails|email|email-status|email-download|email-delete|email-send)
     email_command
     exit 0
     ;;
@@ -1810,50 +1878,23 @@ create_mailbox() {
   printf "%s" "$id"
 }
 
-tag_paths_json() {
-  if [[ "${#TAG_PATHS[@]}" -eq 0 ]]; then
-    printf "[]"
-  else
-    "$JQ_BIN" -nc '$ARGS.positional' --args "${TAG_PATHS[@]}"
-  fi
-}
-
 mailbox_payload() {
-  local tag_paths metadata
-  tag_paths="$(tag_paths_json)"
-  metadata="$(effective_metadata_json)"
   "$JQ_BIN" -nc \
     --arg description "$DESCRIPTION" \
-    --argjson metadata "$metadata" \
-    --argjson tag_paths "$tag_paths" \
-    '{
-      mailbox: (
-        {metadata: $metadata}
-        + (if $description != "" then {description: $description} else {} end)
-        + (if ($tag_paths | length) > 0 then {tag_paths: $tag_paths} else {} end)
-      )
-    }'
+    --argjson metadata "$(effective_metadata_json)" \
+    '{mailbox: ({metadata: $metadata} + (if $description != "" then {description: $description} else {} end))}'
 }
 
 mailbox_update_payload() {
-  local tag_paths
-  tag_paths="$(tag_paths_json)"
   "$JQ_BIN" -nc \
     --arg description "$DESCRIPTION" \
     --argjson metadata "$METADATA_JSON" \
-    --argjson tag_paths "$tag_paths" \
-    '{
-      mailbox: (
-        {}
-        + (if $description != "" then {description: $description} else {} end)
-        + (if ($metadata | length) > 0 then {metadata: $metadata} else {} end)
-        + (if ($tag_paths | length) > 0 then {tag_paths: $tag_paths} else {} end)
-      )
-    }'
+    '{mailbox: ((if $description != "" then {description: $description} else {} end)
+      + (if ($metadata | length) > 0 then {metadata: $metadata} else {} end))}'
 }
 
 mailbox_update_needed() {
-  [[ "$METADATA_JSON" != "{}" || -n "$DESCRIPTION" || "${#TAG_PATHS[@]}" -gt 0 ]]
+  [[ "$METADATA_JSON" != "{}" || -n "$DESCRIPTION" ]]
 }
 
 put_direct_upload() {
@@ -1975,29 +2016,22 @@ mailbox_upload_session_manifest_json() {
 mailbox_upload_session_client_key() {
   local mailbox_id="$1"
   local manifest_json="$2"
-  local delete_missing="${3:-false}"
   local digest
   if [[ -n "$MAILBOX_UPLOAD_CLIENT_SESSION_KEY" ]]; then
     printf "%s" "$MAILBOX_UPLOAD_CLIENT_SESSION_KEY"
     return 0
   fi
-  digest="$(printf "%s:%s:%s:%s" "$mailbox_id" "$manifest_json" "$delete_missing" "$ACTION_REASON" | openssl dgst -sha256 -hex | awk '{print $2}')"
+  digest="$(printf "%s:%s:%s" "$mailbox_id" "$manifest_json" "$ACTION_REASON" | openssl dgst -sha256 -hex | awk '{print $2}')"
   printf "cli:%s:%s" "$mailbox_id" "$digest"
 }
 
 mailbox_upload_session_payload() {
   local client_session_key="$1"
   local expected_file_count="$2"
-  local delete_missing="${3:-false}"
   "$JQ_BIN" -nc \
     --arg client_session_key "$client_session_key" \
     --argjson expected_file_count "$expected_file_count" \
-    --arg delete_missing "$delete_missing" \
-    '{
-      client_session_key: $client_session_key,
-      expected_file_count: $expected_file_count
-    }
-    + (if $delete_missing == "true" then {delete_missing: true} else {} end)'
+    '{client_session_key: $client_session_key, expected_file_count: $expected_file_count}'
 }
 
 prepare_mailbox_upload_descriptors() {
@@ -2097,7 +2131,6 @@ upload_mailbox_session_missing_entry() {
 store_mailbox_session_upload() (
   local mailbox_id="$1"
   local file_list="$2"
-  local delete_missing="${3:-false}"
   local manifest_json payload response session_id upload_line rel upload_json file batch_json batch_response expected_file_count client_session_key failed=0 finalized=0 entry_json refresh_response uploaded_index=0
   local upload_session_tmp
   upload_session_tmp="$(mktemp -d "${TMPDIR:-/tmp}/revdoku-upload.XXXXXX")" || return 1
@@ -2109,8 +2142,8 @@ store_mailbox_session_upload() (
   manifest_json="$(mailbox_upload_session_manifest_json "$file_list")" || { rm -f "$UPLOAD_LOCAL_MAP"; return 1; }
   UPLOAD_MANIFEST="$manifest_json"
   expected_file_count="$("$JQ_BIN" -r 'length' <<<"$manifest_json")"
-  client_session_key="$(mailbox_upload_session_client_key "$mailbox_id" "$manifest_json" "$delete_missing")"
-  payload="$(mailbox_upload_session_payload "$client_session_key" "$expected_file_count" "$delete_missing")"
+  client_session_key="$(mailbox_upload_session_client_key "$mailbox_id" "$manifest_json")"
+  payload="$(mailbox_upload_session_payload "$client_session_key" "$expected_file_count")"
   response="$(http_json POST "/api/v1/mailboxes/${mailbox_id}/upload_sessions" "$payload")" || return 1
   session_id="$("$JQ_BIN" -r '.data.mailbox_upload_session.id // empty' <<<"$response")"
   validate_id upload_session_id "$session_id"
@@ -2152,7 +2185,7 @@ store_mailbox_session_upload() (
     done < <("$JQ_BIN" -c '.data.uploads[]?' <<<"$batch_response")
     [[ "$failed" == "0" ]] || break
 
-    if [[ "$delete_missing" != "true" ]] && ! finalize_mailbox_upload_session_batch "$mailbox_id" "$session_id" "$MAILBOX_UPLOAD_DESCRIPTOR_BATCH_SIZE"; then
+    if ! finalize_mailbox_upload_session_batch "$mailbox_id" "$session_id" "$MAILBOX_UPLOAD_DESCRIPTOR_BATCH_SIZE"; then
       failed=1
       break
     fi
@@ -2208,7 +2241,7 @@ store_mailbox() {
   }
   echo "Mailbox: $mailbox_id" >&2
   echo "Saved mailbox: $mailbox_id" >&2
-  store_mailbox_session_upload "$mailbox_id" "$file_list" false || {
+  store_mailbox_session_upload "$mailbox_id" "$file_list" || {
     rm -f "$file_list"
     return 1
   }

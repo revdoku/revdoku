@@ -13,47 +13,68 @@ part of revdoku.api;
 class GetAccountLimits200ResponseDataUsageMailboxCreations {
   /// Returns a new [GetAccountLimits200ResponseDataUsageMailboxCreations] instance.
   GetAccountLimits200ResponseDataUsageMailboxCreations({
-    required this.used,
-    required this.remaining,
-    required this.monthlyLimit,
-    required this.resetsAt,
+    this.monthlyLimit,
+    this.used,
+    this.remaining,
+    this.resetsAt,
   });
 
-  /// Minimum value: 0
-  int used;
+  int? monthlyLimit;
 
-  /// Minimum value: 0
-  int remaining;
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  int? used;
 
-  /// Minimum value: 0
-  int monthlyLimit;
+  int? remaining;
 
-  DateTime resetsAt;
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  DateTime? resetsAt;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is GetAccountLimits200ResponseDataUsageMailboxCreations &&
+    other.monthlyLimit == monthlyLimit &&
     other.used == used &&
     other.remaining == remaining &&
-    other.monthlyLimit == monthlyLimit &&
     other.resetsAt == resetsAt;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (used.hashCode) +
-    (remaining.hashCode) +
-    (monthlyLimit.hashCode) +
-    (resetsAt.hashCode);
+    (monthlyLimit == null ? 0 : monthlyLimit!.hashCode) +
+    (used == null ? 0 : used!.hashCode) +
+    (remaining == null ? 0 : remaining!.hashCode) +
+    (resetsAt == null ? 0 : resetsAt!.hashCode);
 
   @override
-  String toString() => 'GetAccountLimits200ResponseDataUsageMailboxCreations[used=$used, remaining=$remaining, monthlyLimit=$monthlyLimit, resetsAt=$resetsAt]';
+  String toString() => 'GetAccountLimits200ResponseDataUsageMailboxCreations[monthlyLimit=$monthlyLimit, used=$used, remaining=$remaining, resetsAt=$resetsAt]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'used'] = this.used;
-      json[r'remaining'] = this.remaining;
+    if (this.monthlyLimit != null) {
       json[r'monthly_limit'] = this.monthlyLimit;
-      json[r'resets_at'] = this.resetsAt.toUtc().toIso8601String();
+    } else {
+      json[r'monthly_limit'] = null;
+    }
+    if (this.used != null) {
+      json[r'used'] = this.used;
+    }
+    if (this.remaining != null) {
+      json[r'remaining'] = this.remaining;
+    } else {
+      json[r'remaining'] = null;
+    }
+    if (this.resetsAt != null) {
+      json[r'resets_at'] = this.resetsAt!.toUtc().toIso8601String();
+    }
     return json;
   }
 
@@ -68,22 +89,14 @@ class GetAccountLimits200ResponseDataUsageMailboxCreations {
       // Note 1: the values aren't checked for validity beyond being non-null.
       // Note 2: this code is stripped in release mode!
       assert(() {
-        assert(json.containsKey(r'used'), 'Required key "GetAccountLimits200ResponseDataUsageMailboxCreations[used]" is missing from JSON.');
-        assert(json[r'used'] != null, 'Required key "GetAccountLimits200ResponseDataUsageMailboxCreations[used]" has a null value in JSON.');
-        assert(json.containsKey(r'remaining'), 'Required key "GetAccountLimits200ResponseDataUsageMailboxCreations[remaining]" is missing from JSON.');
-        assert(json[r'remaining'] != null, 'Required key "GetAccountLimits200ResponseDataUsageMailboxCreations[remaining]" has a null value in JSON.');
-        assert(json.containsKey(r'monthly_limit'), 'Required key "GetAccountLimits200ResponseDataUsageMailboxCreations[monthly_limit]" is missing from JSON.');
-        assert(json[r'monthly_limit'] != null, 'Required key "GetAccountLimits200ResponseDataUsageMailboxCreations[monthly_limit]" has a null value in JSON.');
-        assert(json.containsKey(r'resets_at'), 'Required key "GetAccountLimits200ResponseDataUsageMailboxCreations[resets_at]" is missing from JSON.');
-        assert(json[r'resets_at'] != null, 'Required key "GetAccountLimits200ResponseDataUsageMailboxCreations[resets_at]" has a null value in JSON.');
         return true;
       }());
 
       return GetAccountLimits200ResponseDataUsageMailboxCreations(
-        used: mapValueOfType<int>(json, r'used')!,
-        remaining: mapValueOfType<int>(json, r'remaining')!,
-        monthlyLimit: mapValueOfType<int>(json, r'monthly_limit')!,
-        resetsAt: mapDateTime(json, r'resets_at', r'')!,
+        monthlyLimit: mapValueOfType<int>(json, r'monthly_limit'),
+        used: mapValueOfType<int>(json, r'used'),
+        remaining: mapValueOfType<int>(json, r'remaining'),
+        resetsAt: mapDateTime(json, r'resets_at', r''),
       );
     }
     return null;
@@ -131,10 +144,6 @@ class GetAccountLimits200ResponseDataUsageMailboxCreations {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
-    'used',
-    'remaining',
-    'monthly_limit',
-    'resets_at',
   };
 }
 

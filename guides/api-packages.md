@@ -27,21 +27,22 @@ For direct HTTP calls without an SDK, use the [JavaScript, TypeScript and Python
 
 ## What each package covers
 
-The language SDKs are generated from [OpenAPI](https://revdoku.com/openapi.json), which covers selected endpoints. The [complete REST reference](https://revdoku.com/api.md) also documents operations outside that schema.
+The language SDKs are generated from [OpenAPI](https://revdoku.com/openapi.json), which lists every public REST operation. The [REST reference](https://revdoku.com/api.md) explains each one.
 
 | Capability | Language SDKs | n8n | Zapier |
 | --- | --- | --- | --- |
 | List and create mailboxes | Yes | Yes | Find Mailbox / Create Mailbox |
 | List/read email and set read status | Yes | Yes | Yes |
 | Delete one email | Yes | Yes | Yes |
+| Reply to a sender | Yes | Use direct HTTP | Use direct HTTP |
 | Download original email or attachment | Returns a temporary link | Returns binary data | Returns a file reference |
 | List stored files | Yes | Yes | Find Mailbox File search |
 | Upload files | Prepare and save through the SDK; npm also has `uploadFile` | Yes | Yes |
 | Read file metadata | Yes | Yes | Find Mailbox File |
-| Download/delete other stored files | Use direct HTTP | Yes | Delete Mailbox File; use direct HTTP for other operations |
+| Download/delete other stored files | Yes; downloads return a temporary link | Yes | Delete Mailbox File; use direct HTTP for other operations |
 | Mailbox aliases, sender restrictions and custom domains | Yes, where covered by OpenAPI | Use direct HTTP | Use direct HTTP |
 | Configure email webhooks and get live-subscription tickets | Yes; the receiver/WebSocket loop is application code | New Email uses polling | New Email uses polling |
-| Mailbox history | Use direct HTTP | Use direct HTTP | List Mailbox Versions / Get Mailbox Version |
+| File version history and restore | Yes | Use direct HTTP | Use direct HTTP |
 
 For Node.js, use `Revdoku.uploadFile` to calculate checksums and upload bytes. Other SDKs expose `prepareFileUpload` and `saveUploadedFile`; send the bytes to the returned storage URL between these calls. Use only its returned headers, without the API key. See the [upload workflow](https://revdoku.com/api.md#upload-a-file).
 
@@ -86,7 +87,7 @@ Other language guides list their SDK members. Use the generated member names whe
 | Zapier New Email | Samples recent arrivals during setup | Reads the latest 1,000 arrivals; Zapier deduplicates IDs. More than 1,000 arrivals between successful polls can be missed |
 | CLI `emails` / MCP `mailbox_email_list` | Lists according to the supplied filters | The caller must save and reuse `next_cursor` for continued polling |
 
-Reading or downloading does not mark email read. Read status is shared with dashboard users and other integrations, so it cannot identify what one consumer has processed. Marking a message read is a separate operation. See the [API polling workflow](https://revdoku.com/api.md#poll-for-new-messages) and the [HTTP webhook and live-event examples](../examples/README.md#new-email-notifications).
+Reading or downloading does not mark email read. Read status is shared with dashboard users and other integrations, so it cannot identify what one consumer has processed. Marking a message read is a separate operation. See the [API polling workflow](https://revdoku.com/api.md#poll-for-new-email) and the [HTTP webhook and live-event examples](../examples/README.md#new-email-notifications).
 
 ## Downloads
 
@@ -104,4 +105,4 @@ Temporary URLs expire after 15 minutes. Request another link when needed; do not
 
 An API error has an HTTP status and `error.code`, `error.message`, and optional `error.details`. The SDK guides show how to extract them from each language's native exception. Do not expect `result.data` on a failed call.
 
-For `EMAIL_NOT_READY`, inspect `error.details.mailbox_id` and read that retained mailbox's receiving state. For a timeout with no response, reconcile the mailbox list before another creation attempt. Repeating creation can create a second mailbox and consume more capacity. A 429 rate limit permits a bounded read retry after `Retry-After`; a monthly creation-capacity error requires waiting for its reset or changing capacity. [Full error reference](https://revdoku.com/api.md#common-errors).
+For `EMAIL_NOT_READY`, inspect `error.details.mailbox_id` and read that retained mailbox's receiving state. For a timeout with no response, reconcile the mailbox list before another creation attempt. Repeating creation can create a second mailbox and consume more capacity. A 429 rate limit permits a bounded read retry after `Retry-After`; a monthly creation-capacity error requires waiting for its reset or changing capacity. [Full error reference](https://revdoku.com/api.md#errors).

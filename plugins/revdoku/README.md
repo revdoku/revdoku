@@ -3,7 +3,7 @@
 Cloud file storage and incoming email for people and AI agents. Each mailbox has
 an email address and holds messages, attachments and other files. Authorized
 members and agents can read and manage shared mailbox data, including versions.
-Email is receive-only.
+Mailboxes can reply to senders who emailed them.
 
 This package contains the portable Revdoku skill, its bundled local CLI, and the
 hosted OAuth MCP configuration at `https://mcp.revdoku.com`. The repository's

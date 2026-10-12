@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -20,7 +20,7 @@ var _ MappedNullable = &GetEmailSubscription200ResponseData{}
 
 // GetEmailSubscription200ResponseData struct for GetEmailSubscription200ResponseData
 type GetEmailSubscription200ResponseData struct {
-	Subscription GetEmailSubscription200ResponseDataSubscription `json:"subscription"`
+	Subscription EmailSubscription `json:"subscription"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -30,7 +30,7 @@ type _GetEmailSubscription200ResponseData GetEmailSubscription200ResponseData
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewGetEmailSubscription200ResponseData(subscription GetEmailSubscription200ResponseDataSubscription) *GetEmailSubscription200ResponseData {
+func NewGetEmailSubscription200ResponseData(subscription EmailSubscription) *GetEmailSubscription200ResponseData {
 	this := GetEmailSubscription200ResponseData{}
 	this.Subscription = subscription
 	return &this
@@ -45,9 +45,9 @@ func NewGetEmailSubscription200ResponseDataWithDefaults() *GetEmailSubscription2
 }
 
 // GetSubscription returns the Subscription field value
-func (o *GetEmailSubscription200ResponseData) GetSubscription() GetEmailSubscription200ResponseDataSubscription {
+func (o *GetEmailSubscription200ResponseData) GetSubscription() EmailSubscription {
 	if o == nil {
-		var ret GetEmailSubscription200ResponseDataSubscription
+		var ret EmailSubscription
 		return ret
 	}
 
@@ -56,7 +56,7 @@ func (o *GetEmailSubscription200ResponseData) GetSubscription() GetEmailSubscrip
 
 // GetSubscriptionOk returns a tuple with the Subscription field value
 // and a boolean to check if the value has been set.
-func (o *GetEmailSubscription200ResponseData) GetSubscriptionOk() (*GetEmailSubscription200ResponseDataSubscription, bool) {
+func (o *GetEmailSubscription200ResponseData) GetSubscriptionOk() (*EmailSubscription, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -64,7 +64,7 @@ func (o *GetEmailSubscription200ResponseData) GetSubscriptionOk() (*GetEmailSubs
 }
 
 // SetSubscription sets field value
-func (o *GetEmailSubscription200ResponseData) SetSubscription(v GetEmailSubscription200ResponseDataSubscription) {
+func (o *GetEmailSubscription200ResponseData) SetSubscription(v EmailSubscription) {
 	o.Subscription = v
 }
 

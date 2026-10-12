@@ -16,7 +16,6 @@ class MailboxLock {
     required this.locked,
     this.lockedUntil,
     this.kind,
-    this.mailboxUploadSessionId,
     this.message,
     this.progress = const {},
     this.lockedBy,
@@ -33,6 +32,7 @@ class MailboxLock {
   ///
   DateTime? lockedUntil;
 
+  /// For example mailbox_delete while a permanent delete runs.
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated
@@ -40,14 +40,6 @@ class MailboxLock {
   /// Consider adding a "default:" property in the specification file to hide this note.
   ///
   String? kind;
-
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  String? mailboxUploadSessionId;
 
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
@@ -65,7 +57,7 @@ class MailboxLock {
   /// source code must fall back to having a nullable type.
   /// Consider adding a "default:" property in the specification file to hide this note.
   ///
-  MailboxLockLockedBy? lockedBy;
+  FileActor? lockedBy;
 
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
@@ -73,14 +65,13 @@ class MailboxLock {
   /// source code must fall back to having a nullable type.
   /// Consider adding a "default:" property in the specification file to hide this note.
   ///
-  MailboxLockLockedByApiKey? lockedByApiKey;
+  FileKey? lockedByApiKey;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is MailboxLock &&
     other.locked == locked &&
     other.lockedUntil == lockedUntil &&
     other.kind == kind &&
-    other.mailboxUploadSessionId == mailboxUploadSessionId &&
     other.message == message &&
     _deepEquality.equals(other.progress, progress) &&
     other.lockedBy == lockedBy &&
@@ -92,14 +83,13 @@ class MailboxLock {
     (locked.hashCode) +
     (lockedUntil == null ? 0 : lockedUntil!.hashCode) +
     (kind == null ? 0 : kind!.hashCode) +
-    (mailboxUploadSessionId == null ? 0 : mailboxUploadSessionId!.hashCode) +
     (message == null ? 0 : message!.hashCode) +
     (progress.hashCode) +
     (lockedBy == null ? 0 : lockedBy!.hashCode) +
     (lockedByApiKey == null ? 0 : lockedByApiKey!.hashCode);
 
   @override
-  String toString() => 'MailboxLock[locked=$locked, lockedUntil=$lockedUntil, kind=$kind, mailboxUploadSessionId=$mailboxUploadSessionId, message=$message, progress=$progress, lockedBy=$lockedBy, lockedByApiKey=$lockedByApiKey]';
+  String toString() => 'MailboxLock[locked=$locked, lockedUntil=$lockedUntil, kind=$kind, message=$message, progress=$progress, lockedBy=$lockedBy, lockedByApiKey=$lockedByApiKey]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -109,9 +99,6 @@ class MailboxLock {
     }
     if (this.kind != null) {
       json[r'kind'] = this.kind;
-    }
-    if (this.mailboxUploadSessionId != null) {
-      json[r'mailbox_upload_session_id'] = this.mailboxUploadSessionId;
     }
     if (this.message != null) {
       json[r'message'] = this.message;
@@ -146,11 +133,10 @@ class MailboxLock {
         locked: mapValueOfType<bool>(json, r'locked')!,
         lockedUntil: mapDateTime(json, r'locked_until', r''),
         kind: mapValueOfType<String>(json, r'kind'),
-        mailboxUploadSessionId: mapValueOfType<String>(json, r'mailbox_upload_session_id'),
         message: mapValueOfType<String>(json, r'message'),
         progress: mapCastOfType<String, Object?>(json, r'progress') ?? const {},
-        lockedBy: MailboxLockLockedBy.fromJson(json[r'locked_by']),
-        lockedByApiKey: MailboxLockLockedByApiKey.fromJson(json[r'locked_by_api_key']),
+        lockedBy: FileActor.fromJson(json[r'locked_by']),
+        lockedByApiKey: FileKey.fromJson(json[r'locked_by_api_key']),
       );
     }
     return null;

@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -23,12 +23,12 @@ var _ MappedNullable = &MailboxLock{}
 type MailboxLock struct {
 	Locked bool `json:"locked"`
 	LockedUntil *time.Time `json:"locked_until,omitempty"`
+	// For example mailbox_delete while a permanent delete runs.
 	Kind *string `json:"kind,omitempty"`
-	MailboxUploadSessionId *string `json:"mailbox_upload_session_id,omitempty"`
 	Message *string `json:"message,omitempty"`
 	Progress map[string]interface{} `json:"progress,omitempty"`
-	LockedBy *MailboxLockLockedBy `json:"locked_by,omitempty"`
-	LockedByApiKey *MailboxLockLockedByApiKey `json:"locked_by_api_key,omitempty"`
+	LockedBy *FileActor `json:"locked_by,omitempty"`
+	LockedByApiKey *FileKey `json:"locked_by_api_key,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -140,38 +140,6 @@ func (o *MailboxLock) SetKind(v string) {
 	o.Kind = &v
 }
 
-// GetMailboxUploadSessionId returns the MailboxUploadSessionId field value if set, zero value otherwise.
-func (o *MailboxLock) GetMailboxUploadSessionId() string {
-	if o == nil || IsNil(o.MailboxUploadSessionId) {
-		var ret string
-		return ret
-	}
-	return *o.MailboxUploadSessionId
-}
-
-// GetMailboxUploadSessionIdOk returns a tuple with the MailboxUploadSessionId field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *MailboxLock) GetMailboxUploadSessionIdOk() (*string, bool) {
-	if o == nil || IsNil(o.MailboxUploadSessionId) {
-		return nil, false
-	}
-	return o.MailboxUploadSessionId, true
-}
-
-// HasMailboxUploadSessionId returns a boolean if a field has been set.
-func (o *MailboxLock) HasMailboxUploadSessionId() bool {
-	if o != nil && !IsNil(o.MailboxUploadSessionId) {
-		return true
-	}
-
-	return false
-}
-
-// SetMailboxUploadSessionId gets a reference to the given string and assigns it to the MailboxUploadSessionId field.
-func (o *MailboxLock) SetMailboxUploadSessionId(v string) {
-	o.MailboxUploadSessionId = &v
-}
-
 // GetMessage returns the Message field value if set, zero value otherwise.
 func (o *MailboxLock) GetMessage() string {
 	if o == nil || IsNil(o.Message) {
@@ -237,9 +205,9 @@ func (o *MailboxLock) SetProgress(v map[string]interface{}) {
 }
 
 // GetLockedBy returns the LockedBy field value if set, zero value otherwise.
-func (o *MailboxLock) GetLockedBy() MailboxLockLockedBy {
+func (o *MailboxLock) GetLockedBy() FileActor {
 	if o == nil || IsNil(o.LockedBy) {
-		var ret MailboxLockLockedBy
+		var ret FileActor
 		return ret
 	}
 	return *o.LockedBy
@@ -247,7 +215,7 @@ func (o *MailboxLock) GetLockedBy() MailboxLockLockedBy {
 
 // GetLockedByOk returns a tuple with the LockedBy field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *MailboxLock) GetLockedByOk() (*MailboxLockLockedBy, bool) {
+func (o *MailboxLock) GetLockedByOk() (*FileActor, bool) {
 	if o == nil || IsNil(o.LockedBy) {
 		return nil, false
 	}
@@ -263,15 +231,15 @@ func (o *MailboxLock) HasLockedBy() bool {
 	return false
 }
 
-// SetLockedBy gets a reference to the given MailboxLockLockedBy and assigns it to the LockedBy field.
-func (o *MailboxLock) SetLockedBy(v MailboxLockLockedBy) {
+// SetLockedBy gets a reference to the given FileActor and assigns it to the LockedBy field.
+func (o *MailboxLock) SetLockedBy(v FileActor) {
 	o.LockedBy = &v
 }
 
 // GetLockedByApiKey returns the LockedByApiKey field value if set, zero value otherwise.
-func (o *MailboxLock) GetLockedByApiKey() MailboxLockLockedByApiKey {
+func (o *MailboxLock) GetLockedByApiKey() FileKey {
 	if o == nil || IsNil(o.LockedByApiKey) {
-		var ret MailboxLockLockedByApiKey
+		var ret FileKey
 		return ret
 	}
 	return *o.LockedByApiKey
@@ -279,7 +247,7 @@ func (o *MailboxLock) GetLockedByApiKey() MailboxLockLockedByApiKey {
 
 // GetLockedByApiKeyOk returns a tuple with the LockedByApiKey field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *MailboxLock) GetLockedByApiKeyOk() (*MailboxLockLockedByApiKey, bool) {
+func (o *MailboxLock) GetLockedByApiKeyOk() (*FileKey, bool) {
 	if o == nil || IsNil(o.LockedByApiKey) {
 		return nil, false
 	}
@@ -295,8 +263,8 @@ func (o *MailboxLock) HasLockedByApiKey() bool {
 	return false
 }
 
-// SetLockedByApiKey gets a reference to the given MailboxLockLockedByApiKey and assigns it to the LockedByApiKey field.
-func (o *MailboxLock) SetLockedByApiKey(v MailboxLockLockedByApiKey) {
+// SetLockedByApiKey gets a reference to the given FileKey and assigns it to the LockedByApiKey field.
+func (o *MailboxLock) SetLockedByApiKey(v FileKey) {
 	o.LockedByApiKey = &v
 }
 
@@ -316,9 +284,6 @@ func (o MailboxLock) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.Kind) {
 		toSerialize["kind"] = o.Kind
-	}
-	if !IsNil(o.MailboxUploadSessionId) {
-		toSerialize["mailbox_upload_session_id"] = o.MailboxUploadSessionId
 	}
 	if !IsNil(o.Message) {
 		toSerialize["message"] = o.Message
@@ -378,7 +343,6 @@ func (o *MailboxLock) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "locked")
 		delete(additionalProperties, "locked_until")
 		delete(additionalProperties, "kind")
-		delete(additionalProperties, "mailbox_upload_session_id")
 		delete(additionalProperties, "message")
 		delete(additionalProperties, "progress")
 		delete(additionalProperties, "locked_by")

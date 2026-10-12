@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -30,45 +30,21 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * CreateClientAccount201Response
  */
 @JsonPropertyOrder({
-  CreateClientAccount201Response.JSON_PROPERTY_DATA,
-  CreateClientAccount201Response.JSON_PROPERTY_SUCCESS
+  CreateClientAccount201Response.JSON_PROPERTY_SUCCESS,
+  CreateClientAccount201Response.JSON_PROPERTY_DATA
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class CreateClientAccount201Response {
-  public static final String JSON_PROPERTY_DATA = "data";
-  @javax.annotation.Nonnull
-  private CreateClientAccount201ResponseData data;
-
   public static final String JSON_PROPERTY_SUCCESS = "success";
   @javax.annotation.Nonnull
   private Boolean success;
 
+  public static final String JSON_PROPERTY_DATA = "data";
+  @javax.annotation.Nonnull
+  private CreateClientAccount201ResponseData data;
+
   public CreateClientAccount201Response() { 
   }
-
-  public CreateClientAccount201Response data(@javax.annotation.Nonnull CreateClientAccount201ResponseData data) {
-    this.data = data;
-    return this;
-  }
-
-  /**
-   * Get data
-   * @return data
-   */
-  @javax.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public CreateClientAccount201ResponseData getData() {
-    return data;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setData(@javax.annotation.Nonnull CreateClientAccount201ResponseData data) {
-    this.data = data;
-  }
-
 
   public CreateClientAccount201Response success(@javax.annotation.Nonnull Boolean success) {
     this.success = success;
@@ -94,6 +70,30 @@ public class CreateClientAccount201Response {
   }
 
 
+  public CreateClientAccount201Response data(@javax.annotation.Nonnull CreateClientAccount201ResponseData data) {
+    this.data = data;
+    return this;
+  }
+
+  /**
+   * Get data
+   * @return data
+   */
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public CreateClientAccount201ResponseData getData() {
+    return data;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setData(@javax.annotation.Nonnull CreateClientAccount201ResponseData data) {
+    this.data = data;
+  }
+
+
   /**
    * Return true if this createClientAccount_201_response object is equal to o.
    */
@@ -106,21 +106,21 @@ public class CreateClientAccount201Response {
       return false;
     }
     CreateClientAccount201Response createClientAccount201Response = (CreateClientAccount201Response) o;
-    return Objects.equals(this.data, createClientAccount201Response.data) &&
-        Objects.equals(this.success, createClientAccount201Response.success);
+    return Objects.equals(this.success, createClientAccount201Response.success) &&
+        Objects.equals(this.data, createClientAccount201Response.data);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(data, success);
+    return Objects.hash(success, data);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class CreateClientAccount201Response {\n");
-    sb.append("    data: ").append(toIndentedString(data)).append("\n");
     sb.append("    success: ").append(toIndentedString(success)).append("\n");
+    sb.append("    data: ").append(toIndentedString(data)).append("\n");
     sb.append("}");
     return sb.toString();
   }

@@ -12,9 +12,9 @@ import AnyCodable
 
 public struct GetEmailWebhook200ResponseData: Codable, JSONEncodable, Hashable {
 
-    public var webhook: GetEmailWebhook200ResponseDataWebhook?
+    public var webhook: Webhook?
 
-    public init(webhook: GetEmailWebhook200ResponseDataWebhook?) {
+    public init(webhook: Webhook?) {
         self.webhook = webhook
     }
 

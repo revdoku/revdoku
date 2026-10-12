@@ -1,7 +1,7 @@
 /*
- * Revdoku public agent API
+ * Revdoku API
  *
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -11,7 +11,7 @@
 use crate::models;
 use serde::{Deserialize, Serialize};
 
-/// Mailbox : Public mailbox details, including the permitted address, stored and unread email counts, lifetime receipts and receiving state. Keep IDs for API operations. Use the address as the dashboard link label.
+/// Mailbox : A mailbox: one receiving address with private file storage. Use email.address as the label and id in API calls.
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Mailbox {
     #[serde(rename = "id")]
@@ -20,63 +20,68 @@ pub struct Mailbox {
     pub account_id: String,
     #[serde(rename = "description", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
     pub description: Option<Option<String>>,
+    /// Your application data. PATCH replaces the whole object.
     #[serde(rename = "metadata", skip_serializing_if = "Option::is_none")]
     pub metadata: Option<std::collections::HashMap<String, serde_json::Value>>,
-    #[serde(rename = "metadata_version", skip_serializing_if = "Option::is_none")]
-    pub metadata_version: Option<String>,
+    /// Send as expected_metadata_version on PATCH. Changes only when description or metadata changes.
+    #[serde(rename = "metadata_version")]
+    pub metadata_version: String,
     #[serde(rename = "email")]
     pub email: Box<models::MailboxEmail>,
-    #[serde(rename = "archived", skip_serializing_if = "Option::is_none")]
-    pub archived: Option<bool>,
+    #[serde(rename = "archived")]
+    pub archived: bool,
     #[serde(rename = "archived_at", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
     pub archived_at: Option<Option<chrono::DateTime<chrono::FixedOffset>>>,
     #[serde(rename = "lock", skip_serializing_if = "Option::is_none")]
-    pub lock: Option<models::MailboxLock>,
+    pub lock: Option<Box<models::MailboxLock>>,
     #[serde(rename = "storage_bytes", skip_serializing_if = "Option::is_none")]
     pub storage_bytes: Option<i64>,
+    /// Current files, including stored emails and attachments.
     #[serde(rename = "files_count", skip_serializing_if = "Option::is_none")]
     pub files_count: Option<i64>,
+    /// Current mailbox file-tree version. Send as expected_mailbox_version on file writes to detect concurrent changes.
+    #[serde(rename = "version_id", deserialize_with = "Option::deserialize")]
+    pub version_id: Option<String>,
+    #[serde(rename = "version_number")]
+    pub version_number: i32,
     #[serde(rename = "created_at", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
     pub created_at: Option<Option<chrono::DateTime<chrono::FixedOffset>>>,
     #[serde(rename = "updated_at", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<Option<chrono::DateTime<chrono::FixedOffset>>>,
+    /// Opens the mailbox for signed-in members. It does not grant access.
     #[serde(rename = "dashboard_url", skip_serializing_if = "Option::is_none")]
     pub dashboard_url: Option<String>,
-    #[serde(rename = "current_mailbox_revision_id", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
-    pub current_mailbox_revision_id: Option<Option<String>>,
-    #[serde(rename = "current_mailbox_revision_number", skip_serializing_if = "Option::is_none")]
-    pub current_mailbox_revision_number: Option<i32>,
-    #[serde(rename = "archive", skip_serializing_if = "Option::is_none")]
-    pub archive: Option<Box<models::MailboxAction>>,
-    #[serde(rename = "unarchive", skip_serializing_if = "Option::is_none")]
-    pub unarchive: Option<Box<models::MailboxAction>>,
-    #[serde(rename = "delete", skip_serializing_if = "Option::is_none")]
-    pub delete: Option<Box<models::MailboxAction>>,
+    #[serde(rename = "archive")]
+    pub archive: Box<models::MailboxAction>,
+    #[serde(rename = "unarchive")]
+    pub unarchive: Box<models::MailboxAction>,
+    #[serde(rename = "delete")]
+    pub delete: Box<models::MailboxAction>,
 }
 
 impl Mailbox {
-    /// Public mailbox details, including the permitted address, stored and unread email counts, lifetime receipts and receiving state. Keep IDs for API operations. Use the address as the dashboard link label.
-    pub fn new(id: String, account_id: String, email: models::MailboxEmail) -> Mailbox {
+    /// A mailbox: one receiving address with private file storage. Use email.address as the label and id in API calls.
+    pub fn new(id: String, account_id: String, metadata_version: String, email: models::MailboxEmail, archived: bool, version_id: Option<String>, version_number: i32, archive: models::MailboxAction, unarchive: models::MailboxAction, delete: models::MailboxAction) -> Mailbox {
         Mailbox {
             id,
             account_id,
             description: None,
             metadata: None,
-            metadata_version: None,
+            metadata_version,
             email: Box::new(email),
-            archived: None,
+            archived,
             archived_at: None,
             lock: None,
             storage_bytes: None,
             files_count: None,
+            version_id,
+            version_number,
             created_at: None,
             updated_at: None,
             dashboard_url: None,
-            current_mailbox_revision_id: None,
-            current_mailbox_revision_number: None,
-            archive: None,
-            unarchive: None,
-            delete: None,
+            archive: Box::new(archive),
+            unarchive: Box::new(unarchive),
+            delete: Box::new(delete),
         }
     }
 }

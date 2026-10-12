@@ -9,7 +9,7 @@ Source installation works now; a GitHub repository does not imply availability i
 2. [List your mailboxes](QUICKSTART.md) with a read request.
 3. [Receive your first email and save an attachment](example/README.md#receive-and-download).
 
-Covers the operations in [OpenAPI](https://revdoku.com/openapi.json), including email, mailbox settings, file metadata and direct uploads. Other storage operations use the [HTTP examples](https://github.com/revdoku/revdoku/tree/main/examples).
+Covers every operation in the public [OpenAPI](https://revdoku.com/openapi.json): mailboxes and their email settings, emails, files and file versions.
 [Package directory and capability comparison](https://github.com/revdoku/revdoku/blob/main/guides/api-packages.md) · [Complete REST reference](https://revdoku.com/api.md)
 
 ## Contribute

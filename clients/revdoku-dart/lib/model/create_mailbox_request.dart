@@ -13,8 +13,8 @@ part of revdoku.api;
 class CreateMailboxRequest {
   /// Returns a new [CreateMailboxRequest] instance.
   CreateMailboxRequest({
+    this.mailbox,
     this.accountId,
-    required this.mailbox,
     this.reason,
   });
 
@@ -24,35 +24,44 @@ class CreateMailboxRequest {
   /// source code must fall back to having a nullable type.
   /// Consider adding a "default:" property in the specification file to hide this note.
   ///
-  String? accountId;
+  MailboxCreate? mailbox;
 
-  MailboxCreateOptions mailbox;
+  /// Select another granted account for this request.
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  String? accountId;
 
   /// Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
   String? reason;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is CreateMailboxRequest &&
-    other.accountId == accountId &&
     other.mailbox == mailbox &&
+    other.accountId == accountId &&
     other.reason == reason;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
+    (mailbox == null ? 0 : mailbox!.hashCode) +
     (accountId == null ? 0 : accountId!.hashCode) +
-    (mailbox.hashCode) +
     (reason == null ? 0 : reason!.hashCode);
 
   @override
-  String toString() => 'CreateMailboxRequest[accountId=$accountId, mailbox=$mailbox, reason=$reason]';
+  String toString() => 'CreateMailboxRequest[mailbox=$mailbox, accountId=$accountId, reason=$reason]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
+    if (this.mailbox != null) {
+      json[r'mailbox'] = this.mailbox;
+    }
     if (this.accountId != null) {
       json[r'account_id'] = this.accountId;
     }
-      json[r'mailbox'] = this.mailbox;
     if (this.reason != null) {
       json[r'reason'] = this.reason;
     } else {
@@ -72,14 +81,12 @@ class CreateMailboxRequest {
       // Note 1: the values aren't checked for validity beyond being non-null.
       // Note 2: this code is stripped in release mode!
       assert(() {
-        assert(json.containsKey(r'mailbox'), 'Required key "CreateMailboxRequest[mailbox]" is missing from JSON.');
-        assert(json[r'mailbox'] != null, 'Required key "CreateMailboxRequest[mailbox]" has a null value in JSON.');
         return true;
       }());
 
       return CreateMailboxRequest(
+        mailbox: MailboxCreate.fromJson(json[r'mailbox']),
         accountId: mapValueOfType<String>(json, r'account_id'),
-        mailbox: MailboxCreateOptions.fromJson(json[r'mailbox'])!,
         reason: mapValueOfType<String>(json, r'reason'),
       );
     }
@@ -128,7 +135,6 @@ class CreateMailboxRequest {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
-    'mailbox',
   };
 }
 

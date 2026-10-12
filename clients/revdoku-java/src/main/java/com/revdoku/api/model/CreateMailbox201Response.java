@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -30,45 +30,21 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * CreateMailbox201Response
  */
 @JsonPropertyOrder({
-  CreateMailbox201Response.JSON_PROPERTY_DATA,
-  CreateMailbox201Response.JSON_PROPERTY_SUCCESS
+  CreateMailbox201Response.JSON_PROPERTY_SUCCESS,
+  CreateMailbox201Response.JSON_PROPERTY_DATA
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class CreateMailbox201Response {
-  public static final String JSON_PROPERTY_DATA = "data";
-  @javax.annotation.Nonnull
-  private CreateMailbox201ResponseData data;
-
   public static final String JSON_PROPERTY_SUCCESS = "success";
   @javax.annotation.Nonnull
   private Boolean success;
 
+  public static final String JSON_PROPERTY_DATA = "data";
+  @javax.annotation.Nonnull
+  private CreateMailbox201ResponseData data;
+
   public CreateMailbox201Response() { 
   }
-
-  public CreateMailbox201Response data(@javax.annotation.Nonnull CreateMailbox201ResponseData data) {
-    this.data = data;
-    return this;
-  }
-
-  /**
-   * Get data
-   * @return data
-   */
-  @javax.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public CreateMailbox201ResponseData getData() {
-    return data;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setData(@javax.annotation.Nonnull CreateMailbox201ResponseData data) {
-    this.data = data;
-  }
-
 
   public CreateMailbox201Response success(@javax.annotation.Nonnull Boolean success) {
     this.success = success;
@@ -94,6 +70,30 @@ public class CreateMailbox201Response {
   }
 
 
+  public CreateMailbox201Response data(@javax.annotation.Nonnull CreateMailbox201ResponseData data) {
+    this.data = data;
+    return this;
+  }
+
+  /**
+   * Get data
+   * @return data
+   */
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public CreateMailbox201ResponseData getData() {
+    return data;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_DATA, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setData(@javax.annotation.Nonnull CreateMailbox201ResponseData data) {
+    this.data = data;
+  }
+
+
   /**
    * Return true if this createMailbox_201_response object is equal to o.
    */
@@ -106,21 +106,21 @@ public class CreateMailbox201Response {
       return false;
     }
     CreateMailbox201Response createMailbox201Response = (CreateMailbox201Response) o;
-    return Objects.equals(this.data, createMailbox201Response.data) &&
-        Objects.equals(this.success, createMailbox201Response.success);
+    return Objects.equals(this.success, createMailbox201Response.success) &&
+        Objects.equals(this.data, createMailbox201Response.data);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(data, success);
+    return Objects.hash(success, data);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class CreateMailbox201Response {\n");
-    sb.append("    data: ").append(toIndentedString(data)).append("\n");
     sb.append("    success: ").append(toIndentedString(success)).append("\n");
+    sb.append("    data: ").append(toIndentedString(data)).append("\n");
     sb.append("}");
     return sb.toString();
   }

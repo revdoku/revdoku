@@ -14,12 +14,16 @@ class SetEmailWebhookRequest {
   /// Returns a new [SetEmailWebhookRequest] instance.
   SetEmailWebhookRequest({
     required this.webhookUrl,
-    this.accountId,
     this.rotateSecret = false,
+    this.accountId,
+    this.reason,
   });
 
   String webhookUrl;
 
+  bool rotateSecret;
+
+  /// Select another granted account for this request.
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated
@@ -28,32 +32,39 @@ class SetEmailWebhookRequest {
   ///
   String? accountId;
 
-  /// Rotate the secret for the same endpoint and cancel pending deliveries.
-  bool rotateSecret;
+  /// Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
+  String? reason;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is SetEmailWebhookRequest &&
     other.webhookUrl == webhookUrl &&
+    other.rotateSecret == rotateSecret &&
     other.accountId == accountId &&
-    other.rotateSecret == rotateSecret;
+    other.reason == reason;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
     (webhookUrl.hashCode) +
+    (rotateSecret.hashCode) +
     (accountId == null ? 0 : accountId!.hashCode) +
-    (rotateSecret.hashCode);
+    (reason == null ? 0 : reason!.hashCode);
 
   @override
-  String toString() => 'SetEmailWebhookRequest[webhookUrl=$webhookUrl, accountId=$accountId, rotateSecret=$rotateSecret]';
+  String toString() => 'SetEmailWebhookRequest[webhookUrl=$webhookUrl, rotateSecret=$rotateSecret, accountId=$accountId, reason=$reason]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
       json[r'webhook_url'] = this.webhookUrl;
+      json[r'rotate_secret'] = this.rotateSecret;
     if (this.accountId != null) {
       json[r'account_id'] = this.accountId;
     }
-      json[r'rotate_secret'] = this.rotateSecret;
+    if (this.reason != null) {
+      json[r'reason'] = this.reason;
+    } else {
+      json[r'reason'] = null;
+    }
     return json;
   }
 
@@ -75,8 +86,9 @@ class SetEmailWebhookRequest {
 
       return SetEmailWebhookRequest(
         webhookUrl: mapValueOfType<String>(json, r'webhook_url')!,
-        accountId: mapValueOfType<String>(json, r'account_id'),
         rotateSecret: mapValueOfType<bool>(json, r'rotate_secret') ?? false,
+        accountId: mapValueOfType<String>(json, r'account_id'),
+        reason: mapValueOfType<String>(json, r'reason'),
       );
     }
     return null;

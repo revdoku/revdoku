@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -19,9 +19,8 @@ module RevdokuApi
 
     attr_accessor :locked_until
 
+    # For example mailbox_delete while a permanent delete runs.
     attr_accessor :kind
-
-    attr_accessor :mailbox_upload_session_id
 
     attr_accessor :message
 
@@ -37,7 +36,6 @@ module RevdokuApi
         :'locked' => :'locked',
         :'locked_until' => :'locked_until',
         :'kind' => :'kind',
-        :'mailbox_upload_session_id' => :'mailbox_upload_session_id',
         :'message' => :'message',
         :'progress' => :'progress',
         :'locked_by' => :'locked_by',
@@ -61,11 +59,10 @@ module RevdokuApi
         :'locked' => :'Boolean',
         :'locked_until' => :'Time',
         :'kind' => :'String',
-        :'mailbox_upload_session_id' => :'String',
         :'message' => :'String',
         :'progress' => :'Hash<String, Object>',
-        :'locked_by' => :'MailboxLockLockedBy',
-        :'locked_by_api_key' => :'MailboxLockLockedByApiKey'
+        :'locked_by' => :'FileActor',
+        :'locked_by_api_key' => :'FileKey'
       }
     end
 
@@ -105,10 +102,6 @@ module RevdokuApi
         self.kind = attributes[:'kind']
       end
 
-      if attributes.key?(:'mailbox_upload_session_id')
-        self.mailbox_upload_session_id = attributes[:'mailbox_upload_session_id']
-      end
-
       if attributes.key?(:'message')
         self.message = attributes[:'message']
       end
@@ -146,7 +139,6 @@ module RevdokuApi
           locked == o.locked &&
           locked_until == o.locked_until &&
           kind == o.kind &&
-          mailbox_upload_session_id == o.mailbox_upload_session_id &&
           message == o.message &&
           progress == o.progress &&
           locked_by == o.locked_by &&
@@ -162,7 +154,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [locked, locked_until, kind, mailbox_upload_session_id, message, progress, locked_by, locked_by_api_key].hash
+      [locked, locked_until, kind, message, progress, locked_by, locked_by_api_key].hash
     end
 
     # Builds the object from hash

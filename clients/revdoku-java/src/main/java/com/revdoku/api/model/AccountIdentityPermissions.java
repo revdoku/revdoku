@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -35,13 +35,85 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class AccountIdentityPermissions {
+  /**
+   * Gets or Sets scope
+   */
+  public enum ScopeEnum {
+    MAILBOX_READ(String.valueOf("mailbox_read")),
+    
+    MAILBOX_WRITE(String.valueOf("mailbox_write")),
+    
+    MAILBOX_ADMIN(String.valueOf("mailbox_admin"));
+
+    private String value;
+
+    ScopeEnum(String value) {
+      this.value = value;
+    }
+
+    @JsonValue
+    public String getValue() {
+      return value;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(value);
+    }
+
+    @JsonCreator
+    public static ScopeEnum fromValue(String value) {
+      for (ScopeEnum b : ScopeEnum.values()) {
+        if (b.value.equals(value)) {
+          return b;
+        }
+      }
+      throw new IllegalArgumentException("Unexpected value '" + value + "'");
+    }
+  }
+
   public static final String JSON_PROPERTY_SCOPE = "scope";
   @javax.annotation.Nullable
-  private String scope;
+  private ScopeEnum scope;
+
+  /**
+   * Gets or Sets mailboxAccess
+   */
+  public enum MailboxAccessEnum {
+    ALL(String.valueOf("all")),
+    
+    SELECTED(String.valueOf("selected"));
+
+    private String value;
+
+    MailboxAccessEnum(String value) {
+      this.value = value;
+    }
+
+    @JsonValue
+    public String getValue() {
+      return value;
+    }
+
+    @Override
+    public String toString() {
+      return String.valueOf(value);
+    }
+
+    @JsonCreator
+    public static MailboxAccessEnum fromValue(String value) {
+      for (MailboxAccessEnum b : MailboxAccessEnum.values()) {
+        if (b.value.equals(value)) {
+          return b;
+        }
+      }
+      throw new IllegalArgumentException("Unexpected value '" + value + "'");
+    }
+  }
 
   public static final String JSON_PROPERTY_MAILBOX_ACCESS = "mailbox_access";
   @javax.annotation.Nullable
-  private String mailboxAccess;
+  private MailboxAccessEnum mailboxAccess;
 
   public static final String JSON_PROPERTY_CAN_CREATE_MAILBOXES = "can_create_mailboxes";
   @javax.annotation.Nullable
@@ -50,7 +122,7 @@ public class AccountIdentityPermissions {
   public AccountIdentityPermissions() { 
   }
 
-  public AccountIdentityPermissions scope(@javax.annotation.Nullable String scope) {
+  public AccountIdentityPermissions scope(@javax.annotation.Nullable ScopeEnum scope) {
     this.scope = scope;
     return this;
   }
@@ -62,19 +134,19 @@ public class AccountIdentityPermissions {
   @javax.annotation.Nullable
   @JsonProperty(value = JSON_PROPERTY_SCOPE, required = false)
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public String getScope() {
+  public ScopeEnum getScope() {
     return scope;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_SCOPE, required = false)
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setScope(@javax.annotation.Nullable String scope) {
+  public void setScope(@javax.annotation.Nullable ScopeEnum scope) {
     this.scope = scope;
   }
 
 
-  public AccountIdentityPermissions mailboxAccess(@javax.annotation.Nullable String mailboxAccess) {
+  public AccountIdentityPermissions mailboxAccess(@javax.annotation.Nullable MailboxAccessEnum mailboxAccess) {
     this.mailboxAccess = mailboxAccess;
     return this;
   }
@@ -86,14 +158,14 @@ public class AccountIdentityPermissions {
   @javax.annotation.Nullable
   @JsonProperty(value = JSON_PROPERTY_MAILBOX_ACCESS, required = false)
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public String getMailboxAccess() {
+  public MailboxAccessEnum getMailboxAccess() {
     return mailboxAccess;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_MAILBOX_ACCESS, required = false)
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setMailboxAccess(@javax.annotation.Nullable String mailboxAccess) {
+  public void setMailboxAccess(@javax.annotation.Nullable MailboxAccessEnum mailboxAccess) {
     this.mailboxAccess = mailboxAccess;
   }
 

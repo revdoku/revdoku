@@ -119,7 +119,7 @@ The **Create mailbox** source demonstrates the SDK's native error response. It p
 | `429` rate limit | For reads, wait for `Retry-After` before a bounded retry. |
 | `MAILBOX_CREATION_LIMIT_REACHED` | Wait until `error.details.resets_at` or change capacity; immediate retries cannot help. |
 
-Every successful creation consumes capacity. Deleting the mailbox does not refund it. [Creation recovery](https://revdoku.com/api.md#creation-result) and [retry guidance](https://revdoku.com/api.md#rate-limits) explain the API behavior.
+Every successful creation consumes capacity. Deleting the mailbox does not refund it. [Creation recovery](https://revdoku.com/api.md#create-a-mailbox) and [retry guidance](https://revdoku.com/api.md#errors) explain the API behavior.
 
 ## Run continuously
 

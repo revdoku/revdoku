@@ -1,6 +1,6 @@
 use revdoku_api::{
     apis::{configuration::Configuration, default_api},
-    models::{CreateMailboxRequest, MailboxCreateOptions},
+    models::{CreateMailboxRequest, MailboxCreate},
 };
 
 #[tokio::main]
@@ -13,8 +13,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         bearer_access_token: Some(key),
         ..Configuration::default()
     };
-    let mailbox = MailboxCreateOptions::new();
-    let mut body = CreateMailboxRequest::new(mailbox);
+    let mut body = CreateMailboxRequest::new();
+    body.mailbox = Some(Box::new(MailboxCreate::new()));
     body.account_id = std::env::var("REVDOKU_ACCOUNT_ID")
         .ok()
         .filter(|s| !s.is_empty());
@@ -32,7 +32,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let address = mailbox
         .email
         .address
-        .flatten()
         .ok_or("Missing email address")?;
     println!("{} {}", mailbox.id, address);
     Ok(())

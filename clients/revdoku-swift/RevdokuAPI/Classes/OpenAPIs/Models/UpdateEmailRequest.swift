@@ -14,6 +14,7 @@ public struct UpdateEmailRequest: Codable, JSONEncodable, Hashable {
 
     public static let reasonRule = StringRule(minLength: nil, maxLength: 2000, pattern: nil)
     public var read: Bool
+    /** Select another granted account for this request. */
     public var accountId: String?
     /** Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. */
     public var reason: String?

@@ -32,7 +32,7 @@ for (;;) {
     );
   }
   if (!page.pagination.hasMore) break;
-  cursor = page.pagination.nextCursor;
+  cursor = page.pagination.nextCursor ?? undefined;
   if (!cursor || seen.has(cursor))
     throw new Error("Email pagination did not advance");
   seen.add(cursor);

@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.revdoku.api.model.GetEmailSubscription200ResponseDataSubscription;
+import com.revdoku.api.model.EmailSubscription;
 import java.util.Arrays;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
@@ -36,12 +36,12 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 public class GetEmailSubscription200ResponseData {
   public static final String JSON_PROPERTY_SUBSCRIPTION = "subscription";
   @javax.annotation.Nonnull
-  private GetEmailSubscription200ResponseDataSubscription subscription;
+  private EmailSubscription subscription;
 
   public GetEmailSubscription200ResponseData() { 
   }
 
-  public GetEmailSubscription200ResponseData subscription(@javax.annotation.Nonnull GetEmailSubscription200ResponseDataSubscription subscription) {
+  public GetEmailSubscription200ResponseData subscription(@javax.annotation.Nonnull EmailSubscription subscription) {
     this.subscription = subscription;
     return this;
   }
@@ -53,14 +53,14 @@ public class GetEmailSubscription200ResponseData {
   @javax.annotation.Nonnull
   @JsonProperty(value = JSON_PROPERTY_SUBSCRIPTION, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public GetEmailSubscription200ResponseDataSubscription getSubscription() {
+  public EmailSubscription getSubscription() {
     return subscription;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_SUBSCRIPTION, required = true)
   @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setSubscription(@javax.annotation.Nonnull GetEmailSubscription200ResponseDataSubscription subscription) {
+  public void setSubscription(@javax.annotation.Nonnull EmailSubscription subscription) {
     this.subscription = subscription;
   }
 

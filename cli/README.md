@@ -62,24 +62,31 @@ revdoku email-status eml_... --mailbox-id bkt_... --read false
 revdoku email-download eml_... --mailbox-id bkt_... --attachment-id df_... --output attachment.pdf
 # Delete only after confirming the email ID:
 revdoku email-delete eml_... --mailbox-id bkt_... --confirm-delete eml_...
+# Reply to a sender; this never retries:
+revdoku email-send --in-reply-to eml_... --text "Thanks, received." --mailbox-id bkt_...
+revdoku emails --direction sent --mailbox-id bkt_...
 revdoku upload ./project-files --mailbox-id bkt_...
 ```
 
 Use returned email and attachment IDs for message operations; use paths for file operations.
 `mailbox` reports the receiving address, readiness, and message activity. Revdoku
 receives email and attachments.
+`email-send` replies from the mailbox address. Recipients must be addresses that
+emailed this mailbox and passed sender authentication. Check `delivery.status` with
+`emails --direction sent`. After an uncertain result, check the sent list before
+you send again.
 
 `revdoku ls` returns active mailboxes with permitted addresses, receiving state and email counts.
 Use `ls --status archived` or `ls --status all` for other archive states.
 Use `--query TEXT` to filter the permitted email address or ID.
-Use `--limit N --offset N` for pages of at most 100 mailboxes.
-Continue with `data.pagination.next_offset` while `data.pagination.has_more` is true.
+Use `--limit N` for pages of at most 200 mailboxes (default 50).
+Continue with `--cursor` set to `data.pagination.next_cursor` while `data.pagination.has_more` is true.
+`files` and `emails` page the same way.
 `data.counts` contains exact active, archived and total counts for the authorized query.
 
 `email.message_count` counts stored emails.
 `email.unread_count` counts emails with shared unread status.
 Null counts mean the email index is being prepared.
-`email.received_count` counts lifetime deliveries, including messages deleted later.
 File counts include email representations and attachments.
 
 Create accounts at https://app.revdoku.com/users/sign_up. CLI sign-in uses browser OAuth.

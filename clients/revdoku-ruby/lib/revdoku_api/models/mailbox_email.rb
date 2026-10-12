@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -14,39 +14,10 @@ require 'date'
 require 'time'
 
 module RevdokuApi
-  # Mailbox reads include stored and unread email counts, lifetime receipts, receiving state and the permitted address. Creation and include_email reads also include additional address settings.
+  # Receiving and sending state of a mailbox. Counts read the email index without reading content.
   class MailboxEmail < ApiModelBase
-    # Primary mailbox display label when authorized. Omitted without address permission. The address remains a valid label when receiving is unavailable.
+    # Primary address. Present when the credential has write access to the mailbox. Use it as the mailbox label.
     attr_accessor :address
-
-    # Lifetime accepted deliveries. Deleting messages does not reduce this count. This is not the number of stored emails.
-    attr_accessor :received_count
-
-    attr_accessor :last_received_at
-
-    # Latest message folder with trailing slash; null before receipt. May become stale after manual file moves/deletion.
-    attr_accessor :last_received_path
-
-    # Why receiving is unavailable; omitted when receiving_enabled is true.
-    attr_accessor :blocked_reason
-
-    attr_accessor :available_domains
-
-    attr_accessor :assignment
-
-    attr_accessor :customization
-
-    # Whether the mailbox can receive email now. Display an authorized address even when this is false.
-    attr_accessor :receiving_enabled
-
-    attr_accessor :sender_allowlist
-
-    attr_accessor :username
-
-    # Always false. Sending is not implemented.
-    attr_accessor :sending_enabled
-
-    attr_accessor :aliases
 
     # Emails currently stored. Null while the email index is being prepared.
     attr_accessor :message_count
@@ -54,24 +25,32 @@ module RevdokuApi
     # Stored emails with shared unread status. Null while the email index is being prepared.
     attr_accessor :unread_count
 
+    # Receipt time of the latest saved email; null before the first email.
+    attr_accessor :last_received_at
+
+    # Whether the mailbox can receive email now.
+    attr_accessor :receiving_enabled
+
+    # Why receiving is unavailable. Omitted when receiving_enabled is true.
+    attr_accessor :blocked_reason
+
+    # Whether the mailbox can send replies now.
+    attr_accessor :sending_enabled
+
+    # Why sending is unavailable. Omitted when sending_enabled is true.
+    attr_accessor :sending_blocked_reason
+
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
         :'address' => :'address',
-        :'received_count' => :'received_count',
-        :'last_received_at' => :'last_received_at',
-        :'last_received_path' => :'last_received_path',
-        :'blocked_reason' => :'blocked_reason',
-        :'available_domains' => :'available_domains',
-        :'assignment' => :'assignment',
-        :'customization' => :'customization',
-        :'receiving_enabled' => :'receiving_enabled',
-        :'sender_allowlist' => :'sender_allowlist',
-        :'username' => :'username',
-        :'sending_enabled' => :'sending_enabled',
-        :'aliases' => :'aliases',
         :'message_count' => :'message_count',
-        :'unread_count' => :'unread_count'
+        :'unread_count' => :'unread_count',
+        :'last_received_at' => :'last_received_at',
+        :'receiving_enabled' => :'receiving_enabled',
+        :'blocked_reason' => :'blocked_reason',
+        :'sending_enabled' => :'sending_enabled',
+        :'sending_blocked_reason' => :'sending_blocked_reason'
       }
     end
 
@@ -89,33 +68,22 @@ module RevdokuApi
     def self.openapi_types
       {
         :'address' => :'String',
-        :'received_count' => :'Integer',
-        :'last_received_at' => :'Time',
-        :'last_received_path' => :'String',
-        :'blocked_reason' => :'String',
-        :'available_domains' => :'Array<MailboxEmailAvailableDomainsInner>',
-        :'assignment' => :'MailboxEmailAssignment',
-        :'customization' => :'MailboxEmailCustomization',
-        :'receiving_enabled' => :'Boolean',
-        :'sender_allowlist' => :'EmailSenderAllowlist',
-        :'username' => :'String',
-        :'sending_enabled' => :'Boolean',
-        :'aliases' => :'Array<MailboxEmailAliasesInner>',
         :'message_count' => :'Integer',
-        :'unread_count' => :'Integer'
+        :'unread_count' => :'Integer',
+        :'last_received_at' => :'Time',
+        :'receiving_enabled' => :'Boolean',
+        :'blocked_reason' => :'String',
+        :'sending_enabled' => :'Boolean',
+        :'sending_blocked_reason' => :'String'
       }
     end
 
     # List of attributes with nullable: true
     def self.openapi_nullable
       Set.new([
-        :'address',
-        :'last_received_at',
-        :'last_received_path',
-        :'blocked_reason',
-        :'username',
         :'message_count',
-        :'unread_count'
+        :'unread_count',
+        :'last_received_at',
       ])
     end
 
@@ -139,68 +107,6 @@ module RevdokuApi
         self.address = attributes[:'address']
       end
 
-      if attributes.key?(:'received_count')
-        self.received_count = attributes[:'received_count']
-      else
-        self.received_count = nil
-      end
-
-      if attributes.key?(:'last_received_at')
-        self.last_received_at = attributes[:'last_received_at']
-      else
-        self.last_received_at = nil
-      end
-
-      if attributes.key?(:'last_received_path')
-        self.last_received_path = attributes[:'last_received_path']
-      else
-        self.last_received_path = nil
-      end
-
-      if attributes.key?(:'blocked_reason')
-        self.blocked_reason = attributes[:'blocked_reason']
-      end
-
-      if attributes.key?(:'available_domains')
-        if (value = attributes[:'available_domains']).is_a?(Array)
-          self.available_domains = value
-        end
-      end
-
-      if attributes.key?(:'assignment')
-        self.assignment = attributes[:'assignment']
-      end
-
-      if attributes.key?(:'customization')
-        self.customization = attributes[:'customization']
-      end
-
-      if attributes.key?(:'receiving_enabled')
-        self.receiving_enabled = attributes[:'receiving_enabled']
-      else
-        self.receiving_enabled = nil
-      end
-
-      if attributes.key?(:'sender_allowlist')
-        self.sender_allowlist = attributes[:'sender_allowlist']
-      end
-
-      if attributes.key?(:'username')
-        self.username = attributes[:'username']
-      end
-
-      if attributes.key?(:'sending_enabled')
-        self.sending_enabled = attributes[:'sending_enabled']
-      else
-        self.sending_enabled = nil
-      end
-
-      if attributes.key?(:'aliases')
-        if (value = attributes[:'aliases']).is_a?(Array)
-          self.aliases = value
-        end
-      end
-
       if attributes.key?(:'message_count')
         self.message_count = attributes[:'message_count']
       else
@@ -212,40 +118,32 @@ module RevdokuApi
       else
         self.unread_count = nil
       end
-    end
 
-    # Custom attribute writer method with validation
-    # @param [Object] received_count Value to be assigned
-    def received_count=(received_count)
-      if received_count.nil?
-        fail ArgumentError, 'received_count cannot be nil'
+      if attributes.key?(:'last_received_at')
+        self.last_received_at = attributes[:'last_received_at']
+      else
+        self.last_received_at = nil
       end
 
-      if received_count < 0
-        fail ArgumentError, 'invalid value for "received_count", must be greater than or equal to 0.'
+      if attributes.key?(:'receiving_enabled')
+        self.receiving_enabled = attributes[:'receiving_enabled']
+      else
+        self.receiving_enabled = nil
       end
 
-      @received_count = received_count
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] receiving_enabled Value to be assigned
-    def receiving_enabled=(receiving_enabled)
-      if receiving_enabled.nil?
-        fail ArgumentError, 'receiving_enabled cannot be nil'
+      if attributes.key?(:'blocked_reason')
+        self.blocked_reason = attributes[:'blocked_reason']
       end
 
-      @receiving_enabled = receiving_enabled
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] sending_enabled Value to be assigned
-    def sending_enabled=(sending_enabled)
-      if sending_enabled.nil?
-        fail ArgumentError, 'sending_enabled cannot be nil'
+      if attributes.key?(:'sending_enabled')
+        self.sending_enabled = attributes[:'sending_enabled']
+      else
+        self.sending_enabled = nil
       end
 
-      @sending_enabled = sending_enabled
+      if attributes.key?(:'sending_blocked_reason')
+        self.sending_blocked_reason = attributes[:'sending_blocked_reason']
+      end
     end
 
     # Custom attribute writer method with validation
@@ -268,26 +166,39 @@ module RevdokuApi
       @unread_count = unread_count
     end
 
+    # Custom attribute writer method with validation
+    # @param [Object] receiving_enabled Value to be assigned
+    def receiving_enabled=(receiving_enabled)
+      if receiving_enabled.nil?
+        fail ArgumentError, 'receiving_enabled cannot be nil'
+      end
+
+      @receiving_enabled = receiving_enabled
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] sending_enabled Value to be assigned
+    def sending_enabled=(sending_enabled)
+      if sending_enabled.nil?
+        fail ArgumentError, 'sending_enabled cannot be nil'
+      end
+
+      @sending_enabled = sending_enabled
+    end
+
     # Checks equality by comparing each attribute.
     # @param [Object] Object to be compared
     def ==(o)
       return true if self.equal?(o)
       self.class == o.class &&
           address == o.address &&
-          received_count == o.received_count &&
-          last_received_at == o.last_received_at &&
-          last_received_path == o.last_received_path &&
-          blocked_reason == o.blocked_reason &&
-          available_domains == o.available_domains &&
-          assignment == o.assignment &&
-          customization == o.customization &&
-          receiving_enabled == o.receiving_enabled &&
-          sender_allowlist == o.sender_allowlist &&
-          username == o.username &&
-          sending_enabled == o.sending_enabled &&
-          aliases == o.aliases &&
           message_count == o.message_count &&
-          unread_count == o.unread_count
+          unread_count == o.unread_count &&
+          last_received_at == o.last_received_at &&
+          receiving_enabled == o.receiving_enabled &&
+          blocked_reason == o.blocked_reason &&
+          sending_enabled == o.sending_enabled &&
+          sending_blocked_reason == o.sending_blocked_reason
     end
 
     # @see the `==` method
@@ -299,7 +210,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [address, received_count, last_received_at, last_received_path, blocked_reason, available_domains, assignment, customization, receiving_enabled, sender_allowlist, username, sending_enabled, aliases, message_count, unread_count].hash
+      [address, message_count, unread_count, last_received_at, receiving_enabled, blocked_reason, sending_enabled, sending_blocked_reason].hash
     end
 
     # Builds the object from hash

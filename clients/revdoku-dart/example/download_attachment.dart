@@ -17,9 +17,9 @@ Future<void> main() async {
   final client = ApiClient(
     authentication: HttpBearerAuth()..accessToken = env['REVDOKU_API_KEY']!,
   );
-  late EmailDownload download;
+  late Download download;
   try {
-    download = (await DefaultApi(client).getEmailAttachmentDownloadUrl(
+    download = (await DefaultApi(client).getEmailAttachmentDownload(
       env['REVDOKU_BUCKET_ID']!,
       env['REVDOKU_EMAIL_ID']!,
       env['REVDOKU_ATTACHMENT_ID']!,
@@ -29,8 +29,7 @@ Future<void> main() async {
     client.client.close();
   }
   final url = Uri.parse(download.url);
-  if (download.authentication != EmailDownloadAuthenticationEnum.none ||
-      url.scheme != 'https' ||
+  if (url.scheme != 'https' ||
       url.host.isEmpty ||
       url.userInfo.isNotEmpty) {
     throw StateError('Expected an HTTPS download without API authentication');

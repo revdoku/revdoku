@@ -13,20 +13,21 @@ import AnyCodable
 public struct CreateMailboxRequest: Codable, JSONEncodable, Hashable {
 
     public static let reasonRule = StringRule(minLength: nil, maxLength: 2000, pattern: nil)
+    public var mailbox: MailboxCreate?
+    /** Select another granted account for this request. */
     public var accountId: String?
-    public var mailbox: MailboxCreateOptions
     /** Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. */
     public var reason: String?
 
-    public init(accountId: String? = nil, mailbox: MailboxCreateOptions, reason: String? = nil) {
-        self.accountId = accountId
+    public init(mailbox: MailboxCreate? = nil, accountId: String? = nil, reason: String? = nil) {
         self.mailbox = mailbox
+        self.accountId = accountId
         self.reason = reason
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
-        case accountId = "account_id"
         case mailbox
+        case accountId = "account_id"
         case reason
     }
 
@@ -34,8 +35,8 @@ public struct CreateMailboxRequest: Codable, JSONEncodable, Hashable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(mailbox, forKey: .mailbox)
         try container.encodeIfPresent(accountId, forKey: .accountId)
-        try container.encode(mailbox, forKey: .mailbox)
         try container.encodeIfPresent(reason, forKey: .reason)
     }
 }

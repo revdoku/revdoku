@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.revdoku.api.model.MailboxCreateOptions;
+import com.revdoku.api.model.MailboxCreate;
 import java.util.Arrays;
 import org.openapitools.jackson.nullable.JsonNullable;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -34,19 +34,19 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * CreateMailboxRequest
  */
 @JsonPropertyOrder({
-  CreateMailboxRequest.JSON_PROPERTY_ACCOUNT_ID,
   CreateMailboxRequest.JSON_PROPERTY_MAILBOX,
+  CreateMailboxRequest.JSON_PROPERTY_ACCOUNT_ID,
   CreateMailboxRequest.JSON_PROPERTY_REASON
 })
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", comments = "Generator version: 7.25.0")
 public class CreateMailboxRequest {
+  public static final String JSON_PROPERTY_MAILBOX = "mailbox";
+  @javax.annotation.Nullable
+  private MailboxCreate mailbox;
+
   public static final String JSON_PROPERTY_ACCOUNT_ID = "account_id";
   @javax.annotation.Nullable
   private String accountId;
-
-  public static final String JSON_PROPERTY_MAILBOX = "mailbox";
-  @javax.annotation.Nonnull
-  private MailboxCreateOptions mailbox;
 
   public static final String JSON_PROPERTY_REASON = "reason";
   private JsonNullable<String> reason = JsonNullable.<String>undefined();
@@ -54,13 +54,37 @@ public class CreateMailboxRequest {
   public CreateMailboxRequest() { 
   }
 
+  public CreateMailboxRequest mailbox(@javax.annotation.Nullable MailboxCreate mailbox) {
+    this.mailbox = mailbox;
+    return this;
+  }
+
+  /**
+   * Get mailbox
+   * @return mailbox
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_MAILBOX, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public MailboxCreate getMailbox() {
+    return mailbox;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_MAILBOX, required = false)
+  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  public void setMailbox(@javax.annotation.Nullable MailboxCreate mailbox) {
+    this.mailbox = mailbox;
+  }
+
+
   public CreateMailboxRequest accountId(@javax.annotation.Nullable String accountId) {
     this.accountId = accountId;
     return this;
   }
 
   /**
-   * Get accountId
+   * Select another granted account for this request.
    * @return accountId
    */
   @javax.annotation.Nullable
@@ -75,30 +99,6 @@ public class CreateMailboxRequest {
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
   public void setAccountId(@javax.annotation.Nullable String accountId) {
     this.accountId = accountId;
-  }
-
-
-  public CreateMailboxRequest mailbox(@javax.annotation.Nonnull MailboxCreateOptions mailbox) {
-    this.mailbox = mailbox;
-    return this;
-  }
-
-  /**
-   * Get mailbox
-   * @return mailbox
-   */
-  @javax.annotation.Nonnull
-  @JsonProperty(value = JSON_PROPERTY_MAILBOX, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public MailboxCreateOptions getMailbox() {
-    return mailbox;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_MAILBOX, required = true)
-  @JsonInclude(value = JsonInclude.Include.ALWAYS)
-  public void setMailbox(@javax.annotation.Nonnull MailboxCreateOptions mailbox) {
-    this.mailbox = mailbox;
   }
 
 
@@ -146,8 +146,8 @@ public class CreateMailboxRequest {
       return false;
     }
     CreateMailboxRequest createMailboxRequest = (CreateMailboxRequest) o;
-    return Objects.equals(this.accountId, createMailboxRequest.accountId) &&
-        Objects.equals(this.mailbox, createMailboxRequest.mailbox) &&
+    return Objects.equals(this.mailbox, createMailboxRequest.mailbox) &&
+        Objects.equals(this.accountId, createMailboxRequest.accountId) &&
         equalsNullable(this.reason, createMailboxRequest.reason);
   }
 
@@ -157,7 +157,7 @@ public class CreateMailboxRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(accountId, mailbox, hashCodeNullable(reason));
+    return Objects.hash(mailbox, accountId, hashCodeNullable(reason));
   }
 
   private static <T> int hashCodeNullable(JsonNullable<T> a) {
@@ -171,8 +171,8 @@ public class CreateMailboxRequest {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class CreateMailboxRequest {\n");
-    sb.append("    accountId: ").append(toIndentedString(accountId)).append("\n");
     sb.append("    mailbox: ").append(toIndentedString(mailbox)).append("\n");
+    sb.append("    accountId: ").append(toIndentedString(accountId)).append("\n");
     sb.append("    reason: ").append(toIndentedString(reason)).append("\n");
     sb.append("}");
     return sb.toString();

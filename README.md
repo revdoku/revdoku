@@ -41,9 +41,10 @@ Connect Revdoku so you can create and manage email mailboxes for my AI agents, r
 ## Receive and read email
 
 Each mailbox has its own incoming email address. Mailbox creation returns the
-address and receiving state; for an existing mailbox, use
-`mailbox_get(include_email: true)` with write access or **Mailbox settings →
-Email**. Check `email.receiving_enabled` before using the address.
+address and receiving state; for an existing mailbox, `mailbox_get` and
+`mailbox_list` return `email.address` to connections with write access, and
+**Mailbox settings → Email** shows it. Check `email.receiving_enabled` before
+using the address.
 
 With the CLI, run `revdoku mailbox --mailbox-id bkt_...` to retrieve the address,
 readiness, and activity. Use `revdoku emails --mailbox-id bkt_...` to list mail and
@@ -59,17 +60,21 @@ to poll for incoming messages. `mailbox_email_get` returns a message directly;
 `mailbox_email_download` retrieves attachments or the original. Anyone
 knowing the address can email the mailbox; reading its contents requires access.
 See [incoming email](docs.md#receive-and-read-email)
-and the [API contract](api.md#incoming-email-into-a-mailbox).
+and the [API contract](api.md#emails).
+
+To reply, use `mailbox_email_send` or `revdoku email-send --in-reply-to eml_... --text TEXT`.
+Recipients must be addresses that emailed this mailbox and passed sender
+authentication. See [Send and reply](api.md#send-a-reply).
 
 ## Additional file storage
 
 Use `revdoku upload ./project-files` to save a local folder privately. Read files, inspect history, and
-restore earlier versions through the CLI, MCP, API, or dashboard. All stored files
+restore earlier versions through the CLI, API, or dashboard. All stored files
 can be downloaded from Revdoku at any time.
 
 Share the mailbox's dashboard link with people who have account access. Authorize
 each AI connection separately for the intended mailboxes. A dashboard link does not
-grant access by itself. Agents can work on the same files with locks and revision
+grant access by itself. Agents can work on the same files with locks and version
 checks to coordinate changes.
 
 See the [storage quick start](./docs.md#storing-files-inside-a-mailbox) and
@@ -146,7 +151,7 @@ Useful commands:
 - `revdoku upload PATH` — store or update private files.
 - `revdoku files`, `revdoku read PATH` — list and read stored files and email.
 - `revdoku mailbox --mailbox-id ID` — check the incoming address and receiving state.
-- `revdoku versions`, `revdoku restore ID` — inspect and restore history.
+- `revdoku versions PATH`, `revdoku restore PATH --version-id ID` — inspect and restore a file's history.
 - `revdoku status`, `revdoku ls` — inspect the connection and mailboxes.
 - `revdoku dashboard`, `revdoku --help` — open the dashboard or command reference.
 
@@ -189,7 +194,7 @@ See [CHANGELOG.md](./CHANGELOG.md), [api.md](./api.md), and the
 Run `revdoku status` to see the credential's default account and authorized
 accounts. Each identity includes `account_kind` (`standard`, `agency`, or `client`),
 the separate `client_name`, and `agency_account` when the parent is granted.
-`kind` remains a compatibility alias. Use `--account-id ID` on each command to target a client; omitting it
+Use `--account-id ID` on each command to target a client; omitting it
 always uses the credential's main account. The Agency owner must explicitly
 include client accounts when connecting or in Account → Access.
 
@@ -202,7 +207,7 @@ revdoku upload ./project-files --account-id acct_...
 An agency and its clients share account capacity. Each client keeps separate
 files, members, and branding.
 Account names and client names can differ. Unknown client names stay unset.
-`revdoku account --account-id ID` shows a client’s identity and provider guidance;
+`revdoku account --account-id ID` shows a client’s identity and effective limits;
 client billing data remains restricted to the agency owner. Browser switching
 does not change the CLI credential’s default account.
 

@@ -14,24 +14,14 @@ class CreateClientAccountRequest {
   /// Returns a new [CreateClientAccountRequest] instance.
   CreateClientAccountRequest({
     required this.name,
-    this.accountId,
     this.clientName,
+    this.accountId,
     this.reason,
   });
 
-  /// Account name.
   String name;
 
-  /// Optional granted Agency account id. Does not change the credential default.
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  String? accountId;
-
-  /// Optional client person or business, separate from the account name. Omit when unknown.
+  /// Optional client person or business name.
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated
@@ -40,35 +30,44 @@ class CreateClientAccountRequest {
   ///
   String? clientName;
 
+  /// Granted agency account that owns the new client account.
+  ///
+  /// Please note: This property should have been non-nullable! Since the specification file
+  /// does not include a default value (using the "default:" property), however, the generated
+  /// source code must fall back to having a nullable type.
+  /// Consider adding a "default:" property in the specification file to hide this note.
+  ///
+  String? accountId;
+
   /// Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts.
   String? reason;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is CreateClientAccountRequest &&
     other.name == name &&
-    other.accountId == accountId &&
     other.clientName == clientName &&
+    other.accountId == accountId &&
     other.reason == reason;
 
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
     (name.hashCode) +
-    (accountId == null ? 0 : accountId!.hashCode) +
     (clientName == null ? 0 : clientName!.hashCode) +
+    (accountId == null ? 0 : accountId!.hashCode) +
     (reason == null ? 0 : reason!.hashCode);
 
   @override
-  String toString() => 'CreateClientAccountRequest[name=$name, accountId=$accountId, clientName=$clientName, reason=$reason]';
+  String toString() => 'CreateClientAccountRequest[name=$name, clientName=$clientName, accountId=$accountId, reason=$reason]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
       json[r'name'] = this.name;
-    if (this.accountId != null) {
-      json[r'account_id'] = this.accountId;
-    }
     if (this.clientName != null) {
       json[r'client_name'] = this.clientName;
+    }
+    if (this.accountId != null) {
+      json[r'account_id'] = this.accountId;
     }
     if (this.reason != null) {
       json[r'reason'] = this.reason;
@@ -96,8 +95,8 @@ class CreateClientAccountRequest {
 
       return CreateClientAccountRequest(
         name: mapValueOfType<String>(json, r'name')!,
-        accountId: mapValueOfType<String>(json, r'account_id'),
         clientName: mapValueOfType<String>(json, r'client_name'),
+        accountId: mapValueOfType<String>(json, r'account_id'),
         reason: mapValueOfType<String>(json, r'reason'),
       );
     }

@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -37,7 +37,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 
 /**
- * Public mailbox details, including the permitted address, stored and unread email counts, lifetime receipts and receiving state. Keep IDs for API operations. Use the address as the dashboard link label.
+ * A mailbox: one receiving address with private file storage. Use email.address as the label and id in API calls.
  */
 @JsonPropertyOrder({
   Mailbox.JSON_PROPERTY_ID,
@@ -51,11 +51,11 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
   Mailbox.JSON_PROPERTY_LOCK,
   Mailbox.JSON_PROPERTY_STORAGE_BYTES,
   Mailbox.JSON_PROPERTY_FILES_COUNT,
+  Mailbox.JSON_PROPERTY_VERSION_ID,
+  Mailbox.JSON_PROPERTY_VERSION_NUMBER,
   Mailbox.JSON_PROPERTY_CREATED_AT,
   Mailbox.JSON_PROPERTY_UPDATED_AT,
   Mailbox.JSON_PROPERTY_DASHBOARD_URL,
-  Mailbox.JSON_PROPERTY_CURRENT_MAILBOX_REVISION_ID,
-  Mailbox.JSON_PROPERTY_CURRENT_MAILBOX_REVISION_NUMBER,
   Mailbox.JSON_PROPERTY_ARCHIVE,
   Mailbox.JSON_PROPERTY_UNARCHIVE,
   Mailbox.JSON_PROPERTY_DELETE
@@ -78,7 +78,7 @@ public class Mailbox {
   private Map<String, Object> metadata = new HashMap<>();
 
   public static final String JSON_PROPERTY_METADATA_VERSION = "metadata_version";
-  @javax.annotation.Nullable
+  @javax.annotation.Nonnull
   private String metadataVersion;
 
   public static final String JSON_PROPERTY_EMAIL = "email";
@@ -86,7 +86,7 @@ public class Mailbox {
   private MailboxEmail email;
 
   public static final String JSON_PROPERTY_ARCHIVED = "archived";
-  @javax.annotation.Nullable
+  @javax.annotation.Nonnull
   private Boolean archived;
 
   public static final String JSON_PROPERTY_ARCHIVED_AT = "archived_at";
@@ -104,6 +104,14 @@ public class Mailbox {
   @javax.annotation.Nullable
   private Long filesCount;
 
+  public static final String JSON_PROPERTY_VERSION_ID = "version_id";
+  @javax.annotation.Nullable
+  private String versionId;
+
+  public static final String JSON_PROPERTY_VERSION_NUMBER = "version_number";
+  @javax.annotation.Nonnull
+  private Integer versionNumber;
+
   public static final String JSON_PROPERTY_CREATED_AT = "created_at";
   private JsonNullable<OffsetDateTime> createdAt = JsonNullable.<OffsetDateTime>undefined();
 
@@ -114,23 +122,16 @@ public class Mailbox {
   @javax.annotation.Nullable
   private URI dashboardUrl;
 
-  public static final String JSON_PROPERTY_CURRENT_MAILBOX_REVISION_ID = "current_mailbox_revision_id";
-  private JsonNullable<String> currentMailboxRevisionId = JsonNullable.<String>undefined();
-
-  public static final String JSON_PROPERTY_CURRENT_MAILBOX_REVISION_NUMBER = "current_mailbox_revision_number";
-  @javax.annotation.Nullable
-  private Integer currentMailboxRevisionNumber;
-
   public static final String JSON_PROPERTY_ARCHIVE = "archive";
-  @javax.annotation.Nullable
+  @javax.annotation.Nonnull
   private MailboxAction archive;
 
   public static final String JSON_PROPERTY_UNARCHIVE = "unarchive";
-  @javax.annotation.Nullable
+  @javax.annotation.Nonnull
   private MailboxAction unarchive;
 
   public static final String JSON_PROPERTY_DELETE = "delete";
-  @javax.annotation.Nullable
+  @javax.annotation.Nonnull
   private MailboxAction delete;
 
   public Mailbox() { 
@@ -230,7 +231,7 @@ public class Mailbox {
   }
 
   /**
-   * Get metadata
+   * Your application data. PATCH replaces the whole object.
    * @return metadata
    */
   @javax.annotation.Nullable
@@ -248,26 +249,26 @@ public class Mailbox {
   }
 
 
-  public Mailbox metadataVersion(@javax.annotation.Nullable String metadataVersion) {
+  public Mailbox metadataVersion(@javax.annotation.Nonnull String metadataVersion) {
     this.metadataVersion = metadataVersion;
     return this;
   }
 
   /**
-   * Get metadataVersion
+   * Send as expected_metadata_version on PATCH. Changes only when description or metadata changes.
    * @return metadataVersion
    */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_METADATA_VERSION, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_METADATA_VERSION, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public String getMetadataVersion() {
     return metadataVersion;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_METADATA_VERSION, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setMetadataVersion(@javax.annotation.Nullable String metadataVersion) {
+  @JsonProperty(value = JSON_PROPERTY_METADATA_VERSION, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setMetadataVersion(@javax.annotation.Nonnull String metadataVersion) {
     this.metadataVersion = metadataVersion;
   }
 
@@ -296,7 +297,7 @@ public class Mailbox {
   }
 
 
-  public Mailbox archived(@javax.annotation.Nullable Boolean archived) {
+  public Mailbox archived(@javax.annotation.Nonnull Boolean archived) {
     this.archived = archived;
     return this;
   }
@@ -305,17 +306,17 @@ public class Mailbox {
    * Get archived
    * @return archived
    */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_ARCHIVED, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_ARCHIVED, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public Boolean getArchived() {
     return archived;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_ARCHIVED, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setArchived(@javax.annotation.Nullable Boolean archived) {
+  @JsonProperty(value = JSON_PROPERTY_ARCHIVED, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setArchived(@javax.annotation.Nonnull Boolean archived) {
     this.archived = archived;
   }
 
@@ -407,7 +408,7 @@ public class Mailbox {
   }
 
   /**
-   * Get filesCount
+   * Current files, including stored emails and attachments.
    * minimum: 0
    * @return filesCount
    */
@@ -423,6 +424,55 @@ public class Mailbox {
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
   public void setFilesCount(@javax.annotation.Nullable Long filesCount) {
     this.filesCount = filesCount;
+  }
+
+
+  public Mailbox versionId(@javax.annotation.Nullable String versionId) {
+    this.versionId = versionId;
+    return this;
+  }
+
+  /**
+   * Current mailbox file-tree version. Send as expected_mailbox_version on file writes to detect concurrent changes.
+   * @return versionId
+   */
+  @javax.annotation.Nullable
+  @JsonProperty(value = JSON_PROPERTY_VERSION_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public String getVersionId() {
+    return versionId;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_VERSION_ID, required = false)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setVersionId(@javax.annotation.Nullable String versionId) {
+    this.versionId = versionId;
+  }
+
+
+  public Mailbox versionNumber(@javax.annotation.Nonnull Integer versionNumber) {
+    this.versionNumber = versionNumber;
+    return this;
+  }
+
+  /**
+   * Get versionNumber
+   * minimum: 0
+   * @return versionNumber
+   */
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_VERSION_NUMBER, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public Integer getVersionNumber() {
+    return versionNumber;
+  }
+
+
+  @JsonProperty(value = JSON_PROPERTY_VERSION_NUMBER, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setVersionNumber(@javax.annotation.Nonnull Integer versionNumber) {
+    this.versionNumber = versionNumber;
   }
 
 
@@ -496,7 +546,7 @@ public class Mailbox {
   }
 
   /**
-   * Get dashboardUrl
+   * Opens the mailbox for signed-in members. It does not grant access.
    * @return dashboardUrl
    */
   @javax.annotation.Nullable
@@ -514,64 +564,7 @@ public class Mailbox {
   }
 
 
-  public Mailbox currentMailboxRevisionId(@javax.annotation.Nullable String currentMailboxRevisionId) {
-    this.currentMailboxRevisionId = JsonNullable.<String>of(currentMailboxRevisionId);
-    return this;
-  }
-
-  /**
-   * Get currentMailboxRevisionId
-   * @return currentMailboxRevisionId
-   */
-  @javax.annotation.Nullable
-  @JsonIgnore
-  public String getCurrentMailboxRevisionId() {
-        return currentMailboxRevisionId.orElse(null);
-  }
-
-  @JsonProperty(value = JSON_PROPERTY_CURRENT_MAILBOX_REVISION_ID, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-
-  public JsonNullable<String> getCurrentMailboxRevisionId_JsonNullable() {
-    return currentMailboxRevisionId;
-  }
-  
-  @JsonProperty(JSON_PROPERTY_CURRENT_MAILBOX_REVISION_ID)
-  public void setCurrentMailboxRevisionId_JsonNullable(JsonNullable<String> currentMailboxRevisionId) {
-    this.currentMailboxRevisionId = currentMailboxRevisionId;
-  }
-
-  public void setCurrentMailboxRevisionId(@javax.annotation.Nullable String currentMailboxRevisionId) {
-    this.currentMailboxRevisionId = JsonNullable.<String>of(currentMailboxRevisionId);
-  }
-
-
-  public Mailbox currentMailboxRevisionNumber(@javax.annotation.Nullable Integer currentMailboxRevisionNumber) {
-    this.currentMailboxRevisionNumber = currentMailboxRevisionNumber;
-    return this;
-  }
-
-  /**
-   * Get currentMailboxRevisionNumber
-   * minimum: 0
-   * @return currentMailboxRevisionNumber
-   */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_CURRENT_MAILBOX_REVISION_NUMBER, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public Integer getCurrentMailboxRevisionNumber() {
-    return currentMailboxRevisionNumber;
-  }
-
-
-  @JsonProperty(value = JSON_PROPERTY_CURRENT_MAILBOX_REVISION_NUMBER, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setCurrentMailboxRevisionNumber(@javax.annotation.Nullable Integer currentMailboxRevisionNumber) {
-    this.currentMailboxRevisionNumber = currentMailboxRevisionNumber;
-  }
-
-
-  public Mailbox archive(@javax.annotation.Nullable MailboxAction archive) {
+  public Mailbox archive(@javax.annotation.Nonnull MailboxAction archive) {
     this.archive = archive;
     return this;
   }
@@ -580,22 +573,22 @@ public class Mailbox {
    * Get archive
    * @return archive
    */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_ARCHIVE, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_ARCHIVE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public MailboxAction getArchive() {
     return archive;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_ARCHIVE, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setArchive(@javax.annotation.Nullable MailboxAction archive) {
+  @JsonProperty(value = JSON_PROPERTY_ARCHIVE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setArchive(@javax.annotation.Nonnull MailboxAction archive) {
     this.archive = archive;
   }
 
 
-  public Mailbox unarchive(@javax.annotation.Nullable MailboxAction unarchive) {
+  public Mailbox unarchive(@javax.annotation.Nonnull MailboxAction unarchive) {
     this.unarchive = unarchive;
     return this;
   }
@@ -604,22 +597,22 @@ public class Mailbox {
    * Get unarchive
    * @return unarchive
    */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_UNARCHIVE, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_UNARCHIVE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public MailboxAction getUnarchive() {
     return unarchive;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_UNARCHIVE, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setUnarchive(@javax.annotation.Nullable MailboxAction unarchive) {
+  @JsonProperty(value = JSON_PROPERTY_UNARCHIVE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setUnarchive(@javax.annotation.Nonnull MailboxAction unarchive) {
     this.unarchive = unarchive;
   }
 
 
-  public Mailbox delete(@javax.annotation.Nullable MailboxAction delete) {
+  public Mailbox delete(@javax.annotation.Nonnull MailboxAction delete) {
     this.delete = delete;
     return this;
   }
@@ -628,17 +621,17 @@ public class Mailbox {
    * Get delete
    * @return delete
    */
-  @javax.annotation.Nullable
-  @JsonProperty(value = JSON_PROPERTY_DELETE, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
+  @javax.annotation.Nonnull
+  @JsonProperty(value = JSON_PROPERTY_DELETE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
   public MailboxAction getDelete() {
     return delete;
   }
 
 
-  @JsonProperty(value = JSON_PROPERTY_DELETE, required = false)
-  @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setDelete(@javax.annotation.Nullable MailboxAction delete) {
+  @JsonProperty(value = JSON_PROPERTY_DELETE, required = true)
+  @JsonInclude(value = JsonInclude.Include.ALWAYS)
+  public void setDelete(@javax.annotation.Nonnull MailboxAction delete) {
     this.delete = delete;
   }
 
@@ -666,11 +659,11 @@ public class Mailbox {
         Objects.equals(this.lock, mailbox.lock) &&
         Objects.equals(this.storageBytes, mailbox.storageBytes) &&
         Objects.equals(this.filesCount, mailbox.filesCount) &&
+        Objects.equals(this.versionId, mailbox.versionId) &&
+        Objects.equals(this.versionNumber, mailbox.versionNumber) &&
         equalsNullable(this.createdAt, mailbox.createdAt) &&
         equalsNullable(this.updatedAt, mailbox.updatedAt) &&
         Objects.equals(this.dashboardUrl, mailbox.dashboardUrl) &&
-        equalsNullable(this.currentMailboxRevisionId, mailbox.currentMailboxRevisionId) &&
-        Objects.equals(this.currentMailboxRevisionNumber, mailbox.currentMailboxRevisionNumber) &&
         Objects.equals(this.archive, mailbox.archive) &&
         Objects.equals(this.unarchive, mailbox.unarchive) &&
         Objects.equals(this.delete, mailbox.delete);
@@ -682,7 +675,7 @@ public class Mailbox {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, accountId, hashCodeNullable(description), metadata, metadataVersion, email, archived, hashCodeNullable(archivedAt), lock, storageBytes, filesCount, hashCodeNullable(createdAt), hashCodeNullable(updatedAt), dashboardUrl, hashCodeNullable(currentMailboxRevisionId), currentMailboxRevisionNumber, archive, unarchive, delete);
+    return Objects.hash(id, accountId, hashCodeNullable(description), metadata, metadataVersion, email, archived, hashCodeNullable(archivedAt), lock, storageBytes, filesCount, versionId, versionNumber, hashCodeNullable(createdAt), hashCodeNullable(updatedAt), dashboardUrl, archive, unarchive, delete);
   }
 
   private static <T> int hashCodeNullable(JsonNullable<T> a) {
@@ -707,11 +700,11 @@ public class Mailbox {
     sb.append("    lock: ").append(toIndentedString(lock)).append("\n");
     sb.append("    storageBytes: ").append(toIndentedString(storageBytes)).append("\n");
     sb.append("    filesCount: ").append(toIndentedString(filesCount)).append("\n");
+    sb.append("    versionId: ").append(toIndentedString(versionId)).append("\n");
+    sb.append("    versionNumber: ").append(toIndentedString(versionNumber)).append("\n");
     sb.append("    createdAt: ").append(toIndentedString(createdAt)).append("\n");
     sb.append("    updatedAt: ").append(toIndentedString(updatedAt)).append("\n");
     sb.append("    dashboardUrl: ").append(toIndentedString(dashboardUrl)).append("\n");
-    sb.append("    currentMailboxRevisionId: ").append(toIndentedString(currentMailboxRevisionId)).append("\n");
-    sb.append("    currentMailboxRevisionNumber: ").append(toIndentedString(currentMailboxRevisionNumber)).append("\n");
     sb.append("    archive: ").append(toIndentedString(archive)).append("\n");
     sb.append("    unarchive: ").append(toIndentedString(unarchive)).append("\n");
     sb.append("    delete: ").append(toIndentedString(delete)).append("\n");

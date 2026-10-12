@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -19,27 +19,32 @@ import (
 // checks if the Mailbox type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &Mailbox{}
 
-// Mailbox Public mailbox details, including the permitted address, stored and unread email counts, lifetime receipts and receiving state. Keep IDs for API operations. Use the address as the dashboard link label.
+// Mailbox A mailbox: one receiving address with private file storage. Use email.address as the label and id in API calls.
 type Mailbox struct {
-	Id string `json:"id"`
+	Id string `json:"id" validate:"regexp=^bkt_"`
 	AccountId string `json:"account_id"`
 	Description NullableString `json:"description,omitempty"`
+	// Your application data. PATCH replaces the whole object.
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
-	MetadataVersion *string `json:"metadata_version,omitempty"`
+	// Send as expected_metadata_version on PATCH. Changes only when description or metadata changes.
+	MetadataVersion string `json:"metadata_version"`
 	Email MailboxEmail `json:"email"`
-	Archived *bool `json:"archived,omitempty"`
+	Archived bool `json:"archived"`
 	ArchivedAt NullableTime `json:"archived_at,omitempty"`
 	Lock *MailboxLock `json:"lock,omitempty"`
 	StorageBytes *int64 `json:"storage_bytes,omitempty"`
+	// Current files, including stored emails and attachments.
 	FilesCount *int64 `json:"files_count,omitempty"`
+	// Current mailbox file-tree version. Send as expected_mailbox_version on file writes to detect concurrent changes.
+	VersionId NullableString `json:"version_id"`
+	VersionNumber int32 `json:"version_number"`
 	CreatedAt NullableTime `json:"created_at,omitempty"`
 	UpdatedAt NullableTime `json:"updated_at,omitempty"`
+	// Opens the mailbox for signed-in members. It does not grant access.
 	DashboardUrl *string `json:"dashboard_url,omitempty"`
-	CurrentMailboxRevisionId NullableString `json:"current_mailbox_revision_id,omitempty"`
-	CurrentMailboxRevisionNumber *int32 `json:"current_mailbox_revision_number,omitempty"`
-	Archive *MailboxAction `json:"archive,omitempty"`
-	Unarchive *MailboxAction `json:"unarchive,omitempty"`
-	Delete *MailboxAction `json:"delete,omitempty"`
+	Archive MailboxAction `json:"archive"`
+	Unarchive MailboxAction `json:"unarchive"`
+	Delete MailboxAction `json:"delete"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -49,11 +54,18 @@ type _Mailbox Mailbox
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewMailbox(id string, accountId string, email MailboxEmail) *Mailbox {
+func NewMailbox(id string, accountId string, metadataVersion string, email MailboxEmail, archived bool, versionId NullableString, versionNumber int32, archive MailboxAction, unarchive MailboxAction, delete MailboxAction) *Mailbox {
 	this := Mailbox{}
 	this.Id = id
 	this.AccountId = accountId
+	this.MetadataVersion = metadataVersion
 	this.Email = email
+	this.Archived = archived
+	this.VersionId = versionId
+	this.VersionNumber = versionNumber
+	this.Archive = archive
+	this.Unarchive = unarchive
+	this.Delete = delete
 	return &this
 }
 
@@ -187,36 +199,28 @@ func (o *Mailbox) SetMetadata(v map[string]interface{}) {
 	o.Metadata = v
 }
 
-// GetMetadataVersion returns the MetadataVersion field value if set, zero value otherwise.
+// GetMetadataVersion returns the MetadataVersion field value
 func (o *Mailbox) GetMetadataVersion() string {
-	if o == nil || IsNil(o.MetadataVersion) {
+	if o == nil {
 		var ret string
 		return ret
 	}
-	return *o.MetadataVersion
+
+	return o.MetadataVersion
 }
 
-// GetMetadataVersionOk returns a tuple with the MetadataVersion field value if set, nil otherwise
+// GetMetadataVersionOk returns a tuple with the MetadataVersion field value
 // and a boolean to check if the value has been set.
 func (o *Mailbox) GetMetadataVersionOk() (*string, bool) {
-	if o == nil || IsNil(o.MetadataVersion) {
+	if o == nil {
 		return nil, false
 	}
-	return o.MetadataVersion, true
+	return &o.MetadataVersion, true
 }
 
-// HasMetadataVersion returns a boolean if a field has been set.
-func (o *Mailbox) HasMetadataVersion() bool {
-	if o != nil && !IsNil(o.MetadataVersion) {
-		return true
-	}
-
-	return false
-}
-
-// SetMetadataVersion gets a reference to the given string and assigns it to the MetadataVersion field.
+// SetMetadataVersion sets field value
 func (o *Mailbox) SetMetadataVersion(v string) {
-	o.MetadataVersion = &v
+	o.MetadataVersion = v
 }
 
 // GetEmail returns the Email field value
@@ -243,36 +247,28 @@ func (o *Mailbox) SetEmail(v MailboxEmail) {
 	o.Email = v
 }
 
-// GetArchived returns the Archived field value if set, zero value otherwise.
+// GetArchived returns the Archived field value
 func (o *Mailbox) GetArchived() bool {
-	if o == nil || IsNil(o.Archived) {
+	if o == nil {
 		var ret bool
 		return ret
 	}
-	return *o.Archived
+
+	return o.Archived
 }
 
-// GetArchivedOk returns a tuple with the Archived field value if set, nil otherwise
+// GetArchivedOk returns a tuple with the Archived field value
 // and a boolean to check if the value has been set.
 func (o *Mailbox) GetArchivedOk() (*bool, bool) {
-	if o == nil || IsNil(o.Archived) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Archived, true
+	return &o.Archived, true
 }
 
-// HasArchived returns a boolean if a field has been set.
-func (o *Mailbox) HasArchived() bool {
-	if o != nil && !IsNil(o.Archived) {
-		return true
-	}
-
-	return false
-}
-
-// SetArchived gets a reference to the given bool and assigns it to the Archived field.
+// SetArchived sets field value
 func (o *Mailbox) SetArchived(v bool) {
-	o.Archived = &v
+	o.Archived = v
 }
 
 // GetArchivedAt returns the ArchivedAt field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -413,6 +409,56 @@ func (o *Mailbox) SetFilesCount(v int64) {
 	o.FilesCount = &v
 }
 
+// GetVersionId returns the VersionId field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *Mailbox) GetVersionId() string {
+	if o == nil || o.VersionId.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.VersionId.Get()
+}
+
+// GetVersionIdOk returns a tuple with the VersionId field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Mailbox) GetVersionIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.VersionId.Get(), o.VersionId.IsSet()
+}
+
+// SetVersionId sets field value
+func (o *Mailbox) SetVersionId(v string) {
+	o.VersionId.Set(&v)
+}
+
+// GetVersionNumber returns the VersionNumber field value
+func (o *Mailbox) GetVersionNumber() int32 {
+	if o == nil {
+		var ret int32
+		return ret
+	}
+
+	return o.VersionNumber
+}
+
+// GetVersionNumberOk returns a tuple with the VersionNumber field value
+// and a boolean to check if the value has been set.
+func (o *Mailbox) GetVersionNumberOk() (*int32, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.VersionNumber, true
+}
+
+// SetVersionNumber sets field value
+func (o *Mailbox) SetVersionNumber(v int32) {
+	o.VersionNumber = v
+}
+
 // GetCreatedAt returns the CreatedAt field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Mailbox) GetCreatedAt() time.Time {
 	if o == nil || IsNil(o.CreatedAt.Get()) {
@@ -529,174 +575,76 @@ func (o *Mailbox) SetDashboardUrl(v string) {
 	o.DashboardUrl = &v
 }
 
-// GetCurrentMailboxRevisionId returns the CurrentMailboxRevisionId field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *Mailbox) GetCurrentMailboxRevisionId() string {
-	if o == nil || IsNil(o.CurrentMailboxRevisionId.Get()) {
-		var ret string
+// GetArchive returns the Archive field value
+func (o *Mailbox) GetArchive() MailboxAction {
+	if o == nil {
+		var ret MailboxAction
 		return ret
 	}
-	return *o.CurrentMailboxRevisionId.Get()
+
+	return o.Archive
 }
 
-// GetCurrentMailboxRevisionIdOk returns a tuple with the CurrentMailboxRevisionId field value if set, nil otherwise
+// GetArchiveOk returns a tuple with the Archive field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *Mailbox) GetCurrentMailboxRevisionIdOk() (*string, bool) {
+func (o *Mailbox) GetArchiveOk() (*MailboxAction, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.CurrentMailboxRevisionId.Get(), o.CurrentMailboxRevisionId.IsSet()
+	return &o.Archive, true
 }
 
-// HasCurrentMailboxRevisionId returns a boolean if a field has been set.
-func (o *Mailbox) HasCurrentMailboxRevisionId() bool {
-	if o != nil && o.CurrentMailboxRevisionId.IsSet() {
-		return true
-	}
-
-	return false
-}
-
-// SetCurrentMailboxRevisionId gets a reference to the given NullableString and assigns it to the CurrentMailboxRevisionId field.
-func (o *Mailbox) SetCurrentMailboxRevisionId(v string) {
-	o.CurrentMailboxRevisionId.Set(&v)
-}
-// SetCurrentMailboxRevisionIdNil sets the value for CurrentMailboxRevisionId to be an explicit nil
-func (o *Mailbox) SetCurrentMailboxRevisionIdNil() {
-	o.CurrentMailboxRevisionId.Set(nil)
-}
-
-// UnsetCurrentMailboxRevisionId ensures that no value is present for CurrentMailboxRevisionId, not even an explicit nil
-func (o *Mailbox) UnsetCurrentMailboxRevisionId() {
-	o.CurrentMailboxRevisionId.Unset()
-}
-
-// GetCurrentMailboxRevisionNumber returns the CurrentMailboxRevisionNumber field value if set, zero value otherwise.
-func (o *Mailbox) GetCurrentMailboxRevisionNumber() int32 {
-	if o == nil || IsNil(o.CurrentMailboxRevisionNumber) {
-		var ret int32
-		return ret
-	}
-	return *o.CurrentMailboxRevisionNumber
-}
-
-// GetCurrentMailboxRevisionNumberOk returns a tuple with the CurrentMailboxRevisionNumber field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *Mailbox) GetCurrentMailboxRevisionNumberOk() (*int32, bool) {
-	if o == nil || IsNil(o.CurrentMailboxRevisionNumber) {
-		return nil, false
-	}
-	return o.CurrentMailboxRevisionNumber, true
-}
-
-// HasCurrentMailboxRevisionNumber returns a boolean if a field has been set.
-func (o *Mailbox) HasCurrentMailboxRevisionNumber() bool {
-	if o != nil && !IsNil(o.CurrentMailboxRevisionNumber) {
-		return true
-	}
-
-	return false
-}
-
-// SetCurrentMailboxRevisionNumber gets a reference to the given int32 and assigns it to the CurrentMailboxRevisionNumber field.
-func (o *Mailbox) SetCurrentMailboxRevisionNumber(v int32) {
-	o.CurrentMailboxRevisionNumber = &v
-}
-
-// GetArchive returns the Archive field value if set, zero value otherwise.
-func (o *Mailbox) GetArchive() MailboxAction {
-	if o == nil || IsNil(o.Archive) {
-		var ret MailboxAction
-		return ret
-	}
-	return *o.Archive
-}
-
-// GetArchiveOk returns a tuple with the Archive field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *Mailbox) GetArchiveOk() (*MailboxAction, bool) {
-	if o == nil || IsNil(o.Archive) {
-		return nil, false
-	}
-	return o.Archive, true
-}
-
-// HasArchive returns a boolean if a field has been set.
-func (o *Mailbox) HasArchive() bool {
-	if o != nil && !IsNil(o.Archive) {
-		return true
-	}
-
-	return false
-}
-
-// SetArchive gets a reference to the given MailboxAction and assigns it to the Archive field.
+// SetArchive sets field value
 func (o *Mailbox) SetArchive(v MailboxAction) {
-	o.Archive = &v
+	o.Archive = v
 }
 
-// GetUnarchive returns the Unarchive field value if set, zero value otherwise.
+// GetUnarchive returns the Unarchive field value
 func (o *Mailbox) GetUnarchive() MailboxAction {
-	if o == nil || IsNil(o.Unarchive) {
+	if o == nil {
 		var ret MailboxAction
 		return ret
 	}
-	return *o.Unarchive
+
+	return o.Unarchive
 }
 
-// GetUnarchiveOk returns a tuple with the Unarchive field value if set, nil otherwise
+// GetUnarchiveOk returns a tuple with the Unarchive field value
 // and a boolean to check if the value has been set.
 func (o *Mailbox) GetUnarchiveOk() (*MailboxAction, bool) {
-	if o == nil || IsNil(o.Unarchive) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Unarchive, true
+	return &o.Unarchive, true
 }
 
-// HasUnarchive returns a boolean if a field has been set.
-func (o *Mailbox) HasUnarchive() bool {
-	if o != nil && !IsNil(o.Unarchive) {
-		return true
-	}
-
-	return false
-}
-
-// SetUnarchive gets a reference to the given MailboxAction and assigns it to the Unarchive field.
+// SetUnarchive sets field value
 func (o *Mailbox) SetUnarchive(v MailboxAction) {
-	o.Unarchive = &v
+	o.Unarchive = v
 }
 
-// GetDelete returns the Delete field value if set, zero value otherwise.
+// GetDelete returns the Delete field value
 func (o *Mailbox) GetDelete() MailboxAction {
-	if o == nil || IsNil(o.Delete) {
+	if o == nil {
 		var ret MailboxAction
 		return ret
 	}
-	return *o.Delete
+
+	return o.Delete
 }
 
-// GetDeleteOk returns a tuple with the Delete field value if set, nil otherwise
+// GetDeleteOk returns a tuple with the Delete field value
 // and a boolean to check if the value has been set.
 func (o *Mailbox) GetDeleteOk() (*MailboxAction, bool) {
-	if o == nil || IsNil(o.Delete) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Delete, true
+	return &o.Delete, true
 }
 
-// HasDelete returns a boolean if a field has been set.
-func (o *Mailbox) HasDelete() bool {
-	if o != nil && !IsNil(o.Delete) {
-		return true
-	}
-
-	return false
-}
-
-// SetDelete gets a reference to the given MailboxAction and assigns it to the Delete field.
+// SetDelete sets field value
 func (o *Mailbox) SetDelete(v MailboxAction) {
-	o.Delete = &v
+	o.Delete = v
 }
 
 func (o Mailbox) MarshalJSON() ([]byte, error) {
@@ -717,13 +665,9 @@ func (o Mailbox) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Metadata) {
 		toSerialize["metadata"] = o.Metadata
 	}
-	if !IsNil(o.MetadataVersion) {
-		toSerialize["metadata_version"] = o.MetadataVersion
-	}
+	toSerialize["metadata_version"] = o.MetadataVersion
 	toSerialize["email"] = o.Email
-	if !IsNil(o.Archived) {
-		toSerialize["archived"] = o.Archived
-	}
+	toSerialize["archived"] = o.Archived
 	if o.ArchivedAt.IsSet() {
 		toSerialize["archived_at"] = o.ArchivedAt.Get()
 	}
@@ -736,6 +680,8 @@ func (o Mailbox) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.FilesCount) {
 		toSerialize["files_count"] = o.FilesCount
 	}
+	toSerialize["version_id"] = o.VersionId.Get()
+	toSerialize["version_number"] = o.VersionNumber
 	if o.CreatedAt.IsSet() {
 		toSerialize["created_at"] = o.CreatedAt.Get()
 	}
@@ -745,21 +691,9 @@ func (o Mailbox) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.DashboardUrl) {
 		toSerialize["dashboard_url"] = o.DashboardUrl
 	}
-	if o.CurrentMailboxRevisionId.IsSet() {
-		toSerialize["current_mailbox_revision_id"] = o.CurrentMailboxRevisionId.Get()
-	}
-	if !IsNil(o.CurrentMailboxRevisionNumber) {
-		toSerialize["current_mailbox_revision_number"] = o.CurrentMailboxRevisionNumber
-	}
-	if !IsNil(o.Archive) {
-		toSerialize["archive"] = o.Archive
-	}
-	if !IsNil(o.Unarchive) {
-		toSerialize["unarchive"] = o.Unarchive
-	}
-	if !IsNil(o.Delete) {
-		toSerialize["delete"] = o.Delete
-	}
+	toSerialize["archive"] = o.Archive
+	toSerialize["unarchive"] = o.Unarchive
+	toSerialize["delete"] = o.Delete
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -775,7 +709,14 @@ func (o *Mailbox) UnmarshalJSON(data []byte) (err error) {
 	requiredProperties := []string{
 		"id",
 		"account_id",
+		"metadata_version",
 		"email",
+		"archived",
+		"version_id",
+		"version_number",
+		"archive",
+		"unarchive",
+		"delete",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -816,11 +757,11 @@ func (o *Mailbox) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "lock")
 		delete(additionalProperties, "storage_bytes")
 		delete(additionalProperties, "files_count")
+		delete(additionalProperties, "version_id")
+		delete(additionalProperties, "version_number")
 		delete(additionalProperties, "created_at")
 		delete(additionalProperties, "updated_at")
 		delete(additionalProperties, "dashboard_url")
-		delete(additionalProperties, "current_mailbox_revision_id")
-		delete(additionalProperties, "current_mailbox_revision_number")
 		delete(additionalProperties, "archive")
 		delete(additionalProperties, "unarchive")
 		delete(additionalProperties, "delete")

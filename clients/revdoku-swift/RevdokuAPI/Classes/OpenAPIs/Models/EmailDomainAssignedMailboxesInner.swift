@@ -13,9 +13,9 @@ import AnyCodable
 public struct EmailDomainAssignedMailboxesInner: Codable, JSONEncodable, Hashable {
 
     public var id: String?
-    public var email: MailboxEmail?
+    public var email: EmailDomainAssignedMailboxesInnerEmail?
 
-    public init(id: String? = nil, email: MailboxEmail? = nil) {
+    public init(id: String? = nil, email: EmailDomainAssignedMailboxesInnerEmail? = nil) {
         self.id = id
         self.email = email
     }

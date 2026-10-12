@@ -1,7 +1,7 @@
 /*
- * Revdoku public agent API
+ * Revdoku API
  *
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -13,10 +13,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileVersion {
-    #[serde(rename = "id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "file_id", skip_serializing_if = "Option::is_none")]
-    pub file_id: Option<String>,
+    #[serde(rename = "id")]
+    pub id: String,
+    #[serde(rename = "file_id")]
+    pub file_id: String,
     #[serde(rename = "name", skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "mime_type", skip_serializing_if = "Option::is_none")]
@@ -25,28 +25,21 @@ pub struct FileVersion {
     pub sha256: Option<String>,
     #[serde(rename = "reason", default, with = "::serde_with::rust::double_option", skip_serializing_if = "Option::is_none")]
     pub reason: Option<Option<String>>,
-    #[serde(rename = "meta_key", skip_serializing_if = "Option::is_none")]
-    pub meta_key: Option<String>,
     #[serde(rename = "created_by_system", skip_serializing_if = "Option::is_none")]
     pub created_by_system: Option<String>,
+    /// True for the version that records a deletion.
     #[serde(rename = "deleted", skip_serializing_if = "Option::is_none")]
     pub deleted: Option<bool>,
     #[serde(rename = "ready", skip_serializing_if = "Option::is_none")]
     pub ready: Option<bool>,
     #[serde(rename = "has_text", skip_serializing_if = "Option::is_none")]
     pub has_text: Option<bool>,
-    #[serde(rename = "normalization_required", skip_serializing_if = "Option::is_none")]
-    pub normalization_required: Option<bool>,
-    #[serde(rename = "meta_ready", skip_serializing_if = "Option::is_none")]
-    pub meta_ready: Option<bool>,
-    #[serde(rename = "version_number", skip_serializing_if = "Option::is_none")]
-    pub version_number: Option<i64>,
+    #[serde(rename = "version_number")]
+    pub version_number: i64,
     #[serde(rename = "byte_size", skip_serializing_if = "Option::is_none")]
     pub byte_size: Option<i64>,
     #[serde(rename = "created_at", skip_serializing_if = "Option::is_none")]
     pub created_at: Option<chrono::DateTime<chrono::FixedOffset>>,
-    #[serde(rename = "meta_created_at", skip_serializing_if = "Option::is_none")]
-    pub meta_created_at: Option<chrono::DateTime<chrono::FixedOffset>>,
     #[serde(rename = "created_by", skip_serializing_if = "Option::is_none")]
     pub created_by: Option<Box<models::FileActor>>,
     #[serde(rename = "updated_by", skip_serializing_if = "Option::is_none")]
@@ -70,25 +63,21 @@ pub struct FileVersion {
 }
 
 impl FileVersion {
-    pub fn new() -> FileVersion {
+    pub fn new(id: String, file_id: String, version_number: i64) -> FileVersion {
         FileVersion {
-            id: None,
-            file_id: None,
+            id,
+            file_id,
             name: None,
             mime_type: None,
             sha256: None,
             reason: None,
-            meta_key: None,
             created_by_system: None,
             deleted: None,
             ready: None,
             has_text: None,
-            normalization_required: None,
-            meta_ready: None,
-            version_number: None,
+            version_number,
             byte_size: None,
             created_at: None,
-            meta_created_at: None,
             created_by: None,
             updated_by: None,
             created_by_agent: None,

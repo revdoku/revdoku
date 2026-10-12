@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -20,7 +20,7 @@ var _ MappedNullable = &EmailDomainAssignedMailboxesInner{}
 // EmailDomainAssignedMailboxesInner struct for EmailDomainAssignedMailboxesInner
 type EmailDomainAssignedMailboxesInner struct {
 	Id *string `json:"id,omitempty"`
-	Email *MailboxEmail `json:"email,omitempty"`
+	Email *EmailDomainAssignedMailboxesInnerEmail `json:"email,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -76,9 +76,9 @@ func (o *EmailDomainAssignedMailboxesInner) SetId(v string) {
 }
 
 // GetEmail returns the Email field value if set, zero value otherwise.
-func (o *EmailDomainAssignedMailboxesInner) GetEmail() MailboxEmail {
+func (o *EmailDomainAssignedMailboxesInner) GetEmail() EmailDomainAssignedMailboxesInnerEmail {
 	if o == nil || IsNil(o.Email) {
-		var ret MailboxEmail
+		var ret EmailDomainAssignedMailboxesInnerEmail
 		return ret
 	}
 	return *o.Email
@@ -86,7 +86,7 @@ func (o *EmailDomainAssignedMailboxesInner) GetEmail() MailboxEmail {
 
 // GetEmailOk returns a tuple with the Email field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *EmailDomainAssignedMailboxesInner) GetEmailOk() (*MailboxEmail, bool) {
+func (o *EmailDomainAssignedMailboxesInner) GetEmailOk() (*EmailDomainAssignedMailboxesInnerEmail, bool) {
 	if o == nil || IsNil(o.Email) {
 		return nil, false
 	}
@@ -102,8 +102,8 @@ func (o *EmailDomainAssignedMailboxesInner) HasEmail() bool {
 	return false
 }
 
-// SetEmail gets a reference to the given MailboxEmail and assigns it to the Email field.
-func (o *EmailDomainAssignedMailboxesInner) SetEmail(v MailboxEmail) {
+// SetEmail gets a reference to the given EmailDomainAssignedMailboxesInnerEmail and assigns it to the Email field.
+func (o *EmailDomainAssignedMailboxesInner) SetEmail(v EmailDomainAssignedMailboxesInnerEmail) {
 	o.Email = &v
 }
 

@@ -13,16 +13,10 @@ part of revdoku.api;
 class CreateClientAccount201ResponseData {
   /// Returns a new [CreateClientAccount201ResponseData] instance.
   CreateClientAccount201ResponseData({
-    this.account,
+    required this.account,
   });
 
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  AccountIdentity? account;
+  AccountIdentity account;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is CreateClientAccount201ResponseData &&
@@ -31,16 +25,14 @@ class CreateClientAccount201ResponseData {
   @override
   int get hashCode =>
     // ignore: unnecessary_parenthesis
-    (account == null ? 0 : account!.hashCode);
+    (account.hashCode);
 
   @override
   String toString() => 'CreateClientAccount201ResponseData[account=$account]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-    if (this.account != null) {
       json[r'account'] = this.account;
-    }
     return json;
   }
 
@@ -55,11 +47,13 @@ class CreateClientAccount201ResponseData {
       // Note 1: the values aren't checked for validity beyond being non-null.
       // Note 2: this code is stripped in release mode!
       assert(() {
+        assert(json.containsKey(r'account'), 'Required key "CreateClientAccount201ResponseData[account]" is missing from JSON.');
+        assert(json[r'account'] != null, 'Required key "CreateClientAccount201ResponseData[account]" has a null value in JSON.');
         return true;
       }());
 
       return CreateClientAccount201ResponseData(
-        account: AccountIdentity.fromJson(json[r'account']),
+        account: AccountIdentity.fromJson(json[r'account'])!,
       );
     }
     return null;
@@ -107,6 +101,7 @@ class CreateClientAccount201ResponseData {
 
   /// The list of required keys that must be present in a JSON.
   static const requiredKeys = <String>{
+    'account',
   };
 }
 

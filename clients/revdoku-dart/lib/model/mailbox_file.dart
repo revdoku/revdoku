@@ -20,7 +20,6 @@ class MailboxFile {
     this.role,
     this.createdBySystem,
     this.deleted,
-    this.metadata = const {},
     this.versionReasons = const [],
     this.lock = const {},
     this.currentFileVersion,
@@ -81,8 +80,6 @@ class MailboxFile {
   /// Consider adding a "default:" property in the specification file to hide this note.
   ///
   bool? deleted;
-
-  Map<String, Object?> metadata;
 
   List<FileVersionReason> versionReasons;
 
@@ -153,7 +150,6 @@ class MailboxFile {
     other.role == role &&
     other.createdBySystem == createdBySystem &&
     other.deleted == deleted &&
-    _deepEquality.equals(other.metadata, metadata) &&
     _deepEquality.equals(other.versionReasons, versionReasons) &&
     _deepEquality.equals(other.lock, lock) &&
     other.currentFileVersion == currentFileVersion &&
@@ -180,7 +176,6 @@ class MailboxFile {
     (role == null ? 0 : role!.hashCode) +
     (createdBySystem == null ? 0 : createdBySystem!.hashCode) +
     (deleted == null ? 0 : deleted!.hashCode) +
-    (metadata.hashCode) +
     (versionReasons.hashCode) +
     (lock.hashCode) +
     (currentFileVersion == null ? 0 : currentFileVersion!.hashCode) +
@@ -198,7 +193,7 @@ class MailboxFile {
     (readByApiKey == null ? 0 : readByApiKey!.hashCode);
 
   @override
-  String toString() => 'MailboxFile[id=$id, mailboxId=$mailboxId, basename=$basename, path=$path, role=$role, createdBySystem=$createdBySystem, deleted=$deleted, metadata=$metadata, versionReasons=$versionReasons, lock=$lock, currentFileVersion=$currentFileVersion, createdBy=$createdBy, createdAt=$createdAt, updatedAt=$updatedAt, deletedAt=$deletedAt, createdByAgent=$createdByAgent, updatedByAgent=$updatedByAgent, createdByApiKey=$createdByApiKey, updatedByApiKey=$updatedByApiKey, read=$read, readAt=$readAt, readBy=$readBy, readByApiKey=$readByApiKey]';
+  String toString() => 'MailboxFile[id=$id, mailboxId=$mailboxId, basename=$basename, path=$path, role=$role, createdBySystem=$createdBySystem, deleted=$deleted, versionReasons=$versionReasons, lock=$lock, currentFileVersion=$currentFileVersion, createdBy=$createdBy, createdAt=$createdAt, updatedAt=$updatedAt, deletedAt=$deletedAt, createdByAgent=$createdByAgent, updatedByAgent=$updatedByAgent, createdByApiKey=$createdByApiKey, updatedByApiKey=$updatedByApiKey, read=$read, readAt=$readAt, readBy=$readBy, readByApiKey=$readByApiKey]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -219,7 +214,6 @@ class MailboxFile {
     if (this.deleted != null) {
       json[r'deleted'] = this.deleted;
     }
-      json[r'metadata'] = this.metadata;
       json[r'version_reasons'] = this.versionReasons;
       json[r'lock'] = this.lock;
     if (this.currentFileVersion != null) {
@@ -290,7 +284,6 @@ class MailboxFile {
         role: mapValueOfType<String>(json, r'role'),
         createdBySystem: mapValueOfType<String>(json, r'created_by_system'),
         deleted: mapValueOfType<bool>(json, r'deleted'),
-        metadata: mapCastOfType<String, Object?>(json, r'metadata') ?? const {},
         versionReasons: FileVersionReason.listFromJson(json[r'version_reasons']),
         lock: mapCastOfType<String, Object?>(json, r'lock') ?? const {},
         currentFileVersion: FileVersion.fromJson(json[r'current_file_version']),

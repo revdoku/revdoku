@@ -1,6 +1,6 @@
 /*
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.revdoku.api.model.MailboxEmail;
+import com.revdoku.api.model.EmailDomainAssignedMailboxesInnerEmail;
 import java.util.Arrays;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
@@ -41,7 +41,7 @@ public class EmailDomainAssignedMailboxesInner {
 
   public static final String JSON_PROPERTY_EMAIL = "email";
   @javax.annotation.Nullable
-  private MailboxEmail email;
+  private EmailDomainAssignedMailboxesInnerEmail email;
 
   public EmailDomainAssignedMailboxesInner() { 
   }
@@ -70,7 +70,7 @@ public class EmailDomainAssignedMailboxesInner {
   }
 
 
-  public EmailDomainAssignedMailboxesInner email(@javax.annotation.Nullable MailboxEmail email) {
+  public EmailDomainAssignedMailboxesInner email(@javax.annotation.Nullable EmailDomainAssignedMailboxesInnerEmail email) {
     this.email = email;
     return this;
   }
@@ -82,14 +82,14 @@ public class EmailDomainAssignedMailboxesInner {
   @javax.annotation.Nullable
   @JsonProperty(value = JSON_PROPERTY_EMAIL, required = false)
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public MailboxEmail getEmail() {
+  public EmailDomainAssignedMailboxesInnerEmail getEmail() {
     return email;
   }
 
 
   @JsonProperty(value = JSON_PROPERTY_EMAIL, required = false)
   @JsonInclude(value = JsonInclude.Include.USE_DEFAULTS)
-  public void setEmail(@javax.annotation.Nullable MailboxEmail email) {
+  public void setEmail(@javax.annotation.Nullable EmailDomainAssignedMailboxesInnerEmail email) {
     this.email = email;
   }
 

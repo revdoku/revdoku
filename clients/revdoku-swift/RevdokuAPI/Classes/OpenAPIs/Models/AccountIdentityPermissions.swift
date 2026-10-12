@@ -12,11 +12,20 @@ import AnyCodable
 
 public struct AccountIdentityPermissions: Codable, JSONEncodable, Hashable {
 
-    public var scope: String?
-    public var mailboxAccess: String?
+    public enum Scope: String, Codable, CaseIterable {
+        case mailboxRead = "mailbox_read"
+        case mailboxWrite = "mailbox_write"
+        case mailboxAdmin = "mailbox_admin"
+    }
+    public enum MailboxAccess: String, Codable, CaseIterable {
+        case all = "all"
+        case selected = "selected"
+    }
+    public var scope: Scope?
+    public var mailboxAccess: MailboxAccess?
     public var canCreateMailboxes: Bool?
 
-    public init(scope: String? = nil, mailboxAccess: String? = nil, canCreateMailboxes: Bool? = nil) {
+    public init(scope: Scope? = nil, mailboxAccess: MailboxAccess? = nil, canCreateMailboxes: Bool? = nil) {
         self.scope = scope
         self.mailboxAccess = mailboxAccess
         self.canCreateMailboxes = canCreateMailboxes

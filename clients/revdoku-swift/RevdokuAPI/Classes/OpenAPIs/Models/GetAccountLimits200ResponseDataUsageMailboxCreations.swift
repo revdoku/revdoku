@@ -12,25 +12,22 @@ import AnyCodable
 
 public struct GetAccountLimits200ResponseDataUsageMailboxCreations: Codable, JSONEncodable, Hashable {
 
-    public static let usedRule = NumericRule<Int>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
-    public static let remainingRule = NumericRule<Int>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
-    public static let monthlyLimitRule = NumericRule<Int>(minimum: 0, exclusiveMinimum: false, maximum: nil, exclusiveMaximum: false, multipleOf: nil)
-    public var used: Int
-    public var remaining: Int
-    public var monthlyLimit: Int
-    public var resetsAt: Date
+    public var monthlyLimit: Int?
+    public var used: Int?
+    public var remaining: Int?
+    public var resetsAt: Date?
 
-    public init(used: Int, remaining: Int, monthlyLimit: Int, resetsAt: Date) {
+    public init(monthlyLimit: Int? = nil, used: Int? = nil, remaining: Int? = nil, resetsAt: Date? = nil) {
+        self.monthlyLimit = monthlyLimit
         self.used = used
         self.remaining = remaining
-        self.monthlyLimit = monthlyLimit
         self.resetsAt = resetsAt
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
+        case monthlyLimit = "monthly_limit"
         case used
         case remaining
-        case monthlyLimit = "monthly_limit"
         case resetsAt = "resets_at"
     }
 
@@ -38,10 +35,10 @@ public struct GetAccountLimits200ResponseDataUsageMailboxCreations: Codable, JSO
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(used, forKey: .used)
-        try container.encode(remaining, forKey: .remaining)
-        try container.encode(monthlyLimit, forKey: .monthlyLimit)
-        try container.encode(resetsAt, forKey: .resetsAt)
+        try container.encodeIfPresent(monthlyLimit, forKey: .monthlyLimit)
+        try container.encodeIfPresent(used, forKey: .used)
+        try container.encodeIfPresent(remaining, forKey: .remaining)
+        try container.encodeIfPresent(resetsAt, forKey: .resetsAt)
     }
 }
 

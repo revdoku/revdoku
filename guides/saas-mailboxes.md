@@ -53,19 +53,19 @@ agent-labelled OAuth/device connection consumes
 `max_agent_connections`, even when its bearer token calls REST. Human memberships
 have their own allowance.
 
-Check `GET /v1/accounts` and `GET /v1/accounts/:id`. Include the granted `account_id`
+Check `GET /v1/accounts` and `GET /v1/accounts/:account_id`. Include the granted `account_id`
 on every request. Browser account switching does not change a key's default.
 Namespace mappings, cursors and work records by account and mailbox.
 
 ## Provision once and recover
 
-The [minimal creation request](../api.md#1-create-an-mailbox) sends `{"mailbox":{}}`.
+The [minimal creation request](../api.md#create-a-mailbox) sends `{"mailbox":{}}`.
 For a connected custom domain, set `REVDOKU_EMAIL_DOMAIN` before provisioning.
 
 | Outcome | Next action |
 | --- | --- |
 | `201` | Persist the mailbox ID and confirmed receiving address. |
-| `503 EMAIL_NOT_READY` | Persist `error.details.mailbox_id`; inspect that existing mailbox with `GET /v1/mailboxes/:id?include_email=true&account_id=…`. |
+| `503 EMAIL_NOT_READY` | Persist `error.details.mailbox_id`; inspect its receiving state with `GET /v1/mailboxes/:id/email?account_id=…`. |
 | Timeout, broken connection or unreadable response | Retain an unknown outcome; reconcile existing mailboxes. Do not repeat the POST. |
 | Capacity/permission error | Resolve the returned condition before an explicitly chosen new attempt. |
 
@@ -77,7 +77,7 @@ failed. A known mailbox ID is checked with GET. Structured 4xx rejection permits
 later explicit new attempt. Use only confirmed addresses.
 
 Aliases share an mailbox's messages, restrictions and quotas; they provide no
-isolation. Follow the [alias workflow](../api.md#mailbox-aliases),
+isolation. Follow the [alias workflow](../api.md#aliases),
 check `max_email_aliases_per_mailbox`, and wait for routing confirmation. Keeping an
 old primary also uses rotation capacity. Removal stops new/queued deliveries;
 existing mail remains.

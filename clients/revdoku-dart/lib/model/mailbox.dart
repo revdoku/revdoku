@@ -17,21 +17,21 @@ class Mailbox {
     required this.accountId,
     this.description,
     this.metadata = const {},
-    this.metadataVersion,
+    required this.metadataVersion,
     required this.email,
-    this.archived,
+    required this.archived,
     this.archivedAt,
     this.lock,
     this.storageBytes,
     this.filesCount,
+    required this.versionId,
+    required this.versionNumber,
     this.createdAt,
     this.updatedAt,
     this.dashboardUrl,
-    this.currentMailboxRevisionId,
-    this.currentMailboxRevisionNumber,
-    this.archive,
-    this.unarchive,
-    this.delete,
+    required this.archive,
+    required this.unarchive,
+    required this.delete,
   });
 
   String id;
@@ -40,25 +40,15 @@ class Mailbox {
 
   String? description;
 
+  /// Your application data. PATCH replaces the whole object.
   Map<String, Object?> metadata;
 
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  String? metadataVersion;
+  /// Send as expected_metadata_version on PATCH. Changes only when description or metadata changes.
+  String metadataVersion;
 
   MailboxEmail email;
 
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  bool? archived;
+  bool archived;
 
   DateTime? archivedAt;
 
@@ -79,6 +69,8 @@ class Mailbox {
   ///
   int? storageBytes;
 
+  /// Current files, including stored emails and attachments.
+  ///
   /// Minimum value: 0
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
@@ -88,10 +80,17 @@ class Mailbox {
   ///
   int? filesCount;
 
+  /// Current mailbox file-tree version. Send as expected_mailbox_version on file writes to detect concurrent changes.
+  String? versionId;
+
+  /// Minimum value: 0
+  int versionNumber;
+
   DateTime? createdAt;
 
   DateTime? updatedAt;
 
+  /// Opens the mailbox for signed-in members. It does not grant access.
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated
@@ -100,40 +99,11 @@ class Mailbox {
   ///
   String? dashboardUrl;
 
-  String? currentMailboxRevisionId;
+  MailboxAction archive;
 
-  /// Minimum value: 0
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  int? currentMailboxRevisionNumber;
+  MailboxAction unarchive;
 
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  MailboxAction? archive;
-
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  MailboxAction? unarchive;
-
-  ///
-  /// Please note: This property should have been non-nullable! Since the specification file
-  /// does not include a default value (using the "default:" property), however, the generated
-  /// source code must fall back to having a nullable type.
-  /// Consider adding a "default:" property in the specification file to hide this note.
-  ///
-  MailboxAction? delete;
+  MailboxAction delete;
 
   @override
   bool operator ==(Object other) => identical(this, other) || other is Mailbox &&
@@ -148,11 +118,11 @@ class Mailbox {
     other.lock == lock &&
     other.storageBytes == storageBytes &&
     other.filesCount == filesCount &&
+    other.versionId == versionId &&
+    other.versionNumber == versionNumber &&
     other.createdAt == createdAt &&
     other.updatedAt == updatedAt &&
     other.dashboardUrl == dashboardUrl &&
-    other.currentMailboxRevisionId == currentMailboxRevisionId &&
-    other.currentMailboxRevisionNumber == currentMailboxRevisionNumber &&
     other.archive == archive &&
     other.unarchive == unarchive &&
     other.delete == delete;
@@ -164,24 +134,24 @@ class Mailbox {
     (accountId.hashCode) +
     (description == null ? 0 : description!.hashCode) +
     (metadata.hashCode) +
-    (metadataVersion == null ? 0 : metadataVersion!.hashCode) +
+    (metadataVersion.hashCode) +
     (email.hashCode) +
-    (archived == null ? 0 : archived!.hashCode) +
+    (archived.hashCode) +
     (archivedAt == null ? 0 : archivedAt!.hashCode) +
     (lock == null ? 0 : lock!.hashCode) +
     (storageBytes == null ? 0 : storageBytes!.hashCode) +
     (filesCount == null ? 0 : filesCount!.hashCode) +
+    (versionId == null ? 0 : versionId!.hashCode) +
+    (versionNumber.hashCode) +
     (createdAt == null ? 0 : createdAt!.hashCode) +
     (updatedAt == null ? 0 : updatedAt!.hashCode) +
     (dashboardUrl == null ? 0 : dashboardUrl!.hashCode) +
-    (currentMailboxRevisionId == null ? 0 : currentMailboxRevisionId!.hashCode) +
-    (currentMailboxRevisionNumber == null ? 0 : currentMailboxRevisionNumber!.hashCode) +
-    (archive == null ? 0 : archive!.hashCode) +
-    (unarchive == null ? 0 : unarchive!.hashCode) +
-    (delete == null ? 0 : delete!.hashCode);
+    (archive.hashCode) +
+    (unarchive.hashCode) +
+    (delete.hashCode);
 
   @override
-  String toString() => 'Mailbox[id=$id, accountId=$accountId, description=$description, metadata=$metadata, metadataVersion=$metadataVersion, email=$email, archived=$archived, archivedAt=$archivedAt, lock=$lock, storageBytes=$storageBytes, filesCount=$filesCount, createdAt=$createdAt, updatedAt=$updatedAt, dashboardUrl=$dashboardUrl, currentMailboxRevisionId=$currentMailboxRevisionId, currentMailboxRevisionNumber=$currentMailboxRevisionNumber, archive=$archive, unarchive=$unarchive, delete=$delete]';
+  String toString() => 'Mailbox[id=$id, accountId=$accountId, description=$description, metadata=$metadata, metadataVersion=$metadataVersion, email=$email, archived=$archived, archivedAt=$archivedAt, lock=$lock, storageBytes=$storageBytes, filesCount=$filesCount, versionId=$versionId, versionNumber=$versionNumber, createdAt=$createdAt, updatedAt=$updatedAt, dashboardUrl=$dashboardUrl, archive=$archive, unarchive=$unarchive, delete=$delete]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -193,13 +163,9 @@ class Mailbox {
       json[r'description'] = null;
     }
       json[r'metadata'] = this.metadata;
-    if (this.metadataVersion != null) {
       json[r'metadata_version'] = this.metadataVersion;
-    }
       json[r'email'] = this.email;
-    if (this.archived != null) {
       json[r'archived'] = this.archived;
-    }
     if (this.archivedAt != null) {
       json[r'archived_at'] = this.archivedAt!.toUtc().toIso8601String();
     } else {
@@ -214,6 +180,12 @@ class Mailbox {
     if (this.filesCount != null) {
       json[r'files_count'] = this.filesCount;
     }
+    if (this.versionId != null) {
+      json[r'version_id'] = this.versionId;
+    } else {
+      json[r'version_id'] = null;
+    }
+      json[r'version_number'] = this.versionNumber;
     if (this.createdAt != null) {
       json[r'created_at'] = this.createdAt!.toUtc().toIso8601String();
     } else {
@@ -227,23 +199,9 @@ class Mailbox {
     if (this.dashboardUrl != null) {
       json[r'dashboard_url'] = this.dashboardUrl;
     }
-    if (this.currentMailboxRevisionId != null) {
-      json[r'current_mailbox_revision_id'] = this.currentMailboxRevisionId;
-    } else {
-      json[r'current_mailbox_revision_id'] = null;
-    }
-    if (this.currentMailboxRevisionNumber != null) {
-      json[r'current_mailbox_revision_number'] = this.currentMailboxRevisionNumber;
-    }
-    if (this.archive != null) {
       json[r'archive'] = this.archive;
-    }
-    if (this.unarchive != null) {
       json[r'unarchive'] = this.unarchive;
-    }
-    if (this.delete != null) {
       json[r'delete'] = this.delete;
-    }
     return json;
   }
 
@@ -262,8 +220,21 @@ class Mailbox {
         assert(json[r'id'] != null, 'Required key "Mailbox[id]" has a null value in JSON.');
         assert(json.containsKey(r'account_id'), 'Required key "Mailbox[account_id]" is missing from JSON.');
         assert(json[r'account_id'] != null, 'Required key "Mailbox[account_id]" has a null value in JSON.');
+        assert(json.containsKey(r'metadata_version'), 'Required key "Mailbox[metadata_version]" is missing from JSON.');
+        assert(json[r'metadata_version'] != null, 'Required key "Mailbox[metadata_version]" has a null value in JSON.');
         assert(json.containsKey(r'email'), 'Required key "Mailbox[email]" is missing from JSON.');
         assert(json[r'email'] != null, 'Required key "Mailbox[email]" has a null value in JSON.');
+        assert(json.containsKey(r'archived'), 'Required key "Mailbox[archived]" is missing from JSON.');
+        assert(json[r'archived'] != null, 'Required key "Mailbox[archived]" has a null value in JSON.');
+        assert(json.containsKey(r'version_id'), 'Required key "Mailbox[version_id]" is missing from JSON.');
+        assert(json.containsKey(r'version_number'), 'Required key "Mailbox[version_number]" is missing from JSON.');
+        assert(json[r'version_number'] != null, 'Required key "Mailbox[version_number]" has a null value in JSON.');
+        assert(json.containsKey(r'archive'), 'Required key "Mailbox[archive]" is missing from JSON.');
+        assert(json[r'archive'] != null, 'Required key "Mailbox[archive]" has a null value in JSON.');
+        assert(json.containsKey(r'unarchive'), 'Required key "Mailbox[unarchive]" is missing from JSON.');
+        assert(json[r'unarchive'] != null, 'Required key "Mailbox[unarchive]" has a null value in JSON.');
+        assert(json.containsKey(r'delete'), 'Required key "Mailbox[delete]" is missing from JSON.');
+        assert(json[r'delete'] != null, 'Required key "Mailbox[delete]" has a null value in JSON.');
         return true;
       }());
 
@@ -272,21 +243,21 @@ class Mailbox {
         accountId: mapValueOfType<String>(json, r'account_id')!,
         description: mapValueOfType<String>(json, r'description'),
         metadata: mapCastOfType<String, Object?>(json, r'metadata') ?? const {},
-        metadataVersion: mapValueOfType<String>(json, r'metadata_version'),
+        metadataVersion: mapValueOfType<String>(json, r'metadata_version')!,
         email: MailboxEmail.fromJson(json[r'email'])!,
-        archived: mapValueOfType<bool>(json, r'archived'),
+        archived: mapValueOfType<bool>(json, r'archived')!,
         archivedAt: mapDateTime(json, r'archived_at', r''),
         lock: MailboxLock.fromJson(json[r'lock']),
         storageBytes: mapValueOfType<int>(json, r'storage_bytes'),
         filesCount: mapValueOfType<int>(json, r'files_count'),
+        versionId: mapValueOfType<String>(json, r'version_id'),
+        versionNumber: mapValueOfType<int>(json, r'version_number')!,
         createdAt: mapDateTime(json, r'created_at', r''),
         updatedAt: mapDateTime(json, r'updated_at', r''),
         dashboardUrl: mapValueOfType<String>(json, r'dashboard_url'),
-        currentMailboxRevisionId: mapValueOfType<String>(json, r'current_mailbox_revision_id'),
-        currentMailboxRevisionNumber: mapValueOfType<int>(json, r'current_mailbox_revision_number'),
-        archive: MailboxAction.fromJson(json[r'archive']),
-        unarchive: MailboxAction.fromJson(json[r'unarchive']),
-        delete: MailboxAction.fromJson(json[r'delete']),
+        archive: MailboxAction.fromJson(json[r'archive'])!,
+        unarchive: MailboxAction.fromJson(json[r'unarchive'])!,
+        delete: MailboxAction.fromJson(json[r'delete'])!,
       );
     }
     return null;
@@ -336,7 +307,14 @@ class Mailbox {
   static const requiredKeys = <String>{
     'id',
     'account_id',
+    'metadata_version',
     'email',
+    'archived',
+    'version_id',
+    'version_number',
+    'archive',
+    'unarchive',
+    'delete',
   };
 }
 

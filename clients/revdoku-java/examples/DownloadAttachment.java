@@ -1,6 +1,5 @@
 import com.revdoku.api.ApiClient;
 import com.revdoku.api.endpoints.DefaultApi;
-import com.revdoku.api.model.EmailDownload;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -17,11 +16,11 @@ public class DownloadAttachment {
         String key = System.getenv("REVDOKU_API_KEY");
         String account = System.getenv("REVDOKU_ACCOUNT_ID");
         var client = new ApiClient().setRequestInterceptor(request -> request.header("Authorization", "Bearer " + key));
-        var download = new DefaultApi(client).getEmailAttachmentDownloadUrl(System.getenv("REVDOKU_BUCKET_ID"),
+        var download = new DefaultApi(client).getEmailAttachmentDownload(System.getenv("REVDOKU_BUCKET_ID"),
             System.getenv("REVDOKU_EMAIL_ID"), System.getenv("REVDOKU_ATTACHMENT_ID"),
-            account == null || account.isEmpty() ? null : account, null, null).getData().getDownload();
+            account == null || account.isEmpty() ? null : account, null).getData().getDownload();
         var url = URI.create(download.getUrl().toString());
-        if (download.getAuthentication() != EmailDownload.AuthenticationEnum.NONE || !"https".equals(url.getScheme()) || url.getHost() == null || url.getUserInfo() != null)
+        if (!"https".equals(url.getScheme()) || url.getHost() == null || url.getUserInfo() != null)
             throw new IllegalArgumentException("Expected an HTTPS download without API authentication");
         // This separate client has no API bearer token and follows no redirects.
         var http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).followRedirects(HttpClient.Redirect.NEVER).build();

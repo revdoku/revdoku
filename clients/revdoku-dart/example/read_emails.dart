@@ -34,7 +34,7 @@ Future<void> main() async {
       }
       if (!page.pagination.hasMore) break;
       cursor = page.pagination.nextCursor;
-      if (cursor.isEmpty || !seen.add(cursor))
+      if (cursor == null || cursor.isEmpty || !seen.add(cursor))
         throw StateError('Email pagination did not advance');
     }
   } finally {

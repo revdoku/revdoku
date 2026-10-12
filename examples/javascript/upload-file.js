@@ -46,17 +46,16 @@ const attach = await fetch(`https://api.revdoku.com/v1/mailboxes/${mailboxId}/fi
 const attached = await attach.json();
 if (!attach.ok)
     throw new Error(`${attached.error.code}: ${attached.error.message}`);
-// Check the existing file if a write response is lost before repeating it.
-const fileUrl = new URL(`https://api.revdoku.com/v1/mailboxes/${mailboxId}/files/by_path`);
-fileUrl.searchParams.set('path', path);
-fileUrl.searchParams.set('content_url', '1');
+// Download the saved version to confirm it. A lost write response can be checked the same way.
+const fileId = attached.data.file.id;
+const linkUrl = new URL(`https://api.revdoku.com/v1/mailboxes/${mailboxId}/files/${encodeURIComponent(fileId)}/download`);
 if (accountId)
-    fileUrl.searchParams.set('account_id', accountId);
-const readback = await fetch(fileUrl, { headers, redirect: 'error', signal: AbortSignal.timeout(30000) });
-const file = await readback.json();
+    linkUrl.searchParams.set('account_id', accountId);
+const readback = await fetch(linkUrl, { headers, redirect: 'error', signal: AbortSignal.timeout(30000) });
+const link = await readback.json();
 if (!readback.ok)
-    throw new Error(`${file.error.code}: ${file.error.message}`);
-const downloadUrl = new URL(file.data.url);
+    throw new Error(`${link.error.code}: ${link.error.message}`);
+const downloadUrl = new URL(link.data.download.url);
 if (downloadUrl.protocol !== 'https:')
     throw new Error('Invalid download URL.');
 const downloaded = await fetch(downloadUrl, { redirect: 'error', signal: AbortSignal.timeout(30000) })

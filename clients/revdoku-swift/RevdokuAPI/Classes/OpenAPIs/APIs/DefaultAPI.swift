@@ -13,15 +13,17 @@ import AnyCodable
 open class DefaultAPI {
 
     /**
-     Check a domain hostname and existing DNS routing
+     Get storage targets for a batch
      
-     - parameter createAccountEmailDomainRequest: (body)  
+     - parameter mailboxId: (path)  
+     - parameter sessionId: (path) mailbox_upload_session.id from the create response. 
+     - parameter addUploadSessionFilesRequest: (body)  
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func checkEmailHostname(createAccountEmailDomainRequest: CreateAccountEmailDomainRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: EmailDomainCheckResponse?, _ error: Error?) -> Void)) -> RequestTask {
-        return checkEmailHostnameWithRequestBuilder(createAccountEmailDomainRequest: createAccountEmailDomainRequest).execute(apiResponseQueue) { result in
+    open class func addUploadSessionFiles(mailboxId: String, sessionId: String, addUploadSessionFilesRequest: AddUploadSessionFilesRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: CreateUploadSession201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return addUploadSessionFilesWithRequestBuilder(mailboxId: mailboxId, sessionId: sessionId, addUploadSessionFilesRequest: addUploadSessionFilesRequest).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -32,19 +34,230 @@ open class DefaultAPI {
     }
 
     /**
-     Check a domain hostname and existing DNS routing
-     - POST /v1/account/email_domains/check
-     - Requires full-account owner/administrator access. Checks the exact hostname for conflicting MX or CNAME records without creating a claim or changing DNS. If the root already receives email elsewhere, use an unused subdomain such as mailbox.yourdomain.com. Cookie-authenticated requests require CSRF.
+     Get storage targets for a batch
+     - POST /v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/uploads
+     - Returns upload.url and upload.headers for each file that needs bytes. Repeating a path returns a fresh target, for example after a failed PUT. Files with identical content are skipped.
      - Bearer Token:
        - type: http
        - name: bearerAuth
-     - parameter createAccountEmailDomainRequest: (body)  
-     - returns: RequestBuilder<EmailDomainCheckResponse> 
+     - parameter mailboxId: (path)  
+     - parameter sessionId: (path) mailbox_upload_session.id from the create response. 
+     - parameter addUploadSessionFilesRequest: (body)  
+     - returns: RequestBuilder<CreateUploadSession201Response> 
      */
-    open class func checkEmailHostnameWithRequestBuilder(createAccountEmailDomainRequest: CreateAccountEmailDomainRequest) -> RequestBuilder<EmailDomainCheckResponse> {
+    open class func addUploadSessionFilesWithRequestBuilder(mailboxId: String, sessionId: String, addUploadSessionFilesRequest: AddUploadSessionFilesRequest) -> RequestBuilder<CreateUploadSession201Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/uploads"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let sessionIdPreEscape = "\(APIHelper.mapValueToPathItem(sessionId))"
+        let sessionIdPostEscape = sessionIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{session_id}", with: sessionIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: addUploadSessionFilesRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<CreateUploadSession201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Append text to a file
+     
+     - parameter mailboxId: (path)  
+     - parameter appendTextRequest: (body)  
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func appendText(mailboxId: String, appendTextRequest: AppendTextRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: AppendText200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return appendTextWithRequestBuilder(mailboxId: mailboxId, appendTextRequest: appendTextRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Append text to a file
+     - POST /v1/mailboxes/{mailbox_id}/files/append_text
+     - Appends UTF-8 text to an existing text file and creates a new version. A missing file returns MAILBOX_FILE_NOT_FOUND.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter appendTextRequest: (body)  
+     - returns: RequestBuilder<AppendText200Response> 
+     */
+    open class func appendTextWithRequestBuilder(mailboxId: String, appendTextRequest: AppendTextRequest) -> RequestBuilder<AppendText200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/files/append_text"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: appendTextRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<AppendText200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Archive a mailbox
+     
+     - parameter mailboxId: (path)  
+     - parameter actionRequest: (body)  
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func archiveMailbox(mailboxId: String, actionRequest: ActionRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: CreateMailbox201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return archiveMailboxWithRequestBuilder(mailboxId: mailboxId, actionRequest: actionRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Archive a mailbox
+     - POST /v1/mailboxes/{mailbox_id}/archive
+     - Archived mailboxes keep their files and emails and become read-only.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter actionRequest: (body)  
+     - returns: RequestBuilder<CreateMailbox201Response> 
+     */
+    open class func archiveMailboxWithRequestBuilder(mailboxId: String, actionRequest: ActionRequest) -> RequestBuilder<CreateMailbox201Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/archive"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: actionRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<CreateMailbox201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Change the primary address
+     
+     - parameter mailboxId: (path)  
+     - parameter changeMailboxAddressRequest: (body)  
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func changeMailboxAddress(mailboxId: String, changeMailboxAddressRequest: ChangeMailboxAddressRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetMailboxEmailSettings200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return changeMailboxAddressWithRequestBuilder(mailboxId: mailboxId, changeMailboxAddressRequest: changeMailboxAddressRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Change the primary address
+     - POST /v1/mailboxes/{mailbox_id}/email/rotate
+     - Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. The old address stops receiving unless keep_old_as_alias is true.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter changeMailboxAddressRequest: (body)  
+     - returns: RequestBuilder<GetMailboxEmailSettings200Response> 
+     */
+    open class func changeMailboxAddressWithRequestBuilder(mailboxId: String, changeMailboxAddressRequest: ChangeMailboxAddressRequest) -> RequestBuilder<GetMailboxEmailSettings200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/email/rotate"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: changeMailboxAddressRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<GetMailboxEmailSettings200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Check a hostname for conflicting DNS
+     
+     - parameter createEmailDomainRequest: (body)  
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func checkEmailDomain(createEmailDomainRequest: CreateEmailDomainRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: CheckEmailDomain200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return checkEmailDomainWithRequestBuilder(createEmailDomainRequest: createEmailDomainRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Check a hostname for conflicting DNS
+     - POST /v1/account/email_domains/check
+     - Makes no claim and changes no DNS. If the root domain already receives email, use an unused subdomain such as inbox.example.com.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter createEmailDomainRequest: (body)  
+     - returns: RequestBuilder<CheckEmailDomain200Response> 
+     */
+    open class func checkEmailDomainWithRequestBuilder(createEmailDomainRequest: CreateEmailDomainRequest) -> RequestBuilder<CheckEmailDomain200Response> {
         let localVariablePath = "/v1/account/email_domains/check"
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
-        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: createAccountEmailDomainRequest)
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: createEmailDomainRequest)
 
         let localVariableUrlComponents = URLComponents(string: localVariableURLString)
 
@@ -54,21 +267,23 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<EmailDomainCheckResponse>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<CheckEmailDomain200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
 
     /**
-     Claim an exact email domain
+     Copy a file
      
-     - parameter createAccountEmailDomainRequest: (body)  
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter moveFileRequest: (body)  
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func createAccountEmailDomain(createAccountEmailDomainRequest: CreateAccountEmailDomainRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: EmailDomainListResponse?, _ error: Error?) -> Void)) -> RequestTask {
-        return createAccountEmailDomainWithRequestBuilder(createAccountEmailDomainRequest: createAccountEmailDomainRequest).execute(apiResponseQueue) { result in
+    open class func copyFile(mailboxId: String, fileId: String, moveFileRequest: MoveFileRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: RenameFile200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return copyFileWithRequestBuilder(mailboxId: mailboxId, fileId: fileId, moveFileRequest: moveFileRequest).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -79,19 +294,27 @@ open class DefaultAPI {
     }
 
     /**
-     Claim an exact email domain
-     - POST /v1/account/email_domains
-     - Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
+     Copy a file
+     - POST /v1/mailboxes/{mailbox_id}/files/{file_id}/copy
+     - Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
      - Bearer Token:
        - type: http
        - name: bearerAuth
-     - parameter createAccountEmailDomainRequest: (body)  
-     - returns: RequestBuilder<EmailDomainListResponse> 
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter moveFileRequest: (body)  
+     - returns: RequestBuilder<RenameFile200Response> 
      */
-    open class func createAccountEmailDomainWithRequestBuilder(createAccountEmailDomainRequest: CreateAccountEmailDomainRequest) -> RequestBuilder<EmailDomainListResponse> {
-        let localVariablePath = "/v1/account/email_domains"
+    open class func copyFileWithRequestBuilder(mailboxId: String, fileId: String, moveFileRequest: MoveFileRequest) -> RequestBuilder<RenameFile200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/files/{file_id}/copy"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let fileIdPreEscape = "\(APIHelper.mapValueToPathItem(fileId))"
+        let fileIdPostEscape = fileIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{file_id}", with: fileIdPostEscape, options: .literal, range: nil)
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
-        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: createAccountEmailDomainRequest)
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: moveFileRequest)
 
         let localVariableUrlComponents = URLComponents(string: localVariableURLString)
 
@@ -101,13 +324,60 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<EmailDomainListResponse>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<RenameFile200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
 
     /**
-     Create a client account within an authorized agency
+     Create a dashboard link for the user
+     
+     - parameter createBrowserLinkRequest: (body)  
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func createBrowserLink(createBrowserLinkRequest: CreateBrowserLinkRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: CreateBrowserLink201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return createBrowserLinkWithRequestBuilder(createBrowserLinkRequest: createBrowserLinkRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Create a dashboard link for the user
+     - POST /v1/agent_auth/browser_login_link
+     - Returns a dashboard URL for a path such as /mailboxes. The user signs in normally; the link grants no access.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter createBrowserLinkRequest: (body)  
+     - returns: RequestBuilder<CreateBrowserLink201Response> 
+     */
+    open class func createBrowserLinkWithRequestBuilder(createBrowserLinkRequest: CreateBrowserLinkRequest) -> RequestBuilder<CreateBrowserLink201Response> {
+        let localVariablePath = "/v1/agent_auth/browser_login_link"
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: createBrowserLinkRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<CreateBrowserLink201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Create a client account
      
      - parameter createClientAccountRequest: (body)  
      - parameter apiResponseQueue: The queue on which api response is dispatched.
@@ -126,8 +396,9 @@ open class DefaultAPI {
     }
 
     /**
-     Create a client account within an authorized agency
+     Create a client account
      - POST /v1/accounts
+     - Requires an agency owner credential with client-account access. The credential default does not change; send the new account_id on later requests.
      - Bearer Token:
        - type: http
        - name: bearerAuth
@@ -153,7 +424,106 @@ open class DefaultAPI {
     }
 
     /**
-     Create a mailbox with a ready receiving address
+     Add an alias address
+     
+     - parameter mailboxId: (path)  
+     - parameter createEmailAliasRequest: (body)  
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func createEmailAlias(mailboxId: String, createEmailAliasRequest: CreateEmailAliasRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetMailboxEmailSettings200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return createEmailAliasWithRequestBuilder(mailboxId: mailboxId, createEmailAliasRequest: createEmailAliasRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Add an alias address
+     - POST /v1/mailboxes/{mailbox_id}/email/aliases
+     - Requires a paid plan and a full-account owner or administrator with mailbox-admin permission. The primary address stays unchanged.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter createEmailAliasRequest: (body)  
+     - returns: RequestBuilder<GetMailboxEmailSettings200Response> 
+     */
+    open class func createEmailAliasWithRequestBuilder(mailboxId: String, createEmailAliasRequest: CreateEmailAliasRequest) -> RequestBuilder<GetMailboxEmailSettings200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/email/aliases"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: createEmailAliasRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<GetMailboxEmailSettings200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Connect a custom email domain
+     
+     - parameter createEmailDomainRequest: (body)  
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func createEmailDomain(createEmailDomainRequest: CreateEmailDomainRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: CreateEmailDomain201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return createEmailDomainWithRequestBuilder(createEmailDomainRequest: createEmailDomainRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Connect a custom email domain
+     - POST /v1/account/email_domains
+     - Claims an exact hostname and returns the DNS records to publish. Never change DNS without the domain owner's authorization.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter createEmailDomainRequest: (body)  
+     - returns: RequestBuilder<CreateEmailDomain201Response> 
+     */
+    open class func createEmailDomainWithRequestBuilder(createEmailDomainRequest: CreateEmailDomainRequest) -> RequestBuilder<CreateEmailDomain201Response> {
+        let localVariablePath = "/v1/account/email_domains"
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: createEmailDomainRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<CreateEmailDomain201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Create a mailbox
      
      - parameter createMailboxRequest: (body)  
      - parameter apiResponseQueue: The queue on which api response is dispatched.
@@ -172,9 +542,9 @@ open class DefaultAPI {
     }
 
     /**
-     Create a mailbox with a ready receiving address
+     Create a mailbox
      - POST /v1/mailboxes
-     - Creates a mailbox with file storage and waits for receiving confirmation. On Free, email.username is a prefix with a permanent 12-character random suffix. An exact name requires a paid plan. Omit email.username for a generated name. On confirmation failure, EMAIL_NOT_READY includes the retained mailbox_id. Creation quotas apply.
+     - Waits until the address can receive email. On Free, email.username is a prefix with a permanent random suffix; an exact name requires a paid plan. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. Never retry a creation automatically.
      - Bearer Token:
        - type: http
        - name: bearerAuth
@@ -200,18 +570,16 @@ open class DefaultAPI {
     }
 
     /**
-     Add an email alias to a mailbox
+     Start a batch upload
      
-     - parameter id: (path) Authorized mailbox prefix ID 
-     - parameter createMailboxEmailAliasRequest: (body)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter reason: (query)  (optional)
+     - parameter mailboxId: (path)  
+     - parameter createUploadSessionRequest: (body)  
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func createMailboxEmailAlias(id: String, createMailboxEmailAliasRequest: CreateMailboxEmailAliasRequest, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetMailboxEmailSettings200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return createMailboxEmailAliasWithRequestBuilder(id: id, createMailboxEmailAliasRequest: createMailboxEmailAliasRequest, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
+    open class func createUploadSession(mailboxId: String, createUploadSessionRequest: CreateUploadSessionRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: CreateUploadSession201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return createUploadSessionWithRequestBuilder(mailboxId: mailboxId, createUploadSessionRequest: createUploadSessionRequest).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -222,33 +590,25 @@ open class DefaultAPI {
     }
 
     /**
-     Add an email alias to a mailbox
-     - POST /v1/mailboxes/{id}/email/aliases
-     - Requires a paid plan, a full-account owner/administrator with mailbox-admin access and an available alias slot. Free returns EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Accepts a username on an available platform domain or a ready domain owned by this account. Leaves the primary address unchanged and does not consume a rotation. Returns 202 while receiving registration is pending; read mailbox settings until receiving_enabled is true. After an uncertain response, read existing aliases before retrying.
+     Start a batch upload
+     - POST /v1/mailboxes/{mailbox_id}/upload_sessions
+     - Starts an upload session for many files and returns storage targets for the first files. The session locks the mailbox for other writers; incoming email still arrives. Send files in batches with POST .../uploads, PUT the bytes to each upload.url, save each batch with POST .../finalize_batch, then call POST .../finalize. Unsaved uploads are discarded when the session expires.
      - Bearer Token:
        - type: http
        - name: bearerAuth
-     - parameter id: (path) Authorized mailbox prefix ID 
-     - parameter createMailboxEmailAliasRequest: (body)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter reason: (query)  (optional)
-     - returns: RequestBuilder<GetMailboxEmailSettings200Response> 
+     - parameter mailboxId: (path)  
+     - parameter createUploadSessionRequest: (body)  
+     - returns: RequestBuilder<CreateUploadSession201Response> 
      */
-    open class func createMailboxEmailAliasWithRequestBuilder(id: String, createMailboxEmailAliasRequest: CreateMailboxEmailAliasRequest, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<GetMailboxEmailSettings200Response> {
-        var localVariablePath = "/v1/mailboxes/{id}/email/aliases"
-        let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
-        let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        localVariablePath = localVariablePath.replacingOccurrences(of: "{id}", with: idPostEscape, options: .literal, range: nil)
+    open class func createUploadSessionWithRequestBuilder(mailboxId: String, createUploadSessionRequest: CreateUploadSessionRequest) -> RequestBuilder<CreateUploadSession201Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/upload_sessions"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
-        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: createMailboxEmailAliasRequest)
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: createUploadSessionRequest)
 
-        var localVariableUrlComponents = URLComponents(string: localVariableURLString)
-        localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
-            "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
-            "reason": (wrappedValue: reason?.encodeToJSON(), isExplode: true),
-        ])
-        let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
-        localVariableUrlComponents?.percentEncodedQuery = encodedQuery
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
 
         let localVariableNillableHeaders: [String: Any?] = [
             "Content-Type": "application/json",
@@ -256,27 +616,27 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<GetMailboxEmailSettings200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<CreateUploadSession201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
 
     /**
-     Delete one received email
+     Delete an email
      
      - parameter mailboxId: (path)  
      - parameter emailId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func deleteEmail(mailboxId: String, emailId: String, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: Void?, _ error: Error?) -> Void)) -> RequestTask {
+    open class func deleteEmail(mailboxId: String, emailId: String, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: DeleteEmailDomain200Response?, _ error: Error?) -> Void)) -> RequestTask {
         return deleteEmailWithRequestBuilder(mailboxId: mailboxId, emailId: emailId, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
             switch result {
-            case .success:
-                completion((), nil)
+            case let .success(response):
+                completion(response.body, nil)
             case let .failure(error):
                 completion(nil, error)
             }
@@ -284,19 +644,19 @@ open class DefaultAPI {
     }
 
     /**
-     Delete one received email
+     Delete an email
      - DELETE /v1/mailboxes/{mailbox_id}/emails/{email_id}
-     - Requires mailbox-admin permission. Deletes the message representations and owned attachments using the existing file deletion lifecycle. Separately copied files are unaffected. No email trash or restore operation. A repeated delete returns 404.
+     - Requires mailbox-admin permission. Deletes the stored message and its attachments. There is no trash.
      - Bearer Token:
        - type: http
        - name: bearerAuth
      - parameter mailboxId: (path)  
      - parameter emailId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
-     - returns: RequestBuilder<Void> 
+     - returns: RequestBuilder<DeleteEmailDomain200Response> 
      */
-    open class func deleteEmailWithRequestBuilder(mailboxId: String, emailId: String, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<Void> {
+    open class func deleteEmailWithRequestBuilder(mailboxId: String, emailId: String, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<DeleteEmailDomain200Response> {
         var localVariablePath = "/v1/mailboxes/{mailbox_id}/emails/{email_id}"
         let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
         let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
@@ -321,81 +681,24 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<Void>.Type = RevdokuAPIAPI.requestBuilderFactory.getNonDecodableBuilder()
+        let localVariableRequestBuilder: RequestBuilder<DeleteEmailDomain200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "DELETE", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
 
     /**
-     Disable a mailbox webhook
+     Remove an alias address
      
      - parameter mailboxId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter apiResponseQueue: The queue on which api response is dispatched.
-     - parameter completion: completion handler to receive the data and the error objects
-     */
-    @discardableResult
-    open class func deleteEmailWebhook(mailboxId: String, accountId: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: Void?, _ error: Error?) -> Void)) -> RequestTask {
-        return deleteEmailWebhookWithRequestBuilder(mailboxId: mailboxId, accountId: accountId).execute(apiResponseQueue) { result in
-            switch result {
-            case .success:
-                completion((), nil)
-            case let .failure(error):
-                completion(nil, error)
-            }
-        }
-    }
-
-    /**
-     Disable a mailbox webhook
-     - DELETE /v1/mailboxes/{mailbox_id}/email/webhook
-     - Requires mailbox admin permission. Cancels queued attempts; a request already in flight may finish.
-     - Bearer Token:
-       - type: http
-       - name: bearerAuth
-     - parameter mailboxId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - returns: RequestBuilder<Void> 
-     */
-    open class func deleteEmailWebhookWithRequestBuilder(mailboxId: String, accountId: String? = nil) -> RequestBuilder<Void> {
-        var localVariablePath = "/v1/mailboxes/{mailbox_id}/email/webhook"
-        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
-        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
-        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
-        let localVariableParameters: [String: Any]? = nil
-
-        var localVariableUrlComponents = URLComponents(string: localVariableURLString)
-        localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
-            "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
-        ])
-        let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
-        localVariableUrlComponents?.percentEncodedQuery = encodedQuery
-
-        let localVariableNillableHeaders: [String: Any?] = [
-            :
-        ]
-
-        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
-
-        let localVariableRequestBuilder: RequestBuilder<Void>.Type = RevdokuAPIAPI.requestBuilderFactory.getNonDecodableBuilder()
-
-        return localVariableRequestBuilder.init(method: "DELETE", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
-    }
-
-    /**
-     Remove one email alias
-     
-     - parameter id: (path) Authorized mailbox prefix ID 
-     - parameter aliasId: (path) Alias ID from mailbox settings 
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
+     - parameter aliasId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func deleteMailboxEmailAlias(id: String, aliasId: String, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetMailboxEmailSettings200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return deleteMailboxEmailAliasWithRequestBuilder(id: id, aliasId: aliasId, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
+    open class func deleteEmailAlias(mailboxId: String, aliasId: String, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: DeleteEmailDomain200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return deleteEmailAliasWithRequestBuilder(mailboxId: mailboxId, aliasId: aliasId, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -406,23 +709,23 @@ open class DefaultAPI {
     }
 
     /**
-     Remove one email alias
-     - DELETE /v1/mailboxes/{id}/email/aliases/{alias_id}
-     - Requires a full-account owner/administrator with mailbox-admin access. Immediately revokes this alias, including queued deliveries. Retains existing messages and the permanent address reservation. Returns updated mailbox settings.
+     Remove an alias address
+     - DELETE /v1/mailboxes/{mailbox_id}/email/aliases/{alias_id}
+     - Stops new and queued deliveries to the alias. Saved emails stay.
      - Bearer Token:
        - type: http
        - name: bearerAuth
-     - parameter id: (path) Authorized mailbox prefix ID 
-     - parameter aliasId: (path) Alias ID from mailbox settings 
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
+     - parameter mailboxId: (path)  
+     - parameter aliasId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
-     - returns: RequestBuilder<GetMailboxEmailSettings200Response> 
+     - returns: RequestBuilder<DeleteEmailDomain200Response> 
      */
-    open class func deleteMailboxEmailAliasWithRequestBuilder(id: String, aliasId: String, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<GetMailboxEmailSettings200Response> {
-        var localVariablePath = "/v1/mailboxes/{id}/email/aliases/{alias_id}"
-        let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
-        let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        localVariablePath = localVariablePath.replacingOccurrences(of: "{id}", with: idPostEscape, options: .literal, range: nil)
+    open class func deleteEmailAliasWithRequestBuilder(mailboxId: String, aliasId: String, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<DeleteEmailDomain200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/email/aliases/{alias_id}"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
         let aliasIdPreEscape = "\(APIHelper.mapValueToPathItem(aliasId))"
         let aliasIdPostEscape = aliasIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
         localVariablePath = localVariablePath.replacingOccurrences(of: "{alias_id}", with: aliasIdPostEscape, options: .literal, range: nil)
@@ -443,21 +746,22 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<GetMailboxEmailSettings200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<DeleteEmailDomain200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "DELETE", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
 
     /**
-     Read one granted account
+     Remove an unused custom email domain
      
-     - parameter id: (path)  
+     - parameter domainId: (path)  
+     - parameter deleteEmailDomainRequest: (body)  
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func getAccount(id: String, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetAccount200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return getAccountWithRequestBuilder(id: id).execute(apiResponseQueue) { result in
+    open class func deleteEmailDomain(domainId: String, deleteEmailDomainRequest: DeleteEmailDomainRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: DeleteEmailDomain200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return deleteEmailDomainWithRequestBuilder(domainId: domainId, deleteEmailDomainRequest: deleteEmailDomainRequest).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -468,23 +772,82 @@ open class DefaultAPI {
     }
 
     /**
-     Read one granted account
-     - GET /v1/accounts/{id}
+     Remove an unused custom email domain
+     - DELETE /v1/account/email_domains/{domain_id}
+     - Send the domain hostname and confirm=true. A domain that mailbox addresses still use returns EMAIL_DOMAIN_IN_USE.
      - Bearer Token:
        - type: http
        - name: bearerAuth
-     - parameter id: (path)  
-     - returns: RequestBuilder<GetAccount200Response> 
+     - parameter domainId: (path)  
+     - parameter deleteEmailDomainRequest: (body)  
+     - returns: RequestBuilder<DeleteEmailDomain200Response> 
      */
-    open class func getAccountWithRequestBuilder(id: String) -> RequestBuilder<GetAccount200Response> {
-        var localVariablePath = "/v1/accounts/{id}"
-        let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
-        let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        localVariablePath = localVariablePath.replacingOccurrences(of: "{id}", with: idPostEscape, options: .literal, range: nil)
+    open class func deleteEmailDomainWithRequestBuilder(domainId: String, deleteEmailDomainRequest: DeleteEmailDomainRequest) -> RequestBuilder<DeleteEmailDomain200Response> {
+        var localVariablePath = "/v1/account/email_domains/{domain_id}"
+        let domainIdPreEscape = "\(APIHelper.mapValueToPathItem(domainId))"
+        let domainIdPostEscape = domainIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{domain_id}", with: domainIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: deleteEmailDomainRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<DeleteEmailDomain200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "DELETE", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Remove the email webhook
+     
+     - parameter mailboxId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func deleteEmailWebhook(mailboxId: String, accountId: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: DeleteEmailDomain200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return deleteEmailWebhookWithRequestBuilder(mailboxId: mailboxId, accountId: accountId).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Remove the email webhook
+     - DELETE /v1/mailboxes/{mailbox_id}/email/webhook
+     - Cancels queued deliveries. A delivery already in progress can finish. Returns the mailbox ID, also when no webhook is set.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - returns: RequestBuilder<DeleteEmailDomain200Response> 
+     */
+    open class func deleteEmailWebhookWithRequestBuilder(mailboxId: String, accountId: String? = nil) -> RequestBuilder<DeleteEmailDomain200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/email/webhook"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
         let localVariableParameters: [String: Any]? = nil
 
-        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+        var localVariableUrlComponents = URLComponents(string: localVariableURLString)
+        localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
+            "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
+        ])
+        let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+        localVariableUrlComponents?.percentEncodedQuery = encodedQuery
 
         let localVariableNillableHeaders: [String: Any?] = [
             :
@@ -492,23 +855,24 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<GetAccount200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<DeleteEmailDomain200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
-        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+        return localVariableRequestBuilder.init(method: "DELETE", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
 
     /**
-     Read exact domain setup state
+     Delete a file
      
-     - parameter id: (path)  
-     - parameter accountId: (query) Explicit granted account for this call; omission uses the credential account. (optional)
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func getAccountEmailDomain(id: String, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: EmailDomainResponse?, _ error: Error?) -> Void)) -> RequestTask {
-        return getAccountEmailDomainWithRequestBuilder(id: id, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
+    open class func deleteFile(mailboxId: String, fileId: String, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: DeleteEmailDomain200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return deleteFileWithRequestBuilder(mailboxId: mailboxId, fileId: fileId, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -519,22 +883,26 @@ open class DefaultAPI {
     }
 
     /**
-     Read exact domain setup state
-     - GET /v1/account/email_domains/{id}
-     - Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
+     Delete a file
+     - DELETE /v1/mailboxes/{mailbox_id}/files/{file_id}
+     - Requires mailbox-admin permission. Files under _email/ return EMAIL_PATH_READ_ONLY; delete the email instead.
      - Bearer Token:
        - type: http
        - name: bearerAuth
-     - parameter id: (path)  
-     - parameter accountId: (query) Explicit granted account for this call; omission uses the credential account. (optional)
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
-     - returns: RequestBuilder<EmailDomainResponse> 
+     - returns: RequestBuilder<DeleteEmailDomain200Response> 
      */
-    open class func getAccountEmailDomainWithRequestBuilder(id: String, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<EmailDomainResponse> {
-        var localVariablePath = "/v1/account/email_domains/{id}"
-        let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
-        let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        localVariablePath = localVariablePath.replacingOccurrences(of: "{id}", with: idPostEscape, options: .literal, range: nil)
+    open class func deleteFileWithRequestBuilder(mailboxId: String, fileId: String, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<DeleteEmailDomain200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/files/{file_id}"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let fileIdPreEscape = "\(APIHelper.mapValueToPathItem(fileId))"
+        let fileIdPostEscape = fileIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{file_id}", with: fileIdPostEscape, options: .literal, range: nil)
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
         let localVariableParameters: [String: Any]? = nil
 
@@ -552,15 +920,217 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<EmailDomainResponse>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<DeleteEmailDomain200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "DELETE", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Permanently delete an archived mailbox
+     
+     - parameter mailboxId: (path)  
+     - parameter deleteMailboxRequest: (body)  
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func deleteMailbox(mailboxId: String, deleteMailboxRequest: DeleteMailboxRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: DeleteEmailDomain200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return deleteMailboxWithRequestBuilder(mailboxId: mailboxId, deleteMailboxRequest: deleteMailboxRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Permanently delete an archived mailbox
+     - DELETE /v1/mailboxes/{mailbox_id}
+     - Archive the mailbox first. Send delete.confirmation from the mailbox read after the user confirms. Large mailboxes finish deleting in the background.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter deleteMailboxRequest: (body)  
+     - returns: RequestBuilder<DeleteEmailDomain200Response> 
+     */
+    open class func deleteMailboxWithRequestBuilder(mailboxId: String, deleteMailboxRequest: DeleteMailboxRequest) -> RequestBuilder<DeleteEmailDomain200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: deleteMailboxRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<DeleteEmailDomain200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "DELETE", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Exchange a one-time dashboard connection code for an API key
+     
+     - parameter exchangeConnectionGrantRequest: (body)  
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func exchangeConnectionGrant(exchangeConnectionGrantRequest: ExchangeConnectionGrantRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: VerifySignInCode201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return exchangeConnectionGrantWithRequestBuilder(exchangeConnectionGrantRequest: exchangeConnectionGrantRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Exchange a one-time dashboard connection code for an API key
+     - POST /v1/agent_auth/exchange_grant
+     - The dashboard creates the one-time code when a signed-in administrator copies a connection prompt.
+     - parameter exchangeConnectionGrantRequest: (body)  
+     - returns: RequestBuilder<VerifySignInCode201Response> 
+     */
+    open class func exchangeConnectionGrantWithRequestBuilder(exchangeConnectionGrantRequest: ExchangeConnectionGrantRequest) -> RequestBuilder<VerifySignInCode201Response> {
+        let localVariablePath = "/v1/agent_auth/exchange_grant"
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: exchangeConnectionGrantRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<VerifySignInCode201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: false)
+    }
+
+    /**
+     Finish or cancel a batch upload
+     
+     - parameter mailboxId: (path)  
+     - parameter sessionId: (path) mailbox_upload_session.id from the create response. 
+     - parameter finalizeUploadSessionRequest: (body)  (optional)
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func finalizeUploadSession(mailboxId: String, sessionId: String, finalizeUploadSessionRequest: FinalizeUploadSessionRequest? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: CreateUploadSession201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return finalizeUploadSessionWithRequestBuilder(mailboxId: mailboxId, sessionId: sessionId, finalizeUploadSessionRequest: finalizeUploadSessionRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Finish or cancel a batch upload
+     - POST /v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize
+     - complete=true saves the remaining uploaded files, creates one mailbox version and releases the lock. A 202 response with finalize_pending=true means more files remain: call finalize again after Retry-After. complete=false cancels the session and discards its unsaved files. Finalizing a finished session returns it unchanged.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter sessionId: (path) mailbox_upload_session.id from the create response. 
+     - parameter finalizeUploadSessionRequest: (body)  (optional)
+     - returns: RequestBuilder<CreateUploadSession201Response> 
+     */
+    open class func finalizeUploadSessionWithRequestBuilder(mailboxId: String, sessionId: String, finalizeUploadSessionRequest: FinalizeUploadSessionRequest? = nil) -> RequestBuilder<CreateUploadSession201Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let sessionIdPreEscape = "\(APIHelper.mapValueToPathItem(sessionId))"
+        let sessionIdPostEscape = sessionIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{session_id}", with: sessionIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: finalizeUploadSessionRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<CreateUploadSession201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Read one granted account
+     
+     - parameter accountId: (path) Granted account to read. 
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func getAccount(accountId: String, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: CreateClientAccount201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return getAccountWithRequestBuilder(accountId: accountId).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Read one granted account
+     - GET /v1/accounts/{account_id}
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter accountId: (path) Granted account to read. 
+     - returns: RequestBuilder<CreateClientAccount201Response> 
+     */
+    open class func getAccountWithRequestBuilder(accountId: String) -> RequestBuilder<CreateClientAccount201Response> {
+        var localVariablePath = "/v1/accounts/{account_id}"
+        let accountIdPreEscape = "\(APIHelper.mapValueToPathItem(accountId))"
+        let accountIdPostEscape = accountIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{account_id}", with: accountIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters: [String: Any]? = nil
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            :
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<CreateClientAccount201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
 
     /**
-     Read effective mailbox and file storage limits
+     Read effective account limits
      
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
@@ -577,10 +1147,13 @@ open class DefaultAPI {
     }
 
     /**
-     Read effective mailbox and file storage limits
+     Read effective account limits
      - GET /v1/account/limits
-     - For the selected account. Uses the same plan and overrides as enforcement. Limits are not repeated in mailbox responses. Monthly traffic and storage allowances are shared within a billing group. Zero means none; null means no cap for that field.
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
+     - Values come from the plan and account overrides. Zero means no allowance; null means no cap. Storage, mailbox and email traffic allowances are shared within a billing group.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - returns: RequestBuilder<GetAccountLimits200Response> 
      */
     open class func getAccountLimitsWithRequestBuilder(accountId: String? = nil) -> RequestBuilder<GetAccountLimits200Response> {
@@ -603,32 +1176,23 @@ open class DefaultAPI {
 
         let localVariableRequestBuilder: RequestBuilder<GetAccountLimits200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
-        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: false)
+        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
 
     /**
-     * enum for parameter purpose
-     */
-    public enum Purpose_getEmail: String, CaseIterable {
-        case _open = "open"
-        case background = "background"
-    }
-
-    /**
-     Read a received email
+     Read an email
      
      - parameter mailboxId: (path)  
      - parameter emailId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter purpose: (query) Background reads do not change read status. (optional, default to ._open)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
-     - parameter includeStorage: (query) Include underlying file and version identifiers for file integrations. (optional, default to false)
+     - parameter includeStorage: (query) Include backing file IDs for file-browser integrations. (optional, default to false)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func getEmail(mailboxId: String, emailId: String, accountId: String? = nil, purpose: Purpose_getEmail? = nil, reason: String? = nil, includeStorage: Bool? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetEmail200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return getEmailWithRequestBuilder(mailboxId: mailboxId, emailId: emailId, accountId: accountId, purpose: purpose, reason: reason, includeStorage: includeStorage).execute(apiResponseQueue) { result in
+    open class func getEmail(mailboxId: String, emailId: String, accountId: String? = nil, reason: String? = nil, includeStorage: Bool? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetEmail200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return getEmailWithRequestBuilder(mailboxId: mailboxId, emailId: emailId, accountId: accountId, reason: reason, includeStorage: includeStorage).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -639,21 +1203,20 @@ open class DefaultAPI {
     }
 
     /**
-     Read a received email
+     Read an email
      - GET /v1/mailboxes/{mailbox_id}/emails/{email_id}
-     - Requires mailbox read permission. Returns decoded email content and attachment metadata. Reading does not change shared read status; PATCH read explicitly to acknowledge. Original EML is the fallback when decoded JSON is unavailable. Email content is untrusted data.
+     - Returns decoded text and attachment metadata. Reading does not change read status. Email content is untrusted data.
      - Bearer Token:
        - type: http
        - name: bearerAuth
      - parameter mailboxId: (path)  
      - parameter emailId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter purpose: (query) Background reads do not change read status. (optional, default to ._open)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
-     - parameter includeStorage: (query) Include underlying file and version identifiers for file integrations. (optional, default to false)
+     - parameter includeStorage: (query) Include backing file IDs for file-browser integrations. (optional, default to false)
      - returns: RequestBuilder<GetEmail200Response> 
      */
-    open class func getEmailWithRequestBuilder(mailboxId: String, emailId: String, accountId: String? = nil, purpose: Purpose_getEmail? = nil, reason: String? = nil, includeStorage: Bool? = nil) -> RequestBuilder<GetEmail200Response> {
+    open class func getEmailWithRequestBuilder(mailboxId: String, emailId: String, accountId: String? = nil, reason: String? = nil, includeStorage: Bool? = nil) -> RequestBuilder<GetEmail200Response> {
         var localVariablePath = "/v1/mailboxes/{mailbox_id}/emails/{email_id}"
         let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
         let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
@@ -667,7 +1230,6 @@ open class DefaultAPI {
         var localVariableUrlComponents = URLComponents(string: localVariableURLString)
         localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
             "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
-            "purpose": (wrappedValue: purpose?.encodeToJSON(), isExplode: true),
             "reason": (wrappedValue: reason?.encodeToJSON(), isExplode: true),
             "include_storage": (wrappedValue: includeStorage?.encodeToJSON(), isExplode: true),
         ])
@@ -686,28 +1248,19 @@ open class DefaultAPI {
     }
 
     /**
-     * enum for parameter purpose
-     */
-    public enum Purpose_getEmailAttachmentDownloadUrl: String, CaseIterable {
-        case _open = "open"
-        case background = "background"
-    }
-
-    /**
-     Get an email attachment download
+     Get a download link for an attachment
      
      - parameter mailboxId: (path)  
      - parameter emailId: (path)  
      - parameter attachmentId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter purpose: (query) Background reads do not change read status. (optional, default to ._open)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func getEmailAttachmentDownloadUrl(mailboxId: String, emailId: String, attachmentId: String, accountId: String? = nil, purpose: Purpose_getEmailAttachmentDownloadUrl? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetEmailOriginalDownloadUrl200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return getEmailAttachmentDownloadUrlWithRequestBuilder(mailboxId: mailboxId, emailId: emailId, attachmentId: attachmentId, accountId: accountId, purpose: purpose, reason: reason).execute(apiResponseQueue) { result in
+    open class func getEmailAttachmentDownload(mailboxId: String, emailId: String, attachmentId: String, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetEmailOriginalDownload200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return getEmailAttachmentDownloadWithRequestBuilder(mailboxId: mailboxId, emailId: emailId, attachmentId: attachmentId, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -718,21 +1271,20 @@ open class DefaultAPI {
     }
 
     /**
-     Get an email attachment download
+     Get a download link for an attachment
      - GET /v1/mailboxes/{mailbox_id}/emails/{email_id}/attachments/{attachment_id}
-     - Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+     - Returns a temporary link. No extraction or analysis is done.
      - Bearer Token:
        - type: http
        - name: bearerAuth
      - parameter mailboxId: (path)  
      - parameter emailId: (path)  
      - parameter attachmentId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter purpose: (query) Background reads do not change read status. (optional, default to ._open)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
-     - returns: RequestBuilder<GetEmailOriginalDownloadUrl200Response> 
+     - returns: RequestBuilder<GetEmailOriginalDownload200Response> 
      */
-    open class func getEmailAttachmentDownloadUrlWithRequestBuilder(mailboxId: String, emailId: String, attachmentId: String, accountId: String? = nil, purpose: Purpose_getEmailAttachmentDownloadUrl? = nil, reason: String? = nil) -> RequestBuilder<GetEmailOriginalDownloadUrl200Response> {
+    open class func getEmailAttachmentDownloadWithRequestBuilder(mailboxId: String, emailId: String, attachmentId: String, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<GetEmailOriginalDownload200Response> {
         var localVariablePath = "/v1/mailboxes/{mailbox_id}/emails/{email_id}/attachments/{attachment_id}"
         let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
         let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
@@ -749,7 +1301,6 @@ open class DefaultAPI {
         var localVariableUrlComponents = URLComponents(string: localVariableURLString)
         localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
             "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
-            "purpose": (wrappedValue: purpose?.encodeToJSON(), isExplode: true),
             "reason": (wrappedValue: reason?.encodeToJSON(), isExplode: true),
         ])
         let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
@@ -761,33 +1312,22 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<GetEmailOriginalDownloadUrl200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<GetEmailOriginalDownload200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
 
     /**
-     * enum for parameter purpose
-     */
-    public enum Purpose_getEmailOriginalDownloadUrl: String, CaseIterable {
-        case _open = "open"
-        case background = "background"
-    }
-
-    /**
-     Get the original EML download
+     Read a custom email domain
      
-     - parameter mailboxId: (path)  
-     - parameter emailId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter purpose: (query) Background reads do not change read status. (optional, default to ._open)
-     - parameter reason: (query)  (optional)
+     - parameter domainId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func getEmailOriginalDownloadUrl(mailboxId: String, emailId: String, accountId: String? = nil, purpose: Purpose_getEmailOriginalDownloadUrl? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetEmailOriginalDownloadUrl200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return getEmailOriginalDownloadUrlWithRequestBuilder(mailboxId: mailboxId, emailId: emailId, accountId: accountId, purpose: purpose, reason: reason).execute(apiResponseQueue) { result in
+    open class func getEmailDomain(domainId: String, accountId: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: CreateEmailDomain201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return getEmailDomainWithRequestBuilder(domainId: domainId, accountId: accountId).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -798,20 +1338,77 @@ open class DefaultAPI {
     }
 
     /**
-     Get the original EML download
+     Read a custom email domain
+     - GET /v1/account/email_domains/{domain_id}
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter domainId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - returns: RequestBuilder<CreateEmailDomain201Response> 
+     */
+    open class func getEmailDomainWithRequestBuilder(domainId: String, accountId: String? = nil) -> RequestBuilder<CreateEmailDomain201Response> {
+        var localVariablePath = "/v1/account/email_domains/{domain_id}"
+        let domainIdPreEscape = "\(APIHelper.mapValueToPathItem(domainId))"
+        let domainIdPostEscape = domainIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{domain_id}", with: domainIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters: [String: Any]? = nil
+
+        var localVariableUrlComponents = URLComponents(string: localVariableURLString)
+        localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
+            "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
+        ])
+        let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+        localVariableUrlComponents?.percentEncodedQuery = encodedQuery
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            :
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<CreateEmailDomain201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Get a download link for the original email
+     
+     - parameter mailboxId: (path)  
+     - parameter emailId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter reason: (query)  (optional)
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func getEmailOriginalDownload(mailboxId: String, emailId: String, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetEmailOriginalDownload200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return getEmailOriginalDownloadWithRequestBuilder(mailboxId: mailboxId, emailId: emailId, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Get a download link for the original email
      - GET /v1/mailboxes/{mailbox_id}/emails/{email_id}/raw
-     - Requires mailbox read permission to issue a temporary download link for this original or selected attachment. authentication=none: fetch the URL without API credentials. Links expire after 900 seconds. Ordinary files use signed storage URLs; protected files use a scoped signed API URL that rechecks access before decrypting. Downloads do not change shared read status. No attachment extraction or analysis is performed.
+     - Returns a temporary link to the original .eml file. Downloads do not change read status.
      - Bearer Token:
        - type: http
        - name: bearerAuth
      - parameter mailboxId: (path)  
      - parameter emailId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter purpose: (query) Background reads do not change read status. (optional, default to ._open)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
-     - returns: RequestBuilder<GetEmailOriginalDownloadUrl200Response> 
+     - returns: RequestBuilder<GetEmailOriginalDownload200Response> 
      */
-    open class func getEmailOriginalDownloadUrlWithRequestBuilder(mailboxId: String, emailId: String, accountId: String? = nil, purpose: Purpose_getEmailOriginalDownloadUrl? = nil, reason: String? = nil) -> RequestBuilder<GetEmailOriginalDownloadUrl200Response> {
+    open class func getEmailOriginalDownloadWithRequestBuilder(mailboxId: String, emailId: String, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<GetEmailOriginalDownload200Response> {
         var localVariablePath = "/v1/mailboxes/{mailbox_id}/emails/{email_id}/raw"
         let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
         let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
@@ -825,7 +1422,6 @@ open class DefaultAPI {
         var localVariableUrlComponents = URLComponents(string: localVariableURLString)
         localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
             "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
-            "purpose": (wrappedValue: purpose?.encodeToJSON(), isExplode: true),
             "reason": (wrappedValue: reason?.encodeToJSON(), isExplode: true),
         ])
         let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
@@ -837,16 +1433,16 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<GetEmailOriginalDownloadUrl200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<GetEmailOriginalDownload200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
 
     /**
-     Get a short-lived Action Cable ticket for local email monitoring
+     Get a live email subscription ticket
      
      - parameter mailboxId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
@@ -863,14 +1459,14 @@ open class DefaultAPI {
     }
 
     /**
-     Get a short-lived Action Cable ticket for local email monitoring
+     Get a live email subscription ticket
      - GET /v1/mailboxes/{mailbox_id}/email/subscription
-     - Requires mailbox read permission. Connect to the returned websocket_url with email_subscription_token=TICKET using actioncable-v1-json within 60 seconds. Subscribe to EmailReceivedChannel with the returned account_id/mailbox_id. Frames contain EmailReceivedEvent in message. Live only: after confirmation and on reconnect, catch up using existing ascending email arrival cursors.
+     - Requires mailbox read permission. Connect to websocket_url with email_subscription_token=TOKEN within 60 seconds, then subscribe to EmailReceivedChannel. Catch up with the email list cursor after every connect.
      - Bearer Token:
        - type: http
        - name: bearerAuth
      - parameter mailboxId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - returns: RequestBuilder<GetEmailSubscription200Response> 
      */
     open class func getEmailSubscriptionWithRequestBuilder(mailboxId: String, accountId: String? = nil) -> RequestBuilder<GetEmailSubscription200Response> {
@@ -900,10 +1496,10 @@ open class DefaultAPI {
     }
 
     /**
-     Read a mailbox webhook endpoint
+     Read the email webhook
      
      - parameter mailboxId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
@@ -920,14 +1516,14 @@ open class DefaultAPI {
     }
 
     /**
-     Read a mailbox webhook endpoint
+     Read the email webhook
      - GET /v1/mailboxes/{mailbox_id}/email/webhook
-     - Requires mailbox admin permission. Returns null when disabled; never includes the signing secret.
+     - Requires mailbox-admin permission. webhook is null when no webhook is set. The signing secret is never returned here.
      - Bearer Token:
        - type: http
        - name: bearerAuth
      - parameter mailboxId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - returns: RequestBuilder<GetEmailWebhook200Response> 
      */
     open class func getEmailWebhookWithRequestBuilder(mailboxId: String, accountId: String? = nil) -> RequestBuilder<GetEmailWebhook200Response> {
@@ -957,18 +1553,18 @@ open class DefaultAPI {
     }
 
     /**
-     Read mailbox activity and optionally its incoming address
+     Read file metadata
      
-     - parameter id: (path)  
-     - parameter includeEmail: (query) Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
-     - parameter accountId: (query)  (optional)
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func getMailbox(id: String, includeEmail: Bool? = nil, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: CreateMailbox201Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return getMailboxWithRequestBuilder(id: id, includeEmail: includeEmail, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
+    open class func getFile(mailboxId: String, fileId: String, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetFileByPath200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return getFileWithRequestBuilder(mailboxId: mailboxId, fileId: fileId, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -979,29 +1575,222 @@ open class DefaultAPI {
     }
 
     /**
-     Read mailbox activity and optionally its incoming address
-     - GET /v1/mailboxes/{id}
-     - Read mailbox details. List files, emails, versions and account limits through their separate endpoints.
+     Read file metadata
+     - GET /v1/mailboxes/{mailbox_id}/files/{file_id}
+     - Reading metadata never marks the file read.
      - Bearer Token:
        - type: http
        - name: bearerAuth
-     - parameter id: (path)  
-     - parameter includeEmail: (query) Include additional address settings and aliases. Requires write access. Ordinary reads already include receiving state and the permitted address. (optional, default to false)
-     - parameter accountId: (query)  (optional)
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
-     - returns: RequestBuilder<CreateMailbox201Response> 
+     - returns: RequestBuilder<GetFileByPath200Response> 
      */
-    open class func getMailboxWithRequestBuilder(id: String, includeEmail: Bool? = nil, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<CreateMailbox201Response> {
-        var localVariablePath = "/v1/mailboxes/{id}"
-        let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
-        let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        localVariablePath = localVariablePath.replacingOccurrences(of: "{id}", with: idPostEscape, options: .literal, range: nil)
+    open class func getFileWithRequestBuilder(mailboxId: String, fileId: String, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<GetFileByPath200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/files/{file_id}"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let fileIdPreEscape = "\(APIHelper.mapValueToPathItem(fileId))"
+        let fileIdPostEscape = fileIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{file_id}", with: fileIdPostEscape, options: .literal, range: nil)
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
         let localVariableParameters: [String: Any]? = nil
 
         var localVariableUrlComponents = URLComponents(string: localVariableURLString)
         localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
-            "include_email": (wrappedValue: includeEmail?.encodeToJSON(), isExplode: true),
+            "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
+            "reason": (wrappedValue: reason?.encodeToJSON(), isExplode: true),
+        ])
+        let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+        localVariableUrlComponents?.percentEncodedQuery = encodedQuery
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            :
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<GetFileByPath200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Find a file by path
+     
+     - parameter mailboxId: (path)  
+     - parameter path: (query)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter reason: (query)  (optional)
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func getFileByPath(mailboxId: String, path: String, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetFileByPath200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return getFileByPathWithRequestBuilder(mailboxId: mailboxId, path: path, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Find a file by path
+     - GET /v1/mailboxes/{mailbox_id}/files/by_path
+     - Returns file metadata only. Read content with the download endpoint. The disposition and content_url parameters return INVALID_ARGUMENT.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter path: (query)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter reason: (query)  (optional)
+     - returns: RequestBuilder<GetFileByPath200Response> 
+     */
+    open class func getFileByPathWithRequestBuilder(mailboxId: String, path: String, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<GetFileByPath200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/files/by_path"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters: [String: Any]? = nil
+
+        var localVariableUrlComponents = URLComponents(string: localVariableURLString)
+        localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
+            "path": (wrappedValue: path.encodeToJSON(), isExplode: true),
+            "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
+            "reason": (wrappedValue: reason?.encodeToJSON(), isExplode: true),
+        ])
+        let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+        localVariableUrlComponents?.percentEncodedQuery = encodedQuery
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            :
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<GetFileByPath200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Get a download link for a file
+     
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter versionId: (query)  (optional)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter reason: (query)  (optional)
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func getFileDownload(mailboxId: String, fileId: String, versionId: String? = nil, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetFileDownload200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return getFileDownloadWithRequestBuilder(mailboxId: mailboxId, fileId: fileId, versionId: versionId, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Get a download link for a file
+     - GET /v1/mailboxes/{mailbox_id}/files/{file_id}/download
+     - Returns a temporary link and marks this version read. Send version_id for an older version.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter versionId: (query)  (optional)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter reason: (query)  (optional)
+     - returns: RequestBuilder<GetFileDownload200Response> 
+     */
+    open class func getFileDownloadWithRequestBuilder(mailboxId: String, fileId: String, versionId: String? = nil, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<GetFileDownload200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/files/{file_id}/download"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let fileIdPreEscape = "\(APIHelper.mapValueToPathItem(fileId))"
+        let fileIdPostEscape = fileIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{file_id}", with: fileIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters: [String: Any]? = nil
+
+        var localVariableUrlComponents = URLComponents(string: localVariableURLString)
+        localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
+            "version_id": (wrappedValue: versionId?.encodeToJSON(), isExplode: true),
+            "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
+            "reason": (wrappedValue: reason?.encodeToJSON(), isExplode: true),
+        ])
+        let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+        localVariableUrlComponents?.percentEncodedQuery = encodedQuery
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            :
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<GetFileDownload200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Read a mailbox
+     
+     - parameter mailboxId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter reason: (query)  (optional)
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func getMailbox(mailboxId: String, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: CreateMailbox201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return getMailboxWithRequestBuilder(mailboxId: mailboxId, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Read a mailbox
+     - GET /v1/mailboxes/{mailbox_id}
+     - Reading never changes the mailbox. Read address settings, emails and files through their own endpoints.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter reason: (query)  (optional)
+     - returns: RequestBuilder<CreateMailbox201Response> 
+     */
+    open class func getMailboxWithRequestBuilder(mailboxId: String, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<CreateMailbox201Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters: [String: Any]? = nil
+
+        var localVariableUrlComponents = URLComponents(string: localVariableURLString)
+        localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
             "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
             "reason": (wrappedValue: reason?.encodeToJSON(), isExplode: true),
         ])
@@ -1020,17 +1809,17 @@ open class DefaultAPI {
     }
 
     /**
-     Read a mailbox email address and limits
+     Read address settings
      
-     - parameter id: (path) Authorized mailbox prefix ID 
-     - parameter accountId: (query) Explicitly granted account; omission uses credential default (optional)
+     - parameter mailboxId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func getMailboxEmailSettings(id: String, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetMailboxEmailSettings200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return getMailboxEmailSettingsWithRequestBuilder(id: id, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
+    open class func getMailboxEmailSettings(mailboxId: String, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetMailboxEmailSettings200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return getMailboxEmailSettingsWithRequestBuilder(mailboxId: mailboxId, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -1041,22 +1830,22 @@ open class DefaultAPI {
     }
 
     /**
-     Read a mailbox email address and limits
-     - GET /v1/mailboxes/{id}/email
-     - Requires upload/write access. Anyone knowing the address can send; reading files requires mailbox authorization. Original message.eml, decoded message.json, and attachments are stored together.
+     Read address settings
+     - GET /v1/mailboxes/{mailbox_id}/email
+     - Requires mailbox write permission.
      - Bearer Token:
        - type: http
        - name: bearerAuth
-     - parameter id: (path) Authorized mailbox prefix ID 
-     - parameter accountId: (query) Explicitly granted account; omission uses credential default (optional)
+     - parameter mailboxId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
      - returns: RequestBuilder<GetMailboxEmailSettings200Response> 
      */
-    open class func getMailboxEmailSettingsWithRequestBuilder(id: String, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<GetMailboxEmailSettings200Response> {
-        var localVariablePath = "/v1/mailboxes/{id}/email"
-        let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
-        let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        localVariablePath = localVariablePath.replacingOccurrences(of: "{id}", with: idPostEscape, options: .literal, range: nil)
+    open class func getMailboxEmailSettingsWithRequestBuilder(mailboxId: String, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<GetMailboxEmailSettings200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/email"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
         let localVariableParameters: [String: Any]? = nil
 
@@ -1080,77 +1869,16 @@ open class DefaultAPI {
     }
 
     /**
-     Read stored file metadata
+     Read the connection and selected account
      
-     - parameter id: (path)  
-     - parameter fileId: (path)  
-     - parameter accountId: (query)  (optional)
-     - parameter apiResponseQueue: The queue on which api response is dispatched.
-     - parameter completion: completion handler to receive the data and the error objects
-     */
-    @discardableResult
-    open class func getMailboxFile(id: String, fileId: String, accountId: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: MailboxFileResponse?, _ error: Error?) -> Void)) -> RequestTask {
-        return getMailboxFileWithRequestBuilder(id: id, fileId: fileId, accountId: accountId).execute(apiResponseQueue) { result in
-            switch result {
-            case let .success(response):
-                completion(response.body, nil)
-            case let .failure(error):
-                completion(nil, error)
-            }
-        }
-    }
-
-    /**
-     Read stored file metadata
-     - GET /v1/mailboxes/{id}/files/{file_id}
-     - Bearer Token:
-       - type: http
-       - name: bearerAuth
-     - parameter id: (path)  
-     - parameter fileId: (path)  
-     - parameter accountId: (query)  (optional)
-     - returns: RequestBuilder<MailboxFileResponse> 
-     */
-    open class func getMailboxFileWithRequestBuilder(id: String, fileId: String, accountId: String? = nil) -> RequestBuilder<MailboxFileResponse> {
-        var localVariablePath = "/v1/mailboxes/{id}/files/{file_id}"
-        let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
-        let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        localVariablePath = localVariablePath.replacingOccurrences(of: "{id}", with: idPostEscape, options: .literal, range: nil)
-        let fileIdPreEscape = "\(APIHelper.mapValueToPathItem(fileId))"
-        let fileIdPostEscape = fileIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        localVariablePath = localVariablePath.replacingOccurrences(of: "{file_id}", with: fileIdPostEscape, options: .literal, range: nil)
-        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
-        let localVariableParameters: [String: Any]? = nil
-
-        var localVariableUrlComponents = URLComponents(string: localVariableURLString)
-        localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
-            "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
-        ])
-        let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
-        localVariableUrlComponents?.percentEncodedQuery = encodedQuery
-
-        let localVariableNillableHeaders: [String: Any?] = [
-            :
-        ]
-
-        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
-
-        let localVariableRequestBuilder: RequestBuilder<MailboxFileResponse>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
-
-        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
-    }
-
-    /**
-     Read current account identity and granted accounts
-     
-     - parameter accountId: (query) Select a granted account for this request only; omit for the credential&#39;s default account. (optional)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func getRevdokuStatus(accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetRevdokuStatus200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return getRevdokuStatusWithRequestBuilder(accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
+    open class func getStatus(accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetStatus200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return getStatusWithRequestBuilder(accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -1161,16 +1889,17 @@ open class DefaultAPI {
     }
 
     /**
-     Read current account identity and granted accounts
+     Read the connection and selected account
      - GET /v1/status
+     - Works with every API key, including mailbox-scoped keys. Read quotas with GET /v1/account/limits.
      - Bearer Token:
        - type: http
        - name: bearerAuth
-     - parameter accountId: (query) Select a granted account for this request only; omit for the credential&#39;s default account. (optional)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
-     - returns: RequestBuilder<GetRevdokuStatus200Response> 
+     - returns: RequestBuilder<GetStatus200Response> 
      */
-    open class func getRevdokuStatusWithRequestBuilder(accountId: String? = nil, reason: String? = nil) -> RequestBuilder<GetRevdokuStatus200Response> {
+    open class func getStatusWithRequestBuilder(accountId: String? = nil, reason: String? = nil) -> RequestBuilder<GetStatus200Response> {
         let localVariablePath = "/v1/status"
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
         let localVariableParameters: [String: Any]? = nil
@@ -1189,62 +1918,7 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<GetRevdokuStatus200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
-
-        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
-    }
-
-    /**
-     List account email domains, DNS records, receiving state and usage
-     
-     - parameter accountId: (query) Explicit granted account for this call; omission uses the credential account. (optional)
-     - parameter reason: (query)  (optional)
-     - parameter apiResponseQueue: The queue on which api response is dispatched.
-     - parameter completion: completion handler to receive the data and the error objects
-     */
-    @discardableResult
-    open class func listAccountEmailDomains(accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: EmailDomainListResponse?, _ error: Error?) -> Void)) -> RequestTask {
-        return listAccountEmailDomainsWithRequestBuilder(accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
-            switch result {
-            case let .success(response):
-                completion(response.body, nil)
-            case let .failure(error):
-                completion(nil, error)
-            }
-        }
-    }
-
-    /**
-     List account email domains, DNS records, receiving state and usage
-     - GET /v1/account/email_domains
-     - Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-     - Bearer Token:
-       - type: http
-       - name: bearerAuth
-     - parameter accountId: (query) Explicit granted account for this call; omission uses the credential account. (optional)
-     - parameter reason: (query)  (optional)
-     - returns: RequestBuilder<EmailDomainListResponse> 
-     */
-    open class func listAccountEmailDomainsWithRequestBuilder(accountId: String? = nil, reason: String? = nil) -> RequestBuilder<EmailDomainListResponse> {
-        let localVariablePath = "/v1/account/email_domains"
-        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
-        let localVariableParameters: [String: Any]? = nil
-
-        var localVariableUrlComponents = URLComponents(string: localVariableURLString)
-        localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
-            "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
-            "reason": (wrappedValue: reason?.encodeToJSON(), isExplode: true),
-        ])
-        let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
-        localVariableUrlComponents?.percentEncodedQuery = encodedQuery
-
-        let localVariableNillableHeaders: [String: Any?] = [
-            :
-        ]
-
-        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
-
-        let localVariableRequestBuilder: RequestBuilder<EmailDomainListResponse>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<GetStatus200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
@@ -1252,14 +1926,14 @@ open class DefaultAPI {
     /**
      List accounts granted to this credential
      
-     - parameter limit: (query)  (optional, default to 100)
-     - parameter offset: (query)  (optional)
+     - parameter limit: (query)  (optional, default to 50)
+     - parameter cursor: (query) pagination.next_cursor from the previous page. (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func listAccounts(limit: Int? = nil, offset: Int? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: ListAccounts200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return listAccountsWithRequestBuilder(limit: limit, offset: offset).execute(apiResponseQueue) { result in
+    open class func listAccounts(limit: Int? = nil, cursor: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: ListAccounts200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return listAccountsWithRequestBuilder(limit: limit, cursor: cursor).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -1275,11 +1949,11 @@ open class DefaultAPI {
      - Bearer Token:
        - type: http
        - name: bearerAuth
-     - parameter limit: (query)  (optional, default to 100)
-     - parameter offset: (query)  (optional)
+     - parameter limit: (query)  (optional, default to 50)
+     - parameter cursor: (query) pagination.next_cursor from the previous page. (optional)
      - returns: RequestBuilder<ListAccounts200Response> 
      */
-    open class func listAccountsWithRequestBuilder(limit: Int? = nil, offset: Int? = nil) -> RequestBuilder<ListAccounts200Response> {
+    open class func listAccountsWithRequestBuilder(limit: Int? = nil, cursor: String? = nil) -> RequestBuilder<ListAccounts200Response> {
         let localVariablePath = "/v1/accounts"
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
         let localVariableParameters: [String: Any]? = nil
@@ -1287,7 +1961,7 @@ open class DefaultAPI {
         var localVariableUrlComponents = URLComponents(string: localVariableURLString)
         localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
             "limit": (wrappedValue: limit?.encodeToJSON(), isExplode: true),
-            "offset": (wrappedValue: offset?.encodeToJSON(), isExplode: true),
+            "cursor": (wrappedValue: cursor?.encodeToJSON(), isExplode: true),
         ])
         let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
         localVariableUrlComponents?.percentEncodedQuery = encodedQuery
@@ -1304,35 +1978,17 @@ open class DefaultAPI {
     }
 
     /**
-     * enum for parameter order
-     */
-    public enum Order_listEmails: String, CaseIterable {
-        case asc = "asc"
-        case desc = "desc"
-    }
-
-    /**
-     List received emails
+     List custom email domains
      
-     - parameter mailboxId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter limit: (query) Maximum messages on this page. (optional, default to 50)
-     - parameter cursor: (query) Opaque next_cursor from a previous page. (optional)
-     - parameter order: (query) Arrival order. (optional, default to .asc)
-     - parameter sender: (query) Exact sender address, case insensitive. (optional)
-     - parameter subject: (query) Case insensitive subject substring. (optional)
-     - parameter receivedAfter: (query) Exclusive receipt-time lower bound. (optional)
-     - parameter receivedBefore: (query) Exclusive receipt-time upper bound. (optional)
-     - parameter read: (query) Current shared read status. (optional)
-     - parameter hasAttachments: (query) Saved attachment presence. (optional)
-     - parameter conversationId: (query) An email ID in the selected conversation. (optional)
-     - parameter includeStorage: (query) Include backing file identifiers for file-browser integration. (optional, default to false)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter limit: (query)  (optional, default to 50)
+     - parameter cursor: (query) pagination.next_cursor from the previous page. (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func listEmails(mailboxId: String, accountId: String? = nil, limit: Int? = nil, cursor: String? = nil, order: Order_listEmails? = nil, sender: String? = nil, subject: String? = nil, receivedAfter: Date? = nil, receivedBefore: Date? = nil, read: Bool? = nil, hasAttachments: Bool? = nil, conversationId: String? = nil, includeStorage: Bool? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: ListEmails200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return listEmailsWithRequestBuilder(mailboxId: mailboxId, accountId: accountId, limit: limit, cursor: cursor, order: order, sender: sender, subject: subject, receivedAfter: receivedAfter, receivedBefore: receivedBefore, read: read, hasAttachments: hasAttachments, conversationId: conversationId, includeStorage: includeStorage).execute(apiResponseQueue) { result in
+    open class func listEmailDomains(accountId: String? = nil, limit: Int? = nil, cursor: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: ListEmailDomains200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return listEmailDomainsWithRequestBuilder(accountId: accountId, limit: limit, cursor: cursor).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -1343,28 +1999,117 @@ open class DefaultAPI {
     }
 
     /**
-     List received emails
+     List custom email domains
+     - GET /v1/account/email_domains
+     - Requires a full-account owner or administrator credential.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter limit: (query)  (optional, default to 50)
+     - parameter cursor: (query) pagination.next_cursor from the previous page. (optional)
+     - returns: RequestBuilder<ListEmailDomains200Response> 
+     */
+    open class func listEmailDomainsWithRequestBuilder(accountId: String? = nil, limit: Int? = nil, cursor: String? = nil) -> RequestBuilder<ListEmailDomains200Response> {
+        let localVariablePath = "/v1/account/email_domains"
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters: [String: Any]? = nil
+
+        var localVariableUrlComponents = URLComponents(string: localVariableURLString)
+        localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
+            "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
+            "limit": (wrappedValue: limit?.encodeToJSON(), isExplode: true),
+            "cursor": (wrappedValue: cursor?.encodeToJSON(), isExplode: true),
+        ])
+        let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+        localVariableUrlComponents?.percentEncodedQuery = encodedQuery
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            :
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<ListEmailDomains200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     * enum for parameter order
+     */
+    public enum Order_listEmails: String, CaseIterable {
+        case asc = "asc"
+        case desc = "desc"
+    }
+
+    /**
+     * enum for parameter direction
+     */
+    public enum Direction_listEmails: String, CaseIterable {
+        case received = "received"
+        case sent = "sent"
+        case all = "all"
+    }
+
+    /**
+     List emails
+     
+     - parameter mailboxId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter reason: (query)  (optional)
+     - parameter limit: (query)  (optional, default to 50)
+     - parameter cursor: (query) pagination.next_cursor from the previous page. (optional)
+     - parameter order: (query) Arrival order. Use asc to poll. (optional, default to .asc)
+     - parameter direction: (query)  (optional, default to .received)
+     - parameter sender: (query) Exact sender address, case insensitive. (optional)
+     - parameter subject: (query) Case-insensitive subject text. (optional)
+     - parameter receivedAfter: (query)  (optional)
+     - parameter receivedBefore: (query)  (optional)
+     - parameter read: (query)  (optional)
+     - parameter hasAttachments: (query)  (optional)
+     - parameter conversationId: (query) Return the emails of this conversation. (optional)
+     - parameter includeStorage: (query) Include backing file IDs for file-browser integrations. (optional, default to false)
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func listEmails(mailboxId: String, accountId: String? = nil, reason: String? = nil, limit: Int? = nil, cursor: String? = nil, order: Order_listEmails? = nil, direction: Direction_listEmails? = nil, sender: String? = nil, subject: String? = nil, receivedAfter: Date? = nil, receivedBefore: Date? = nil, read: Bool? = nil, hasAttachments: Bool? = nil, conversationId: String? = nil, includeStorage: Bool? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: ListEmails200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return listEmailsWithRequestBuilder(mailboxId: mailboxId, accountId: accountId, reason: reason, limit: limit, cursor: cursor, order: order, direction: direction, sender: sender, subject: subject, receivedAfter: receivedAfter, receivedBefore: receivedBefore, read: read, hasAttachments: hasAttachments, conversationId: conversationId, includeStorage: includeStorage).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     List emails
      - GET /v1/mailboxes/{mailbox_id}/emails
-     - Requires mailbox read permission. Ascending arrival order supports incremental polling: retain next_cursor even after an empty page. Reuse account, mailbox and filters. Late receipt timestamps are included. Descending order browses history. Edits/read changes/restorations do not replay earlier arrivals. Listing does not mark read.
+     - Requires mailbox read permission. Lists received email by default. To poll, list in ascending order, save pagination.next_cursor after every page (including an empty page) and send it next time with the same filters. Listing never marks email read.
      - Bearer Token:
        - type: http
        - name: bearerAuth
      - parameter mailboxId: (path)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter limit: (query) Maximum messages on this page. (optional, default to 50)
-     - parameter cursor: (query) Opaque next_cursor from a previous page. (optional)
-     - parameter order: (query) Arrival order. (optional, default to .asc)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter reason: (query)  (optional)
+     - parameter limit: (query)  (optional, default to 50)
+     - parameter cursor: (query) pagination.next_cursor from the previous page. (optional)
+     - parameter order: (query) Arrival order. Use asc to poll. (optional, default to .asc)
+     - parameter direction: (query)  (optional, default to .received)
      - parameter sender: (query) Exact sender address, case insensitive. (optional)
-     - parameter subject: (query) Case insensitive subject substring. (optional)
-     - parameter receivedAfter: (query) Exclusive receipt-time lower bound. (optional)
-     - parameter receivedBefore: (query) Exclusive receipt-time upper bound. (optional)
-     - parameter read: (query) Current shared read status. (optional)
-     - parameter hasAttachments: (query) Saved attachment presence. (optional)
-     - parameter conversationId: (query) An email ID in the selected conversation. (optional)
-     - parameter includeStorage: (query) Include backing file identifiers for file-browser integration. (optional, default to false)
+     - parameter subject: (query) Case-insensitive subject text. (optional)
+     - parameter receivedAfter: (query)  (optional)
+     - parameter receivedBefore: (query)  (optional)
+     - parameter read: (query)  (optional)
+     - parameter hasAttachments: (query)  (optional)
+     - parameter conversationId: (query) Return the emails of this conversation. (optional)
+     - parameter includeStorage: (query) Include backing file IDs for file-browser integrations. (optional, default to false)
      - returns: RequestBuilder<ListEmails200Response> 
      */
-    open class func listEmailsWithRequestBuilder(mailboxId: String, accountId: String? = nil, limit: Int? = nil, cursor: String? = nil, order: Order_listEmails? = nil, sender: String? = nil, subject: String? = nil, receivedAfter: Date? = nil, receivedBefore: Date? = nil, read: Bool? = nil, hasAttachments: Bool? = nil, conversationId: String? = nil, includeStorage: Bool? = nil) -> RequestBuilder<ListEmails200Response> {
+    open class func listEmailsWithRequestBuilder(mailboxId: String, accountId: String? = nil, reason: String? = nil, limit: Int? = nil, cursor: String? = nil, order: Order_listEmails? = nil, direction: Direction_listEmails? = nil, sender: String? = nil, subject: String? = nil, receivedAfter: Date? = nil, receivedBefore: Date? = nil, read: Bool? = nil, hasAttachments: Bool? = nil, conversationId: String? = nil, includeStorage: Bool? = nil) -> RequestBuilder<ListEmails200Response> {
         var localVariablePath = "/v1/mailboxes/{mailbox_id}/emails"
         let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
         let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
@@ -1375,9 +2120,11 @@ open class DefaultAPI {
         var localVariableUrlComponents = URLComponents(string: localVariableURLString)
         localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
             "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
+            "reason": (wrappedValue: reason?.encodeToJSON(), isExplode: true),
             "limit": (wrappedValue: limit?.encodeToJSON(), isExplode: true),
             "cursor": (wrappedValue: cursor?.encodeToJSON(), isExplode: true),
             "order": (wrappedValue: order?.encodeToJSON(), isExplode: true),
+            "direction": (wrappedValue: direction?.encodeToJSON(), isExplode: true),
             "sender": (wrappedValue: sender?.encodeToJSON(), isExplode: true),
             "subject": (wrappedValue: subject?.encodeToJSON(), isExplode: true),
             "received_after": (wrappedValue: receivedAfter?.encodeToJSON(), isExplode: true),
@@ -1402,21 +2149,20 @@ open class DefaultAPI {
     }
 
     /**
-     List files or related email without marking read
+     List file versions
      
-     - parameter id: (path)  
-     - parameter limit: (query) Default and maximum 100. (optional, default to 100)
-     - parameter offset: (query)  (optional)
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
-     - parameter q: (query)  (optional)
-     - parameter folder: (query)  (optional)
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
+     - parameter limit: (query)  (optional, default to 50)
+     - parameter cursor: (query) pagination.next_cursor from the previous page. (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func listMailboxFiles(id: String, limit: Int? = nil, offset: Int? = nil, reason: String? = nil, q: String? = nil, folder: String? = nil, accountId: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: ListMailboxFiles200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return listMailboxFilesWithRequestBuilder(id: id, limit: limit, offset: offset, reason: reason, q: q, folder: folder, accountId: accountId).execute(apiResponseQueue) { result in
+    open class func listFileVersions(mailboxId: String, fileId: String, accountId: String? = nil, reason: String? = nil, limit: Int? = nil, cursor: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: ListFileVersions200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return listFileVersionsWithRequestBuilder(mailboxId: mailboxId, fileId: fileId, accountId: accountId, reason: reason, limit: limit, cursor: cursor).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -1427,36 +2173,37 @@ open class DefaultAPI {
     }
 
     /**
-     List files or related email without marking read
-     - GET /v1/mailboxes/{id}/files
+     List file versions
+     - GET /v1/mailboxes/{mailbox_id}/files/{file_id}/versions
+     - Newest first.
      - Bearer Token:
        - type: http
        - name: bearerAuth
-     - parameter id: (path)  
-     - parameter limit: (query) Default and maximum 100. (optional, default to 100)
-     - parameter offset: (query)  (optional)
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
      - parameter reason: (query)  (optional)
-     - parameter q: (query)  (optional)
-     - parameter folder: (query)  (optional)
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - returns: RequestBuilder<ListMailboxFiles200Response> 
+     - parameter limit: (query)  (optional, default to 50)
+     - parameter cursor: (query) pagination.next_cursor from the previous page. (optional)
+     - returns: RequestBuilder<ListFileVersions200Response> 
      */
-    open class func listMailboxFilesWithRequestBuilder(id: String, limit: Int? = nil, offset: Int? = nil, reason: String? = nil, q: String? = nil, folder: String? = nil, accountId: String? = nil) -> RequestBuilder<ListMailboxFiles200Response> {
-        var localVariablePath = "/v1/mailboxes/{id}/files"
-        let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
-        let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        localVariablePath = localVariablePath.replacingOccurrences(of: "{id}", with: idPostEscape, options: .literal, range: nil)
+    open class func listFileVersionsWithRequestBuilder(mailboxId: String, fileId: String, accountId: String? = nil, reason: String? = nil, limit: Int? = nil, cursor: String? = nil) -> RequestBuilder<ListFileVersions200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/files/{file_id}/versions"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let fileIdPreEscape = "\(APIHelper.mapValueToPathItem(fileId))"
+        let fileIdPostEscape = fileIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{file_id}", with: fileIdPostEscape, options: .literal, range: nil)
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
         let localVariableParameters: [String: Any]? = nil
 
         var localVariableUrlComponents = URLComponents(string: localVariableURLString)
         localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
-            "limit": (wrappedValue: limit?.encodeToJSON(), isExplode: true),
-            "offset": (wrappedValue: offset?.encodeToJSON(), isExplode: true),
-            "reason": (wrappedValue: reason?.encodeToJSON(), isExplode: true),
-            "q": (wrappedValue: q?.encodeToJSON(), isExplode: true),
-            "folder": (wrappedValue: folder?.encodeToJSON(), isExplode: true),
             "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
+            "reason": (wrappedValue: reason?.encodeToJSON(), isExplode: true),
+            "limit": (wrappedValue: limit?.encodeToJSON(), isExplode: true),
+            "cursor": (wrappedValue: cursor?.encodeToJSON(), isExplode: true),
         ])
         let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
         localVariableUrlComponents?.percentEncodedQuery = encodedQuery
@@ -1467,7 +2214,79 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<ListMailboxFiles200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<ListFileVersions200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     List files
+     
+     - parameter mailboxId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter reason: (query)  (optional)
+     - parameter q: (query) Case-insensitive text in the path. (optional)
+     - parameter folder: (query) List one folder. An empty value lists the root. (optional)
+     - parameter limit: (query)  (optional, default to 50)
+     - parameter cursor: (query) pagination.next_cursor from the previous page. (optional)
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func listFiles(mailboxId: String, accountId: String? = nil, reason: String? = nil, q: String? = nil, folder: String? = nil, limit: Int? = nil, cursor: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: ListFiles200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return listFilesWithRequestBuilder(mailboxId: mailboxId, accountId: accountId, reason: reason, q: q, folder: folder, limit: limit, cursor: cursor).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     List files
+     - GET /v1/mailboxes/{mailbox_id}/files
+     - Lists current files, including stored emails under _email/. Listing never marks files read.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter reason: (query)  (optional)
+     - parameter q: (query) Case-insensitive text in the path. (optional)
+     - parameter folder: (query) List one folder. An empty value lists the root. (optional)
+     - parameter limit: (query)  (optional, default to 50)
+     - parameter cursor: (query) pagination.next_cursor from the previous page. (optional)
+     - returns: RequestBuilder<ListFiles200Response> 
+     */
+    open class func listFilesWithRequestBuilder(mailboxId: String, accountId: String? = nil, reason: String? = nil, q: String? = nil, folder: String? = nil, limit: Int? = nil, cursor: String? = nil) -> RequestBuilder<ListFiles200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/files"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters: [String: Any]? = nil
+
+        var localVariableUrlComponents = URLComponents(string: localVariableURLString)
+        localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
+            "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
+            "reason": (wrappedValue: reason?.encodeToJSON(), isExplode: true),
+            "q": (wrappedValue: q?.encodeToJSON(), isExplode: true),
+            "folder": (wrappedValue: folder?.encodeToJSON(), isExplode: true),
+            "limit": (wrappedValue: limit?.encodeToJSON(), isExplode: true),
+            "cursor": (wrappedValue: cursor?.encodeToJSON(), isExplode: true),
+        ])
+        let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+        localVariableUrlComponents?.percentEncodedQuery = encodedQuery
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            :
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<ListFiles200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "GET", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
@@ -1482,19 +2301,20 @@ open class DefaultAPI {
     }
 
     /**
-     List accessible mailboxes
+     List mailboxes
      
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter q: (query) Case-insensitive contains-filter on the permitted email address or ID. (optional)
-     - parameter status: (query) Archive status: active, archived or all. Defaults to active. (optional, default to .active)
-     - parameter limit: (query)  (optional, default to 100)
-     - parameter offset: (query)  (optional, default to 0)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter reason: (query)  (optional)
+     - parameter status: (query)  (optional, default to .active)
+     - parameter q: (query) Case-insensitive text in the permitted address or the mailbox ID. (optional)
+     - parameter limit: (query)  (optional, default to 50)
+     - parameter cursor: (query) pagination.next_cursor from the previous page. (optional)
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func listMailboxes(accountId: String? = nil, q: String? = nil, status: Status_listMailboxes? = nil, limit: Int? = nil, offset: Int? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: ListMailboxes200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return listMailboxesWithRequestBuilder(accountId: accountId, q: q, status: status, limit: limit, offset: offset).execute(apiResponseQueue) { result in
+    open class func listMailboxes(accountId: String? = nil, reason: String? = nil, status: Status_listMailboxes? = nil, q: String? = nil, limit: Int? = nil, cursor: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: ListMailboxes200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return listMailboxesWithRequestBuilder(accountId: accountId, reason: reason, status: status, q: q, limit: limit, cursor: cursor).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -1505,20 +2325,21 @@ open class DefaultAPI {
     }
 
     /**
-     List accessible mailboxes
+     List mailboxes
      - GET /v1/mailboxes
-     - List active mailboxes by default. Returns permitted email addresses, current email and unread counts, lifetime receipts and receiving state. Counts and pagination cover only authorized mailboxes. No message content is read.
+     - Lists active mailboxes by default, newest first. Counts and pages cover only mailboxes this credential can access. Reads no email content.
      - Bearer Token:
        - type: http
        - name: bearerAuth
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter q: (query) Case-insensitive contains-filter on the permitted email address or ID. (optional)
-     - parameter status: (query) Archive status: active, archived or all. Defaults to active. (optional, default to .active)
-     - parameter limit: (query)  (optional, default to 100)
-     - parameter offset: (query)  (optional, default to 0)
+     - parameter accountId: (query) Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. (optional)
+     - parameter reason: (query)  (optional)
+     - parameter status: (query)  (optional, default to .active)
+     - parameter q: (query) Case-insensitive text in the permitted address or the mailbox ID. (optional)
+     - parameter limit: (query)  (optional, default to 50)
+     - parameter cursor: (query) pagination.next_cursor from the previous page. (optional)
      - returns: RequestBuilder<ListMailboxes200Response> 
      */
-    open class func listMailboxesWithRequestBuilder(accountId: String? = nil, q: String? = nil, status: Status_listMailboxes? = nil, limit: Int? = nil, offset: Int? = nil) -> RequestBuilder<ListMailboxes200Response> {
+    open class func listMailboxesWithRequestBuilder(accountId: String? = nil, reason: String? = nil, status: Status_listMailboxes? = nil, q: String? = nil, limit: Int? = nil, cursor: String? = nil) -> RequestBuilder<ListMailboxes200Response> {
         let localVariablePath = "/v1/mailboxes"
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
         let localVariableParameters: [String: Any]? = nil
@@ -1526,10 +2347,11 @@ open class DefaultAPI {
         var localVariableUrlComponents = URLComponents(string: localVariableURLString)
         localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
             "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
-            "q": (wrappedValue: q?.encodeToJSON(), isExplode: true),
+            "reason": (wrappedValue: reason?.encodeToJSON(), isExplode: true),
             "status": (wrappedValue: status?.encodeToJSON(), isExplode: true),
+            "q": (wrappedValue: q?.encodeToJSON(), isExplode: true),
             "limit": (wrappedValue: limit?.encodeToJSON(), isExplode: true),
-            "offset": (wrappedValue: offset?.encodeToJSON(), isExplode: true),
+            "cursor": (wrappedValue: cursor?.encodeToJSON(), isExplode: true),
         ])
         let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
         localVariableUrlComponents?.percentEncodedQuery = encodedQuery
@@ -1546,14 +2368,71 @@ open class DefaultAPI {
     }
 
     /**
-     Prepare a single file upload
+     Move a file
+     
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter moveFileRequest: (body)  
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func moveFile(mailboxId: String, fileId: String, moveFileRequest: MoveFileRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: RenameFile200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return moveFileWithRequestBuilder(mailboxId: mailboxId, fileId: fileId, moveFileRequest: moveFileRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Move a file
+     - POST /v1/mailboxes/{mailbox_id}/files/{file_id}/move
+     - Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter moveFileRequest: (body)  
+     - returns: RequestBuilder<RenameFile200Response> 
+     */
+    open class func moveFileWithRequestBuilder(mailboxId: String, fileId: String, moveFileRequest: MoveFileRequest) -> RequestBuilder<RenameFile200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/files/{file_id}/move"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let fileIdPreEscape = "\(APIHelper.mapValueToPathItem(fileId))"
+        let fileIdPostEscape = fileIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{file_id}", with: fileIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: moveFileRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<RenameFile200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Prepare a file upload (step 1 of 3)
      
      - parameter prepareFileUploadRequest: (body)  
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func prepareFileUpload(prepareFileUploadRequest: PrepareFileUploadRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: PreparedFileUploadResponse?, _ error: Error?) -> Void)) -> RequestTask {
+    open class func prepareFileUpload(prepareFileUploadRequest: PrepareFileUploadRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: PrepareFileUpload201Response?, _ error: Error?) -> Void)) -> RequestTask {
         return prepareFileUploadWithRequestBuilder(prepareFileUploadRequest: prepareFileUploadRequest).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
@@ -1565,15 +2444,16 @@ open class DefaultAPI {
     }
 
     /**
-     Prepare a single file upload
+     Prepare a file upload (step 1 of 3)
      - POST /v1/direct_uploads
+     - Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/mailboxes/{mailbox_id}/files (step 3). Identical content at the same path returns skipped=true and duplicate=true without an upload.
      - Bearer Token:
        - type: http
        - name: bearerAuth
      - parameter prepareFileUploadRequest: (body)  
-     - returns: RequestBuilder<PreparedFileUploadResponse> 
+     - returns: RequestBuilder<PrepareFileUpload201Response> 
      */
-    open class func prepareFileUploadWithRequestBuilder(prepareFileUploadRequest: PrepareFileUploadRequest) -> RequestBuilder<PreparedFileUploadResponse> {
+    open class func prepareFileUploadWithRequestBuilder(prepareFileUploadRequest: PrepareFileUploadRequest) -> RequestBuilder<PrepareFileUpload201Response> {
         let localVariablePath = "/v1/direct_uploads"
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
         let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: prepareFileUploadRequest)
@@ -1586,22 +2466,23 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<PreparedFileUploadResponse>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<PrepareFileUpload201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
 
     /**
-     Remove unused receiving domain after confirmation
+     Rename or move a file in the same mailbox
      
-     - parameter id: (path)  
-     - parameter removeAccountEmailDomainRequest: (body)  
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter renameFileRequest: (body)  
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func removeAccountEmailDomain(id: String, removeAccountEmailDomainRequest: RemoveAccountEmailDomainRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: EmailDomainListResponse?, _ error: Error?) -> Void)) -> RequestTask {
-        return removeAccountEmailDomainWithRequestBuilder(id: id, removeAccountEmailDomainRequest: removeAccountEmailDomainRequest).execute(apiResponseQueue) { result in
+    open class func renameFile(mailboxId: String, fileId: String, renameFileRequest: RenameFileRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: RenameFile200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return renameFileWithRequestBuilder(mailboxId: mailboxId, fileId: fileId, renameFileRequest: renameFileRequest).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -1612,23 +2493,27 @@ open class DefaultAPI {
     }
 
     /**
-     Remove unused receiving domain after confirmation
-     - DELETE /v1/account/email_domains/{id}
-     - Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
+     Rename or move a file in the same mailbox
+     - POST /v1/mailboxes/{mailbox_id}/files/{file_id}/rename
+     - Changes the path without uploading the content again.
      - Bearer Token:
        - type: http
        - name: bearerAuth
-     - parameter id: (path)  
-     - parameter removeAccountEmailDomainRequest: (body)  
-     - returns: RequestBuilder<EmailDomainListResponse> 
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter renameFileRequest: (body)  
+     - returns: RequestBuilder<RenameFile200Response> 
      */
-    open class func removeAccountEmailDomainWithRequestBuilder(id: String, removeAccountEmailDomainRequest: RemoveAccountEmailDomainRequest) -> RequestBuilder<EmailDomainListResponse> {
-        var localVariablePath = "/v1/account/email_domains/{id}"
-        let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
-        let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        localVariablePath = localVariablePath.replacingOccurrences(of: "{id}", with: idPostEscape, options: .literal, range: nil)
+    open class func renameFileWithRequestBuilder(mailboxId: String, fileId: String, renameFileRequest: RenameFileRequest) -> RequestBuilder<RenameFile200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/files/{file_id}/rename"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let fileIdPreEscape = "\(APIHelper.mapValueToPathItem(fileId))"
+        let fileIdPostEscape = fileIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{file_id}", with: fileIdPostEscape, options: .literal, range: nil)
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
-        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: removeAccountEmailDomainRequest)
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: renameFileRequest)
 
         let localVariableUrlComponents = URLComponents(string: localVariableURLString)
 
@@ -1638,22 +2523,21 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<EmailDomainListResponse>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<RenameFile200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
-        return localVariableRequestBuilder.init(method: "DELETE", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
 
     /**
-     Replace a mailbox email address after confirmation
+     Email a sign-in code
      
-     - parameter id: (path) Authorized mailbox prefix ID 
-     - parameter rotateMailboxEmailAddressRequest: (body)  
+     - parameter requestSignInCodeRequest: (body)  
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func rotateMailboxEmailAddress(id: String, rotateMailboxEmailAddressRequest: RotateMailboxEmailAddressRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: GetMailboxEmailSettings200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return rotateMailboxEmailAddressWithRequestBuilder(id: id, rotateMailboxEmailAddressRequest: rotateMailboxEmailAddressRequest).execute(apiResponseQueue) { result in
+    open class func requestSignInCode(requestSignInCodeRequest: RequestSignInCodeRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: RequestSignInCode200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return requestSignInCodeWithRequestBuilder(requestSignInCodeRequest: requestSignInCodeRequest).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -1664,23 +2548,16 @@ open class DefaultAPI {
     }
 
     /**
-     Replace a mailbox email address after confirmation
-     - POST /v1/mailboxes/{id}/email/rotate
-     - Requires write access and confirmation. Rotations stay on the current domain unless domain is supplied. A ready custom domain requires account eligibility and exact tenant ownership; platform recovers to the default platform domain. Custom activation returns 202; poll the existing email endpoint until assignment.status is active or failed. The old address remains current until successful commit, which charges once. Read /v1/account/limits for the rotation allowance; do not hard-code plan allowances. Never use or synthesize a pending address. Free address changes return EMAIL_NAMES_UPGRADE_REQUIRED with an upgrade_url. Optional username chooses a custom name and additionally requires a paid plan and a full-account owner/administrator, an available platform domain or a ready customer-owned domain (with deployment support for custom domains). Blank/null names are invalid. Unchanged saves cost no rotation. Named addresses may be reused only in their original account once no primary, alias or pending assignment holds them; archived mailboxes retain addresses. Retired addresses do not forward. Assignment history survives mailbox deletion. Optional keep_old_as_alias retains the old primary for the same mailbox, requiring full-account administrator access and an available alias slot. Free has no aliases; query account limits for the effective cap. Retention commits atomically with activation.
-     - Bearer Token:
-       - type: http
-       - name: bearerAuth
-     - parameter id: (path) Authorized mailbox prefix ID 
-     - parameter rotateMailboxEmailAddressRequest: (body)  
-     - returns: RequestBuilder<GetMailboxEmailSettings200Response> 
+     Email a sign-in code
+     - POST /v1/agent_auth/request_code
+     - Sends a six-digit code to an existing account email. The response is the same for every address, so it never reveals whether an account exists. Create new accounts in the browser at https://app.revdoku.com/users/sign_up.
+     - parameter requestSignInCodeRequest: (body)  
+     - returns: RequestBuilder<RequestSignInCode200Response> 
      */
-    open class func rotateMailboxEmailAddressWithRequestBuilder(id: String, rotateMailboxEmailAddressRequest: RotateMailboxEmailAddressRequest) -> RequestBuilder<GetMailboxEmailSettings200Response> {
-        var localVariablePath = "/v1/mailboxes/{id}/email/rotate"
-        let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
-        let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        localVariablePath = localVariablePath.replacingOccurrences(of: "{id}", with: idPostEscape, options: .literal, range: nil)
+    open class func requestSignInCodeWithRequestBuilder(requestSignInCodeRequest: RequestSignInCodeRequest) -> RequestBuilder<RequestSignInCode200Response> {
+        let localVariablePath = "/v1/agent_auth/request_code"
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
-        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: rotateMailboxEmailAddressRequest)
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: requestSignInCodeRequest)
 
         let localVariableUrlComponents = URLComponents(string: localVariableURLString)
 
@@ -1690,22 +2567,24 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<GetMailboxEmailSettings200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<RequestSignInCode200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
-        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: false)
     }
 
     /**
-     Save an uploaded file or a new version
+     Restore a file version
      
-     - parameter id: (path)  
-     - parameter saveUploadedFileRequest: (body)  
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter versionId: (path)  
+     - parameter actionRequest: (body)  
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func saveUploadedFile(id: String, saveUploadedFileRequest: SaveUploadedFileRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: SavedFileResponse?, _ error: Error?) -> Void)) -> RequestTask {
-        return saveUploadedFileWithRequestBuilder(id: id, saveUploadedFileRequest: saveUploadedFileRequest).execute(apiResponseQueue) { result in
+    open class func restoreFileVersion(mailboxId: String, fileId: String, versionId: String, actionRequest: ActionRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: RestoreFileVersion201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return restoreFileVersionWithRequestBuilder(mailboxId: mailboxId, fileId: fileId, versionId: versionId, actionRequest: actionRequest).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -1716,20 +2595,138 @@ open class DefaultAPI {
     }
 
     /**
-     Save an uploaded file or a new version
-     - POST /v1/mailboxes/{id}/files
+     Restore a file version
+     - POST /v1/mailboxes/{mailbox_id}/files/{file_id}/versions/{version_id}/restore
+     - Creates a new current version with the content of the selected version. History is kept. Requires a plan with version restore.
      - Bearer Token:
        - type: http
        - name: bearerAuth
-     - parameter id: (path)  
-     - parameter saveUploadedFileRequest: (body)  
-     - returns: RequestBuilder<SavedFileResponse> 
+     - parameter mailboxId: (path)  
+     - parameter fileId: (path)  
+     - parameter versionId: (path)  
+     - parameter actionRequest: (body)  
+     - returns: RequestBuilder<RestoreFileVersion201Response> 
      */
-    open class func saveUploadedFileWithRequestBuilder(id: String, saveUploadedFileRequest: SaveUploadedFileRequest) -> RequestBuilder<SavedFileResponse> {
-        var localVariablePath = "/v1/mailboxes/{id}/files"
-        let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
-        let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        localVariablePath = localVariablePath.replacingOccurrences(of: "{id}", with: idPostEscape, options: .literal, range: nil)
+    open class func restoreFileVersionWithRequestBuilder(mailboxId: String, fileId: String, versionId: String, actionRequest: ActionRequest) -> RequestBuilder<RestoreFileVersion201Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/files/{file_id}/versions/{version_id}/restore"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let fileIdPreEscape = "\(APIHelper.mapValueToPathItem(fileId))"
+        let fileIdPostEscape = fileIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{file_id}", with: fileIdPostEscape, options: .literal, range: nil)
+        let versionIdPreEscape = "\(APIHelper.mapValueToPathItem(versionId))"
+        let versionIdPostEscape = versionIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{version_id}", with: versionIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: actionRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<RestoreFileVersion201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Save uploaded files
+     
+     - parameter mailboxId: (path)  
+     - parameter sessionId: (path) mailbox_upload_session.id from the create response. 
+     - parameter saveUploadSessionBatchRequest: (body)  (optional)
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func saveUploadSessionBatch(mailboxId: String, sessionId: String, saveUploadSessionBatchRequest: SaveUploadSessionBatchRequest? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: CreateUploadSession201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return saveUploadSessionBatchWithRequestBuilder(mailboxId: mailboxId, sessionId: sessionId, saveUploadSessionBatchRequest: saveUploadSessionBatchRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Save uploaded files
+     - POST /v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize_batch
+     - Saves up to limit files whose bytes were uploaded. Call it after each batch to keep each request short. DIRECT_UPLOAD_NOT_FOUND names a file whose bytes are missing in error.details.path; upload it again and retry.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter sessionId: (path) mailbox_upload_session.id from the create response. 
+     - parameter saveUploadSessionBatchRequest: (body)  (optional)
+     - returns: RequestBuilder<CreateUploadSession201Response> 
+     */
+    open class func saveUploadSessionBatchWithRequestBuilder(mailboxId: String, sessionId: String, saveUploadSessionBatchRequest: SaveUploadSessionBatchRequest? = nil) -> RequestBuilder<CreateUploadSession201Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize_batch"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let sessionIdPreEscape = "\(APIHelper.mapValueToPathItem(sessionId))"
+        let sessionIdPostEscape = sessionIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{session_id}", with: sessionIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: saveUploadSessionBatchRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<CreateUploadSession201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Save an uploaded file (step 3 of 3)
+     
+     - parameter mailboxId: (path)  
+     - parameter saveUploadedFileRequest: (body)  
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func saveUploadedFile(mailboxId: String, saveUploadedFileRequest: SaveUploadedFileRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: SaveUploadedFile201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return saveUploadedFileWithRequestBuilder(mailboxId: mailboxId, saveUploadedFileRequest: saveUploadedFileRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Save an uploaded file (step 3 of 3)
+     - POST /v1/mailboxes/{mailbox_id}/files
+     - Saves the uploaded blob at path. An existing path gets a new version.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter saveUploadedFileRequest: (body)  
+     - returns: RequestBuilder<SaveUploadedFile201Response> 
+     */
+    open class func saveUploadedFileWithRequestBuilder(mailboxId: String, saveUploadedFileRequest: SaveUploadedFileRequest) -> RequestBuilder<SaveUploadedFile201Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/files"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
         let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: saveUploadedFileRequest)
 
@@ -1741,13 +2738,65 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<SavedFileResponse>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<SaveUploadedFile201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
 
     /**
-     Configure one received-email webhook per mailbox
+     Send a reply
+     
+     - parameter mailboxId: (path)  
+     - parameter sendEmailRequest: (body)  
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func sendEmail(mailboxId: String, sendEmailRequest: SendEmailRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: SendEmail202Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return sendEmailWithRequestBuilder(mailboxId: mailboxId, sendEmailRequest: sendEmailRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Send a reply
+     - POST /v1/mailboxes/{mailbox_id}/emails
+     - Requires mailbox write permission. Recipients must have emailed this mailbox and passed sender authentication. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter sendEmailRequest: (body)  
+     - returns: RequestBuilder<SendEmail202Response> 
+     */
+    open class func sendEmailWithRequestBuilder(mailboxId: String, sendEmailRequest: SendEmailRequest) -> RequestBuilder<SendEmail202Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/emails"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: sendEmailRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<SendEmail202Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Set the email webhook
      
      - parameter mailboxId: (path)  
      - parameter setEmailWebhookRequest: (body)  
@@ -1767,9 +2816,9 @@ open class DefaultAPI {
     }
 
     /**
-     Configure one received-email webhook per mailbox
+     Set the email webhook
      - PUT /v1/mailboxes/{mailbox_id}/email/webhook
-     - Requires mailbox admin permission. Public HTTPS, including explicit ports such as 8443. Generates an encrypted signing secret, returned here. Same-URL updates retain it; replacing the URL rotates it and cancels pending old-version deliveries. Events are signed and retried up to eight attempts on transient failure; duplicates are possible. Worker-crash recovery is bounded to 24 hours from event creation. Exhausted and permanent failures require operator review.
+     - Requires mailbox-admin permission and a public HTTPS URL. A new URL or rotate_secret=true creates a new signing secret, returns it once and cancels pending deliveries. The same URL without rotate_secret returns the webhook without a secret.
      - Bearer Token:
        - type: http
        - name: bearerAuth
@@ -1799,19 +2848,16 @@ open class DefaultAPI {
     }
 
     /**
-     Mark a received email read or unread
+     Unarchive a mailbox
      
      - parameter mailboxId: (path)  
-     - parameter emailId: (path)  
-     - parameter updateEmailRequest: (body)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter includeStorage: (query) Include the related file identifiers in the updated email response. (optional, default to false)
+     - parameter actionRequest: (body)  
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func updateEmail(mailboxId: String, emailId: String, updateEmailRequest: UpdateEmailRequest, accountId: String? = nil, includeStorage: Bool? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: UpdateEmail200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return updateEmailWithRequestBuilder(mailboxId: mailboxId, emailId: emailId, updateEmailRequest: updateEmailRequest, accountId: accountId, includeStorage: includeStorage).execute(apiResponseQueue) { result in
+    open class func unarchiveMailbox(mailboxId: String, actionRequest: ActionRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: CreateMailbox201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return unarchiveMailboxWithRequestBuilder(mailboxId: mailboxId, actionRequest: actionRequest).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -1822,20 +2868,72 @@ open class DefaultAPI {
     }
 
     /**
-     Mark a received email read or unread
+     Unarchive a mailbox
+     - POST /v1/mailboxes/{mailbox_id}/unarchive
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter actionRequest: (body)  
+     - returns: RequestBuilder<CreateMailbox201Response> 
+     */
+    open class func unarchiveMailboxWithRequestBuilder(mailboxId: String, actionRequest: ActionRequest) -> RequestBuilder<CreateMailbox201Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/unarchive"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: actionRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<CreateMailbox201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Mark an email read or unread
+     
+     - parameter mailboxId: (path)  
+     - parameter emailId: (path)  
+     - parameter updateEmailRequest: (body)  
+     - parameter includeStorage: (query) Include backing file IDs for file-browser integrations. (optional, default to false)
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func updateEmail(mailboxId: String, emailId: String, updateEmailRequest: UpdateEmailRequest, includeStorage: Bool? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: SendEmail202Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return updateEmailWithRequestBuilder(mailboxId: mailboxId, emailId: emailId, updateEmailRequest: updateEmailRequest, includeStorage: includeStorage).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Mark an email read or unread
      - PATCH /v1/mailboxes/{mailbox_id}/emails/{email_id}
-     - Requires mailbox read permission, including for locked/read-only content. Only read status can change. Receipt and audit event commit atomically. Repeated state changes are idempotent.
+     - Only read status can change.
      - Bearer Token:
        - type: http
        - name: bearerAuth
      - parameter mailboxId: (path)  
      - parameter emailId: (path)  
      - parameter updateEmailRequest: (body)  
-     - parameter accountId: (query) Select another granted account; otherwise use the credential default. (optional)
-     - parameter includeStorage: (query) Include the related file identifiers in the updated email response. (optional, default to false)
-     - returns: RequestBuilder<UpdateEmail200Response> 
+     - parameter includeStorage: (query) Include backing file IDs for file-browser integrations. (optional, default to false)
+     - returns: RequestBuilder<SendEmail202Response> 
      */
-    open class func updateEmailWithRequestBuilder(mailboxId: String, emailId: String, updateEmailRequest: UpdateEmailRequest, accountId: String? = nil, includeStorage: Bool? = nil) -> RequestBuilder<UpdateEmail200Response> {
+    open class func updateEmailWithRequestBuilder(mailboxId: String, emailId: String, updateEmailRequest: UpdateEmailRequest, includeStorage: Bool? = nil) -> RequestBuilder<SendEmail202Response> {
         var localVariablePath = "/v1/mailboxes/{mailbox_id}/emails/{email_id}"
         let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
         let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
@@ -1848,7 +2946,6 @@ open class DefaultAPI {
 
         var localVariableUrlComponents = URLComponents(string: localVariableURLString)
         localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
-            "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
             "include_storage": (wrappedValue: includeStorage?.encodeToJSON(), isExplode: true),
         ])
         let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
@@ -1860,24 +2957,22 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<UpdateEmail200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<SendEmail202Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "PATCH", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
     }
 
     /**
-     Replace the allowed senders for a mailbox
+     Replace the allowed senders
      
-     - parameter id: (path) Authorized mailbox prefix ID 
-     - parameter updateMailboxEmailAllowlistRequest: (body)  
-     - parameter accountId: (query) Explicitly granted account; omission uses credential default (optional)
-     - parameter reason: (query)  (optional)
+     - parameter mailboxId: (path)  
+     - parameter updateEmailAllowlistRequest: (body)  
      - parameter apiResponseQueue: The queue on which api response is dispatched.
      - parameter completion: completion handler to receive the data and the error objects
      */
     @discardableResult
-    open class func updateMailboxEmailAllowlist(id: String, updateMailboxEmailAllowlistRequest: UpdateMailboxEmailAllowlistRequest, accountId: String? = nil, reason: String? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: UpdateMailboxEmailAllowlist200Response?, _ error: Error?) -> Void)) -> RequestTask {
-        return updateMailboxEmailAllowlistWithRequestBuilder(id: id, updateMailboxEmailAllowlistRequest: updateMailboxEmailAllowlistRequest, accountId: accountId, reason: reason).execute(apiResponseQueue) { result in
+    open class func updateEmailAllowlist(mailboxId: String, updateEmailAllowlistRequest: UpdateEmailAllowlistRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: UpdateEmailAllowlist200Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return updateEmailAllowlistWithRequestBuilder(mailboxId: mailboxId, updateEmailAllowlistRequest: updateEmailAllowlistRequest).execute(apiResponseQueue) { result in
             switch result {
             case let .success(response):
                 completion(response.body, nil)
@@ -1888,83 +2983,23 @@ open class DefaultAPI {
     }
 
     /**
-     Replace the allowed senders for a mailbox
-     - PATCH /v1/mailboxes/{id}/email/allowlist
-     - Requires account owner/administrator and mailbox-admin permission. Read sender_allowlist.version from GET /mailboxes/{id}/email first. Entries match exact authenticated From addresses or domains, with no wildcards or implicit subdomains. A stale or missing version returns EMAIL_ALLOWLIST_CHANGED; invalid entries return EMAIL_ALLOWLIST_INVALID. Disabled policies retain the supplied entries. Locks and read-only account state apply.
+     Replace the allowed senders
+     - PATCH /v1/mailboxes/{mailbox_id}/email/allowlist
+     - Requires an account owner or administrator with mailbox-admin permission. Send sender_allowlist.version from the settings read as expected_version.
      - Bearer Token:
        - type: http
        - name: bearerAuth
-     - parameter id: (path) Authorized mailbox prefix ID 
-     - parameter updateMailboxEmailAllowlistRequest: (body)  
-     - parameter accountId: (query) Explicitly granted account; omission uses credential default (optional)
-     - parameter reason: (query)  (optional)
-     - returns: RequestBuilder<UpdateMailboxEmailAllowlist200Response> 
+     - parameter mailboxId: (path)  
+     - parameter updateEmailAllowlistRequest: (body)  
+     - returns: RequestBuilder<UpdateEmailAllowlist200Response> 
      */
-    open class func updateMailboxEmailAllowlistWithRequestBuilder(id: String, updateMailboxEmailAllowlistRequest: UpdateMailboxEmailAllowlistRequest, accountId: String? = nil, reason: String? = nil) -> RequestBuilder<UpdateMailboxEmailAllowlist200Response> {
-        var localVariablePath = "/v1/mailboxes/{id}/email/allowlist"
-        let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
-        let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        localVariablePath = localVariablePath.replacingOccurrences(of: "{id}", with: idPostEscape, options: .literal, range: nil)
+    open class func updateEmailAllowlistWithRequestBuilder(mailboxId: String, updateEmailAllowlistRequest: UpdateEmailAllowlistRequest) -> RequestBuilder<UpdateEmailAllowlist200Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}/email/allowlist"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
         let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
-        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: updateMailboxEmailAllowlistRequest)
-
-        var localVariableUrlComponents = URLComponents(string: localVariableURLString)
-        localVariableUrlComponents?.queryItems = APIHelper.mapValuesToQueryItems([
-            "account_id": (wrappedValue: accountId?.encodeToJSON(), isExplode: true),
-            "reason": (wrappedValue: reason?.encodeToJSON(), isExplode: true),
-        ])
-        let encodedQuery = localVariableUrlComponents?.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
-        localVariableUrlComponents?.percentEncodedQuery = encodedQuery
-
-        let localVariableNillableHeaders: [String: Any?] = [
-            "Content-Type": "application/json",
-        ]
-
-        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
-
-        let localVariableRequestBuilder: RequestBuilder<UpdateMailboxEmailAllowlist200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
-
-        return localVariableRequestBuilder.init(method: "PATCH", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
-    }
-
-    /**
-     Queue exact ownership, SES and MX verification
-     
-     - parameter id: (path)  
-     - parameter verifyAccountEmailDomainRequest: (body)  (optional)
-     - parameter apiResponseQueue: The queue on which api response is dispatched.
-     - parameter completion: completion handler to receive the data and the error objects
-     */
-    @discardableResult
-    open class func verifyAccountEmailDomain(id: String, verifyAccountEmailDomainRequest: VerifyAccountEmailDomainRequest? = nil, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: EmailDomainListResponse?, _ error: Error?) -> Void)) -> RequestTask {
-        return verifyAccountEmailDomainWithRequestBuilder(id: id, verifyAccountEmailDomainRequest: verifyAccountEmailDomainRequest).execute(apiResponseQueue) { result in
-            switch result {
-            case let .success(response):
-                completion(response.body, nil)
-            case let .failure(error):
-                completion(nil, error)
-            }
-        }
-    }
-
-    /**
-     Queue exact ownership, SES and MX verification
-     - POST /v1/account/email_domains/{id}/verify
-     - Full-account owner/administrator authorization required. Cookie-authenticated writes require CSRF. Check the returned domain setup availability. Never change customer DNS without explicit authorization.
-     - Bearer Token:
-       - type: http
-       - name: bearerAuth
-     - parameter id: (path)  
-     - parameter verifyAccountEmailDomainRequest: (body)  (optional)
-     - returns: RequestBuilder<EmailDomainListResponse> 
-     */
-    open class func verifyAccountEmailDomainWithRequestBuilder(id: String, verifyAccountEmailDomainRequest: VerifyAccountEmailDomainRequest? = nil) -> RequestBuilder<EmailDomainListResponse> {
-        var localVariablePath = "/v1/account/email_domains/{id}/verify"
-        let idPreEscape = "\(APIHelper.mapValueToPathItem(id))"
-        let idPostEscape = idPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
-        localVariablePath = localVariablePath.replacingOccurrences(of: "{id}", with: idPostEscape, options: .literal, range: nil)
-        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
-        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: verifyAccountEmailDomainRequest)
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: updateEmailAllowlistRequest)
 
         let localVariableUrlComponents = URLComponents(string: localVariableURLString)
 
@@ -1974,8 +3009,156 @@ open class DefaultAPI {
 
         let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
 
-        let localVariableRequestBuilder: RequestBuilder<EmailDomainListResponse>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+        let localVariableRequestBuilder: RequestBuilder<UpdateEmailAllowlist200Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "PATCH", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Update a mailbox description or metadata
+     
+     - parameter mailboxId: (path)  
+     - parameter updateMailboxRequest: (body)  
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func updateMailbox(mailboxId: String, updateMailboxRequest: UpdateMailboxRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: CreateMailbox201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return updateMailboxWithRequestBuilder(mailboxId: mailboxId, updateMailboxRequest: updateMailboxRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Update a mailbox description or metadata
+     - PATCH /v1/mailboxes/{mailbox_id}
+     - metadata must be a JSON object. It replaces the stored object; {} clears it. Send expected_metadata_version from your last read; a stale value changes nothing and returns MAILBOX_METADATA_CONFLICT.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter mailboxId: (path)  
+     - parameter updateMailboxRequest: (body)  
+     - returns: RequestBuilder<CreateMailbox201Response> 
+     */
+    open class func updateMailboxWithRequestBuilder(mailboxId: String, updateMailboxRequest: UpdateMailboxRequest) -> RequestBuilder<CreateMailbox201Response> {
+        var localVariablePath = "/v1/mailboxes/{mailbox_id}"
+        let mailboxIdPreEscape = "\(APIHelper.mapValueToPathItem(mailboxId))"
+        let mailboxIdPostEscape = mailboxIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{mailbox_id}", with: mailboxIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: updateMailboxRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<CreateMailbox201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "PATCH", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Check DNS and provider setup again
+     
+     - parameter domainId: (path)  
+     - parameter verifyEmailDomainRequest: (body)  
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func verifyEmailDomain(domainId: String, verifyEmailDomainRequest: VerifyEmailDomainRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: CreateEmailDomain201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return verifyEmailDomainWithRequestBuilder(domainId: domainId, verifyEmailDomainRequest: verifyEmailDomainRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Check DNS and provider setup again
+     - POST /v1/account/email_domains/{domain_id}/verify
+     - Queues the check and returns the current state. Read the domain again to see the result.
+     - Bearer Token:
+       - type: http
+       - name: bearerAuth
+     - parameter domainId: (path)  
+     - parameter verifyEmailDomainRequest: (body)  
+     - returns: RequestBuilder<CreateEmailDomain201Response> 
+     */
+    open class func verifyEmailDomainWithRequestBuilder(domainId: String, verifyEmailDomainRequest: VerifyEmailDomainRequest) -> RequestBuilder<CreateEmailDomain201Response> {
+        var localVariablePath = "/v1/account/email_domains/{domain_id}/verify"
+        let domainIdPreEscape = "\(APIHelper.mapValueToPathItem(domainId))"
+        let domainIdPostEscape = domainIdPreEscape.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        localVariablePath = localVariablePath.replacingOccurrences(of: "{domain_id}", with: domainIdPostEscape, options: .literal, range: nil)
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: verifyEmailDomainRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<CreateEmailDomain201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
 
         return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: true)
+    }
+
+    /**
+     Exchange a sign-in code for an API key
+     
+     - parameter verifySignInCodeRequest: (body)  
+     - parameter apiResponseQueue: The queue on which api response is dispatched.
+     - parameter completion: completion handler to receive the data and the error objects
+     */
+    @discardableResult
+    open class func verifySignInCode(verifySignInCodeRequest: VerifySignInCodeRequest, apiResponseQueue: DispatchQueue = RevdokuAPIAPI.apiResponseQueue, completion: @escaping ((_ data: VerifySignInCode201Response?, _ error: Error?) -> Void)) -> RequestTask {
+        return verifySignInCodeWithRequestBuilder(verifySignInCodeRequest: verifySignInCodeRequest).execute(apiResponseQueue) { result in
+            switch result {
+            case let .success(response):
+                completion(response.body, nil)
+            case let .failure(error):
+                completion(nil, error)
+            }
+        }
+    }
+
+    /**
+     Exchange a sign-in code for an API key
+     - POST /v1/agent_auth/verify_code
+     - Creates an AI agent connection for an account owner or administrator. Accounts with two-factor authentication must use browser sign-in.
+     - parameter verifySignInCodeRequest: (body)  
+     - returns: RequestBuilder<VerifySignInCode201Response> 
+     */
+    open class func verifySignInCodeWithRequestBuilder(verifySignInCodeRequest: VerifySignInCodeRequest) -> RequestBuilder<VerifySignInCode201Response> {
+        let localVariablePath = "/v1/agent_auth/verify_code"
+        let localVariableURLString = RevdokuAPIAPI.basePath + localVariablePath
+        let localVariableParameters = JSONEncodingHelper.encodingParameters(forEncodableObject: verifySignInCodeRequest)
+
+        let localVariableUrlComponents = URLComponents(string: localVariableURLString)
+
+        let localVariableNillableHeaders: [String: Any?] = [
+            "Content-Type": "application/json",
+        ]
+
+        let localVariableHeaderParameters = APIHelper.rejectNilHeaders(localVariableNillableHeaders)
+
+        let localVariableRequestBuilder: RequestBuilder<VerifySignInCode201Response>.Type = RevdokuAPIAPI.requestBuilderFactory.getBuilder()
+
+        return localVariableRequestBuilder.init(method: "POST", URLString: (localVariableUrlComponents?.string ?? localVariableURLString), parameters: localVariableParameters, headers: localVariableHeaderParameters, requiresAuthentication: false)
     }
 }

@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -20,8 +20,8 @@ var _ MappedNullable = &CreateClientAccount201Response{}
 
 // CreateClientAccount201Response struct for CreateClientAccount201Response
 type CreateClientAccount201Response struct {
-	Data CreateClientAccount201ResponseData `json:"data"`
 	Success bool `json:"success"`
+	Data CreateClientAccount201ResponseData `json:"data"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -31,10 +31,10 @@ type _CreateClientAccount201Response CreateClientAccount201Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCreateClientAccount201Response(data CreateClientAccount201ResponseData, success bool) *CreateClientAccount201Response {
+func NewCreateClientAccount201Response(success bool, data CreateClientAccount201ResponseData) *CreateClientAccount201Response {
 	this := CreateClientAccount201Response{}
-	this.Data = data
 	this.Success = success
+	this.Data = data
 	return &this
 }
 
@@ -44,30 +44,6 @@ func NewCreateClientAccount201Response(data CreateClientAccount201ResponseData, 
 func NewCreateClientAccount201ResponseWithDefaults() *CreateClientAccount201Response {
 	this := CreateClientAccount201Response{}
 	return &this
-}
-
-// GetData returns the Data field value
-func (o *CreateClientAccount201Response) GetData() CreateClientAccount201ResponseData {
-	if o == nil {
-		var ret CreateClientAccount201ResponseData
-		return ret
-	}
-
-	return o.Data
-}
-
-// GetDataOk returns a tuple with the Data field value
-// and a boolean to check if the value has been set.
-func (o *CreateClientAccount201Response) GetDataOk() (*CreateClientAccount201ResponseData, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Data, true
-}
-
-// SetData sets field value
-func (o *CreateClientAccount201Response) SetData(v CreateClientAccount201ResponseData) {
-	o.Data = v
 }
 
 // GetSuccess returns the Success field value
@@ -94,6 +70,30 @@ func (o *CreateClientAccount201Response) SetSuccess(v bool) {
 	o.Success = v
 }
 
+// GetData returns the Data field value
+func (o *CreateClientAccount201Response) GetData() CreateClientAccount201ResponseData {
+	if o == nil {
+		var ret CreateClientAccount201ResponseData
+		return ret
+	}
+
+	return o.Data
+}
+
+// GetDataOk returns a tuple with the Data field value
+// and a boolean to check if the value has been set.
+func (o *CreateClientAccount201Response) GetDataOk() (*CreateClientAccount201ResponseData, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Data, true
+}
+
+// SetData sets field value
+func (o *CreateClientAccount201Response) SetData(v CreateClientAccount201ResponseData) {
+	o.Data = v
+}
+
 func (o CreateClientAccount201Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -104,8 +104,8 @@ func (o CreateClientAccount201Response) MarshalJSON() ([]byte, error) {
 
 func (o CreateClientAccount201Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["data"] = o.Data
 	toSerialize["success"] = o.Success
+	toSerialize["data"] = o.Data
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -119,8 +119,8 @@ func (o *CreateClientAccount201Response) UnmarshalJSON(data []byte) (err error) 
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"data",
 		"success",
+		"data",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -150,8 +150,8 @@ func (o *CreateClientAccount201Response) UnmarshalJSON(data []byte) (err error) 
 	additionalProperties := make(map[string]interface{})
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "data")
 		delete(additionalProperties, "success")
+		delete(additionalProperties, "data")
 		o.AdditionalProperties = additionalProperties
 	}
 

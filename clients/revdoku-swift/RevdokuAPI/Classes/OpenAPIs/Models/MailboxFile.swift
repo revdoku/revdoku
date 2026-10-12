@@ -12,6 +12,7 @@ import AnyCodable
 
 public struct MailboxFile: Codable, JSONEncodable, Hashable {
 
+    public static let mailboxIdRule = StringRule(minLength: nil, maxLength: nil, pattern: "/^bkt_/")
     public var id: String
     public var mailboxId: String?
     public var basename: String?
@@ -19,7 +20,6 @@ public struct MailboxFile: Codable, JSONEncodable, Hashable {
     public var role: String?
     public var createdBySystem: String?
     public var deleted: Bool?
-    public var metadata: [String: AnyCodable]?
     public var versionReasons: [FileVersionReason]?
     public var lock: [String: AnyCodable]?
     public var currentFileVersion: FileVersion?
@@ -36,7 +36,7 @@ public struct MailboxFile: Codable, JSONEncodable, Hashable {
     public var readBy: FileActor?
     public var readByApiKey: FileKey?
 
-    public init(id: String, mailboxId: String? = nil, basename: String? = nil, path: String, role: String? = nil, createdBySystem: String? = nil, deleted: Bool? = nil, metadata: [String: AnyCodable]? = nil, versionReasons: [FileVersionReason]? = nil, lock: [String: AnyCodable]? = nil, currentFileVersion: FileVersion? = nil, createdBy: FileActor? = nil, createdAt: Date? = nil, updatedAt: Date? = nil, deletedAt: Date? = nil, createdByAgent: [String: AnyCodable]? = nil, updatedByAgent: [String: AnyCodable]? = nil, createdByApiKey: [String: AnyCodable]? = nil, updatedByApiKey: [String: AnyCodable]? = nil, read: Bool? = nil, readAt: Date? = nil, readBy: FileActor? = nil, readByApiKey: FileKey? = nil) {
+    public init(id: String, mailboxId: String? = nil, basename: String? = nil, path: String, role: String? = nil, createdBySystem: String? = nil, deleted: Bool? = nil, versionReasons: [FileVersionReason]? = nil, lock: [String: AnyCodable]? = nil, currentFileVersion: FileVersion? = nil, createdBy: FileActor? = nil, createdAt: Date? = nil, updatedAt: Date? = nil, deletedAt: Date? = nil, createdByAgent: [String: AnyCodable]? = nil, updatedByAgent: [String: AnyCodable]? = nil, createdByApiKey: [String: AnyCodable]? = nil, updatedByApiKey: [String: AnyCodable]? = nil, read: Bool? = nil, readAt: Date? = nil, readBy: FileActor? = nil, readByApiKey: FileKey? = nil) {
         self.id = id
         self.mailboxId = mailboxId
         self.basename = basename
@@ -44,7 +44,6 @@ public struct MailboxFile: Codable, JSONEncodable, Hashable {
         self.role = role
         self.createdBySystem = createdBySystem
         self.deleted = deleted
-        self.metadata = metadata
         self.versionReasons = versionReasons
         self.lock = lock
         self.currentFileVersion = currentFileVersion
@@ -70,7 +69,6 @@ public struct MailboxFile: Codable, JSONEncodable, Hashable {
         case role
         case createdBySystem = "created_by_system"
         case deleted
-        case metadata
         case versionReasons = "version_reasons"
         case lock
         case currentFileVersion = "current_file_version"
@@ -99,7 +97,6 @@ public struct MailboxFile: Codable, JSONEncodable, Hashable {
         try container.encodeIfPresent(role, forKey: .role)
         try container.encodeIfPresent(createdBySystem, forKey: .createdBySystem)
         try container.encodeIfPresent(deleted, forKey: .deleted)
-        try container.encodeIfPresent(metadata, forKey: .metadata)
         try container.encodeIfPresent(versionReasons, forKey: .versionReasons)
         try container.encodeIfPresent(lock, forKey: .lock)
         try container.encodeIfPresent(currentFileVersion, forKey: .currentFileVersion)

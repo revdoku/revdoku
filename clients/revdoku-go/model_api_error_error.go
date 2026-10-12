@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -21,6 +21,7 @@ var _ MappedNullable = &ApiErrorError{}
 
 // ApiErrorError struct for ApiErrorError
 type ApiErrorError struct {
+	// Stable error identifier. See ErrorCode for the documented values. Invalid input always returns INVALID_ARGUMENT with HTTP 422.
 	Code string `json:"code"`
 	Message string `json:"message"`
 	// Structured error details: an object or an array of field/message validation errors.

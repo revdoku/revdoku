@@ -12,27 +12,52 @@ import AnyCodable
 
 public struct SaveUploadedFileRequest: Codable, JSONEncodable, Hashable {
 
+    public enum Role: String, Codable, CaseIterable {
+        case source = "source"
+        case reference = "reference"
+        case generated = "generated"
+        case agentOutput = "agent_output"
+        case export = "export"
+        case artifact = "artifact"
+    }
+    public enum ExistingFilePolicy: String, Codable, CaseIterable {
+        case replace = "replace"
+        case skip = "skip"
+    }
     public static let reasonRule = StringRule(minLength: nil, maxLength: 2000, pattern: nil)
+    /** Destination path. An existing path receives a new version. Paths under _email/ return EMAIL_PATH_READ_ONLY. */
     public var path: String
+    /** data.signed_id from POST /v1/direct_uploads. */
     public var signedBlobId: String
+    /** Display name; defaults to the last path segment. */
+    public var name: String?
+    public var role: Role? = .source
+    public var existingFilePolicy: ExistingFilePolicy? = .replace
+    /** Mailbox version_id from your last read. A different current version returns MAILBOX_VERSION_CONFLICT and saves nothing. */
+    public var expectedMailboxVersion: String?
     public var accountId: String?
-    public var expectedMailboxRevisionId: String?
     /** Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. */
     public var reason: String?
 
-    public init(path: String, signedBlobId: String, accountId: String? = nil, expectedMailboxRevisionId: String? = nil, reason: String? = nil) {
+    public init(path: String, signedBlobId: String, name: String? = nil, role: Role? = .source, existingFilePolicy: ExistingFilePolicy? = .replace, expectedMailboxVersion: String? = nil, accountId: String? = nil, reason: String? = nil) {
         self.path = path
         self.signedBlobId = signedBlobId
+        self.name = name
+        self.role = role
+        self.existingFilePolicy = existingFilePolicy
+        self.expectedMailboxVersion = expectedMailboxVersion
         self.accountId = accountId
-        self.expectedMailboxRevisionId = expectedMailboxRevisionId
         self.reason = reason
     }
 
     public enum CodingKeys: String, CodingKey, CaseIterable {
         case path
         case signedBlobId = "signed_blob_id"
+        case name
+        case role
+        case existingFilePolicy = "existing_file_policy"
+        case expectedMailboxVersion = "expected_mailbox_version"
         case accountId = "account_id"
-        case expectedMailboxRevisionId = "expected_mailbox_revision_id"
         case reason
     }
 
@@ -42,8 +67,11 @@ public struct SaveUploadedFileRequest: Codable, JSONEncodable, Hashable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(path, forKey: .path)
         try container.encode(signedBlobId, forKey: .signedBlobId)
+        try container.encodeIfPresent(name, forKey: .name)
+        try container.encodeIfPresent(role, forKey: .role)
+        try container.encodeIfPresent(existingFilePolicy, forKey: .existingFilePolicy)
+        try container.encodeIfPresent(expectedMailboxVersion, forKey: .expectedMailboxVersion)
         try container.encodeIfPresent(accountId, forKey: .accountId)
-        try container.encodeIfPresent(expectedMailboxRevisionId, forKey: .expectedMailboxRevisionId)
         try container.encodeIfPresent(reason, forKey: .reason)
     }
 }

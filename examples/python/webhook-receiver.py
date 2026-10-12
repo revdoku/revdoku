@@ -53,7 +53,7 @@ def webhook():
                 return '', 204
             response = requests.get(
                 f"https://api.revdoku.com/v1/mailboxes/{mailbox_id}/emails/{data['email_id']}",
-                params={'account_id': data['account_id'], 'purpose': 'background'},
+                params={'account_id': data['account_id']},
                 headers={'Authorization': f'Bearer {api_key}'}, timeout=8, allow_redirects=False)
             if response.status_code != 200:
                 return '', 503, {'Retry-After': '5'}

@@ -1,7 +1,7 @@
 /*
-Revdoku public agent API
+Revdoku API
 
-Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 API version: 2.0.1
 */
@@ -21,11 +21,10 @@ var _ MappedNullable = &EmailDomainList{}
 // EmailDomainList struct for EmailDomainList
 type EmailDomainList struct {
 	Domains []EmailDomain `json:"domains"`
-	Enabled *bool `json:"enabled,omitempty"`
-	Configured *bool `json:"configured,omitempty"`
-	Limit *int32 `json:"limit,omitempty"`
-	Usage *EmailUsage `json:"usage,omitempty"`
+	// Whether this account can use custom email domains.
+	Enabled bool `json:"enabled"`
 	Guidance *string `json:"guidance,omitempty"`
+	Pagination Pagination `json:"pagination"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -35,9 +34,11 @@ type _EmailDomainList EmailDomainList
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewEmailDomainList(domains []EmailDomain) *EmailDomainList {
+func NewEmailDomainList(domains []EmailDomain, enabled bool, pagination Pagination) *EmailDomainList {
 	this := EmailDomainList{}
 	this.Domains = domains
+	this.Enabled = enabled
+	this.Pagination = pagination
 	return &this
 }
 
@@ -73,132 +74,28 @@ func (o *EmailDomainList) SetDomains(v []EmailDomain) {
 	o.Domains = v
 }
 
-// GetEnabled returns the Enabled field value if set, zero value otherwise.
+// GetEnabled returns the Enabled field value
 func (o *EmailDomainList) GetEnabled() bool {
-	if o == nil || IsNil(o.Enabled) {
+	if o == nil {
 		var ret bool
 		return ret
 	}
-	return *o.Enabled
+
+	return o.Enabled
 }
 
-// GetEnabledOk returns a tuple with the Enabled field value if set, nil otherwise
+// GetEnabledOk returns a tuple with the Enabled field value
 // and a boolean to check if the value has been set.
 func (o *EmailDomainList) GetEnabledOk() (*bool, bool) {
-	if o == nil || IsNil(o.Enabled) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Enabled, true
+	return &o.Enabled, true
 }
 
-// HasEnabled returns a boolean if a field has been set.
-func (o *EmailDomainList) HasEnabled() bool {
-	if o != nil && !IsNil(o.Enabled) {
-		return true
-	}
-
-	return false
-}
-
-// SetEnabled gets a reference to the given bool and assigns it to the Enabled field.
+// SetEnabled sets field value
 func (o *EmailDomainList) SetEnabled(v bool) {
-	o.Enabled = &v
-}
-
-// GetConfigured returns the Configured field value if set, zero value otherwise.
-func (o *EmailDomainList) GetConfigured() bool {
-	if o == nil || IsNil(o.Configured) {
-		var ret bool
-		return ret
-	}
-	return *o.Configured
-}
-
-// GetConfiguredOk returns a tuple with the Configured field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *EmailDomainList) GetConfiguredOk() (*bool, bool) {
-	if o == nil || IsNil(o.Configured) {
-		return nil, false
-	}
-	return o.Configured, true
-}
-
-// HasConfigured returns a boolean if a field has been set.
-func (o *EmailDomainList) HasConfigured() bool {
-	if o != nil && !IsNil(o.Configured) {
-		return true
-	}
-
-	return false
-}
-
-// SetConfigured gets a reference to the given bool and assigns it to the Configured field.
-func (o *EmailDomainList) SetConfigured(v bool) {
-	o.Configured = &v
-}
-
-// GetLimit returns the Limit field value if set, zero value otherwise.
-func (o *EmailDomainList) GetLimit() int32 {
-	if o == nil || IsNil(o.Limit) {
-		var ret int32
-		return ret
-	}
-	return *o.Limit
-}
-
-// GetLimitOk returns a tuple with the Limit field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *EmailDomainList) GetLimitOk() (*int32, bool) {
-	if o == nil || IsNil(o.Limit) {
-		return nil, false
-	}
-	return o.Limit, true
-}
-
-// HasLimit returns a boolean if a field has been set.
-func (o *EmailDomainList) HasLimit() bool {
-	if o != nil && !IsNil(o.Limit) {
-		return true
-	}
-
-	return false
-}
-
-// SetLimit gets a reference to the given int32 and assigns it to the Limit field.
-func (o *EmailDomainList) SetLimit(v int32) {
-	o.Limit = &v
-}
-
-// GetUsage returns the Usage field value if set, zero value otherwise.
-func (o *EmailDomainList) GetUsage() EmailUsage {
-	if o == nil || IsNil(o.Usage) {
-		var ret EmailUsage
-		return ret
-	}
-	return *o.Usage
-}
-
-// GetUsageOk returns a tuple with the Usage field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *EmailDomainList) GetUsageOk() (*EmailUsage, bool) {
-	if o == nil || IsNil(o.Usage) {
-		return nil, false
-	}
-	return o.Usage, true
-}
-
-// HasUsage returns a boolean if a field has been set.
-func (o *EmailDomainList) HasUsage() bool {
-	if o != nil && !IsNil(o.Usage) {
-		return true
-	}
-
-	return false
-}
-
-// SetUsage gets a reference to the given EmailUsage and assigns it to the Usage field.
-func (o *EmailDomainList) SetUsage(v EmailUsage) {
-	o.Usage = &v
+	o.Enabled = v
 }
 
 // GetGuidance returns the Guidance field value if set, zero value otherwise.
@@ -233,6 +130,30 @@ func (o *EmailDomainList) SetGuidance(v string) {
 	o.Guidance = &v
 }
 
+// GetPagination returns the Pagination field value
+func (o *EmailDomainList) GetPagination() Pagination {
+	if o == nil {
+		var ret Pagination
+		return ret
+	}
+
+	return o.Pagination
+}
+
+// GetPaginationOk returns a tuple with the Pagination field value
+// and a boolean to check if the value has been set.
+func (o *EmailDomainList) GetPaginationOk() (*Pagination, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Pagination, true
+}
+
+// SetPagination sets field value
+func (o *EmailDomainList) SetPagination(v Pagination) {
+	o.Pagination = v
+}
+
 func (o EmailDomainList) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -244,21 +165,11 @@ func (o EmailDomainList) MarshalJSON() ([]byte, error) {
 func (o EmailDomainList) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["domains"] = o.Domains
-	if !IsNil(o.Enabled) {
-		toSerialize["enabled"] = o.Enabled
-	}
-	if !IsNil(o.Configured) {
-		toSerialize["configured"] = o.Configured
-	}
-	if !IsNil(o.Limit) {
-		toSerialize["limit"] = o.Limit
-	}
-	if !IsNil(o.Usage) {
-		toSerialize["usage"] = o.Usage
-	}
+	toSerialize["enabled"] = o.Enabled
 	if !IsNil(o.Guidance) {
 		toSerialize["guidance"] = o.Guidance
 	}
+	toSerialize["pagination"] = o.Pagination
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -273,6 +184,8 @@ func (o *EmailDomainList) UnmarshalJSON(data []byte) (err error) {
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"domains",
+		"enabled",
+		"pagination",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -304,10 +217,8 @@ func (o *EmailDomainList) UnmarshalJSON(data []byte) (err error) {
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "domains")
 		delete(additionalProperties, "enabled")
-		delete(additionalProperties, "configured")
-		delete(additionalProperties, "limit")
-		delete(additionalProperties, "usage")
 		delete(additionalProperties, "guidance")
+		delete(additionalProperties, "pagination")
 		o.AdditionalProperties = additionalProperties
 	}
 

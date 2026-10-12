@@ -11,21 +11,21 @@ Future<void> main() async {
   final account = Platform.environment['REVDOKU_ACCOUNT_ID'];
   final client = ApiClient(authentication: HttpBearerAuth()..accessToken = key);
   final api = DefaultApi(client);
-  var offset = 0;
+  String? cursor;
+  final seen = <String>{};
   try {
     while (true) {
-      final page = (await api.listMailboxFiles(
+      final page = (await api.listFiles(
         mailbox,
         limit: 100,
-        offset: offset,
+        cursor: cursor,
         accountId: account == null || account.isEmpty ? null : account,
       ))!.data;
       for (final file in page.files) print(jsonEncode(file));
       if (!page.pagination.hasMore) break;
-      final next = page.pagination.nextOffset;
-      if (next == null || next <= offset)
+      cursor = page.pagination.nextCursor;
+      if (cursor == null || cursor.isEmpty || !seen.add(cursor))
         throw StateError('File pagination did not advance');
-      offset = next;
     }
   } finally {
     client.client.close();

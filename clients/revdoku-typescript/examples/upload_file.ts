@@ -10,5 +10,5 @@ if (!apiKey || !mailboxId || !localPath)
 const api = new Revdoku({ apiKey, accountId: process.env.REVDOKU_ACCOUNT_ID || undefined });
 const { data } = await api.getMailbox({ mailboxId });
 const result = await api.uploadFile({ mailboxId, path: process.argv[3] || basename(localPath),
-  content: await readFile(localPath), expectedMailboxRevisionId: data.mailbox.currentMailboxRevisionId ?? undefined });
+  content: await readFile(localPath), expectedMailboxVersion: data.mailbox.versionId ?? undefined });
 console.log(result.data.file.id, result.data.file.path);

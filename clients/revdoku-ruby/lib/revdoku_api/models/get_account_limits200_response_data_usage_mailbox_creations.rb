@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -15,20 +15,20 @@ require 'time'
 
 module RevdokuApi
   class GetAccountLimits200ResponseDataUsageMailboxCreations < ApiModelBase
+    attr_accessor :monthly_limit
+
     attr_accessor :used
 
     attr_accessor :remaining
-
-    attr_accessor :monthly_limit
 
     attr_accessor :resets_at
 
     # Attribute mapping from ruby-style variable name to JSON key.
     def self.attribute_map
       {
+        :'monthly_limit' => :'monthly_limit',
         :'used' => :'used',
         :'remaining' => :'remaining',
-        :'monthly_limit' => :'monthly_limit',
         :'resets_at' => :'resets_at'
       }
     end
@@ -46,9 +46,9 @@ module RevdokuApi
     # Attribute type mapping.
     def self.openapi_types
       {
+        :'monthly_limit' => :'Integer',
         :'used' => :'Integer',
         :'remaining' => :'Integer',
-        :'monthly_limit' => :'Integer',
         :'resets_at' => :'Time'
       }
     end
@@ -56,6 +56,8 @@ module RevdokuApi
     # List of attributes with nullable: true
     def self.openapi_nullable
       Set.new([
+        :'monthly_limit',
+        :'remaining',
       ])
     end
 
@@ -75,81 +77,21 @@ module RevdokuApi
         h[k.to_sym] = v
       }
 
+      if attributes.key?(:'monthly_limit')
+        self.monthly_limit = attributes[:'monthly_limit']
+      end
+
       if attributes.key?(:'used')
         self.used = attributes[:'used']
-      else
-        self.used = nil
       end
 
       if attributes.key?(:'remaining')
         self.remaining = attributes[:'remaining']
-      else
-        self.remaining = nil
-      end
-
-      if attributes.key?(:'monthly_limit')
-        self.monthly_limit = attributes[:'monthly_limit']
-      else
-        self.monthly_limit = nil
       end
 
       if attributes.key?(:'resets_at')
         self.resets_at = attributes[:'resets_at']
-      else
-        self.resets_at = nil
       end
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] used Value to be assigned
-    def used=(used)
-      if used.nil?
-        fail ArgumentError, 'used cannot be nil'
-      end
-
-      if used < 0
-        fail ArgumentError, 'invalid value for "used", must be greater than or equal to 0.'
-      end
-
-      @used = used
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] remaining Value to be assigned
-    def remaining=(remaining)
-      if remaining.nil?
-        fail ArgumentError, 'remaining cannot be nil'
-      end
-
-      if remaining < 0
-        fail ArgumentError, 'invalid value for "remaining", must be greater than or equal to 0.'
-      end
-
-      @remaining = remaining
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] monthly_limit Value to be assigned
-    def monthly_limit=(monthly_limit)
-      if monthly_limit.nil?
-        fail ArgumentError, 'monthly_limit cannot be nil'
-      end
-
-      if monthly_limit < 0
-        fail ArgumentError, 'invalid value for "monthly_limit", must be greater than or equal to 0.'
-      end
-
-      @monthly_limit = monthly_limit
-    end
-
-    # Custom attribute writer method with validation
-    # @param [Object] resets_at Value to be assigned
-    def resets_at=(resets_at)
-      if resets_at.nil?
-        fail ArgumentError, 'resets_at cannot be nil'
-      end
-
-      @resets_at = resets_at
     end
 
     # Checks equality by comparing each attribute.
@@ -157,9 +99,9 @@ module RevdokuApi
     def ==(o)
       return true if self.equal?(o)
       self.class == o.class &&
+          monthly_limit == o.monthly_limit &&
           used == o.used &&
           remaining == o.remaining &&
-          monthly_limit == o.monthly_limit &&
           resets_at == o.resets_at
     end
 
@@ -172,7 +114,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [used, remaining, monthly_limit, resets_at].hash
+      [monthly_limit, used, remaining, resets_at].hash
     end
 
     # Builds the object from hash

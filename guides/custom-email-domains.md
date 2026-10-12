@@ -15,16 +15,15 @@ does not automatically register a custom domain or fall back to another domain.
 Connect a domain in **Account Settings → Domains → Email**, or use these endpoints
 with a whole-account `mailbox_admin` credential belonging to an account owner or administrator.
 Selected-mailbox, read-only and write-only credentials cannot manage domain ownership.
-Existing `full_account_access` credentials continue to work.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/v1/account/email_domains` | List account email domains. |
+| GET | `/v1/account/email_domains` | List account email domains in `data.domains`, with cursor `pagination`. |
 | POST | `/v1/account/email_domains/check` | Check a hostname for DNS conflicts before connecting it. |
-| POST | `/v1/account/email_domains` | Start connecting a domain. |
-| GET | `/v1/account/email_domains/:id` | Read DNS requirements and receiving state. |
-| POST | `/v1/account/email_domains/:id/verify` | Check ownership and provider setup. |
-| DELETE | `/v1/account/email_domains/:id` | Remove a domain after its mailbox assignments have been removed. |
+| POST | `/v1/account/email_domains` | Start connecting a domain; `201` returns `data.domain`. |
+| GET | `/v1/account/email_domains/:domain_id` | Read DNS requirements and receiving state in `data.domain`. |
+| POST | `/v1/account/email_domains/:domain_id/verify` | Check ownership and provider setup; `202` returns `data.domain`. |
+| DELETE | `/v1/account/email_domains/:domain_id` | Remove a domain after its mailbox assignments have been removed; `200` returns `data.deleted` and `data.id`. |
 
 | Field or requirement | Purpose |
 | --- | --- |
@@ -61,17 +60,17 @@ change your DNS records. A successful check does not activate receiving.
 #### Use a connected domain
 
 Connecting a domain preserves existing addresses. Select it when creating a mailbox,
-or use the address replacement endpoint for an existing mailbox.
+or use `POST /v1/mailboxes/:mailbox_id/email/rotate` for an existing mailbox.
 
 | Replacement field | Purpose |
 | --- | --- |
 | `domain` | Exact ready domain, such as `mail.example.com`; use `platform` for the platform domain. |
 | `username` | Optional chosen name, such as `my-agent`. Omit for a generated name. |
-| `current_address` | Current address being replaced. |
+| `expected_address` | Current address from your last settings read. A different current address returns `EMAIL_ADDRESS_CHANGED`. |
 | `confirm` | Must be `true`. |
 
 Custom names require account-administrator access and deployment support.
-[Username rules](../api.md#username-rules) also apply. Platform domains also accept chosen
+[Username rules](../api.md#create-a-mailbox) also apply. Platform domains also accept chosen
 names; their reserved-name rules still apply.
 
 | Replacement result | Behavior |

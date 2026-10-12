@@ -13,9 +13,9 @@ import AnyCodable
 public struct ListAccounts200Response: Codable, JSONEncodable, Hashable {
 
     public var success: Bool
-    public var data: ListAccounts200ResponseData
+    public var data: AccountList
 
-    public init(success: Bool, data: ListAccounts200ResponseData) {
+    public init(success: Bool, data: AccountList) {
         self.success = success
         self.data = data
     }

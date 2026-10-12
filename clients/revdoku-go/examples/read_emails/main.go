@@ -47,7 +47,7 @@ func main() {
 		if !result.Data.Pagination.HasMore {
 			break
 		}
-		cursor = result.Data.Pagination.NextCursor
+		cursor = result.Data.Pagination.GetNextCursor()
 		if cursor == "" || seen[cursor] {
 			log.Fatal("Email pagination did not advance")
 		}

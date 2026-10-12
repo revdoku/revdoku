@@ -83,7 +83,7 @@ skill directory in place of `revdoku`; this install does not add a CLI to `PATH`
 
 Without credentials, the CLI opens browser sign-in. Re-running the upload
 updates the same mailbox. Use `revdoku files`, `revdoku read PATH`, and
-`revdoku versions` to inspect its files and history.
+`revdoku versions PATH` to inspect its files and their history.
 
 ## Hosted MCP agent
 
@@ -91,8 +91,8 @@ Endpoint: `https://mcp.revdoku.com`
 
 Authenticate with OAuth before calling account tools. Choose selected mailboxes and
 read access for reading tasks; choose broader access only for the requested task.
-Call `account_list`, then `account_get` with the chosen ID, and list its authorized
-mailboxes. Read an existing message before making requested changes. Mailbox creation
+Call `account_list`, choose an account, pass its `account_id` on later calls, and
+list its authorized mailboxes. Read an existing message before making requested changes. Mailbox creation
 returns its incoming email address and receiving state. For an existing mailbox, use `mailbox_get(include_email: true)` with write access.
 Check `receiving_enabled`, then use `mailbox_email_list` with a saved `pagination.next_cursor`
 to poll. Read `eml_` IDs with `mailbox_email_get`; download attachments or the original
@@ -128,6 +128,6 @@ Confirm my Revdoku account ID and granted access. List the mailboxes you can acc
 ask which to use, and read its latest message if one exists. Do not change anything.
 ```
 
-A mailbox-wide edit lock blocks incoming email. Prefer individual file locks or
-revision checks while an mailbox is receiving. Human administrators inspect receiving
+Incoming email keeps arriving while a mailbox-wide edit lock is held. Prefer
+individual file locks or revision checks. Human administrators inspect receiving
 holds and logs in the dashboard.

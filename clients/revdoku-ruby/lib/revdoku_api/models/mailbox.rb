@@ -1,7 +1,7 @@
 =begin
-#Revdoku public agent API
+#Revdoku API
 
-#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+#Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
 
 The version of the OpenAPI document: 2.0.1
 
@@ -14,7 +14,7 @@ require 'date'
 require 'time'
 
 module RevdokuApi
-  # Public mailbox details, including the permitted address, stored and unread email counts, lifetime receipts and receiving state. Keep IDs for API operations. Use the address as the dashboard link label.
+  # A mailbox: one receiving address with private file storage. Use email.address as the label and id in API calls.
   class Mailbox < ApiModelBase
     attr_accessor :id
 
@@ -22,8 +22,10 @@ module RevdokuApi
 
     attr_accessor :description
 
+    # Your application data. PATCH replaces the whole object.
     attr_accessor :metadata
 
+    # Send as expected_metadata_version on PATCH. Changes only when description or metadata changes.
     attr_accessor :metadata_version
 
     attr_accessor :email
@@ -36,17 +38,20 @@ module RevdokuApi
 
     attr_accessor :storage_bytes
 
+    # Current files, including stored emails and attachments.
     attr_accessor :files_count
+
+    # Current mailbox file-tree version. Send as expected_mailbox_version on file writes to detect concurrent changes.
+    attr_accessor :version_id
+
+    attr_accessor :version_number
 
     attr_accessor :created_at
 
     attr_accessor :updated_at
 
+    # Opens the mailbox for signed-in members. It does not grant access.
     attr_accessor :dashboard_url
-
-    attr_accessor :current_mailbox_revision_id
-
-    attr_accessor :current_mailbox_revision_number
 
     attr_accessor :archive
 
@@ -68,11 +73,11 @@ module RevdokuApi
         :'lock' => :'lock',
         :'storage_bytes' => :'storage_bytes',
         :'files_count' => :'files_count',
+        :'version_id' => :'version_id',
+        :'version_number' => :'version_number',
         :'created_at' => :'created_at',
         :'updated_at' => :'updated_at',
         :'dashboard_url' => :'dashboard_url',
-        :'current_mailbox_revision_id' => :'current_mailbox_revision_id',
-        :'current_mailbox_revision_number' => :'current_mailbox_revision_number',
         :'archive' => :'archive',
         :'unarchive' => :'unarchive',
         :'delete' => :'delete'
@@ -103,11 +108,11 @@ module RevdokuApi
         :'lock' => :'MailboxLock',
         :'storage_bytes' => :'Integer',
         :'files_count' => :'Integer',
+        :'version_id' => :'String',
+        :'version_number' => :'Integer',
         :'created_at' => :'Time',
         :'updated_at' => :'Time',
         :'dashboard_url' => :'String',
-        :'current_mailbox_revision_id' => :'String',
-        :'current_mailbox_revision_number' => :'Integer',
         :'archive' => :'MailboxAction',
         :'unarchive' => :'MailboxAction',
         :'delete' => :'MailboxAction'
@@ -119,9 +124,9 @@ module RevdokuApi
       Set.new([
         :'description',
         :'archived_at',
+        :'version_id',
         :'created_at',
         :'updated_at',
-        :'current_mailbox_revision_id',
       ])
     end
 
@@ -165,6 +170,8 @@ module RevdokuApi
 
       if attributes.key?(:'metadata_version')
         self.metadata_version = attributes[:'metadata_version']
+      else
+        self.metadata_version = nil
       end
 
       if attributes.key?(:'email')
@@ -175,6 +182,8 @@ module RevdokuApi
 
       if attributes.key?(:'archived')
         self.archived = attributes[:'archived']
+      else
+        self.archived = nil
       end
 
       if attributes.key?(:'archived_at')
@@ -193,6 +202,18 @@ module RevdokuApi
         self.files_count = attributes[:'files_count']
       end
 
+      if attributes.key?(:'version_id')
+        self.version_id = attributes[:'version_id']
+      else
+        self.version_id = nil
+      end
+
+      if attributes.key?(:'version_number')
+        self.version_number = attributes[:'version_number']
+      else
+        self.version_number = nil
+      end
+
       if attributes.key?(:'created_at')
         self.created_at = attributes[:'created_at']
       end
@@ -205,24 +226,22 @@ module RevdokuApi
         self.dashboard_url = attributes[:'dashboard_url']
       end
 
-      if attributes.key?(:'current_mailbox_revision_id')
-        self.current_mailbox_revision_id = attributes[:'current_mailbox_revision_id']
-      end
-
-      if attributes.key?(:'current_mailbox_revision_number')
-        self.current_mailbox_revision_number = attributes[:'current_mailbox_revision_number']
-      end
-
       if attributes.key?(:'archive')
         self.archive = attributes[:'archive']
+      else
+        self.archive = nil
       end
 
       if attributes.key?(:'unarchive')
         self.unarchive = attributes[:'unarchive']
+      else
+        self.unarchive = nil
       end
 
       if attributes.key?(:'delete')
         self.delete = attributes[:'delete']
+      else
+        self.delete = nil
       end
     end
 
@@ -231,6 +250,11 @@ module RevdokuApi
     def id=(id)
       if id.nil?
         fail ArgumentError, 'id cannot be nil'
+      end
+
+      pattern = Regexp.new(/^bkt_/)
+      if id !~ pattern
+        fail ArgumentError, "invalid value for \"id\", must conform to the pattern #{pattern}."
       end
 
       @id = id
@@ -247,6 +271,16 @@ module RevdokuApi
     end
 
     # Custom attribute writer method with validation
+    # @param [Object] metadata_version Value to be assigned
+    def metadata_version=(metadata_version)
+      if metadata_version.nil?
+        fail ArgumentError, 'metadata_version cannot be nil'
+      end
+
+      @metadata_version = metadata_version
+    end
+
+    # Custom attribute writer method with validation
     # @param [Object] email Value to be assigned
     def email=(email)
       if email.nil?
@@ -254,6 +288,16 @@ module RevdokuApi
       end
 
       @email = email
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] archived Value to be assigned
+    def archived=(archived)
+      if archived.nil?
+        fail ArgumentError, 'archived cannot be nil'
+      end
+
+      @archived = archived
     end
 
     # Custom attribute writer method with validation
@@ -285,17 +329,47 @@ module RevdokuApi
     end
 
     # Custom attribute writer method with validation
-    # @param [Object] current_mailbox_revision_number Value to be assigned
-    def current_mailbox_revision_number=(current_mailbox_revision_number)
-      if current_mailbox_revision_number.nil?
-        fail ArgumentError, 'current_mailbox_revision_number cannot be nil'
+    # @param [Object] version_number Value to be assigned
+    def version_number=(version_number)
+      if version_number.nil?
+        fail ArgumentError, 'version_number cannot be nil'
       end
 
-      if current_mailbox_revision_number < 0
-        fail ArgumentError, 'invalid value for "current_mailbox_revision_number", must be greater than or equal to 0.'
+      if version_number < 0
+        fail ArgumentError, 'invalid value for "version_number", must be greater than or equal to 0.'
       end
 
-      @current_mailbox_revision_number = current_mailbox_revision_number
+      @version_number = version_number
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] archive Value to be assigned
+    def archive=(archive)
+      if archive.nil?
+        fail ArgumentError, 'archive cannot be nil'
+      end
+
+      @archive = archive
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] unarchive Value to be assigned
+    def unarchive=(unarchive)
+      if unarchive.nil?
+        fail ArgumentError, 'unarchive cannot be nil'
+      end
+
+      @unarchive = unarchive
+    end
+
+    # Custom attribute writer method with validation
+    # @param [Object] delete Value to be assigned
+    def delete=(delete)
+      if delete.nil?
+        fail ArgumentError, 'delete cannot be nil'
+      end
+
+      @delete = delete
     end
 
     # Checks equality by comparing each attribute.
@@ -314,11 +388,11 @@ module RevdokuApi
           lock == o.lock &&
           storage_bytes == o.storage_bytes &&
           files_count == o.files_count &&
+          version_id == o.version_id &&
+          version_number == o.version_number &&
           created_at == o.created_at &&
           updated_at == o.updated_at &&
           dashboard_url == o.dashboard_url &&
-          current_mailbox_revision_id == o.current_mailbox_revision_id &&
-          current_mailbox_revision_number == o.current_mailbox_revision_number &&
           archive == o.archive &&
           unarchive == o.unarchive &&
           delete == o.delete
@@ -333,7 +407,7 @@ module RevdokuApi
     # Calculates hash code according to all attributes.
     # @return [Integer] Hash code
     def hash
-      [id, account_id, description, metadata, metadata_version, email, archived, archived_at, lock, storage_bytes, files_count, created_at, updated_at, dashboard_url, current_mailbox_revision_id, current_mailbox_revision_number, archive, unarchive, delete].hash
+      [id, account_id, description, metadata, metadata_version, email, archived, archived_at, lock, storage_bytes, files_count, version_id, version_number, created_at, updated_at, dashboard_url, archive, unarchive, delete].hash
     end
 
     # Builds the object from hash

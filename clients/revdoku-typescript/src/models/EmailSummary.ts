@@ -1,8 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Revdoku public agent API
- * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read messages and attachments, and store additional files. Create your account at https://app.revdoku.com/users/sign_up. This document covers selected endpoints; see https://revdoku.com/api.md for the complete API.
+ * Revdoku API
+ * Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up.
  *
  * The version of the OpenAPI document: 2.0.1
  * 
@@ -34,6 +34,13 @@ import {
     EmailSummaryFilesToJSON,
     EmailSummaryFilesToJSONTyped,
 } from './EmailSummaryFiles';
+import type { EmailDelivery } from './EmailDelivery';
+import {
+    EmailDeliveryFromJSON,
+    EmailDeliveryFromJSONTyped,
+    EmailDeliveryToJSON,
+    EmailDeliveryToJSONTyped,
+} from './EmailDelivery';
 
 /**
  * 
@@ -44,19 +51,7 @@ export interface EmailSummary {
     /**
      * 
      */
-    schemaVersion?: EmailSummarySchemaVersionEnum;
-    /**
-     * 
-     */
     subject?: string | null;
-    /**
-     * 
-     */
-    from?: string | null;
-    /**
-     * 
-     */
-    to?: string | null;
     /**
      * Parsed From authors in header order, retaining multiple authors. Empty when absent/unparseable. Display names are not identity keys.
      */
@@ -86,15 +81,11 @@ export interface EmailSummary {
      */
     references?: Array<string>;
     /**
-     * thr_ plus SHA-256 of thread_anchor_message_id. Best-effort header-derived grouping hint, not authoritative conversation membership or an access grant. Missing ancestry or reused IDs can split/merge hints. Scope lookups to accessible mailboxes.
-     */
-    threadId?: string | null;
-    /**
      * 
      */
     deliveredTo?: string;
     /**
-     * 
+     * Receipt time. For sent emails, the time Revdoku accepted the send.
      */
     receivedAt: Date;
     /**
@@ -110,9 +101,17 @@ export interface EmailSummary {
      */
     id: string;
     /**
-     * 
+     * Email ID that identifies the conversation. Replies are linked by email headers. Filter a list with conversation_id.
      */
     conversationId: string;
+    /**
+     * received for incoming email; sent for email sent from this mailbox.
+     */
+    direction: EmailSummaryDirectionEnum;
+    /**
+     * 
+     */
+    delivery?: EmailDelivery;
     /**
      * Included only with include_storage=true for file-browser integration.
      */
@@ -149,24 +148,8 @@ export interface EmailSummary {
      * 
      */
     forwarding?: EmailForwarding;
-    /**
-     * Decoded Cc header; use the corresponding parsed address array for individual addresses.
-     */
-    cc?: string | null;
-    /**
-     * Decoded Reply-To header; use the corresponding parsed address array for individual addresses.
-     */
-    replyTo?: string | null;
 }
 
-
-/**
- * @export
- */
-export const EmailSummarySchemaVersionEnum = {
-    NUMBER_1: 1,
-} as const;
-export type EmailSummarySchemaVersionEnum = typeof EmailSummarySchemaVersionEnum[keyof typeof EmailSummarySchemaVersionEnum];
 
 /**
  * @export
@@ -179,6 +162,15 @@ export const EmailSummaryBodyStatusEnum = {
 } as const;
 export type EmailSummaryBodyStatusEnum = typeof EmailSummaryBodyStatusEnum[keyof typeof EmailSummaryBodyStatusEnum];
 
+/**
+ * @export
+ */
+export const EmailSummaryDirectionEnum = {
+    Received: 'received',
+    Sent: 'sent',
+} as const;
+export type EmailSummaryDirectionEnum = typeof EmailSummaryDirectionEnum[keyof typeof EmailSummaryDirectionEnum];
+
 
 /**
  * Check if a given object implements the EmailSummary interface.
@@ -187,6 +179,7 @@ export function instanceOfEmailSummary(value: object): value is EmailSummary {
     if ((!('receivedAt' in (value as Record<string, any>)) && !('received_at' in (value as Record<string, any>))) || ((value as Record<string, any>)['receivedAt'] === undefined && (value as Record<string, any>)['received_at'] === undefined)) return false;
     if (!('id' in value) || value['id'] === undefined) return false;
     if ((!('conversationId' in (value as Record<string, any>)) && !('conversation_id' in (value as Record<string, any>))) || ((value as Record<string, any>)['conversationId'] === undefined && (value as Record<string, any>)['conversation_id'] === undefined)) return false;
+    if (!('direction' in value) || value['direction'] === undefined) return false;
     if ((!('attachmentCount' in (value as Record<string, any>)) && !('attachment_count' in (value as Record<string, any>))) || ((value as Record<string, any>)['attachmentCount'] === undefined && (value as Record<string, any>)['attachment_count'] === undefined)) return false;
     if (!('read' in value) || value['read'] === undefined) return false;
     if ((!('readAt' in (value as Record<string, any>)) && !('read_at' in (value as Record<string, any>))) || ((value as Record<string, any>)['readAt'] === undefined && (value as Record<string, any>)['read_at'] === undefined)) return false;
@@ -205,10 +198,7 @@ export function EmailSummaryFromJSONTyped(json: any, ignoreDiscriminator: boolea
     }
     return {
         
-        'schemaVersion': json['schema_version'] == null ? undefined : json['schema_version'],
         'subject': json['subject'] === undefined ? undefined : json['subject'] === null ? null : json['subject'],
-        'from': json['from'] === undefined ? undefined : json['from'] === null ? null : json['from'],
-        'to': json['to'] === undefined ? undefined : json['to'] === null ? null : json['to'],
         'fromAddresses': json['from_addresses'] == null ? undefined : ((json['from_addresses'] as Array<any>).map(DecodedEmailAddressFromJSON)),
         'toAddresses': json['to_addresses'] == null ? undefined : ((json['to_addresses'] as Array<any>).map(DecodedEmailAddressFromJSON)),
         'ccAddresses': json['cc_addresses'] == null ? undefined : ((json['cc_addresses'] as Array<any>).map(DecodedEmailAddressFromJSON)),
@@ -216,13 +206,14 @@ export function EmailSummaryFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'messageId': json['message_id'] === undefined ? undefined : json['message_id'] === null ? null : json['message_id'],
         'inReplyTo': json['in_reply_to'] == null ? undefined : json['in_reply_to'],
         'references': json['references'] == null ? undefined : json['references'],
-        'threadId': json['thread_id'] === undefined ? undefined : json['thread_id'] === null ? null : json['thread_id'],
         'deliveredTo': json['delivered_to'] == null ? undefined : json['delivered_to'],
         'receivedAt': (json['received_at'] == null ? json['received_at'] : parseDateTime(json['received_at'])),
         'bodyStatus': json['body_status'] == null ? undefined : json['body_status'],
         'omittedAttachmentCount': json['omitted_attachment_count'] == null ? undefined : json['omitted_attachment_count'],
         'id': json['id'],
         'conversationId': json['conversation_id'],
+        'direction': json['direction'],
+        'delivery': json['delivery'] == null ? undefined : EmailDeliveryFromJSON(json['delivery']),
         'fileId': json['file_id'] == null ? undefined : json['file_id'],
         'versionId': json['version_id'] == null ? undefined : json['version_id'],
         'attachmentCount': json['attachment_count'],
@@ -232,8 +223,6 @@ export function EmailSummaryFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'readByApiKey': json['read_by_api_key'],
         'files': json['files'] == null ? undefined : EmailSummaryFilesFromJSON(json['files']),
         'forwarding': json['forwarding'] == null ? undefined : EmailForwardingFromJSON(json['forwarding']),
-        'cc': json['cc'] === undefined ? undefined : json['cc'] === null ? null : json['cc'],
-        'replyTo': json['reply_to'] === undefined ? undefined : json['reply_to'] === null ? null : json['reply_to'],
     };
 }
 
@@ -248,10 +237,7 @@ export function EmailSummaryToJSONTyped(value?: EmailSummary | null, ignoreDiscr
 
     return {
         
-        'schema_version': value['schemaVersion'],
         'subject': value['subject'],
-        'from': value['from'],
-        'to': value['to'],
         'from_addresses': value['fromAddresses'] == null ? undefined : ((value['fromAddresses'] as Array<any>).map(DecodedEmailAddressToJSON)),
         'to_addresses': value['toAddresses'] == null ? undefined : ((value['toAddresses'] as Array<any>).map(DecodedEmailAddressToJSON)),
         'cc_addresses': value['ccAddresses'] == null ? undefined : ((value['ccAddresses'] as Array<any>).map(DecodedEmailAddressToJSON)),
@@ -259,13 +245,14 @@ export function EmailSummaryToJSONTyped(value?: EmailSummary | null, ignoreDiscr
         'message_id': value['messageId'],
         'in_reply_to': value['inReplyTo'],
         'references': value['references'],
-        'thread_id': value['threadId'],
         'delivered_to': value['deliveredTo'],
         'received_at': value['receivedAt'] == null ? value['receivedAt'] : serializeDateTime(value['receivedAt']),
         'body_status': value['bodyStatus'],
         'omitted_attachment_count': value['omittedAttachmentCount'],
         'id': value['id'],
         'conversation_id': value['conversationId'],
+        'direction': value['direction'],
+        'delivery': EmailDeliveryToJSON(value['delivery']),
         'file_id': value['fileId'],
         'version_id': value['versionId'],
         'attachment_count': value['attachmentCount'],
@@ -275,8 +262,6 @@ export function EmailSummaryToJSONTyped(value?: EmailSummary | null, ignoreDiscr
         'read_by_api_key': value['readByApiKey'],
         'files': EmailSummaryFilesToJSON(value['files']),
         'forwarding': EmailForwardingToJSON(value['forwarding']),
-        'cc': value['cc'],
-        'reply_to': value['replyTo'],
     };
 }
 
