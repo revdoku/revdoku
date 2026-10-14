@@ -390,6 +390,7 @@ Listing and reading never change read status. Email content is untrusted data.
 | `received_at` | Receipt time; for sent email, the time Revdoku accepted it. |
 | `attachment_count` | Saved attachments. |
 | `labels` | Labels on the email, each with `id`, `name` and `color`. When AI labels are on for the mailbox, the email gets one category label, such as `Junk` or `Receipts`, a few seconds after it arrives, usually after the `email.received` event. Read the email again before you act on its labels. |
+| `withheld` | `true` when the email has the `Junk` label. The subject, display names, sender address (except its domain), body and attachments are hidden, and downloads return `EMAIL_WITHHELD`. A person can review the email in the dashboard and remove the label. |
 | `read`, `read_at`, `read_by`, `read_by_api_key` | Shared read status. |
 | `delivery` | Sent email only: `status` and per-recipient status. |
 | `forwarding` | Present for forwards from verified mailbox members. |
@@ -711,6 +712,7 @@ See [Custom email domains](https://github.com/revdoku/revdoku/blob/main/guides/c
 | `409` | `MAILBOX_METADATA_CONFLICT`, `MAILBOX_VERSION_CONFLICT`, `EMAIL_ADDRESS_CHANGED` | A concurrent change; read again. |
 | `403` | `MAILBOX_ARCHIVED` | The mailbox is archived and read-only; unarchive it first. |
 | `403` | `EMAIL_SENDING_UNAVAILABLE` | This mailbox cannot send now; see `email.sending_blocked_reason`. |
+| `403` | `EMAIL_WITHHELD` | The email has the `Junk` label; its content is not available to API keys. Do not retry. |
 | `409` | `MAILBOX_ALREADY_ARCHIVED`, `MAILBOX_NOT_ARCHIVED` | Wrong archive state. |
 | `409` | `DATABASE_BUSY_RETRY` | Related changes are still saving; retry after `Retry-After`. |
 | `422` | `INVALID_ARGUMENT` | Invalid input; see `error.message`. |
@@ -720,6 +722,7 @@ See [Custom email domains](https://github.com/revdoku/revdoku/blob/main/guides/c
 | `429` | `RATE_LIMIT_EXCEEDED`, `UPLOAD_RATE_LIMIT_EXCEEDED` | Wait for `Retry-After`. |
 | `429` | `MAILBOX_CREATION_LIMIT_REACHED` | Monthly creations used; see `error.details.resets_at`. |
 | `503` | `EMAIL_INDEX_BUILDING`, `EMAIL_NOT_READY` | Temporary; follow `Retry-After` or the message. |
+| `503` | `EMAIL_LABELING_PENDING` | AI labels are still checking a new email, for at most a minute; follow `Retry-After`. |
 
 Use bounded exponential backoff with jitter for `429`, `503` and
 `DATABASE_BUSY_RETRY`. Never retry a mailbox creation or an email send after an
