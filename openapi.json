@@ -5507,6 +5507,35 @@
           }
         }
       },
+      "EmailLabel": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "color"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^tag_"
+          },
+          "name": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "red",
+              "orange",
+              "yellow",
+              "green",
+              "blue",
+              "purple",
+              "gray"
+            ]
+          }
+        }
+      },
       "SendEmailRequest": {
         "type": "object",
         "required": [
@@ -5911,6 +5940,13 @@
           "delivery": {
             "$ref": "#/components/schemas/EmailDelivery"
           },
+          "labels": {
+            "type": "array",
+            "description": "Labels on the email files. AI labels add one built-in category label, such as Junk or Receipts, a few seconds after the email arrives, usually after the email.received event.",
+            "items": {
+              "$ref": "#/components/schemas/EmailLabel"
+            }
+          },
           "file_id": {
             "type": "string",
             "pattern": "^df_",
@@ -5989,6 +6025,7 @@
           "direction",
           "received_at",
           "attachment_count",
+          "labels",
           "read",
           "read_at",
           "read_by",

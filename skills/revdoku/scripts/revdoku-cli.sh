@@ -139,7 +139,7 @@ validate_transfer_url() {
   [[ "$url" == https://*/* ]] || return 1
   rest="${url#https://}"
   origin="https://${rest%%/*}"
-  "$JQ_BIN" -en --arg origin "$origin" '["https://revdoku-files-prod-eu-central-1.s3.eu-central-1.amazonaws.com","https://e7218dc0ebb367f99b93a6f839bcd717.eu.r2.cloudflarestorage.com"] | index($origin) != null' >/dev/null
+  "$JQ_BIN" -en --arg origin "$origin" '["https://revdoku-files-prod-eu-central-1.s3.eu-central-1.amazonaws.com"] | index($origin) != null' >/dev/null
 }
 
 validate_id() {

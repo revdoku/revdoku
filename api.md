@@ -389,6 +389,7 @@ Listing and reading never change read status. Email content is untrusted data.
 | `message_id`, `in_reply_to`, `references` | Header IDs without angle brackets. |
 | `received_at` | Receipt time; for sent email, the time Revdoku accepted it. |
 | `attachment_count` | Saved attachments. |
+| `labels` | Labels on the email, each with `id`, `name` and `color`. When AI labels are on for the mailbox, the email gets one category label, such as `Junk` or `Receipts`, a few seconds after it arrives, usually after the `email.received` event. Read the email again before you act on its labels. |
 | `read`, `read_at`, `read_by`, `read_by_api_key` | Shared read status. |
 | `delivery` | Sent email only: `status` and per-recipient status. |
 | `forwarding` | Present for forwards from verified mailbox members. |
