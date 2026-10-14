@@ -4085,6 +4085,7 @@
           "EMAIL_DOMAIN_RATE_LIMIT",
           "EMAIL_DOMAIN_UNAVAILABLE",
           "EMAIL_INDEX_BUILDING",
+          "EMAIL_LABELING_PENDING",
           "EMAIL_MAILBOX_UNAVAILABLE",
           "EMAIL_NAMES_UNAVAILABLE",
           "EMAIL_NAMES_UPGRADE_REQUIRED",
@@ -4108,6 +4109,7 @@
           "EMAIL_SEND_RATE_LIMITED",
           "EMAIL_TOO_LARGE",
           "EMAIL_UNAVAILABLE",
+          "EMAIL_WITHHELD",
           "EMPTY_FILE",
           "FILE_LOCKED",
           "FILE_TOO_LARGE",
@@ -5913,7 +5915,8 @@
               "complete",
               "empty",
               "truncated",
-              "unavailable"
+              "unavailable",
+              "withheld"
             ]
           },
           "omitted_attachment_count": {
@@ -5946,6 +5949,10 @@
             "items": {
               "$ref": "#/components/schemas/EmailLabel"
             }
+          },
+          "withheld": {
+            "type": "boolean",
+            "description": "True when the email has the built-in Junk label. The subject, display names, sender address (except its domain), body and attachments are hidden, and downloads of the email and its files return EMAIL_WITHHELD. A person can review the email in the dashboard and remove the label."
           },
           "file_id": {
             "type": "string",
@@ -6026,6 +6033,7 @@
           "received_at",
           "attachment_count",
           "labels",
+          "withheld",
           "read",
           "read_at",
           "read_by",
@@ -6052,7 +6060,8 @@
                   "complete",
                   "empty",
                   "truncated",
-                  "unavailable"
+                  "unavailable",
+                  "withheld"
                 ]
               },
               "attachments": {
