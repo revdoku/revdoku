@@ -254,7 +254,7 @@ Keys with access to all mailboxes also get `data.usage.mailbox_creations`
 | Parameter | Meaning |
 | --- | --- |
 | `status` | `active` (default), `archived` or `all`. |
-| `q` | Text in the permitted address or mailbox ID. |
+| `q` | Text in the mailbox ID, or in the title or address when the key can see the address. |
 | `limit`, `cursor` | See [Lists](#lists). |
 
 `data.counts` has `active`, `archived` and `total` mailboxes that match `q`.
@@ -291,6 +291,7 @@ Content-Type: application/json
 | --- | --- | --- |
 | `mailbox.email.username` | Generated name | Free: a prefix; Revdoku adds a permanent 12-character random suffix. Paid: the exact name before `@`. |
 | `mailbox.email.domain` | Platform domain | `revdokumail.com`, or a ready custom domain of this account. |
+| `mailbox.title` | The username | Optional title, at most 255 characters. Without it, the title is `email.username` as given, or the generated name without its random suffix. |
 | `mailbox.description` | Empty | Optional description, at most 2,000 characters. |
 | `mailbox.metadata` | `{}` | Your application data. |
 
@@ -300,6 +301,10 @@ Content-Type: application/json
 | Empty or `null` | `422 EMAIL_NAME_INVALID`. |
 | Reserved word, such as `support` or `sales` | `422 EMAIL_NAME_RESERVED`. Use a custom domain for such names. |
 | Address in use or retired | `409 EMAIL_ALREADY_EXISTS`. |
+
+Titles are unique among the account's active mailboxes, ignoring case and
+surrounding spaces. A title that another active mailbox uses returns
+`409 MAILBOX_TITLE_TAKEN`. A default title gets a number instead, such as `support (1)`.
 
 - Success means the address can receive email now.
 - If confirmation takes longer than 25 seconds, the API returns `503 EMAIL_NOT_READY`
@@ -311,7 +316,8 @@ Content-Type: application/json
 | Field | Meaning |
 | --- | --- |
 | `id` | Mailbox ID for API calls. |
-| `email.address` | Primary address. Shown to keys with write access. Use it as the mailbox label. |
+| `title` | Title chosen by people, or `null`. Shown to keys that can see `email.address`. Label a mailbox as `title (email.address)`, or by its address alone. |
+| `email.address` | Primary address. Shown to keys with write access. |
 | `email.message_count`, `email.unread_count` | Stored and unread email. `null` while the email index is prepared. |
 | `email.last_received_at` | Time of the latest received email. |
 | `email.receiving_enabled`, `email.blocked_reason` | Receiving state and, when off, the reason. |
@@ -330,12 +336,13 @@ Content-Type: application/json
 ```json
 {
   "expected_metadata_version": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "mailbox": { "description": "Orders", "metadata": { "customer": "c_42" } }
+  "mailbox": { "title": "Orders", "description": "Orders from the shop", "metadata": { "customer": "c_42" } }
 }
 ```
 
 `metadata` must be a JSON object. It replaces the stored object; `{}` clears it.
-Only `description` and `metadata` can change.
+`title` set to `""` or `null` clears the title; a used title returns `409 MAILBOX_TITLE_TAKEN`.
+Only `title`, `description` and `metadata` can change.
 
 ### Delete a mailbox
 
@@ -509,11 +516,15 @@ Requires a paid plan and mailbox admin.
 | `expected_address` | Yes | Current `address` from step 1. |
 | `username` | No | New name; omit for a generated name. |
 | `domain` | No | Available platform domain, a ready custom domain, or `platform`. |
-| `keep_old_as_alias` | No | Keep the old address as an alias. |
+| `keep_old_as_alias` | No | Keep the old address as an alias. Default `true` for account owners and administrators, otherwise `false`. Send `false` to retire it. |
 
 3. On `202`, read the settings until `assignment.status` is `active` or `failed`.
 
-The old address stops receiving unless you keep it as an alias. Check
+For account owners and administrators, the old address becomes an alias by
+default and keeps receiving. An old address on a domain that no longer
+receives email is retired. A mailbox
+without a free alias slot returns `409 EMAIL_ALIAS_LIMIT`; send
+`keep_old_as_alias: false` to retire the old address instead. Check
 `max_email_address_rotations_per_month` in the limits.
 
 ### Aliases
