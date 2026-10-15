@@ -57,12 +57,13 @@ add one, follow [No connector available](https://revdoku.com/llms-install.md#no-
 
 `mailbox_list` returns active mailboxes by default.
 Use `status: "archived"` or `status: "all"` for other archive states.
-Use `q` to filter the permitted email address or ID.
+Use `q` to filter the ID, or the title and email address when the connection can see the address.
 `limit` defaults to 50, maximum 200. When `pagination.has_more` is true, pass
 `pagination.next_cursor` as `cursor` with the same filters. Every MCP list uses
 this page shape.
 
-Use `email.address` as the label linked to `dashboard_url`.
+Label a mailbox as `title (email.address)` linked to `dashboard_url`.
+Use `email.address` alone when `title` is null.
 Keep IDs for tool calls unless the user requests them.
 Descriptions provide optional context and are not mailbox names.
 If the address is unavailable, use an Open mailbox link and state that the address is unavailable.
@@ -144,9 +145,10 @@ saved messages without the address. See the
 
 With account-wide admin access, call `mailbox_create` only when another mailbox is
 needed. Pass `email: {username, domain}` to choose the address, or omit `email`
-to generate one.
+to generate one. Pass `title` to name it; otherwise the title is the username.
 A taken or retired address returns `EMAIL_ALREADY_EXISTS`; platform role names
-are reserved. Creation consumes a monthly allowance as well as active-mailbox capacity.
+are reserved. A title that another active mailbox uses returns `MAILBOX_TITLE_TAKEN`.
+Change or clear a title with `mailbox_update(title: ...)`. Creation consumes a monthly allowance as well as active-mailbox capacity.
 
 Creation waits for receiving confirmation. On `EMAIL_NOT_READY`, preserve the
 returned mailbox ID and check it with `mailbox_get`; after an unknown result,

@@ -32,12 +32,13 @@ authorized agency account. Use the returned client ID for subsequent calls.
 
 Use `mailbox_list` for active mailboxes.
 Use `status: "archived"` or `status: "all"` only when relevant.
-Filter with `q` on the permitted address or ID.
+Filter with `q` on the title, permitted address or ID.
 `limit` defaults to 50, maximum 200. When `pagination.has_more` is true, pass
 `pagination.next_cursor` as `cursor` with the same filters.
 Never describe a partial page as the complete list.
 
-Use `email.address` as the label linked to `dashboard_url`.
+Label a mailbox as `title (email.address)` linked to `dashboard_url`.
+Use `email.address` alone when `title` is null.
 Keep IDs for tool calls unless the user requests them.
 Do not use descriptions as mailbox names.
 If the address is unavailable, use an Open mailbox link and state that the address is unavailable.

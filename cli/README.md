@@ -79,7 +79,7 @@ you send again.
 
 `revdoku ls` returns active mailboxes with permitted addresses, receiving state and email counts.
 Use `ls --status archived` or `ls --status all` for other archive states.
-Use `--query TEXT` to filter the permitted email address or ID.
+Use `--query TEXT` to filter the title, permitted email address or ID.
 Use `--limit N` for pages of at most 200 mailboxes (default 50).
 Continue with `--cursor` set to `data.pagination.next_cursor` while `data.pagination.has_more` is true.
 `files` and `emails` page the same way.
@@ -101,6 +101,7 @@ creation capacity. `revdoku create` creates an empty mailbox. Omit `--username` 
 generate a name. Free adds a permanent 12-character random suffix to the requested
 prefix. An exact available name requires a paid plan. Reserved shared-domain words
 return an explanation and guidance for using your own verified domain.
+`--title TEXT` names the mailbox; without it, the title is the username.
 Creation returns when receiving is ready. Use the returned address.
 
 See [the API reference](../api.md) and `revdoku --help` for commands, scopes,

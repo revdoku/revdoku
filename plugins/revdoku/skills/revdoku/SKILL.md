@@ -106,12 +106,12 @@ Select `archived` or `all` with MCP `status` or CLI `--status`.
 Filter with MCP `q` or CLI `--query`.
 Reuse filters and pass `pagination.next_cursor` while `pagination.has_more` is true.
 Never report a partial page as complete.
-Use `counts.active`, `counts.archived` and `counts.total` for exact authorized totals.
+Use `counts.*` for exact authorized totals.
 
-Display `email.address` linked to `dashboard_url`.
+Label mailboxes `title (email.address)`, or the address alone, linked to `dashboard_url`.
 Keep IDs for tool calls unless requested.
 Never use descriptions as names.
-If the address is unavailable, label the link Open mailbox and explain that limitation.
+If the address is unavailable, label the link Open mailbox and explain why.
 Keep existing permissions.
 Show `email.message_count` as stored emails and `email.unread_count` as unread emails.
 Null counts mean indexing is incomplete.

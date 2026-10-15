@@ -1061,7 +1061,7 @@
               "type": "string",
               "maxLength": 500
             },
-            "description": "Case-insensitive text in the permitted address or the mailbox ID."
+            "description": "Case-insensitive text in the mailbox ID, or in the title or address when the key can see the address."
           },
           {
             "$ref": "#/components/parameters/Limit"
@@ -1105,7 +1105,7 @@
           "Mailboxes"
         ],
         "summary": "Create a mailbox",
-        "description": "Waits until the address can receive email. On Free, email.username is a prefix with a permanent random suffix; an exact name requires a paid plan. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. Never retry a creation automatically.",
+        "description": "Waits until the address can receive email. On Free, email.username is a prefix with a permanent random suffix; an exact name requires a paid plan. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. The title defaults to email.username; a title that another active mailbox uses returns 409 MAILBOX_TITLE_TAKEN. Never retry a creation automatically.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1258,8 +1258,8 @@
         "tags": [
           "Mailboxes"
         ],
-        "summary": "Update a mailbox description or metadata",
-        "description": "metadata must be a JSON object. It replaces the stored object; {} clears it. Send expected_metadata_version from your last read; a stale value changes nothing and returns MAILBOX_METADATA_CONFLICT.",
+        "summary": "Update a mailbox title, description or metadata",
+        "description": "metadata must be a JSON object. It replaces the stored object; {} clears it. Send expected_metadata_version from your last read; a stale value changes nothing and returns MAILBOX_METADATA_CONFLICT. Titles are unique among active mailboxes; a used title returns 409 MAILBOX_TITLE_TAKEN.",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -1574,7 +1574,7 @@
           "Email settings"
         ],
         "summary": "Change the primary address",
-        "description": "Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. The old address stops receiving unless keep_old_as_alias is true.",
+        "description": "Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address.",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -1606,7 +1606,7 @@
                   },
                   "keep_old_as_alias": {
                     "type": "boolean",
-                    "default": false
+                    "description": "Keep the old address as an alias. Defaults to true for account owners and administrators while the old domain still receives email, otherwise false. Keeping it needs a free alias slot and an account owner or administrator."
                   },
                   "account_id": {
                     "type": "string",
@@ -4147,6 +4147,7 @@
           "MAILBOX_LIMIT_REACHED",
           "MAILBOX_LOCKED",
           "MAILBOX_METADATA_CONFLICT",
+          "MAILBOX_TITLE_TAKEN",
           "MAILBOX_MOVING",
           "MAILBOX_NOT_ARCHIVED",
           "MAILBOX_NOT_FOUND",
@@ -4784,7 +4785,7 @@
         "properties": {
           "address": {
             "type": "string",
-            "description": "Primary address. Present when the credential has write access to the mailbox. Use it as the mailbox label."
+            "description": "Primary address. Present when the credential has write access to the mailbox. Show it after the title."
           },
           "message_count": {
             "type": [
@@ -4864,7 +4865,7 @@
       },
       "Mailbox": {
         "type": "object",
-        "description": "A mailbox: one receiving address with private file storage. Use email.address as the label and id in API calls.",
+        "description": "A mailbox: one receiving address with private file storage. Label it as title (email.address), or by email.address alone when title is null. Use id in API calls.",
         "required": [
           "id",
           "account_id",
@@ -4884,6 +4885,14 @@
           },
           "account_id": {
             "type": "string"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255,
+            "description": "Mailbox title chosen by people. Defaults to the email username given at creation. Null when unset or when the caller cannot see email.address."
           },
           "description": {
             "type": [
@@ -5036,6 +5045,11 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Optional title. Defaults to email.username as given, or to the generated name without its random suffix. A title that another active mailbox uses returns 409 MAILBOX_TITLE_TAKEN."
+          },
           "description": {
             "type": "string",
             "maxLength": 2000
@@ -5053,6 +5067,14 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255,
+            "description": "New title. An empty string or null clears it. A title that another active mailbox uses returns 409 MAILBOX_TITLE_TAKEN."
+          },
           "description": {
             "type": "string",
             "maxLength": 2000
@@ -5128,7 +5150,7 @@
         "properties": {
           "address": {
             "type": "string",
-            "description": "Primary address. Present when the credential has write access to the mailbox. Use it as the mailbox label."
+            "description": "Primary address. Present when the credential has write access to the mailbox. Show it after the title."
           },
           "message_count": {
             "type": [
