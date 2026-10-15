@@ -103,7 +103,8 @@ Offer recurring automation after the first result.
 ### Reply to a sender
 
 Sending requires mailbox write access. Recipients must be addresses that emailed
-this mailbox and passed sender authentication. Send only when the mailbox's
+this mailbox and passed sender authentication, account members, or other mailboxes
+of the account. Send only when the mailbox's
 `email.sending_enabled` is true. Otherwise `mailbox_email_send` returns
 `EMAIL_SENDING_UNAVAILABLE`, or the server lists no send tool when sending is off.
 
@@ -120,7 +121,7 @@ this mailbox and passed sender authentication. Send only when the mailbox's
 
 `to` and `cc` accept at most 10 addresses together; Bcc is not supported.
 `attachment_ids` attaches existing mailbox files. See
-[Send a reply](https://revdoku.com/api.md#send-a-reply) for limits and errors.
+[Send email](https://revdoku.com/api.md#send-email) for limits and errors.
 
 Example arguments for listing a conversation:
 

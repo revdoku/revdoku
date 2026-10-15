@@ -4,9 +4,9 @@ You can start free, with no card. Prices are in USD.
 
 | Plan | Free | DEV | DEV PRO |
 | --- | ---: | ---: | ---: |
-| Price | $0 | $4.99/mo | $49.99/mo |
-| Incoming emails / month | 3,000 (128 MiB) | 3,000 (1 GiB) | 15,000 (5 GiB) |
-| Sent emails / month (replies) | 300 | 3,000 | 15,000 |
+| Price | $0 | $9.99/mo | $49.99/mo |
+| Incoming emails / month | 3,000 (128 MiB) | 5,000 (2 GiB) | 15,000 (5 GiB) |
+| Sent emails / month (replies) | 300 | 5,000 | 15,000 |
 | Mailboxes | 3 | 10 | 125 |
 | Storage | 1 GB | 10 GB | 50 GB |
 | Maximum email size | 10 MiB | 40 MiB | 40 MiB |

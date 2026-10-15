@@ -71,8 +71,9 @@ revdoku upload ./project-files --mailbox-id bkt_...
 Use returned email and attachment IDs for message operations; use paths for file operations.
 `mailbox` reports the receiving address, readiness, and message activity. Revdoku
 receives email and attachments.
-`email-send` replies from the mailbox address. Recipients must be addresses that
-emailed this mailbox and passed sender authentication. Check `delivery.status` with
+`email-send` sends from the mailbox address. Recipients must be addresses that
+emailed this mailbox and passed sender authentication, account members, or other
+mailboxes of the account. Check `delivery.status` with
 `emails --direction sent`. After an uncertain result, check the sent list before
 you send again.
 

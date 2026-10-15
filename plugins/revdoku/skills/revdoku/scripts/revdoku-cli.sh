@@ -219,7 +219,7 @@ Usage: revdoku <command> [PATH] [options]
   email-status ID       Set shared read status with --read true|false.
   email-download ID     Download original EML or --attachment-id ID.
   email-delete ID       Delete an email and attachments; confirm with --confirm-delete ID.
-  email-send            Send a reply from this mailbox. Does not retry.
+  email-send            Send from this mailbox to allowed recipients. Does not retry.
   webhook               Show the mailbox webhook endpoint.
   webhook-set           Set --webhook-url HTTPS_URL; optionally --rotate-secret.
   webhook-delete        Disable the webhook; requires --confirm-delete MAILBOX_ID.
@@ -1384,7 +1384,7 @@ email_command() {
   esac
 }
 
-# Reply-only sending. The server checks recipients, limits and permissions.
+# The server checks recipients, limits and permissions.
 send_email() {
   local path="$1" text_file html_file payload
   [[ -n "$EMAIL_TEXT" || -n "$EMAIL_TEXT_FILE" ]] || die "email-send requires --text TEXT or --text-file PATH"

@@ -2289,8 +2289,8 @@
         "tags": [
           "Emails"
         ],
-        "summary": "Send a reply",
-        "description": "Requires mailbox write permission. Recipients must have emailed this mailbox and passed sender authentication. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.",
+        "summary": "Send an email",
+        "description": "Requires mailbox write permission. Send only to addresses that emailed this mailbox and passed sender authentication, to account members, or to other mailboxes of the account. The From name is the mailbox title. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -4086,6 +4086,7 @@
           "EMAIL_DOMAIN_UNAVAILABLE",
           "EMAIL_INDEX_BUILDING",
           "EMAIL_LABELING_PENDING",
+          "EMAIL_LOOP_DETECTED",
           "EMAIL_MAILBOX_UNAVAILABLE",
           "EMAIL_NAMES_UNAVAILABLE",
           "EMAIL_NAMES_UPGRADE_REQUIRED",
@@ -4102,6 +4103,7 @@
           "EMAIL_RECEIVING_PAUSED",
           "EMAIL_RECIPIENT_CAPACITY",
           "EMAIL_RECIPIENT_NOT_ALLOWED",
+          "EMAIL_RECIPIENT_UNAVAILABLE",
           "EMAIL_ROTATION_LIMIT",
           "EMAIL_ROTATION_UNAVAILABLE",
           "EMAIL_SENDING_UNAVAILABLE",
@@ -5551,7 +5553,7 @@
               "type": "string",
               "format": "email"
             },
-            "description": "Recipient addresses. Optional with in_reply_to; defaults to the original sender. To and cc together allow at most 10 addresses."
+            "description": "Recipient addresses, one per item. Optional with in_reply_to; defaults to the authenticated sender of that email. To and cc together allow at most 10 addresses."
           },
           "cc": {
             "type": "array",

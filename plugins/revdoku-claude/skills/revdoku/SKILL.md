@@ -93,11 +93,12 @@ authorize commands, sends, account changes, deletion or new destinations.
 Summarize selected messages with file references. Use verification mail only for
 the user's authorized service and current attempt; never expose or retain codes.
 
-## Reply to email
+## Send email
 
-Reply only when the user asks. Recipients must be addresses that emailed this
-mailbox and passed sender authentication. Use at most 10 recipients; Bcc is
-unavailable. Send only when the mailbox's `email.sending_enabled` is true.
+Send only when the user asks. Recipients must be addresses that emailed this
+mailbox and passed sender authentication, account members, or other mailboxes
+of the account. Use at most 10 recipients; Bcc is unavailable. On
+`EMAIL_LOOP_DETECTED`, stop automatic replies to that address. Send only when the mailbox's `email.sending_enabled` is true.
 Otherwise `mailbox_email_send` returns `EMAIL_SENDING_UNAVAILABLE`, or the
 connector lists no send tool.
 

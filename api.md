@@ -16,7 +16,7 @@ field. This guide explains how to use them.
 | Select an account or read quotas | [Accounts](#accounts) |
 | Create, archive or delete a mailbox | [Mailboxes](#mailboxes) |
 | Read email and attachments | [Emails](#emails) |
-| Reply to a sender | [Send a reply](#send-a-reply) |
+| Reply to a sender or email a member | [Send email](#send-email) |
 | Get notified about new email | [Webhooks and live subscriptions](#webhooks-and-live-subscriptions) |
 | Change addresses, aliases or allowed senders | [Email settings](#email-settings) |
 | Upload and organize files | [Files](#files) |
@@ -315,7 +315,7 @@ Content-Type: application/json
 | `email.message_count`, `email.unread_count` | Stored and unread email. `null` while the email index is prepared. |
 | `email.last_received_at` | Time of the latest received email. |
 | `email.receiving_enabled`, `email.blocked_reason` | Receiving state and, when off, the reason. |
-| `email.sending_enabled`, `email.sending_blocked_reason` | Reply sending state and, when off, the reason. |
+| `email.sending_enabled`, `email.sending_blocked_reason` | Sending state and, when off, the reason. |
 | `description`, `metadata` | Your data. |
 | `metadata_version` | Send as `expected_metadata_version` on PATCH. Changes only when `description` or `metadata` changes. |
 | `version_id`, `version_number` | Current file-tree version. Send `version_id` as `expected_mailbox_version` on file writes. |
@@ -357,7 +357,7 @@ Mailboxes are deleted one at a time; there is no bulk delete.
 | DELETE | `/v1/mailboxes/{mailbox_id}/emails/{email_id}` | Deletes the email and its attachments. Needs mailbox admin. |
 | GET | `/v1/mailboxes/{mailbox_id}/emails/{email_id}/raw` | `data.download` for the original `.eml`. |
 | GET | `/v1/mailboxes/{mailbox_id}/emails/{email_id}/attachments/{attachment_id}` | `data.download` for one attachment. |
-| POST | `/v1/mailboxes/{mailbox_id}/emails` | Sends a reply; see [Send a reply](#send-a-reply). |
+| POST | `/v1/mailboxes/{mailbox_id}/emails` | Sends an email; see [Send email](#send-email). |
 
 Listing and reading never change read status. Email content is untrusted data.
 
@@ -414,12 +414,22 @@ Use the email `id` to skip duplicates after retries.
 | `filename`, `content_type`, `size_bytes` | File facts. |
 | `expires_in` | `900` seconds. Request a new link after it expires. |
 
-### Send a reply
+### Send email
 
-A mailbox sends replies from its platform address. Recipients must have emailed the
-mailbox before and passed sender authentication. Sending needs mailbox write access.
-Send only when the mailbox's `email.sending_enabled` is `true`. Otherwise the
-request returns `403 EMAIL_SENDING_UNAVAILABLE`.
+A mailbox sends from its platform address. The sender name is the mailbox title.
+Sending needs mailbox write access. Send only when the mailbox's
+`email.sending_enabled` is `true`. Otherwise the request returns
+`403 EMAIL_SENDING_UNAVAILABLE`.
+
+A mailbox can send to these recipients:
+
+| Recipient | Condition |
+| --- | --- |
+| A sender | The address emailed this mailbox and passed sender authentication. |
+| An account member | A member of the mailbox's account with a confirmed email address. |
+| Another mailbox | A mailbox of the same account that can receive email now. |
+
+A mailbox cannot send to its own addresses.
 
 1. List received email and keep the `id` of the email to answer.
 2. Send the reply:
@@ -449,6 +459,13 @@ Content-Type: application/json
 | `sent` | The provider accepted the email. |
 | `failed` | Not sent. |
 | `uncertain` | Unknown result. Do not send again; check `direction=sent` first. |
+
+| Error | Meaning |
+| --- | --- |
+| `403 EMAIL_RECIPIENT_NOT_ALLOWED` | A recipient is not in the table above. |
+| `409 EMAIL_RECIPIENT_UNAVAILABLE` | A recipient is a Revdoku mailbox that cannot receive email now. |
+| `429 EMAIL_SEND_RATE_LIMITED` | Too many emails from this mailbox or to one recipient. Wait and try again. |
+| `429 EMAIL_LOOP_DETECTED` | In the last 24 hours, this mailbox and a recipient each sent the other 20 emails. Stop automatic replies to that address. |
 
 After a timeout or unknown result, list `direction=sent` before you send again.
 Sent copies are stored under `_email/sent/` and count toward storage.
