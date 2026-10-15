@@ -1900,7 +1900,8 @@ validate_upload_descriptors() {
 create_mailbox_id() {
   local payload response id
   payload="$(mailbox_payload)"
-  response="$(http_json POST "/api/v1/mailboxes" "$payload")" || die "mailbox create failed"
+  response="$(http_json POST "/api/v1/mailboxes" "$payload")" ||
+    die "mailbox create failed; to store files in an existing mailbox, pass --mailbox-id ID (see 'revdoku ls')"
   id="$("$JQ_BIN" -r '.data.mailbox.id // empty' <<<"$response")"
   validate_id mailbox_id "$id"
   printf "%s" "$id"

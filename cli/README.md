@@ -71,9 +71,9 @@ revdoku upload ./project-files --mailbox-id bkt_...
 Use returned email and attachment IDs for message operations; use paths for file operations.
 `mailbox` reports the receiving address, readiness, and message activity. Revdoku
 receives email and attachments.
-`email-send` sends from the mailbox address. Recipients must be addresses that
-emailed this mailbox and passed sender authentication, account members, or other
-mailboxes of the account. Check `delivery.status` with
+`email-send` sends from the mailbox address. Recipients must be account members or
+other mailboxes of the account. On paid plans, they can also be addresses that
+emailed this mailbox and passed sender authentication. Check `delivery.status` with
 `emails --direction sent`. After an uncertain result, check the sent list before
 you send again.
 
@@ -97,10 +97,10 @@ Use `--account-id acct_...` when selecting another authorized account. Credentia
 and selection state otherwise live under `~/.revdoku/`; keep them private.
 
 Uploading without an existing mailbox binding can create a mailbox and consume
-creation capacity. `revdoku create` creates an empty mailbox. Omit `--username` to
-generate a name. Free adds a permanent 12-character random suffix to the requested
-prefix. An exact available name requires a paid plan. Reserved shared-domain words
-return an explanation and guidance for using your own verified domain.
+creation capacity. Pass `--mailbox-id` to store files in an existing mailbox. `revdoku create` creates an empty mailbox. Omit `--username` to
+generate a name. Free adds a permanent 4-character random suffix to the requested
+prefix. Paid plans get the exact name (at least 6 characters on `revdokumail.com`).
+An unavailable name returns `EMAIL_ALREADY_EXISTS`.
 `--title TEXT` names the mailbox; without it, the title is the username.
 Creation returns when receiving is ready. Use the returned address.
 

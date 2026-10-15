@@ -134,10 +134,9 @@ Gmail verification alone does not prove forwarding works.
 See the [first email workflow](https://revdoku.com/docs.md#first-email-workflow).
 
 `mailbox_create(email: {username: "project.alerts"})` returns a ready mailbox.
-Free adds a permanent random suffix. An exact name requires a paid plan.
+Free adds a permanent 4-character suffix. Paid exact names need 6+ characters.
 Omit `email` to generate one. Use the returned address.
-Reserved shared-domain names return `EMAIL_NAME_RESERVED` on every plan.
-Show its explanation and custom-domain guidance. Do not silently replace rejected names.
+`EMAIL_ALREADY_EXISTS` means the name is unavailable. Ask for another name. Do not silently replace rejected names.
 CLI: `create --username NAME`.
 
 Write-authorized `mailbox_get` returns `email.address`; CLI `mailbox --mailbox-id ID` adds address settings.
@@ -166,8 +165,8 @@ See the [email contract](https://revdoku.com/api.md#emails).
 
 ## Send email
 
-Recipients: authenticated senders of this mailbox, account members, or other
-account mailboxes. Limit: 10 recipients, no Bcc. Send only when
+Recipients: account members, other account mailboxes, or (paid plans)
+authenticated senders of this mailbox. Limit: 10 recipients, no Bcc. Send only when
 `email.sending_enabled` is true. On `EMAIL_LOOP_DETECTED`, stop auto-replies to
 that address.
 

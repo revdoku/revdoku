@@ -278,7 +278,7 @@ Content-Type: application/json
     "mailbox": {
       "id": "bkt_example",
       "email": {
-        "address": "acme.orders.k7m2x9q4v8nc@revdokumail.com",
+        "address": "acme.orders.k7m2@revdokumail.com",
         "receiving_enabled": true,
         "sending_enabled": true
       }
@@ -289,7 +289,7 @@ Content-Type: application/json
 
 | Field | Default | Purpose |
 | --- | --- | --- |
-| `mailbox.email.username` | Generated name | Free: a prefix; Revdoku adds a permanent 12-character random suffix. Paid: the exact name before `@`. |
+| `mailbox.email.username` | Generated name | Free: a prefix; Revdoku adds a permanent 4-character random suffix. Paid: the exact name before `@`. |
 | `mailbox.email.domain` | Platform domain | `revdokumail.com`, or a ready custom domain of this account. |
 | `mailbox.title` | The username | Optional title, at most 255 characters. Without it, the title is `email.username` as given, or the generated name without its random suffix. |
 | `mailbox.description` | Empty | Optional description, at most 2,000 characters. |
@@ -299,8 +299,8 @@ Content-Type: application/json
 | --- | --- |
 | Characters | ASCII letters, digits, dots, hyphens and underscores; stored in lowercase. |
 | Empty or `null` | `422 EMAIL_NAME_INVALID`. |
-| Reserved word, such as `support` or `sales` | `422 EMAIL_NAME_RESERVED`. Use a custom domain for such names. |
-| Address in use or retired | `409 EMAIL_ALREADY_EXISTS`. |
+| Paid exact name with fewer than 6 characters on `revdokumail.com` | `422 EMAIL_NAME_INVALID`. |
+| Address unavailable | `409 EMAIL_ALREADY_EXISTS`. |
 
 Titles are unique among the account's active mailboxes, ignoring case and
 surrounding spaces. A title that another active mailbox uses returns
@@ -471,7 +471,8 @@ Content-Type: application/json
 | --- | --- |
 | `403 EMAIL_RECIPIENT_NOT_ALLOWED` | A recipient is not in the table above. |
 | `409 EMAIL_RECIPIENT_UNAVAILABLE` | A recipient is a Revdoku mailbox that cannot receive email now. |
-| `429 EMAIL_SEND_RATE_LIMITED` | Too many emails from this mailbox or to one recipient. Wait and try again. |
+| `403 EMAIL_SEND_LIMIT_REACHED` | The account used its monthly sent email allowance. |
+| `429 EMAIL_SEND_RATE_LIMITED` | Too many emails from this mailbox or to one recipient, per minute, hour or day. Wait and try again. |
 | `429 EMAIL_LOOP_DETECTED` | In the last 24 hours, this mailbox and a recipient each sent the other 20 emails. Stop automatic replies to that address. |
 
 After a timeout or unknown result, list `direction=sent` before you send again.
