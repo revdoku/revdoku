@@ -66,7 +66,8 @@ and the [API contract](api.md#emails).
 
 To reply, use `mailbox_email_send` or `revdoku email-send --in-reply-to eml_... --text TEXT`.
 Recipients must be addresses that emailed this mailbox and passed sender
-authentication. See [Send and reply](api.md#send-a-reply).
+authentication, account members, or other mailboxes of the account.
+See [Send email](api.md#send-email).
 
 ## Additional file storage
 

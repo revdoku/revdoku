@@ -164,11 +164,12 @@ Admin access is required.
 
 See the [email contract](https://revdoku.com/api.md#emails).
 
-## Reply to email
+## Send email
 
-Recipients must have emailed this mailbox and passed sender authentication.
-Limit: 10 recipients, no Bcc. Send only when `email.sending_enabled` is true.
-Otherwise sends return 403 `EMAIL_SENDING_UNAVAILABLE`, or MCP lists no send tool.
+Recipients: authenticated senders of this mailbox, account members, or other
+account mailboxes. Limit: 10 recipients, no Bcc. Send only when
+`email.sending_enabled` is true. On `EMAIL_LOOP_DETECTED`, stop auto-replies to
+that address.
 
 1. Reply with `mailbox_email_send(in_reply_to, text)` (CLI `email-send --in-reply-to ID --text TEXT`).
 2. Track `delivery.status` (`queued`, `sending`, `sent`, `failed`, `uncertain`) through

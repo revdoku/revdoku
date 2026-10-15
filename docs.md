@@ -160,7 +160,8 @@ can send to it; reading saved mail requires mailbox access.
 ### Reply to a sender
 
 A mailbox sends email from its own address. Sending requires mailbox write access.
-Recipients must be addresses that emailed this mailbox and passed sender authentication.
+Recipients must be addresses that emailed this mailbox and passed sender authentication,
+account members, or other mailboxes of the account.
 
 1. List received messages and choose the message to answer.
 2. Send the reply with `in_reply_to` set to its email ID. The reply goes to the
@@ -169,7 +170,7 @@ Recipients must be addresses that emailed this mailbox and passed sender authent
 4. If the result is unknown or `delivery.status` is `uncertain`, do not send again.
    List sent messages and check first.
 
-See [Send and reply](https://revdoku.com/api.md#send-a-reply) for fields, limits and errors.
+See [Send email](https://revdoku.com/api.md#send-email) for fields, limits and errors.
 
 ### Message and attachment behavior
 
