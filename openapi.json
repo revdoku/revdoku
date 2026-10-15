@@ -1105,7 +1105,7 @@
           "Mailboxes"
         ],
         "summary": "Create a mailbox",
-        "description": "Waits until the address can receive email. On Free, email.username is a prefix with a permanent random suffix; an exact name requires a paid plan. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. The title defaults to email.username; a title that another active mailbox uses returns 409 MAILBOX_TITLE_TAKEN. Never retry a creation automatically.",
+        "description": "Waits until the address can receive email. On Free, email.username is a prefix with a permanent 4-character random suffix; paid plans get the exact name. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. The title defaults to email.username; a title that another active mailbox uses returns 409 MAILBOX_TITLE_TAKEN. Never retry a creation automatically.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1163,7 +1163,7 @@
                     "mailbox": {
                       "id": "bkt_example",
                       "email": {
-                        "address": "acme.orders.k7m2x9q4v8nc@revdokumail.com",
+                        "address": "acme.orders.k7m2@revdokumail.com",
                         "receiving_enabled": true,
                         "sending_enabled": true
                       }
@@ -2290,7 +2290,7 @@
           "Emails"
         ],
         "summary": "Send an email",
-        "description": "Requires mailbox write permission. Send only to addresses that emailed this mailbox and passed sender authentication, to account members, or to other mailboxes of the account. The From name is the mailbox title. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.",
+        "description": "Requires mailbox write permission. Send only to account members, to other mailboxes of the account, or to addresses that emailed this mailbox and passed sender authentication. The From name is the mailbox title. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -4092,7 +4092,6 @@
           "EMAIL_NAMES_UPGRADE_REQUIRED",
           "EMAIL_NAME_FORBIDDEN",
           "EMAIL_NAME_INVALID",
-          "EMAIL_NAME_RESERVED",
           "EMAIL_NOT_READY",
           "EMAIL_OWNERSHIP_PENDING",
           "EMAIL_PATH_READ_ONLY",
@@ -5033,7 +5032,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "description": "Free: a prefix normalized to dots, shortened to 51 characters, with a permanent 12-character random lowercase letter/digit suffix added. Paid: the exact name before @, normalized to lowercase. Omit to generate; blank/null is invalid. Reserved shared-domain words return EMAIL_NAME_RESERVED with the reserved word and custom-domain guidance; occupied or retired exact names return EMAIL_ALREADY_EXISTS."
+            "description": "Free: a prefix normalized to dots, shortened to 59 characters, with a permanent 4-character random lowercase letter/digit suffix added. Paid: the exact name before @, normalized to lowercase, at least 6 characters on built-in domains. Omit to generate; blank/null is invalid. Unavailable names return EMAIL_ALREADY_EXISTS."
           },
           "domain": {
             "type": "string",

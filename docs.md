@@ -121,7 +121,7 @@ Content-Type: application/json
 
 | Choice | Behavior |
 | --- | --- |
-| Supply `mailbox.email.username` | Free adds a permanent 12-character random suffix to a dot-separated prefix. An exact username requires a paid plan. Reserved shared-domain words return an explanation and custom-domain guidance. |
+| Supply `mailbox.email.username` | Free adds a permanent 4-character random suffix to a dot-separated prefix. Paid plans get the exact name (at least 6 characters on `revdokumail.com`). An unavailable name returns `EMAIL_ALREADY_EXISTS`. |
 | Send `{"mailbox": {}}` | Generate a username automatically. |
 
 Creation waits for receiving confirmation. Use the returned address after a
@@ -160,8 +160,8 @@ can send to it; reading saved mail requires mailbox access.
 ### Reply to a sender
 
 A mailbox sends email from its own address. Sending requires mailbox write access.
-Recipients must be addresses that emailed this mailbox and passed sender authentication,
-account members, or other mailboxes of the account.
+Recipients must be account members or other mailboxes of the account. On paid plans,
+they can also be addresses that emailed this mailbox and passed sender authentication.
 
 1. List received messages and choose the message to answer.
 2. Send the reply with `in_reply_to` set to its email ID. The reply goes to the
