@@ -5,8 +5,8 @@ const apiKey = process.env.REVDOKU_API_KEY;
 if (!apiKey) throw new Error('Set REVDOKU_API_KEY in your local .env file.');
 const accountId = process.env.REVDOKU_ACCOUNT_ID;
 const headers = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
-const mailboxId = process.env.REVDOKU_BUCKET_ID;
-if (!mailboxId || !/^bkt_[A-Za-z0-9]+$/.test(mailboxId)) throw new Error('Set REVDOKU_BUCKET_ID.');
+const mailboxId = process.env.REVDOKU_MAILBOX_ID;
+if (!mailboxId || !/^bkt_[A-Za-z0-9]+$/.test(mailboxId)) throw new Error('Set REVDOKU_MAILBOX_ID.');
 
 await mkdir('.revdoku-examples', { recursive: true, mode: 0o700 });
 const checkpoint = `.revdoku-examples/${accountId ?? 'default'}-${mailboxId}.json`;

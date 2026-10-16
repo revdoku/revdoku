@@ -1,5 +1,5 @@
 {
-  "name": "revdoku-api-examples",
+  "name": "revdoku-examples",
   "private": true,
   "type": "module",
   "engines": { "node": ">=22" },

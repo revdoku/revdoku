@@ -7,6 +7,12 @@
   <resource type="openapi" href="https://revdoku.com/openapi.json" media-type="application/vnd.oai.openapi+json"/>
   <resource type="pricing" href="https://app.revdoku.com/pricing" media-type="text/html"/>
   <resource type="documentation" href="https://revdoku.com/docs" media-type="text/html"/>
+  <resource type="quickstart" href="https://revdoku.com/docs/quickstart.md" media-type="text/markdown"/>
+  <resource type="api-guide" href="https://revdoku.com/api.md" media-type="text/markdown"/>
+  <resource type="api-reference" href="https://revdoku.com/api/reference.md" media-type="text/markdown"/>
+  <resource type="sdk-typescript" href="https://revdoku.com/docs/sdks/typescript.md" media-type="text/markdown"/>
+  <resource type="sdk-python" href="https://revdoku.com/docs/sdks/python.md" media-type="text/markdown"/>
+  <resource type="coding-agents" href="https://revdoku.com/docs/coding-agents.md" media-type="text/markdown"/>
   <resource type="skill" href="https://github.com/revdoku/revdoku/tree/main/skills/revdoku" media-type="text/html"/>
   <feed type="agent-resources" href="https://revdoku.com/schema-feeds/agent-resources.jsonl" media-type="application/x-ndjson"/>
 </schema-map>

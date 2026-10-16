@@ -1,6 +1,6 @@
 # Python receiving examples
 
-These examples use direct HTTP calls with Python 3.10+ and `requests`. For the generated Python SDK, use [revdoku-python](https://github.com/revdoku/revdoku-python); see the [package comparison](../../guides/api-packages.md) to choose an approach.
+These examples use direct HTTP calls with Python 3.10+ and `requests`. For the Python SDK (`pip install revdoku`), see the [Python SDK guide](https://revdoku.com/docs/sdks/python.md).
 
 ```sh
 python3 -m venv .venv
@@ -8,7 +8,7 @@ python3 -m venv .venv
 pip install requests
 # Set REVDOKU_API_KEY using your secret manager or local environment.
 python python/create-mailbox.py
-export REVDOKU_BUCKET_ID=bkt_RETURNED_ID
+export REVDOKU_MAILBOX_ID=bkt_RETURNED_ID
 python python/read-mail.py
 python python/download-attachment.py eml_RETURNED_ID df_RETURNED_ID attachment.pdf
 ```
@@ -24,7 +24,7 @@ Save the last processed cursor and set `REVDOKU_CURSOR` for the next run. Use th
 same filters and deduplicate downstream effects by email ID. GET requests leave
 shared read status unchanged. Attachment download prints the saved byte count.
 
-Errors include the API's code and message. For 429, respect `Retry-After`; monthly
+Errors include the API's code and message. For 429 request rate limits, respect `Retry-After`; monthly
 allowances require waiting until reset or changing the plan. Never retry a write
 blindly. Temporary attachment links expire after 15 minutes and take no API key.
 Use [the JavaScript/TypeScript examples](../README.md) for file uploads and a

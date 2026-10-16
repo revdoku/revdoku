@@ -3,6 +3,12 @@
 {"type":"skill","url":"https://github.com/revdoku/revdoku/tree/main/skills/revdoku","install_npm":"npx skills add revdoku/revdoku --skill revdoku -g","install_shell":"curl -fsSL https://revdoku.com/install.sh | bash"}
 {"type":"documentation","url":"https://revdoku.com/docs"}
 {"type":"openapi","url":"https://revdoku.com/openapi.json"}
+{"type":"quickstart","url":"https://revdoku.com/docs/quickstart.md","media_type":"text/markdown"}
+{"type":"api-guide","url":"https://revdoku.com/api.md","media_type":"text/markdown"}
+{"type":"api-reference","url":"https://revdoku.com/api/reference.md","media_type":"text/markdown"}
+{"type":"sdk","language":"typescript","package":"revdoku","install":"npm install revdoku","url":"https://revdoku.com/docs/sdks/typescript.md","repository":"https://github.com/revdoku/revdoku-typescript"}
+{"type":"sdk","language":"python","package":"revdoku","install":"pip install revdoku","url":"https://revdoku.com/docs/sdks/python.md","repository":"https://github.com/revdoku/revdoku-python"}
+{"type":"coding-agents","url":"https://revdoku.com/docs/coding-agents.md","media_type":"text/markdown"}
 {"type":"pricing","url":"https://app.revdoku.com/pricing"}
 {"type":"signup","url":"https://app.revdoku.com/users/sign_up","browser_only":true,"available_in_agent_chat":false}
 {"type":"terms","url":"https://revdoku.com/terms.md","scope":"All service use, including private storage"}

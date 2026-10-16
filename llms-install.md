@@ -6,7 +6,7 @@ Verify the account and granted access with a read, then complete the requested t
 
 | Task | Connection |
 | --- | --- |
-| Application backend | [REST API](https://revdoku.com/api/) with a normal API key |
+| Application backend | [REST API](https://revdoku.com/api.md) with a normal API key |
 | Local coding assistant | Skill with bundled CLI |
 | Desktop or cloud assistant | [Hosted MCP setup](https://revdoku.com/connect/) |
 | Chat app that cannot add connectors | [No connector available](#no-connector-available) |
@@ -127,7 +127,7 @@ with `mailbox_email_download`.
 If not ready, explain `blocked_reason`; do not assume a paused or unknown mailbox
 can receive. Read quotas with `account_limits`. Personal
 notification frequency is managed in Account Settings → Notifications.
-See the [email contract](https://revdoku.com/api.md#incoming-email-into-a-mailbox).
+See the [email contract](https://revdoku.com/api.md#emails).
 If the user has no account, follow Account setup above.
 
 If the host does not support MCP or the agent needs local/binary files, use the
@@ -137,7 +137,7 @@ Without MCP or shell access, follow [No connector available](#no-connector-avail
 Private storage and collaboration follow the [Terms of Use](https://revdoku.com/terms/).
 ## Plans
 
-Try Revdoku free. For regular use, choose a paid plan on the [pricing page](https://app.revdoku.com/pricing).
+New accounts start on the Try free plan. For regular use, choose a paid plan on the [pricing page](https://app.revdoku.com/pricing).
 
 ## Troubleshooting tutorials
 

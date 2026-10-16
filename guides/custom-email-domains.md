@@ -15,6 +15,8 @@ does not automatically register a custom domain or fall back to another domain.
 Connect a domain in **Account Settings → Domains → Email**, or use these endpoints
 with a whole-account `mailbox_admin` credential belonging to an account owner or administrator.
 Selected-mailbox, read-only and write-only credentials cannot manage domain ownership.
+Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for
+example `https://api.revdoku.com/v1/mailboxes`.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -70,7 +72,7 @@ or use `POST /v1/mailboxes/:mailbox_id/email/rotate` for an existing mailbox.
 | `confirm` | Must be `true`. |
 
 Custom names require account-administrator access and deployment support.
-[Username rules](../api.md#create-a-mailbox) also apply. Platform domains also accept chosen
+[Username rules](https://revdoku.com/api.md#create-a-mailbox) also apply. Platform domains also accept chosen
 names; their reserved-name rules still apply.
 
 | Replacement result | Behavior |
@@ -96,4 +98,4 @@ names; their reserved-name rules still apply.
 - Mail sent while receiving is paused is not automatically recovered.
 
 
-[API reference](../api.md)
+[API guide](https://revdoku.com/api.md) · [API reference](https://revdoku.com/api/reference.md)

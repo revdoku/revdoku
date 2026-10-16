@@ -105,9 +105,9 @@ Otherwise `mailbox_email_send` returns `EMAIL_SENDING_UNAVAILABLE`, or the
 connector lists no send tool.
 
 1. Find the received `eml_` ID with `mailbox_email_list`.
-2. Call `mailbox_email_send` with `in_reply_to` and `text`. It defaults the
-   recipient and subject. Add `to`, `cc`, `subject`, `html` or mailbox
-   `attachment_ids` only when needed.
+2. Call `mailbox_email_send` with `in_reply_to` and `text`. It sets the subject,
+   and the recipient only when the sender passed SPF or DMARC; otherwise add `to`.
+   Add `cc`, `subject`, `html` or mailbox `attachment_ids` only when needed.
 3. Check `delivery.status` (`queued`, `sending`, `sent`, `failed`, `uncertain`)
    with `mailbox_email_list(direction: "sent")`.
 

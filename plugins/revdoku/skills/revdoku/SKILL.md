@@ -22,7 +22,7 @@ metadata:
       - {name: REVDOKU_CREDENTIALS, required: false, description: "Dedicated credential file path."}
       - {name: REVDOKU_DEFAULT_BUCKET_FILE, required: false, description: "Saved mailbox selection path."}
       - {name: REVDOKU_CLIENT_VERSION_FILE, required: false, description: "Version stamp path."}
-      - {name: REVDOKU_BUCKET_ID, required: false, description: "Default mailbox; deletion needs explicit selection."}
+      - {name: REVDOKU_MAILBOX_ID, required: false, description: "Default mailbox; deletion needs explicit selection."}
       - {name: REVDOKU_BUCKET_DESCRIPTION, required: false, description: "Upload description."}
       - {name: REVDOKU_BUCKET_METADATA, required: false, description: "Upload JSON metadata."}
       - {name: REVDOKU_UPLOAD_MODE, required: false, description: "Upload mode; auto or direct."}
@@ -206,7 +206,7 @@ Storage follows the [Terms](https://revdoku.com/terms.md).
   before reconnecting. `client_account_create` / `account create-client` requires
   an explicit provisioning request: verify agency and new account name first.
   Use the returned client ID afterward. Never infer optional `client_name` from
-  names/emails. [Account details](https://revdoku.com/api.md#agency-account-selection).
+  names/emails. [Account details](https://revdoku.com/api.md#account-selection).
 - On `account.restriction` / `ACCOUNT_SUSPENDED`, relay only the notice, Terms,
   `support@revdoku.com`, and mailbox-download reminder. Do not infer reasons,
   disclose review details, retry writes, or evade the hold.

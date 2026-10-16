@@ -5,9 +5,9 @@ if (!apiKey)
     throw new Error('Set REVDOKU_API_KEY in your local .env file.');
 const accountId = process.env.REVDOKU_ACCOUNT_ID;
 const headers = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
-const mailboxId = process.env.REVDOKU_BUCKET_ID;
+const mailboxId = process.env.REVDOKU_MAILBOX_ID;
 if (!mailboxId || !/^bkt_[A-Za-z0-9]+$/.test(mailboxId))
-    throw new Error('Set REVDOKU_BUCKET_ID.');
+    throw new Error('Set REVDOKU_MAILBOX_ID.');
 const [emailId, attachmentId, directory = 'downloads'] = process.argv.slice(2);
 if (!emailId || !attachmentId)
     throw new Error('Usage: download-attachments.js EMAIL_ID ATTACHMENT_ID [DIRECTORY]');

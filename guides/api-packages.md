@@ -1,25 +1,25 @@
-# Revdoku API packages and integrations
+# Revdoku packages and integrations
 
 Choose the TypeScript or Python SDK for backend code, n8n or Zapier for automation, the CLI for terminal work, or hosted MCP for an AI connection. All use the same Revdoku accounts and mailboxes. Each mailbox has a receiving address and private file storage.
 
 ## Install a package
 
-The four repositories below are public. GitHub source availability and package-registry availability are separate. The SDK setup guides work from source, including installation into your own application.
+| Language or platform | Package | Install | Guide |
+| --- | --- | --- | --- |
+| TypeScript and JavaScript (Node.js 22 or later) | `revdoku` on npm | `npm install revdoku` | [TypeScript SDK](https://revdoku.com/docs/sdks/typescript.md) · [source](https://github.com/revdoku/revdoku-typescript) |
+| Python 3.10 or later | `revdoku` on PyPI | `pip install revdoku` | [Python SDK](https://revdoku.com/docs/sdks/python.md) · [source](https://github.com/revdoku/revdoku-python) |
+| n8n | `n8n-nodes-revdoku` | [Build and install on self-hosted n8n](https://github.com/revdoku/revdoku-n8n/blob/main/USAGE.md#install-from-source) | [n8n usage](https://github.com/revdoku/revdoku-n8n/blob/main/USAGE.md) |
+| Zapier | Revdoku | [Request Zapier access](mailto:support@revdoku.com?subject=Revdoku%20Zapier%20access) | [Zapier tutorial](https://github.com/revdoku/revdoku-zapier/blob/main/TUTORIAL.md) |
 
-| Language or platform | Package | Working setup |
-| --- | --- | --- |
-| TypeScript and JavaScript | `@revdoku/api` | [Build from source and install a local npm tarball](https://github.com/revdoku/revdoku-typescript/blob/main/examples/README.md) |
-| Python | `revdoku-api` / import `revdoku_api` | [Install the source directory with pip](https://github.com/revdoku/revdoku-python/blob/main/examples/README.md) |
-| n8n | `n8n-nodes-revdoku` | [Build and install on self-hosted n8n](https://github.com/revdoku/revdoku-n8n/blob/main/USAGE.md#install-from-source) |
-| Zapier | Revdoku | [Request Zapier access](mailto:support@revdoku.com?subject=Revdoku%20Zapier%20access), then follow the [tutorial](https://github.com/revdoku/revdoku-zapier/blob/main/TUTORIAL.md) |
+The `revdoku` packages are API libraries. For the `revdoku` command-line tool, see https://revdoku.com/cli/.
 
-As checked on 2026-10-03, the SDK packages were not available on npm or PyPI. n8n has source installation; it is not available on n8n Cloud. For Zapier, request availability and access from support before starting. Use the source instructions above rather than assuming a registry command is available.
+n8n is available for self-hosted n8n, not n8n Cloud. For Zapier, request access from support before you start.
 
-For direct HTTP calls without an SDK, use the [JavaScript, TypeScript and Python examples](../examples/README.md). For terminal use, install the [standalone CLI](../cli/README.md). For AI agents, use the [skill or plugin](../README.md#local-ai-apps) or [hosted MCP](../mcp.md).
+To make your first request, follow the [quickstart](https://revdoku.com/docs/quickstart.md). For direct HTTP calls without an SDK, use the [JavaScript, TypeScript and Python examples](https://github.com/revdoku/revdoku/tree/main/examples). For AI agents, use the [skill or plugin](https://github.com/revdoku/revdoku#local-ai-apps) or [hosted MCP](https://revdoku.com/mcp.md).
 
 ## What each package covers
 
-The TypeScript and Python SDKs are generated from [OpenAPI](https://revdoku.com/openapi.json), which lists every public REST operation. The [REST reference](https://revdoku.com/api.md) explains each one.
+The TypeScript and Python SDKs are generated from [OpenAPI](https://revdoku.com/openapi.json), which lists every public REST operation. The [API reference](https://revdoku.com/api/reference.md) shows each operation with SDK and cURL examples.
 
 | Capability | SDKs | n8n | Zapier |
 | --- | --- | --- | --- |
@@ -27,26 +27,18 @@ The TypeScript and Python SDKs are generated from [OpenAPI](https://revdoku.com/
 | List/read email and set read status | Yes | Yes | Yes |
 | Delete one email | Yes | Yes | Yes |
 | Reply to a sender | Yes | Use direct HTTP | Use direct HTTP |
-| Download original email or attachment | Returns a temporary link | Returns binary data | Returns a file reference |
+| Download original email or attachment | `downloadAttachment` / `download_attachment` return bytes; the other download operations return a temporary link | Returns binary data | Returns a file reference |
 | List stored files | Yes | Yes | Find Mailbox File search |
-| Upload files | Prepare and save through the SDK; the TypeScript SDK also has `uploadFile` | Yes | Yes |
+| Upload files | `uploadFile` / `upload_file` | Yes | Yes |
 | Read file metadata | Yes | Yes | Find Mailbox File |
 | Download/delete other stored files | Yes; downloads return a temporary link | Yes | Delete Mailbox File; use direct HTTP for other operations |
-| Mailbox aliases, sender restrictions and custom domains | Yes, where covered by OpenAPI | Use direct HTTP | Use direct HTTP |
+| Mailbox aliases, sender restrictions and custom domains | Yes | Use direct HTTP | Use direct HTTP |
 | Configure email webhooks and get live-subscription tickets | Yes; the receiver/WebSocket loop is application code | New Email uses polling | New Email uses polling |
 | File version history and restore | Yes | Use direct HTTP | Use direct HTTP |
 
-For Node.js, use `Revdoku.uploadFile` to calculate checksums and upload bytes. The Python SDK exposes `prepare_file_upload` and `save_uploaded_file`; send the bytes to the returned storage URL between these calls. Use only its returned headers, without the API key. See the [upload workflow](https://revdoku.com/api.md#upload-a-file).
+`uploadFile` (TypeScript) and `upload_file` (Python) compute the checksums, upload the bytes to storage without your API key, and save the file. See the [upload workflow](https://revdoku.com/api.md#upload-a-file).
 
-## Make a first working integration
-
-1. Sign up or sign in, then create a key under [Account → Access](https://app.revdoku.com/account/access). Signup creates a starter mailbox.
-2. Give the key access to the intended account and mailbox. Read permission is sufficient to list/read email and download attachments. Creating another mailbox requires account-wide admin permission. A key restricted to selected mailboxes cannot create mailboxes.
-3. Follow your package's setup guide above. Run its read-only **List mailboxes** example and keep the returned `bkt_...` ID.
-4. Send a small message with an attachment from your normal email app to the mailbox's exact receiving address. The dashboard shows the address to an authorized writer; a read-only consumer can use the address supplied during provisioning.
-5. Run **Read emails**, copy the returned email and attachment IDs, then run **Download attachment**. Each SDK guide shows the commands and expected output.
-
-`account_id` selects a granted account. Omitting it uses the key's default; a mailbox ID or a dashboard account switch does not select another account for that key. Discover accounts through `GET /v1/accounts`, the SDK's `listAccounts` equivalent, CLI `revdoku accounts`, or MCP `account_list`.
+`account_id` selects a granted account. Omitting it uses the key's default; a mailbox ID or a dashboard account switch does not select another account for that key. Discover accounts through `GET /v1/accounts`, `client.api.listAccounts` / `client.api.list_accounts`, CLI `revdoku accounts`, or MCP `account_list`.
 
 | ID | Use |
 | --- | --- |
@@ -60,31 +52,31 @@ For Node.js, use `Revdoku.uploadFile` to calculate checksums and upload bytes. T
 
 | Caller | API configuration | Email text |
 | --- | --- | --- |
-| Raw HTTP | REST base `https://api.revdoku.com/v1` | `response.data.email.body_text` |
-| TypeScript SDK | Default origin `https://api.revdoku.com`; generated paths include `/v1` | `result.data.email.bodyText` |
-| Python SDK | Same default origin | `result.data.email.body_text` |
+| Raw HTTP | Requests go to `https://api.revdoku.com`; every path starts with `/v1`, for example `https://api.revdoku.com/v1/mailboxes` | `response.data.email.body_text` |
+| TypeScript SDK | Default origin `https://api.revdoku.com`, without `/v1` | `(await client.getEmail({ mailboxId, emailId })).data.email.bodyText` |
+| Python SDK | Same default origin | `client.get_email(mailbox_id, email_id).data.email.body_text` |
 | n8n Get Email | Configured by the node | `$json.email.body_text` |
 | Zapier Get Email | Configured by the integration | Map `body_text` from that action |
 
-Use the generated member names when writing code; the REST reference describes JSON field names. Success responses retain `data` with a named resource. List-email results contain summaries; call Get Email to fetch `body_text`, `body_status` and attachment metadata.
+JSON and Python use snake_case names; TypeScript uses camelCase. Success responses keep `data` with a named resource. Email list results contain summaries; call `getEmail` / `get_email` to fetch `body_text`, `body_status` and attachment metadata.
 
 ## New email processing
 
 | Approach | First run | Later runs and recovery |
 | --- | --- | --- |
-| SDK Read emails example | Reads unread mail in arrival order | Starts again each run; prints messages that remain unread |
-| Application with a saved arrival cursor | Starts where the application chooses | Persist `next_cursor` after processing, including empty pages; keep account/mailbox/order/filters fixed and deduplicate effects by email ID |
+| Application with a saved arrival cursor (SDK or HTTP) | Starts where the application chooses | Persist `next_cursor` after processing, including empty pages; keep account/mailbox/order/filters fixed and deduplicate effects by email ID |
 | n8n New Email | Skips existing mail by default; Include Existing Emails opts into backlog processing | Saves an arrival cursor, at most 1,000 messages per poll; large initial mailboxes need warmup. A manual test samples the newest email and does not advance the active cursor |
 | Zapier New Email | Samples recent arrivals during setup | Reads the latest 1,000 arrivals; Zapier deduplicates IDs. More than 1,000 arrivals between successful polls can be missed |
 | CLI `emails` / MCP `mailbox_email_list` | Lists according to the supplied filters | The caller must save and reuse `next_cursor` for continued polling |
 
-Reading or downloading does not mark email read. Read status is shared with dashboard users and other integrations, so it cannot identify what one consumer has processed. Marking a message read is a separate operation. See the [API polling workflow](https://revdoku.com/api.md#poll-for-new-email) and the [HTTP webhook and live-event examples](../examples/README.md#new-email-notifications).
+Reading or downloading does not mark email read. Read status is shared with dashboard users and other integrations, so it cannot identify what one consumer has processed. Marking a message read is a separate operation. See the [API polling workflow](https://revdoku.com/api.md#poll-for-new-email) and the [webhook and live-event examples](https://github.com/revdoku/revdoku/blob/main/examples/README.md#new-email-notifications).
 
 ## Downloads
 
 | Surface | Result | Next step |
 | --- | --- | --- |
-| Generated SDK download-URL method | `data.download` with a URL, expiry and metadata | Fetch that URL with an ordinary HTTP client without the API token; the shipped attachment example does both steps |
+| SDK `downloadAttachment` / `download_attachment` | Attachment bytes, up to a size limit you can change | Save or process the bytes |
+| SDK download-link operations | `data.download` with a URL, expiry and metadata | Fetch that URL with an ordinary HTTP client without the API key |
 | n8n Download Attachment | Binary field `data` by default | Select that binary field on the next upload/storage node |
 | Zapier Download Email File | `file`, a Zapier file reference | Map it into the next action's file input; the integration obtains a fresh URL when needed |
 | CLI `email-download ... --output PATH` | Saved local file | Open or process that path |
@@ -94,6 +86,6 @@ Temporary URLs expire after 15 minutes. Request another link when needed; do not
 
 ## Errors and creation recovery
 
-An API error has an HTTP status and `error.code`, `error.message`, and optional `error.details`. The SDK guides show how to extract them from each SDK's native exception. Do not expect `result.data` on a failed call.
+An API error has an HTTP status and `error.code`, `error.message`, and optional `error.details`. API error responses raise `RevdokuError`. Network, timeout and TLS failures raise the runtime's own errors (Node: `FetchError` from the SDK with the original error as `cause`; Python: urllib3 exceptions such as `urllib3.exceptions.SSLError`). Do not expect `data` on a failed call.
 
-For `EMAIL_NOT_READY`, inspect `error.details.mailbox_id` and read that retained mailbox's receiving state. For a timeout with no response, reconcile the mailbox list before another creation attempt. Repeating creation can create a second mailbox and consume more capacity. A 429 rate limit permits a bounded read retry after `Retry-After`; a monthly creation-capacity error requires waiting for its reset or changing capacity. [Full error reference](https://revdoku.com/api.md#errors).
+For `EMAIL_NOT_READY`, inspect `error.details.mailbox_id` and read that retained mailbox's receiving state. For a timeout with no response, reconcile the mailbox list before another creation attempt. Repeating creation can create a second mailbox and consume more capacity. Any `429` or `503` response with `Retry-After` (for example `503 EMAIL_LABELING_PENDING` or `503 EMAIL_INDEX_BUILDING`): wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. Never retry `EMAIL_LOOP_DETECTED`, and never retry creating a mailbox or sending an email automatically after an uncertain result. A monthly creation-capacity error requires waiting for its reset or changing capacity. [Full error reference](https://revdoku.com/api.md#errors).

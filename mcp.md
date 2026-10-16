@@ -1,8 +1,8 @@
 # Revdoku MCP: mailboxes for AI agents
 
 Connect to `https://mcp.revdoku.com` using Streamable HTTP and complete OAuth
-in the browser. Each agent needs its own authorized connection. Try Revdoku free,
-or choose a paid plan on the [pricing page](https://app.revdoku.com/pricing).
+in the browser. Each agent needs its own authorized connection. Compare plans on the
+[pricing page](https://app.revdoku.com/pricing).
 
 ## Connect without a terminal
 
@@ -112,7 +112,8 @@ mailbox and passed sender authentication; otherwise a reply returns
 
 1. Call `mailbox_email_list` with `direction: "received"` and choose the message to answer.
 2. Call `mailbox_email_send` with `in_reply_to` set to its email ID and `text`.
-   `to` and `subject` default to the original sender and `Re:` subject.
+   This sets the reply headers and the `Re:` subject. The recipient defaults to the
+   original sender only when that sender passed SPF or DMARC; otherwise pass `to`.
 3. Call `mailbox_email_get` for the returned email ID and check `delivery.status`.
 4. If the result is unknown or `delivery.status` is `uncertain`, do not send again.
    Call `mailbox_email_list` with `direction: "sent"` and check first.
@@ -140,7 +141,7 @@ its `account_id` on every call. Omitting it uses the connection's default accoun
 access (**Read & write** or **Full access** on the permission screen). Use the
 address once `email.receiving_enabled` is true. **Read only** connections can use
 saved messages without the address. See the
-[credential matrix](https://github.com/revdoku/revdoku/blob/main/guides/saas-mailboxes.md#map-customers-and-choose-access).
+[credential matrix](https://revdoku.com/guides/saas-mailboxes.md#map-customers-and-choose-access).
 
 ### Create another mailbox
 
@@ -154,7 +155,7 @@ Change or clear a title with `mailbox_update(title: ...)`. Creation consumes a m
 Creation waits for receiving confirmation. On `EMAIL_NOT_READY`, preserve the
 returned mailbox ID and check it with `mailbox_get`; after an unknown result,
 reconcile existing mailboxes without repeating creation. Follow the
-[provisioning guide](https://github.com/revdoku/revdoku/blob/main/guides/saas-mailboxes.md#provision-once-and-recover).
+[provisioning guide](https://revdoku.com/guides/saas-mailboxes.md#provision-once-and-recover).
 
 ## Account limits
 

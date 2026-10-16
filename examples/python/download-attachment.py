@@ -9,7 +9,7 @@ import requests
 if len(sys.argv) != 4:
     raise SystemExit("Usage: download-attachment.py EMAIL_ID ATTACHMENT_ID OUTPUT_PATH")
 email_id, attachment_id, output = sys.argv[1:]
-mailbox_id = os.environ["REVDOKU_BUCKET_ID"]
+mailbox_id = os.environ["REVDOKU_MAILBOX_ID"]
 if not re.fullmatch(r"bkt_[A-Za-z0-9]+", mailbox_id):
     raise ValueError("Invalid mailbox ID")
 response = requests.get(

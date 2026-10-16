@@ -2,6 +2,8 @@
 
 Give each customer a private mailbox. Your backend creates mailboxes, reads messages
 and downloads attachments. Customers need no separate Revdoku signup.
+Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for
+example `https://api.revdoku.com/v1/mailboxes`.
 
 ## Start with the examples
 
@@ -21,7 +23,9 @@ node --env-file=.env javascript/process-customer-mail.js
 ```
 
 The examples use native `fetch` and a private persistent journal in
-`.revdoku-examples` (`REVDOKU_STATE_DIR` overrides this). Run one process at a time;
+`.revdoku-examples` (`REVDOKU_STATE_DIR` overrides this). In your application,
+you can use the SDK instead (`npm install revdoku` or `pip install revdoku`); see
+the [quickstart](https://revdoku.com/docs/quickstart.md). Run one process at a time;
 verify its process stopped before removing a leftover lock.
 
 Send test mail to a confirmed address. The processor saves summaries and arrival
@@ -59,7 +63,7 @@ Namespace mappings, cursors and work records by account and mailbox.
 
 ## Provision once and recover
 
-The [minimal creation request](../api.md#create-a-mailbox) sends `{"mailbox":{}}`.
+The [minimal creation request](https://revdoku.com/api.md#create-a-mailbox) sends `{"mailbox":{}}`.
 For a connected custom domain, set `REVDOKU_EMAIL_DOMAIN` before provisioning.
 
 | Outcome | Next action |
@@ -79,7 +83,7 @@ failed. A known mailbox ID is checked with GET. Structured 4xx rejection permits
 later explicit new attempt. Use only confirmed addresses.
 
 Aliases share a mailbox's messages, restrictions and quotas; they provide no
-isolation. Follow the [alias workflow](../api.md#aliases),
+isolation. Follow the [alias workflow](https://revdoku.com/api.md#aliases),
 check `max_email_aliases_per_mailbox`, and wait for routing confirmation. Keeping an
 old primary also uses rotation capacity. Removal stops new/queued deliveries;
 existing mail remains.
@@ -179,4 +183,4 @@ only identified test messages/files individually.
 
 Content-search filters may be unavailable; authorized reads still work. Signed API
 download URLs check access and decrypt content. Fetch them without an API key.
-See [account setup and download differences](../api.md#hipaa-and-high-security-accounts).
+See [account setup and download differences](https://revdoku.com/api.md#hipaa-and-high-security-accounts).

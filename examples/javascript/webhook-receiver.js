@@ -3,10 +3,10 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { mkdir, access, writeFile } from 'node:fs/promises';
 const secret = process.env.REVDOKU_WEBHOOK_SECRET;
 const apiKey = process.env.REVDOKU_API_KEY;
-const mailboxId = process.env.REVDOKU_BUCKET_ID;
+const mailboxId = process.env.REVDOKU_MAILBOX_ID;
 const accountId = process.env.REVDOKU_ACCOUNT_ID;
 if (!secret || !apiKey || !mailboxId)
-    throw new Error('Set REVDOKU_WEBHOOK_SECRET, REVDOKU_API_KEY and REVDOKU_BUCKET_ID.');
+    throw new Error('Set REVDOKU_WEBHOOK_SECRET, REVDOKU_API_KEY and REVDOKU_MAILBOX_ID.');
 await mkdir('.revdoku-examples/webhooks', { recursive: true, mode: 0o700 });
 const processing = new Set();
 const server = createServer(async (request, response) => {

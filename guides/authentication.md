@@ -1,7 +1,8 @@
 # Authentication for existing accounts
 
-REST endpoints use `https://api.revdoku.com`; OAuth endpoints use
-`https://app.revdoku.com`.
+API requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for
+example `https://api.revdoku.com/v1/mailboxes`. OAuth endpoints (paths that
+start with `/oauth/`) use `https://app.revdoku.com`.
 
 Most REST clients use an API key from **Account → Access**. Send it as
 `Authorization: Bearer YOUR_API_KEY`. For a new account, use [browser signup](https://app.revdoku.com/users/sign_up).

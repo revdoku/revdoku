@@ -6,7 +6,7 @@
         {
           "href": "https://revdoku.com/openapi.json",
           "type": "application/vnd.oai.openapi+json",
-          "title": "Revdoku public agent API"
+          "title": "Revdoku API"
         }
       ],
       "service-doc": [
@@ -16,9 +16,34 @@
           "title": "Revdoku documentation"
         },
         {
+          "href": "https://revdoku.com/docs/quickstart.md",
+          "type": "text/markdown",
+          "title": "Revdoku API quickstart"
+        },
+        {
           "href": "https://revdoku.com/api.md",
           "type": "text/markdown",
           "title": "Revdoku API guide"
+        },
+        {
+          "href": "https://revdoku.com/api/reference.md",
+          "type": "text/markdown",
+          "title": "Revdoku API reference"
+        },
+        {
+          "href": "https://revdoku.com/docs/sdks/typescript.md",
+          "type": "text/markdown",
+          "title": "Revdoku TypeScript SDK"
+        },
+        {
+          "href": "https://revdoku.com/docs/sdks/python.md",
+          "type": "text/markdown",
+          "title": "Revdoku Python SDK"
+        },
+        {
+          "href": "https://revdoku.com/docs/coding-agents.md",
+          "type": "text/markdown",
+          "title": "Build with Claude Code or Codex"
         }
       ],
       "https://revdoku.com/rels/mcp": [
