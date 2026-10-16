@@ -1,8 +1,8 @@
 ---
 name: revdoku
 description: >
-  Receive and reply to email, read messages and attachments, and store or share
-  files with humans and AI agents. Use Revdoku for authorized uploads, file changes,
+  Mailboxes for AI agents: receive and reply to email, read messages and
+  attachments, and store or share files. Use Revdoku for authorized uploads, file changes,
   restore, archiving, permanent deletion, and agency client account creation.
 license: MIT-0
 metadata:
@@ -134,7 +134,7 @@ Gmail verification alone does not prove forwarding works.
 See the [first email workflow](https://revdoku.com/docs.md#first-email-workflow).
 
 `mailbox_create(email: {username: "project.alerts"})` returns a ready mailbox.
-Free adds a permanent 4-character suffix. Paid exact names need 6+ characters.
+Revdoku adds a permanent 4-character suffix on `revdokumail.com`.
 Omit `email` to generate one. Use the returned address.
 `EMAIL_ALREADY_EXISTS` means the name is unavailable. Ask for another name. Do not silently replace rejected names.
 CLI: `create --username NAME`.
@@ -244,7 +244,7 @@ Supply the known purpose through CLI `--reason` or MCP/REST `reason`.
 Omit unknown reasons, secrets, contents and transcripts.
 See [API details](https://revdoku.com/api.md#action-reasons).
 
-Read quotas with CLI `account limits` or MCP `account_limits`.
+Read quotas with CLI `account limits` or MCP `account_limits`; relay an error's `upgrade_url`.
 
 ## Email events
 

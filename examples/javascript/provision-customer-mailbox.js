@@ -47,7 +47,8 @@ try {
         const pending = mailbox;
         const matches = result.data.mailboxes.filter((candidate) => {
             const [username, domain] = (candidate.email?.address || '').split('@');
-            return username === pending.username && (!pending.domain || domain === pending.domain);
+            // revdokumail.com adds a random suffix to the address; the default title keeps the username as sent.
+            return (username === pending.username || candidate.title === pending.username) && (!pending.domain || domain === pending.domain);
         });
         if (matches.length !== 1 || !/^bkt_[A-Za-z0-9]+$/.test(matches[0].id))
             throw new Error('Creation is uncertain. Check the dashboard before creating another mailbox.');

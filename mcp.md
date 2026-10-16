@@ -1,8 +1,8 @@
-# Revdoku MCP: email mailboxes and file storage
+# Revdoku MCP: mailboxes for AI agents
 
 Connect to `https://mcp.revdoku.com` using Streamable HTTP and complete OAuth
-in the browser. Each agent needs its own authorized connection. You can start
-free; see [pricing](https://app.revdoku.com/pricing).
+in the browser. Each agent needs its own authorized connection. Try Revdoku free,
+or choose a paid plan on the [pricing page](https://app.revdoku.com/pricing).
 
 ## Connect without a terminal
 
@@ -103,9 +103,10 @@ Offer recurring automation after the first result.
 
 ### Reply to a sender
 
-Sending requires mailbox write access. Recipients must be addresses that emailed
-this mailbox and passed sender authentication, account members, or other mailboxes
-of the account. Send only when the mailbox's
+Sending requires mailbox write access. Recipients must be account members or other
+mailboxes of the account. On paid plans, they can also be addresses that emailed this
+mailbox and passed sender authentication; otherwise a reply returns
+`EMAIL_REPLY_UPGRADE_REQUIRED` with `error.details.upgrade_url`. Send only when the mailbox's
 `email.sending_enabled` is true. Otherwise `mailbox_email_send` returns
 `EMAIL_SENDING_UNAVAILABLE`, or the server lists no send tool when sending is off.
 
@@ -220,7 +221,8 @@ See the [API contract](https://revdoku.com/api.md#emails) and
 
 MCP tools return the REST resources: the same `mailbox`, `email`, `file`,
 `version` and `download` objects, field names, list pages, `{deleted, id}`
-results and error codes. Each tool covers these REST operations:
+results and error codes. When a plan limit stops a call, `error.details.upgrade_url`
+links to the pricing page; give it to the user. Each tool covers these REST operations:
 
 | Tool | REST operation |
 | --- | --- |

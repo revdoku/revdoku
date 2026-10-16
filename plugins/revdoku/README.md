@@ -1,6 +1,6 @@
 # Revdoku skill and MCP plugin
 
-Cloud file storage and incoming email for people and AI agents. Each mailbox has
+Mailboxes for AI agents, with private file storage. Each mailbox has
 an email address and holds messages, attachments and other files. Authorized
 members and agents can read and manage shared mailbox data, including versions.
 Mailboxes can reply to senders who emailed them.

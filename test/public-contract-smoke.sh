@@ -173,12 +173,14 @@ if [[ "$PUBLIC_DISTRIBUTION" == true ]]; then
     "$MANIFEST_ROOT/.codex-plugin/plugin.json"
     "$MANIFEST_ROOT/.cursor-plugin/plugin.json"
     "$MANIFEST_ROOT/plugins/revdoku-claude/.claude-plugin/plugin.json"
+    "$MANIFEST_ROOT/plugins/revdoku-chatgpt/plugin.json"
   )
 else
   manifest_paths=(
     "$MANIFEST_ROOT/public/.codex-plugin/plugin.json"
     "$MANIFEST_ROOT/public/.cursor-plugin/plugin.json"
     "$MANIFEST_ROOT/claude-plugin/plugin.json"
+    "$MANIFEST_ROOT/chatgpt-plugin/plugin.json"
   )
 fi
 

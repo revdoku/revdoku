@@ -3,7 +3,7 @@
   "info": {
     "title": "Revdoku API",
     "version": "2.0.0",
-    "description": "Email mailboxes for people and AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up."
+    "description": "Mailboxes for AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up."
   },
   "servers": [
     {
@@ -1105,7 +1105,7 @@
           "Mailboxes"
         ],
         "summary": "Create a mailbox",
-        "description": "Waits until the address can receive email. On Free, email.username is a prefix with a permanent 4-character random suffix; paid plans get the exact name. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. The title defaults to email.username; a title that another active mailbox uses returns 409 MAILBOX_TITLE_TAKEN. Never retry a creation automatically.",
+        "description": "Waits until the address can receive email. On revdokumail.com, email.username is a prefix with a permanent 4-character random suffix on every plan; a custom domain takes the exact name. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. The title defaults to email.username; a title that another active mailbox uses returns 409 MAILBOX_TITLE_TAKEN. Never retry a creation automatically.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1598,7 +1598,8 @@
                   "username": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 64
+                    "maxLength": 64,
+                    "description": "New name before @. On revdokumail.com, a prefix with a new 4-character random suffix; on a custom domain, the exact name."
                   },
                   "domain": {
                     "type": "string",
@@ -1698,7 +1699,8 @@
                 "type": "object",
                 "properties": {
                   "username": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Alias name before @. On revdokumail.com, a prefix with a 4-character random suffix; on a custom domain, the exact name."
                   },
                   "domain": {
                     "type": "string"
@@ -2290,7 +2292,7 @@
           "Emails"
         ],
         "summary": "Send an email",
-        "description": "Requires mailbox write permission. Send only to account members, to other mailboxes of the account, or to addresses that emailed this mailbox and passed sender authentication. The From name is the mailbox title. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.",
+        "description": "Requires mailbox write permission. Send only to account members, to other mailboxes of the account, or (on paid plans) to addresses that emailed this mailbox and passed sender authentication. The From name is the mailbox title. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -4103,6 +4105,7 @@
           "EMAIL_RECIPIENT_CAPACITY",
           "EMAIL_RECIPIENT_NOT_ALLOWED",
           "EMAIL_RECIPIENT_UNAVAILABLE",
+          "EMAIL_REPLY_UPGRADE_REQUIRED",
           "EMAIL_ROTATION_LIMIT",
           "EMAIL_ROTATION_UNAVAILABLE",
           "EMAIL_SENDING_UNAVAILABLE",
@@ -4553,7 +4556,7 @@
           "max_email_aliases_per_mailbox": {
             "type": "integer",
             "minimum": 0,
-            "description": "Active retained email addresses per mailbox; Free always has zero."
+            "description": "Active retained email addresses per mailbox; Try free always has zero."
           }
         }
       },
@@ -5032,7 +5035,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "description": "Free: a prefix normalized to dots, shortened to 59 characters, with a permanent 4-character random lowercase letter/digit suffix added. Paid: the exact name before @, normalized to lowercase, at least 6 characters on built-in domains. Omit to generate; blank/null is invalid. Unavailable names return EMAIL_ALREADY_EXISTS."
+            "description": "On revdokumail.com, every plan: a prefix normalized to dots, shortened to 59 characters, with a permanent 4-character random lowercase letter/digit suffix added. On a custom domain: the exact name before @, normalized to lowercase. Omit to generate; blank/null is invalid. Unavailable names return EMAIL_ALREADY_EXISTS."
           },
           "domain": {
             "type": "string",

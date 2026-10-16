@@ -1,7 +1,7 @@
 # Revdoku CLI
 
-Use Revdoku from your terminal or automation to read email and attachments
-and store additional files. This standalone installation adds one `revdoku` executable. It does not
+Revdoku provides mailboxes for AI agents. Use it from your terminal or automation to
+read email and attachments and store additional files. This standalone installation adds one `revdoku` executable. It does not
 install skills, plugins, or AI app configuration.
 
 ## Install
@@ -98,8 +98,8 @@ and selection state otherwise live under `~/.revdoku/`; keep them private.
 
 Uploading without an existing mailbox binding can create a mailbox and consume
 creation capacity. Pass `--mailbox-id` to store files in an existing mailbox. `revdoku create` creates an empty mailbox. Omit `--username` to
-generate a name. Free adds a permanent 4-character random suffix to the requested
-prefix. Paid plans get the exact name (at least 6 characters on `revdokumail.com`).
+generate a name. On `revdokumail.com`, Revdoku adds a permanent 4-character random
+suffix to the requested prefix on every plan. A custom domain takes the exact name.
 An unavailable name returns `EMAIL_ALREADY_EXISTS`.
 `--title TEXT` names the mailbox; without it, the title is the username.
 Creation returns when receiving is ready. Use the returned address.

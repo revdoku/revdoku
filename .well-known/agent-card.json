@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Email mailboxes with shared file storage for people and AI agents. Receive and read messages and attachments, and share files through authorized mailbox access. ",
+  "description": "Mailboxes for AI agents, with private file storage. Receive and read messages and attachments, and share files through authorized mailbox access. ",
   "url": "https://revdoku.com/",
   "documentation_url": "https://revdoku.com/docs",
   "mcp_url": "https://mcp.revdoku.com",
@@ -13,7 +13,7 @@
   "skills": [
     {
       "id": "email",
-      "name": "Email mailboxes for people and AI agents",
+      "name": "Mailboxes for AI agents",
       "description": "Create a mailbox with mailbox_create and check email.receiving_enabled. Use mailbox_email_list with a saved cursor, mailbox_email_get for decoded messages, and mailbox_email_download for originals and attachments. ",
       "account_required": true
     },
