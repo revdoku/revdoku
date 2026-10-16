@@ -70,8 +70,10 @@ For a connected custom domain, set `REVDOKU_EMAIL_DOMAIN` before provisioning.
 | Capacity/permission error | Resolve the returned condition before an explicitly chosen new attempt. |
 
 The example saves intent and a unique email username before sending. After an
-unknown result, rerunning searches that username and requires an exact match; it
-never repeats the POST. The saved username identifies the intended address. It is not a retry key. Missing
+unknown result, rerunning searches that username and requires one mailbox whose
+title or address name equals it; it never repeats the POST. On `revdokumail.com`
+the address adds a random suffix, so the default title (the username as sent)
+identifies the mailbox. The username is not a retry key. Missing
 or multiple matches need human review; an empty list does not prove creation
 failed. A known mailbox ID is checked with GET. Structured 4xx rejection permits a
 later explicit new attempt. Use only confirmed addresses.

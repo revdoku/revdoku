@@ -1,6 +1,6 @@
 # Revdoku for Claude
 
-Email mailboxes with shared file storage for people and AI agents. Receive and read
+Mailboxes for AI agents, with private file storage. Receive and read
 messages and attachments, manage stored text files, and collaborate through
 authorized mailbox access.
 

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Create and manage email mailboxes for AI agents, with cloud storage for emails, attachments, and files.",
+  "description": "Create and manage mailboxes for AI agents, with cloud storage for emails, attachments, and files.",
   "homepage": "https://revdoku.com/",
   "docs": "https://revdoku.com/docs",
   "pricing": "https://app.revdoku.com/pricing",

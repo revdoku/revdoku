@@ -26,15 +26,17 @@ globalThis.fetch = async (input, options = {}) => {
       if (options.method === 'POST') {
         assert.equal(body.idempotency_key, undefined);
         assert.equal(body.mailbox.title, undefined);
-        const mailbox = { id: `bkt_${mailboxes.length + 1}`,
-          email: { address: `${body.mailbox.email.username}@${body.mailbox.email.domain || "revdokumail.com"}`, receiving_enabled: true } };
+        // revdokumail.com adds a random suffix; a custom domain keeps the exact name. The title is the username.
+        const { username, domain } = body.mailbox.email;
+        const mailbox = { id: `bkt_${mailboxes.length + 1}`, title: username,
+          email: { address: domain ? `${username}@${domain}` : `${username.replace(/[-_]/g, '.')}.k7x2@revdokumail.com`, receiving_enabled: true } };
         mailboxes.push(mailbox);
         writeFileSync('.fixture-mailboxes.json', JSON.stringify(mailboxes));
         if (process.env.FIXTURE_CREATE === 'lost') throw new TypeError('Connection dropped after commit');
         if (process.env.FIXTURE_CREATE === 'not_ready') return Response.json({ error: { code: 'EMAIL_NOT_READY', details: { mailbox_id: mailbox.id } } }, { status: 503 });
         return ok({ mailbox });
       }
-      if (url.pathname === '/v1/mailboxes') return ok({ mailboxes: mailboxes.filter(mailbox => mailbox.email.address.includes(url.searchParams.get('q'))) });
+      if (url.pathname === '/v1/mailboxes') return ok({ mailboxes: mailboxes.filter(mailbox => [mailbox.title, mailbox.email.address].some(text => text.includes(url.searchParams.get('q')))) });
       const mailbox = mailboxes.find(mailbox => mailbox.id === url.pathname.split('/').at(-1));
       assert.ok(mailbox);
       if (process.env.FIXTURE_CREATE === 'not_ready') mailbox.email = { ...mailbox.email, receiving_enabled: false, blocked_reason: 'routing_pending' };

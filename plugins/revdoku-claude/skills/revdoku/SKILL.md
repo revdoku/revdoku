@@ -96,9 +96,10 @@ the user's authorized service and current attempt; never expose or retain codes.
 
 ## Send email
 
-Send only when the user asks. Recipients must be addresses that emailed this
-mailbox and passed sender authentication, account members, or other mailboxes
-of the account. Use at most 10 recipients; Bcc is unavailable. On
+Send only when the user asks. Recipients must be account members, other
+mailboxes of the account, or addresses that emailed this mailbox and passed
+sender authentication. When the account cannot reply to senders, the send returns
+`EMAIL_REPLY_UPGRADE_REQUIRED`; relay its `upgrade_url` to the user. Use at most 10 recipients; Bcc is unavailable. On
 `EMAIL_LOOP_DETECTED`, stop automatic replies to that address. Send only when the mailbox's `email.sending_enabled` is true.
 Otherwise `mailbox_email_send` returns `EMAIL_SENDING_UNAVAILABLE`, or the
 connector lists no send tool.

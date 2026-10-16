@@ -1,0 +1,49 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "revdoku",
+  "version": "1.0.565",
+  "description": "Mailboxes for AI agents. Read incoming email and attachments, reply to senders and manage stored files in authorized Revdoku mailboxes through the hosted Revdoku MCP server.",
+  "author": {
+    "name": "Revdoku",
+    "email": "support@revdoku.com",
+    "url": "https://revdoku.com"
+  },
+  "homepage": "https://revdoku.com",
+  "repository": "https://github.com/revdoku/revdoku",
+  "license": "MIT",
+  "keywords": [
+    "email",
+    "mailbox",
+    "ai-agents",
+    "attachments",
+    "incoming-email"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Revdoku",
+        "shortDescription": "Mailboxes for AI agents",
+        "longDescription": "Mailboxes for AI agents. Each Revdoku mailbox has its own email address. Read the email and attachments that arrive there, reply to the people who wrote, and keep files in private storage. Revdoku scans incoming email for malware, labels prompt-injection attempts as Junk and keeps Junk content away from the assistant. You choose which accounts and mailboxes each connection can use, and every read and change is logged.",
+        "developerName": "Revdoku",
+        "category": "Communication",
+        "capabilities": [
+          "Read incoming email and attachments",
+          "Reply to people who emailed a mailbox",
+          "Store and organize files in a mailbox"
+        ],
+        "websiteURL": "https://revdoku.com",
+        "privacyPolicyURL": "https://revdoku.com/privacy/",
+        "termsOfServiceURL": "https://revdoku.com/terms/",
+        "supportURL": "https://revdoku.com/contact/",
+        "defaultPrompt": [
+          "Check my Revdoku mailboxes for new email and summarize what needs my attention.",
+          "Read the latest receipt in my mailbox and list the order number and total.",
+          "Reply to the latest customer question in my support mailbox."
+        ],
+        "brandColor": "#2563EB",
+        "composerIcon": "./assets/composer-icon.png",
+        "logo": "./assets/logo.png"
+      }
+    }
+  }
+}

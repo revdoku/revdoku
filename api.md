@@ -1,6 +1,6 @@
 # Revdoku API
 
-Revdoku provides **email mailboxes for humans and AI agents**, with private file
+Revdoku provides **mailboxes for AI agents**, with private file
 storage in each mailbox. The REST API creates mailboxes, lists and reads email,
 downloads attachments, replies to senders and stores files.
 
@@ -289,7 +289,7 @@ Content-Type: application/json
 
 | Field | Default | Purpose |
 | --- | --- | --- |
-| `mailbox.email.username` | Generated name | Free: a prefix; Revdoku adds a permanent 4-character random suffix. Paid: the exact name before `@`. |
+| `mailbox.email.username` | Generated name | On `revdokumail.com`, a prefix: Revdoku adds a permanent 4-character random suffix on every plan. On a ready custom domain, the exact name before `@`. |
 | `mailbox.email.domain` | Platform domain | `revdokumail.com`, or a ready custom domain of this account. |
 | `mailbox.title` | The username | Optional title, at most 255 characters. Without it, the title is `email.username` as given, or the generated name without its random suffix. |
 | `mailbox.description` | Empty | Optional description, at most 2,000 characters. |
@@ -299,7 +299,6 @@ Content-Type: application/json
 | --- | --- |
 | Characters | ASCII letters, digits, dots, hyphens and underscores; stored in lowercase. |
 | Empty or `null` | `422 EMAIL_NAME_INVALID`. |
-| Paid exact name with fewer than 6 characters on `revdokumail.com` | `422 EMAIL_NAME_INVALID`. |
 | Address unavailable | `409 EMAIL_ALREADY_EXISTS`. |
 
 Titles are unique among the account's active mailboxes, ignoring case and
@@ -432,7 +431,7 @@ A mailbox can send to these recipients:
 
 | Recipient | Condition |
 | --- | --- |
-| A sender | The address emailed this mailbox and passed sender authentication. |
+| A sender (paid plans) | The address emailed this mailbox and passed sender authentication. |
 | An account member | A member of the mailbox's account with a confirmed email address. |
 | Another mailbox | A mailbox of the same account that can receive email now. |
 
@@ -470,8 +469,9 @@ Content-Type: application/json
 | Error | Meaning |
 | --- | --- |
 | `403 EMAIL_RECIPIENT_NOT_ALLOWED` | A recipient is not in the table above. |
+| `403 EMAIL_REPLY_UPGRADE_REQUIRED` | A recipient emailed this mailbox, but the plan sends only to account members and the account's other mailboxes. `error.details.upgrade_url` links to the pricing page. |
 | `409 EMAIL_RECIPIENT_UNAVAILABLE` | A recipient is a Revdoku mailbox that cannot receive email now. |
-| `403 EMAIL_SEND_LIMIT_REACHED` | The account used its monthly sent email allowance. |
+| `403 EMAIL_SEND_LIMIT_REACHED` | The account used its monthly sent email allowance. `error.details` has `monthly_limit`, `resets_at` and, when a higher plan raises the limit, `upgrade_url`. |
 | `429 EMAIL_SEND_RATE_LIMITED` | Too many emails from this mailbox or to one recipient, per minute, hour or day. Wait and try again. |
 | `429 EMAIL_LOOP_DETECTED` | In the last 24 hours, this mailbox and a recipient each sent the other 20 emails. Stop automatic replies to that address. |
 
@@ -515,7 +515,7 @@ Requires a paid plan and mailbox admin.
 | --- | --- | --- |
 | `confirm` | Yes | `true`. |
 | `expected_address` | Yes | Current `address` from step 1. |
-| `username` | No | New name; omit for a generated name. |
+| `username` | No | New name; omit for a generated name. On `revdokumail.com`, it gets a new 4-character random suffix. |
 | `domain` | No | Available platform domain, a ready custom domain, or `platform`. |
 | `keep_old_as_alias` | No | Keep the old address as an alias. Default `true` for account owners and administrators, otherwise `false`. Send `false` to retire it. |
 
@@ -532,7 +532,7 @@ without a free alias slot returns `409 EMAIL_ALIAS_LIMIT`; send
 
 | Method | Path | Meaning |
 | --- | --- | --- |
-| POST | `/v1/mailboxes/{mailbox_id}/email/aliases` | Add `username` (and optional `domain`). Returns `202`; read the settings until the alias is ready. |
+| POST | `/v1/mailboxes/{mailbox_id}/email/aliases` | Add `username` (and optional `domain`). On `revdokumail.com`, the alias gets a 4-character random suffix. Returns `202`; read the settings until the alias is ready. After an uncertain result, read the settings before you try again. |
 | DELETE | `/v1/mailboxes/{mailbox_id}/email/aliases/{alias_id}` | Remove one alias. Saved email stays. |
 
 Aliases need a paid plan and a full-account owner or administrator with mailbox admin.
@@ -740,6 +740,7 @@ See [Custom email domains](https://github.com/revdoku/revdoku/blob/main/guides/c
 | `404` | `NOT_FOUND`, `MAILBOX_NOT_FOUND`, `MAILBOX_FILE_NOT_FOUND` | Unknown route or resource, or not visible to this key. |
 | `409` | `MAILBOX_METADATA_CONFLICT`, `MAILBOX_VERSION_CONFLICT`, `EMAIL_ADDRESS_CHANGED` | A concurrent change; read again. |
 | `403` | `MAILBOX_ARCHIVED` | The mailbox is archived and read-only; unarchive it first. |
+| `403` | `MAILBOX_LIMIT_REACHED` | The plan's active mailbox limit is reached; archive a mailbox or upgrade. |
 | `403` | `EMAIL_SENDING_UNAVAILABLE` | This mailbox cannot send now; see `email.sending_blocked_reason`. |
 | `403` | `EMAIL_WITHHELD` | The email has the `Junk` label; its content is not available to API keys. Do not retry. |
 | `409` | `MAILBOX_ALREADY_ARCHIVED`, `MAILBOX_NOT_ARCHIVED` | Wrong archive state. |
@@ -756,6 +757,8 @@ See [Custom email domains](https://github.com/revdoku/revdoku/blob/main/guides/c
 Use bounded exponential backoff with jitter for `429`, `503` and
 `DATABASE_BUSY_RETRY`. Never retry a mailbox creation or an email send after an
 unknown result. A quota error is not a short throttle: do not retry it automatically.
+When a plan limit stops a request, `error.details.upgrade_url` links to the pricing
+page and `error.next_action` is `upgrade_plan`. Give the link to the person who manages the account.
 
 When an account is read-only, reads work and writes return the account-state error.
 `GET /v1/status` explains the restriction in `account.restriction`.

@@ -1,6 +1,6 @@
 # Revdoku documentation
 
-Revdoku provides email mailboxes with private file storage inside each mailbox.
+Revdoku provides mailboxes for AI agents, with private file storage inside each mailbox.
 Use the REST API, CLI, MCP, or dashboard to create mailboxes and read messages.
 
 ## Choose how to connect
@@ -121,7 +121,7 @@ Content-Type: application/json
 
 | Choice | Behavior |
 | --- | --- |
-| Supply `mailbox.email.username` | Free adds a permanent 4-character random suffix to a dot-separated prefix. Paid plans get the exact name (at least 6 characters on `revdokumail.com`). An unavailable name returns `EMAIL_ALREADY_EXISTS`. |
+| Supply `mailbox.email.username` | On `revdokumail.com`, Revdoku adds a permanent 4-character random suffix to a dot-separated prefix on every plan. A ready custom domain takes the exact name. An unavailable name returns `EMAIL_ALREADY_EXISTS`. |
 | Send `{"mailbox": {}}` | Generate a username automatically. |
 
 Creation waits for receiving confirmation. Use the returned address after a

@@ -202,7 +202,7 @@ detect_agent_name() {
 
 usage() {
   cat <<USAGE
-revdoku — email mailboxes for people and AI agents, with private file storage.
+revdoku: mailboxes for AI agents, with private file storage.
 
 Usage: revdoku <command> [PATH] [options]
 
@@ -280,7 +280,7 @@ Examples:
   revdoku read notes.md --mailbox-id bkt_... --reason "Review project decisions"
   revdoku dashboard
 
-You can start free. Plans: https://app.revdoku.com/pricing
+Try Revdoku free. Paid plans: https://app.revdoku.com/pricing
 USAGE
 }
 
@@ -862,7 +862,7 @@ http_json() {
       payload="$("$JQ_BIN" -c --arg reason "$ACTION_REASON" '. + {reason: $reason}' <<<"$payload")"
     fi
   fi
-  local body_file status message code request_id retry_after details_json attempt curl_status delay agent_args=()
+  local body_file status message code request_id retry_after details_json upgrade_url attempt curl_status delay agent_args=()
   LAST_HTTP_STATUS=""
   LAST_ERROR_CODE=""
   LAST_ERROR_MESSAGE=""
@@ -931,7 +931,9 @@ http_json() {
     retry_after="$("$JQ_BIN" -r '.error.details.retry_after // empty' "$body_file" 2>/dev/null || true)"
     details_json="$("$JQ_BIN" -c '.error.details // {}' "$body_file" 2>/dev/null || printf '{}')"
 
-    if [[ "$method" != "DELETE" && "$send_once" != "true" && "$status" == "429" && "$attempt" -lt 20 ]]; then
+    # Plan limits also answer 429 (for example MAILBOX_CREATION_LIMIT_REACHED); only rate limits clear on retry.
+    if [[ "$method" != "DELETE" && "$send_once" != "true" && "$status" == "429" && "$attempt" -lt 20 ]] &&
+      [[ -z "$code" || "$code" == *RATE_LIMIT* ]]; then
       [[ "$retry_after" =~ ^[0-9]+$ && "$retry_after" -gt 0 ]] || retry_after=5
       attempt=$((attempt + 1))
       echo "Rate limited while calling $path; retrying in ${retry_after}s..." >&2
@@ -972,6 +974,8 @@ http_json() {
     [[ -n "$code" ]] && message="${message} (${code})"
     [[ -n "$request_id" ]] && message="${message} request_id=${request_id}"
     echo "error: $message" >&2
+    upgrade_url="$("$JQ_BIN" -r '.upgrade_url? // empty | strings | select(test("^https?://[^\\s\\p{Cc}]+$"))' <<<"$details_json" 2>/dev/null || true)"
+    [[ -z "$upgrade_url" ]] || echo "Upgrade: $upgrade_url" >&2
     if [[ "$status" == "423" && ( "$code" == "MAILBOX_LOCKED" || "$code" == "FILE_LOCKED" ) ]]; then
       echo "Lock details: $(lock_detail_summary "$details_json")" >&2
     fi
@@ -1104,7 +1108,7 @@ request_device_agent_key() {
   echo "Open this Revdoku link to connect:" >&2
   echo "$verification_uri_complete" >&2
   echo "Connection ID is $user_code" >&2
-  echo "This is a safety check. Make sure the same ID appears in the top-right of Revdoku, then select Confirm Connection." >&2
+  echo "This is a safety check. Make sure the same ID appears in the top-right of Revdoku, then select Connect." >&2
   if open_browser_url "$verification_uri_complete"; then
     echo "Opened the approval page in your browser." >&2
   else

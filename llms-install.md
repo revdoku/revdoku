@@ -1,6 +1,6 @@
 # Revdoku agent setup
 
-Revdoku provides email mailboxes for people and AI agents, with private file storage.
+Revdoku provides mailboxes for AI agents, with private file storage.
 Connect to create and manage mailboxes, read messages and attachments, and store files.
 Verify the account and granted access with a read, then complete the requested task.
 
@@ -135,9 +135,9 @@ local CLI when you have shell access. A hosted agent cannot read the user's comp
 Without MCP or shell access, follow [No connector available](#no-connector-available).
 
 Private storage and collaboration follow the [Terms of Use](https://revdoku.com/terms/).
-## Start free
+## Plans
 
-You can start free. See [pricing](https://app.revdoku.com/pricing) for current plans.
+Try Revdoku free. For regular use, choose a paid plan on the [pricing page](https://app.revdoku.com/pricing).
 
 ## Troubleshooting tutorials
 

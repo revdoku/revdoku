@@ -47,7 +47,7 @@ Content-Type: application/json
 ```
 
 1. Open the returned browser link and show the Connection ID to the human.
-2. The human checks the same ID in Revdoku and selects **Confirm Connection**.
+2. The human checks the same ID in Revdoku and selects **Connect**.
 3. Poll the token endpoint until approval or expiry.
 4. Store the returned credential privately. Permissions can be reduced in **Account → Access**.
 

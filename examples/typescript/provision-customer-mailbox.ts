@@ -40,9 +40,10 @@ try {
     const result = await response.json();
     if (!response.ok || !Array.isArray(result.data?.mailboxes)) throw new Error('Could not reconcile creation. Check the dashboard; rerun to check again.');
     const pending = mailbox;
-    const matches = result.data.mailboxes.filter((candidate: { email?: { address?: string } }) => {
+    const matches = result.data.mailboxes.filter((candidate: { title?: string | null; email?: { address?: string } }) => {
       const [username, domain] = (candidate.email?.address || '').split('@');
-      return username === pending.username && (!pending.domain || domain === pending.domain);
+      // revdokumail.com adds a random suffix to the address; the default title keeps the username as sent.
+      return (username === pending.username || candidate.title === pending.username) && (!pending.domain || domain === pending.domain);
     });
     if (matches.length !== 1 || !/^bkt_[A-Za-z0-9]+$/.test(matches[0].id)) throw new Error('Creation is uncertain. Check the dashboard before creating another mailbox.');
     mailbox.mailbox_id = matches[0].id;

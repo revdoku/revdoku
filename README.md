@@ -1,9 +1,8 @@
 # Revdoku
 
-**Email mailboxes with shared file storage for people and AI agents.** Give an agent
-or project its own mailbox to receive messages and attachments. Each mailbox is a
-private storage mailbox with its own email address, where you can also store and
-share documents, data, and project files with authorized people and agents.
+**Mailboxes for AI agents.** Give each agent its own mailbox and email address to
+receive messages and attachments. Each mailbox also stores private documents, data,
+and project files that you share with authorized people and agents.
 
 Ask your agent to summarize incoming mail, collect invoices and attachments, or
 monitor replies to submissions. Use hosted MCP for AI agents, the CLI for local
@@ -83,11 +82,11 @@ checks to coordinate changes.
 See the [storage quick start](./docs.md#storing-files-inside-a-mailbox) and
 [sharing access and coordinating edits](./docs.md#share-access-and-coordinate-edits).
 
-## Start free
+## Plans
 
 Create an account in your browser at <https://app.revdoku.com/users/sign_up>.
 Keep account credentials and verification codes out of AI chat.
-You can start free. See [pricing](https://app.revdoku.com/pricing) for current plans.
+Try Revdoku free. For regular use, choose a paid plan on the [pricing page](https://app.revdoku.com/pricing).
 
 Private storage and collaboration follow the [Terms of Use](https://revdoku.com/terms/).
 Contact `support@revdoku.com` for account, billing, or access questions.
