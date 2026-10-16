@@ -7,8 +7,8 @@ Use the TypeScript or Python SDK, the REST API, CLI, MCP, or dashboard to create
 
 | Interface | Best for | Start here |
 | --- | --- | --- |
-| TypeScript SDK | Node.js applications and backend services | `npm install revdoku` · [Quickstart](https://revdoku.com/docs/quickstart.md) · [TypeScript SDK guide](https://revdoku.com/docs/sdks/typescript.md) |
-| Python SDK | Python applications, scripts, and backend services | `pip install revdoku` · [Quickstart](https://revdoku.com/docs/quickstart.md) · [Python SDK guide](https://revdoku.com/docs/sdks/python.md) |
+| TypeScript SDK | Node.js applications and backend services | [Install](#api-quick-start) · [Quickstart](https://revdoku.com/docs/quickstart.md) · [TypeScript SDK guide](https://revdoku.com/docs/sdks/typescript.md) |
+| Python SDK | Python applications, scripts, and backend services | [Install](#api-quick-start) · [Quickstart](https://revdoku.com/docs/quickstart.md) · [Python SDK guide](https://revdoku.com/docs/sdks/python.md) |
 | REST API | Any language, and direct HTTP calls | [API guide](https://revdoku.com/api.md) · [API reference](https://revdoku.com/api/reference.md) · [OpenAPI](https://revdoku.com/openapi.json) |
 | Coding agents | Claude Code, Codex, or Cursor writing your integration | [Build with coding agents](https://revdoku.com/docs/coding-agents.md) |
 | CLI | Terminal use and uploading local files or folders | [CLI installation and commands](https://revdoku.com/cli/) |
@@ -55,10 +55,18 @@ Connecting MCP alone does not make an idle AI chat monitor your mailbox.
 ## API quick start
 
 The [quickstart](https://revdoku.com/docs/quickstart.md) takes you from a new API key
-to your first received email, with TypeScript, Python, and cURL examples:
+to your first received email, with TypeScript, Python, and cURL examples.
+
+Install the TypeScript and JavaScript SDK (Node.js 22 or later):
 
 ```sh
-npm install revdoku   # or: pip install revdoku
+npm install revdoku
+```
+
+Or install the Python SDK (Python 3.10 or later):
+
+```sh
+pip install revdoku
 ```
 
 Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example
