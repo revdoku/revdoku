@@ -3,7 +3,8 @@
 Runnable Node.js examples for email mailboxes and additional private file storage. Choose
 [JavaScript](./javascript/README.md) or [TypeScript](./typescript/README.md).
 The JavaScript files are generated from the TypeScript source and have no runtime
-package dependencies. Every recipe uses native fetch directly; there is no Revdoku client library.
+package dependencies. Every recipe uses native fetch directly, without the SDK.
+For the SDK (`npm install revdoku`), start with the [quickstart](https://revdoku.com/docs/quickstart.md).
 
 ## Setup
 
@@ -11,7 +12,7 @@ Use Node.js 22 or newer. Clone this repository, enter `examples`, then copy
 `.env.example` to `.env`. Set `REVDOKU_API_KEY` locally using a key from Account →
 Access. Never commit `.env` or paste credentials into an issue or AI chat.
 
-Set `REVDOKU_BUCKET_ID` to an existing authorized mailbox for the reading and
+Set `REVDOKU_MAILBOX_ID` to an existing authorized mailbox for the reading and
 uploading examples. Browser signup creates a default mailbox; you can use that
 mailbox without creating another. Mailbox creation requires account-wide permission
 and available active-mailbox and creation capacity. Address/readiness queries and

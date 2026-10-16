@@ -73,7 +73,9 @@ Use returned email and attachment IDs for message operations; use paths for file
 receives email and attachments.
 `email-send` sends from the mailbox address. Recipients must be account members or
 other mailboxes of the account. On paid plans, they can also be addresses that
-emailed this mailbox and passed sender authentication. Check `delivery.status` with
+emailed this mailbox and passed sender authentication. With `--in-reply-to`, the
+recipient defaults to the original sender only when that sender passed SPF or
+DMARC; otherwise pass `--to`. Check `delivery.status` with
 `emails --direction sent`. After an uncertain result, check the sent list before
 you send again.
 
@@ -93,6 +95,7 @@ File counts include email representations and attachments.
 Create accounts at https://app.revdoku.com/users/sign_up. CLI sign-in uses browser OAuth.
 
 For automation, set `REVDOKU_API_KEY` through your secret manager or environment.
+Set `REVDOKU_MAILBOX_ID` to choose a default mailbox.
 Use `--account-id acct_...` when selecting another authorized account. Credentials
 and selection state otherwise live under `~/.revdoku/`; keep them private.
 

@@ -17,20 +17,33 @@ and state on your machine; host tool permissions remain in control.
 
 ## For developers
 
+```sh
+npm install revdoku   # TypeScript and JavaScript (Node.js 22+)
+pip install revdoku   # Python 3.10+
+```
+
+```ts
+import { Revdoku } from 'revdoku';
+
+const client = new Revdoku(); // reads REVDOKU_API_KEY
+const { data } = await client.listEmails({ mailboxId: 'bkt_...' });
+for (const email of data.emails) console.log(email.receivedAt, email.subject);
+```
+
+Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example
+`https://api.revdoku.com/v1/mailboxes`.
+
 | Start here | What you get |
 | --- | --- |
-| [TypeScript/JavaScript SDK: `@revdoku/api`](https://github.com/revdoku/revdoku-typescript) | The npm package repository. |
-| [Python SDK: `revdoku-api`](https://github.com/revdoku/revdoku-python) | The PyPI package repository. |
-| [API packages, n8n and Zapier](./guides/api-packages.md) | Working installation paths, supported operations, and a first-email walkthrough. |
-| [Standalone CLI](./cli/README.md) | Terminal installation and usage without an AI integration. |
-| [Versioned CLI downloads](https://github.com/revdoku/revdoku/releases/latest) | A portable Bash executable, installer, and SHA-256 checksums. |
-| [JavaScript examples](./examples/javascript/README.md) | Runnable Node.js examples with no runtime dependencies. |
-| [TypeScript examples](./examples/typescript/README.md) | The same workflows with types and shared source. |
-| [API reference](./api.md) · [OpenAPI](./openapi.json) | Authentication, mailbox creation, incoming mail, and private storage. |
+| [Quickstart](https://revdoku.com/docs/quickstart.md) | From a new API key to your first received email, in TypeScript, Python and cURL. |
+| [TypeScript SDK](https://revdoku.com/docs/sdks/typescript.md) · [Python SDK](https://revdoku.com/docs/sdks/python.md) | SDK guides. Source: [revdoku-typescript](https://github.com/revdoku/revdoku-typescript) and [revdoku-python](https://github.com/revdoku/revdoku-python). |
+| [API guide](https://revdoku.com/api.md) · [API reference](https://revdoku.com/api/reference.md) · [OpenAPI](./openapi.json) | Concepts and workflows, then every operation with examples. |
+| [Build with coding agents](https://revdoku.com/docs/coding-agents.md) | A prompt and project rules for Claude Code and Codex. |
+| [Packages and integrations](https://revdoku.com/guides/api-packages.md) | The SDKs, n8n and Zapier compared. |
+| [Standalone CLI](./cli/README.md) · [Versioned CLI downloads](https://github.com/revdoku/revdoku/releases/latest) | Terminal installation and usage without an AI integration. |
+| [Examples](./examples/README.md) | Runnable Node.js and Python examples with plain HTTP calls. |
 
-The examples cover creating a ready mailbox,
-reading incoming messages, downloading attachments, uploading and reading files,
-and handling quotas and retries. CLI, examples, skills, and plugins share this
+Keep API keys on your backend. CLI, examples, skills, and plugins share this
 repository. For agent setup, see [Local AI apps](#local-ai-apps).
 
 ## Prompt for an AI agent
@@ -86,7 +99,7 @@ See the [storage quick start](./docs.md#storing-files-inside-a-mailbox) and
 
 Create an account in your browser at <https://app.revdoku.com/users/sign_up>.
 Keep account credentials and verification codes out of AI chat.
-Try Revdoku free. For regular use, choose a paid plan on the [pricing page](https://app.revdoku.com/pricing).
+New accounts start on the Try free plan. For regular use, choose a paid plan on the [pricing page](https://app.revdoku.com/pricing).
 
 Private storage and collaboration follow the [Terms of Use](https://revdoku.com/terms/).
 Contact `support@revdoku.com` for account, billing, or access questions.

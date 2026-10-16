@@ -6,9 +6,9 @@ if (!apiKey)
     throw new Error('Set REVDOKU_API_KEY in your local .env file.');
 const accountId = process.env.REVDOKU_ACCOUNT_ID;
 const headers = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
-const mailboxId = process.env.REVDOKU_BUCKET_ID;
+const mailboxId = process.env.REVDOKU_MAILBOX_ID;
 if (!mailboxId || !/^bkt_[A-Za-z0-9]+$/.test(mailboxId))
-    throw new Error('Set REVDOKU_BUCKET_ID.');
+    throw new Error('Set REVDOKU_MAILBOX_ID.');
 const local = process.argv[2];
 if (!local)
     throw new Error('Usage: upload-file.js LOCAL_FILE [MAILBOX_PATH]');

@@ -1,6 +1,7 @@
 # Bulk file uploads
 
-Use `https://api.revdoku.com/v1` with your bearer API key. For one file, see
+Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for
+example `https://api.revdoku.com/v1/mailboxes`. Send your API key as a bearer token. For one file, see
 [Upload a file](https://revdoku.com/api.md#upload-a-file).
 
 Use the CLI for a local folder: `revdoku upload ./folder --mailbox-id ID`.

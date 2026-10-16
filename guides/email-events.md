@@ -12,7 +12,9 @@ Read contents through the existing email API.
 | DELETE /v1/mailboxes/:mailbox_id/email/webhook | Mailbox admin | Disable delivery; 200 with data.deleted and data.id (the mailbox ID). |
 | GET /v1/mailboxes/:mailbox_id/email/subscription | Mailbox read | Signed WebSocket ticket valid for 60 seconds. |
 
-Use your normal bearer API key. Select another granted account with account_id in
+Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for
+example `https://api.revdoku.com/v1/mailboxes`. Use your normal bearer API key.
+Select another granted account with account_id in
 the query for GET/DELETE, or in the JSON body for PUT. Endpoints must use public
 HTTPS, including explicit ports such as 8443, with no URL user/password or fragment. Local/private addresses
 and redirects are rejected. Invalid configuration returns INVALID_ARGUMENT (422).
@@ -141,4 +143,4 @@ each transmitted event. Treat the ticket as a temporary credential: it authorize
 only its selected mailbox channel, never account notification streams.
 
 
-[API reference](../api.md)
+[API guide](https://revdoku.com/api.md) · [API reference](https://revdoku.com/api/reference.md)

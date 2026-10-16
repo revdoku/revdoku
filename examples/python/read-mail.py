@@ -9,7 +9,7 @@ import requests
 
 headers = {"Authorization": f"Bearer {os.environ['REVDOKU_API_KEY']}"}
 account_id = os.getenv("REVDOKU_ACCOUNT_ID")
-mailbox_id = os.environ["REVDOKU_BUCKET_ID"]
+mailbox_id = os.environ["REVDOKU_MAILBOX_ID"]
 if not re.fullmatch(r"bkt_[A-Za-z0-9]+", mailbox_id):
     raise ValueError("Invalid mailbox ID")
 cursor = os.getenv("REVDOKU_CURSOR")

@@ -10,7 +10,7 @@ const example = name => fileURLToPath(new URL(`../javascript/${name}.js`, import
 const fixture = fileURLToPath(new URL('./mock-api.js', import.meta.url));
 function run(cwd, name, args = [], env = {}) {
   return spawnSync(process.execPath, ['--import', fixture, example(name), ...args], { cwd, encoding: 'utf8', timeout: 12000,
-    env: { ...process.env, REVDOKU_API_KEY: 'offline-fixture-key', REVDOKU_BUCKET_ID: 'bkt_fixture',
+    env: { ...process.env, REVDOKU_API_KEY: 'offline-fixture-key', REVDOKU_MAILBOX_ID: 'bkt_fixture',
       REVDOKU_ACCOUNT_ID: 'acct_fixture', ...env } });
 }
 function success(result) { assert.equal(result.status, 0, result.stderr); assert.doesNotMatch(result.stdout + result.stderr, /offline-fixture-key/); return result.stdout; }
@@ -49,7 +49,7 @@ test('published webhook receiver rejects forged/stale requests and deduplicates 
   const cwd = await mkdtemp(join(tmpdir(), 'revdoku-hook-'));
   const secret = 'offline-signing-secret';
   const child = spawn(process.execPath, ['--import', fixture, example('webhook-receiver')], {
-    cwd, env: { ...process.env, PORT: '0', FIXTURE_EMAIL_DELAY: '1', REVDOKU_WEBHOOK_SECRET: secret, REVDOKU_API_KEY: 'offline-fixture-key', REVDOKU_BUCKET_ID: 'bkt_fixture', REVDOKU_ACCOUNT_ID: 'acct_fixture' }
+    cwd, env: { ...process.env, PORT: '0', FIXTURE_EMAIL_DELAY: '1', REVDOKU_WEBHOOK_SECRET: secret, REVDOKU_API_KEY: 'offline-fixture-key', REVDOKU_MAILBOX_ID: 'bkt_fixture', REVDOKU_ACCOUNT_ID: 'acct_fixture' }
   });
   let stdout = '', stderr = '';
   child.stdout.on('data', bytes => { stdout += bytes; });

@@ -17,7 +17,7 @@ class ReceiverTest(unittest.TestCase):
         previous = os.getcwd()
         with tempfile.TemporaryDirectory() as work, patch.dict(os.environ, {
             'REVDOKU_WEBHOOK_SECRET': 'fixture-secret', 'REVDOKU_API_KEY': 'fixture-key',
-            'REVDOKU_BUCKET_ID': 'bkt_fixture', 'REVDOKU_ACCOUNT_ID': 'acct_fixture',
+            'REVDOKU_MAILBOX_ID': 'bkt_fixture', 'REVDOKU_ACCOUNT_ID': 'acct_fixture',
         }):
             os.chdir(work)
             try:

@@ -385,6 +385,69 @@
                       "$ref": "#/components/schemas/Status"
                     }
                   }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "connected": true,
+                    "default_account_id": "acct_example",
+                    "accounts": [
+                      {
+                        "id": "acct_example",
+                        "name": "Acme",
+                        "account_kind": "standard",
+                        "client_name": null,
+                        "agency_account": null
+                      }
+                    ],
+                    "server_version": "1.0.575",
+                    "client_version": "1.0.575",
+                    "features": {
+                      "email_domains": true
+                    },
+                    "account": {
+                      "id": "acct_example",
+                      "name": "Acme",
+                      "status": "active",
+                      "account_kind": "standard",
+                      "client_name": null,
+                      "agency_account": null,
+                      "can_create_client_account": false,
+                      "can_manage_billing": true,
+                      "billing_message": null,
+                      "previous_status": null,
+                      "status_reason": null,
+                      "status_updated_at": null
+                    },
+                    "user": {
+                      "id": "user_example",
+                      "email": "ada@example.com",
+                      "name": "Ada Lovelace"
+                    },
+                    "dashboard_url": "https://app.revdoku.com/mailboxes?account_id=acct_example",
+                    "connection": {
+                      "api_key_id": "atok_example",
+                      "label": "Orders backend",
+                      "token_type": "api",
+                      "scope": "mailbox_admin",
+                      "expires_at": "2027-10-11T12:00:00Z",
+                      "last_used_at": "2026-10-11T12:20:00Z",
+                      "mailbox_access": "all",
+                      "mailbox_ids": [],
+                      "denied_mailbox_ids": [],
+                      "mailbox_permissions": {},
+                      "permissions": {
+                        "read": true,
+                        "write": true,
+                        "admin": true
+                      },
+                      "agent": null,
+                      "transport": "api_key",
+                      "renewal": {
+                        "recommended": false
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -402,6 +465,7 @@
           "Accounts"
         ],
         "summary": "List accounts granted to this credential",
+        "description": "Works with every API key. Lists the account of this credential and the client accounts that an agency owner granted to it. Send an id from this list as account_id to act in that account.",
         "parameters": [
           {
             "$ref": "#/components/parameters/Limit"
@@ -428,6 +492,33 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/AccountList"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "default_account_id": "acct_example",
+                    "accounts": [
+                      {
+                        "id": "acct_example",
+                        "name": "Acme",
+                        "account_kind": "standard",
+                        "client_name": null,
+                        "agency_account": null,
+                        "region": "eu",
+                        "status": "active",
+                        "permissions": {
+                          "scope": "mailbox_admin",
+                          "mailbox_access": "all",
+                          "can_create_mailboxes": true
+                        }
+                      }
+                    ],
+                    "pagination": {
+                      "limit": 50,
+                      "has_more": false,
+                      "next_cursor": null
                     }
                   }
                 }
@@ -522,6 +613,7 @@
           "Accounts"
         ],
         "summary": "Read one granted account",
+        "description": "Works with every API key. Returns the name, kind, region and status of one account that this credential can use, and the permissions of the credential in it. Other account IDs return 403.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AccountPathId"
@@ -552,6 +644,25 @@
                         "account": {
                           "$ref": "#/components/schemas/AccountIdentity"
                         }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "account": {
+                      "id": "acct_example",
+                      "name": "Acme",
+                      "account_kind": "standard",
+                      "client_name": null,
+                      "agency_account": null,
+                      "region": "eu",
+                      "status": "active",
+                      "permissions": {
+                        "scope": "mailbox_admin",
+                        "mailbox_access": "all",
+                        "can_create_mailboxes": true
                       }
                     }
                   }
@@ -639,6 +750,42 @@
                       }
                     }
                   }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "account_id": "acct_example",
+                    "limits": {
+                      "max_mailboxes": 3,
+                      "max_mailbox_creations_per_month": 12,
+                      "max_files_per_mailbox": 25000,
+                      "max_current_files": 40000,
+                      "max_storage_bytes": 2147483648,
+                      "max_file_size_bytes": 52428800,
+                      "max_pdf_size_bytes": 52428800,
+                      "max_file_versions_per_file": 15,
+                      "max_email_aliases_per_mailbox": 4,
+                      "max_email_domains": 3,
+                      "max_received_emails_per_month": 1500,
+                      "max_received_email_bytes_per_month": 268435456,
+                      "max_received_email_message_bytes": 20971520,
+                      "max_sent_emails_per_month": 750,
+                      "max_email_address_rotations_per_month": 6,
+                      "max_account_members": 3,
+                      "max_api_keys": 4,
+                      "max_agent_connections": 7,
+                      "api_rate_limit_requests_per_minute": 240,
+                      "audit_retention_days": 45
+                    },
+                    "usage": {
+                      "mailbox_creations": {
+                        "monthly_limit": 12,
+                        "used": 2,
+                        "remaining": 10,
+                        "resets_at": "2026-11-01T00:00:00Z"
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -686,6 +833,64 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/EmailDomainList"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "domains": [
+                      {
+                        "id": "ied_example",
+                        "hostname": "inbox.example.com",
+                        "status": "pending_ownership",
+                        "receiving": false,
+                        "root_domain": false,
+                        "suggested_subdomain": null,
+                        "guidance": "Subdomain recommended. If your domain already handles email elsewhere, use a subdomain such as mailbox.example.com to avoid disrupting it. Otherwise, use a dedicated domain such as mycustomdomain-mail.com.",
+                        "root_guidance": null,
+                        "required_dns_records": [
+                          {
+                            "type": "TXT",
+                            "name": "_revdoku-inbound.inbox.example.com",
+                            "value": "revdoku-inbound=EXAMPLE_TOKEN",
+                            "purpose": "ownership",
+                            "zone": "example.com",
+                            "relative_name": "_revdoku-inbound.inbox"
+                          },
+                          {
+                            "type": "TXT",
+                            "name": "_amazonses.inbox.example.com",
+                            "value": "EXAMPLE_SES_TOKEN",
+                            "purpose": "ses_verification",
+                            "zone": "example.com",
+                            "relative_name": "_amazonses.inbox"
+                          },
+                          {
+                            "type": "MX",
+                            "name": "inbox.example.com",
+                            "value": "10 inbound-smtp.eu-central-1.amazonaws.com",
+                            "purpose": "receiving",
+                            "zone": "example.com",
+                            "relative_name": "inbox"
+                          }
+                        ],
+                        "pause_reason": null,
+                        "paused_at": null,
+                        "last_checked_at": null,
+                        "ownership_verified_at": null,
+                        "setup_expires_at": "2026-10-18T12:00:00.000Z",
+                        "ready_at": null,
+                        "error": null,
+                        "assigned_mailboxes": []
+                      }
+                    ],
+                    "enabled": true,
+                    "guidance": "Subdomain recommended. If your domain already handles email elsewhere, use a subdomain such as mailbox.example.com to avoid disrupting it. Otherwise, use a dedicated domain such as mycustomdomain-mail.com.",
+                    "pagination": {
+                      "limit": 50,
+                      "has_more": false,
+                      "next_cursor": null
                     }
                   }
                 }
@@ -837,6 +1042,7 @@
           "Email domains"
         ],
         "summary": "Read a custom email domain",
+        "description": "Requires a full-account owner or administrator credential. Returns the domain status and the DNS records to publish.",
         "parameters": [
           {
             "$ref": "#/components/parameters/DomainId"
@@ -1090,6 +1296,64 @@
                       "$ref": "#/components/schemas/MailboxList"
                     }
                   }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "mailboxes": [
+                      {
+                        "id": "bkt_example",
+                        "account_id": "acct_example",
+                        "title": "acme-orders",
+                        "description": null,
+                        "metadata": {},
+                        "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+                        "email": {
+                          "address": "acme.orders.k7m2@revdokumail.com",
+                          "message_count": 1,
+                          "unread_count": 1,
+                          "last_received_at": "2026-10-11T12:05:00.000000Z",
+                          "receiving_enabled": true,
+                          "sending_enabled": true
+                        },
+                        "archived": false,
+                        "archived_at": null,
+                        "lock": {
+                          "locked": false
+                        },
+                        "storage_bytes": 51840,
+                        "files_count": 3,
+                        "version_id": "bktrv_example",
+                        "version_number": 0,
+                        "created_at": "2026-10-11T12:00:00.000000Z",
+                        "updated_at": "2026-10-11T12:05:00.000000Z",
+                        "dashboard_url": "https://app.revdoku.com/mailboxes/view?account_id=acct_example&id=bkt_example",
+                        "archive": {
+                          "allowed": true
+                        },
+                        "unarchive": {
+                          "allowed": false,
+                          "blocked_reason": "not_archived"
+                        },
+                        "delete": {
+                          "allowed": false,
+                          "blocked_reason": "not_archived",
+                          "required_action": "archive_first",
+                          "confirmation": "delete bkt_example"
+                        }
+                      }
+                    ],
+                    "counts": {
+                      "active": 1,
+                      "archived": 0,
+                      "total": 1
+                    },
+                    "pagination": {
+                      "limit": 50,
+                      "has_more": false,
+                      "next_cursor": null
+                    }
+                  }
                 }
               }
             }
@@ -1162,10 +1426,43 @@
                   "data": {
                     "mailbox": {
                       "id": "bkt_example",
+                      "account_id": "acct_example",
+                      "title": "acme-orders",
+                      "description": null,
+                      "metadata": {},
+                      "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
                       "email": {
                         "address": "acme.orders.k7m2@revdokumail.com",
+                        "message_count": 0,
+                        "unread_count": 0,
+                        "last_received_at": null,
                         "receiving_enabled": true,
                         "sending_enabled": true
+                      },
+                      "archived": false,
+                      "archived_at": null,
+                      "lock": {
+                        "locked": false
+                      },
+                      "storage_bytes": 0,
+                      "files_count": 0,
+                      "version_id": "bktrv_example",
+                      "version_number": 0,
+                      "created_at": "2026-10-11T12:00:00.000000Z",
+                      "updated_at": "2026-10-11T12:00:00.000000Z",
+                      "dashboard_url": "https://app.revdoku.com/mailboxes/view?account_id=acct_example&id=bkt_example",
+                      "archive": {
+                        "allowed": true
+                      },
+                      "unarchive": {
+                        "allowed": false,
+                        "blocked_reason": "not_archived"
+                      },
+                      "delete": {
+                        "allowed": false,
+                        "blocked_reason": "not_archived",
+                        "required_action": "archive_first",
+                        "confirmation": "delete bkt_example"
                       }
                     }
                   }
@@ -1241,6 +1538,52 @@
                         "mailbox": {
                           "$ref": "#/components/schemas/Mailbox"
                         }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "mailbox": {
+                      "id": "bkt_example",
+                      "account_id": "acct_example",
+                      "title": "acme-orders",
+                      "description": null,
+                      "metadata": {},
+                      "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+                      "email": {
+                        "address": "acme.orders.k7m2@revdokumail.com",
+                        "message_count": 1,
+                        "unread_count": 1,
+                        "last_received_at": "2026-10-11T12:05:00.000000Z",
+                        "receiving_enabled": true,
+                        "sending_enabled": true
+                      },
+                      "archived": false,
+                      "archived_at": null,
+                      "lock": {
+                        "locked": false
+                      },
+                      "storage_bytes": 51840,
+                      "files_count": 3,
+                      "version_id": "bktrv_example",
+                      "version_number": 0,
+                      "created_at": "2026-10-11T12:00:00.000000Z",
+                      "updated_at": "2026-10-11T12:05:00.000000Z",
+                      "dashboard_url": "https://app.revdoku.com/mailboxes/view?account_id=acct_example&id=bkt_example",
+                      "archive": {
+                        "allowed": true
+                      },
+                      "unarchive": {
+                        "allowed": false,
+                        "blocked_reason": "not_archived"
+                      },
+                      "delete": {
+                        "allowed": false,
+                        "blocked_reason": "not_archived",
+                        "required_action": "archive_first",
+                        "confirmation": "delete bkt_example"
                       }
                     }
                   }
@@ -1465,6 +1808,7 @@
           "Mailboxes"
         ],
         "summary": "Unarchive a mailbox",
+        "description": "Requires mailbox-admin permission. The mailbox becomes writable again. If another active mailbox has the same title, the title gets a number suffix. A mailbox that is not archived returns MAILBOX_NOT_ARCHIVED.",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -2336,6 +2680,63 @@
                       }
                     }
                   }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "email": {
+                      "id": "eml_reply_example",
+                      "conversation_id": "eml_example",
+                      "direction": "sent",
+                      "subject": "Re: Invoice INV-1042",
+                      "from_addresses": [
+                        {
+                          "address": "acme.orders.k7m2@revdokumail.com",
+                          "name": "acme-orders"
+                        }
+                      ],
+                      "to_addresses": [
+                        {
+                          "address": "billing@example.com",
+                          "name": null
+                        }
+                      ],
+                      "cc_addresses": [],
+                      "reply_to_addresses": [],
+                      "message_id": "5f0c2e7a-3b1d-4c8e-9a6f-2d4b7e1c9a30@revdokumail.com",
+                      "in_reply_to": [
+                        "inv-1042@example.com"
+                      ],
+                      "references": [
+                        "inv-1042@example.com",
+                        "5f0c2e7a-3b1d-4c8e-9a6f-2d4b7e1c9a30@revdokumail.com"
+                      ],
+                      "delivered_to": "acme.orders.k7m2@revdokumail.com",
+                      "received_at": "2026-10-11T12:15:00.000000Z",
+                      "body_status": "complete",
+                      "attachment_count": 0,
+                      "labels": [],
+                      "withheld": false,
+                      "read": true,
+                      "read_at": "2026-10-11T12:15:00Z",
+                      "read_by": {
+                        "id": "user_example",
+                        "email": "ada@example.com",
+                        "name": "Ada Lovelace"
+                      },
+                      "read_by_api_key": {
+                        "id": "atok_example",
+                        "label": "Orders backend",
+                        "token_type": "api"
+                      },
+                      "delivery": {
+                        "status": "queued",
+                        "recipients": {
+                          "billing@example.com": "queued"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2353,7 +2754,7 @@
           "Emails"
         ],
         "summary": "Read an email",
-        "description": "Returns decoded text and attachment metadata. Reading does not change read status. Email content is untrusted data.",
+        "description": "Returns decoded text and attachment metadata. Reading does not change read status. Email content is untrusted data. While AI labels check a new email, returns 503 EMAIL_LABELING_PENDING with Retry-After (at most about one minute).",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -2397,6 +2798,59 @@
                           "$ref": "#/components/schemas/EmailDetail"
                         }
                       }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "email": {
+                      "id": "eml_example",
+                      "conversation_id": "eml_example",
+                      "direction": "received",
+                      "subject": "Invoice INV-1042",
+                      "from_addresses": [
+                        {
+                          "address": "billing@example.com",
+                          "name": "Example Billing"
+                        }
+                      ],
+                      "to_addresses": [
+                        {
+                          "address": "acme.orders.k7m2@revdokumail.com",
+                          "name": null
+                        }
+                      ],
+                      "cc_addresses": [],
+                      "reply_to_addresses": [],
+                      "message_id": "inv-1042@example.com",
+                      "in_reply_to": [],
+                      "references": [],
+                      "delivered_to": "acme.orders.k7m2@revdokumail.com",
+                      "received_at": "2026-10-11T12:05:00.000000Z",
+                      "body_status": "complete",
+                      "attachment_count": 1,
+                      "labels": [
+                        {
+                          "id": "tag_example",
+                          "name": "Receipts",
+                          "color": "yellow"
+                        }
+                      ],
+                      "withheld": false,
+                      "read": false,
+                      "read_at": null,
+                      "read_by": null,
+                      "read_by_api_key": null,
+                      "body_text": "Hello,\n\nInvoice INV-1042 for October is attached.\n\nExample Billing",
+                      "attachments": [
+                        {
+                          "id": "df_example",
+                          "filename": "INV-1042.pdf",
+                          "content_type": "application/pdf",
+                          "size_bytes": 48213
+                        }
+                      ]
                     }
                   }
                 }
@@ -2479,6 +2933,58 @@
                       }
                     }
                   }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "email": {
+                      "id": "eml_example",
+                      "conversation_id": "eml_example",
+                      "direction": "received",
+                      "subject": "Invoice INV-1042",
+                      "from_addresses": [
+                        {
+                          "address": "billing@example.com",
+                          "name": "Example Billing"
+                        }
+                      ],
+                      "to_addresses": [
+                        {
+                          "address": "acme.orders.k7m2@revdokumail.com",
+                          "name": null
+                        }
+                      ],
+                      "cc_addresses": [],
+                      "reply_to_addresses": [],
+                      "message_id": "inv-1042@example.com",
+                      "in_reply_to": [],
+                      "references": [],
+                      "delivered_to": "acme.orders.k7m2@revdokumail.com",
+                      "received_at": "2026-10-11T12:05:00.000000Z",
+                      "body_status": "complete",
+                      "attachment_count": 1,
+                      "labels": [
+                        {
+                          "id": "tag_example",
+                          "name": "Receipts",
+                          "color": "yellow"
+                        }
+                      ],
+                      "withheld": false,
+                      "read": true,
+                      "read_at": "2026-10-11T12:10:00Z",
+                      "read_by": {
+                        "id": "user_example",
+                        "email": "ada@example.com",
+                        "name": "Ada Lovelace"
+                      },
+                      "read_by_api_key": {
+                        "id": "atok_example",
+                        "label": "Orders backend",
+                        "token_type": "api"
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -2529,6 +3035,13 @@
                       "$ref": "#/components/schemas/DeleteResult"
                     }
                   }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "deleted": true,
+                    "id": "eml_example"
+                  }
                 }
               }
             }
@@ -2546,7 +3059,7 @@
           "Emails"
         ],
         "summary": "Get a download link for the original email",
-        "description": "Returns a temporary link to the original .eml file. Downloads do not change read status.",
+        "description": "Returns a temporary link to the original .eml file. Downloads do not change read status. Junk email returns 403 EMAIL_WITHHELD. A new email that AI labels are still checking returns 503 EMAIL_LABELING_PENDING with Retry-After.",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -2606,7 +3119,7 @@
           "Emails"
         ],
         "summary": "Get a download link for an attachment",
-        "description": "Returns a temporary link. No extraction or analysis is done.",
+        "description": "Returns a temporary link. No extraction or analysis is done. Junk email returns 403 EMAIL_WITHHELD. A new email that AI labels are still checking returns 503 EMAIL_LABELING_PENDING with Retry-After.",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -2650,6 +3163,18 @@
                           "$ref": "#/components/schemas/Download"
                         }
                       }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "download": {
+                      "url": "https://storage.example/INV-1042.pdf?X-Amz-Expires=900&X-Amz-Signature=EXAMPLE",
+                      "filename": "INV-1042.pdf",
+                      "content_type": "application/pdf",
+                      "size_bytes": 48213,
+                      "expires_in": 900
                     }
                   }
                 }
@@ -2698,6 +3223,24 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/PreparedFileUpload"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "signed_id": "eyJfcmFpbHMi...",
+                    "filename": "document_7a77539cbd6d02a5.txt",
+                    "byte_size": 1234,
+                    "checksum": "rL0Y20zC+Fzt72VPzMSk2A==",
+                    "content_type": "text/plain",
+                    "direct_upload": {
+                      "url": "https://storage.example/upload",
+                      "headers": {
+                        "Content-Type": "text/plain",
+                        "Content-MD5": "rL0Y20zC+Fzt72VPzMSk2A==",
+                        "Content-Disposition": "inline; filename=\"document_7a77539cbd6d02a5.txt\"; filename*=UTF-8''document_7a77539cbd6d02a5.txt"
+                      }
                     }
                   }
                 }
@@ -2794,6 +3337,99 @@
                       "$ref": "#/components/schemas/FileList"
                     }
                   }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "files": [
+                      {
+                        "id": "df_example",
+                        "mailbox_id": "bkt_example",
+                        "basename": "summary.txt",
+                        "path": "reports/summary.txt",
+                        "role": "source",
+                        "deleted": false,
+                        "lock": {
+                          "locked": false
+                        },
+                        "current_file_version": {
+                          "id": "dfrev_example",
+                          "file_id": "df_example",
+                          "version_number": 0,
+                          "name": "summary.txt",
+                          "mime_type": "text/plain",
+                          "byte_size": 1234,
+                          "sha256": "0d6a3c2b8f5e41a7c9b2d4e6f8a1c3e5b7d9f1a3c5e7b9d1f3a5c7e9b1d3f5a7",
+                          "deleted": false,
+                          "ready": true,
+                          "has_text": false,
+                          "created_at": "2026-10-11T12:20:00Z",
+                          "created_by": {
+                            "id": "user_example",
+                            "email": "ada@example.com",
+                            "name": "Ada Lovelace"
+                          },
+                          "updated_by": {
+                            "id": "user_example",
+                            "email": "ada@example.com",
+                            "name": "Ada Lovelace"
+                          },
+                          "created_by_api_key": {
+                            "id": "atok_example",
+                            "label": "Orders backend",
+                            "token_type": "api"
+                          },
+                          "created_by_agent": {
+                            "name": "Orders backend"
+                          },
+                          "updated_by_api_key": {
+                            "id": "atok_example",
+                            "label": "Orders backend",
+                            "token_type": "api"
+                          },
+                          "updated_by_agent": {
+                            "name": "Orders backend"
+                          },
+                          "read": false,
+                          "read_at": null,
+                          "read_by": null,
+                          "read_by_api_key": null
+                        },
+                        "created_by": {
+                          "id": "user_example",
+                          "email": "ada@example.com",
+                          "name": "Ada Lovelace"
+                        },
+                        "created_by_api_key": {
+                          "id": "atok_example",
+                          "label": "Orders backend",
+                          "token_type": "api"
+                        },
+                        "created_by_agent": {
+                          "name": "Orders backend"
+                        },
+                        "updated_by_api_key": {
+                          "id": "atok_example",
+                          "label": "Orders backend",
+                          "token_type": "api"
+                        },
+                        "updated_by_agent": {
+                          "name": "Orders backend"
+                        },
+                        "created_at": "2026-10-11T12:20:00Z",
+                        "updated_at": "2026-10-11T12:20:00Z",
+                        "read": false,
+                        "read_at": null,
+                        "read_by": null,
+                        "read_by_api_key": null
+                      }
+                    ],
+                    "pagination": {
+                      "limit": 50,
+                      "has_more": false,
+                      "next_cursor": null
+                    }
+                  }
                 }
               }
             }
@@ -2844,6 +3480,137 @@
                     "data": {
                       "$ref": "#/components/schemas/SavedFile"
                     }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "file": {
+                      "id": "df_example",
+                      "mailbox_id": "bkt_example",
+                      "basename": "summary.txt",
+                      "path": "reports/summary.txt",
+                      "role": "source",
+                      "deleted": false,
+                      "version_reasons": [],
+                      "lock": {
+                        "locked": false
+                      },
+                      "current_file_version": {
+                        "id": "dfrev_example",
+                        "file_id": "df_example",
+                        "version_number": 0,
+                        "name": "summary.txt",
+                        "mime_type": "text/plain",
+                        "byte_size": 1234,
+                        "sha256": "0d6a3c2b8f5e41a7c9b2d4e6f8a1c3e5b7d9f1a3c5e7b9d1f3a5c7e9b1d3f5a7",
+                        "deleted": false,
+                        "ready": true,
+                        "has_text": false,
+                        "created_at": "2026-10-11T12:20:00Z",
+                        "created_by": {
+                          "id": "user_example",
+                          "email": "ada@example.com",
+                          "name": "Ada Lovelace"
+                        },
+                        "updated_by": {
+                          "id": "user_example",
+                          "email": "ada@example.com",
+                          "name": "Ada Lovelace"
+                        },
+                        "created_by_api_key": {
+                          "id": "atok_example",
+                          "label": "Orders backend",
+                          "token_type": "api"
+                        },
+                        "created_by_agent": {
+                          "name": "Orders backend"
+                        },
+                        "updated_by_api_key": {
+                          "id": "atok_example",
+                          "label": "Orders backend",
+                          "token_type": "api"
+                        },
+                        "updated_by_agent": {
+                          "name": "Orders backend"
+                        },
+                        "read": false,
+                        "read_at": null,
+                        "read_by": null,
+                        "read_by_api_key": null
+                      },
+                      "created_by": {
+                        "id": "user_example",
+                        "email": "ada@example.com",
+                        "name": "Ada Lovelace"
+                      },
+                      "created_by_api_key": {
+                        "id": "atok_example",
+                        "label": "Orders backend",
+                        "token_type": "api"
+                      },
+                      "created_by_agent": {
+                        "name": "Orders backend"
+                      },
+                      "updated_by_api_key": {
+                        "id": "atok_example",
+                        "label": "Orders backend",
+                        "token_type": "api"
+                      },
+                      "updated_by_agent": {
+                        "name": "Orders backend"
+                      },
+                      "created_at": "2026-10-11T12:20:00Z",
+                      "updated_at": "2026-10-11T12:20:00Z",
+                      "read": false,
+                      "read_at": null,
+                      "read_by": null,
+                      "read_by_api_key": null
+                    },
+                    "version": {
+                      "id": "dfrev_example",
+                      "file_id": "df_example",
+                      "version_number": 0,
+                      "name": "summary.txt",
+                      "mime_type": "text/plain",
+                      "byte_size": 1234,
+                      "sha256": "0d6a3c2b8f5e41a7c9b2d4e6f8a1c3e5b7d9f1a3c5e7b9d1f3a5c7e9b1d3f5a7",
+                      "deleted": false,
+                      "ready": true,
+                      "has_text": false,
+                      "created_at": "2026-10-11T12:20:00Z",
+                      "created_by": {
+                        "id": "user_example",
+                        "email": "ada@example.com",
+                        "name": "Ada Lovelace"
+                      },
+                      "updated_by": {
+                        "id": "user_example",
+                        "email": "ada@example.com",
+                        "name": "Ada Lovelace"
+                      },
+                      "created_by_api_key": {
+                        "id": "atok_example",
+                        "label": "Orders backend",
+                        "token_type": "api"
+                      },
+                      "created_by_agent": {
+                        "name": "Orders backend"
+                      },
+                      "updated_by_api_key": {
+                        "id": "atok_example",
+                        "label": "Orders backend",
+                        "token_type": "api"
+                      },
+                      "updated_by_agent": {
+                        "name": "Orders backend"
+                      },
+                      "read": false,
+                      "read_at": null,
+                      "read_by": null,
+                      "read_by_api_key": null
+                    },
+                    "created": true
                   }
                 }
               }
@@ -4556,7 +5323,7 @@
           "max_email_aliases_per_mailbox": {
             "type": "integer",
             "minimum": 0,
-            "description": "Active retained email addresses per mailbox; Try free always has zero."
+            "description": "Active retained email addresses (aliases) per mailbox. Zero means that the plan has no aliases."
           }
         }
       },
@@ -5577,7 +6344,7 @@
               "type": "string",
               "format": "email"
             },
-            "description": "Recipient addresses, one per item. Optional with in_reply_to; defaults to the authenticated sender of that email. To and cc together allow at most 10 addresses."
+            "description": "Recipient addresses, one per item. With in_reply_to, the recipient defaults to the original sender only when that sender passed SPF or DMARC; otherwise pass to. To and cc together allow at most 10 addresses."
           },
           "cc": {
             "type": "array",
@@ -5605,7 +6372,7 @@
           "in_reply_to": {
             "type": "string",
             "pattern": "^eml_",
-            "description": "Received email ID to reply to. Sets reply headers and the conversation."
+            "description": "Received email ID to reply to. Sets the reply headers and subject, and links the reply to the conversation."
           },
           "attachment_ids": {
             "type": "array",
@@ -5971,14 +6738,14 @@
           },
           "labels": {
             "type": "array",
-            "description": "Labels on the email files. AI labels add one built-in category label, such as Junk or Receipts, a few seconds after the email arrives, usually after the email.received event.",
+            "description": "Labels on the email files. When AI labels are on for the account, they add one built-in category label, such as Junk or Receipts, a few seconds after the email arrives, usually after the email.received event.",
             "items": {
               "$ref": "#/components/schemas/EmailLabel"
             }
           },
           "withheld": {
             "type": "boolean",
-            "description": "True when the email has the built-in Junk label. The subject, display names, sender address (except its domain), body and attachments are hidden, and downloads of the email and its files return EMAIL_WITHHELD. A person can review the email in the dashboard and remove the label."
+            "description": "True means Revdoku hides the email's content from API keys and MCP: the subject, display names, sender address (except its domain), body and attachments. If labels includes the Junk label, the email is junk: skip it. Downloads of the email and its files return EMAIL_WITHHELD, and a person can review it in the dashboard. Otherwise AI labels have not checked it yet: keep its ID and read it again with getEmail / get_email after a few seconds. The read returns 503 EMAIL_LABELING_PENDING with Retry-After until the label is ready (at most about one minute). Do not drop a pending email."
           },
           "file_id": {
             "type": "string",
@@ -7483,7 +8250,7 @@
     },
     "responses": {
       "Error": {
-        "description": "Request failed. See error.code. 429 and some 503 responses include Retry-After.",
+        "description": "Request failed. See error.code. Any 429 or 503 response with Retry-After (for example 503 EMAIL_LABELING_PENDING or 503 EMAIL_INDEX_BUILDING): wait that many seconds, then try the read again. 429 EMAIL_SEND_RATE_LIMITED has no Retry-After. Never retry EMAIL_LOOP_DETECTED.",
         "content": {
           "application/json": {
             "schema": {

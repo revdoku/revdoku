@@ -1,6 +1,6 @@
 # Revdoku pricing
 
-Try Revdoku free, without a card. Paid plans start at $4.99/mo. Prices are in USD.
+Start on the Try free plan, without a card. Paid plans start at $4.99/mo. Prices are in USD.
 One agent? Starter. A team of agents? Standard. Apps or clients? Business.
 
 | Plan | Try free | Starter | Standard | Business |

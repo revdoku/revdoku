@@ -15,7 +15,7 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16384
 secret = os.environ['REVDOKU_WEBHOOK_SECRET']
 api_key = os.environ['REVDOKU_API_KEY']
-mailbox_id = os.environ['REVDOKU_BUCKET_ID']
+mailbox_id = os.environ['REVDOKU_MAILBOX_ID']
 account_id = os.environ.get('REVDOKU_ACCOUNT_ID')
 os.makedirs('.revdoku-examples', mode=0o700, exist_ok=True)
 lock = threading.Lock()

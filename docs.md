@@ -1,14 +1,17 @@
 # Revdoku documentation
 
 Revdoku provides mailboxes for AI agents, with private file storage inside each mailbox.
-Use the REST API, CLI, MCP, or dashboard to create mailboxes and read messages.
+Use the TypeScript or Python SDK, the REST API, CLI, MCP, or dashboard to create mailboxes and read messages.
 
 ## Choose how to connect
 
 | Interface | Best for | Start here |
 | --- | --- | --- |
-| REST API | Your application, scripts, and backend services | [API reference](https://revdoku.com/api.md) · [OpenAPI](https://revdoku.com/openapi.json) |
-| CLI | Terminal use and uploading local files or folders | [CLI installation and commands](https://github.com/revdoku/revdoku/tree/main/cli) |
+| TypeScript SDK | Node.js applications and backend services | `npm install revdoku` · [Quickstart](https://revdoku.com/docs/quickstart.md) · [TypeScript SDK guide](https://revdoku.com/docs/sdks/typescript.md) |
+| Python SDK | Python applications, scripts, and backend services | `pip install revdoku` · [Quickstart](https://revdoku.com/docs/quickstart.md) · [Python SDK guide](https://revdoku.com/docs/sdks/python.md) |
+| REST API | Any language, and direct HTTP calls | [API guide](https://revdoku.com/api.md) · [API reference](https://revdoku.com/api/reference.md) · [OpenAPI](https://revdoku.com/openapi.json) |
+| Coding agents | Claude Code, Codex, or Cursor writing your integration | [Build with coding agents](https://revdoku.com/docs/coding-agents.md) |
+| CLI | Terminal use and uploading local files or folders | [CLI installation and commands](https://revdoku.com/cli/) |
 | Hosted MCP | AI clients with remote MCP support | [MCP guide](https://revdoku.com/mcp.md) |
 | Skill | Local coding agents using the bundled CLI | [Skill installation](https://github.com/revdoku/revdoku#local-ai-apps) |
 | Dashboard | Reading mail, managing access, account settings, and activity logs | [Open Revdoku](https://app.revdoku.com/mailboxes) |
@@ -51,32 +54,27 @@ Connecting MCP alone does not make an idle AI chat monitor your mailbox.
 
 ## API quick start
 
-1. [Create an account](https://app.revdoku.com/users/sign_up) or sign in. Browser signup creates your first mailbox automatically.
-2. Create an API key from **Connect via API** or **Account → Access**.
-3. Keep the key on your backend and list your existing mailboxes:
+The [quickstart](https://revdoku.com/docs/quickstart.md) takes you from a new API key
+to your first received email, with TypeScript, Python, and cURL examples:
 
-```http
-GET /v1/mailboxes
-Authorization: Bearer YOUR_API_KEY
+```sh
+npm install revdoku   # or: pip install revdoku
 ```
 
-Choose an authorized mailbox from `data.mailboxes`, then [read its messages](#receive-and-read-email).
+Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example
+`https://api.revdoku.com/v1/mailboxes`. The SDKs use this origin by default.
 
 When you create a key or approve an AI connection, choose its access:
 
 - **Read only** can list mailboxes and read saved email and files. It cannot
   show the mailbox's email address.
-- **Read & write** (or **Full access**) is needed when your app or AI agent must
-  show the mailbox's email address. It can also reply to senders and save files.
+- **Read & write** is needed when your app or AI agent must show the mailbox's
+  email address. It can also reply to senders and save files.
+- **Full access** can also create and manage mailboxes. Creating mailboxes needs
+  full access to all mailboxes. **Connect via API** creates such a key by default.
 
 To give each application customer a mailbox, follow the
-[SaaS mailbox guide](https://github.com/revdoku/revdoku/blob/main/guides/saas-mailboxes.md).
-
-| Setting | Value |
-| --- | --- |
-| API base URL | `https://api.revdoku.com/v1` |
-| Authentication | `Authorization: Bearer YOUR_API_KEY` |
-| JSON request bodies | `Content-Type: application/json` |
+[SaaS mailbox guide](https://revdoku.com/guides/saas-mailboxes.md).
 
 ### New email notifications
 
@@ -129,7 +127,8 @@ successful response. On `EMAIL_NOT_READY`, save the returned mailbox ID and insp
 that existing mailbox. After a lost response, reconcile existing mailboxes before
 any further creation. See [creation errors](https://revdoku.com/api.md#create-a-mailbox).
 
-Runnable examples use standard HTTP clients:
+With the SDKs, call `client.createMailbox()` in TypeScript or `client.create_mailbox()` in Python.
+Runnable examples without the SDK use standard HTTP clients:
 [JavaScript](https://github.com/revdoku/revdoku/tree/main/examples/javascript),
 [TypeScript](https://github.com/revdoku/revdoku/tree/main/examples/typescript), and
 [Python](https://github.com/revdoku/revdoku/tree/main/examples/python).
@@ -145,7 +144,7 @@ can send to it; reading saved mail requires mailbox access.
 | List received messages | `GET /v1/mailboxes/:id/emails` | `revdoku emails --mailbox-id ID` | `mailbox_email_list` |
 | Read one message | `GET /v1/mailboxes/:id/emails/:email_id` | `revdoku email EMAIL_ID --mailbox-id ID` | `mailbox_email_get` |
 | Mark read/unread | `PATCH /v1/mailboxes/:id/emails/:email_id` | `revdoku email-status EMAIL_ID --read true --mailbox-id ID` | `mailbox_email_update` |
-| Download an attachment | [Attachment endpoint](https://revdoku.com/api.md#download-links) | `revdoku email-download EMAIL_ID --attachment-id ID --mailbox-id ID` | `mailbox_email_download` |
+| Download an attachment | [Download an attachment](https://revdoku.com/api.md#download-an-attachment) | `revdoku email-download EMAIL_ID --attachment-id ID --mailbox-id ID` | `mailbox_email_download` |
 | Delete one message | `DELETE /v1/mailboxes/:id/emails/:email_id` | `revdoku email-delete EMAIL_ID --confirm-delete EMAIL_ID --mailbox-id ID` | `mailbox_email_delete` |
 | Reply to a sender | `POST /v1/mailboxes/:id/emails` | `revdoku email-send --in-reply-to EMAIL_ID --text TEXT --mailbox-id ID` | `mailbox_email_send` |
 | List sent messages | `GET /v1/mailboxes/:id/emails?direction=sent` | `revdoku emails --direction sent --mailbox-id ID` | `mailbox_email_list` with `direction: "sent"` |
@@ -164,8 +163,9 @@ Recipients must be account members or other mailboxes of the account. On paid pl
 they can also be addresses that emailed this mailbox and passed sender authentication.
 
 1. List received messages and choose the message to answer.
-2. Send the reply with `in_reply_to` set to its email ID. The reply goes to the
-   original sender, with `Re:` and the original subject.
+2. Send the reply with `in_reply_to` set to its email ID. This sets the reply
+   headers and the `Re:` subject. The recipient defaults to the original sender
+   only when that sender passed SPF or DMARC; otherwise pass `to`.
 3. Read the sent email again and check `delivery.status`.
 4. If the result is unknown or `delivery.status` is `uncertain`, do not send again.
    List sent messages and check first.

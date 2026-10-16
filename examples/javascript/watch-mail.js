@@ -1,10 +1,10 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 const apiKey = process.env.REVDOKU_API_KEY;
-const mailboxId = process.env.REVDOKU_BUCKET_ID;
+const mailboxId = process.env.REVDOKU_MAILBOX_ID;
 const accountId = process.env.REVDOKU_ACCOUNT_ID;
 if (!apiKey || !mailboxId || !/^bkt_[A-Za-z0-9]+$/.test(mailboxId))
-    throw new Error('Set REVDOKU_API_KEY and REVDOKU_BUCKET_ID.');
+    throw new Error('Set REVDOKU_API_KEY and REVDOKU_MAILBOX_ID.');
 if (accountId && !/^acct_[A-Za-z0-9]+$/.test(accountId))
     throw new Error('Invalid account ID.');
 let stopped = false;
