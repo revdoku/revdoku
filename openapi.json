@@ -1918,7 +1918,7 @@
           "Email settings"
         ],
         "summary": "Change the primary address",
-        "description": "Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address. A mailbox on a customer domain keeps its revdokumail.com base address as an alias; moving back to revdokumail.com counts that alias too, so remove an alias first when they do not fit.",
+        "description": "Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address. A change from revdokumail.com to a customer domain always keeps the old address as the revdokumail.com base address, which uses no alias slot. After a move back to revdokumail.com the base address counts as an ordinary alias; aliases above the limit stay, but only the oldest ones within the limit receive.",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -1951,7 +1951,7 @@
                   },
                   "keep_old_as_alias": {
                     "type": "boolean",
-                    "description": "Keep the old address as an alias. Defaults to true for account owners and administrators while the old domain still receives email, otherwise false. Keeping it needs a free alias slot and an account owner or administrator."
+                    "description": "Keep the old address as an alias. Defaults to true for account owners and administrators while the old domain still receives email, otherwise false. Keeping it needs a free alias slot and an account owner or administrator. A change from revdokumail.com to a customer domain always keeps the old address as the base address. That needs no alias slot and no administrator."
                   },
                   "account_id": {
                     "type": "string",
