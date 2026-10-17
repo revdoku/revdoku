@@ -695,22 +695,24 @@ Requires a paid plan and mailbox admin.
 | `expected_address` | Yes | Current `address` from step 1. |
 | `username` | No | New name; omit for a generated name. On `revdokumail.com`, it gets a new 4-character random suffix. |
 | `domain` | No | Available platform domain, a ready custom domain, or `platform`. |
-| `keep_old_as_alias` | No | Keep the old address as an alias. Default `true` for account owners and administrators, otherwise `false`. Send `false` to retire it. |
+| `keep_old_as_alias` | No | Keep the old address as an alias. Default `true` for account owners and administrators, otherwise `false`. Send `false` to retire it. A change from `revdokumail.com` to your own domain always keeps it. |
 
 3. On `202`, read the settings until `assignment.status` is `active` or `failed`.
 
 For account owners and administrators, the old address becomes an alias by
 default and keeps receiving. An old address on a domain that no longer
-receives email is retired. A mailbox
-without a free alias slot returns `409 EMAIL_ALIAS_LIMIT`; send
-`keep_old_as_alias: false` to retire the old address instead. Check
+receives email is retired. Keeping the old address without a free alias slot
+returns `409 EMAIL_ALIAS_LIMIT`, except on a change from `revdokumail.com` to
+your own domain; send `keep_old_as_alias: false` to retire the old address instead. Check
 `max_email_address_rotations_per_month` in the limits.
 
-A mailbox on your own domain keeps its `revdokumail.com` address as an alias:
-the base address. It receives on every plan, uses no alias slot and sends the
+A mailbox on your own domain always has one `revdokumail.com` alias: the base
+address. A change from `revdokumail.com` keeps the old address as the base
+address. A mailbox created on your own domain gets a new one. It receives on every plan, uses no alias slot and sends the
 mailbox's email, so it cannot be removed (`409 EMAIL_ALIAS_BASE`). When the
 mailbox moves back to `revdokumail.com`, the base address counts as an ordinary
-alias again. Remove an alias first when they do not fit the limit.
+alias again. Aliases above the limit stay, but only the oldest ones within the
+limit receive.
 
 ### Aliases
 

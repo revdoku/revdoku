@@ -63,6 +63,9 @@ change your DNS records. A successful check does not activate receiving.
 
 Connecting a domain preserves existing addresses. Select it when creating a mailbox,
 or use `POST /v1/mailboxes/:mailbox_id/email/rotate` for an existing mailbox.
+A mailbox on your domain always keeps a `revdokumail.com` alias, the base address,
+which sends its email. Creating a mailbox on your domain adds one. A change from
+`revdokumail.com` keeps the old address as that alias.
 
 | Replacement field | Purpose |
 | --- | --- |
