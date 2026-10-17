@@ -117,7 +117,7 @@ curl "https://api.revdoku.com/v1/mailboxes" \
         "metadata": {},
         "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "email": {
-          "address": "acme.orders.k7m2@revdokumail.com",
+          "address": "acme-orders.k7m2@revdokumail.com",
           "message_count": 1,
           "unread_count": 1,
           "last_received_at": "2026-10-11T12:05:00.000000Z",
@@ -237,7 +237,7 @@ curl -X POST "https://api.revdoku.com/v1/mailboxes" \
       "metadata": {},
       "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "email": {
-        "address": "acme.orders.k7m2@revdokumail.com",
+        "address": "acme-orders.k7m2@revdokumail.com",
         "message_count": 0,
         "unread_count": 0,
         "last_received_at": null,
@@ -347,7 +347,7 @@ curl "https://api.revdoku.com/v1/mailboxes/bkt_example" \
       "metadata": {},
       "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "email": {
-        "address": "acme.orders.k7m2@revdokumail.com",
+        "address": "acme-orders.k7m2@revdokumail.com",
         "message_count": 1,
         "unread_count": 1,
         "last_received_at": "2026-10-11T12:05:00.000000Z",

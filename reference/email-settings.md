@@ -116,7 +116,7 @@ Guide: [Email settings](https://revdoku.com/api.md#email-settings)
 
 Requires a paid plan and mailbox admin permission.
 
-Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address.
+Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address. A mailbox on a customer domain keeps its revdokumail.com base address as an alias; moving back to revdokumail.com counts that alias too, so remove an alias first when they do not fit.
 
 | Language | Call |
 | --- | --- |
@@ -228,7 +228,7 @@ Guide: [Change the address](https://revdoku.com/api.md#change-the-address)
 
 Requires a paid plan and a full-account owner or administrator with mailbox-admin permission.
 
-The primary address stays unchanged.
+The primary address stays unchanged. On a mailbox whose primary address is on your domain, the first revdokumail.com alias becomes its base address and uses no alias slot.
 
 | Language | Call |
 | --- | --- |
@@ -327,7 +327,7 @@ Guide: [Aliases](https://revdoku.com/api.md#aliases)
 
 `DELETE /v1/mailboxes/{mailbox_id}/email/aliases/{alias_id}`
 
-Stops new and queued deliveries to the alias. Saved emails stay.
+Stops new and queued deliveries to the alias. Saved emails stay. The base address of a mailbox whose primary address is on your domain cannot be removed (`409 EMAIL_ALIAS_BASE`).
 
 | Language | Call |
 | --- | --- |
@@ -387,6 +387,8 @@ curl -X DELETE "https://api.revdoku.com/v1/mailboxes/bkt_example/email/aliases/e
 | Status | Description |
 | --- | --- |
 | 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
+
+Error codes named above: `EMAIL_ALIAS_BASE`.
 
 Guide: [Aliases](https://revdoku.com/api.md#aliases)
 

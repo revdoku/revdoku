@@ -29,10 +29,10 @@ configuration unchanged. To update, download and run the latest installer again.
 
 Each `cli-vX.Y.Z` release includes `revdoku`, `install-cli.sh`, `LICENSE`, and
 `SHA256SUMS`. Select a version on the Releases page, download the executable and
-checksums from that same release, and verify before running. Run this in the
-directory with those two downloaded files:
+checksums from that same release, and verify before running:
 
 ```sh
+# In the directory containing those two downloaded files:
 expected=$(awk '$2 == "revdoku" { print $1 }' SHA256SUMS)
 actual=$(openssl dgst -sha256 revdoku | awk '{print $NF}')
 if test -n "$expected" && test "$actual" = "$expected"; then
@@ -60,13 +60,13 @@ revdoku emails --mailbox-id bkt_...
 revdoku email eml_... --mailbox-id bkt_...
 revdoku email-status eml_... --mailbox-id bkt_... --read false
 revdoku email-download eml_... --mailbox-id bkt_... --attachment-id df_... --output attachment.pdf
+# Delete only after confirming the email ID:
 revdoku email-delete eml_... --mailbox-id bkt_... --confirm-delete eml_...
+# Reply to a sender; this never retries:
 revdoku email-send --in-reply-to eml_... --text "Thanks, received." --mailbox-id bkt_...
 revdoku emails --direction sent --mailbox-id bkt_...
 revdoku upload ./project-files --mailbox-id bkt_...
 ```
-
-Run `email-delete` only after you confirm the email ID. `email-send` replies to a sender and never retries.
 
 Use returned email and attachment IDs for message operations; use paths for file operations.
 `mailbox` reports the receiving address, readiness, and message activity. Revdoku

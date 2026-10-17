@@ -7,8 +7,8 @@ Use the TypeScript or Python SDK, the REST API, CLI, MCP, or dashboard to create
 
 | Interface | Best for | Start here |
 | --- | --- | --- |
-| TypeScript SDK | Node.js applications and backend services | [Install](#api-quick-start) · [Quickstart](https://revdoku.com/docs/quickstart.md) · [TypeScript SDK guide](https://revdoku.com/docs/sdks/typescript.md) |
-| Python SDK | Python applications, scripts, and backend services | [Install](#api-quick-start) · [Quickstart](https://revdoku.com/docs/quickstart.md) · [Python SDK guide](https://revdoku.com/docs/sdks/python.md) |
+| TypeScript SDK | Node.js applications and backend services | `npm install revdoku` · [Quickstart](https://revdoku.com/docs/quickstart.md) · [TypeScript SDK guide](https://revdoku.com/docs/sdks/typescript.md) |
+| Python SDK | Python applications, scripts, and backend services | `pip install revdoku` · [Quickstart](https://revdoku.com/docs/quickstart.md) · [Python SDK guide](https://revdoku.com/docs/sdks/python.md) |
 | REST API | Any language, and direct HTTP calls | [API guide](https://revdoku.com/api.md) · [API reference](https://revdoku.com/api/reference.md) · [OpenAPI](https://revdoku.com/openapi.json) |
 | Coding agents | Claude Code, Codex, or Cursor writing your integration | [Build with coding agents](https://revdoku.com/docs/coding-agents.md) |
 | CLI | Terminal use and uploading local files or folders | [CLI installation and commands](https://revdoku.com/cli/) |
@@ -55,18 +55,10 @@ Connecting MCP alone does not make an idle AI chat monitor your mailbox.
 ## API quick start
 
 The [quickstart](https://revdoku.com/docs/quickstart.md) takes you from a new API key
-to your first received email, with TypeScript, Python, and cURL examples.
-
-Install the TypeScript and JavaScript SDK (Node.js 22 or later):
+to your first received email, with TypeScript, Python, and cURL examples:
 
 ```sh
-npm install revdoku
-```
-
-Or install the Python SDK (Python 3.10 or later):
-
-```sh
-pip install revdoku
+npm install revdoku   # or: pip install revdoku
 ```
 
 Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example
@@ -127,7 +119,7 @@ Content-Type: application/json
 
 | Choice | Behavior |
 | --- | --- |
-| Supply `mailbox.email.username` | On `revdokumail.com`, Revdoku adds a permanent 4-character random suffix to a dot-separated prefix on every plan. A ready custom domain takes the exact name. An unavailable name returns `EMAIL_ALREADY_EXISTS`. |
+| Supply `mailbox.email.username` | On `revdokumail.com`, Revdoku adds a permanent 4-character random suffix to the name (letters, digits, dots, hyphens and underscores) on every plan. A ready custom domain takes the exact name. An unavailable name returns `EMAIL_ALREADY_EXISTS`. |
 | Send `{"mailbox": {}}` | Generate a username automatically. |
 
 Creation waits for receiving confirmation. Use the returned address after a
