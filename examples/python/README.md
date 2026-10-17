@@ -6,11 +6,7 @@ These examples use direct HTTP calls with Python 3.10+ and `requests`. For the P
 python3 -m venv .venv
 . .venv/bin/activate
 pip install requests
-```
-
-Set `REVDOKU_API_KEY` in your secret manager or local environment, then run:
-
-```sh
+# Set REVDOKU_API_KEY using your secret manager or local environment.
 python python/create-mailbox.py
 export REVDOKU_MAILBOX_ID=bkt_RETURNED_ID
 python python/read-mail.py

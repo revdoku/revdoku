@@ -22,11 +22,7 @@ Use `REVDOKU_ACCOUNT_ID` only to select an account already granted to the key.
 ```sh
 cd examples
 cp .env.example .env
-```
-
-Edit `.env` locally, then run the examples:
-
-```sh
+# Edit .env locally before running a command.
 node --env-file=.env javascript/create-mailbox.js
 node --env-file=.env javascript/read-mail.js
 node --env-file=.env javascript/read-mail.js --show-body
@@ -78,12 +74,9 @@ printed.
 
 ```sh
 npm ci
-npm run build
-npm run check
+npm run build    # TypeScript → matching JavaScript
+npm run check    # Types, generated-file consistency, offline API/CLI examples
 ```
-
-`npm run build` turns the TypeScript into matching JavaScript. `npm run check` checks
-types, generated-file consistency and the offline API and CLI examples.
 
 Tests use fixtures and make no network calls. Changes belong in TypeScript;
 commit the matching generated JavaScript. See [api.md](../api.md) and
@@ -121,13 +114,7 @@ Keep `.revdoku-examples/` private and persistent (`REVDOKU_STATE_DIR` changes it
 | --- | --- | --- |
 | WebSocket reconnect and catch-up | `node --env-file=.env javascript/watch-mail.js` | New email summaries and `New messages read: N` after subscription confirmation and events |
 | Signed webhook receiver (Node) | `node --env-file=.env javascript/webhook-receiver.js` | Local listener address, then received email IDs and subjects |
-| Signed webhook receiver (Python) | `python3 python/webhook-receiver.py` (install Flask first, below) | Flask listener, then received email IDs and subjects |
-
-The Python webhook receiver needs Flask. Install it first:
-
-```sh
-pip install flask requests
-```
+| Signed webhook receiver (Python) | `pip install flask requests`, then `python3 python/webhook-receiver.py` | Flask listener, then received email IDs and subjects |
 
 Export the `.env` values in your shell for Python. Set a mailbox and authorized account explicitly. These are ordinary HTTP/WebSocket examples; no Revdoku SDK is required.
 

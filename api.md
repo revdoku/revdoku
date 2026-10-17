@@ -38,26 +38,14 @@ operation and field.
 | Base URL | Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example `https://api.revdoku.com/v1/mailboxes`. |
 | Authentication | `Authorization: Bearer YOUR_API_KEY` |
 | JSON requests | `Content-Type: application/json` |
+| TypeScript and JavaScript SDK | `npm install revdoku` (Node.js 22 or later) |
+| Python SDK | `pip install revdoku` (Python 3.10 or later) |
 
 Create an API key in the dashboard with **Connect via API** or in
 **Account → Access**, and keep it on your backend. If you need an account,
 [browser signup](https://app.revdoku.com/users/sign_up) creates your first
 mailbox. The [quickstart](https://revdoku.com/docs/quickstart.md) takes you from a
 new key to your first received email.
-
-### Install an SDK
-
-TypeScript and JavaScript (Node.js 22 or later):
-
-```sh
-npm install revdoku
-```
-
-Python 3.10 or later:
-
-```sh
-pip install revdoku
-```
 
 Both SDKs read the key from the `REVDOKU_API_KEY` environment variable. The
 examples in this guide start with this client:
@@ -339,7 +327,7 @@ Content-Type: application/json
     "mailbox": {
       "id": "bkt_example",
       "email": {
-        "address": "acme.orders.k7m2@revdokumail.com",
+        "address": "acme-orders.k7m2@revdokumail.com",
         "receiving_enabled": true,
         "sending_enabled": true
       }
@@ -705,6 +693,12 @@ receives email is retired. A mailbox
 without a free alias slot returns `409 EMAIL_ALIAS_LIMIT`; send
 `keep_old_as_alias: false` to retire the old address instead. Check
 `max_email_address_rotations_per_month` in the limits.
+
+A mailbox on your own domain keeps its `revdokumail.com` address as an alias:
+the base address. It receives on every plan, uses no alias slot and sends the
+mailbox's email, so it cannot be removed (`409 EMAIL_ALIAS_BASE`). When the
+mailbox moves back to `revdokumail.com`, the base address counts as an ordinary
+alias again. Remove an alias first when they do not fit the limit.
 
 ### Aliases
 

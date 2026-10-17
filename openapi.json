@@ -1309,7 +1309,7 @@
                         "metadata": {},
                         "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
                         "email": {
-                          "address": "acme.orders.k7m2@revdokumail.com",
+                          "address": "acme-orders.k7m2@revdokumail.com",
                           "message_count": 1,
                           "unread_count": 1,
                           "last_received_at": "2026-10-11T12:05:00.000000Z",
@@ -1432,7 +1432,7 @@
                       "metadata": {},
                       "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
                       "email": {
-                        "address": "acme.orders.k7m2@revdokumail.com",
+                        "address": "acme-orders.k7m2@revdokumail.com",
                         "message_count": 0,
                         "unread_count": 0,
                         "last_received_at": null,
@@ -1553,7 +1553,7 @@
                       "metadata": {},
                       "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
                       "email": {
-                        "address": "acme.orders.k7m2@revdokumail.com",
+                        "address": "acme-orders.k7m2@revdokumail.com",
                         "message_count": 1,
                         "unread_count": 1,
                         "last_received_at": "2026-10-11T12:05:00.000000Z",
@@ -1918,7 +1918,7 @@
           "Email settings"
         ],
         "summary": "Change the primary address",
-        "description": "Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address.",
+        "description": "Requires a paid plan and mailbox admin permission. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address. A mailbox on a customer domain keeps its revdokumail.com base address as an alias; moving back to revdokumail.com counts that alias too, so remove an alias first when they do not fit.",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -2029,7 +2029,7 @@
           "Email settings"
         ],
         "summary": "Add an alias address",
-        "description": "Requires a paid plan and a full-account owner or administrator with mailbox-admin permission. The primary address stays unchanged.",
+        "description": "Requires a paid plan and a full-account owner or administrator with mailbox-admin permission. The primary address stays unchanged. On a mailbox whose primary address is on your domain, the first revdokumail.com alias becomes its base address and uses no alias slot.",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -2101,7 +2101,7 @@
           "Email settings"
         ],
         "summary": "Remove an alias address",
-        "description": "Stops new and queued deliveries to the alias. Saved emails stay.",
+        "description": "Stops new and queued deliveries to the alias. Saved emails stay. The base address of a mailbox whose primary address is on your domain cannot be removed (`409 EMAIL_ALIAS_BASE`).",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -2691,7 +2691,7 @@
                       "subject": "Re: Invoice INV-1042",
                       "from_addresses": [
                         {
-                          "address": "acme.orders.k7m2@revdokumail.com",
+                          "address": "acme-orders.k7m2@revdokumail.com",
                           "name": "acme-orders"
                         }
                       ],
@@ -2711,7 +2711,7 @@
                         "inv-1042@example.com",
                         "5f0c2e7a-3b1d-4c8e-9a6f-2d4b7e1c9a30@revdokumail.com"
                       ],
-                      "delivered_to": "acme.orders.k7m2@revdokumail.com",
+                      "delivered_to": "acme-orders.k7m2@revdokumail.com",
                       "received_at": "2026-10-11T12:15:00.000000Z",
                       "body_status": "complete",
                       "attachment_count": 0,
@@ -2817,7 +2817,7 @@
                       ],
                       "to_addresses": [
                         {
-                          "address": "acme.orders.k7m2@revdokumail.com",
+                          "address": "acme-orders.k7m2@revdokumail.com",
                           "name": null
                         }
                       ],
@@ -2826,7 +2826,7 @@
                       "message_id": "inv-1042@example.com",
                       "in_reply_to": [],
                       "references": [],
-                      "delivered_to": "acme.orders.k7m2@revdokumail.com",
+                      "delivered_to": "acme-orders.k7m2@revdokumail.com",
                       "received_at": "2026-10-11T12:05:00.000000Z",
                       "body_status": "complete",
                       "attachment_count": 1,
@@ -2950,7 +2950,7 @@
                       ],
                       "to_addresses": [
                         {
-                          "address": "acme.orders.k7m2@revdokumail.com",
+                          "address": "acme-orders.k7m2@revdokumail.com",
                           "name": null
                         }
                       ],
@@ -2959,7 +2959,7 @@
                       "message_id": "inv-1042@example.com",
                       "in_reply_to": [],
                       "references": [],
-                      "delivered_to": "acme.orders.k7m2@revdokumail.com",
+                      "delivered_to": "acme-orders.k7m2@revdokumail.com",
                       "received_at": "2026-10-11T12:05:00.000000Z",
                       "body_status": "complete",
                       "attachment_count": 1,
@@ -4830,11 +4830,13 @@
           "DUPLICATE_FILE_VERSION",
           "EMAIL_ACCOUNT_DISABLED",
           "EMAIL_ADDRESS_CHANGED",
+          "EMAIL_ALIAS_BASE",
           "EMAIL_ALIAS_LIMIT",
           "EMAIL_ALLOWLIST_CHANGED",
           "EMAIL_ALLOWLIST_INVALID",
           "EMAIL_ALLOWLIST_UNAVAILABLE",
           "EMAIL_ALREADY_EXISTS",
+          "EMAIL_ASSIGNMENT_CANCELED",
           "EMAIL_ASSIGNMENT_EXPIRED",
           "EMAIL_ASSIGNMENT_FORBIDDEN",
           "EMAIL_ASSIGNMENT_PENDING",
@@ -5802,7 +5804,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "description": "On revdokumail.com, every plan: a prefix normalized to dots, shortened to 59 characters, with a permanent 4-character random lowercase letter/digit suffix added. On a custom domain: the exact name before @, normalized to lowercase. Omit to generate; blank/null is invalid. Unavailable names return EMAIL_ALREADY_EXISTS."
+            "description": "On revdokumail.com, every plan: a prefix that keeps letters, digits, dots, hyphens and underscores (other characters become dots), shortened to 59 characters, with a permanent 4-character random lowercase letter/digit suffix added. On a custom domain: the exact name before @, normalized to lowercase. Omit to generate; blank/null is invalid. Unavailable names return EMAIL_ALREADY_EXISTS."
           },
           "domain": {
             "type": "string",
