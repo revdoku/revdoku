@@ -114,9 +114,9 @@ Guide: [Email settings](https://revdoku.com/api.md#email-settings)
 
 `POST /v1/mailboxes/{mailbox_id}/email/rotate`
 
-Requires a paid plan and mailbox admin permission.
+Requires mailbox admin permission and a paid plan, except for a change back to revdokumail.
 
-Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address. A change from revdokumail.com to a customer domain always keeps the old address as the revdokumail.com base address, which uses no alias slot. After a move back to revdokumail.com the base address counts as an ordinary alias; aliases above the limit stay, but only the oldest ones within the limit receive.
+com. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address. A change from revdokumail.com to a customer domain always keeps the old address as the revdokumail.com base address, which uses no alias slot. A change from a customer domain back to revdokumail.com makes that base address the main address again at once (200, assignment.status active): username is ignored, no address change is counted and it works on every plan.
 
 | Language | Call |
 | --- | --- |

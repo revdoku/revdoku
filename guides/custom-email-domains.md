@@ -65,7 +65,9 @@ Connecting a domain preserves existing addresses. Select it when creating a mail
 or use `POST /v1/mailboxes/:mailbox_id/email/rotate` for an existing mailbox.
 A mailbox on your domain always keeps a `revdokumail.com` alias, the base address,
 which sends its email. Creating a mailbox on your domain adds one. A change from
-`revdokumail.com` keeps the old address as that alias.
+`revdokumail.com` keeps the old address as that alias. A change back to
+`revdokumail.com` makes that alias the main address again, at once and without a rotation,
+on every plan.
 
 | Replacement field | Purpose |
 | --- | --- |
@@ -81,7 +83,7 @@ names; their reserved-name rules still apply.
 | Replacement result | Behavior |
 | --- | --- |
 | `202`, assignment `pending` | Setup is running. Read the mailbox settings to check progress. The old address remains current. |
-| Assignment `active` | The new primary is assigned and one rotation is charged. Check `receiving_enabled` before using it. |
+| Assignment `active` | The new primary is assigned and one rotation is charged; a change back to `revdokumail.com` charges none. Check `receiving_enabled` before using it. |
 | Assignment `failed` | The old address and rotation allowance are preserved. |
 
 | Mailbox settings field | Meaning |
