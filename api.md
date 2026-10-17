@@ -709,10 +709,10 @@ your own domain; send `keep_old_as_alias: false` to retire the old address inste
 A mailbox on your own domain always has one `revdokumail.com` alias: the base
 address. A change from `revdokumail.com` keeps the old address as the base
 address. A mailbox created on your own domain gets a new one. It receives on every plan, uses no alias slot and sends the
-mailbox's email, so it cannot be removed (`409 EMAIL_ALIAS_BASE`). When the
-mailbox moves back to `revdokumail.com`, the base address counts as an ordinary
-alias again. Aliases above the limit stay, but only the oldest ones within the
-limit receive.
+mailbox's email, so it cannot be removed (`409 EMAIL_ALIAS_BASE`). A change back
+to `revdokumail.com` makes the base address the main address again at once
+(`200`): `username` is ignored, no address change is counted and it works on
+every plan.
 
 ### Aliases
 

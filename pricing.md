@@ -17,8 +17,8 @@ One agent? Starter. A team of agents? Standard. Apps or clients? Business.
 | AI connections | 3 | 5 | 10 | 50 |
 | API keys | 1 | 2 | 3 | 15 |
 | Virus and malware scanning | Included | Included | Included | Included |
-| AI screening for prompt injection | Included | Included | Included | Included |
-| Support | Community | Fanatical support | Fanatical support | Fanatical support |
+| AI labels for suspected prompt injection | Included | Included | Included | Included |
+| Support | Community | Email support | Email support | Email support |
 
 API, MCP and CLI are included on every plan. Your first paid
 subscription has a 30-day money-back guarantee on its first payment.
