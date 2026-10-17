@@ -38,14 +38,26 @@ operation and field.
 | Base URL | Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example `https://api.revdoku.com/v1/mailboxes`. |
 | Authentication | `Authorization: Bearer YOUR_API_KEY` |
 | JSON requests | `Content-Type: application/json` |
-| TypeScript and JavaScript SDK | `npm install revdoku` (Node.js 22 or later) |
-| Python SDK | `pip install revdoku` (Python 3.10 or later) |
 
 Create an API key in the dashboard with **Connect via API** or in
 **Account → Access**, and keep it on your backend. If you need an account,
 [browser signup](https://app.revdoku.com/users/sign_up) creates your first
 mailbox. The [quickstart](https://revdoku.com/docs/quickstart.md) takes you from a
 new key to your first received email.
+
+### Install an SDK
+
+TypeScript and JavaScript (Node.js 22 or later):
+
+```sh
+npm install revdoku
+```
+
+Python 3.10 or later:
+
+```sh
+pip install revdoku
+```
 
 Both SDKs read the key from the `REVDOKU_API_KEY` environment variable. The
 examples in this guide start with this client:
