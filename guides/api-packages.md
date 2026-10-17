@@ -6,10 +6,22 @@ Choose the TypeScript or Python SDK for backend code, n8n or Zapier for automati
 
 | Language or platform | Package | Install | Guide |
 | --- | --- | --- | --- |
-| TypeScript and JavaScript (Node.js 22 or later) | `revdoku` on npm | `npm install revdoku` | [TypeScript SDK](https://revdoku.com/docs/sdks/typescript.md) · [source](https://github.com/revdoku/revdoku-typescript) |
-| Python 3.10 or later | `revdoku` on PyPI | `pip install revdoku` | [Python SDK](https://revdoku.com/docs/sdks/python.md) · [source](https://github.com/revdoku/revdoku-python) |
+| TypeScript and JavaScript (Node.js 22 or later) | `revdoku` on npm | [Command below](#typescript-and-javascript) | [TypeScript SDK](https://revdoku.com/docs/sdks/typescript.md) · [source](https://github.com/revdoku/revdoku-typescript) |
+| Python 3.10 or later | `revdoku` on PyPI | [Command below](#python) | [Python SDK](https://revdoku.com/docs/sdks/python.md) · [source](https://github.com/revdoku/revdoku-python) |
 | n8n | `n8n-nodes-revdoku` | [Build and install on self-hosted n8n](https://github.com/revdoku/revdoku-n8n/blob/main/USAGE.md#install-from-source) | [n8n usage](https://github.com/revdoku/revdoku-n8n/blob/main/USAGE.md) |
 | Zapier | Revdoku | [Request Zapier access](mailto:support@revdoku.com?subject=Revdoku%20Zapier%20access) | [Zapier tutorial](https://github.com/revdoku/revdoku-zapier/blob/main/TUTORIAL.md) |
+
+### TypeScript and JavaScript
+
+```sh
+npm install revdoku
+```
+
+### Python
+
+```sh
+pip install revdoku
+```
 
 The `revdoku` packages are API libraries. For the `revdoku` command-line tool, see https://revdoku.com/cli/.
 

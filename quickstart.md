@@ -24,21 +24,41 @@ REVDOKU_API_KEY=your-api-key
 
 ## 2. Install
 
-| Language | Install | Requires |
-| --- | --- | --- |
-| TypeScript or JavaScript | `npm install revdoku` | Node.js 22 or later |
-| Python | `pip install revdoku` | Python 3.10 or later |
-| cURL | Nothing | — |
+TypeScript or JavaScript (Node.js 22 or later):
+
+```sh
+npm install revdoku
+```
+
+Python 3.10 or later:
+
+```sh
+pip install revdoku
+```
+
+cURL needs nothing to install.
 
 Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for
 example `https://api.revdoku.com/v1/mailboxes`. The SDKs use this origin by default.
 
 Both SDKs read `REVDOKU_API_KEY` from the environment. To load `.env` and run a step:
 
+TypeScript (Node.js 22.18 or later):
+
 ```sh
-node --env-file=.env quickstart.mts               # TypeScript (Node.js 22.18 or later)
-set -a; . ./.env; set +a; python3 quickstart.py   # Python
-set -a; . ./.env; set +a                          # cURL: load the variables into your shell
+node --env-file=.env quickstart.mts
+```
+
+Python:
+
+```sh
+set -a; . ./.env; set +a; python3 quickstart.py
+```
+
+cURL: load the variables into your shell, then run the cURL commands:
+
+```sh
+set -a; . ./.env; set +a
 ```
 
 ## 3. List your mailboxes
@@ -170,18 +190,31 @@ for attachment in detail.attachments:
 
 **cURL**
 
+List the newest emails:
+
 ```sh
-# List the newest emails.
 curl -s "https://api.revdoku.com/v1/mailboxes/$REVDOKU_MAILBOX_ID/emails?order=desc&limit=5" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
-# Read one email. Use an id from the list. On 503 EMAIL_LABELING_PENDING, wait the
-# seconds in the Retry-After header, then run it again.
+```
+
+Read one email. Use an `id` from the list. On `503 EMAIL_LABELING_PENDING`, wait the
+seconds in the `Retry-After` header, then run it again:
+
+```sh
 curl -s "https://api.revdoku.com/v1/mailboxes/$REVDOKU_MAILBOX_ID/emails/eml_example" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
-# Get a download link. Use an id from data.email.attachments.
+```
+
+Get a download link. Use an `id` from `data.email.attachments`:
+
+```sh
 curl -s "https://api.revdoku.com/v1/mailboxes/$REVDOKU_MAILBOX_ID/emails/eml_example/attachments/df_example" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
-# Download data.download.url within 15 minutes. Do not send your API key there.
+```
+
+Download `data.download.url` within 15 minutes. Do not send your API key there:
+
+```sh
 curl -s -o attachment.bin "DOWNLOAD_URL"
 ```
 

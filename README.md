@@ -17,9 +17,16 @@ and state on your machine; host tool permissions remain in control.
 
 ## For developers
 
+TypeScript and JavaScript (Node.js 22 or later):
+
 ```sh
-npm install revdoku   # TypeScript and JavaScript (Node.js 22+)
-pip install revdoku   # Python 3.10+
+npm install revdoku
+```
+
+Python 3.10 or later:
+
+```sh
+pip install revdoku
 ```
 
 ```ts
