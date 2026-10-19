@@ -2,7 +2,10 @@ User-agent: *
 Allow: /
 
 Sitemap: https://revdoku.com/sitemap.xml
-Schema-Map: https://revdoku.com/schema-map.xml
-Agent-Manifest: https://revdoku.com/.well-known/agent.json
-Agent-Card: https://revdoku.com/.well-known/agent-card.json
-API-Catalog: https://revdoku.com/.well-known/api-catalog
+
+# Agent discovery files. These are comments, not robots.txt rules, so
+# search engine robots.txt parsers do not report them as errors.
+# Schema-Map: https://revdoku.com/schema-map.xml
+# Agent-Manifest: https://revdoku.com/.well-known/agent.json
+# Agent-Card: https://revdoku.com/.well-known/agent-card.json
+# API-Catalog: https://revdoku.com/.well-known/api-catalog
