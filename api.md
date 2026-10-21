@@ -583,7 +583,7 @@ A mailbox can send to these recipients:
 | An account member | A member of the mailbox's account with a confirmed email address. |
 | Another mailbox | A mailbox of the same account that can receive email now. |
 
-A mailbox cannot send to its own addresses. On Try free, each sent email ends
+A mailbox cannot send to its own addresses. On the Free plan, each sent email ends
 with one line: "Sent with Revdoku, mailboxes for AI agents: https://revdoku.com".
 
 1. List received email and keep the `id` of the email to answer.

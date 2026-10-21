@@ -166,7 +166,7 @@ See the [email contract](https://revdoku.com/api.md#emails).
 ## Send email
 
 Recipients: account members, other account mailboxes, or authenticated senders
-of this mailbox. Try free adds one Revdoku line. Limit: 10 recipients, no Bcc. Send only when
+of this mailbox. The Free plan adds one Revdoku line. Limit: 10 recipients, no Bcc. Send only when
 `email.sending_enabled` is true. On `EMAIL_LOOP_DETECTED`, stop auto-replies to
 that address.
 

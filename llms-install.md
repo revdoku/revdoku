@@ -137,7 +137,7 @@ Without MCP or shell access, follow [No connector available](#no-connector-avail
 Private storage and collaboration follow the [Terms of Use](https://revdoku.com/terms/).
 ## Plans
 
-New accounts start on the Try free plan. For regular use, choose a paid plan on the [pricing page](https://app.revdoku.com/pricing).
+New accounts start on the Free plan. For regular use, choose a paid plan on the [pricing page](https://app.revdoku.com/pricing).
 
 ## Troubleshooting tutorials
 

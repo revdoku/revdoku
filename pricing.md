@@ -1,9 +1,9 @@
 # Revdoku pricing
 
-Start on the Try free plan, without a card. Paid plans start at $4.99/mo. Prices are in USD.
+Start on the Free plan, without a card. Paid plans start at $4.99/mo. Prices are in USD.
 Your own domain? Starter. A team of agents? Standard. Apps or clients? Business.
 
-| Plan | Try free | Starter | Standard | Business |
+| Plan | Free | Starter | Standard | Business |
 | --- | ---: | ---: | ---: | ---: |
 | Price | $0 | $4.99/mo | $19.99/mo | $49.99/mo |
 | Annual price (2 months free) | — | $49.90/yr | $199.90/yr | $499.90/yr |
@@ -31,7 +31,7 @@ Starter Annual, Standard and Business, monthly or annual. When it ends, the
 pricing page stops showing it.
 
 Every plan can send to account members, the account's other mailboxes and
-people who emailed the mailbox. On Try free, each sent email ends with one line:
+people who emailed the mailbox. On the Free plan, each sent email ends with one line:
 "Sent with Revdoku, mailboxes for AI agents: https://revdoku.com".
 
 A mailbox address on `revdokumail.com` is the name you choose plus a 4-character

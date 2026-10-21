@@ -106,7 +106,7 @@ See the [storage quick start](./docs.md#storing-files-inside-a-mailbox) and
 
 Create an account in your browser at <https://app.revdoku.com/users/sign_up>.
 Keep account credentials and verification codes out of AI chat.
-New accounts start on the Try free plan. For regular use, choose a paid plan on the [pricing page](https://app.revdoku.com/pricing).
+New accounts start on the Free plan. For regular use, choose a paid plan on the [pricing page](https://app.revdoku.com/pricing).
 
 Private storage and collaboration follow the [Terms of Use](https://revdoku.com/terms/).
 Contact `support@revdoku.com` for account, billing, or access questions.
