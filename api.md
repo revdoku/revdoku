@@ -579,11 +579,12 @@ A mailbox can send to these recipients:
 
 | Recipient | Condition |
 | --- | --- |
-| A sender (paid plans) | The address emailed this mailbox and passed sender authentication. |
+| A sender | The address emailed this mailbox and passed sender authentication. |
 | An account member | A member of the mailbox's account with a confirmed email address. |
 | Another mailbox | A mailbox of the same account that can receive email now. |
 
-A mailbox cannot send to its own addresses.
+A mailbox cannot send to its own addresses. On Try free, each sent email ends
+with one line: "Sent with Revdoku, mailboxes for AI agents: https://revdoku.com".
 
 1. List received email and keep the `id` of the email to answer.
 2. Send the reply with `in_reply_to`. Pass `to` when the original sender did not pass SPF or DMARC.
@@ -639,7 +640,7 @@ Content-Type: application/json
 | Error | Meaning |
 | --- | --- |
 | `403 EMAIL_RECIPIENT_NOT_ALLOWED` | A recipient is not in the table above. |
-| `403 EMAIL_REPLY_UPGRADE_REQUIRED` | A recipient emailed this mailbox, but the plan sends only to account members and the account's other mailboxes. `error.details.upgrade_url` links to the pricing page. |
+| `403 EMAIL_REPLY_UPGRADE_REQUIRED` | A recipient emailed this mailbox, but the account's plan sends only to account members and the account's other mailboxes. `error.details.upgrade_url` links to the pricing page. |
 | `409 EMAIL_RECIPIENT_UNAVAILABLE` | A recipient is a Revdoku mailbox that cannot receive email now. |
 | `403 EMAIL_SEND_LIMIT_REACHED` | The account used its monthly sent email allowance. `error.details` has `monthly_limit`, `resets_at` and, when a higher plan raises the limit, `upgrade_url`. |
 | `429 EMAIL_SEND_RATE_LIMITED` | Too many emails from this mailbox or to one recipient, per minute, hour or day. There is no `Retry-After`; wait before you send again. |
