@@ -151,7 +151,7 @@ Guide: [Poll for new email](https://revdoku.com/api.md#poll-for-new-email)
 
 Requires mailbox write permission.
 
-Send only to account members, to other mailboxes of the account, or to addresses that emailed this mailbox and passed sender authentication. The From name is the mailbox title. On Try free, the email ends with one line about Revdoku. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.
+Send only to account members, to other mailboxes of the account, or to addresses that emailed this mailbox and passed sender authentication. The From name is the mailbox title. On the Free plan, the email ends with one line about Revdoku. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.
 
 | Language | Call |
 | --- | --- |
