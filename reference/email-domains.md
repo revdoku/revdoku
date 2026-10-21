@@ -12,6 +12,7 @@ Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for exam
 - [Read a custom email domain](#read-a-custom-email-domain): `GET /v1/account/email_domains/{domain_id}`
 - [Remove an unused custom email domain](#remove-an-unused-custom-email-domain): `DELETE /v1/account/email_domains/{domain_id}`
 - [Check DNS and provider setup again](#check-dns-and-provider-setup-again): `POST /v1/account/email_domains/{domain_id}/verify`
+- [Get a one-click DNS setup link](#get-a-one-click-dns-setup-link): `GET /v1/account/email_domains/{domain_id}/setup_link`
 
 ## List custom email domains
 
@@ -81,6 +82,7 @@ curl "https://api.revdoku.com/v1/account/email_domains" \
 | `domains[].setup_expires_at` / `setupExpiresAt` | string (date-time) or null |  |
 | `domains[].ready_at` / `readyAt` | string (date-time) or null |  |
 | `domains[].required_dns_records` / `requiredDnsRecords` | array of DnsRecord | Fields: `type`, `name`, `value`, `purpose`, `zone`, `relative_name`. |
+| `domains[].setup_provider` / `setupProvider` | string or null | DNS provider of the domain's zone that supports one-click setup, such as Cloudflare. Null otherwise, also while the deployment cannot sign setup links. Get the link with `getEmailDomainSetupLink`; it can still return an error. |
 | `domains[].error` | object or null |  |
 | `domains[].assigned_mailboxes` / `assignedMailboxes` | array of object | Fields: `id`, `email`. |
 | `enabled` | boolean | Whether this account can use custom email domains. |
@@ -130,6 +132,7 @@ curl "https://api.revdoku.com/v1/account/email_domains" \
             "relative_name": "inbox"
           }
         ],
+        "setup_provider": null,
         "pause_reason": null,
         "paused_at": null,
         "last_checked_at": null,
@@ -159,7 +162,7 @@ Guide: [Custom email domains](https://revdoku.com/api.md#custom-email-domains)
 
 `POST /v1/account/email_domains`
 
-Claims an exact hostname and returns the DNS records to publish. Never change DNS without the domain owner's authorization.
+Claims an exact hostname and returns the ownership record. Read the domain again shortly after for all `required_dns_records`. Never change DNS without the domain owner's authorization.
 
 | Language | Call |
 | --- | --- |
@@ -509,5 +512,72 @@ curl -X POST "https://api.revdoku.com/v1/account/email_domains/ied_example/verif
 | Status | Description |
 | --- | --- |
 | 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
+
+Guide: [Custom email domains](https://revdoku.com/api.md#custom-email-domains)
+
+## Get a one-click DNS setup link
+
+`GET /v1/account/email_domains/{domain_id}/setup_link`
+
+Signs a Domain Connect link for a domain whose `setup_provider` is set. Give the URL to the domain owner to open in a browser. The DNS provider adds `required_dns_records` after the owner approves them, then returns to Account Settings → Domains. Errors: 422 `EMAIL_DOMAIN_SETUP_UNSUPPORTED` when the provider or the domain state does not allow one-click setup, 422 `EMAIL_DOMAIN_SETUP_UNAVAILABLE` while the deployment cannot sign links, 422 `EMAIL_DNS_CONFLICT` when the hostname has records of another mail provider, 403 `EMAIL_DOMAINS_UPGRADE_REQUIRED` when the plan no longer includes custom email domains, and 503 `EMAIL_DNS_TEMPORARY` when DNS cannot be checked. Add the records manually, or try again later after a 503.
+
+| Language | Call |
+| --- | --- |
+| TypeScript | `client.api.getEmailDomainSetupLink({ domainId })` |
+| Python | `client.api.get_email_domain_setup_link(domain_id)` |
+
+**Parameters**
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `domain_id` / `domainId` | string | yes |  |
+| `account_id` / `accountId` | string | no | Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. |
+
+**Examples**
+
+**TypeScript**
+
+```ts
+import { Revdoku } from 'revdoku';
+
+const client = new Revdoku();
+const { data } = await client.api.getEmailDomainSetupLink({
+  domainId: 'ied_example',
+});
+console.log(data);
+```
+
+**Python**
+
+```python
+from revdoku import Revdoku
+
+client = Revdoku()
+response = client.api.get_email_domain_setup_link("ied_example")
+print(response.data)
+```
+
+**cURL**
+
+```sh
+curl "https://api.revdoku.com/v1/account/email_domains/ied_example/setup_link" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY"
+```
+
+**Response** `200`
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `setup_link` / `setupLink` | object |  |
+| `setup_link.provider` | string | DNS provider name, such as Cloudflare. |
+| `setup_link.url` | string (uri) | Signed link for the domain owner to open in a browser. |
+
+**Errors**
+
+| Status | Description |
+| --- | --- |
+| 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
+
+Error codes named above: `EMAIL_DNS_CONFLICT`, `EMAIL_DNS_TEMPORARY`, `EMAIL_DOMAINS_UPGRADE_REQUIRED`, `EMAIL_DOMAIN_SETUP_UNAVAILABLE`, `EMAIL_DOMAIN_SETUP_UNSUPPORTED`.
 
 Guide: [Custom email domains](https://revdoku.com/api.md#custom-email-domains)

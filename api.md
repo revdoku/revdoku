@@ -931,13 +931,16 @@ owner or administrator key.
 | --- | --- | --- | --- |
 | GET | `/v1/account/email_domains` | [`listEmailDomains` / `list_email_domains`](https://revdoku.com/api/reference/email-domains.md#list-custom-email-domains) | `data.domains`, `data.enabled`, `data.pagination`. |
 | POST | `/v1/account/email_domains/check` | [`checkEmailDomain` / `check_email_domain`](https://revdoku.com/api/reference/email-domains.md#check-a-hostname-for-conflicting-dns) | Check a `hostname` for conflicting DNS. Makes no change. |
-| POST | `/v1/account/email_domains` | [`createEmailDomain` / `create_email_domain`](https://revdoku.com/api/reference/email-domains.md#connect-a-custom-email-domain) | Connect `hostname`. Returns `data.domain` with DNS records. |
+| POST | `/v1/account/email_domains` | [`createEmailDomain` / `create_email_domain`](https://revdoku.com/api/reference/email-domains.md#connect-a-custom-email-domain) | Connect `hostname`. Returns `data.domain` with the ownership record. |
 | GET | `/v1/account/email_domains/{domain_id}` | [`getEmailDomain` / `get_email_domain`](https://revdoku.com/api/reference/email-domains.md#read-a-custom-email-domain) | `data.domain`. |
 | POST | `/v1/account/email_domains/{domain_id}/verify` | [`verifyEmailDomain` / `verify_email_domain`](https://revdoku.com/api/reference/email-domains.md#check-dns-and-provider-setup-again) | Check DNS again. |
+| GET | `/v1/account/email_domains/{domain_id}/setup_link` | [`getEmailDomainSetupLink` / `get_email_domain_setup_link`](https://revdoku.com/api/reference/email-domains.md#get-a-one-click-dns-setup-link) | Signed link for the domain owner. Only when `setup_provider` is set. |
 | DELETE | `/v1/account/email_domains/{domain_id}` | [`deleteEmailDomain` / `delete_email_domain`](https://revdoku.com/api/reference/email-domains.md#remove-an-unused-custom-email-domain) | Remove an unused domain; send `hostname` and `confirm: true`. |
 
 1. Check the hostname. If the root domain already receives email, use a subdomain such as `inbox.example.com`.
-2. Connect it and publish the returned `required_dns_records`.
+2. Connect it. Shortly after, read the domain again to get all `required_dns_records`.
+   Publish them. When `setup_provider` is set, you can also get a setup link and give it to
+   the domain owner, who approves the records at that DNS provider.
 3. Verify, then read the domain until `receiving` is `true`.
 4. Create mailboxes with `mailbox.email.domain`.
 

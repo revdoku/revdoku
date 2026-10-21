@@ -875,6 +875,7 @@
                             "relative_name": "inbox"
                           }
                         ],
+                        "setup_provider": null,
                         "pause_reason": null,
                         "paused_at": null,
                         "last_checked_at": null,
@@ -908,7 +909,7 @@
           "Email domains"
         ],
         "summary": "Connect a custom email domain",
-        "description": "Claims an exact hostname and returns the DNS records to publish. Never change DNS without the domain owner's authorization.",
+        "description": "Claims an exact hostname and returns the ownership record. Read the domain again shortly after for all `required_dns_records`. Never change DNS without the domain owner's authorization.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1216,6 +1217,75 @@
                       "properties": {
                         "domain": {
                           "$ref": "#/components/schemas/EmailDomain"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/account/email_domains/{domain_id}/setup_link": {
+      "get": {
+        "operationId": "getEmailDomainSetupLink",
+        "tags": [
+          "Email domains"
+        ],
+        "summary": "Get a one-click DNS setup link",
+        "description": "Signs a Domain Connect link for a domain whose `setup_provider` is set. Give the URL to the domain owner to open in a browser. The DNS provider adds `required_dns_records` after the owner approves them, then returns to Account Settings → Domains. Errors: 422 `EMAIL_DOMAIN_SETUP_UNSUPPORTED` when the provider or the domain state does not allow one-click setup, 422 `EMAIL_DOMAIN_SETUP_UNAVAILABLE` while the deployment cannot sign links, 422 `EMAIL_DNS_CONFLICT` when the hostname has records of another mail provider, 403 `EMAIL_DOMAINS_UPGRADE_REQUIRED` when the plan no longer includes custom email domains, and 503 `EMAIL_DNS_TEMPORARY` when DNS cannot be checked. Add the records manually, or try again later after a 503.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DomainId"
+          },
+          {
+            "$ref": "#/components/parameters/AccountId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "setup_link"
+                      ],
+                      "properties": {
+                        "setup_link": {
+                          "type": "object",
+                          "required": [
+                            "provider",
+                            "url"
+                          ],
+                          "properties": {
+                            "provider": {
+                              "type": "string",
+                              "description": "DNS provider name, such as Cloudflare."
+                            },
+                            "url": {
+                              "type": "string",
+                              "format": "uri",
+                              "description": "Signed link for the domain owner to open in a browser."
+                            }
+                          }
                         }
                       }
                     }
@@ -4854,6 +4924,8 @@
           "EMAIL_DOMAIN_NOT_READY",
           "EMAIL_DOMAIN_NOT_REGISTERED",
           "EMAIL_DOMAIN_RATE_LIMIT",
+          "EMAIL_DOMAIN_SETUP_UNAVAILABLE",
+          "EMAIL_DOMAIN_SETUP_UNSUPPORTED",
           "EMAIL_DOMAIN_UNAVAILABLE",
           "EMAIL_INDEX_BUILDING",
           "EMAIL_LABELING_PENDING",
@@ -7683,6 +7755,13 @@
             "items": {
               "$ref": "#/components/schemas/DnsRecord"
             }
+          },
+          "setup_provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "DNS provider of the domain's zone that supports one-click setup, such as Cloudflare. Null otherwise, also while the deployment cannot sign setup links. Get the link with `getEmailDomainSetupLink`; it can still return an error."
           },
           "error": {
             "anyOf": [
