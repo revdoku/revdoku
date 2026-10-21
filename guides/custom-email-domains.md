@@ -24,6 +24,7 @@ example `https://api.revdoku.com/v1/mailboxes`.
 | POST | `/v1/account/email_domains/check` | Check a hostname for DNS conflicts before connecting it. |
 | POST | `/v1/account/email_domains` | Start connecting a domain; `201` returns `data.domain`. |
 | GET | `/v1/account/email_domains/:domain_id` | Read DNS requirements and receiving state in `data.domain`. |
+| GET | `/v1/account/email_domains/:domain_id/setup_link` | Get a signed one-click setup link in `data.setup_link`, when `setup_provider` is set. |
 | POST | `/v1/account/email_domains/:domain_id/verify` | Check ownership and provider setup; `202` returns `data.domain`. |
 | DELETE | `/v1/account/email_domains/:domain_id` | Remove a domain after its mailbox assignments have been removed; `200` returns `data.deleted` and `data.id`. |
 
@@ -32,6 +33,9 @@ example `https://api.revdoku.com/v1/mailboxes`.
 | `customization.allowed` | Whether this caller can customize the mailbox domain. |
 | `customization.blocked_reason` | Why customization is unavailable. |
 | `hostname` | Exact domain hostname; also required to confirm deletion. |
+| `required_dns_records` | DNS records to add. The SES and MX records appear shortly after the domain is connected. |
+| `setup_provider` | DNS provider, such as Cloudflare, that can add the records in one click. `null` otherwise, also while one-click setup is not available. |
+| `setup_link.url` | Link for the domain owner to open in a browser. The provider adds the records after the owner approves them, then returns to Account Settings → Domains. An error (`EMAIL_DOMAIN_SETUP_UNAVAILABLE`, `EMAIL_DOMAIN_SETUP_UNSUPPORTED`, `EMAIL_DNS_CONFLICT`, `EMAIL_DOMAINS_UPGRADE_REQUIRED` or a retryable `EMAIL_DNS_TEMPORARY`) means: add the records manually or try later. |
 | `confirm: true` | Explicit confirmation for deletion. |
 | `retryable` | Whether a reported setup error can be retried. |
 
@@ -53,7 +57,8 @@ current provider. Add DNS records only at the hostname shown in the setup instru
 | Null MX (the hostname currently accepts no mail) | Setup can start; replace the null MX with the required receiving MX before activation. |
 
 Checks run before connecting and again during verification. Revdoku does not
-change your DNS records. A successful check does not activate receiving.
+change your DNS records itself. With a setup link, your DNS provider adds the
+records after you approve them. A successful check does not activate receiving.
 
 - DNS ownership instructions are visible only to full-account administrators.
 - Unverified claims expire after seven days.
