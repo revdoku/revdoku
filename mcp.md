@@ -103,9 +103,9 @@ Offer recurring automation after the first result.
 
 ### Reply to a sender
 
-Sending requires mailbox write access. Recipients must be account members or other
-mailboxes of the account. On paid plans, they can also be addresses that emailed this
-mailbox and passed sender authentication; otherwise a reply returns
+Sending requires mailbox write access. Recipients must be account members, other
+mailboxes of the account, or addresses that emailed this mailbox and passed sender
+authentication. A plan that cannot reply to senders returns
 `EMAIL_REPLY_UPGRADE_REQUIRED` with `error.details.upgrade_url`. Send only when the mailbox's
 `email.sending_enabled` is true. Otherwise `mailbox_email_send` returns
 `EMAIL_SENDING_UNAVAILABLE`, or the server lists no send tool when sending is off.

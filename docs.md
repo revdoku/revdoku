@@ -167,8 +167,8 @@ can send to it; reading saved mail requires mailbox access.
 ### Reply to a sender
 
 A mailbox sends email from its own address. Sending requires mailbox write access.
-Recipients must be account members or other mailboxes of the account. On paid plans,
-they can also be addresses that emailed this mailbox and passed sender authentication.
+Recipients must be account members, other mailboxes of the account, or addresses
+that emailed this mailbox and passed sender authentication.
 
 1. List received messages and choose the message to answer.
 2. Send the reply with `in_reply_to` set to its email ID. This sets the reply

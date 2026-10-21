@@ -71,9 +71,9 @@ Run `email-delete` only after you confirm the email ID. `email-send` replies to 
 Use returned email and attachment IDs for message operations; use paths for file operations.
 `mailbox` reports the receiving address, readiness, and message activity. Revdoku
 receives email and attachments.
-`email-send` sends from the mailbox address. Recipients must be account members or
-other mailboxes of the account. On paid plans, they can also be addresses that
-emailed this mailbox and passed sender authentication. With `--in-reply-to`, the
+`email-send` sends from the mailbox address. Recipients must be account members,
+other mailboxes of the account, or addresses that emailed this mailbox and passed
+sender authentication. With `--in-reply-to`, the
 recipient defaults to the original sender only when that sender passed SPF or
 DMARC; otherwise pass `--to`. Check `delivery.status` with
 `emails --direction sent`. After an uncertain result, check the sent list before
