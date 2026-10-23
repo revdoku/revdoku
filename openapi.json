@@ -2706,7 +2706,7 @@
           "Emails"
         ],
         "summary": "Send an email",
-        "description": "Requires mailbox write permission. Send only to account members, to other mailboxes of the account, or to addresses that emailed this mailbox and passed sender authentication. The From name is the mailbox title. On the Free plan, the email ends with one line about Revdoku. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.",
+        "description": "Requires mailbox write permission. Send only to account members, to other mailboxes of the account, or to addresses that emailed this mailbox and passed sender authentication; an administrator can turn off each kind. When the mailbox requires approval, delivery.status is awaiting_approval until a person sends, edits or declines the email; do not send it again. Replying to or attaching an email that AI labels marked as Junk returns 403 EMAIL_WITHHELD; one they are still checking returns 503 EMAIL_LABELING_PENDING with Retry-After. The From name is the mailbox title. On the Free plan, the email ends with one line about Revdoku. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -2937,8 +2937,8 @@
         "tags": [
           "Emails"
         ],
-        "summary": "Mark an email read or unread",
-        "description": "Only read status can change.",
+        "summary": "Update an email's read status or labels",
+        "description": "Changes read status and custom labels. Send at least one of read, add_labels and remove_labels. Labels need write access. A new label name creates the label. Built-in labels such as Junk change only in the dashboard.",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -2960,6 +2960,26 @@
                   "read": {
                     "type": "boolean"
                   },
+                  "add_labels": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "description": "Label names to add."
+                  },
+                  "remove_labels": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "description": "Label names to remove."
+                  },
                   "account_id": {
                     "type": "string",
                     "description": "Select another granted account for this request."
@@ -2967,10 +2987,7 @@
                   "reason": {
                     "$ref": "#/components/schemas/ActionReason"
                   }
-                },
-                "required": [
-                  "read"
-                ]
+                }
               }
             }
           }
@@ -3925,7 +3942,7 @@
           "Files"
         ],
         "summary": "Delete a file",
-        "description": "Requires mailbox-admin permission. Files under _email/ return EMAIL_PATH_READ_ONLY; delete the email instead.",
+        "description": "Requires mailbox-admin permission. Files under _email/ return EMAIL_PATH_READ_ONLY; delete the email instead. Other top-level folders that start with _ return RESERVED_PATH.",
         "parameters": [
           {
             "$ref": "#/components/parameters/MailboxId"
@@ -4949,6 +4966,7 @@
           "EMAIL_REPLY_UPGRADE_REQUIRED",
           "EMAIL_ROTATION_LIMIT",
           "EMAIL_ROTATION_UNAVAILABLE",
+          "EMAIL_SENDING_RULES_CHANGED",
           "EMAIL_SENDING_UNAVAILABLE",
           "EMAIL_SEND_LIMIT_REACHED",
           "EMAIL_SEND_RATE_LIMITED",
@@ -5018,6 +5036,7 @@
           "PROHIBITED_FILE_EXTENSION",
           "PROJECT_STORAGE_QUOTA_EXCEEDED",
           "RATE_LIMIT_EXCEEDED",
+          "RESERVED_PATH",
           "SERVICE_UNAVAILABLE",
           "STORAGE_QUOTA_EXCEEDED",
           "UNAUTHORIZED",
@@ -6359,17 +6378,19 @@
           "status": {
             "type": "string",
             "enum": [
+              "awaiting_approval",
               "queued",
               "sending",
               "sent",
               "failed",
-              "uncertain"
+              "uncertain",
+              "declined"
             ],
-            "description": "uncertain: the provider result is unknown. Do not send again before you check the sent list."
+            "description": "awaiting_approval: a person sends, edits or declines the email in the dashboard; do not send it again. declined: a person declined it and it was not sent; do not send it again unless a person asks. uncertain: the provider result is unknown. Do not send again before you check the sent list."
           },
           "recipients": {
             "type": "object",
-            "description": "Status for each recipient address: queued, sent, delivered, bounced, bounced_temporarily, complained or rejected.",
+            "description": "Status for each recipient address: awaiting_approval, queued, sent, delivered, bounced, bounced_temporarily, complained, rejected or declined.",
             "additionalProperties": {
               "type": "string"
             }
@@ -7384,7 +7405,7 @@
           },
           "path": {
             "type": "string",
-            "description": "Destination path in the mailbox. Paths under _email/ return EMAIL_PATH_READ_ONLY."
+            "description": "Destination path in the mailbox. Paths under _email/ return EMAIL_PATH_READ_ONLY; other top-level folders that start with _ return RESERVED_PATH."
           },
           "existing_file_policy": {
             "type": "string",
@@ -7459,7 +7480,7 @@
         "properties": {
           "path": {
             "type": "string",
-            "description": "Destination path. An existing path receives a new version. Paths under _email/ return EMAIL_PATH_READ_ONLY."
+            "description": "Destination path. An existing path receives a new version. Paths under _email/ return EMAIL_PATH_READ_ONLY; other top-level folders that start with _ return RESERVED_PATH."
           },
           "signed_blob_id": {
             "type": "string",
@@ -7967,7 +7988,7 @@
         "properties": {
           "path": {
             "type": "string",
-            "description": "Destination path in the mailbox. Paths under _email/ return EMAIL_PATH_READ_ONLY."
+            "description": "Destination path in the mailbox. Paths under _email/ return EMAIL_PATH_READ_ONLY; other top-level folders that start with _ return RESERVED_PATH."
           },
           "byte_size": {
             "type": "integer",
@@ -8331,7 +8352,7 @@
     },
     "responses": {
       "Error": {
-        "description": "Request failed. See error.code. Any 429 or 503 response with Retry-After (for example 503 EMAIL_LABELING_PENDING or 503 EMAIL_INDEX_BUILDING): wait that many seconds, then try the read again. 429 EMAIL_SEND_RATE_LIMITED has no Retry-After. Never retry EMAIL_LOOP_DETECTED.",
+        "description": "Request failed. See error.code. Any 429 or 503 response with Retry-After (for example 503 EMAIL_LABELING_PENDING or 503 EMAIL_INDEX_BUILDING): wait that many seconds, then try the request again. 429 EMAIL_SEND_RATE_LIMITED has no Retry-After. Never retry EMAIL_LOOP_DETECTED.",
         "content": {
           "application/json": {
             "schema": {

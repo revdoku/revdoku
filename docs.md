@@ -151,7 +151,7 @@ can send to it; reading saved mail requires mailbox access.
 | Inspect an existing receiving address (write access) | `GET /v1/mailboxes/:id/email` | `revdoku mailbox --mailbox-id ID` | `mailbox_get` (`email.address`) |
 | List received messages | `GET /v1/mailboxes/:id/emails` | `revdoku emails --mailbox-id ID` | `mailbox_email_list` |
 | Read one message | `GET /v1/mailboxes/:id/emails/:email_id` | `revdoku email EMAIL_ID --mailbox-id ID` | `mailbox_email_get` |
-| Mark read/unread | `PATCH /v1/mailboxes/:id/emails/:email_id` | `revdoku email-status EMAIL_ID --read true --mailbox-id ID` | `mailbox_email_update` |
+| Mark read/unread or label | `PATCH /v1/mailboxes/:id/emails/:email_id` | `revdoku email-status EMAIL_ID --read true --add-label Leads --mailbox-id ID` | `mailbox_email_update` |
 | Download an attachment | [Download an attachment](https://revdoku.com/api.md#download-an-attachment) | `revdoku email-download EMAIL_ID --attachment-id ID --mailbox-id ID` | `mailbox_email_download` |
 | Delete one message | `DELETE /v1/mailboxes/:id/emails/:email_id` | `revdoku email-delete EMAIL_ID --confirm-delete EMAIL_ID --mailbox-id ID` | `mailbox_email_delete` |
 | Reply to a sender | `POST /v1/mailboxes/:id/emails` | `revdoku email-send --in-reply-to EMAIL_ID --text TEXT --mailbox-id ID` | `mailbox_email_send` |
@@ -177,6 +177,8 @@ that emailed this mailbox and passed sender authentication.
 3. Read the sent email again and check `delivery.status`.
 4. If the result is unknown or `delivery.status` is `uncertain`, do not send again.
    List sent messages and check first.
+5. If `delivery.status` is `awaiting_approval`, a person sends, edits or declines the email
+   in the dashboard. Do not send it again. Do not send a `declined` email again unless a person asks.
 
 See [Send email](https://revdoku.com/api.md#send-email) for fields, limits and errors.
 

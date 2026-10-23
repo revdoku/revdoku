@@ -89,6 +89,8 @@ EMAIL_DIRECTION=""
 EMAIL_TO=""
 EMAIL_CC=""
 EMAIL_ATTACHMENTS=""
+EMAIL_ADD_LABELS=""
+EMAIL_REMOVE_LABELS=""
 EMAIL_TEXT=""
 EMAIL_TEXT_FILE=""
 EMAIL_HTML_FILE=""
@@ -217,7 +219,7 @@ Usage: revdoku <command> [PATH] [options]
   mailbox                 Show incoming address, readiness, and email activity.
   emails                List received emails; returns a resumable polling cursor.
   email ID              Read decoded email without changing shared read status.
-  email-status ID       Set shared read status with --read true|false.
+  email-status ID       Set read status (--read true|false) or labels (--add-label NAME).
   email-download ID     Download original EML or --attachment-id ID.
   email-delete ID       Delete an email and attachments; confirm with --confirm-delete ID.
   email-send            Send from this mailbox to allowed recipients. Does not retry.
@@ -261,6 +263,7 @@ Options:
   --text TEXT | --text-file PATH       email-send plain-text body (- reads stdin).
   --html-file PATH     --attach FILE_ID   Optional HTML body; attach mailbox files.
   --read true|false                    Email filter or desired read status.
+  --add-label NAME  --remove-label NAME  email-status: custom labels; repeat (10 maximum).
   --attachment-id ID   --output FILE   Download a selected email attachment.
   --version-id ID                      File version for read or restore.
   --description TEXT   --metadata JSON
@@ -366,14 +369,16 @@ while [[ $# -gt 0 ]]; do
       esac
       shift 2
       ;;
-    --to|--cc|--attach|--in-reply-to|--direction|--text|--text-file|--html-file)
+    --to|--cc|--attach|--in-reply-to|--direction|--text|--text-file|--html-file|--add-label|--remove-label)
       [[ $# -ge 2 && -n "$2" ]] || die "$1 requires a value"
       case "$1" in
-        --to|--cc|--attach|--in-reply-to|--direction)
+        --to|--cc|--attach|--in-reply-to|--direction|--add-label|--remove-label)
           [[ "$2" != *$'\n'* ]] || die "$1 requires a single value" ;;
       esac
       case "$1" in
         --to) EMAIL_TO+="$2"$'\n' ;;
+        --add-label) EMAIL_ADD_LABELS+="$2"$'\n' ;;
+        --remove-label) EMAIL_REMOVE_LABELS+="$2"$'\n' ;;
         --cc) EMAIL_CC+="$2"$'\n' ;;
         --attach) [[ "$2" =~ ^df_[A-Za-z0-9]+$ ]] || die "--attach requires a mailbox file id"; EMAIL_ATTACHMENTS+="$2"$'\n' ;;
         --in-reply-to) [[ "$2" =~ ^eml_[A-Za-z0-9]+$ ]] || die "--in-reply-to requires an email id"; EMAIL_IN_REPLY_TO="$2" ;;
@@ -551,6 +556,7 @@ if [[ -n "$EMAIL_TO$EMAIL_CC$EMAIL_ATTACHMENTS$EMAIL_IN_REPLY_TO$EMAIL_TEXT$EMAI
   die "--to, --cc, --attach, --in-reply-to, --text, --text-file and --html-file require email-send"
 fi
 [[ -z "$EMAIL_DIRECTION" || "$ACTION" == "list_emails" ]] || die "--direction requires emails"
+[[ -z "$EMAIL_ADD_LABELS$EMAIL_REMOVE_LABELS" || "$ACTION" == "email-status" ]] || die "--add-label and --remove-label require email-status"
 if [[ "$MAILBOX_LIST_OPTIONS" == "true" && "$ACTION" != "list_mailboxes" ]]; then
   die "--status and --query require ls or list"
 fi
@@ -1378,8 +1384,12 @@ email_command() {
       http_json GET "$path" "{}"
       ;;
     email-status)
-      [[ -n "$EMAIL_READ" ]] || die "email-status requires --read true|false"
-      http_json PATCH "$path" "$("$JQ_BIN" -nc --argjson read "$EMAIL_READ" '{read:$read}')"
+      [[ -n "$EMAIL_READ$EMAIL_ADD_LABELS$EMAIL_REMOVE_LABELS" ]] || die "email-status requires --read true|false, --add-label or --remove-label"
+      http_json PATCH "$path" "$("$JQ_BIN" -nc --arg read "$EMAIL_READ" --arg add "$EMAIL_ADD_LABELS" --arg remove "$EMAIL_REMOVE_LABELS" '
+        def names: split("\n") | map(select(length > 0));
+        (if $read == "" then {} else {read: ($read == "true")} end)
+        + (if ($add | names | length) > 0 then {add_labels: ($add | names)} else {} end)
+        + (if ($remove | names | length) > 0 then {remove_labels: ($remove | names)} else {} end)')"
       ;;
     email-delete)
       [[ "$DELETE_CONFIRMATION" == "$EMAIL_ID" ]] || die "To delete this email and its attachments, repeat with --confirm-delete $EMAIL_ID"
@@ -1427,7 +1437,8 @@ send_email() {
   rm -f "$text_file" "$html_file"
   [[ -n "$payload" ]] || die "Could not read the email body"
   if ! http_json POST "$path" "$payload"; then
-    if [[ -z "$LAST_HTTP_STATUS" || "$LAST_HTTP_STATUS" == 5* ]]; then
+    # EMAIL_LABELING_PENDING refuses the send before anything is stored.
+    if [[ -z "$LAST_HTTP_STATUS" || "$LAST_HTTP_STATUS" == 5* ]] && [[ "$LAST_ERROR_CODE" != "EMAIL_LABELING_PENDING" ]]; then
       echo "The send result is unknown. Do not send again until 'revdoku emails --direction sent --mailbox-id $MAILBOX_ID' confirms it was not sent." >&2
     fi
     return 1

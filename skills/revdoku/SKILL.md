@@ -146,8 +146,8 @@ Only offer compose links or test emails when `receiving_enabled` is true.
 Use `mailbox_email_list` and retain `pagination.next_cursor` even on empty pages.
 Poll with the same filters, backoff and a deadline. Read an `eml_` ID through
 `mailbox_email_get`. Set read status explicitly
-with `mailbox_email_update(read: true|false)`. CLI: `emails`, `email ID`,
-`email-status ID --read true|false`, with `--mailbox-id ID`.
+with `mailbox_email_update(read: true|false, add_labels)`. CLI: `emails`, `email ID`,
+`email-status ID --read true|false --add-label NAME`.
 
 If `body_status` shows truncated or unavailable text, use the original EML.
 Request `mailbox_email_download` for the
@@ -165,16 +165,15 @@ See the [email contract](https://revdoku.com/api.md#emails).
 
 ## Send email
 
-Recipients: account members, other account mailboxes, or authenticated senders
-of this mailbox. The Free plan adds one Revdoku line. Limit: 10 recipients, no Bcc. Send only when
+Recipients: account members, other account mailboxes, or this mailbox's authenticated
+senders. The Free plan adds one Revdoku line. Limit: 10 recipients, no Bcc. Send only when
 `email.sending_enabled` is true. On `EMAIL_LOOP_DETECTED`, stop auto-replies to
 that address.
 
-1. Reply with `mailbox_email_send(in_reply_to, text)` (CLI `email-send --in-reply-to ID --text TEXT`).
-2. Track `delivery.status` (`queued`, `sending`, `sent`, `failed`, `uncertain`) through
-   `mailbox_email_list(direction: "sent")` (CLI `emails --direction sent`).
+1. Reply: `mailbox_email_send(in_reply_to, text)` (CLI `email-send --in-reply-to ID --text TEXT`).
+2. Track `delivery.status`: `mailbox_email_list(direction: "sent")` (CLI `emails --direction sent`).
 
-After `uncertain`, check the sent list; never resend.
+Never resend `awaiting_approval` (a person decides) or `declined` (unless asked); after `uncertain`, check the sent list.
 
 ## Additional private file storage
 

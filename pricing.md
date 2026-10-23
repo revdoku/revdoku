@@ -19,7 +19,7 @@ Your own domain? Starter. A team of agents? Standard. Apps or clients? Business.
 | AI connections | 3 | 5 | 10 | 50 |
 | API keys | 1 | 2 | 3 | 15 |
 | Virus and malware scanning | Included | Included | Included | Included |
-| AI pre-scan for prompt injections | First 100 emails | Included | Included | Included |
+| AI credits for AI agents that review and extract | 1,000 one-time | 50,000/mo | 100,000/mo | 300,000/mo |
 | Support | Community | Email support | Email support | Email support |
 
 API, MCP and CLI are included on every plan. Your first paid
@@ -30,7 +30,7 @@ active, once per customer. Checkout applies it to Starter Annual, Standard and
 Business, monthly or annual. When it ends, the pricing page stops showing it.
 
 Every plan can send to account members, the account's other mailboxes and
-people who emailed the mailbox. On the Free plan, each sent email ends with one line:
+people who emailed the mailbox. On the Free plan, each sent email ends with a signature line, after the standard `-- ` separator:
 "Sent with Revdoku, mailboxes for AI agents: https://revdoku.com".
 
 A mailbox address on `revdokumail.com` is the name you choose plus a 4-character

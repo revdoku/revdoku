@@ -108,9 +108,11 @@ connector lists no send tool.
 2. Call `mailbox_email_send` with `in_reply_to` and `text`. It sets the subject,
    and the recipient only when the sender passed SPF or DMARC; otherwise add `to`.
    Add `cc`, `subject`, `html` or mailbox `attachment_ids` only when needed.
-3. Check `delivery.status` (`queued`, `sending`, `sent`, `failed`, `uncertain`)
-   with `mailbox_email_list(direction: "sent")`.
+3. Check `delivery.status` (`awaiting_approval`, `queued`, `sending`, `sent`, `failed`,
+   `uncertain`, `declined`) with `mailbox_email_list(direction: "sent")`.
 
+A person sends, edits or declines an `awaiting_approval` email in the dashboard; never resend it.
+Resend a `declined` email only when a person asks.
 Never resend after an uncertain result; check the sent list first.
 
 ## Manage stored files

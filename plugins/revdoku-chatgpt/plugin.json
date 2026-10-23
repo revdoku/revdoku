@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "revdoku",
-  "version": "1.0.568",
+  "version": "1.0.570",
   "description": "Mailboxes for AI agents. Read incoming email and attachments, reply to senders and manage stored files in authorized Revdoku mailboxes through the hosted Revdoku MCP server.",
   "author": {
     "name": "Revdoku",

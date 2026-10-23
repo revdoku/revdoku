@@ -42,7 +42,7 @@ Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly dire
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | `mailbox_id` / `mailboxId` | string | yes |  |
-| `path` | string | yes | Destination path in the mailbox. Paths under _email/ return EMAIL_PATH_READ_ONLY. |
+| `path` | string | yes | Destination path in the mailbox. Paths under _email/ return EMAIL_PATH_READ_ONLY; other top-level folders that start with _ return RESERVED_PATH. |
 | `existing_file_policy` / `existingFilePolicy` | string: `replace`, `skip` | no | skip returns the existing file without an upload when the path exists. |
 | `blob` | UploadBlob | yes |  |
 | `blob.filename` | string | yes |  |
@@ -368,7 +368,7 @@ Saves the uploaded blob at path. An existing path gets a new version.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `path` | string | yes | Destination path. An existing path receives a new version. Paths under _email/ return EMAIL_PATH_READ_ONLY. |
+| `path` | string | yes | Destination path. An existing path receives a new version. Paths under _email/ return EMAIL_PATH_READ_ONLY; other top-level folders that start with _ return RESERVED_PATH. |
 | `signed_blob_id` / `signedBlobId` | string | yes | data.signed_id from POST /v1/direct_uploads. |
 | `name` | string | no | Display name; defaults to the last path segment. |
 | `role` | string: `source`, `reference`, `generated`, `agent_output`, `export`, `artifact` | no |  |
@@ -801,7 +801,7 @@ Guide: [Files](https://revdoku.com/api.md#files)
 
 Requires mailbox-admin permission.
 
-Files under _email/ return EMAIL_PATH_READ_ONLY; delete the email instead.
+Files under _email/ return EMAIL_PATH_READ_ONLY; delete the email instead. Other top-level folders that start with _ return RESERVED_PATH.
 
 | Language | Call |
 | --- | --- |
@@ -862,7 +862,7 @@ curl -X DELETE "https://api.revdoku.com/v1/mailboxes/bkt_example/files/df_exampl
 | --- | --- |
 | 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
 
-Error codes named above: `EMAIL_PATH_READ_ONLY`.
+Error codes named above: `EMAIL_PATH_READ_ONLY`, `RESERVED_PATH`.
 
 Guide: [Files](https://revdoku.com/api.md#files)
 
@@ -1379,7 +1379,7 @@ Starts an upload session for many files and returns storage targets for the firs
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | `files` | array of UploadSessionFile | no | Optional first batch. Send the rest with POST .../uploads. |
-| `files[].path` | string | yes | Destination path in the mailbox. Paths under _email/ return EMAIL_PATH_READ_ONLY. |
+| `files[].path` | string | yes | Destination path in the mailbox. Paths under _email/ return EMAIL_PATH_READ_ONLY; other top-level folders that start with _ return RESERVED_PATH. |
 | `files[].byte_size` / `byteSize` | integer (int64) | yes |  |
 | `files[].content_type` / `contentType` | string | yes |  |
 | `files[].checksum` | string | yes | Base64-encoded MD5 of the bytes. |
@@ -1610,7 +1610,7 @@ Returns upload.url and upload.headers for each file that needs bytes. Repeating 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | `files` | array of UploadSessionFile | yes |  |
-| `files[].path` | string | yes | Destination path in the mailbox. Paths under _email/ return EMAIL_PATH_READ_ONLY. |
+| `files[].path` | string | yes | Destination path in the mailbox. Paths under _email/ return EMAIL_PATH_READ_ONLY; other top-level folders that start with _ return RESERVED_PATH. |
 | `files[].byte_size` / `byteSize` | integer (int64) | yes |  |
 | `files[].content_type` / `contentType` | string | yes |  |
 | `files[].checksum` | string | yes | Base64-encoded MD5 of the bytes. |

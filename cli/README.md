@@ -77,7 +77,8 @@ sender authentication. With `--in-reply-to`, the
 recipient defaults to the original sender only when that sender passed SPF or
 DMARC; otherwise pass `--to`. Check `delivery.status` with
 `emails --direction sent`. After an uncertain result, check the sent list before
-you send again.
+you send again. A person sends, edits or declines an `awaiting_approval` email in
+the dashboard; do not send it again, or a `declined` email unless a person asks.
 
 `revdoku ls` returns active mailboxes with permitted addresses, receiving state and email counts.
 Use `ls --status archived` or `ls --status all` for other archive states.

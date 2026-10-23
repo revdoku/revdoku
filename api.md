@@ -421,7 +421,7 @@ Mailboxes are deleted one at a time; there is no bulk delete.
 | --- | --- | --- | --- |
 | GET | `/v1/mailboxes/{mailbox_id}/emails` | [`listEmails` / `list_emails`](https://revdoku.com/api/reference/emails.md#list-emails) | `data.emails`, `data.pagination`. |
 | GET | `/v1/mailboxes/{mailbox_id}/emails/{email_id}` | [`getEmail` / `get_email`](https://revdoku.com/api/reference/emails.md#read-an-email) | `data.email` with `body_text` and `attachments`. |
-| PATCH | `/v1/mailboxes/{mailbox_id}/emails/{email_id}` | [`updateEmail` / `update_email`](https://revdoku.com/api/reference/emails.md#mark-an-email-read-or-unread) | Send `{"read": true}` or `{"read": false}`. |
+| PATCH | `/v1/mailboxes/{mailbox_id}/emails/{email_id}` | [`updateEmail` / `update_email`](https://revdoku.com/api/reference/emails.md#update-an-emails-read-status-or-labels) | Send `read`, `add_labels` or `remove_labels`. Labels need write access; a new name creates the label. Built-in labels such as Junk change only in the dashboard. |
 | DELETE | `/v1/mailboxes/{mailbox_id}/emails/{email_id}` | [`deleteEmail` / `delete_email`](https://revdoku.com/api/reference/emails.md#delete-an-email) | Deletes the email and its attachments. Needs mailbox admin. |
 | GET | `/v1/mailboxes/{mailbox_id}/emails/{email_id}/raw` | [`getEmailOriginalDownload` / `get_email_original_download`](https://revdoku.com/api/reference/emails.md#get-a-download-link-for-the-original-email) | `data.download` for the original `.eml`. |
 | GET | `/v1/mailboxes/{mailbox_id}/emails/{email_id}/attachments/{attachment_id}` | [`getEmailAttachmentDownload` / `get_email_attachment_download`](https://revdoku.com/api/reference/emails.md#get-a-download-link-for-an-attachment) | `data.download` for one attachment. |
@@ -449,7 +449,7 @@ to include sent email. The other filters, such as `sender`, `subject`, `read` an
 | `received_at` | Receipt time; for sent email, the time Revdoku accepted it. |
 | `attachment_count` | Saved attachments. |
 | `labels` | Labels on the email, each with `id`, `name` and `color`. When AI labels are on for the account (Account Settings → Security), the email gets one category label, such as `Junk` or `Receipts`, a few seconds after it arrives, usually after the `email.received` event. Read the email again before you act on its labels. |
-| `withheld` | `true` means Revdoku hides the email's content from API keys and MCP: the subject, display names, sender address (except its domain), body and attachments. If `labels` includes the `Junk` label, the email is junk: skip it. Its downloads return `EMAIL_WITHHELD`, and a person can review it in the dashboard. Otherwise AI labels have not checked it yet: keep its ID and read it again with `getEmail` / `get_email` after a few seconds. The read returns `503 EMAIL_LABELING_PENDING` with `Retry-After` until the label is ready (at most about one minute). Do not drop a pending email. |
+| `withheld` | `true` means Revdoku hides the email's content from API keys and MCP: the subject, display names, sender address (except its domain), body, attachments, `message_id`, `in_reply_to`, `references` and its storage folder. If `labels` includes the `Junk` label, the email is junk: skip it. Its downloads, file reads and replies return `EMAIL_WITHHELD`, its files are left out of file lists, and `subject` and `sender` filters never match it. A person can review it in the dashboard. Otherwise AI labels have not checked it yet: keep its ID and read it again with `getEmail` / `get_email` after a few seconds. The read returns `503 EMAIL_LABELING_PENDING` with `Retry-After` until the label is ready (at most about one minute). Do not drop a pending email. |
 | `read`, `read_at`, `read_by`, `read_by_api_key` | Shared read status. |
 | `delivery` | Sent email only: `status` and per-recipient status. |
 | `forwarding` | Present for forwards from verified mailbox members. |
@@ -584,12 +584,22 @@ A mailbox can send to these recipients:
 | Another mailbox | A mailbox of the same account that can receive email now. |
 
 Every current plan, the Free plan included, can reply to senders.
+An account administrator can turn off each kind of recipient for a mailbox in the dashboard.
 A mailbox cannot send to its own addresses. On the Free plan, each sent email ends
-with one line: "Sent with Revdoku, mailboxes for AI agents: https://revdoku.com".
+with a signature line, after the standard `-- ` separator: "Sent with Revdoku, mailboxes for AI agents: https://revdoku.com".
 
 1. List received email and keep the `id` of the email to answer.
 2. Send the reply with `in_reply_to`. Pass `to` when the original sender did not pass SPF or DMARC.
 3. Read the email later and check `delivery.status`.
+
+An account administrator can require a person to approve each email of a mailbox.
+The send then returns `delivery.status` `awaiting_approval`. A person sends, edits or declines
+the email in the dashboard. Do not send it again. Any number of emails can wait, but the per-minute
+limit applies when you send them, also to emails that were deleted or declined since. The other
+sending limits apply only when a person sends an email. Revdoku then sends what the person saw: the
+HTML without images or styles, with link targets only for http, https and mailto, and a text version
+made from it, or the text when there is no HTML.
+When the administrator turns approval off, emails that already wait keep waiting.
 
 **TypeScript**
 
@@ -633,19 +643,24 @@ Content-Type: application/json
 
 | `delivery.status` | Meaning |
 | --- | --- |
+| `awaiting_approval` | A person must send, edit or decline it in the dashboard. Do not send it again. |
 | `queued`, `sending` | Waiting or sending. |
 | `sent` | The provider accepted the email. |
 | `failed` | Not sent. |
 | `uncertain` | Unknown result. Do not send again; check `direction=sent` first. |
+| `declined` | A person declined it. It was not sent. Do not send it again unless a person asks. |
 
 | Error | Meaning |
 | --- | --- |
-| `403 EMAIL_RECIPIENT_NOT_ALLOWED` | A recipient is not in the table above. |
+| `403 EMAIL_RECIPIENT_NOT_ALLOWED` | A recipient is not in the table above, or its kind is turned off for this mailbox. The message names the allowed kinds. |
 | `403 EMAIL_REPLY_UPGRADE_REQUIRED` | A recipient emailed this mailbox, but the plan of the account does not include replies to senders. All current plans include them. `error.details.upgrade_url` links to the pricing page. |
 | `409 EMAIL_RECIPIENT_UNAVAILABLE` | A recipient is a Revdoku mailbox that cannot receive email now. |
 | `403 EMAIL_SEND_LIMIT_REACHED` | The account used its monthly sent email allowance. `error.details` has `monthly_limit`, `resets_at` and, when a higher plan raises the limit, `upgrade_url`. |
 | `429 EMAIL_SEND_RATE_LIMITED` | Too many emails from this mailbox or to one recipient, per minute, hour or day. There is no `Retry-After`; wait before you send again. |
+| `409 EMAIL_SENDING_RULES_CHANGED` | An administrator changed the mailbox's sending rules while Revdoku checked the email. Send it again. |
 | `429 EMAIL_LOOP_DETECTED` | In the last 24 hours, this mailbox and a recipient each sent the other 20 emails. Stop automatic replies to that address. Never retry it. |
+| `403 EMAIL_WITHHELD` | `in_reply_to` or an attachment is from an email that AI labels marked as Junk. API keys and AI agents cannot use it. Nothing was sent. |
+| `503 EMAIL_LABELING_PENDING` | `in_reply_to` or an attachment is from a new email that AI labels are still checking. Nothing was sent. Wait `Retry-After`, then send again. |
 
 Sending has no idempotency key. After a timeout or unknown result, never send
 again automatically: list `direction=sent` first. Sent copies are stored under
@@ -773,6 +788,9 @@ return the stored path; match rows by `input_index`, not by path.
 Stored email lives under `_email/`. These files are read-only for the file
 operations: uploads, appends, renames, moves, copies, restores and deletes that
 touch `_email/` return `422 EMAIL_PATH_READ_ONLY`. Use the email operations instead.
+Every other top-level folder that starts with `_` also belongs to Revdoku. File
+operations there return `422 RESERVED_PATH`. Folders deeper in a path, such as
+`site/_next/`, are ordinary folders.
 
 ### Upload a file
 
@@ -909,7 +927,8 @@ Content-Type: application/json
 - If `finalize_batch` returns `DIRECT_UPLOAD_NOT_FOUND`, `error.details.path` names a
   file without bytes. Send it to `POST .../uploads` again, upload it, then retry.
 - A session expires at `uploads_expire_at`; its unsaved files are discarded.
-- Paths under `_email/` return `422 EMAIL_PATH_READ_ONLY`.
+- Paths under `_email/` return `422 EMAIL_PATH_READ_ONLY`. Other top-level folders
+  that start with `_` return `422 RESERVED_PATH`.
 
 The [bulk uploads guide](https://revdoku.com/guides/bulk-uploads.md) has a complete example.
 
@@ -958,11 +977,12 @@ See the [custom email domains guide](https://revdoku.com/guides/custom-email-dom
 | `403` | `MAILBOX_ARCHIVED` | The mailbox is archived and read-only; unarchive it first. |
 | `403` | `MAILBOX_LIMIT_REACHED` | The plan's active mailbox limit is reached; archive a mailbox or upgrade. |
 | `403` | `EMAIL_SENDING_UNAVAILABLE` | This mailbox cannot send now; see `email.sending_blocked_reason`. |
-| `403` | `EMAIL_WITHHELD` | The email has the `Junk` label; its content is not available to API keys. Do not retry. |
+| `403` | `EMAIL_WITHHELD` | The email has the `Junk` label; its content, files and replies are not available to API keys. Do not retry. |
 | `409` | `MAILBOX_ALREADY_ARCHIVED`, `MAILBOX_NOT_ARCHIVED` | Wrong archive state. |
 | `409` | `DATABASE_BUSY_RETRY` | Related changes are still saving; retry after `Retry-After`. |
 | `422` | `INVALID_ARGUMENT` | Invalid input; see `error.message`. |
 | `422` | `EMAIL_PATH_READ_ONLY` | A file operation touched `_email/`. |
+| `422` | `RESERVED_PATH` | A file operation touched another top-level folder that starts with `_`. |
 | `422` | `MAILBOX_DELETE_CONFIRMATION_REQUIRED` | Send `delete.confirmation`. |
 | `423` | `MAILBOX_LOCKED`, `FILE_LOCKED` | Another operation holds a lock. |
 | `429` | `RATE_LIMIT_EXCEEDED`, `UPLOAD_RATE_LIMIT_EXCEEDED` | Wait for `Retry-After`. |
@@ -973,7 +993,7 @@ See the [custom email domains guide](https://revdoku.com/guides/custom-email-dom
 
 Any `429` or `503` response with `Retry-After` (for example
 `503 EMAIL_LABELING_PENDING` or `503 EMAIL_INDEX_BUILDING`): wait that many
-seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no
+seconds, then try the request again. `429 EMAIL_SEND_RATE_LIMITED` has no
 `Retry-After`. Never retry `EMAIL_LOOP_DETECTED`, and never retry creating a
 mailbox or sending an email automatically after an uncertain result. For other
 temporary errors without `Retry-After`, use bounded exponential backoff with jitter.

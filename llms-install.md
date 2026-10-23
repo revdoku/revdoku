@@ -49,6 +49,8 @@ Read a relevant message and produce the chosen result before offering recurring 
 - Do not ask the user to send `continue` after a browser step. Resume by
   checking status yourself.
 - Follow the account setup flow above. Hosted MCP requires browser OAuth before connecting.
+- If you are an AI agent that uses the Revdoku dashboard in a browser, choose
+  **Are you an AI agent?** on the setup screen after signup.
 - Use `revdoku upload` for files and folders. Share the dashboard link with authorized
   people; the link itself does not grant access.
 
