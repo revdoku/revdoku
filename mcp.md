@@ -105,7 +105,8 @@ Offer recurring automation after the first result.
 
 Sending requires mailbox write access. Recipients must be account members, other
 mailboxes of the account, or addresses that emailed this mailbox and passed sender
-authentication. A plan that cannot reply to senders returns
+authentication. Every current plan, the Free plan included, can reply to senders.
+A plan without replies to senders returns
 `EMAIL_REPLY_UPGRADE_REQUIRED` with `error.details.upgrade_url`. Send only when the mailbox's
 `email.sending_enabled` is true. Otherwise `mailbox_email_send` returns
 `EMAIL_SENDING_UNAVAILABLE`, or the server lists no send tool when sending is off.
