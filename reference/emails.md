@@ -9,7 +9,7 @@ Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for exam
 - [List emails](#list-emails): `GET /v1/mailboxes/{mailbox_id}/emails`
 - [Send an email](#send-an-email): `POST /v1/mailboxes/{mailbox_id}/emails`
 - [Read an email](#read-an-email): `GET /v1/mailboxes/{mailbox_id}/emails/{email_id}`
-- [Mark an email read or unread](#mark-an-email-read-or-unread): `PATCH /v1/mailboxes/{mailbox_id}/emails/{email_id}`
+- [Update an email's read status or labels](#update-an-emails-read-status-or-labels): `PATCH /v1/mailboxes/{mailbox_id}/emails/{email_id}`
 - [Delete an email](#delete-an-email): `DELETE /v1/mailboxes/{mailbox_id}/emails/{email_id}`
 - [Get a download link for the original email](#get-a-download-link-for-the-original-email): `GET /v1/mailboxes/{mailbox_id}/emails/{email_id}/raw`
 - [Get a download link for an attachment](#get-a-download-link-for-an-attachment): `GET /v1/mailboxes/{mailbox_id}/emails/{email_id}/attachments/{attachment_id}`
@@ -151,7 +151,7 @@ Guide: [Poll for new email](https://revdoku.com/api.md#poll-for-new-email)
 
 Requires mailbox write permission.
 
-Send only to account members, to other mailboxes of the account, or to addresses that emailed this mailbox and passed sender authentication. The From name is the mailbox title. On the Free plan, the email ends with one line about Revdoku. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.
+Send only to account members, to other mailboxes of the account, or to addresses that emailed this mailbox and passed sender authentication; an administrator can turn off each kind. When the mailbox requires approval, delivery.status is awaiting_approval until a person sends, edits or declines the email; do not send it again. Replying to or attaching an email that AI labels marked as Junk returns 403 EMAIL_WITHHELD; one they are still checking returns 503 EMAIL_LABELING_PENDING with Retry-After. The From name is the mailbox title. On the Free plan, the email ends with one line about Revdoku. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.
 
 | Language | Call |
 | --- | --- |
@@ -289,6 +289,8 @@ curl -X POST "https://api.revdoku.com/v1/mailboxes/bkt_example/emails" \
 | Status | Description |
 | --- | --- |
 | 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
+
+Error codes named above: `EMAIL_LABELING_PENDING`, `EMAIL_WITHHELD`.
 
 Guide: [Send email](https://revdoku.com/api.md#send-email)
 
@@ -437,11 +439,11 @@ Error codes named above: `EMAIL_LABELING_PENDING`.
 
 Guide: [Emails](https://revdoku.com/api.md#emails)
 
-## Mark an email read or unread
+## Update an email's read status or labels
 
 `PATCH /v1/mailboxes/{mailbox_id}/emails/{email_id}`
 
-Only read status can change.
+Changes read status and custom labels. Send at least one of read, add_labels and remove_labels. Labels need write access. A new label name creates the label. Built-in labels such as Junk change only in the dashboard.
 
 | Language | Call |
 | --- | --- |
@@ -460,7 +462,9 @@ Only read status can change.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `read` | boolean | yes |  |
+| `read` | boolean | no |  |
+| `add_labels` / `addLabels` | array of string | no | Label names to add. |
+| `remove_labels` / `removeLabels` | array of string | no | Label names to remove. |
 | `account_id` / `accountId` | string | no | Select another granted account for this request. |
 | `reason` | string or null | no | Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. |
 
@@ -475,7 +479,7 @@ const client = new Revdoku();
 const { data } = await client.api.updateEmail({
   mailboxId: 'bkt_example',
   emailId: 'eml_example',
-  updateEmailRequest: { read: true },
+  updateEmailRequest: {},
 });
 console.log(data);
 ```
@@ -489,7 +493,7 @@ client = Revdoku()
 response = client.api.update_email(
     "bkt_example",
     "eml_example",
-    UpdateEmailRequest(read=True),
+    UpdateEmailRequest(),
 )
 print(response.data)
 ```
@@ -500,7 +504,7 @@ print(response.data)
 curl -X PATCH "https://api.revdoku.com/v1/mailboxes/bkt_example/emails/eml_example" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"read": true}'
+  -d '{}'
 ```
 
 **Response** `200`

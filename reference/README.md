@@ -70,7 +70,7 @@ List, read, reply to and delete email.
 | [List emails](https://revdoku.com/api/reference/emails.md#list-emails) | `GET /v1/mailboxes/{mailbox_id}/emails` | `client.listEmails` | `client.list_emails` |
 | [Send an email](https://revdoku.com/api/reference/emails.md#send-an-email) | `POST /v1/mailboxes/{mailbox_id}/emails` | `client.api.sendEmail` | `client.api.send_email` |
 | [Read an email](https://revdoku.com/api/reference/emails.md#read-an-email) | `GET /v1/mailboxes/{mailbox_id}/emails/{email_id}` | `client.getEmail` | `client.get_email` |
-| [Mark an email read or unread](https://revdoku.com/api/reference/emails.md#mark-an-email-read-or-unread) | `PATCH /v1/mailboxes/{mailbox_id}/emails/{email_id}` | `client.api.updateEmail` | `client.api.update_email` |
+| [Update an email's read status or labels](https://revdoku.com/api/reference/emails.md#update-an-emails-read-status-or-labels) | `PATCH /v1/mailboxes/{mailbox_id}/emails/{email_id}` | `client.api.updateEmail` | `client.api.update_email` |
 | [Delete an email](https://revdoku.com/api/reference/emails.md#delete-an-email) | `DELETE /v1/mailboxes/{mailbox_id}/emails/{email_id}` | `client.api.deleteEmail` | `client.api.delete_email` |
 | [Get a download link for the original email](https://revdoku.com/api/reference/emails.md#get-a-download-link-for-the-original-email) | `GET /v1/mailboxes/{mailbox_id}/emails/{email_id}/raw` | `client.api.getEmailOriginalDownload` | `client.api.get_email_original_download` |
 | [Get a download link for an attachment](https://revdoku.com/api/reference/emails.md#get-a-download-link-for-an-attachment) | `GET /v1/mailboxes/{mailbox_id}/emails/{email_id}/attachments/{attachment_id}` | `client.getAttachmentDownload` | `client.get_attachment_download` |

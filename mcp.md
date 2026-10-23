@@ -95,7 +95,8 @@ Offer recurring automation after the first result.
    `limit` defaults to 50, maximum 200.
 4. Call `mailbox_email_get` with an `email_id` for headers, body text and attachment
    metadata. Reads leave shared status unchanged. Change it explicitly through
-   `mailbox_email_update(read: true|false)`.
+   `mailbox_email_update(read: true|false)`. The same tool adds and removes
+   custom labels (`add_labels`, `remove_labels`).
 5. Request `mailbox_email_download` only for the selected `attachment_id`, or
    omit it for the original EML. The returned URL expires in 15 minutes and needs
    no extra credential. Fetch the returned URL as provided. Never send an API
@@ -118,6 +119,8 @@ A plan without replies to senders returns
 3. Call `mailbox_email_get` for the returned email ID and check `delivery.status`.
 4. If the result is unknown or `delivery.status` is `uncertain`, do not send again.
    Call `mailbox_email_list` with `direction: "sent"` and check first.
+5. If `delivery.status` is `awaiting_approval`, a person sends, edits or declines the email
+   in the dashboard. Do not send it again. Do not send a `declined` email again unless a person asks.
 
 ```json
 {"account_id":"acct_...","mailbox_id":"bkt_...","in_reply_to":"eml_...","text":"Thanks, we received your invoice."}
@@ -171,7 +174,8 @@ Selected-mailbox/read-only connections still receive their normal limits respons
 
 Messages and attachments are ordinary private mailbox files. Listing,
 `mailbox_email_get` and `mailbox_email_download` leave read status unchanged.
-`mailbox_email_update` marks an email read or unread. `mailbox_file_read` records
+`mailbox_email_update` marks an email read or unread and adds or removes custom
+labels; built-in labels such as Junk change only in the dashboard. `mailbox_file_read` records
 a read receipt; reading an email's own file under `_email/` marks that email read
 for everyone. Attachments have independent read status. Read receipts do not
 reserve work or prove a verification code was used.
@@ -205,7 +209,8 @@ by the service, keeping the current address until a pending change completes.
 Pass the mailbox `version_id` from your last read as `expected_mailbox_version` on
 writes; a stale value returns `MAILBOX_VERSION_CONFLICT` and writes nothing.
 Files under `_email/` are read-only for file tools (`EMAIL_PATH_READ_ONLY`); use
-the email tools to change email. Deleted files keep their earlier versions in the
+the email tools to change email. Other top-level folders that start with `_` are
+read-only too (`RESERVED_PATH`). Deleted files keep their earlier versions in the
 file history. There is no batch delete. Hosted MCP cannot read a local folder or
 upload binary files; use the local CLI or the REST
 [batch upload](https://revdoku.com/api.md#upload-many-files) for those operations.
