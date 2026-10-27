@@ -596,9 +596,12 @@ An account administrator can require a person to approve each email of a mailbox
 The send then returns `delivery.status` `awaiting_approval`. A person sends, edits or declines
 the email in the dashboard. Do not send it again. Any number of emails can wait, but the per-minute
 limit applies when you send them, also to emails that were deleted or declined since. The other
-sending limits apply only when a person sends an email. Revdoku then sends what the person saw: the
-HTML without images or styles, with link targets only for http, https and mailto, and a text version
-made from it, or the text when there is no HTML.
+sending limits apply only when a person sends an email.
+An email that waits is a draft under `_email/drafts/`, which you can read like other email files.
+A person can edit its subject and text: the edit is the next version of its `message.json`.
+Revdoku then sends what the person saw: the edited text, or the HTML without images or styles,
+with link targets only for http, https and mailto, and a text version made from it, or the text
+when there is no HTML. A sent draft moves to `_email/sent/` with its versions.
 When the administrator turns approval off, emails that already wait keep waiting.
 
 **TypeScript**
@@ -664,7 +667,7 @@ Content-Type: application/json
 
 Sending has no idempotency key. After a timeout or unknown result, never send
 again automatically: list `direction=sent` first. Sent copies are stored under
-`_email/sent/` and count toward storage.
+`_email/sent/`, and emails that wait for approval under `_email/drafts/`. Both count toward storage.
 
 ## Webhooks and live subscriptions
 
