@@ -585,6 +585,8 @@ A mailbox can send to these recipients:
 
 Every current plan, the Free plan included, can reply to senders.
 An account administrator can turn off each kind of recipient for a mailbox in the dashboard.
+The API cannot send the first email to a new address. A person sends it from the Revdoku dashboard.
+After the address replies, it is a sender, and the API can answer it.
 A mailbox cannot send to its own addresses. On the Free plan, each sent email ends
 with a signature line, after the standard `-- ` separator: "Sent with Revdoku, mailboxes for AI agents: https://revdoku.com".
 
@@ -655,7 +657,7 @@ Content-Type: application/json
 
 | Error | Meaning |
 | --- | --- |
-| `403 EMAIL_RECIPIENT_NOT_ALLOWED` | A recipient is not in the table above, or its kind is turned off for this mailbox. The message names the allowed kinds. |
+| `403 EMAIL_RECIPIENT_NOT_ALLOWED` | A recipient is not in the table above, or its kind is turned off for this mailbox. The message names the allowed kinds. For a new address, it also says that a person sends the first email from the dashboard. |
 | `403 EMAIL_REPLY_UPGRADE_REQUIRED` | A recipient emailed this mailbox, but the plan of the account does not include replies to senders. All current plans include them. `error.details.upgrade_url` links to the pricing page. |
 | `409 EMAIL_RECIPIENT_UNAVAILABLE` | A recipient is a Revdoku mailbox that cannot receive email now. |
 | `403 EMAIL_SEND_LIMIT_REACHED` | The account used its monthly sent email allowance. `error.details` has `monthly_limit`, `resets_at` and, when a higher plan raises the limit, `upgrade_url`. |
