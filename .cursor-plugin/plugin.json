@@ -1,7 +1,7 @@
 {
   "name": "revdoku",
   "displayName": "Revdoku",
-  "version": "1.0.570",
+  "version": "1.0.571",
   "description": "Mailboxes for AI agents, with private file storage. Receive and read messages and attachments, upload selected files, and write, restore, or organize stored files. Supports mailbox archiving, permanent deletion, and agency client account creation when explicitly requested and authorized.  File storage supports reads and writes.",
   "author": {
     "name": "Revdoku"

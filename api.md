@@ -452,7 +452,7 @@ to include sent email. The other filters, such as `sender`, `subject`, `read` an
 | `withheld` | `true` means Revdoku hides the email's content from API keys and MCP: the subject, display names, sender address (except its domain), body, attachments, `message_id`, `in_reply_to`, `references` and its storage folder. If `labels` includes the `Junk` label, the email is junk: skip it. Its downloads, file reads and replies return `EMAIL_WITHHELD`, its files are left out of file lists, and `subject` and `sender` filters never match it. A person can review it in the dashboard. Otherwise AI labels have not checked it yet: keep its ID and read it again with `getEmail` / `get_email` after a few seconds. The read returns `503 EMAIL_LABELING_PENDING` with `Retry-After` until the label is ready (at most about one minute). Do not drop a pending email. |
 | `read`, `read_at`, `read_by`, `read_by_api_key` | Shared read status. |
 | `delivery` | Sent email only: `status` and per-recipient status. |
-| `forwarding` | Present for forwards from verified mailbox members. |
+| `forwarding` | Present for forwards from verified mailbox members, on paid plans. The email's sender is then the original sender. On Free, a forward stays an email from the member. |
 | `body_text`, `body_status` | Detail only. Status is `complete`, `empty`, `truncated` or `unavailable`. |
 | `attachments` | Detail only: `id`, `filename`, `content_type`, `size_bytes`. |
 
