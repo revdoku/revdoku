@@ -1,5 +1,23 @@
 # Revdoku Changelog
 
+## 1.0.613 — 2026-11-03
+
+### Improved
+
+- Keep Compose, the folders and the labels in the mailbox sidebar in Mail, Files and Agents.
+- Show the title and the address of each mailbox on two lines in the mailbox switcher.
+- Show agents as numbered steps. Each step has a Settings button.
+- Change the order of agents by dragging, with the arrow keys or with Move up and Move down, then select Save order.
+- Open the built-in AI filter from the Agents view, like other agents. Account Settings no longer has an AI Agents tab.
+- Try an agent on an email in a panel beside its settings. The result shows what the agent would do, or why it skipped the email.
+- Group agent settings into When it runs, What it reads, What it does and Instructions.
+- Go back one step with Back at the top right of Set up this mailbox.
+
+### Fixed
+
+- Save the new order after you drag an agent down.
+- Show the full focus outline of form fields in dialogs.
+
 ## 1.0.548 — 2026-10-08
 
 ### Improved
@@ -18,7 +36,7 @@
 ### Fixed
 
 - Request sign-in when an AI client calls an account tool without a valid connection.
-- Keep connection revocation and refresh-token protection effective when client identity data changes or is unavailable.
+- Improve the security of AI app connections.
 
 ## 1.0.540 — 2026-10-06
 
@@ -26,7 +44,6 @@
 
 - Simplify web and API signup. Generate the first mailbox address from the verified email automatically.
 - Shorten the API guide and show optional usernames and domains when creating another mailbox.
-
 - API and MCP signup now use `email` and `accept_terms_and_policy` only. Signup username, permission and label options were removed.
 - Remove the signup capability and policy-read endpoints. Request a verification code directly to start signup.
 
@@ -52,7 +69,7 @@
 - Keep Select mode in the mailbox directory and return Back to the originating view.
 - Hide the test-email link after a mailbox receives its first email.
 - Follow the browser system theme by default and preserve saved theme choices.
-- Complete AI connection-code exchanges without a mailbox-identity serialization error.
+- Fix an error when an AI app connects with a one-time connection code.
 
 ## 1.0.535 — 2026-10-05
 
@@ -100,8 +117,7 @@
   on request. Reading email no longer changes its shared read status.
 - Use direct HTTP examples for JavaScript, TypeScript, and Python, without a
   Revdoku SDK or client wrapper.
-- Protect direct API signup with human-operator email verification, shared abuse
-  limits, and bounded requests. Deployments enable this flow through configuration.
+- Direct API signup requires the person to verify their email.
 
 ### Fixed
 
@@ -116,8 +132,7 @@
   in the API and runnable JavaScript/TypeScript examples.
 - Navigate with Mailboxes and Analytics in the header and switch accounts from
   the sidebar. API connections come first in the Connect menu.
-- Keep sensitive file and email metadata protected with account keys on HIPAA
-  and high-security accounts; ordinary accounts retain queryable metadata.
+- Protect file and email details on HIPAA and high-security accounts.
 - Account settings have a separate Subscription tab for billing and usage.
 
 ## 1.0.513 — 2026-09-29
@@ -152,9 +167,8 @@
 - Public CLI API/auth requests require https://app.revdoku.com. Storage transfers
   use approved HTTPS origins and cannot select local files outside the upload manifest.
 - Skill packages contain one readable CLI implementation and a compatibility launcher.
-- Preserve normal Rails storage uploads and macOS parent paths while validating
-  headers and protecting temporary files. Deletion previews use current revision
-  metadata and complete counts; offline upload previews honor the saved destination.
+- Fix CLI uploads on macOS. Deletion previews show complete counts, and offline
+  upload previews use the saved destination.
 
 ## 1.0.499 — 2026-09-25
 

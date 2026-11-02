@@ -11,7 +11,7 @@ This package is the API library. For the `revdoku` command-line tool, see https:
 npm install revdoku
 ```
 
-1. Create an account at https://app.revdoku.com/users/sign_up. Signup creates your first mailbox.
+1. Create an account at https://app.revdoku.com/users/sign_up. The setup steps after signup create your first mailbox.
 2. In the dashboard, select **Connect via API** and copy a new API key. The key has full access by default.
 3. Put the key in the environment of your backend, for example in `.env`:
 

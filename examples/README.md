@@ -13,9 +13,9 @@ Use Node.js 22 or newer. Clone this repository, enter `examples`, then copy
 Access. Never commit `.env` or paste credentials into an issue or AI chat.
 
 Set `REVDOKU_MAILBOX_ID` to an existing authorized mailbox for the reading and
-uploading examples. Browser signup creates a default mailbox; you can use that
-mailbox without creating another. Mailbox creation requires account-wide permission
-and available active-mailbox and creation capacity. Address/readiness queries and
+uploading examples. The setup steps after browser signup create your first
+mailbox. You can use that mailbox without creating another one.
+Mailbox creation requires account-wide permission and available active-mailbox and creation capacity. Address/readiness queries and
 uploads require write access. The quota example requires an authenticated connection to the selected account.
 Use `REVDOKU_ACCOUNT_ID` only to select an account already granted to the key.
 
