@@ -9,7 +9,7 @@ example `https://api.revdoku.com/v1/mailboxes`.
 
 1. Select your development account. In **Account → Access**, create an API key
    with **All current and future mailboxes** and **Manage mailboxes and files**
-   (`mailbox_admin`) for provisioning. Browser signup already creates a mailbox.
+   (`mailbox_admin`) for provisioning. The setup steps after signup create your first mailbox.
 2. Clone the [repository](https://github.com/revdoku/revdoku). In `examples`, copy
    `.env.example` to `.env`. With Node.js 22+, set
    `REVDOKU_API_KEY` and `REVDOKU_ACCOUNT_ID` locally. Keep keys off browsers and Git.

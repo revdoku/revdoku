@@ -9,7 +9,8 @@ The `revdoku` package is the API library. For the `revdoku` command-line tool, s
 ## 1. Create an API key
 
 1. Sign in at https://app.revdoku.com. If you need an account,
-   [sign up in your browser](https://app.revdoku.com/users/sign_up). Signup creates your first mailbox.
+   [sign up in your browser](https://app.revdoku.com/users/sign_up). The setup steps after signup
+   create your first mailbox.
 2. Open **Connect via API** in the dashboard and click **Copy API key**. The key
    has full access to all mailboxes of the account. In a mailbox, you can choose
    **This mailbox** instead: that key can read and write that mailbox only. You can
@@ -94,7 +95,7 @@ curl -s https://api.revdoku.com/v1/mailboxes \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
-The response has `data.mailboxes`; each mailbox has an `id`, a `title` and an
+The response has `data.mailboxes`. Each mailbox has an `id`, a `title` and an
 `email.address`. Add the mailbox ID to `.env` as `REVDOKU_MAILBOX_ID=bkt_...`. JSON and Python use
 snake_case field names (`receiving_enabled`). TypeScript uses camelCase (`receivingEnabled`).
 To make another mailbox, see [Create a mailbox](https://revdoku.com/api.md#create-a-mailbox).
@@ -230,8 +231,8 @@ curl -s -o attachment.bin "DOWNLOAD_URL"
 ## 6. Handle errors
 
 API error responses raise `RevdokuError`. Network, timeout and TLS failures raise
-the runtime's own errors (Node: `FetchError` from the SDK with the original error
-as `cause`; Python: urllib3 exceptions such as `urllib3.exceptions.SSLError`).
+the runtime's own errors. Node: `FetchError` from the SDK, with the original error
+as `cause`. Python: urllib3 exceptions such as `urllib3.exceptions.SSLError`.
 `RevdokuError` has the HTTP status, `code`, `message`, `details`, the request ID and
 `Retry-After` in seconds. Branch on `code`, not on the message.
 

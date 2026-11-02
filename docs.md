@@ -18,7 +18,7 @@ Use the TypeScript or Python SDK, the REST API, CLI, MCP, or dashboard to create
 
 ## First email workflow
 
-Signup creates your first mailbox. Use it to receive a message and get a useful result.
+The setup steps after signup create your first mailbox. Use it to receive a message and get a useful result.
 If you already have a task, start with that task.
 
 | Workflow | Email source | Example request for your connected AI |
@@ -92,12 +92,12 @@ To give each application customer a mailbox, follow the
 | Local development | WebSocket connection with a short-lived ticket |
 | Delivery status and retries | Dashboard → Analytics → Webhooks (account administrators) |
 
-Both send a small `email.received` event after the email and attachments are stored. Read content through the email API. Receivers must remain running; an idle AI chat cannot receive background notifications. See the [event API](https://revdoku.com/api.md#webhooks-and-live-subscriptions) and [runnable examples](https://github.com/revdoku/revdoku/tree/main/examples).
+Both send a small `email.received` event after the email and attachments are stored. Read content through the email API. Receivers must keep running. An idle AI chat cannot receive background notifications. See the [event API](https://revdoku.com/api.md#webhooks-and-live-subscriptions) and [runnable examples](https://github.com/revdoku/revdoku/tree/main/examples).
 
 ## Create another mailbox
 
 Create a mailbox only when another mailbox is needed. This requires account-wide
-admin access and consumes both active-mailbox capacity and monthly creation capacity.
+admin access and uses both active-mailbox capacity and monthly creation capacity.
 
 ```http
 POST /v1/mailboxes
@@ -143,8 +143,8 @@ Runnable examples without the SDK use standard HTTP clients:
 
 ## Receive and read email
 
-Send mail to the complete address returned by Revdoku. Anyone knowing the address
-can send to it; reading saved mail requires mailbox access.
+Send mail to the complete address returned by Revdoku. Anyone who knows the address
+can send to it. Only people and agents with mailbox access can read the saved mail.
 
 | Task | REST | CLI | MCP |
 | --- | --- | --- | --- |
@@ -173,7 +173,7 @@ that emailed this mailbox and passed sender authentication.
 1. List received messages and choose the message to answer.
 2. Send the reply with `in_reply_to` set to its email ID. This sets the reply
    headers and the `Re:` subject. The recipient defaults to the original sender
-   only when that sender passed SPF or DMARC; otherwise pass `to`.
+   only when that sender passed SPF or DMARC. Otherwise pass `to`.
 3. Read the sent email again and check `delivery.status`.
 4. If the result is unknown or `delivery.status` is `uncertain`, do not send again.
    List sent messages and check first.
@@ -204,8 +204,8 @@ files. Received email is stored as files inside `_email/`.
 | `message.json` | Decoded headers, body text and attachment metadata. |
 | `attachments/` | Saved attachments. |
 
-New deliveries are organized under `_email/inbox/`. Follow returned file paths;
-older messages may use `_email/in/`.
+New deliveries are organized under `_email/inbox/`. Follow the returned file paths.
+Older messages can be in `_email/in/`.
 
 ### File operations
 
@@ -219,13 +219,13 @@ older messages may use `_email/in/`.
 | Restore a file version | `revdoku restore notes.txt --version-id VERSION_ID --mailbox-id ID` | [Files](https://revdoku.com/api.md#files) |
 
 - CLI and REST uploads support binary files. Hosted MCP file writes support text.
-- Hosted MCP cannot read local folders; use the CLI to upload them.
-- Files, versions and email representations consume storage; current files also
-  consume file-count allowances.
-  Incoming raw-email traffic has separate count and byte limits; deleting saved
-  content does not refund that traffic.
+- Hosted MCP cannot read local folders. Use the CLI to upload them.
+- Files, versions and stored email use storage. Current files also count toward
+  the file-count limits.
+  Incoming email has separate count and byte limits. Deleting saved content does
+  not lower these counts.
 - Executables and secret files are refused. Uploaded content is also scanned.
-- Append adds UTF-8 text; your application handles CSV/JSON formatting.
+- Append adds UTF-8 text. Your application handles CSV or JSON formatting.
 
 ## Check limits
 
@@ -236,11 +236,11 @@ older messages may use `_email/in/`.
 | MCP | `account_limits` |
 
 The response groups effective quotas under `limits`. Mailbox responses describe
-the mailbox; they do not repeat account quotas. See [limit fields](https://revdoku.com/api.md#limits).
+the mailbox. They do not repeat account quotas. See [limit fields](https://revdoku.com/api.md#limits).
 Full-account browser sessions and unrestricted admin connections also receive
 optional `usage.mailbox_creations` with used, remaining, monthly limit and UTC
 reset time. Selected-mailbox/read-only connections retain their normal limits
-response. Deleting or archiving mailboxes does not refund creation capacity.
+response. Deleting or archiving a mailbox does not lower the creation count.
 
 ## Multiple accounts
 
@@ -263,11 +263,11 @@ request when working across accounts.
 
 | Edit control | Purpose |
 | --- | --- |
-| File lock | Coordinate edits to specific files; release your lock afterward. |
+| File lock | Coordinate edits to specific files. Release your lock afterward. |
 | Mailbox lock | Coordinate broad edits. Incoming mail keeps arriving while the lock is held. Prefer file locks and version checks. |
 | `expected_mailbox_version` | Send the mailbox `version_id` from your last read to detect that another writer changed the mailbox. |
 | `MAILBOX_VERSION_CONFLICT` | Reread current content and reconcile before retrying the edit. |
-| `reason` | Optional explanation saved in activity/history. Maximum 2,000 characters; omit secrets and file contents. |
+| `reason` | Optional explanation saved in activity/history. Maximum 2,000 characters. Do not include secrets or file contents. |
 
 ## Custom email domains
 
@@ -276,7 +276,7 @@ account. The page shows availability and DNS requirements.
 
 - If `yourdomain.com` already receives email elsewhere, connect an unused subdomain
   such as `mailbox.yourdomain.com`. Your Revdoku address will use that subdomain, for
-  example `support@mailbox.yourdomain.com`; existing root-domain mailboxes stay unchanged.
+  example `support@mailbox.yourdomain.com`. Existing root-domain mailboxes stay unchanged.
 - Setup checks existing MX/CNAME records and rejects conflicts. Keep your existing
   provider's records and choose an unused hostname.
 - Connecting a domain does not change existing mailbox addresses.
@@ -290,7 +290,7 @@ See [custom email domains](https://revdoku.com/api.md#custom-email-domains) for 
 | --- | --- |
 | Hosted MCP URL | `https://mcp.revdoku.com` |
 | Transport | Streamable HTTP |
-| Authentication | Browser OAuth; approve the account and permissions shown. |
+| Authentication | Browser OAuth. Approve the account and permissions shown. |
 | Connection management | **Account → Access** |
 
 For a local skill:
