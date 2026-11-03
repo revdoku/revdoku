@@ -667,6 +667,7 @@ Content-Type: application/json
 | `429 EMAIL_LOOP_DETECTED` | In the last 24 hours, this mailbox and a recipient each sent the other 20 emails. Stop automatic replies to that address. Never retry it. |
 | `403 EMAIL_WITHHELD` | `in_reply_to` or an attachment is from an email that AI labels marked as Junk. API keys and AI agents cannot use it. Nothing was sent. |
 | `503 EMAIL_LABELING_PENDING` | `in_reply_to` or an attachment is from a new email that AI labels are still checking. Nothing was sent. Wait `Retry-After`, then send again. |
+| `423 EMAIL_LOCKED` | The `in_reply_to` email is locked, for example while a Revdoku AI agent of the mailbox works on it. Nothing was sent. Send again after `error.details.locked_until`. |
 
 Sending has no idempotency key. After a timeout or unknown result, never send
 again automatically: list `direction=sent` first. Sent copies are stored under
@@ -991,6 +992,7 @@ See the [custom email domains guide](https://revdoku.com/guides/custom-email-dom
 | `422` | `RESERVED_PATH` | A file operation touched another top-level folder that starts with `_`. |
 | `422` | `MAILBOX_DELETE_CONFIRMATION_REQUIRED` | Send `delete.confirmation`. |
 | `423` | `MAILBOX_LOCKED`, `FILE_LOCKED` | Another operation holds a lock. |
+| `423` | `EMAIL_LOCKED` | The email is locked, for example while a Revdoku AI agent of the mailbox works on it. Replies to it, label changes and deletion wait until the lock ends. `error.details` has `locked_until` and, for an agent, `agent.name`. Reading the email still works. |
 | `429` | `RATE_LIMIT_EXCEEDED`, `UPLOAD_RATE_LIMIT_EXCEEDED` | Wait for `Retry-After`. |
 | `429` | `MAILBOX_CREATION_LIMIT_REACHED` | Monthly creations used. See `error.details.resets_at`. |
 | `503` | `EMAIL_INDEX_BUILDING` | Revdoku is preparing the email index of this mailbox. Wait `Retry-After` and try the read again. |

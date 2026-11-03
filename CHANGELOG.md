@@ -1,5 +1,17 @@
 # Revdoku Changelog
 
+## 1.0.614 — 2026-11-03
+
+### Improved
+
+- Filter Logs by the built-in AI filter, separately from connected apps and people.
+- Name more actions in Logs, such as Viewed email list and Opened email.
+
+### Fixed
+
+- Keep the AI filter working when the AI model does not answer: another model answers instead.
+- Show "AI filter could not check this email." on an email that the AI filter could not check.
+
 ## 1.0.613 — 2026-11-03
 
 ### Improved

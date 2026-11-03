@@ -19,7 +19,7 @@ Your own domain? Starter. A team of agents? Standard. Apps or clients? Business.
 | AI connections | 3 | 5 | 10 | 50 |
 | API keys | 1 | 2 | 3 | 15 |
 | Virus and malware scanning | Included | Included | Included | Included |
-| AI credits for AI agents that review and extract | 1,000 one-time | 50,000/mo | 100,000/mo | 300,000/mo |
+| AI credits for AI checks of incoming email | 1,000 one-time | 50,000/mo | 100,000/mo | 300,000/mo |
 | Support | Community | Email support | Email support | Email support |
 
 API, MCP and CLI are included on every plan. Your first paid
