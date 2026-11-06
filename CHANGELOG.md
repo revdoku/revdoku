@@ -1,5 +1,11 @@
 # Revdoku Changelog
 
+## 1.0.620 — 2026-11-06
+
+### Added
+
+- Add AI agents to any bucket from its Agents view. An agent runs on new email with your instructions: it can draft replies, email your team, write files in its folder and add labels. Its runs spend the account's AI credits.
+
 ## 1.0.619 — 2026-11-06
 
 ### Added
