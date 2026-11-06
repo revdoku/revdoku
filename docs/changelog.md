@@ -1,5 +1,33 @@
 # Revdoku Changelog
 
+## 1.0.621 — 2026-11-06
+
+### Added
+
+- Publish edits to GitHub when they are ready. Edits in a bucket linked to GitHub wait as pending changes: **Publish** commits them to your branch, and **Open pull request** sends them for review.
+- Merge Revdoku's pull request from the GitHub panel with **Merge and publish**. While the pull request is open, new edits go to it.
+- Choose how edits reach GitHub in **Edits in Revdoku**: Publish manually, Commit at once or Read-only.
+- See who reads your docs in the bucket's **Analytics**: AI agents and their requests, bots, countries, what visitors and agents searched, and the questions asked in Ask AI. On every plan.
+- Leave a message from Ask AI: when the docs do not answer, visitors confirm their email with a code and send a message. It opens a support ticket, and your reply goes to their email.
+- Set the name, address, access and docs layout of a site in one **Publish** dialog.
+- Add your own Cloudflare Turnstile keys for a custom domain in Website settings, so Ask AI on that domain has a security check.
+
+### Improved
+
+- Your live docs site shows only your GitHub branch: edits that wait for Publish or for review never go live.
+- A protected branch gets its changes through a pull request.
+- Ask AI opens as a panel beside the page, and asks visitors to pass a security check once.
+- Docs pages link llms.txt, the page's Markdown and the MCP server for AI agents, in the page and in its footer.
+- A bucket with a site shows Site, Analytics, Support and Files in the sidebar. Compose, the folders and Agents are in Support.
+- New buckets take a name, and a bucket without a chosen name takes the name of its first GitHub repository.
+- A site never shows your support email address to visitors or AI agents.
+
+### Fixed
+
+- Starting a bucket from the docs template works again.
+- A publish that fails because the site review could not run now says so and can be retried.
+- The email about a failed publish is sent again.
+
 ## 1.0.620 — 2026-11-06
 
 ### Added
