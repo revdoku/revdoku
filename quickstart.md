@@ -10,10 +10,10 @@ The `revdoku` package is the API library. For the `revdoku` command-line tool, s
 
 1. Sign in at https://app.revdoku.com. If you need an account,
    [sign up in your browser](https://app.revdoku.com/users/sign_up). The setup steps after signup
-   create your first mailbox.
+   create your first bucket.
 2. Open **Connect via API** in the dashboard and click **Copy API key**. The key
    has full access to all mailboxes of the account. In a mailbox, you can choose
-   **This mailbox** instead: that key can read and write that mailbox only. You can
+   **This mailbox** instead: that key can read and write that bucket only. You can
    also create keys in [Account → Access](https://app.revdoku.com/account/access).
    A read-only key cannot see mailbox addresses.
 3. Put the key in a `.env` file or in the environment of your backend. Add `.env`
@@ -40,7 +40,7 @@ pip install revdoku
 cURL needs nothing to install.
 
 Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for
-example `https://api.revdoku.com/v1/mailboxes`. The SDKs use this origin by default.
+example `https://api.revdoku.com/v1/buckets`. The SDKs use this origin by default.
 
 Both SDKs read `REVDOKU_API_KEY` from the environment. To load `.env` and run a step:
 
@@ -62,9 +62,9 @@ cURL: load the variables into your shell, then run the cURL commands:
 set -a; . ./.env; set +a
 ```
 
-## 3. List your mailboxes
+## 3. List your buckets
 
-Keep the `id` and the `email.address` of the mailbox that you want to use.
+Keep the `id` and the `mailbox.address` of the bucket that you want to use.
 
 **TypeScript**
 
@@ -72,9 +72,9 @@ Keep the `id` and the `email.address` of the mailbox that you want to use.
 import { Revdoku } from 'revdoku';
 
 const client = new Revdoku(); // reads REVDOKU_API_KEY
-const { data } = await client.listMailboxes();
-for (const mailbox of data.mailboxes) {
-  console.log(mailbox.id, mailbox.title, mailbox.email.address);
+const { data } = await client.listBuckets();
+for (const bucket of data.buckets) {
+  console.log(bucket.id, bucket.title, bucket.mailbox?.address);
 }
 ```
 
@@ -84,28 +84,28 @@ for (const mailbox of data.mailboxes) {
 from revdoku import Revdoku
 
 client = Revdoku()  # reads REVDOKU_API_KEY
-for mailbox in client.list_mailboxes().data.mailboxes:
-    print(mailbox.id, mailbox.title, mailbox.email.address)
+for bucket in client.list_buckets().data.buckets:
+    print(bucket.id, bucket.title, bucket.mailbox.address if bucket.mailbox else None)
 ```
 
 **cURL**
 
 ```sh
-curl -s https://api.revdoku.com/v1/mailboxes \
+curl -s https://api.revdoku.com/v1/buckets \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
-The response has `data.mailboxes`. Each mailbox has an `id`, a `title` and an
-`email.address`. Add the mailbox ID to `.env` as `REVDOKU_MAILBOX_ID=bkt_...`. JSON and Python use
+The response has `data.buckets`. Each bucket has an `id`, a `title` and a
+`mailbox.address`. Add the bucket ID to `.env` as `REVDOKU_BUCKET_ID=bkt_...`. JSON and Python use
 snake_case field names (`receiving_enabled`). TypeScript uses camelCase (`receivingEnabled`).
-To make another mailbox, see [Create a mailbox](https://revdoku.com/api.md#create-a-mailbox).
-Creating mailboxes needs a key with admin access to all mailboxes.
+To make another bucket, see [Create a bucket](https://revdoku.com/api.md#create-a-bucket).
+Creating buckets needs a key with admin access to all buckets.
 
 ## 4. Send a test email
 
 From your own email app, send an email with a small attachment, such as a PDF or
 an image, to the mailbox address from step 3. The email arrives in a few seconds.
-You can also see it in the [dashboard](https://app.revdoku.com/mailboxes).
+You can also see it in the [dashboard](https://app.revdoku.com/buckets).
 
 When AI labels are on for the account, they check each new email for up to about
 one minute. Until they finish, reading the email returns `503 EMAIL_LABELING_PENDING`
@@ -123,10 +123,10 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { Revdoku, RevdokuError } from 'revdoku';
 
 const client = new Revdoku();
-const mailboxId = process.env.REVDOKU_MAILBOX_ID;
-if (!mailboxId) throw new Error('Set REVDOKU_MAILBOX_ID');
+const bucketId = process.env.REVDOKU_BUCKET_ID;
+if (!bucketId) throw new Error('Set REVDOKU_BUCKET_ID');
 
-const { data } = await client.listEmails({ mailboxId, order: 'desc', limit: 5 });
+const { data } = await client.listEmails({ bucketId, order: 'desc', limit: 5 });
 for (const summary of data.emails) {
   console.log(summary.id, summary.receivedAt.toISOString(), summary.fromAddresses?.[0]?.address, summary.subject);
 }
@@ -137,7 +137,7 @@ if (!latest) throw new Error('No email yet. Send one, then run this again.');
 const readEmail = async (emailId: string) => {
   for (;;) {
     try {
-      return (await client.getEmail({ mailboxId, emailId })).data.email;
+      return (await client.getEmail({ bucketId, emailId })).data.email;
     } catch (error) {
       if (!(error instanceof RevdokuError) || error.code !== 'EMAIL_LABELING_PENDING') throw error;
       await sleep((error.retryAfter ?? 5) * 1000);
@@ -148,7 +148,7 @@ const readEmail = async (emailId: string) => {
 const email = await readEmail(latest.id);
 console.log(email.bodyText);
 for (const attachment of email.attachments) {
-  const bytes = await client.downloadAttachment({ mailboxId, emailId: email.id, attachmentId: attachment.id });
+  const bytes = await client.downloadAttachment({ bucketId, emailId: email.id, attachmentId: attachment.id });
   await writeFile(`${attachment.id}.bin`, bytes); // the sender chose the filename: do not use it as a path
   console.log('Saved', attachment.filename, bytes.length, 'bytes');
 }
@@ -163,9 +163,9 @@ from pathlib import Path
 from revdoku import Revdoku, RevdokuError
 
 client = Revdoku()
-mailbox_id = os.environ["REVDOKU_MAILBOX_ID"]
+bucket_id = os.environ["REVDOKU_BUCKET_ID"]
 
-emails = client.list_emails(mailbox_id, order="desc", limit=5).data.emails
+emails = client.list_emails(bucket_id, order="desc", limit=5).data.emails
 for summary in emails:
     sender = summary.from_addresses[0].address if summary.from_addresses else None
     print(summary.id, summary.received_at.isoformat(), sender, summary.subject)
@@ -175,7 +175,7 @@ if not emails:
 # While AI labels check a new email, the read returns EMAIL_LABELING_PENDING. Wait and read it again.
 while True:
     try:
-        detail = client.get_email(mailbox_id, emails[0].id).data.email
+        detail = client.get_email(bucket_id, emails[0].id).data.email
         break
     except RevdokuError as error:
         if error.code != "EMAIL_LABELING_PENDING":
@@ -184,7 +184,7 @@ while True:
 
 print(detail.body_text)
 for attachment in detail.attachments:
-    content = client.download_attachment(mailbox_id, detail.id, attachment.id)
+    content = client.download_attachment(bucket_id, detail.id, attachment.id)
     Path(f"{attachment.id}.bin").write_bytes(content)  # the sender chose the filename: do not use it as a path
     print("Saved", attachment.filename, len(content), "bytes")
 ```
@@ -194,7 +194,7 @@ for attachment in detail.attachments:
 List the newest emails:
 
 ```sh
-curl -s "https://api.revdoku.com/v1/mailboxes/$REVDOKU_MAILBOX_ID/emails?order=desc&limit=5" \
+curl -s "https://api.revdoku.com/v1/buckets/$REVDOKU_BUCKET_ID/mailbox/emails?order=desc&limit=5" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -202,14 +202,14 @@ Read one email. Use an `id` from the list. On `503 EMAIL_LABELING_PENDING`, wait
 seconds in the `Retry-After` header, then run it again:
 
 ```sh
-curl -s "https://api.revdoku.com/v1/mailboxes/$REVDOKU_MAILBOX_ID/emails/eml_example" \
+curl -s "https://api.revdoku.com/v1/buckets/$REVDOKU_BUCKET_ID/mailbox/emails/eml_example" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
 Get a download link. Use an `id` from `data.email.attachments`:
 
 ```sh
-curl -s "https://api.revdoku.com/v1/mailboxes/$REVDOKU_MAILBOX_ID/emails/eml_example/attachments/df_example" \
+curl -s "https://api.revdoku.com/v1/buckets/$REVDOKU_BUCKET_ID/mailbox/emails/eml_example/attachments/df_example" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -242,14 +242,14 @@ seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no
 `Retry-After`. Never retry `EMAIL_LOOP_DETECTED`, and never retry creating a
 mailbox or sending an email automatically after an uncertain result.
 
-Add this to the end of your step 5 file. It uses `client`, `mailboxId`
-(`mailbox_id`) and `RevdokuError` from step 5.
+Add this to the end of your step 5 file. It uses `client`, `bucketId`
+(`bucket_id`) and `RevdokuError` from step 5.
 
 **TypeScript**
 
 ```ts
 try {
-  await client.getEmail({ mailboxId, emailId: 'eml_example' });
+  await client.getEmail({ bucketId, emailId: 'eml_example' });
 } catch (error) {
   if (!(error instanceof RevdokuError)) throw error;
   console.error(error.status, error.code, error.message, error.retryAfter);
@@ -260,7 +260,7 @@ try {
 
 ```python
 try:
-    client.get_email(mailbox_id, "eml_example")
+    client.get_email(bucket_id, "eml_example")
 except RevdokuError as error:
     print(error.status, error.code, error.message, error.retry_after)
 ```
@@ -275,8 +275,8 @@ With cURL, a failed request returns `"success": false` and an `error` object wit
 | Process new email continuously | [Poll for new email](https://revdoku.com/api.md#poll-for-new-email) |
 | Get a webhook or a live event for each new email | [Email events](https://revdoku.com/guides/email-events.md) |
 | Reply to a sender | [Send email](https://revdoku.com/api.md#send-email) |
-| Store files in the mailbox | [Upload a file](https://revdoku.com/api.md#upload-a-file) |
-| Give each customer of your app a mailbox | [SaaS mailboxes](https://revdoku.com/guides/saas-mailboxes.md) |
+| Store files in the bucket | [Upload a file](https://revdoku.com/api.md#upload-a-file) |
+| Give each customer of your app a mailbox | [SaaS buckets](https://revdoku.com/guides/saas-mailboxes.md) |
 | Write the integration with Claude Code or Codex | [Coding agents](https://revdoku.com/docs/coding-agents.md) |
 | Learn the SDK | [TypeScript SDK](https://revdoku.com/docs/sdks/typescript.md) · [Python SDK](https://revdoku.com/docs/sdks/python.md) |
 | Look up every operation | [API reference](https://revdoku.com/api/reference.md) · [API guide](https://revdoku.com/api.md) |

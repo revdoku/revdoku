@@ -1,6 +1,6 @@
 # Revdoku API examples
 
-Runnable Node.js examples for email mailboxes and additional private file storage. Choose
+Runnable Node.js examples for email buckets and additional private file storage. Choose
 [JavaScript](./javascript/README.md) or [TypeScript](./typescript/README.md).
 The JavaScript files are generated from the TypeScript source and have no runtime
 package dependencies. Every recipe uses native fetch directly, without the SDK.
@@ -12,10 +12,10 @@ Use Node.js 22 or newer. Clone this repository, enter `examples`, then copy
 `.env.example` to `.env`. Set `REVDOKU_API_KEY` locally using a key from Account →
 Access. Never commit `.env` or paste credentials into an issue or AI chat.
 
-Set `REVDOKU_MAILBOX_ID` to an existing authorized mailbox for the reading and
+Set `REVDOKU_BUCKET_ID` to an existing authorized mailbox for the reading and
 uploading examples. The setup steps after browser signup create your first
-mailbox. You can use that mailbox without creating another one.
-Mailbox creation requires account-wide permission and available active-mailbox and creation capacity. Address/readiness queries and
+mailbox. You can use that bucket without creating another one.
+Bucket creation requires account-wide permission and available active-mailbox and creation capacity. Address/readiness queries and
 uploads require write access. The quota example requires an authenticated connection to the selected account.
 Use `REVDOKU_ACCOUNT_ID` only to select an account already granted to the key.
 
@@ -43,14 +43,14 @@ path saves a new version. Email reads leave shared read status unchanged. File r
 
 | Script | Behavior | Example output |
 | --- | --- | --- |
-| `create-mailbox` | Creates a mailbox with a requested or generated username and returns its ready address. | `Mailbox: bkt_…` followed by `Receiving ready: …@revdokumail.com` |
+| `create-mailbox` | Creates a bucket with a requested or generated username and returns its ready address. | `Mailbox: bkt_…` followed by `Receiving ready: …@revdokumail.com` |
 | `read-mail` | Paginates received emails using a durable arrival cursor and saves a local checkpoint. Add `--show-body` to print message bodies. | Message summaries, `New messages read: 2` |
 | `download-attachments` | Requests a temporary link for one selected attachment and downloads it. | `Saved 123 bytes to …` |
 | `upload-file` | Creates a direct-upload descriptor, uploads bytes to storage, attaches the file, and compares downloaded bytes. | `Uploaded and verified 123 bytes at project/notes.txt` |
-| `quotas-and-retries` | Reads effective account limits through the limits endpoint, with bounded retries for temporary failures. | JSON containing limits such as `max_mailboxes` and `max_storage_bytes` |
+| `quotas-and-retries` | Reads effective account limits through the limits endpoint, with bounded retries for temporary failures. | JSON containing limits such as `max_buckets` and `max_storage_bytes` |
 
 The creation example sends one request and returns a ready receiving address.
-After a lost response, check your mailboxes before creating another.
+After a lost response, check your buckets before creating another.
 
 The mail checkpoint lives in `.revdoku-examples/` and is separate from shared
 read/unread status. Run one reader per checkpoint directory. Each page is processed

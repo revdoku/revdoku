@@ -2,7 +2,7 @@
 
 Sign-in helpers for the CLI and AI agents. Backend applications use an API key from the dashboard.
 
-Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example `https://api.revdoku.com/v1/mailboxes`. Send `Authorization: Bearer $REVDOKU_API_KEY` from your server. Tables use JSON names; where TypeScript differs, a field shows `json_name` / `typescriptName`. Python uses the JSON names.
+Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example `https://api.revdoku.com/v1/buckets`. Send `Authorization: Bearer $REVDOKU_API_KEY` from your server. Tables use JSON names; where TypeScript differs, a field shows `json_name` / `typescriptName`. Python uses the JSON names.
 
 Operations that need no API key run before you have one. They use the generated `DefaultApi` class instead of `Revdoku`, so their errors are `ResponseError` (TypeScript) or `ApiException` (Python), not `RevdokuError`.
 
@@ -108,10 +108,10 @@ Creates an AI agent connection for an account owner or administrator. Accounts w
 | `email` | string (email) | yes |  |
 | `code` | string | yes | Six digits; spaces are ignored. |
 | `label` | string | no | Connection name shown in Account access. |
-| `permission_scope` / `permissionScope` | string: `mailbox_read`, `mailbox_write`, `mailbox_admin` | no |  |
-| `mailbox_access` / `mailboxAccess` | string: `all`, `selected` | no |  |
-| `mailbox_ids` / `mailboxIds` | array of string | no | Required when mailbox_access is selected. |
-| `mailbox_permissions` / `mailboxPermissions` | object | no | Optional access per selected mailbox ID: read or write. Without an entry, a mailbox gets write, or read when permission_scope is mailbox_read. |
+| `permission_scope` / `permissionScope` | string: `bucket_read`, `bucket_write`, `bucket_admin` | no |  |
+| `bucket_access` / `bucketAccess` | string: `all`, `selected` | no |  |
+| `bucket_ids` / `bucketIds` | array of string | no | Required when bucket_access is selected. |
+| `bucket_permissions` / `bucketPermissions` | object | no | Optional access per selected bucket ID: read or write. Without an entry, a bucket gets write, or read when permission_scope is bucket_read. |
 | `account_id` / `accountId` | string | no | Select another granted account for this request. |
 | `reason` | string or null | no | Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. |
 
@@ -158,14 +158,14 @@ curl -X POST "https://api.revdoku.com/v1/agent_auth/verify_code" \
 | `api_key` / `apiKey` | string |  |
 | `account_id` / `accountId` | string |  |
 | `account_name` / `accountName` | string |  |
-| `scope` | string: `mailbox_read`, `mailbox_write`, `mailbox_admin` |  |
-| `mailbox_access` / `mailboxAccess` | string: `all`, `selected` |  |
-| `mailbox_ids` / `mailboxIds` | array of string |  |
-| `mailbox_permissions` / `mailboxPermissions` | object |  |
+| `scope` | string: `bucket_read`, `bucket_write`, `bucket_admin` |  |
+| `bucket_access` / `bucketAccess` | string: `all`, `selected` |  |
+| `bucket_ids` / `bucketIds` | array of string |  |
+| `bucket_permissions` / `bucketPermissions` | object |  |
 | `account_connection_limits` / `accountConnectionLimits` | object |  |
 | `expires_at` / `expiresAt` | string (date-time) or null |  |
 | `manage_access` / `manageAccess` | object |  |
-| `mailboxes` | array of object |  |
+| `buckets` | array of object |  |
 | `guidance` | string |  |
 
 **Errors**
@@ -241,14 +241,14 @@ curl -X POST "https://api.revdoku.com/v1/agent_auth/exchange_grant" \
 | `api_key` / `apiKey` | string |  |
 | `account_id` / `accountId` | string |  |
 | `account_name` / `accountName` | string |  |
-| `scope` | string: `mailbox_read`, `mailbox_write`, `mailbox_admin` |  |
-| `mailbox_access` / `mailboxAccess` | string: `all`, `selected` |  |
-| `mailbox_ids` / `mailboxIds` | array of string |  |
-| `mailbox_permissions` / `mailboxPermissions` | object |  |
+| `scope` | string: `bucket_read`, `bucket_write`, `bucket_admin` |  |
+| `bucket_access` / `bucketAccess` | string: `all`, `selected` |  |
+| `bucket_ids` / `bucketIds` | array of string |  |
+| `bucket_permissions` / `bucketPermissions` | object |  |
 | `account_connection_limits` / `accountConnectionLimits` | object |  |
 | `expires_at` / `expiresAt` | string (date-time) or null |  |
 | `manage_access` / `manageAccess` | object |  |
-| `mailboxes` | array of object |  |
+| `buckets` | array of object |  |
 | `guidance` | string |  |
 
 **Errors**
@@ -263,7 +263,7 @@ Guide: [Authentication](https://revdoku.com/api.md#authentication)
 
 `POST /v1/agent_auth/browser_login_link`
 
-Returns a dashboard URL for a path such as /mailboxes. The user signs in normally; the link grants no access.
+Returns a dashboard URL for a path such as /buckets. The user signs in normally; the link grants no access.
 
 | Language | Call |
 | --- | --- |
@@ -287,7 +287,7 @@ import { Revdoku } from 'revdoku';
 
 const client = new Revdoku();
 const { data } = await client.api.createBrowserLink({
-  createBrowserLinkRequest: { redirectPath: '/mailboxes' },
+  createBrowserLinkRequest: { redirectPath: '/buckets' },
 });
 console.log(data);
 ```
@@ -299,7 +299,7 @@ from revdoku import Revdoku, CreateBrowserLinkRequest
 
 client = Revdoku()
 response = client.api.create_browser_link(
-    CreateBrowserLinkRequest(redirect_path="/mailboxes"),
+    CreateBrowserLinkRequest(redirect_path="/buckets"),
 )
 print(response.data)
 ```
@@ -310,7 +310,7 @@ print(response.data)
 curl -X POST "https://api.revdoku.com/v1/agent_auth/browser_login_link" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"redirect_path": "/mailboxes"}'
+  -d '{"redirect_path": "/buckets"}'
 ```
 
 **Response** `201`

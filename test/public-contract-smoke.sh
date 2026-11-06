@@ -84,16 +84,16 @@ for target in codex claude-code cursor antigravity opencode grok-build hermes op
   require_text "$UNINSTALL_FILE" "$target"
 done
 require_text "$SKILL_FILE" 'scripts/revdoku.sh upload <path>'
-require_text "$SKILL_FILE" '`mailbox_lock`'
-require_text "$SKILL_FILE" '`mailbox_file_reorganize`'
-reject_text "$SKILL_FILE" '`mailbox_lock_files`'
-require_text "$SKILL_FILE" '`mailbox_delete_permanently`'
+require_text "$SKILL_FILE" '`bucket_lock`'
+require_text "$SKILL_FILE" '`bucket_file_reorganize`'
+reject_text "$SKILL_FILE" '`bucket_lock_files`'
+require_text "$SKILL_FILE" '`bucket_delete_permanently`'
 reject_text "$SKILL_FILE" 'github_sync'
 require_text "$SKILL_FILE" '`ACCOUNT_SUSPENDED`'
 require_text "$SKILL_FILE" 'support@revdoku.com'
-require_text "$API_FILE" '| GET | `/v1/mailboxes/{mailbox_id}/files/{file_id}/versions` |'
+require_text "$API_FILE" '| GET | `/v1/buckets/{bucket_id}/files/{file_id}/versions` |'
 require_text "$API_FILE" 'https://api.revdoku.com/v1'
-require_text "$API_FILE" 'POST /v1/mailboxes'
+require_text "$API_FILE" 'POST /v1/buckets'
 require_text "$API_FILE" '201 Created'
 reject_text "$API_FILE" 'github_sync'
 require_text "$API_FILE" '`account.restriction`'
@@ -108,7 +108,7 @@ for guidance in "$README_FILE" "$SKILL_FILE" "$API_FILE" "$SOURCE_CLIENT_DIR/doc
 done
 RETIRED_COMMAND_OUTPUT="$(mktemp)"
 trap 'rm -f "$RETIRED_COMMAND_OUTPUT"' EXIT
-for command in publish preview unpublish sites analytics init; do
+for command in sites analytics init; do
   if bash "$CLI_FILE" "$command" --url http://127.0.0.1:1 --api-key unused > "$RETIRED_COMMAND_OUTPUT" 2>&1; then
     die "retired command succeeded: $command"
   fi

@@ -1,6 +1,6 @@
 # API reference
 
-Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example `https://api.revdoku.com/v1/mailboxes`. Send `Authorization: Bearer $REVDOKU_API_KEY` from your server; never put the key in a browser or a chat.
+Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example `https://api.revdoku.com/v1/buckets`. Send `Authorization: Bearer $REVDOKU_API_KEY` from your server; never put the key in a browser or a chat.
 Responses use `{"success": true, "data": ...}`. Errors use `{"success": false, "error": {"code": ..., "message": ...}}`; branch on `error.code`.
 The SDKs keep this envelope: TypeScript fields are camelCase, Python fields use the JSON names.
 
@@ -31,35 +31,35 @@ Connection status, granted accounts and limits.
 | [Read one granted account](https://revdoku.com/api/reference/accounts.md#read-one-granted-account) | `GET /v1/accounts/{account_id}` | `client.api.getAccount` | `client.api.get_account` |
 | [Read effective account limits](https://revdoku.com/api/reference/accounts.md#read-effective-account-limits) | `GET /v1/account/limits` | `client.api.getAccountLimits` | `client.api.get_account_limits` |
 
-## [Mailboxes](https://revdoku.com/api/reference/mailboxes.md)
+## [Buckets](https://revdoku.com/api/reference/buckets.md)
 
-Create, read, archive and delete mailboxes.
+Create, read, archive and delete buckets.
 
 | Operation | HTTP | TypeScript | Python |
 | --- | --- | --- | --- |
-| [List mailboxes](https://revdoku.com/api/reference/mailboxes.md#list-mailboxes) | `GET /v1/mailboxes` | `client.listMailboxes` | `client.list_mailboxes` |
-| [Create a mailbox](https://revdoku.com/api/reference/mailboxes.md#create-a-mailbox) | `POST /v1/mailboxes` | `client.createMailbox` | `client.create_mailbox` |
-| [Read a mailbox](https://revdoku.com/api/reference/mailboxes.md#read-a-mailbox) | `GET /v1/mailboxes/{mailbox_id}` | `client.getMailbox` | `client.get_mailbox` |
-| [Update a mailbox title, description or metadata](https://revdoku.com/api/reference/mailboxes.md#update-a-mailbox-title-description-or-metadata) | `PATCH /v1/mailboxes/{mailbox_id}` | `client.api.updateMailbox` | `client.api.update_mailbox` |
-| [Permanently delete an archived mailbox](https://revdoku.com/api/reference/mailboxes.md#permanently-delete-an-archived-mailbox) | `DELETE /v1/mailboxes/{mailbox_id}` | `client.api.deleteMailbox` | `client.api.delete_mailbox` |
-| [Archive a mailbox](https://revdoku.com/api/reference/mailboxes.md#archive-a-mailbox) | `POST /v1/mailboxes/{mailbox_id}/archive` | `client.api.archiveMailbox` | `client.api.archive_mailbox` |
-| [Unarchive a mailbox](https://revdoku.com/api/reference/mailboxes.md#unarchive-a-mailbox) | `POST /v1/mailboxes/{mailbox_id}/unarchive` | `client.api.unarchiveMailbox` | `client.api.unarchive_mailbox` |
+| [List buckets](https://revdoku.com/api/reference/buckets.md#list-buckets) | `GET /v1/buckets` | `client.listBuckets` | `client.list_buckets` |
+| [Create a bucket](https://revdoku.com/api/reference/buckets.md#create-a-bucket) | `POST /v1/buckets` | `client.createBucket` | `client.create_bucket` |
+| [Read a bucket](https://revdoku.com/api/reference/buckets.md#read-a-bucket) | `GET /v1/buckets/{bucket_id}` | `client.getBucket` | `client.get_bucket` |
+| [Update a bucket title, description or metadata](https://revdoku.com/api/reference/buckets.md#update-a-bucket-title-description-or-metadata) | `PATCH /v1/buckets/{bucket_id}` | `client.api.updateBucket` | `client.api.update_bucket` |
+| [Permanently delete an archived bucket](https://revdoku.com/api/reference/buckets.md#permanently-delete-an-archived-bucket) | `DELETE /v1/buckets/{bucket_id}` | `client.api.deleteBucket` | `client.api.delete_bucket` |
+| [Archive a bucket](https://revdoku.com/api/reference/buckets.md#archive-a-bucket) | `POST /v1/buckets/{bucket_id}/archive` | `client.api.archiveBucket` | `client.api.archive_bucket` |
+| [Unarchive a bucket](https://revdoku.com/api/reference/buckets.md#unarchive-a-bucket) | `POST /v1/buckets/{bucket_id}/unarchive` | `client.api.unarchiveBucket` | `client.api.unarchive_bucket` |
 
-## [Email settings](https://revdoku.com/api/reference/email-settings.md)
+## [Mailbox](https://revdoku.com/api/reference/mailbox.md)
 
 Addresses, aliases, allowed senders, webhooks and live subscriptions.
 
 | Operation | HTTP | TypeScript | Python |
 | --- | --- | --- | --- |
-| [Read address settings](https://revdoku.com/api/reference/email-settings.md#read-address-settings) | `GET /v1/mailboxes/{mailbox_id}/email` | `client.api.getMailboxEmailSettings` | `client.api.get_mailbox_email_settings` |
-| [Change the primary address](https://revdoku.com/api/reference/email-settings.md#change-the-primary-address) | `POST /v1/mailboxes/{mailbox_id}/email/rotate` | `client.api.changeMailboxAddress` | `client.api.change_mailbox_address` |
-| [Add an alias address](https://revdoku.com/api/reference/email-settings.md#add-an-alias-address) | `POST /v1/mailboxes/{mailbox_id}/email/aliases` | `client.api.createEmailAlias` | `client.api.create_email_alias` |
-| [Remove an alias address](https://revdoku.com/api/reference/email-settings.md#remove-an-alias-address) | `DELETE /v1/mailboxes/{mailbox_id}/email/aliases/{alias_id}` | `client.api.deleteEmailAlias` | `client.api.delete_email_alias` |
-| [Replace the allowed senders](https://revdoku.com/api/reference/email-settings.md#replace-the-allowed-senders) | `PATCH /v1/mailboxes/{mailbox_id}/email/allowlist` | `client.api.updateEmailAllowlist` | `client.api.update_email_allowlist` |
-| [Read the email webhook](https://revdoku.com/api/reference/email-settings.md#read-the-email-webhook) | `GET /v1/mailboxes/{mailbox_id}/email/webhook` | `client.api.getEmailWebhook` | `client.api.get_email_webhook` |
-| [Set the email webhook](https://revdoku.com/api/reference/email-settings.md#set-the-email-webhook) | `PUT /v1/mailboxes/{mailbox_id}/email/webhook` | `client.api.setEmailWebhook` | `client.api.set_email_webhook` |
-| [Remove the email webhook](https://revdoku.com/api/reference/email-settings.md#remove-the-email-webhook) | `DELETE /v1/mailboxes/{mailbox_id}/email/webhook` | `client.api.deleteEmailWebhook` | `client.api.delete_email_webhook` |
-| [Get a live email subscription ticket](https://revdoku.com/api/reference/email-settings.md#get-a-live-email-subscription-ticket) | `GET /v1/mailboxes/{mailbox_id}/email/subscription` | `client.api.getEmailSubscription` | `client.api.get_email_subscription` |
+| [Read address settings](https://revdoku.com/api/reference/mailbox.md#read-address-settings) | `GET /v1/buckets/{bucket_id}/mailbox` | `client.api.getMailbox` | `client.api.get_mailbox` |
+| [Change the primary address](https://revdoku.com/api/reference/mailbox.md#change-the-primary-address) | `POST /v1/buckets/{bucket_id}/mailbox/rotate` | `client.api.changeMailboxAddress` | `client.api.change_mailbox_address` |
+| [Add an alias address](https://revdoku.com/api/reference/mailbox.md#add-an-alias-address) | `POST /v1/buckets/{bucket_id}/mailbox/aliases` | `client.api.createEmailAlias` | `client.api.create_email_alias` |
+| [Remove an alias address](https://revdoku.com/api/reference/mailbox.md#remove-an-alias-address) | `DELETE /v1/buckets/{bucket_id}/mailbox/aliases/{alias_id}` | `client.api.deleteEmailAlias` | `client.api.delete_email_alias` |
+| [Replace the allowed senders](https://revdoku.com/api/reference/mailbox.md#replace-the-allowed-senders) | `PATCH /v1/buckets/{bucket_id}/mailbox/allowlist` | `client.api.updateEmailAllowlist` | `client.api.update_email_allowlist` |
+| [Read the email webhook](https://revdoku.com/api/reference/mailbox.md#read-the-email-webhook) | `GET /v1/buckets/{bucket_id}/mailbox/webhook` | `client.api.getEmailWebhook` | `client.api.get_email_webhook` |
+| [Set the email webhook](https://revdoku.com/api/reference/mailbox.md#set-the-email-webhook) | `PUT /v1/buckets/{bucket_id}/mailbox/webhook` | `client.api.setEmailWebhook` | `client.api.set_email_webhook` |
+| [Remove the email webhook](https://revdoku.com/api/reference/mailbox.md#remove-the-email-webhook) | `DELETE /v1/buckets/{bucket_id}/mailbox/webhook` | `client.api.deleteEmailWebhook` | `client.api.delete_email_webhook` |
+| [Get a live email subscription ticket](https://revdoku.com/api/reference/mailbox.md#get-a-live-email-subscription-ticket) | `GET /v1/buckets/{bucket_id}/mailbox/subscription` | `client.api.getEmailSubscription` | `client.api.get_email_subscription` |
 
 ## [Emails](https://revdoku.com/api/reference/emails.md)
 
@@ -67,13 +67,13 @@ List, read, reply to and delete email.
 
 | Operation | HTTP | TypeScript | Python |
 | --- | --- | --- | --- |
-| [List emails](https://revdoku.com/api/reference/emails.md#list-emails) | `GET /v1/mailboxes/{mailbox_id}/emails` | `client.listEmails` | `client.list_emails` |
-| [Send an email](https://revdoku.com/api/reference/emails.md#send-an-email) | `POST /v1/mailboxes/{mailbox_id}/emails` | `client.api.sendEmail` | `client.api.send_email` |
-| [Read an email](https://revdoku.com/api/reference/emails.md#read-an-email) | `GET /v1/mailboxes/{mailbox_id}/emails/{email_id}` | `client.getEmail` | `client.get_email` |
-| [Update an email's read status or labels](https://revdoku.com/api/reference/emails.md#update-an-emails-read-status-or-labels) | `PATCH /v1/mailboxes/{mailbox_id}/emails/{email_id}` | `client.api.updateEmail` | `client.api.update_email` |
-| [Delete an email](https://revdoku.com/api/reference/emails.md#delete-an-email) | `DELETE /v1/mailboxes/{mailbox_id}/emails/{email_id}` | `client.api.deleteEmail` | `client.api.delete_email` |
-| [Get a download link for the original email](https://revdoku.com/api/reference/emails.md#get-a-download-link-for-the-original-email) | `GET /v1/mailboxes/{mailbox_id}/emails/{email_id}/raw` | `client.api.getEmailOriginalDownload` | `client.api.get_email_original_download` |
-| [Get a download link for an attachment](https://revdoku.com/api/reference/emails.md#get-a-download-link-for-an-attachment) | `GET /v1/mailboxes/{mailbox_id}/emails/{email_id}/attachments/{attachment_id}` | `client.getAttachmentDownload` | `client.get_attachment_download` |
+| [List emails](https://revdoku.com/api/reference/emails.md#list-emails) | `GET /v1/buckets/{bucket_id}/mailbox/emails` | `client.listEmails` | `client.list_emails` |
+| [Send an email](https://revdoku.com/api/reference/emails.md#send-an-email) | `POST /v1/buckets/{bucket_id}/mailbox/emails` | `client.api.sendEmail` | `client.api.send_email` |
+| [Read an email](https://revdoku.com/api/reference/emails.md#read-an-email) | `GET /v1/buckets/{bucket_id}/mailbox/emails/{email_id}` | `client.getEmail` | `client.get_email` |
+| [Update an email's read status or labels](https://revdoku.com/api/reference/emails.md#update-an-emails-read-status-or-labels) | `PATCH /v1/buckets/{bucket_id}/mailbox/emails/{email_id}` | `client.api.updateEmail` | `client.api.update_email` |
+| [Delete an email](https://revdoku.com/api/reference/emails.md#delete-an-email) | `DELETE /v1/buckets/{bucket_id}/mailbox/emails/{email_id}` | `client.api.deleteEmail` | `client.api.delete_email` |
+| [Get a download link for the original email](https://revdoku.com/api/reference/emails.md#get-a-download-link-for-the-original-email) | `GET /v1/buckets/{bucket_id}/mailbox/emails/{email_id}/raw` | `client.api.getEmailOriginalDownload` | `client.api.get_email_original_download` |
+| [Get a download link for an attachment](https://revdoku.com/api/reference/emails.md#get-a-download-link-for-an-attachment) | `GET /v1/buckets/{bucket_id}/mailbox/emails/{email_id}/attachments/{attachment_id}` | `client.getAttachmentDownload` | `client.get_attachment_download` |
 
 ## [Files](https://revdoku.com/api/reference/files.md)
 
@@ -82,22 +82,22 @@ Upload, read, organize and restore files.
 | Operation | HTTP | TypeScript | Python |
 | --- | --- | --- | --- |
 | [Prepare a file upload (step 1 of 3)](https://revdoku.com/api/reference/files.md#prepare-a-file-upload-step-1-of-3) | `POST /v1/direct_uploads` | `client.uploadFile` | `client.upload_file` |
-| [List files](https://revdoku.com/api/reference/files.md#list-files) | `GET /v1/mailboxes/{mailbox_id}/files` | `client.listFiles` | `client.list_files` |
-| [Save an uploaded file (step 3 of 3)](https://revdoku.com/api/reference/files.md#save-an-uploaded-file-step-3-of-3) | `POST /v1/mailboxes/{mailbox_id}/files` | `client.uploadFile` | `client.upload_file` |
-| [Find a file by path](https://revdoku.com/api/reference/files.md#find-a-file-by-path) | `GET /v1/mailboxes/{mailbox_id}/files/by_path` | `client.api.getFileByPath` | `client.api.get_file_by_path` |
-| [Append text to a file](https://revdoku.com/api/reference/files.md#append-text-to-a-file) | `POST /v1/mailboxes/{mailbox_id}/files/append_text` | `client.api.appendText` | `client.api.append_text` |
-| [Read file metadata](https://revdoku.com/api/reference/files.md#read-file-metadata) | `GET /v1/mailboxes/{mailbox_id}/files/{file_id}` | `client.api.getFile` | `client.api.get_file` |
-| [Delete a file](https://revdoku.com/api/reference/files.md#delete-a-file) | `DELETE /v1/mailboxes/{mailbox_id}/files/{file_id}` | `client.api.deleteFile` | `client.api.delete_file` |
-| [Get a download link for a file](https://revdoku.com/api/reference/files.md#get-a-download-link-for-a-file) | `GET /v1/mailboxes/{mailbox_id}/files/{file_id}/download` | `client.api.getFileDownload` | `client.api.get_file_download` |
-| [Rename or move a file in the same mailbox](https://revdoku.com/api/reference/files.md#rename-or-move-a-file-in-the-same-mailbox) | `POST /v1/mailboxes/{mailbox_id}/files/{file_id}/rename` | `client.api.renameFile` | `client.api.rename_file` |
-| [Move a file](https://revdoku.com/api/reference/files.md#move-a-file) | `POST /v1/mailboxes/{mailbox_id}/files/{file_id}/move` | `client.api.moveFile` | `client.api.move_file` |
-| [Copy a file](https://revdoku.com/api/reference/files.md#copy-a-file) | `POST /v1/mailboxes/{mailbox_id}/files/{file_id}/copy` | `client.api.copyFile` | `client.api.copy_file` |
-| [List file versions](https://revdoku.com/api/reference/files.md#list-file-versions) | `GET /v1/mailboxes/{mailbox_id}/files/{file_id}/versions` | `client.api.listFileVersions` | `client.api.list_file_versions` |
-| [Restore a file version](https://revdoku.com/api/reference/files.md#restore-a-file-version) | `POST /v1/mailboxes/{mailbox_id}/files/{file_id}/versions/{version_id}/restore` | `client.api.restoreFileVersion` | `client.api.restore_file_version` |
-| [Start a batch upload](https://revdoku.com/api/reference/files.md#start-a-batch-upload) | `POST /v1/mailboxes/{mailbox_id}/upload_sessions` | `client.api.createUploadSession` | `client.api.create_upload_session` |
-| [Get storage targets for a batch](https://revdoku.com/api/reference/files.md#get-storage-targets-for-a-batch) | `POST /v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/uploads` | `client.api.addUploadSessionFiles` | `client.api.add_upload_session_files` |
-| [Save uploaded files](https://revdoku.com/api/reference/files.md#save-uploaded-files) | `POST /v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize_batch` | `client.api.saveUploadSessionBatch` | `client.api.save_upload_session_batch` |
-| [Finish or cancel a batch upload](https://revdoku.com/api/reference/files.md#finish-or-cancel-a-batch-upload) | `POST /v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize` | `client.api.finalizeUploadSession` | `client.api.finalize_upload_session` |
+| [List files](https://revdoku.com/api/reference/files.md#list-files) | `GET /v1/buckets/{bucket_id}/files` | `client.listFiles` | `client.list_files` |
+| [Save an uploaded file (step 3 of 3)](https://revdoku.com/api/reference/files.md#save-an-uploaded-file-step-3-of-3) | `POST /v1/buckets/{bucket_id}/files` | `client.uploadFile` | `client.upload_file` |
+| [Find a file by path](https://revdoku.com/api/reference/files.md#find-a-file-by-path) | `GET /v1/buckets/{bucket_id}/files/by_path` | `client.api.getFileByPath` | `client.api.get_file_by_path` |
+| [Append text to a file](https://revdoku.com/api/reference/files.md#append-text-to-a-file) | `POST /v1/buckets/{bucket_id}/files/append_text` | `client.api.appendText` | `client.api.append_text` |
+| [Read file metadata](https://revdoku.com/api/reference/files.md#read-file-metadata) | `GET /v1/buckets/{bucket_id}/files/{file_id}` | `client.api.getFile` | `client.api.get_file` |
+| [Delete a file](https://revdoku.com/api/reference/files.md#delete-a-file) | `DELETE /v1/buckets/{bucket_id}/files/{file_id}` | `client.api.deleteFile` | `client.api.delete_file` |
+| [Get a download link for a file](https://revdoku.com/api/reference/files.md#get-a-download-link-for-a-file) | `GET /v1/buckets/{bucket_id}/files/{file_id}/download` | `client.api.getFileDownload` | `client.api.get_file_download` |
+| [Rename or move a file in the same bucket](https://revdoku.com/api/reference/files.md#rename-or-move-a-file-in-the-same-bucket) | `POST /v1/buckets/{bucket_id}/files/{file_id}/rename` | `client.api.renameFile` | `client.api.rename_file` |
+| [Move a file](https://revdoku.com/api/reference/files.md#move-a-file) | `POST /v1/buckets/{bucket_id}/files/{file_id}/move` | `client.api.moveFile` | `client.api.move_file` |
+| [Copy a file](https://revdoku.com/api/reference/files.md#copy-a-file) | `POST /v1/buckets/{bucket_id}/files/{file_id}/copy` | `client.api.copyFile` | `client.api.copy_file` |
+| [List file versions](https://revdoku.com/api/reference/files.md#list-file-versions) | `GET /v1/buckets/{bucket_id}/files/{file_id}/versions` | `client.api.listFileVersions` | `client.api.list_file_versions` |
+| [Restore a file version](https://revdoku.com/api/reference/files.md#restore-a-file-version) | `POST /v1/buckets/{bucket_id}/files/{file_id}/versions/{version_id}/restore` | `client.api.restoreFileVersion` | `client.api.restore_file_version` |
+| [Start a batch upload](https://revdoku.com/api/reference/files.md#start-a-batch-upload) | `POST /v1/buckets/{bucket_id}/upload_sessions` | `client.api.createUploadSession` | `client.api.create_upload_session` |
+| [Get storage targets for a batch](https://revdoku.com/api/reference/files.md#get-storage-targets-for-a-batch) | `POST /v1/buckets/{bucket_id}/upload_sessions/{session_id}/uploads` | `client.api.addUploadSessionFiles` | `client.api.add_upload_session_files` |
+| [Save uploaded files](https://revdoku.com/api/reference/files.md#save-uploaded-files) | `POST /v1/buckets/{bucket_id}/upload_sessions/{session_id}/finalize_batch` | `client.api.saveUploadSessionBatch` | `client.api.save_upload_session_batch` |
+| [Finish or cancel a batch upload](https://revdoku.com/api/reference/files.md#finish-or-cancel-a-batch-upload) | `POST /v1/buckets/{bucket_id}/upload_sessions/{session_id}/finalize` | `client.api.finalizeUploadSession` | `client.api.finalize_upload_session` |
 
 ## [Email domains](https://revdoku.com/api/reference/email-domains.md)
 
@@ -112,3 +112,15 @@ Custom domains for mailbox addresses.
 | [Remove an unused custom email domain](https://revdoku.com/api/reference/email-domains.md#remove-an-unused-custom-email-domain) | `DELETE /v1/account/email_domains/{domain_id}` | `client.api.deleteEmailDomain` | `client.api.delete_email_domain` |
 | [Check DNS and provider setup again](https://revdoku.com/api/reference/email-domains.md#check-dns-and-provider-setup-again) | `POST /v1/account/email_domains/{domain_id}/verify` | `client.api.verifyEmailDomain` | `client.api.verify_email_domain` |
 | [Get a one-click DNS setup link](https://revdoku.com/api/reference/email-domains.md#get-a-one-click-dns-setup-link) | `GET /v1/account/email_domains/{domain_id}/setup_link` | `client.api.getEmailDomainSetupLink` | `client.api.get_email_domain_setup_link` |
+
+## [Publications](https://revdoku.com/api/reference/publications.md)
+
+A bucket's site: publish its files, preview them for 24 hours, or take the site down.
+
+| Operation | HTTP | TypeScript | Python |
+| --- | --- | --- | --- |
+| [Get the site](https://revdoku.com/api/reference/publications.md#get-the-site) | `GET /v1/buckets/{bucket_id}/publication` | `client.api.getPublication` | `client.api.get_publication` |
+| [Publish the site](https://revdoku.com/api/reference/publications.md#publish-the-site) | `POST /v1/buckets/{bucket_id}/publication` | `client.api.publishBucket` | `client.api.publish_bucket` |
+| [Unpublish the site](https://revdoku.com/api/reference/publications.md#unpublish-the-site) | `DELETE /v1/buckets/{bucket_id}/publication` | `client.api.unpublishBucket` | `client.api.unpublish_bucket` |
+| [Get the preview](https://revdoku.com/api/reference/publications.md#get-the-preview) | `GET /v1/buckets/{bucket_id}/publication/preview` | `client.api.getPublicationPreview` | `client.api.get_publication_preview` |
+| [Preview the site](https://revdoku.com/api/reference/publications.md#preview-the-site) | `POST /v1/buckets/{bucket_id}/publication/preview` | `client.api.previewBucket` | `client.api.preview_bucket` |

@@ -1,5 +1,46 @@
 # Revdoku Changelog
 
+## 1.0.619 — 2026-11-06
+
+### Added
+
+- Answer support email from your docs: the built-in support agent drafts a reply to each support email from the bucket's docs pages, and a person sends it.
+- Connect a GitHub repository from the new GitHub tab in Website settings.
+- Track support requests as tickets: each conversation in Support has a number. Filter open or solved tickets, and solve or reopen one from the email.
+- Ask AI on public docs sites: visitors ask a question and get an answer from your docs with links to its pages, and can contact support.
+- Connect AI agents to the MCP server of a public docs site at `/mcp`, with the tools `search_docs`, `read_page` and `list_pages`, without sign-in.
+- Search the whole pages of a docs site from code with `GET /_revdoku/search?q=`. It answers the page, the matching section and a snippet.
+- Find the MCP server of a docs site at `/.well-known/mcp`.
+- Show the bucket's mailbox address to AI agents from the Site tab, so they send questions and requests by email.
+- Try API requests from the API console of a public docs site even when the API does not allow browser requests from the site.
+- See each publish from GitHub on its commit: the Revdoku check shows the build while it runs, then links the published site, or the bucket when publishing failed.
+- Preview every branch of a published site: a push to another branch of the connected repository, such as a pull request's, gets a 24-hour preview with the site's access settings, linked from its commit on GitHub.
+
+### Improved
+
+- Set up a new account by adding your docs: connect a GitHub repository, upload files or start from the docs template, then publish.
+- The Mailbox tab is now Support. Its email controls show there, and the other views of a bucket show Website settings.
+- Pricing leads with docs sites: each plan names its docs sites, access protection, custom domains and docs features. Email is the support channel of a docs site, with smaller allowances. Password-protected sites and email-code gates need a paid plan. See https://app.revdoku.com/pricing.
+- The dashboard, notifications and messages say bucket for a bucket, and notifications name it by its title.
+- Read the pages of a docs site in `llms.txt` by navigation group, each with a summary.
+- List every page of a docs site in `sitemap.xml` when the site allows search indexing.
+- Search the whole text of the pages from the search box of a docs site.
+
+## 1.0.618 — 2026-11-05
+
+### Added
+
+- Publish a bucket as a website or a docs site. A Mintlify repository works as it is: `docs.json` navigation, `.mdx` pages with snippets and components, an OpenAPI document and endpoint pages.
+- Connect a GitHub repository to a bucket. The bucket's files follow the repository, and each push publishes the site.
+- Start a new account by connecting a GitHub repository. Connect GitHub… is the first choice in the Connect menu and in an empty bucket.
+
+## 1.0.616 — 2026-11-05
+
+### Improved
+
+- The public resource is now the bucket: a bucket has files, a site, a mailbox and agents. REST paths are `/v1/buckets/{bucket_id}`, MCP tools are `bucket_*`, and the CLI takes `--bucket-id`. The SDKs are 3.0.0.
+- A bucket keeps its email in the `_mailbox/` folder. `_agents/` and `_revdoku/` are the other reserved folders; every other folder name that starts with `_` is an ordinary folder.
+
 ## 1.0.614 — 2026-11-03
 
 ### Improved

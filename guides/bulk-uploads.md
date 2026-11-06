@@ -1,10 +1,10 @@
 # Bulk file uploads
 
 Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for
-example `https://api.revdoku.com/v1/mailboxes`. Send your API key as a bearer token. For one file, see
+example `https://api.revdoku.com/v1/buckets`. Send your API key as a bearer token. For one file, see
 [Upload a file](https://revdoku.com/api.md#upload-a-file).
 
-Use the CLI for a local folder: `revdoku upload ./folder --mailbox-id ID`.
+Use the CLI for a local folder: `revdoku upload ./folder --bucket-id ID`.
 To implement folder uploads yourself:
 
 1. Open an upload session with the expected file count.
@@ -20,7 +20,7 @@ To implement folder uploads yourself:
 | `complete: false` | Cancel remaining work and release the lock. |
 
 ```http
-POST /v1/mailboxes/bkt_.../upload_sessions
+POST /v1/buckets/bkt_.../upload_sessions
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
@@ -32,7 +32,7 @@ Content-Type: application/json
 Then request descriptors for one subbatch:
 
 ```http
-POST /v1/mailboxes/bkt_.../upload_sessions/bus_.../uploads
+POST /v1/buckets/bkt_.../upload_sessions/bus_.../uploads
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
@@ -55,7 +55,7 @@ object-storage `PUT`. Do not send Revdoku authorization headers to object
 storage. After each successful descriptor subbatch, commit a bounded batch:
 
 ```http
-POST /v1/mailboxes/bkt_.../upload_sessions/bus_.../finalize_batch
+POST /v1/buckets/bkt_.../upload_sessions/bus_.../finalize_batch
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 
@@ -71,7 +71,7 @@ canceling or interrupting the upload; it closes the session and releases the
 lock without committing any unfinalized staged uploads.
 
 ```http
-POST /v1/mailboxes/bkt_.../upload_sessions/bus_.../finalize
+POST /v1/buckets/bkt_.../upload_sessions/bus_.../finalize
 Authorization: Bearer YOUR_API_KEY
 Content-Type: application/json
 

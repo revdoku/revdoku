@@ -7,5 +7,5 @@ Connect Revdoku so you can create and manage email mailboxes for my AI agents, r
 ```
 
 Create an account at https://app.revdoku.com/users/sign_up in your browser.
-Revdoku requires authentication before an agent creates mailboxes, stores files,
+Revdoku requires authentication before an agent creates buckets, stores files,
 or reads incoming email.

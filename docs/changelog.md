@@ -1,0 +1,241 @@
+# Revdoku Changelog
+
+## 1.0.619 — 2026-11-06
+
+### Added
+
+- Answer support email from your docs: the built-in support agent drafts a reply to each support email from the bucket's docs pages, and a person sends it.
+- Connect a GitHub repository from the new GitHub tab in Website settings.
+- Track support requests as tickets: each conversation in Support has a number. Filter open or solved tickets, and solve or reopen one from the email.
+- Ask AI on public docs sites: visitors ask a question and get an answer from your docs with links to its pages, and can contact support.
+- Connect AI agents to the MCP server of a public docs site at `/mcp`, with the tools `search_docs`, `read_page` and `list_pages`, without sign-in.
+- Search the whole pages of a docs site from code with `GET /_revdoku/search?q=`. It answers the page, the matching section and a snippet.
+- Find the MCP server of a docs site at `/.well-known/mcp`.
+- Show the bucket's mailbox address to AI agents from the Site tab, so they send questions and requests by email.
+- Try API requests from the API console of a public docs site even when the API does not allow browser requests from the site.
+- See each publish from GitHub on its commit: the Revdoku check shows the build while it runs, then links the published site, or the bucket when publishing failed.
+- Preview every branch of a published site: a push to another branch of the connected repository, such as a pull request's, gets a 24-hour preview with the site's access settings, linked from its commit on GitHub.
+
+### Improved
+
+- Set up a new account by adding your docs: connect a GitHub repository, upload files or start from the docs template, then publish.
+- The Mailbox tab is now Support. Its email controls show there, and the other views of a bucket show Website settings.
+- Pricing leads with docs sites: each plan names its docs sites, access protection, custom domains and docs features. Email is the support channel of a docs site, with smaller allowances. Password-protected sites and email-code gates need a paid plan. See https://app.revdoku.com/pricing.
+- The dashboard, notifications and messages say bucket for a bucket, and notifications name it by its title.
+- Read the pages of a docs site in `llms.txt` by navigation group, each with a summary.
+- List every page of a docs site in `sitemap.xml` when the site allows search indexing.
+- Search the whole text of the pages from the search box of a docs site.
+
+## 1.0.618 — 2026-11-05
+
+### Added
+
+- Publish a bucket as a website or a docs site. A Mintlify repository works as it is: `docs.json` navigation, `.mdx` pages with snippets and components, an OpenAPI document and endpoint pages.
+- Connect a GitHub repository to a bucket. The bucket's files follow the repository, and each push publishes the site.
+- Start a new account by connecting a GitHub repository. Connect GitHub… is the first choice in the Connect menu and in an empty bucket.
+
+## 1.0.616 — 2026-11-05
+
+### Improved
+
+- The public resource is now the bucket: a bucket has files, a site, a mailbox and agents. REST paths are `/v1/buckets/{bucket_id}`, MCP tools are `bucket_*`, and the CLI takes `--bucket-id`. The SDKs are 3.0.0.
+- A bucket keeps its email in the `_mailbox/` folder. `_agents/` and `_revdoku/` are the other reserved folders; every other folder name that starts with `_` is an ordinary folder.
+
+## 1.0.614 — 2026-11-03
+
+### Improved
+
+- Filter Logs by the built-in AI filter, separately from connected apps and people.
+- Name more actions in Logs, such as Viewed email list and Opened email.
+
+### Fixed
+
+- Keep the AI filter working when the AI model does not answer: another model answers instead.
+- Show "AI filter could not check this email." on an email that the AI filter could not check.
+
+## 1.0.613 — 2026-11-03
+
+### Improved
+
+- Keep Compose, the folders and the labels in the mailbox sidebar in Mail, Files and Agents.
+- Show the title and the address of each mailbox on two lines in the mailbox switcher.
+- Show agents as numbered steps. Each step has a Settings button.
+- Change the order of agents by dragging, with the arrow keys or with Move up and Move down, then select Save order.
+- Open the built-in AI filter from the Agents view, like other agents. Account Settings no longer has an AI Agents tab.
+- Try an agent on an email in a panel beside its settings. The result shows what the agent would do, or why it skipped the email.
+- Group agent settings into When it runs, What it reads, What it does and Instructions.
+- Go back one step with Back at the top right of Set up this mailbox.
+
+### Fixed
+
+- Save the new order after you drag an agent down.
+- Show the full focus outline of form fields in dialogs.
+
+## 1.0.548 — 2026-10-08
+
+### Improved
+
+- Create new accounts in the browser at app.revdoku.com. Direct API and MCP signup are unavailable.
+- Require sign-in when an AI client connects to MCP, including initial tool discovery.
+- Update API documentation, generated clients and the Skill for browser signup.
+
+## 1.0.547 — 2026-10-08
+
+### Improved
+
+- Connect Claude web and Desktop with Claude's published identity or automatic registration.
+- Open reconnect instructions from Account → Access when a saved Claude connector fails.
+
+### Fixed
+
+- Request sign-in when an AI client calls an account tool without a valid connection.
+- Improve the security of AI app connections.
+
+## 1.0.540 — 2026-10-06
+
+### Improved
+
+- Simplify web and API signup. Generate the first mailbox address from the verified email automatically.
+- Shorten the API guide and show optional usernames and domains when creating another mailbox.
+- API and MCP signup now use `email` and `accept_terms_and_policy` only. Signup username, permission and label options were removed.
+- Remove the signup capability and policy-read endpoints. Request a verification code directly to start signup.
+
+## 1.0.538 — 2026-10-06
+
+### Improved
+
+- New Free mailbox addresses use a readable prefix and a 12-character random
+  suffix. An exact name requires a paid plan. Existing addresses stay unchanged.
+- Explain reserved email names and link to custom-domain or upgrade settings.
+- Open archived mailboxes from the bottom of the mailbox sidebar.
+- Remove the automatic-source marker from label management.
+
+### Fixed
+
+- Keep account switching available in client accounts so people can return to
+  their agency account and its mailboxes.
+- Align notification email content with its footer and wrap long addresses on
+  mobile screens.
+- Identify deleted mailboxes in notification emails and show their deletion time once.
+- Use readable yellow error text in dark mode.
+- Put the read-status envelope beside the sender so subjects use the full message-list width.
+- Keep Select mode in the mailbox directory and return Back to the originating view.
+- Hide the test-email link after a mailbox receives its first email.
+- Follow the browser system theme by default and preserve saved theme choices.
+- Fix an error when an AI app connects with a one-time connection code.
+
+## 1.0.535 — 2026-10-05
+
+### Improved
+
+- Identify mailboxes by their email address throughout the dashboard, API,
+  MCP, CLI, SDKs and integrations. Mailbox titles are no longer public fields.
+- Open a mailbox by selecting its address in mailbox lists. Use separate
+  controls to copy the address or compose an email.
+- Browse notification history in Analytics. Choose Short or Details in logs.
+- See connection icons, counts, action reasons and mailbox links in activity logs.
+- Open large mailboxes and Analytics faster. Simplify mailbox settings and menus.
+
+## 1.0.519 — 2026-09-30
+
+### Improved
+
+- Create mailboxes with a confirmed receiving address in one request. Creation no
+  longer requires a retry key or client-side readiness polling.
+- Complete API signup with one private signup token. Human-authorized terms and
+  privacy acknowledgments replace client-supplied policy versions.
+- Read effective mailbox and storage quotas from a dedicated limits endpoint,
+  the CLI, or MCP. Public mailbox responses use one receiving-state flag.
+- Follow reorganized API and developer guides with request/response examples,
+  field tables, and direct HTTP examples for JavaScript, TypeScript and Python.
+
+### Fixed
+
+- Hide disabled GitHub Sync controls and remove its public routes and documentation.
+- Keep mailbox creation errors, website examples, CLI commands and MCP schemas
+  aligned with actual API responses.
+
+## 1.0.518 — 2026-09-30
+
+### Added
+
+- Choose a mailbox username through the API, MCP, CLI, and signup. Omit it for
+  a generated address. Retired platform addresses remain reserved.
+- Discover authorized accounts and delete individual emails with their attachments
+  through the API and agent tools.
+
+### Improved
+
+- Keep email responses focused on message content, with storage details available
+  on request. Reading email no longer changes its shared read status.
+- Use direct HTTP examples for JavaScript, TypeScript, and Python, without a
+  Revdoku SDK or client wrapper.
+- Direct API signup requires the person to verify their email.
+
+### Fixed
+
+- Download protected email attachments through expiring authorized links that
+  return usable bytes without exposing an API key to storage.
+
+## 1.0.516 — 2026-09-30
+
+- Read emails, conversations, originals and attachments through the email API,
+  MCP and CLI. Email settings use `email` across clients and examples.
+- Use consistent success and error responses, arrival cursors and retry guidance
+  in the API and runnable JavaScript/TypeScript examples.
+- Navigate with Mailboxes and Analytics in the header and switch accounts from
+  the sidebar. API connections come first in the Connect menu.
+- Protect file and email details on HIPAA and high-security accounts.
+- Account settings have a separate Subscription tab for billing and usage.
+
+## 1.0.513 — 2026-09-29
+
+- Install the CLI independently from versioned GitHub Release downloads with
+  SHA-256 checksums. Existing skill and plugin installation paths remain available.
+- Run JavaScript or TypeScript examples for mailbox creation and readiness, mail
+  reading, attachment downloads, file uploads/readback, and quota handling.
+- Retry mailbox creation with a stable key and inspect monthly creation usage through
+  the authenticated account profile. Deletion does not refund creation capacity.
+
+## 1.0.508 — 2026-09-29
+
+- Skill and plugin descriptions disclose file uploads, changes, mailbox deletion,
+  and agency client creation alongside receiving email.
+- Exclude Revdoku credentials, saved selections, update/version stamps, and deletion
+  previews from uploads, including when configuration is stored in a project.
+
+## 1.0.507 — 2026-09-28
+
+- Find Revdoku as an email mailbox with shared file storage for people and AI agents.
+- Start with examples for summarizing mail, collecting invoices and attachments,
+  and monitoring submission replies. Email guidance appears before file storage.
+- Skill and plugin descriptions make clear that email support is incoming only.
+
+## 1.0.506 — 2026-09-28
+
+- Uploads require an explicit path; use `upload .` for the current folder or
+  `upload PATH --dry-run` to inspect the selection without connecting.
+- Permanent deletion requires an explicit account/mailbox preview followed by
+  `--confirm-delete TOKEN`. Confirmations expire after ten minutes and are single-use.
+- Public CLI API/auth requests require https://app.revdoku.com. Storage transfers
+  use approved HTTPS origins and cannot select local files outside the upload manifest.
+- Skill packages contain one readable CLI implementation and a compatibility launcher.
+- Fix CLI uploads on macOS. Deletion previews show complete counts, and offline
+  upload previews use the saved destination.
+
+## 1.0.499 — 2026-09-25
+
+- Filter messages by read status or attachments, and sort newest, oldest, or unread first.
+- Choose a mailbox name before creation and keep it ready when retrying a failed request.
+- Review clearer activity totals and relative email arrival times, with exact timestamps on hover.
+- Install portable agent skills with bundled resources and updated plugin metadata.
+
+## 1.0.492 — 2026-09-23
+
+- Store, share, and version files in private cloud mailboxes.
+- Use each mailbox as a mailbox for messages and attachments.
+- Read decoded message bodies and originals through the CLI, API, or hosted MCP.
+- Coordinate authorized agents with account selection, locks, and revision checks.
+
+Current setup and usage: [README](./README.md), [mailbox guide](./docs.md),
+[API](./api.md), and [MCP](./mcp.md).

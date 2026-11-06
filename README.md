@@ -1,12 +1,13 @@
 # Revdoku
 
-**Mailboxes for AI agents.** Give each agent its own mailbox and email address to
-receive messages and attachments. Each mailbox also stores private documents, data,
-and project files that you share with authorized people and agents.
+**Docs sites for API products, with a support mailbox.** Publish your docs from a GitHub
+repository or uploaded files, with search, Ask AI, an API console, previews and an MCP server.
+Each bucket also has an email address for support: a built-in AI agent drafts replies from
+your docs for a person to approve. Buckets store private files that you share with authorized people and agents.
 
 Ask your agent to summarize incoming mail, collect invoices and attachments, or
 monitor replies to submissions. Use hosted MCP for AI agents, the CLI for local
-files and mailbox access, or the REST API for your own integrations. Mailboxes keep
+files and mailbox access, or the REST API for your own integrations. Buckets keep
 file versions so you can review changes and restore earlier files.
 
 The skill supports uploads and file changes as well as reading mail. It also
@@ -33,12 +34,12 @@ pip install revdoku
 import { Revdoku } from 'revdoku';
 
 const client = new Revdoku(); // reads REVDOKU_API_KEY
-const { data } = await client.listEmails({ mailboxId: 'bkt_...' });
+const { data } = await client.listEmails({ bucketId: 'bkt_...' });
 for (const email of data.emails) console.log(email.receivedAt, email.subject);
 ```
 
 Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example
-`https://api.revdoku.com/v1/mailboxes`.
+`https://api.revdoku.com/v1/buckets`.
 
 | Start here | What you get |
 | --- | --- |
@@ -61,29 +62,29 @@ Connect Revdoku so you can create and manage email mailboxes for my AI agents, r
 
 ## Receive and read email
 
-Each mailbox has its own incoming email address. Mailbox creation returns the
-address and receiving state; for an existing mailbox, `mailbox_get` and
-`mailbox_list` return `email.address` to connections with write access, and
-**Mailbox settings → Email** shows it. Check `email.receiving_enabled` before
+Each mailbox has its own incoming email address. Bucket creation returns the
+address and receiving state; for an existing mailbox, `bucket_get` and
+`bucket_list` return `mailbox.address` to connections with write access, and
+**Mailbox settings → Email** shows it. Check `mailbox.receiving_enabled` before
 using the address.
 
-With the CLI, run `revdoku mailbox --mailbox-id bkt_...` to retrieve the address,
-readiness, and activity. Use `revdoku emails --mailbox-id bkt_...` to list mail and
-`revdoku email eml_... --mailbox-id bkt_...` to read it.
+With the CLI, run `revdoku mailbox --bucket-id bkt_...` to retrieve the address,
+readiness, and activity. Use `revdoku emails --bucket-id bkt_...` to list mail and
+`revdoku email eml_... --bucket-id bkt_...` to read it.
 
 Receive invoices, documents, project updates, or authorized service verification
 messages. Each accepted email is saved as original `message.eml`, decoded
 `message.json` and attachment files. Authorized people and agents can read these
 through the email API and tools; file tools also expose the stored representations.
 
-Use `mailbox_email_list` or the CLI `emails` command with a saved `next_cursor`
-to poll for incoming messages. `mailbox_email_get` returns a message directly;
-`mailbox_email_download` retrieves attachments or the original. Anyone
-knowing the address can email the mailbox; reading its contents requires access.
+Use `bucket_email_list` or the CLI `emails` command with a saved `next_cursor`
+to poll for incoming messages. `bucket_email_get` returns a message directly;
+`bucket_email_download` retrieves attachments or the original. Anyone
+knowing the address can email the bucket; reading its contents requires access.
 See [incoming email](docs.md#receive-and-read-email)
 and the [API contract](api.md#emails).
 
-To reply, use `mailbox_email_send` or `revdoku email-send --in-reply-to eml_... --text TEXT`.
+To reply, use `bucket_email_send` or `revdoku email-send --in-reply-to eml_... --text TEXT`.
 Recipients must be account members, other mailboxes of the account, or addresses
 that emailed this mailbox and passed sender authentication; an administrator can
 turn off each kind. When the mailbox requires approval, a person sends, edits or declines
@@ -95,8 +96,8 @@ Use `revdoku upload ./project-files` to save a local folder privately. Read file
 restore earlier versions through the CLI, API, or dashboard. All stored files
 can be downloaded from Revdoku at any time.
 
-Share the mailbox's dashboard link with people who have account access. Authorize
-each AI connection separately for the intended mailboxes. A dashboard link does not
+Share the bucket's dashboard link with people who have account access. Authorize
+each AI connection separately for the intended buckets. A dashboard link does not
 grant access by itself. Agents can work on the same files with locks and version
 checks to coordinate changes.
 
@@ -167,15 +168,15 @@ revdoku upload ./project-files
 ```
 
 The first run opens browser sign-in when credentials are missing. Re-running
-updates the same mailbox. New accounts can be created on the web signup page.
+updates the same bucket. New accounts can be created on the web signup page.
 
 Useful commands:
 
 - `revdoku upload PATH` — store or update private files.
 - `revdoku files`, `revdoku read PATH` — list and read stored files and email.
-- `revdoku mailbox --mailbox-id ID` — check the incoming address and receiving state.
+- `revdoku mailbox --bucket-id ID` — check the incoming address and receiving state.
 - `revdoku versions PATH`, `revdoku restore PATH --version-id ID` — inspect and restore a file's history.
-- `revdoku status`, `revdoku ls` — inspect the connection and mailboxes.
+- `revdoku status`, `revdoku ls` — inspect the connection and buckets.
 - `revdoku dashboard`, `revdoku --help` — open the dashboard or command reference.
 
 ## Hosted and web agents
@@ -256,7 +257,7 @@ at `https://api.revdoku.com`. `--url` and `REVDOKU_URL` also accept the previous
 Browser sign-in and dashboard links use `https://app.revdoku.com`.
 Storage transfers use approved HTTPS origins.
 
-`revdoku delete --account-id ACCOUNT --mailbox-id MAILBOX` previews permanent
+`revdoku delete --account-id ACCOUNT --bucket-id MAILBOX` previews permanent
 deletion. Review the target and irreversible effect with the user, then repeat with
 `--confirm-delete TOKEN` using that preview's token. It expires after ten minutes
 and is consumed before submission. On an uncertain response, check mailbox status
@@ -277,6 +278,6 @@ logging disabled. Change reasons are also saved in version history; read reasons
 belong to access events and never replace a saved version's reason.
 
 ```bash
-revdoku read invoices.csv --mailbox-id bkt_... --reason "Reconcile September expenses"
-revdoku upload ./approved.csv --mailbox-id bkt_... --reason "Store the approved totals"
+revdoku read invoices.csv --bucket-id bkt_... --reason "Reconcile September expenses"
+revdoku upload ./approved.csv --bucket-id bkt_... --reason "Store the approved totals"
 ```

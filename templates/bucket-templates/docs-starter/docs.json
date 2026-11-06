@@ -1,0 +1,12 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Acme API",
+  "colors": { "primary": "#4f46e5" },
+  "navigation": {
+    "groups": [
+      { "group": "Get started", "pages": ["index", "quickstart"] },
+      { "group": "Guides", "pages": ["guides/authentication", "guides/errors"] }
+    ]
+  },
+  "openapi": "api-reference/openapi.json"
+}
