@@ -1007,15 +1007,13 @@ A public docs site also serves AI agents, without sign-in:
 |---|---|
 | `POST /mcp` | An MCP server (Streamable HTTP, one message per request) with the read-only tools `search_docs`, `read_page` and `list_pages`. |
 | `GET /_revdoku/search?q=` | Search whole pages. `limit` is 1 to 20 (default 8). `data.results` has `title`, `url` (with the section anchor), `markdown_url`, `heading`, `description` and `snippet`. Invalid input answers `422 INVALID_ARGUMENT`. |
-| `GET /llms.txt` | The pages by navigation group with a summary each, the addresses above and the contact. |
+| `GET /llms.txt` | The pages by navigation group with a summary each, and the addresses above. |
 | `GET /llms-full.txt` | Every page in one file. |
 | `GET /.well-known/mcp` | The discovery document that names the MCP server. |
 | `GET /sitemap.xml` | Every page URL, when the site allows search indexing. |
 
 Too many requests from one network answer `429 RATE_LIMITED` with `Retry-After`. A site with a password or an email gate has no agent endpoints.
-To give agents the bucket's mailbox address for questions and requests, set the bucket metadata key `publication_agent_contact` to `true`
-(the Site tab: AI agents), and to `false` to stop. The site changes at once, with no publish. The address is the contact while the mailbox
-receives email from anyone and can reply to senders.
+A site never shows the bucket's email address. Visitors whom Ask AI did not help leave a message on the site; it arrives in the bucket's mailbox as a support ticket.
 A password needs `access_mode` `password`; otherwise the publish returns `422 INVALID_ARGUMENT`.
 A password has 8 to 128 characters (`422 PUBLICATION_PASSWORD_INVALID`). Omit it to get a generated password.
 Never retry a publish automatically after an uncertain result: read the site first.
