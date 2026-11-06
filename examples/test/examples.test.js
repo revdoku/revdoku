@@ -10,7 +10,7 @@ const example = name => fileURLToPath(new URL(`../javascript/${name}.js`, import
 const fixture = fileURLToPath(new URL('./mock-api.js', import.meta.url));
 function run(cwd, name, args = [], env = {}) {
   return spawnSync(process.execPath, ['--import', fixture, example(name), ...args], { cwd, encoding: 'utf8', timeout: 12000,
-    env: { ...process.env, REVDOKU_API_KEY: 'offline-fixture-key', REVDOKU_MAILBOX_ID: 'bkt_fixture',
+    env: { ...process.env, REVDOKU_API_KEY: 'offline-fixture-key', REVDOKU_BUCKET_ID: 'bkt_fixture',
       REVDOKU_ACCOUNT_ID: 'acct_fixture', ...env } });
 }
 function success(result) { assert.equal(result.status, 0, result.stderr); assert.doesNotMatch(result.stdout + result.stderr, /offline-fixture-key/); return result.stdout; }
@@ -26,7 +26,7 @@ test('all five command-line examples run offline, with pagination and persisted 
     assert.equal(await readFile(join(cwd, 'downloads/attachment-note.txt'), 'utf8'), 'hello');
     await writeFile(join(cwd, 'notes.txt'), 'fixture upload');
     assert.match(success(run(cwd, 'upload-file', ['notes.txt', 'project/notes.txt'])), /Uploaded and verified 14 bytes/);
-    assert.match(success(run(cwd, 'quotas-and-retries')), /"max_mailboxes": 25/);
+    assert.match(success(run(cwd, 'quotas-and-retries')), /"max_buckets": 25/);
     const quota = run(cwd, 'quotas-and-retries', [], { FIXTURE_QUOTA: '1' });
     assert.equal(quota.status, 1); assert.match(quota.stderr, /Allowance resets at 2026-10-01/);
   } finally { await rm(cwd, { recursive: true, force: true }); }
@@ -49,7 +49,7 @@ test('published webhook receiver rejects forged/stale requests and deduplicates 
   const cwd = await mkdtemp(join(tmpdir(), 'revdoku-hook-'));
   const secret = 'offline-signing-secret';
   const child = spawn(process.execPath, ['--import', fixture, example('webhook-receiver')], {
-    cwd, env: { ...process.env, PORT: '0', FIXTURE_EMAIL_DELAY: '1', REVDOKU_WEBHOOK_SECRET: secret, REVDOKU_API_KEY: 'offline-fixture-key', REVDOKU_MAILBOX_ID: 'bkt_fixture', REVDOKU_ACCOUNT_ID: 'acct_fixture' }
+    cwd, env: { ...process.env, PORT: '0', FIXTURE_EMAIL_DELAY: '1', REVDOKU_WEBHOOK_SECRET: secret, REVDOKU_API_KEY: 'offline-fixture-key', REVDOKU_BUCKET_ID: 'bkt_fixture', REVDOKU_ACCOUNT_ID: 'acct_fixture' }
   });
   let stdout = '', stderr = '';
   child.stdout.on('data', bytes => { stdout += bytes; });
@@ -58,7 +58,7 @@ test('published webhook receiver rejects forged/stale requests and deduplicates 
     for (let attempt = 0; !stdout.includes('Listening on') && attempt < 100; attempt++) await new Promise(resolve => setTimeout(resolve, 20));
     const url = stdout.match(/http:\/\/127\.0\.0\.1:\d+\/webhook/)?.[0];
     assert.ok(url, stderr);
-    const body = JSON.stringify({ id: 'email.received:eml_first', type: 'email.received', data: { email_id: 'eml_first', mailbox_id: 'bkt_fixture', account_id: 'acct_fixture' } });
+    const body = JSON.stringify({ id: 'email.received:eml_first', type: 'email.received', data: { email_id: 'eml_first', bucket_id: 'bkt_fixture', account_id: 'acct_fixture' } });
     const timestamp = String(Math.floor(Date.now() / 1000));
     const headers = { 'Content-Type': 'application/json', 'X-Revdoku-Event-Id': 'email.received:eml_first', 'X-Revdoku-Timestamp': timestamp,
       'X-Revdoku-Signature': 'v1=' + createHmac('sha256', secret).update(timestamp + '.' + body).digest('hex') };
@@ -109,8 +109,8 @@ test('customer mapping and processing survive restarts without cross-customer or
     const alice = JSON.parse(success(run(cwd, 'provision-customer-mailbox', ['alice'], env)));
     const same = JSON.parse(success(run(cwd, 'provision-customer-mailbox', ['alice'], env)));
     const bob = JSON.parse(success(run(cwd, 'provision-customer-mailbox', ['bob'], env)));
-    assert.equal(alice.mailbox_id, same.mailbox_id);
-    assert.notEqual(alice.mailbox_id, bob.mailbox_id);
+    assert.equal(alice.bucket_id, same.bucket_id);
+    assert.notEqual(alice.bucket_id, bob.bucket_id);
     assert.equal(JSON.parse(await readFile(join(cwd, '.fixture-mailboxes.json'))).length, 2);
     assert.match(success(run(cwd, 'process-customer-mail', [], env)), /processed: 4/);
     assert.match(success(run(cwd, 'process-customer-mail', [], env)), /processed: 0/);
@@ -132,7 +132,7 @@ test('uncertain creation and saved-but-unready receiving recover using reads onl
       const result = run(cwd, 'provision-customer-mailbox', ['alice'], { FIXTURE_CUSTOMERS: '1', FIXTURE_CREATE: failure });
       assert.equal(result.status, 1);
       const recovered = JSON.parse(success(run(cwd, 'provision-customer-mailbox', ['alice'], { FIXTURE_CUSTOMERS: '1' })));
-      assert.equal(recovered.mailbox_id, 'bkt_1');
+      assert.equal(recovered.bucket_id, 'bkt_1');
       assert.equal(JSON.parse(await readFile(join(cwd, '.fixture-mailboxes.json'))).length, 1, 'Recovery must not create another mailbox');
     } finally { await rm(cwd, { recursive: true, force: true }); }
   }

@@ -7,7 +7,7 @@ DEFAULT_URL="https://api.revdoku.com"
 APP_URL="https://app.revdoku.com"
 MCP_RESOURCE="https://mcp.revdoku.com"
 CREDENTIALS_PATH="${REVDOKU_CREDENTIALS:-${HOME}/.revdoku/credentials}"
-DEFAULT_MAILBOX_PATH="${REVDOKU_DEFAULT_BUCKET_FILE:-${CREDENTIALS_PATH}.bucket}"
+DEFAULT_BUCKET_PATH="${REVDOKU_DEFAULT_BUCKET_FILE:-${CREDENTIALS_PATH}.bucket}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEVICE_CODE_GRANT_TYPE="urn:ietf:params:oauth:grant-type:device_code"
 
@@ -30,11 +30,11 @@ BASE_URL="${REVDOKU_URL:-$DEFAULT_URL}"
 API_KEY="${REVDOKU_API_KEY:-}"
 DESCRIPTION="${REVDOKU_BUCKET_DESCRIPTION:-}"
 UPLOAD_MODE="${REVDOKU_UPLOAD_MODE:-auto}"
-MAILBOX_ID="${REVDOKU_MAILBOX_ID:-}"
+BUCKET_ID="${REVDOKU_BUCKET_ID:-}"
 METADATA_JSON="${REVDOKU_BUCKET_METADATA:-}"
 RESTORE_VERSION_ID="${REVDOKU_RESTORE_VERSION_ID:-}"
 ACTION_REASON=""
-BROWSER_LOGIN_PATH="${REVDOKU_BROWSER_LOGIN_PATH:-/mailboxes}"
+BROWSER_LOGIN_PATH="${REVDOKU_BROWSER_LOGIN_PATH:-/buckets}"
 APPEND_TEXT_PATH="${REVDOKU_APPEND_TEXT_PATH:-}"
 APPEND_TEXT_CONTENT="${REVDOKU_APPEND_TEXT_CONTENT:-}"
 APPEND_TEXT_CONTENT_FILE="${REVDOKU_APPEND_TEXT_CONTENT_FILE:-}"
@@ -53,7 +53,7 @@ fi
 AGENT_RUN_ID="${REVDOKU_AGENT_RUN_ID:-}"
 AGENT_PROJECT="${REVDOKU_AGENT_PROJECT:-}"
 AGENT_TASK="${REVDOKU_AGENT_TASK:-}"
-MAILBOX_UPLOAD_DESCRIPTOR_BATCH_SIZE="${REVDOKU_BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE:-25}"
+BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE="${REVDOKU_BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE:-25}"
 MAILBOX_UPLOAD_CLIENT_SESSION_KEY="${REVDOKU_BUCKET_UPLOAD_CLIENT_SESSION_KEY:-}"
 HTTP_TRANSIENT_MAX_ATTEMPTS="${REVDOKU_HTTP_TRANSIENT_MAX_ATTEMPTS:-5}"
 HTTP_RETRYABLE_CONFLICT_MAX_ATTEMPTS="${REVDOKU_HTTP_RETRYABLE_CONFLICT_MAX_ATTEMPTS:-12}"
@@ -63,11 +63,14 @@ LOGIN="false"
 ACTION="store"
 PATH_TO_STORE=""
 PATH_EXPLICIT="false"
-MAILBOX_EXPLICIT="false"
+BUCKET_EXPLICIT="false"
 DRY_RUN="false"
 DELETE_CONFIRMATION=""
 WEBHOOK_URL=""
 ROTATE_SECRET="false"
+ACCESS_MODE=""
+PASSWORD_FILE=""
+SITE_PREVIEW="false"
 UPLOAD_MANIFEST=""
 UPLOAD_LOCAL_MAP=""
 SKIPPED_PATHS=""
@@ -75,7 +78,7 @@ READ_FILE_PATH=""
 EMAIL_ID=""
 EMAIL_USERNAME=""
 EMAIL_DOMAIN=""
-MAILBOX_TITLE=""
+BUCKET_TITLE=""
 EMAIL_ATTACHMENT_ID=""
 LIST_LIMIT=""
 LIST_CURSOR=""
@@ -95,15 +98,15 @@ EMAIL_TEXT=""
 EMAIL_TEXT_FILE=""
 EMAIL_HTML_FILE=""
 EMAIL_IN_REPLY_TO=""
-MAILBOX_LIST_STATUS="active"
-MAILBOX_LIST_QUERY=""
-MAILBOX_LIST_OPTIONS="false"
+BUCKET_LIST_STATUS="active"
+BUCKET_LIST_QUERY=""
+BUCKET_LIST_OPTIONS="false"
 OUTPUT_PATH=""
 SHOW_UPLOAD_HINT="false"
-# Project-local binding (.revdoku): remembers the mailbox so `revdoku upload`
-# updates the same stored files. Populated from the target dir, --mailbox-id overrides.
+# Project-local binding (.revdoku): remembers the bucket so `revdoku upload`
+# updates the same stored files. Populated from the target dir, --bucket-id overrides.
 REVDOKU_PROJECT_FILE=""
-BOUND_MAILBOX_ID=""
+BOUND_BUCKET_ID=""
 BINDING_EXISTED="false"
 LAST_HTTP_STATUS=""
 LAST_ERROR_CODE=""
@@ -142,7 +145,7 @@ validate_transfer_url() {
   [[ "$url" == https://*/* ]] || return 1
   rest="${url#https://}"
   origin="https://${rest%%/*}"
-  "$JQ_BIN" -en --arg origin "$origin" '["https://revdoku-files-prod-eu-central-1.s3.eu-central-1.amazonaws.com"] | index($origin) != null' >/dev/null
+  "$JQ_BIN" -en --arg origin "$origin" '["https://revdoku-files-prod-eu-central-1.s3.eu-central-1.amazonaws.com","https://e7218dc0ebb367f99b93a6f839bcd717.eu.r2.cloudflarestorage.com"] | index($origin) != null' >/dev/null
 }
 
 validate_id() {
@@ -204,15 +207,15 @@ detect_agent_name() {
 
 usage() {
   cat <<USAGE
-revdoku: mailboxes for AI agents, with private file storage.
+revdoku: buckets with a mailbox, private files and a site.
 
 Usage: revdoku <command> [PATH] [options]
 
   upload PATH           Save the selected local file or folder (use . explicitly).
                         Opens browser sign-in when credentials are missing.
-  ls, list              List active mailboxes with titles, addresses and email counts.
-  create                Create a mailbox; optionally choose --username, --domain and --title.
-  o, open               Open this mailbox in the dashboard.
+  ls, list              List active buckets with titles, addresses and email counts.
+  create                Create a bucket; optionally choose --username, --domain and --title.
+  o, open               Open this bucket in the dashboard.
   st, status            Show connection and account status.
   login                 Sign in to an existing account in the browser.
   grant TOKEN           Use a one-time connection token from the web app.
@@ -225,17 +228,23 @@ Usage: revdoku <command> [PATH] [options]
   email-send            Send from this mailbox to allowed recipients. Does not retry.
   webhook               Show the mailbox webhook endpoint.
   webhook-set           Set --webhook-url HTTPS_URL; optionally --rotate-secret.
-  webhook-delete        Disable the webhook; requires --confirm-delete MAILBOX_ID.
+  webhook-delete        Disable the webhook; requires --confirm-delete BUCKET_ID.
   email-subscription    Get a short-lived WebSocket ticket for a running client.
-  files                 List mailbox files.
-  read PATH             Read a mailbox file; --output FILE saves it locally.
+  files                 List bucket files.
+  read PATH             Read a bucket file; --output FILE saves it locally.
   versions PATH         List one file's versions (PATH or a df_ file ID).
   restore PATH          Restore one file version; requires --version-id ID.
   append PATH           Append text; --content TEXT or --content-file FILE.
-  archive | unarchive    Manage a mailbox.
-  delete                Preview permanent deletion; requires explicit account/mailbox.
+  archive | unarchive    Manage a bucket.
+  publish               Publish the bucket's files as its site, where the account can publish.
+                        Optional --access-mode public|password|require_email and
+                        --password-file FILE (- reads stdin). Does not retry.
+  preview               Make a 24-hour preview with the same options.
+  site                  Show the site: URL, build state and access; --preview for the preview.
+  unpublish             Take the site down.
+  delete                Preview permanent deletion; requires explicit account/bucket.
   accounts              List accounts granted to this credential.
-  account limits                 Read effective mailbox and storage quotas
+  account limits                 Read effective bucket and storage quotas
   account get ID        Read one granted account.
   account               Account identity and effective limits.
   account create-client NAME     Create a client account within an authorized agency.
@@ -246,9 +255,9 @@ Options:
                         AI agents should explain intentional reads and changes.
   --account-id ID       Select a granted account for this command.
   --client-name NAME    Client person or business (account create-client).
-  --mailbox-id ID        Target mailbox; overrides the local .revdoku binding.
-  --status active|archived|all          Mailbox list filter (default: active).
-  --query TEXT                        Mailbox title, address or ID filter (ls).
+  --bucket-id ID        Target bucket; overrides the local .revdoku binding.
+  --status active|archived|all          Bucket list filter (default: active).
+  --query TEXT                        Bucket title, address or ID filter (ls).
   --limit N   --cursor CURSOR          List page size (maximum 200) and next page.
                                        Use pagination.next_cursor from the last page.
   --sender ADDRESS     --subject TEXT  Email filters.
@@ -261,14 +270,14 @@ Options:
                                        mailbox and passed sender authentication.
   --subject TEXT                       email-send subject (optional for replies).
   --text TEXT | --text-file PATH       email-send plain-text body (- reads stdin).
-  --html-file PATH     --attach FILE_ID   Optional HTML body; attach mailbox files.
+  --html-file PATH     --attach FILE_ID   Optional HTML body; attach bucket files.
   --read true|false                    Email filter or desired read status.
   --add-label NAME  --remove-label NAME  email-status: custom labels; repeat (10 maximum).
   --attachment-id ID   --output FILE   Download a selected email attachment.
   --version-id ID                      File version for read or restore.
   --description TEXT   --metadata JSON
-  --username NAME      --domain HOST          Mailbox creation address options.
-  --title TEXT                                Mailbox title for create (default: the username).
+  --username NAME      --domain HOST          Bucket creation address options.
+  --title TEXT                                Bucket title for create (default: the username).
   --dry-run            Preview an upload locally, without network requests.
   --confirm-delete TOKEN  Execute a reviewed deletion preview (expires in 10 minutes).
   --api-key KEY        API credential (or REVDOKU_API_KEY / $CREDENTIALS_PATH).
@@ -279,8 +288,8 @@ Options:
 
 Examples:
   revdoku upload ./project-files
-  revdoku files --mailbox-id bkt_...
-  revdoku read notes.md --mailbox-id bkt_... --reason "Review project decisions"
+  revdoku files --bucket-id bkt_...
+  revdoku read notes.md --bucket-id bkt_... --reason "Review project decisions"
   revdoku dashboard
 
 Plans: https://app.revdoku.com/pricing
@@ -306,6 +315,13 @@ while [[ $# -gt 0 ]]; do
       [[ $# -ge 2 ]] || die "--webhook-url requires a value"
       WEBHOOK_URL="$2"; shift 2 ;;
     --rotate-secret) ROTATE_SECRET="true"; shift ;;
+    --access-mode)
+      [[ $# -ge 2 && "$2" =~ ^(public|password|require_email)$ ]] || die "--access-mode must be public, password or require_email"
+      ACCESS_MODE="$2"; shift 2 ;;
+    --password-file)
+      [[ $# -ge 2 ]] || die "--password-file requires a path, or - for standard input"
+      PASSWORD_FILE="$2"; shift 2 ;;
+    --preview) SITE_PREVIEW="true"; shift ;;
     --url)
       [[ $# -ge 2 ]] || die "--url requires a value"
       BASE_URL="$2"
@@ -326,7 +342,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --title)
       [[ $# -ge 2 && -n "$2" ]] || die "--title requires a value"
-      MAILBOX_TITLE="$2"
+      BUCKET_TITLE="$2"
       shift 2
       ;;
     --account-id)
@@ -339,20 +355,20 @@ while [[ $# -gt 0 ]]; do
       CLIENT_DISPLAY_NAME="$2"
       shift 2
       ;;
-    --mailbox-id)
-      [[ $# -ge 2 ]] || die "--mailbox-id requires a value"
-      MAILBOX_ID="$2"
-      MAILBOX_EXPLICIT="true"
+    --bucket-id)
+      [[ $# -ge 2 ]] || die "--bucket-id requires a value"
+      BUCKET_ID="$2"
+      BUCKET_EXPLICIT="true"
       shift 2
       ;;
     --status|--query)
       [[ $# -ge 2 && -n "$2" ]] || die "$1 requires a value"
       if [[ "$1" == "--status" ]]; then
-        case "$2" in active|archived|all) MAILBOX_LIST_STATUS="$2" ;; *) die "--status must be active, archived or all" ;; esac
+        case "$2" in active|archived|all) BUCKET_LIST_STATUS="$2" ;; *) die "--status must be active, archived or all" ;; esac
       else
-        MAILBOX_LIST_QUERY="$2"
+        BUCKET_LIST_QUERY="$2"
       fi
-      MAILBOX_LIST_OPTIONS="true"
+      BUCKET_LIST_OPTIONS="true"
       shift 2
       ;;
     --cursor|--limit|--sender|--subject|--conversation-id|--read|--attachment-id|--version-id)
@@ -380,7 +396,7 @@ while [[ $# -gt 0 ]]; do
         --add-label) EMAIL_ADD_LABELS+="$2"$'\n' ;;
         --remove-label) EMAIL_REMOVE_LABELS+="$2"$'\n' ;;
         --cc) EMAIL_CC+="$2"$'\n' ;;
-        --attach) [[ "$2" =~ ^df_[A-Za-z0-9]+$ ]] || die "--attach requires a mailbox file id"; EMAIL_ATTACHMENTS+="$2"$'\n' ;;
+        --attach) [[ "$2" =~ ^df_[A-Za-z0-9]+$ ]] || die "--attach requires a bucket file id"; EMAIL_ATTACHMENTS+="$2"$'\n' ;;
         --in-reply-to) [[ "$2" =~ ^eml_[A-Za-z0-9]+$ ]] || die "--in-reply-to requires an email id"; EMAIL_IN_REPLY_TO="$2" ;;
         --direction) [[ "$2" =~ ^(received|sent|all)$ ]] || die "--direction must be received, sent or all"; EMAIL_DIRECTION="$2" ;;
         --text) EMAIL_TEXT="$2" ;;
@@ -469,11 +485,13 @@ while [[ $# -gt 0 ]]; do
         VERB_SEEN="true"
         case "$1" in
           upload|put)     shift ;;
-          p|publish|down|unpublish|preview|sites|analytics|i|init)
-            die "This command is unavailable. Use revdoku --help for storage commands." ;;
-          ls|list)        ACTION="list_mailboxes"; shift ;;
+          publish|preview|site) ACTION="$1"; shift ;;
+          unpublish|down) ACTION="unpublish"; shift ;;
+          p|sites|analytics|i|init)
+            die "This command is unavailable. Use revdoku --help for the available commands." ;;
+          ls|list)        ACTION="list_buckets"; shift ;;
           accounts)       ACTION="list_accounts"; shift ;;
-          create)         ACTION="create_mailbox"; shift ;;
+          create)         ACTION="create_bucket"; shift ;;
           o|open)         ACTION="open_dashboard"; shift ;;
           st|status)      ACTION="connection_status"; shift ;;
           login)          LOGIN="true"; shift ;;
@@ -486,13 +504,13 @@ while [[ $# -gt 0 ]]; do
             ACTION="$1"; EMAIL_ID="$2"; shift 2 ;;
           files)          ACTION="list_files"; shift ;;
           mailbox)          ACTION="mailbox_status"; shift ;;
-          read)           [[ $# -ge 2 && "$2" != -* ]] || die "read needs a mailbox PATH right after it, e.g. revdoku read notes.md --mailbox-id ID"; ACTION="read_file"; READ_FILE_PATH="$2"; shift 2 ;;
-          versions)       [[ $# -ge 2 && "$2" != -* ]] || die "versions needs a mailbox PATH right after it, e.g. revdoku versions notes.md --mailbox-id ID"; ACTION="list_versions"; READ_FILE_PATH="$2"; shift 2 ;;
-          restore)        [[ $# -ge 2 && "$2" != -* ]] || die "restore needs a mailbox PATH right after it, e.g. revdoku restore notes.md --version-id ID --mailbox-id ID"; ACTION="restore_version"; READ_FILE_PATH="$2"; shift 2 ;;
-          append)         [[ $# -ge 2 && "$2" != -* ]] || die "append needs a mailbox PATH right after it, e.g. revdoku append leads.csv --mailbox-id ID --content-file new.csv"; ACTION="append_text_file"; APPEND_TEXT_PATH="$2"; shift 2 ;;
-          archive)        ACTION="archive_mailbox"; shift ;;
-          unarchive)      ACTION="unarchive_mailbox"; shift ;;
-          delete)         ACTION="delete_mailbox"; shift ;;
+          read)           [[ $# -ge 2 && "$2" != -* ]] || die "read needs a bucket PATH right after it, e.g. revdoku read notes.md --bucket-id ID"; ACTION="read_file"; READ_FILE_PATH="$2"; shift 2 ;;
+          versions)       [[ $# -ge 2 && "$2" != -* ]] || die "versions needs a bucket PATH right after it, e.g. revdoku versions notes.md --bucket-id ID"; ACTION="list_versions"; READ_FILE_PATH="$2"; shift 2 ;;
+          restore)        [[ $# -ge 2 && "$2" != -* ]] || die "restore needs a bucket PATH right after it, e.g. revdoku restore notes.md --version-id ID --bucket-id ID"; ACTION="restore_version"; READ_FILE_PATH="$2"; shift 2 ;;
+          append)         [[ $# -ge 2 && "$2" != -* ]] || die "append needs a bucket PATH right after it, e.g. revdoku append leads.csv --bucket-id ID --content-file new.csv"; ACTION="append_text_file"; APPEND_TEXT_PATH="$2"; shift 2 ;;
+          archive)        ACTION="archive_bucket"; shift ;;
+          unarchive)      ACTION="unarchive_bucket"; shift ;;
+          delete)         ACTION="delete_bucket"; shift ;;
           account)
             shift
             if [[ "${1:-}" == "create-client" ]]; then
@@ -548,7 +566,7 @@ if [[ "$ACTION" == "store" && "$LOGIN" != "true" && "$PATH_EXPLICIT" != "true" ]
   die "upload requires an explicit PATH; use 'revdoku upload .' for this folder"
 fi
 [[ "$DRY_RUN" != "true" || ( "$ACTION" == "store" && "$LOGIN" != "true" ) ]] || die "--dry-run is only available with upload PATH"
-[[ -z "$DELETE_CONFIRMATION" || "$ACTION" == "delete_mailbox" || "$ACTION" == "email-delete" || "$ACTION" == "webhook-delete" ]] || die "--confirm-delete is only available with delete, email-delete or webhook-delete"
+[[ -z "$DELETE_CONFIRMATION" || "$ACTION" == "delete_bucket" || "$ACTION" == "email-delete" || "$ACTION" == "webhook-delete" ]] || die "--confirm-delete is only available with delete, email-delete or webhook-delete"
 if [[ ( -n "$WEBHOOK_URL" || "$ROTATE_SECRET" == "true" ) && "$ACTION" != "webhook-set" ]]; then
   die "--webhook-url and --rotate-secret require webhook-set"
 fi
@@ -557,11 +575,11 @@ if [[ -n "$EMAIL_TO$EMAIL_CC$EMAIL_ATTACHMENTS$EMAIL_IN_REPLY_TO$EMAIL_TEXT$EMAI
 fi
 [[ -z "$EMAIL_DIRECTION" || "$ACTION" == "list_emails" ]] || die "--direction requires emails"
 [[ -z "$EMAIL_ADD_LABELS$EMAIL_REMOVE_LABELS" || "$ACTION" == "email-status" ]] || die "--add-label and --remove-label require email-status"
-if [[ "$MAILBOX_LIST_OPTIONS" == "true" && "$ACTION" != "list_mailboxes" ]]; then
+if [[ "$BUCKET_LIST_OPTIONS" == "true" && "$ACTION" != "list_buckets" ]]; then
   die "--status and --query require ls or list"
 fi
 case "$ACTION" in
-  list_mailboxes|list_files|list_emails|list_versions) ;;
+  list_buckets|list_files|list_emails|list_versions) ;;
   *) [[ -z "$LIST_LIMIT$LIST_CURSOR" ]] || die "--limit and --cursor require ls, files, emails or versions" ;;
 esac
 if [[ "$ACTION" == "restore_version" ]]; then
@@ -570,14 +588,14 @@ if [[ "$ACTION" == "restore_version" ]]; then
 elif [[ -n "$VERSION_ID" && "$ACTION" != "read_file" ]]; then
   die "--version-id requires read or restore"
 fi
-if [[ -n "$EMAIL_USERNAME$EMAIL_DOMAIN" && "$ACTION" != "create_mailbox" ]]; then
+if [[ -n "$EMAIL_USERNAME$EMAIL_DOMAIN" && "$ACTION" != "create_bucket" ]]; then
   die "--username and --domain require create"
 fi
-if [[ -n "$MAILBOX_TITLE" && "$ACTION" != "create_mailbox" ]]; then
+if [[ -n "$BUCKET_TITLE" && "$ACTION" != "create_bucket" ]]; then
   die "--title requires create"
 fi
-if [[ "$ACTION" == "delete_mailbox" ]]; then
-  [[ "$MAILBOX_EXPLICIT" == "true" && -n "$MAILBOX_ID" && -n "$ACCOUNT_ID" ]] || die "delete requires explicit --account-id and --mailbox-id"
+if [[ "$ACTION" == "delete_bucket" ]]; then
+  [[ "$BUCKET_EXPLICIT" == "true" && -n "$BUCKET_ID" && -n "$ACCOUNT_ID" ]] || die "delete requires explicit --account-id and --bucket-id"
 fi
 [[ -n "$AGENT_NAME" ]] || AGENT_NAME="$(detect_agent_name)"
 
@@ -608,13 +626,17 @@ if [[ -z "$API_KEY" && -f "$CREDENTIALS_PATH" ]]; then
   fi
 fi
 
-if [[ -z "$MAILBOX_ID" && "$API_KEY_FROM_CREDENTIALS" == "true" && -f "$DEFAULT_MAILBOX_PATH" ]]; then
-  [[ ! -L "$DEFAULT_MAILBOX_PATH" ]] || die "refusing symlink mailbox selection"
-  MAILBOX_ID="$(tr -d '\r\n' < "$DEFAULT_MAILBOX_PATH")"
+if [[ -z "$BUCKET_ID" && "$API_KEY_FROM_CREDENTIALS" == "true" && -f "$DEFAULT_BUCKET_PATH" ]]; then
+  [[ ! -L "$DEFAULT_BUCKET_PATH" ]] || die "refusing symlink bucket selection"
+  BUCKET_ID="$(tr -d '\r\n' < "$DEFAULT_BUCKET_PATH")"
 fi
 
-# A .revdoku file binds this folder to a mailbox for upload/read commands.
-# An explicit --mailbox-id takes precedence. The binding is excluded from uploads.
+# Earlier releases read REVDOKU_MAILBOX_ID. Stop rather than create a new bucket.
+if [[ -n "${REVDOKU_MAILBOX_ID:-}" && -z "${REVDOKU_BUCKET_ID:-}" && "$BUCKET_EXPLICIT" != "true" ]]; then
+  die "Rename REVDOKU_MAILBOX_ID to REVDOKU_BUCKET_ID, or use --bucket-id."
+fi
+# A .revdoku file binds this folder to a bucket for upload/read commands.
+# An explicit --bucket-id takes precedence. The binding is excluded from uploads.
 if [[ -d "$PATH_TO_STORE" || ! -e "$PATH_TO_STORE" ]]; then
   REVDOKU_PROJECT_FILE="${PATH_TO_STORE%/}/.revdoku"
 else
@@ -623,15 +645,16 @@ fi
 [[ ! -L "$REVDOKU_PROJECT_FILE" ]] || die "refusing symlink project binding"
 if [[ -f "$REVDOKU_PROJECT_FILE" ]]; then
   BINDING_EXISTED="true"
-  if [[ "$MAILBOX_EXPLICIT" != "true" ]] && LC_ALL=C grep -q '^bucket_id=' "$REVDOKU_PROJECT_FILE"; then
-    die "Replace bucket_id with mailbox_id in .revdoku, or use --mailbox-id."
+  # Earlier releases wrote mailbox_id=. Stop rather than create a new bucket for this folder.
+  if [[ "$BUCKET_EXPLICIT" != "true" ]] && LC_ALL=C grep -q '^mailbox_id=' "$REVDOKU_PROJECT_FILE"; then
+    die "Replace mailbox_id with bucket_id in .revdoku, or use --bucket-id."
   fi
-  BOUND_MAILBOX_ID="$(sed -n 's/^mailbox_id=//p' "$REVDOKU_PROJECT_FILE" 2>/dev/null | head -n1 | tr -d '\r')"
+  BOUND_BUCKET_ID="$(sed -n 's/^bucket_id=//p' "$REVDOKU_PROJECT_FILE" 2>/dev/null | head -n1 | tr -d '\r')"
 fi
-if [[ -z "$MAILBOX_ID" && -n "$BOUND_MAILBOX_ID" ]]; then
-  MAILBOX_ID="$BOUND_MAILBOX_ID"
+if [[ -z "$BUCKET_ID" && -n "$BOUND_BUCKET_ID" ]]; then
+  BUCKET_ID="$BOUND_BUCKET_ID"
 fi
-[[ -z "$MAILBOX_ID" ]] || validate_id mailbox_id "$MAILBOX_ID"
+[[ -z "$BUCKET_ID" ]] || validate_id bucket_id "$BUCKET_ID"
 [[ -z "$ACCOUNT_ID" ]] || validate_id account_id "$ACCOUNT_ID"
 [[ -z "$VERSION_ID" ]] || validate_id version_id "$VERSION_ID"
 for header_value in "$API_KEY" "$AGENT_NAME" "$AGENT_CLIENT" "$AGENT_VERSION" "$AGENT_RUN_ID" "$AGENT_PROJECT" "$AGENT_TASK"; do
@@ -640,17 +663,17 @@ done
 # Persist (or refresh) the .revdoku binding for a directory project after a
 # successful upload. Silent unless it is the first time we bind.
 write_project_binding() {
-  local mailbox="$1" url="$2"
+  local bucket="$1" url="$2"
   [[ "${REVDOKU_WRITE_BINDING:-true}" == "true" ]] || return 0
-  [[ -n "$mailbox" && -n "$REVDOKU_PROJECT_FILE" ]] || return 0
+  [[ -n "$bucket" && -n "$REVDOKU_PROJECT_FILE" ]] || return 0
   [[ -d "$PATH_TO_STORE" ]] || return 0
   {
     printf '# Revdoku project binding — created by `revdoku upload`. Safe to commit or gitignore.\n'
-    printf 'mailbox_id=%s\n' "$mailbox"
+    printf 'bucket_id=%s\n' "$bucket"
     if [[ -n "$url" ]]; then printf 'url=%s\n' "$url"; fi
   } | atomic_private_write "$REVDOKU_PROJECT_FILE" || return 1
   if [[ "$BINDING_EXISTED" != "true" ]]; then
-    echo "Bound this folder to $mailbox (.revdoku). Next time just run: revdoku upload ." >&2
+    echo "Bound this folder to $bucket (.revdoku). Next time just run: revdoku upload ." >&2
     BINDING_EXISTED="true"
   fi
 }
@@ -682,8 +705,8 @@ APPEND_TEXT_NEWLINE_BEFORE="$(normalize_optional_bool "REVDOKU_APPEND_TEXT_NEWLI
 APPEND_TEXT_NEWLINE_BEFORE="${APPEND_TEXT_NEWLINE_BEFORE:-true}"
 
 if [[ "$ACTION" == "append_text_file" ]]; then
-  [[ -n "$MAILBOX_ID" ]] || die "append requires --mailbox-id"
-  [[ -n "$APPEND_TEXT_PATH" ]] || die "append requires a mailbox-relative PATH"
+  [[ -n "$BUCKET_ID" ]] || die "append requires --bucket-id"
+  [[ -n "$APPEND_TEXT_PATH" ]] || die "append requires a bucket-relative PATH"
   if [[ -n "$APPEND_TEXT_CONTENT" && -n "$APPEND_TEXT_CONTENT_FILE" ]]; then
     die "use either --content or --content-file with append, not both"
   fi
@@ -733,7 +756,7 @@ http_status_retryable() {
 
 http_error_code_retryable() {
   case "${1:-}" in
-    DATABASE_BUSY_RETRY|MAILBOX_DELETE_BUSY|MAILBOX_DELETE_ENQUEUE_FAILED)
+    DATABASE_BUSY_RETRY|BUCKET_DELETE_BUSY|BUCKET_DELETE_ENQUEUE_FAILED)
       return 0
       ;;
     *)
@@ -845,12 +868,13 @@ http_json() {
   local HTTP_TRANSIENT_MAX_ATTEMPTS="$HTTP_TRANSIENT_MAX_ATTEMPTS"
   [[ "$method" != "DELETE" ]] || HTTP_TRANSIENT_MAX_ATTEMPTS=0
   # Creation has no replay key. A lost or failed response may follow a commit.
-  if [[ "$method" == "POST" && "$path" == "/api/v1/mailboxes" ]]; then
+  if [[ "$method" == "POST" && "$path" == "/api/v1/buckets" ]]; then
     HTTP_TRANSIENT_MAX_ATTEMPTS=0
   fi
-  # Never send an email twice. Rate limits also return without a retry.
+  # Never send an email or a publish twice: a publish may already be queued and charged after a
+  # lost response. Rate limits also return without a retry (the hourly publish limit waits an hour).
   local send_once="false"
-  if [[ "$method" == "POST" && "$path" =~ ^/api/v1/mailboxes/[^/?]+/emails$ ]]; then
+  if [[ "$method" == "POST" && "$path" =~ ^/api/v1/buckets/[^/?]+/(mailbox/emails|publication(/preview)?)$ ]]; then
     HTTP_TRANSIENT_MAX_ATTEMPTS=0
     send_once="true"
   fi
@@ -937,7 +961,7 @@ http_json() {
     retry_after="$("$JQ_BIN" -r '.error.details.retry_after // empty' "$body_file" 2>/dev/null || true)"
     details_json="$("$JQ_BIN" -c '.error.details // {}' "$body_file" 2>/dev/null || printf '{}')"
 
-    # Plan limits also answer 429 (for example MAILBOX_CREATION_LIMIT_REACHED); only rate limits clear on retry.
+    # Plan limits also answer 429 (for example BUCKET_CREATION_LIMIT_REACHED); only rate limits clear on retry.
     if [[ "$method" != "DELETE" && "$send_once" != "true" && "$status" == "429" && "$attempt" -lt 20 ]] &&
       [[ -z "$code" || "$code" == *RATE_LIMIT* ]]; then
       [[ "$retry_after" =~ ^[0-9]+$ && "$retry_after" -gt 0 ]] || retry_after=5
@@ -955,7 +979,7 @@ http_json() {
       continue
     fi
 
-    if [[ "$status" == "423" && ( "$code" == "MAILBOX_LOCKED" || "$code" == "FILE_LOCKED" ) ]] && http_lock_retry_allowed "$method" "$path" && (( attempt < HTTP_LOCK_MAX_ATTEMPTS )); then
+    if [[ "$status" == "423" && ( "$code" == "BUCKET_LOCKED" || "$code" == "FILE_LOCKED" ) ]] && http_lock_retry_allowed "$method" "$path" && (( attempt < HTTP_LOCK_MAX_ATTEMPTS )); then
       attempt=$((attempt + 1))
       delay="$(retry_delay_for_attempt "$attempt" "$retry_after")"
       echo "Locked while calling $path ($(lock_detail_summary "$details_json")); retrying in ${delay}s (${attempt}/${HTTP_LOCK_MAX_ATTEMPTS})..." >&2
@@ -982,12 +1006,12 @@ http_json() {
     echo "error: $message" >&2
     upgrade_url="$("$JQ_BIN" -r '.upgrade_url? // empty | strings | select(test("^https?://[^\\s\\p{Cc}]+$"))' <<<"$details_json" 2>/dev/null || true)"
     [[ -z "$upgrade_url" ]] || echo "Upgrade: $upgrade_url" >&2
-    if [[ "$status" == "423" && ( "$code" == "MAILBOX_LOCKED" || "$code" == "FILE_LOCKED" ) ]]; then
+    if [[ "$status" == "423" && ( "$code" == "BUCKET_LOCKED" || "$code" == "FILE_LOCKED" ) ]]; then
       echo "Lock details: $(lock_detail_summary "$details_json")" >&2
     fi
     if [[ "$auth" == "true" ]]; then
       if [[ "$code" == "ACCOUNT_ACCESS_UNAVAILABLE" ]]; then
-        echo "This connection uses mailbox-scoped agent credentials, which cannot read account-level status. Verify the connection with 'revdoku status', or open Revdoku in a browser for account details." >&2
+        echo "This connection uses bucket-scoped agent credentials, which cannot read account-level status. Verify the connection with 'revdoku status', or open Revdoku in a browser for account details." >&2
       elif [[ "$status" == "401" || "$status" == "403" ]]; then
         echo "Run 'revdoku login' to reconnect and save a fresh Revdoku API key." >&2
       fi
@@ -1057,7 +1081,7 @@ save_api_key() {
   [[ -n "$key" ]] || die "API key is required"
   [[ "$key" != *[[:cntrl:]]* ]] || die "invalid credential"
   printf "%s\n" "$key" | atomic_private_write "$CREDENTIALS_PATH" || return 1
-  rm -f "$DEFAULT_MAILBOX_PATH"
+  rm -f "$DEFAULT_BUCKET_PATH"
   echo "Saved Revdoku API key to $CREDENTIALS_PATH" >&2
   echo "This is a one-time setup. Future runs will reuse the saved key automatically." >&2
   API_KEY="$key"
@@ -1078,12 +1102,12 @@ open_browser_url() {
   return 1
 }
 
-# Open the selected mailbox in the authenticated dashboard.
+# Open the selected bucket in the authenticated dashboard.
 open_dashboard() {
-  if [[ -n "$MAILBOX_ID" ]]; then
-    BROWSER_LOGIN_PATH="/mailboxes/view?id=$MAILBOX_ID"
+  if [[ -n "$BUCKET_ID" ]]; then
+    BROWSER_LOGIN_PATH="/buckets/view?id=$BUCKET_ID"
   else
-    BROWSER_LOGIN_PATH="/mailboxes"
+    BROWSER_LOGIN_PATH="/buckets"
   fi
   browser_login_link
 }
@@ -1189,7 +1213,7 @@ request_email_agent_key() {
   code="$(prompt_read "Code: ")"
   [[ -n "$code" ]] || die "code is required"
 
-  payload="$("$JQ_BIN" -nc --arg email "$email" --arg code "$code" '{email:$email, code:$code, label:"Revdoku mailbox client"}')"
+  payload="$("$JQ_BIN" -nc --arg email "$email" --arg code "$code" '{email:$email, code:$code, label:"Revdoku CLI"}')"
   if ! response="$(http_json POST "/api/v1/agent_auth/verify_code" "$payload" false)"; then
     die "Could not verify the code. If no code arrived or the code is rejected, use 'revdoku login' and complete browser device sign-in."
   fi
@@ -1262,15 +1286,15 @@ query_string() {
     | map(select(.value != "") | (.key + "=" + (.value | @uri))) | join("&")' --args "$@"
 }
 
-list_mailboxes() {
-  http_json GET "/api/v1/mailboxes?$(query_string status "$MAILBOX_LIST_STATUS" q "$MAILBOX_LIST_QUERY" limit "$LIST_LIMIT" cursor "$LIST_CURSOR")" "{}"
+list_buckets() {
+  http_json GET "/api/v1/buckets?$(query_string status "$BUCKET_LIST_STATUS" q "$BUCKET_LIST_QUERY" limit "$LIST_LIMIT" cursor "$LIST_CURSOR")" "{}"
 }
 
 list_files() {
-  [[ -n "$MAILBOX_ID" ]] || die "files requires --mailbox-id (or a remembered selected mailbox)"
+  [[ -n "$BUCKET_ID" ]] || die "files requires --bucket-id (or a remembered selected bucket)"
   local query
   query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
-  http_json GET "/api/v1/mailboxes/${MAILBOX_ID}/files${query:+?$query}" "{}"
+  http_json GET "/api/v1/buckets/${BUCKET_ID}/files${query:+?$query}" "{}"
 }
 
 # Prints the ID of the current file at READ_FILE_PATH, or the given df_ file ID.
@@ -1280,34 +1304,34 @@ file_id_for_path() {
     printf '%s' "$READ_FILE_PATH"
     return 0
   fi
-  response="$(http_json GET "/api/v1/mailboxes/${MAILBOX_ID}/files/by_path?$(query_string path "$READ_FILE_PATH")" "{}")" || return 1
+  response="$(http_json GET "/api/v1/buckets/${BUCKET_ID}/files/by_path?$(query_string path "$READ_FILE_PATH")" "{}")" || return 1
   id="$("$JQ_BIN" -r '.data.file.id // empty' <<<"$response")"
   validate_id file_id "$id"
   printf '%s' "$id"
 }
 
 list_versions() {
-  [[ -n "$MAILBOX_ID" ]] || die "versions requires --mailbox-id"
+  [[ -n "$BUCKET_ID" ]] || die "versions requires --bucket-id"
   local file_id query
   file_id="$(file_id_for_path)" || return 1
   query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
-  http_json GET "/api/v1/mailboxes/${MAILBOX_ID}/files/${file_id}/versions${query:+?$query}" "{}"
+  http_json GET "/api/v1/buckets/${BUCKET_ID}/files/${file_id}/versions${query:+?$query}" "{}"
 }
 
 restore_version() {
-  [[ -n "$MAILBOX_ID" ]] || die "restore requires --mailbox-id"
+  [[ -n "$BUCKET_ID" ]] || die "restore requires --bucket-id"
   local file_id
   file_id="$(file_id_for_path)" || return 1
-  http_json POST "/api/v1/mailboxes/${MAILBOX_ID}/files/${file_id}/versions/${VERSION_ID}/restore" "{}"
+  http_json POST "/api/v1/buckets/${BUCKET_ID}/files/${file_id}/versions/${VERSION_ID}/restore" "{}"
 }
 
 # Content reads use a temporary link. Downloading marks the version read.
 read_file() {
-  [[ -n "$MAILBOX_ID" && -n "$READ_FILE_PATH" ]] || die "read requires a mailbox and PATH"
+  [[ -n "$BUCKET_ID" && -n "$READ_FILE_PATH" ]] || die "read requires a bucket and PATH"
   local file_id query response
   file_id="$(file_id_for_path)" || return 1
   query="$(query_string version_id "$VERSION_ID")"
-  response="$(http_json GET "/api/v1/mailboxes/${MAILBOX_ID}/files/${file_id}/download${query:+?$query}" "{}")" || return 1
+  response="$(http_json GET "/api/v1/buckets/${BUCKET_ID}/files/${file_id}/download${query:+?$query}" "{}")" || return 1
   download_link "$response" "$READ_FILE_PATH"
 }
 
@@ -1365,8 +1389,8 @@ download_file_url() {
 }
 
 email_command() {
-  [[ -n "$MAILBOX_ID" ]] || die "email commands require --mailbox-id or a bound folder"
-  local path="/api/v1/mailboxes/${MAILBOX_ID}/emails" query response
+  [[ -n "$BUCKET_ID" ]] || die "email commands require --bucket-id or a bound folder"
+  local path="/api/v1/buckets/${BUCKET_ID}/mailbox/emails" query response
   if [[ "$ACTION" == "list_emails" ]]; then
     query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR" direction "$EMAIL_DIRECTION" sender "$EMAIL_SENDER" \
       subject "$EMAIL_SUBJECT" conversation_id "$EMAIL_CONVERSATION" read "$EMAIL_READ")"
@@ -1439,27 +1463,27 @@ send_email() {
   if ! http_json POST "$path" "$payload"; then
     # EMAIL_LABELING_PENDING refuses the send before anything is stored.
     if [[ -z "$LAST_HTTP_STATUS" || "$LAST_HTTP_STATUS" == 5* ]] && [[ "$LAST_ERROR_CODE" != "EMAIL_LABELING_PENDING" ]]; then
-      echo "The send result is unknown. Do not send again until 'revdoku emails --direction sent --mailbox-id $MAILBOX_ID' confirms it was not sent." >&2
+      echo "The send result is unknown. Do not send again until 'revdoku emails --direction sent --bucket-id $BUCKET_ID' confirms it was not sent." >&2
     fi
     return 1
   fi
 }
 
-create_mailbox() {
+create_bucket() {
   local payload
-  payload="$("$JQ_BIN" -nc --arg description "$DESCRIPTION" --arg title "$MAILBOX_TITLE" \
+  payload="$("$JQ_BIN" -nc --arg description "$DESCRIPTION" --arg title "$BUCKET_TITLE" \
     --arg username "$EMAIL_USERNAME" --arg domain "$EMAIL_DOMAIN" \
     --argjson metadata "$METADATA_JSON" \
-    '{mailbox: (({title:$title,description:$description} | with_entries(select(.value != ""))) +
+    '{bucket: (({title:$title,description:$description} | with_entries(select(.value != ""))) +
       (if ($metadata | length) > 0 then {metadata: $metadata} else {} end) +
-      {email: ({username:$username,domain:$domain} | with_entries(select(.value != "")))})}')"
-  http_json POST "/api/v1/mailboxes" "$payload"
+      {mailbox: ({username:$username,domain:$domain} | with_entries(select(.value != "")))})}')"
+  http_json POST "/api/v1/buckets" "$payload"
 }
 
 append_text_file() {
   local content_file tmp_content payload response path
-  [[ -n "$MAILBOX_ID" ]] || die "append requires --mailbox-id"
-  [[ -n "$APPEND_TEXT_PATH" ]] || die "append requires a mailbox-relative PATH"
+  [[ -n "$BUCKET_ID" ]] || die "append requires --bucket-id"
+  [[ -n "$APPEND_TEXT_PATH" ]] || die "append requires a bucket-relative PATH"
 
   tmp_content=""
   if [[ -n "$APPEND_TEXT_CONTENT_FILE" ]]; then
@@ -1487,7 +1511,7 @@ append_text_file() {
     --arg path "$path" \
     --argjson newline_before "$APPEND_TEXT_NEWLINE_BEFORE" \
     '{path:$path, content: ., newline_before:$newline_before}' < "$content_file")"
-  if ! response="$(http_json POST "/api/v1/mailboxes/${MAILBOX_ID}/files/append_text" "$payload")"; then
+  if ! response="$(http_json POST "/api/v1/buckets/${BUCKET_ID}/files/append_text" "$payload")"; then
     [[ -z "$tmp_content" ]] || rm -f "$tmp_content"
     return 1
   fi
@@ -1495,18 +1519,36 @@ append_text_file() {
   printf "%s\n" "$response"
 }
 
-archive_mailbox() {
-  [[ -n "$MAILBOX_ID" ]] || die "archive requires --mailbox-id"
-  http_json POST "/api/v1/mailboxes/${MAILBOX_ID}/archive" "{}"
+# The access settings of a publish or preview. The password comes from a file or
+# standard input, never from the command line.
+publish_request_body() {
+  local source="/dev/null"
+  if [[ -n "$PASSWORD_FILE" ]]; then
+    if [[ "$PASSWORD_FILE" == "-" ]]; then
+      source="/dev/stdin"
+    else
+      [[ -f "$PASSWORD_FILE" && ! -L "$PASSWORD_FILE" ]] || die "--password-file must be a regular file"
+      source="$PASSWORD_FILE"
+    fi
+  fi
+  # --rawfile keeps the password out of the process arguments.
+  "$JQ_BIN" -n --arg mode "$ACCESS_MODE" --rawfile password "$source" \
+    '($password | rtrimstr("\n") | rtrimstr("\r")) as $value
+     | (if $mode == "" then {} else {access_mode: $mode} end) + (if $value == "" then {} else {password: $value} end)'
 }
 
-unarchive_mailbox() {
-  [[ -n "$MAILBOX_ID" ]] || die "unarchive requires --mailbox-id"
-  http_json POST "/api/v1/mailboxes/${MAILBOX_ID}/unarchive" "{}"
+archive_bucket() {
+  [[ -n "$BUCKET_ID" ]] || die "archive requires --bucket-id"
+  http_json POST "/api/v1/buckets/${BUCKET_ID}/archive" "{}"
 }
 
-delete_mailbox() {
-  local mailbox_response account_response state token directory path claimed now expires payload response
+unarchive_bucket() {
+  [[ -n "$BUCKET_ID" ]] || die "unarchive requires --bucket-id"
+  http_json POST "/api/v1/buckets/${BUCKET_ID}/unarchive" "{}"
+}
+
+delete_bucket() {
+  local bucket_response account_response state token directory path claimed now expires payload response
   directory="$REVDOKU_CONFIG_DIR/delete-confirmations"
   [[ ! -L "$directory" ]] || die "refusing symlink confirmation storage"
   if [[ -d "$directory" ]]; then
@@ -1517,27 +1559,27 @@ delete_mailbox() {
     [[ "$DELETE_CONFIRMATION" =~ ^[a-f0-9]{64}$ ]] || die "invalid deletion preview token"
     path="$directory/$DELETE_CONFIRMATION.json"
     [[ -f "$path" && ! -L "$path" ]] || die "deletion preview is missing or already consumed"
-    "$JQ_BIN" -e --argjson now "$now" --arg origin "$BASE_URL" --arg account "$ACCOUNT_ID" --arg mailbox "$MAILBOX_ID" \
-      '.expires_at > $now and .state.origin == $origin and .state.account.id == $account and .state.mailbox.id == $mailbox' "$path" >/dev/null || die "deletion preview expired or targets differ; preview again"
+    "$JQ_BIN" -e --argjson now "$now" --arg origin "$BASE_URL" --arg account "$ACCOUNT_ID" --arg bucket "$BUCKET_ID" \
+      '.expires_at > $now and .state.origin == $origin and .state.account.id == $account and .state.bucket.id == $bucket' "$path" >/dev/null || die "deletion preview expired or targets differ; preview again"
   fi
-  mailbox_response="$(http_json GET "/api/v1/mailboxes/${MAILBOX_ID}" "{}")" || return 1
+  bucket_response="$(http_json GET "/api/v1/buckets/${BUCKET_ID}" "{}")" || return 1
   account_response="$(http_json GET "/api/v1/accounts/${ACCOUNT_ID}" "{}")" || return 1
   # The preview binds the confirmation to the file-tree version, the settings
   # version and the counts. Any change between preview and confirm stops it.
-  state="$(printf '%s\n%s\n' "$mailbox_response" "$account_response" | "$JQ_BIN" -csS --arg origin "$BASE_URL" '
-    .[0].data.mailbox as $b | .[1].data.account as $account |
+  state="$(printf '%s\n%s\n' "$bucket_response" "$account_response" | "$JQ_BIN" -csS --arg origin "$BASE_URL" '
+    .[0].data.bucket as $b | .[1].data.account as $account |
     if (($b.metadata_version | type == "string" and length > 0) and
         ($b | has("version_id")) and ($b.version_id | . == null or type == "string") and
         ($b.version_number | type == "number") and ($b.files_count | type == "number")) | not
-    then error("Incomplete mailbox deletion state; update the client or review in the dashboard") else
+    then error("Incomplete bucket deletion state; update the client or review in the dashboard") else
     {origin:$origin, account:($account | {id,name}),
-     mailbox:($b | {id, email:{address:.email.address}, account_id, archived, archived_at, metadata_version,
+     bucket:($b | {id, mailbox:{address:.mailbox.address}, account_id, archived, archived_at, metadata_version,
        version_id, version_number, files_count, storage_bytes, delete, dashboard_url})}
     end')" || return 1
-  "$JQ_BIN" -e --arg account "$ACCOUNT_ID" --arg mailbox "$MAILBOX_ID" '
-    .account.id == $account and .mailbox.id == $mailbox and
-    (.mailbox.account_id == null or .mailbox.account_id == $account) and
-    .mailbox.archived == true and .mailbox.delete.allowed == true and (.mailbox.delete.confirmation | type == "string" and length > 0)' <<<"$state" >/dev/null || die "mailbox is not eligible for deletion in the selected account; review its action guidance in the dashboard"
+  "$JQ_BIN" -e --arg account "$ACCOUNT_ID" --arg bucket "$BUCKET_ID" '
+    .account.id == $account and .bucket.id == $bucket and
+    (.bucket.account_id == null or .bucket.account_id == $account) and
+    .bucket.archived == true and .bucket.delete.allowed == true and (.bucket.delete.confirmation | type == "string" and length > 0)' <<<"$state" >/dev/null || die "bucket is not eligible for deletion in the selected account; review its action guidance in the dashboard"
 
   if [[ -z "$DELETE_CONFIRMATION" ]]; then
     mkdir -p -- "$directory"
@@ -1549,23 +1591,23 @@ delete_mailbox() {
     "$JQ_BIN" -cn --argjson state "$state" --argjson expires "$expires" \
       '{state:$state,expires_at:$expires}' | atomic_private_write "$directory/$token.json"
     "$JQ_BIN" -cn --argjson state "$state" --arg token "$token" --argjson expires "$expires" \
-      '$state | del(.mailbox.delete.confirmation) | {success:true, data:(. + {
+      '$state | del(.bucket.delete.confirmation) | {success:true, data:(. + {
         preview:true, irreversible:true, confirmation_token:$token, expires_at:$expires,
-        dashboard_url:.mailbox.dashboard_url,
-        notice:"Permanently deletes this mailbox, its emails, files and versions. Obtain user approval for this exact target before --confirm-delete."})}'
+        dashboard_url:.bucket.dashboard_url,
+        notice:"Permanently deletes this bucket, its emails, files and versions. Obtain user approval for this exact target before --confirm-delete."})}'
     return 0
   fi
 
-  "$JQ_BIN" -e --argjson state "$state" --argjson now "$(date +%s)" '.state == $state and .expires_at > $now' "$path" >/dev/null || die "mailbox deletion state changed; preview again"
+  "$JQ_BIN" -e --argjson state "$state" --argjson now "$(date +%s)" '.state == $state and .expires_at > $now' "$path" >/dev/null || die "bucket deletion state changed; preview again"
   claimed="$(mktemp "$directory/.consumed.XXXXXX")"
   if ! mv "$path" "$claimed" 2>/dev/null; then
     rm -f "$claimed"
     die "deletion preview was already consumed"
   fi
   rm -f "$claimed"
-  payload="$("$JQ_BIN" -c '{confirmation:.mailbox.delete.confirmation}' <<<"$state")"
-  if ! response="$(http_json DELETE "/api/v1/mailboxes/${MAILBOX_ID}" "$payload")"; then
-    echo "Deletion was not confirmed. Check mailbox status before creating another preview; this token is consumed." >&2
+  payload="$("$JQ_BIN" -c '{confirmation:.bucket.delete.confirmation}' <<<"$state")"
+  if ! response="$(http_json DELETE "/api/v1/buckets/${BUCKET_ID}" "$payload")"; then
+    echo "Deletion was not confirmed. Check bucket status before creating another preview; this token is consumed." >&2
     return 1
   fi
   printf '%s\n' "$response"
@@ -1662,20 +1704,32 @@ maybe_notify_update() {
   fi
 }
 
-[[ "$DRY_RUN" == "true" || "$ACTION" == "delete_mailbox" ]] || maybe_notify_update || true
+[[ "$DRY_RUN" == "true" || "$ACTION" == "delete_bucket" ]] || maybe_notify_update || true
 
 case "$ACTION" in
   webhook|webhook-set|webhook-delete|email-subscription)
-    [[ "$MAILBOX_ID" =~ ^bkt_[A-Za-z0-9]+$ ]] || die "Provide --mailbox-id ID"
+    [[ "$BUCKET_ID" =~ ^bkt_[A-Za-z0-9]+$ ]] || die "Provide --bucket-id ID"
     case "$ACTION" in
-      webhook) http_json GET "/api/v1/mailboxes/$MAILBOX_ID/email/webhook" "{}" ;;
+      webhook) http_json GET "/api/v1/buckets/$BUCKET_ID/mailbox/webhook" "{}" ;;
       webhook-set)
         [[ -n "$WEBHOOK_URL" ]] || die "Provide --webhook-url HTTPS_URL"
-        http_json PUT "/api/v1/mailboxes/$MAILBOX_ID/email/webhook" "$("$JQ_BIN" -n --arg url "$WEBHOOK_URL" --argjson rotate "$ROTATE_SECRET" '{webhook_url:$url,rotate_secret:$rotate}')" ;;
+        http_json PUT "/api/v1/buckets/$BUCKET_ID/mailbox/webhook" "$("$JQ_BIN" -n --arg url "$WEBHOOK_URL" --argjson rotate "$ROTATE_SECRET" '{webhook_url:$url,rotate_secret:$rotate}')" ;;
       webhook-delete)
-        [[ "$DELETE_CONFIRMATION" == "$MAILBOX_ID" ]] || die "Repeat with --confirm-delete $MAILBOX_ID to disable this webhook"
-        http_json DELETE "/api/v1/mailboxes/$MAILBOX_ID/email/webhook" "{}" ;;
-      email-subscription) http_json GET "/api/v1/mailboxes/$MAILBOX_ID/email/subscription" "{}" ;;
+        [[ "$DELETE_CONFIRMATION" == "$BUCKET_ID" ]] || die "Repeat with --confirm-delete $BUCKET_ID to disable this webhook"
+        http_json DELETE "/api/v1/buckets/$BUCKET_ID/mailbox/webhook" "{}" ;;
+      email-subscription) http_json GET "/api/v1/buckets/$BUCKET_ID/mailbox/subscription" "{}" ;;
+    esac
+    exit 0 ;;
+  publish|preview|unpublish|site)
+    [[ "$BUCKET_ID" =~ ^bkt_[A-Za-z0-9]+$ ]] || die "Provide --bucket-id ID"
+    [[ "$SITE_PREVIEW" != "true" || "$ACTION" == "site" ]] || die "--preview works with site only. Use revdoku preview to publish a preview."
+    case "$ACTION" in
+      site) http_json GET "/api/v1/buckets/$BUCKET_ID/publication$([[ "$SITE_PREVIEW" == "true" ]] && printf '/preview')" "{}" ;;
+      unpublish) http_json DELETE "/api/v1/buckets/$BUCKET_ID/publication" "{}" ;;
+      *)
+        # A failed password read must stop here: an empty body would publish the site without protection.
+        publish_body="$(publish_request_body)" || exit 1
+        http_json POST "/api/v1/buckets/$BUCKET_ID/publication$([[ "$ACTION" == "preview" ]] && printf '/preview')" "$publish_body" ;;
     esac
     exit 0 ;;
   account_limits)
@@ -1694,17 +1748,17 @@ case "$ACTION" in
     email_command
     exit 0
     ;;
-  create_mailbox)
-    create_mailbox
+  create_bucket)
+    create_bucket
     exit 0
     ;;
-  list_mailboxes)
-    list_mailboxes
+  list_buckets)
+    list_buckets
     exit 0
     ;;
   mailbox_status)
-    [[ -n "$MAILBOX_ID" ]] || die "mailbox requires --mailbox-id or a bound folder"
-    http_json GET "/api/v1/mailboxes/${MAILBOX_ID}/email" "{}"
+    [[ -n "$BUCKET_ID" ]] || die "mailbox requires --bucket-id or a bound folder"
+    http_json GET "/api/v1/buckets/${BUCKET_ID}/mailbox" "{}"
     exit 0
     ;;
   list_files)
@@ -1727,16 +1781,16 @@ case "$ACTION" in
     append_text_file
     exit 0
     ;;
-  archive_mailbox)
-    archive_mailbox
+  archive_bucket)
+    archive_bucket
     exit 0
     ;;
-  unarchive_mailbox)
-    unarchive_mailbox
+  unarchive_bucket)
+    unarchive_bucket
     exit 0
     ;;
-  delete_mailbox)
-    delete_mailbox
+  delete_bucket)
+    delete_bucket
     exit 0
     ;;
   create_client_account)
@@ -1912,32 +1966,32 @@ validate_upload_descriptors() {
     }
 }
 
-create_mailbox_id() {
+create_bucket_id() {
   local payload response id
-  payload="$(mailbox_payload)"
-  response="$(http_json POST "/api/v1/mailboxes" "$payload")" ||
-    die "mailbox create failed; to store files in an existing mailbox, pass --mailbox-id ID (see 'revdoku ls')"
-  id="$("$JQ_BIN" -r '.data.mailbox.id // empty' <<<"$response")"
-  validate_id mailbox_id "$id"
+  payload="$(bucket_payload)"
+  response="$(http_json POST "/api/v1/buckets" "$payload")" ||
+    die "bucket create failed; to store files in an existing bucket, pass --bucket-id ID (see 'revdoku ls')"
+  id="$("$JQ_BIN" -r '.data.bucket.id // empty' <<<"$response")"
+  validate_id bucket_id "$id"
   printf "%s" "$id"
 }
 
-mailbox_payload() {
+bucket_payload() {
   "$JQ_BIN" -nc \
     --arg description "$DESCRIPTION" \
     --argjson metadata "$(effective_metadata_json)" \
-    '{mailbox: ({metadata: $metadata} + (if $description != "" then {description: $description} else {} end))}'
+    '{bucket: ({metadata: $metadata} + (if $description != "" then {description: $description} else {} end))}'
 }
 
-mailbox_update_payload() {
+bucket_update_payload() {
   "$JQ_BIN" -nc \
     --arg description "$DESCRIPTION" \
     --argjson metadata "$METADATA_JSON" \
-    '{mailbox: ((if $description != "" then {description: $description} else {} end)
+    '{bucket: ((if $description != "" then {description: $description} else {} end)
       + (if ($metadata | length) > 0 then {metadata: $metadata} else {} end))}'
 }
 
-mailbox_update_needed() {
+bucket_update_needed() {
   [[ "$METADATA_JSON" != "{}" || -n "$DESCRIPTION" ]]
 }
 
@@ -2005,28 +2059,28 @@ put_direct_upload() {
 }
 
 upload_file_direct() {
-  local mailbox_id="$1"
+  local bucket_id="$1"
   local file="$2"
   local file_list
   file_list="$(mktemp)"
   printf "%s\0" "$file" > "$file_list"
-  store_mailbox_session_upload "$mailbox_id" "$file_list"
+  store_bucket_session_upload "$bucket_id" "$file_list"
   local status=$?
   rm -f "$file_list"
   return "$status"
 }
 
 upload_file() {
-  local mailbox_id="$1"
+  local bucket_id="$1"
   local file="$2"
   local rel
   rel="$(relative_path_for "$file")"
   echo "Uploading $rel" >&2
 
-  upload_file_direct "$mailbox_id" "$file"
+  upload_file_direct "$bucket_id" "$file"
 }
 
-mailbox_upload_session_manifest_json() {
+bucket_upload_session_manifest_json() {
   local file_list="$1"
   local manifest_lines converted_map rel filename content_type size checksum sha256 identity
   manifest_lines="$(mktemp "$upload_session_tmp/manifest.XXXXXX")" || return 1
@@ -2057,19 +2111,19 @@ mailbox_upload_session_manifest_json() {
   rm -f "$manifest_lines"
 }
 
-mailbox_upload_session_client_key() {
-  local mailbox_id="$1"
+bucket_upload_session_client_key() {
+  local bucket_id="$1"
   local manifest_json="$2"
   local digest
   if [[ -n "$MAILBOX_UPLOAD_CLIENT_SESSION_KEY" ]]; then
     printf "%s" "$MAILBOX_UPLOAD_CLIENT_SESSION_KEY"
     return 0
   fi
-  digest="$(printf "%s:%s:%s" "$mailbox_id" "$manifest_json" "$ACTION_REASON" | openssl dgst -sha256 -hex | awk '{print $2}')"
-  printf "cli:%s:%s" "$mailbox_id" "$digest"
+  digest="$(printf "%s:%s:%s" "$bucket_id" "$manifest_json" "$ACTION_REASON" | openssl dgst -sha256 -hex | awk '{print $2}')"
+  printf "cli:%s:%s" "$bucket_id" "$digest"
 }
 
-mailbox_upload_session_payload() {
+bucket_upload_session_payload() {
   local client_session_key="$1"
   local expected_file_count="$2"
   "$JQ_BIN" -nc \
@@ -2078,17 +2132,17 @@ mailbox_upload_session_payload() {
     '{client_session_key: $client_session_key, expected_file_count: $expected_file_count}'
 }
 
-prepare_mailbox_upload_descriptors() {
-  local mailbox_id="$1"
+prepare_bucket_upload_descriptors() {
+  local bucket_id="$1"
   local session_id="$2"
   local batch_json="$3"
   local payload
   payload="$("$JQ_BIN" -nc --argjson files "$batch_json" '{files: $files}')"
-  http_json POST "/api/v1/mailboxes/${mailbox_id}/upload_sessions/${session_id}/uploads" "$payload"
+  http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions/${session_id}/uploads" "$payload"
 }
 
-finalize_mailbox_upload_session() {
-  local mailbox_id="$1"
+finalize_bucket_upload_session() {
+  local bucket_id="$1"
   local session_id="$2"
   local complete="${3:-true}"
   local payload response pending attempts=0 remaining
@@ -2097,11 +2151,11 @@ finalize_mailbox_upload_session() {
   "$JQ_BIN" -nc --argjson complete "$complete" '{complete:$complete}' | {
     payload="$(cat)"
     while :; do
-      response="$(http_json POST "/api/v1/mailboxes/${mailbox_id}/upload_sessions/${session_id}/finalize" "$payload")" || return 1
+      response="$(http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions/${session_id}/finalize" "$payload")" || return 1
       pending="$("$JQ_BIN" -r '.data.finalize_pending // false' <<<"$response")"
       [[ "$pending" == "true" && "$complete" == "true" ]] || return 0
       attempts=$((attempts + 1))
-      remaining="$("$JQ_BIN" -r '.data.remaining_files_count // .data.mailbox_upload_session.remaining_files_count // empty' <<<"$response" 2>/dev/null || true)"
+      remaining="$("$JQ_BIN" -r '.data.remaining_files_count // .data.bucket_upload_session.remaining_files_count // empty' <<<"$response" 2>/dev/null || true)"
       if (( attempts == 1 || attempts % 5 == 0 )); then
         if [[ -n "$remaining" && "$remaining" != "null" ]]; then
           echo "Still finalizing ${remaining} file(s)… (attempt ${attempts})" >&2
@@ -2119,8 +2173,8 @@ finalize_mailbox_upload_session() {
   }
 }
 
-finalize_mailbox_upload_session_batch() {
-  local mailbox_id="$1"
+finalize_bucket_upload_session_batch() {
+  local bucket_id="$1"
   local session_id="$2"
   local limit="${3:-100}"
   local attempts=0 missing_entry_json missing_path
@@ -2129,16 +2183,16 @@ finalize_mailbox_upload_session_batch() {
     local payload
     payload="$(cat)"
     while :; do
-      if http_json POST "/api/v1/mailboxes/${mailbox_id}/upload_sessions/${session_id}/finalize_batch" "$payload" >/dev/null; then
+      if http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions/${session_id}/finalize_batch" "$payload" >/dev/null; then
         return 0
       fi
 
-      if [[ "${LAST_ERROR_CODE:-}" == "DIRECT_UPLOAD_NOT_FOUND" && "$attempts" -lt "$MAILBOX_UPLOAD_DESCRIPTOR_BATCH_SIZE" ]]; then
+      if [[ "${LAST_ERROR_CODE:-}" == "DIRECT_UPLOAD_NOT_FOUND" && "$attempts" -lt "$BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE" ]]; then
         missing_entry_json="$LAST_ERROR_DETAILS_JSON"
         missing_path="$("$JQ_BIN" -r '.path // empty' <<<"$missing_entry_json" 2>/dev/null || true)"
-        if [[ -n "$missing_path" ]] && upload_mailbox_session_missing_entry "$mailbox_id" "$session_id" "$missing_entry_json"; then
+        if [[ -n "$missing_path" ]] && upload_bucket_session_missing_entry "$bucket_id" "$session_id" "$missing_entry_json"; then
           attempts=$((attempts + 1))
-          echo "Retrying mailbox upload batch finalize after refreshing $missing_path." >&2
+          echo "Retrying bucket upload batch finalize after refreshing $missing_path." >&2
           continue
         fi
       fi
@@ -2148,8 +2202,8 @@ finalize_mailbox_upload_session_batch() {
   }
 }
 
-upload_mailbox_session_missing_entry() {
-  local mailbox_id="$1"
+upload_bucket_session_missing_entry() {
+  local bucket_id="$1"
   local session_id="$2"
   local entry_json="$3"
   local rel file response upload_json
@@ -2163,7 +2217,7 @@ upload_mailbox_session_missing_entry() {
 
   echo "Refreshing missing direct upload for $rel." >&2
   entry_json="$("$JQ_BIN" -ce --arg rel "$rel" 'map(select(.path == $rel))[0] // error("unknown retry path")' <<<"$UPLOAD_MANIFEST")" || return 1
-  response="$(prepare_mailbox_upload_descriptors "$mailbox_id" "$session_id" "[$entry_json]")" || return 1
+  response="$(prepare_bucket_upload_descriptors "$bucket_id" "$session_id" "[$entry_json]")" || return 1
   validate_upload_descriptors "$response" "[$entry_json]" || return 1
   upload_json="$("$JQ_BIN" -c '.data.uploads[0].upload // empty' <<<"$response")"
   [[ -n "$upload_json" && "$upload_json" != "null" ]] || return 1
@@ -2172,8 +2226,8 @@ upload_mailbox_session_missing_entry() {
   put_direct_upload "$upload_json" "$file"
 }
 
-store_mailbox_session_upload() (
-  local mailbox_id="$1"
+store_bucket_session_upload() (
+  local bucket_id="$1"
   local file_list="$2"
   local manifest_json payload response session_id upload_line rel upload_json file batch_json batch_response expected_file_count client_session_key failed=0 finalized=0 entry_json refresh_response uploaded_index=0
   local upload_session_tmp
@@ -2183,19 +2237,19 @@ store_mailbox_session_upload() (
   trap 'exit 143' TERM
   trap 'exit 129' HUP
   UPLOAD_LOCAL_MAP="$upload_session_tmp/local-map.json"
-  manifest_json="$(mailbox_upload_session_manifest_json "$file_list")" || { rm -f "$UPLOAD_LOCAL_MAP"; return 1; }
+  manifest_json="$(bucket_upload_session_manifest_json "$file_list")" || { rm -f "$UPLOAD_LOCAL_MAP"; return 1; }
   UPLOAD_MANIFEST="$manifest_json"
   expected_file_count="$("$JQ_BIN" -r 'length' <<<"$manifest_json")"
-  client_session_key="$(mailbox_upload_session_client_key "$mailbox_id" "$manifest_json")"
-  payload="$(mailbox_upload_session_payload "$client_session_key" "$expected_file_count")"
-  response="$(http_json POST "/api/v1/mailboxes/${mailbox_id}/upload_sessions" "$payload")" || return 1
-  session_id="$("$JQ_BIN" -r '.data.mailbox_upload_session.id // empty' <<<"$response")"
+  client_session_key="$(bucket_upload_session_client_key "$bucket_id" "$manifest_json")"
+  payload="$(bucket_upload_session_payload "$client_session_key" "$expected_file_count")"
+  response="$(http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions" "$payload")" || return 1
+  session_id="$("$JQ_BIN" -r '.data.bucket_upload_session.id // empty' <<<"$response")"
   validate_id upload_session_id "$session_id"
-  echo "Mailbox upload session: $session_id" >&2
+  echo "Bucket upload session: $session_id" >&2
 
   while IFS= read -r batch_json; do
     [[ -n "$batch_json" && "$batch_json" != "[]" ]] || continue
-    batch_response="$(prepare_mailbox_upload_descriptors "$mailbox_id" "$session_id" "$batch_json")" || {
+    batch_response="$(prepare_bucket_upload_descriptors "$bucket_id" "$session_id" "$batch_json")" || {
       failed=1
       break
     }
@@ -2214,7 +2268,7 @@ store_mailbox_session_upload() (
       if ! put_direct_upload "$upload_json" "$file"; then
         if [[ "${LAST_DIRECT_UPLOAD_STATUS:-}" == "403" || "${LAST_DIRECT_UPLOAD_STATUS:-}" == "404" ]]; then
           entry_json="$("$JQ_BIN" -c --arg rel "$rel" 'map(select(.path == $rel))[0] // empty' <<<"$batch_json")"
-          if [[ -n "$entry_json" ]] && refresh_response="$(prepare_mailbox_upload_descriptors "$mailbox_id" "$session_id" "[$entry_json]")"; then
+          if [[ -n "$entry_json" ]] && refresh_response="$(prepare_bucket_upload_descriptors "$bucket_id" "$session_id" "[$entry_json]")"; then
             validate_upload_descriptors "$refresh_response" "[$entry_json]" || { failed=1; break; }
             upload_json="$("$JQ_BIN" -c '.data.uploads[0].upload // empty' <<<"$refresh_response")"
             if [[ -n "$upload_json" ]] && put_direct_upload "$upload_json" "$file"; then
@@ -2229,39 +2283,39 @@ store_mailbox_session_upload() (
     done < <("$JQ_BIN" -c '.data.uploads[]?' <<<"$batch_response")
     [[ "$failed" == "0" ]] || break
 
-    if ! finalize_mailbox_upload_session_batch "$mailbox_id" "$session_id" "$MAILBOX_UPLOAD_DESCRIPTOR_BATCH_SIZE"; then
+    if ! finalize_bucket_upload_session_batch "$bucket_id" "$session_id" "$BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE"; then
       failed=1
       break
     fi
-  done < <("$JQ_BIN" -c --argjson size "$MAILBOX_UPLOAD_DESCRIPTOR_BATCH_SIZE" 'range(0; length; $size) as $i | .[$i:($i + $size)]' <<<"$manifest_json")
+  done < <("$JQ_BIN" -c --argjson size "$BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE" 'range(0; length; $size) as $i | .[$i:($i + $size)]' <<<"$manifest_json")
 
-  if [[ "$failed" == "0" ]] && finalize_mailbox_upload_session "$mailbox_id" "$session_id" true; then
+  if [[ "$failed" == "0" ]] && finalize_bucket_upload_session "$bucket_id" "$session_id" true; then
     finalized=1
   else
     failed=1
   fi
   if [[ "$finalized" != "1" ]]; then
-    finalize_mailbox_upload_session "$mailbox_id" "$session_id" false >/dev/null 2>&1 || true
+    finalize_bucket_upload_session "$bucket_id" "$session_id" false >/dev/null 2>&1 || true
   fi
   rm -f "$UPLOAD_LOCAL_MAP"
   return "$failed"
 )
 
-mailbox_id_for_storage() {
-  if [[ -n "$MAILBOX_ID" ]]; then
-    if mailbox_update_needed; then
+bucket_id_for_storage() {
+  if [[ -n "$BUCKET_ID" ]]; then
+    if bucket_update_needed; then
       local payload
-      payload="$(mailbox_update_payload)"
-      http_json PATCH "/api/v1/mailboxes/${MAILBOX_ID}" "$payload" >/dev/null
+      payload="$(bucket_update_payload)"
+      http_json PATCH "/api/v1/buckets/${BUCKET_ID}" "$payload" >/dev/null
     fi
-    printf "%s" "$MAILBOX_ID"
+    printf "%s" "$BUCKET_ID"
   else
-    create_mailbox_id
+    create_bucket_id
   fi
 }
 
-store_mailbox() {
-  local mailbox_id mailbox_id_file file_list
+store_bucket() {
+  local bucket_id bucket_id_file file_list
   file_list="$(mktemp)"
   if ! collect_files > "$file_list"; then
     rm -f "$file_list"
@@ -2272,25 +2326,25 @@ store_mailbox() {
     die "no files found to store after safety exclusions"
   fi
 
-  mailbox_id_file="$(mktemp)"
-  if ! mailbox_id_for_storage > "$mailbox_id_file"; then
-    rm -f "$mailbox_id_file" "$file_list"
+  bucket_id_file="$(mktemp)"
+  if ! bucket_id_for_storage > "$bucket_id_file"; then
+    rm -f "$bucket_id_file" "$file_list"
     return 1
   fi
-  mailbox_id="$(cat "$mailbox_id_file")"
-  rm -f "$mailbox_id_file"
-  [[ -n "$mailbox_id" ]] || {
+  bucket_id="$(cat "$bucket_id_file")"
+  rm -f "$bucket_id_file"
+  [[ -n "$bucket_id" ]] || {
     rm -f "$file_list"
-    die "mailbox id is required before uploading files"
+    die "bucket id is required before uploading files"
   }
-  echo "Mailbox: $mailbox_id" >&2
-  echo "Saved mailbox: $mailbox_id" >&2
-  store_mailbox_session_upload "$mailbox_id" "$file_list" || {
+  echo "Bucket: $bucket_id" >&2
+  echo "Saved bucket: $bucket_id" >&2
+  store_bucket_session_upload "$bucket_id" "$file_list" || {
     rm -f "$file_list"
     return 1
   }
   rm -f "$file_list"
-  printf "%s" "$mailbox_id"
+  printf "%s" "$bucket_id"
 }
 
 collect_files() {
@@ -2328,8 +2382,8 @@ should_skip_storage_path() {
   esac
   # Keep the client's private state out even when its config paths are inside
   # the selected folder. A custom credential location must not expose sibling
-  # mailbox selections, version/update stamps, or deletion preview tokens.
-  for state_file in "$CREDENTIALS_PATH" "$DEFAULT_MAILBOX_PATH" "$CLIENT_VERSION_FILE" "$UPDATE_CHECK_STAMP"; do
+  # bucket selections, version/update stamps, or deletion preview tokens.
+  for state_file in "$CREDENTIALS_PATH" "$DEFAULT_BUCKET_PATH" "$CLIENT_VERSION_FILE" "$UPDATE_CHECK_STAMP"; do
     if [[ -e "$state_file" && "$file" == "$(abs_path "$state_file")" ]]; then
       return 0
     fi
@@ -2404,24 +2458,24 @@ if [[ "$DRY_RUN" == "true" ]]; then
     "$JQ_BIN" -nc --arg path "$(relative_path_for "$file")" --argjson bytes "$(file_size "$file")" '{path:$path,bytes:$bytes}' >> "$preview_lines"
   done < "$preview_files"
   "$JQ_BIN" -n --slurpfile files "$preview_lines" --slurpfile skipped "$SKIPPED_PATHS" \
-    --arg root "$ROOT_PATH" --arg origin "$BASE_URL" --arg account "$ACCOUNT_ID" --arg mailbox "$MAILBOX_ID" \
+    --arg root "$ROOT_PATH" --arg origin "$BASE_URL" --arg account "$ACCOUNT_ID" --arg bucket "$BUCKET_ID" \
     '{dry_run:true,root:$root,api_origin:$origin,account_id:($account|if . == "" then null else . end),
-      mailbox_id:($mailbox|if . == "" then null else . end),creates_mailbox:($mailbox == ""),
+      bucket_id:($bucket|if . == "" then null else . end),creates_bucket:($bucket == ""),
       files:$files,file_count:($files|length),bytes:([$files[].bytes]|add // 0),skipped:$skipped}'
   exit 0
 fi
 
-mailbox_id_file="$(mktemp)"
-if ! store_mailbox > "$mailbox_id_file"; then
-  rm -f "$mailbox_id_file"
-  die "mailbox store failed"
+bucket_id_file="$(mktemp)"
+if ! store_bucket > "$bucket_id_file"; then
+  rm -f "$bucket_id_file"
+  die "bucket store failed"
 fi
-mailbox_id="$(cat "$mailbox_id_file")"
-rm -f "$mailbox_id_file"
-echo "Saved mailbox: $mailbox_id" >&2
+bucket_id="$(cat "$bucket_id_file")"
+rm -f "$bucket_id_file"
+echo "Saved bucket: $bucket_id" >&2
 
-# stdout stays the mailbox ID for scripts; the dashboard link goes to stderr.
-echo "View in Revdoku: $APP_URL/mailboxes/view?id=$mailbox_id" >&2
-write_project_binding "$mailbox_id" ""
+# stdout stays the bucket ID for scripts; the dashboard link goes to stderr.
+echo "View in Revdoku: $APP_URL/buckets/view?id=$bucket_id" >&2
+write_project_binding "$bucket_id" ""
 print_terminal_link_hint
-printf "%s\n" "$mailbox_id"
+printf "%s\n" "$bucket_id"

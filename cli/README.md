@@ -1,7 +1,7 @@
 # Revdoku CLI
 
-Revdoku provides mailboxes for AI agents. Use it from your terminal or automation to
-read email and attachments and store additional files. This standalone installation adds one `revdoku` executable. It does not
+Revdoku provides buckets: each has a mailbox, private files and an optional site. Use the CLI
+from your terminal or automation to read email and attachments and store files. This standalone installation adds one `revdoku` executable. It does not
 install skills, plugins, or AI app configuration.
 
 ## Install
@@ -54,16 +54,16 @@ revdoku accounts
 revdoku account get acct_...
 revdoku ls
 revdoku create --username acme-orders
-revdoku mailbox --mailbox-id bkt_...
-revdoku files --mailbox-id bkt_...
-revdoku emails --mailbox-id bkt_...
-revdoku email eml_... --mailbox-id bkt_...
-revdoku email-status eml_... --mailbox-id bkt_... --read false
-revdoku email-download eml_... --mailbox-id bkt_... --attachment-id df_... --output attachment.pdf
-revdoku email-delete eml_... --mailbox-id bkt_... --confirm-delete eml_...
-revdoku email-send --in-reply-to eml_... --text "Thanks, received." --mailbox-id bkt_...
-revdoku emails --direction sent --mailbox-id bkt_...
-revdoku upload ./project-files --mailbox-id bkt_...
+revdoku mailbox --bucket-id bkt_...
+revdoku files --bucket-id bkt_...
+revdoku emails --bucket-id bkt_...
+revdoku email eml_... --bucket-id bkt_...
+revdoku email-status eml_... --bucket-id bkt_... --read false
+revdoku email-download eml_... --bucket-id bkt_... --attachment-id df_... --output attachment.pdf
+revdoku email-delete eml_... --bucket-id bkt_... --confirm-delete eml_...
+revdoku email-send --in-reply-to eml_... --text "Thanks, received." --bucket-id bkt_...
+revdoku emails --direction sent --bucket-id bkt_...
+revdoku upload ./project-files --bucket-id bkt_...
 ```
 
 Run `email-delete` only after you confirm the email ID. `email-send` replies to a sender and never retries.
@@ -80,32 +80,32 @@ DMARC; otherwise pass `--to`. Check `delivery.status` with
 you send again. A person sends, edits or declines an `awaiting_approval` email in
 the dashboard; do not send it again, or a `declined` email unless a person asks.
 
-`revdoku ls` returns active mailboxes with permitted addresses, receiving state and email counts.
+`revdoku ls` returns active buckets with permitted addresses, receiving state and email counts.
 Use `ls --status archived` or `ls --status all` for other archive states.
 Use `--query TEXT` to filter the title, permitted email address or ID.
-Use `--limit N` for pages of at most 200 mailboxes (default 50).
+Use `--limit N` for pages of at most 200 buckets (default 50).
 Continue with `--cursor` set to `data.pagination.next_cursor` while `data.pagination.has_more` is true.
 `files` and `emails` page the same way.
 `data.counts` contains exact active, archived and total counts for the authorized query.
 
-`email.message_count` counts stored emails.
-`email.unread_count` counts emails with shared unread status.
+`mailbox.message_count` counts stored emails.
+`mailbox.unread_count` counts emails with shared unread status.
 Null counts mean the email index is being prepared.
 File counts include email representations and attachments.
 
 Create accounts at https://app.revdoku.com/users/sign_up. CLI sign-in uses browser OAuth.
 
 For automation, set `REVDOKU_API_KEY` through your secret manager or environment.
-Set `REVDOKU_MAILBOX_ID` to choose a default mailbox.
+Set `REVDOKU_BUCKET_ID` to choose a default mailbox.
 Use `--account-id acct_...` when selecting another authorized account. Credentials
 and selection state otherwise live under `~/.revdoku/`; keep them private.
 
-Uploading without an existing mailbox binding can create a mailbox and consume
-creation capacity. Pass `--mailbox-id` to store files in an existing mailbox. `revdoku create` creates an empty mailbox. Omit `--username` to
+Uploading without an existing mailbox binding can create a bucket and consume
+creation capacity. Pass `--bucket-id` to store files in an existing mailbox. `revdoku create` creates an empty bucket. Omit `--username` to
 generate a name. On `revdokumail.com`, Revdoku adds a permanent 4-character random
 suffix to the requested prefix on every plan. A custom domain takes the exact name.
 An unavailable name returns `EMAIL_ALREADY_EXISTS`.
-`--title TEXT` names the mailbox; without it, the title is the username.
+`--title TEXT` names the bucket; without it, the title is the username.
 Creation returns when receiving is ready. Use the returned address.
 
 See [the API reference](../api.md) and `revdoku --help` for commands, scopes,
@@ -114,7 +114,7 @@ quota errors, and confirmation requirements. For AI integration, use the
 
 ## Uninstall
 
-Remove the executable from the directory you selected. Your remote mailboxes and
+Remove the executable from the directory you selected. Your remote buckets and
 files remain. Remove `~/.revdoku/` separately only if you also want to remove
 saved local credentials and preferences.
 
@@ -131,10 +131,10 @@ Returns effective mailbox and file quotas under `data.limits`.
 
 | Command | Purpose |
 | --- | --- |
-| `revdoku webhook --mailbox-id ID` | Read the configured endpoint |
-| `revdoku webhook-set --mailbox-id ID --webhook-url HTTPS_URL` | Set one signed webhook; save the returned secret privately |
+| `revdoku webhook --bucket-id ID` | Read the configured endpoint |
+| `revdoku webhook-set --bucket-id ID --webhook-url HTTPS_URL` | Set one signed webhook; save the returned secret privately |
 | Add `--rotate-secret` | Replace the signing secret and cancel pending deliveries |
-| `revdoku webhook-delete --mailbox-id ID --confirm-delete ID` | Disable deliveries |
-| `revdoku email-subscription --mailbox-id ID` | Get a WebSocket URL and short-lived ticket |
+| `revdoku webhook-delete --bucket-id ID --confirm-delete ID` | Disable deliveries |
+| `revdoku email-subscription --bucket-id ID` | Get a WebSocket URL and short-lived ticket |
 
 Use `--account-id ID` to select an authorized account. A running receiver is required. See the [examples](../examples/README.md) for signature verification and WebSocket reconnect/catch-up. Human administrators can inspect delivery attempts and retry failures in **Analytics → Webhooks**.

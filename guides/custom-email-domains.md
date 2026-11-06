@@ -1,7 +1,7 @@
 # Custom email domains
 
 Built-in domains such as `revdokumail.com` work on every plan, including when
-explicitly supplied as `mailbox.email.domain`. For custom domains:
+explicitly supplied as `bucket.mailbox.domain`. For custom domains:
 
 | Error code | Action |
 | --- | --- |
@@ -9,14 +9,14 @@ explicitly supplied as `mailbox.email.domain`. For custom domains:
 | `EMAIL_DOMAIN_NOT_REGISTERED` | Add and verify the domain in [Account Settings → Domains](https://app.revdoku.com/account/domains) first. |
 | `EMAIL_DOMAIN_NOT_READY` | Complete verification or resolve receiving restrictions for the registered domain. |
 
-The latter two errors include `error.details.settings_url`. Mailbox creation
+The latter two errors include `error.details.settings_url`. Bucket creation
 does not automatically register a custom domain or fall back to another domain.
 
 Connect a domain in **Account Settings → Domains → Email**, or use these endpoints
-with a whole-account `mailbox_admin` credential belonging to an account owner or administrator.
+with a whole-account `bucket_admin` credential belonging to an account owner or administrator.
 Selected-mailbox, read-only and write-only credentials cannot manage domain ownership.
 Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for
-example `https://api.revdoku.com/v1/mailboxes`.
+example `https://api.revdoku.com/v1/buckets`.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -30,7 +30,7 @@ example `https://api.revdoku.com/v1/mailboxes`.
 
 | Field or requirement | Purpose |
 | --- | --- |
-| `customization.allowed` | Whether this caller can customize the mailbox domain. |
+| `customization.allowed` | Whether this caller can customize the bucket domain. |
 | `customization.blocked_reason` | Why customization is unavailable. |
 | `hostname` | Exact domain hostname; also required to confirm deletion. |
 | `required_dns_records` | DNS records to add. The SES and MX records appear shortly after the domain is connected. |
@@ -46,13 +46,13 @@ example `https://api.revdoku.com/v1/mailboxes`.
 | `yourdomain.com` already receives email through another provider | An unused subdomain, such as `mailbox.yourdomain.com` | `support@mailbox.yourdomain.com` |
 | A domain dedicated to Revdoku email | The root domain, such as `yourdomain.com` | `support@yourdomain.com` |
 
-Using `mailbox.yourdomain.com` keeps existing mailboxes at `yourdomain.com` with their
+Using `mailbox.yourdomain.com` keeps existing buckets at `yourdomain.com` with their
 current provider. Add DNS records only at the hostname shown in the setup instructions.
 
 | DNS check | Result |
 | --- | --- |
 | Another provider's MX records at the chosen hostname | HTTP 422, `EMAIL_DNS_CONFLICT`. Keep those records and choose an unused subdomain. |
-| Revdoku and another provider's MX records together, or a CNAME | HTTP 422, `EMAIL_DNS_CONFLICT`. MX priority cannot split individual mailboxes between providers. |
+| Revdoku and another provider's MX records together, or a CNAME | HTTP 422, `EMAIL_DNS_CONFLICT`. MX priority cannot split individual buckets between providers. |
 | DNS lookup temporarily unavailable | HTTP 503, `EMAIL_DNS_TEMPORARY`; retry the check later. |
 | Null MX (the hostname currently accepts no mail) | Setup can start; replace the null MX with the required receiving MX before activation. |
 
@@ -67,7 +67,7 @@ records after you approve them. A successful check does not activate receiving.
 #### Use a connected domain
 
 Connecting a domain preserves existing addresses. Select it when creating a mailbox,
-or use `POST /v1/mailboxes/:mailbox_id/email/rotate` for an existing mailbox.
+or use `POST /v1/buckets/:bucket_id/mailbox/rotate` for an existing mailbox.
 A mailbox on your domain always keeps a `revdokumail.com` alias, the base address,
 which sends its email. Creating a mailbox on your domain adds one. A change from
 `revdokumail.com` keeps the old address as that alias. A change back to
@@ -82,12 +82,12 @@ on every plan.
 | `confirm` | Must be `true`. |
 
 Custom names require account-administrator access and deployment support.
-[Username rules](https://revdoku.com/api.md#create-a-mailbox) also apply. Platform domains also accept chosen
+[Username rules](https://revdoku.com/api.md#create-a-bucket) also apply. Platform domains also accept chosen
 names; their reserved-name rules still apply.
 
 | Replacement result | Behavior |
 | --- | --- |
-| `202`, assignment `pending` | Setup is running. Read the mailbox settings to check progress. The old address remains current. |
+| `202`, assignment `pending` | Setup is running. Read the bucket settings to check progress. The old address remains current. |
 | Assignment `active` | The new primary is assigned and one rotation is charged; a change back to `revdokumail.com` charges none. Check `receiving_enabled` before using it. |
 | Assignment `failed` | The old address and rotation allowance are preserved. |
 
@@ -101,7 +101,7 @@ names; their reserved-name rules still apply.
 | `customization.blocked_reason` | Why customization is unavailable. |
 | `customization.settings_url` | Dashboard settings link for account administrators. |
 
-- Custom-domain names remain reserved to their original account. That account may reuse a released name once no primary, alias or pending assignment holds it; archived mailboxes retain their addresses.
+- Custom-domain names remain reserved to their original account. That account may reuse a released name once no primary, alias or pending assignment holds it; archived buckets retain their addresses.
 - Platform addresses cannot be reused, even after deletion.
 - A downgrade preserves assigned addresses but can block new domain setup or switching.
 - Switch to a platform address and remove custom-domain aliases before moving a mailbox to another account. Copies get fresh platform addresses without aliases.

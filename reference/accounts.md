@@ -2,7 +2,7 @@
 
 Connection status, granted accounts and limits.
 
-Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example `https://api.revdoku.com/v1/mailboxes`. Send `Authorization: Bearer $REVDOKU_API_KEY` from your server. Tables use JSON names; where TypeScript differs, a field shows `json_name` / `typescriptName`. Python uses the JSON names.
+Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example `https://api.revdoku.com/v1/buckets`. Send `Authorization: Bearer $REVDOKU_API_KEY` from your server. Tables use JSON names; where TypeScript differs, a field shows `json_name` / `typescriptName`. Python uses the JSON names.
 
 [All operations](https://revdoku.com/api/reference.md) · [API guide](https://revdoku.com/api.md) · [Errors](https://revdoku.com/api.md#errors) · [OpenAPI](https://revdoku.com/openapi.json)
 
@@ -16,7 +16,7 @@ Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for exam
 
 `GET /v1/status`
 
-Works with every API key, including mailbox-scoped keys. Read quotas with GET /v1/account/limits.
+Works with every API key, including bucket-scoped keys. Read quotas with GET /v1/account/limits.
 
 | Language | Call |
 | --- | --- |
@@ -75,13 +75,13 @@ curl "https://api.revdoku.com/v1/status" \
 | `connection.api_key_id` / `apiKeyId` | string or null |  |
 | `connection.label` | string or null |  |
 | `connection.token_type` / `tokenType` | string: `api` or null |  |
-| `connection.scope` | string: `mailbox_read`, `mailbox_write`, `mailbox_admin` or null |  |
+| `connection.scope` | string: `bucket_read`, `bucket_write`, `bucket_admin` or null |  |
 | `connection.expires_at` / `expiresAt` | string (date-time) or null |  |
 | `connection.last_used_at` / `lastUsedAt` | string (date-time) or null |  |
-| `connection.mailbox_access` / `mailboxAccess` | string: `all`, `selected` or null |  |
-| `connection.mailbox_ids` / `mailboxIds` | array of string |  |
-| `connection.denied_mailbox_ids` / `deniedMailboxIds` | array of string |  |
-| `connection.mailbox_permissions` / `mailboxPermissions` | object |  |
+| `connection.bucket_access` / `bucketAccess` | string: `all`, `selected` or null |  |
+| `connection.bucket_ids` / `bucketIds` | array of string |  |
+| `connection.denied_bucket_ids` / `deniedBucketIds` | array of string |  |
+| `connection.bucket_permissions` / `bucketPermissions` | object |  |
 | `connection.permissions` | object | Fields: `read`, `write`, `admin`. |
 | `connection.agent` | object or null |  |
 | `connection.transport` | string or null |  |
@@ -129,18 +129,18 @@ curl "https://api.revdoku.com/v1/status" \
       "email": "ada@example.com",
       "name": "Ada Lovelace"
     },
-    "dashboard_url": "https://app.revdoku.com/mailboxes?account_id=acct_example",
+    "dashboard_url": "https://app.revdoku.com/buckets?account_id=acct_example",
     "connection": {
       "api_key_id": "atok_example",
       "label": "Orders backend",
       "token_type": "api",
-      "scope": "mailbox_admin",
+      "scope": "bucket_admin",
       "expires_at": "2027-10-11T12:00:00Z",
       "last_used_at": "2026-10-11T12:20:00Z",
-      "mailbox_access": "all",
-      "mailbox_ids": [],
-      "denied_mailbox_ids": [],
-      "mailbox_permissions": {},
+      "bucket_access": "all",
+      "bucket_ids": [],
+      "denied_bucket_ids": [],
+      "bucket_permissions": {},
       "permissions": {"read": true, "write": true, "admin": true},
       "agent": null,
       "transport": "api_key",
@@ -217,7 +217,7 @@ curl "https://api.revdoku.com/v1/accounts" \
 | `accounts[].agency_account` / `agencyAccount` | object or null | Parent agency only when granted to this credential. Null does not make a client independent. Fields: `id`, `name`. |
 | `accounts[].region` | string or null |  |
 | `accounts[].status` | string: `active`, `read_only` |  |
-| `accounts[].permissions` | object | Fields: `scope`, `mailbox_access`, `can_create_mailboxes`. |
+| `accounts[].permissions` | object | Fields: `scope`, `bucket_access`, `can_create_buckets`. |
 | `default_account_id` / `defaultAccountId` | string or null | Account used when a request does not send account_id. |
 | `pagination` | Pagination | One page of a list. Request the next page with cursor=next_cursor and the same filters. Cursors are opaque strings: do not build or decode them. |
 | `pagination.limit` | integer |  |
@@ -239,9 +239,9 @@ curl "https://api.revdoku.com/v1/accounts" \
         "region": "eu",
         "status": "active",
         "permissions": {
-          "scope": "mailbox_admin",
-          "mailbox_access": "all",
-          "can_create_mailboxes": true
+          "scope": "bucket_admin",
+          "bucket_access": "all",
+          "can_create_buckets": true
         }
       }
     ],
@@ -394,9 +394,9 @@ curl "https://api.revdoku.com/v1/accounts/acct_example" \
       "region": "eu",
       "status": "active",
       "permissions": {
-        "scope": "mailbox_admin",
-        "mailbox_access": "all",
-        "can_create_mailboxes": true
+        "scope": "bucket_admin",
+        "bucket_access": "all",
+        "can_create_buckets": true
       }
     }
   }
@@ -415,7 +415,7 @@ Guide: [Accounts](https://revdoku.com/api.md#accounts)
 
 `GET /v1/account/limits`
 
-Values come from the plan and account overrides. Zero means no allowance; null means no cap. Storage, mailbox and email traffic allowances are shared within a billing group.
+Values come from the plan and account overrides. Zero means no allowance; null means no cap. Storage, bucket and email traffic allowances are shared within a billing group.
 
 | Language | Call |
 | --- | --- |
@@ -463,9 +463,9 @@ curl "https://api.revdoku.com/v1/account/limits" \
 | --- | --- | --- |
 | `account_id` / `accountId` | string |  |
 | `limits` | AccountLimits |  |
-| `limits.max_mailboxes` / `maxMailboxes` | integer or null |  |
-| `limits.max_mailbox_creations_per_month` / `maxMailboxCreationsPerMonth` | integer or null |  |
-| `limits.max_files_per_mailbox` / `maxFilesPerMailbox` | integer or null |  |
+| `limits.max_buckets` / `maxBuckets` | integer or null |  |
+| `limits.max_bucket_creations_per_month` / `maxBucketCreationsPerMonth` | integer or null |  |
+| `limits.max_files_per_bucket` / `maxFilesPerBucket` | integer or null |  |
 | `limits.max_current_files` / `maxCurrentFiles` | integer or null |  |
 | `limits.max_storage_bytes` / `maxStorageBytes` | integer (int64) or null |  |
 | `limits.max_file_size_bytes` / `maxFileSizeBytes` | integer (int64) or null |  |
@@ -482,9 +482,9 @@ curl "https://api.revdoku.com/v1/account/limits" \
 | `limits.max_agent_connections` / `maxAgentConnections` | integer or null |  |
 | `limits.api_rate_limit_requests_per_minute` / `apiRateLimitRequestsPerMinute` | integer or null |  |
 | `limits.audit_retention_days` / `auditRetentionDays` | integer or null |  |
-| `limits.max_email_aliases_per_mailbox` / `maxEmailAliasesPerMailbox` | integer | Active retained email addresses (aliases) per mailbox. Zero means that the plan has no aliases. |
+| `limits.max_email_aliases_per_bucket` / `maxEmailAliasesPerBucket` | integer | Active retained email addresses (aliases) per mailbox. Zero means that the plan has no aliases. |
 | `usage` | object |  |
-| `usage.mailbox_creations` / `mailboxCreations` | object | Fields: `monthly_limit`, `used`, `remaining`, `resets_at`. |
+| `usage.bucket_creations` / `bucketCreations` | object | Fields: `monthly_limit`, `used`, `remaining`, `resets_at`. |
 
 ```json
 {
@@ -492,15 +492,15 @@ curl "https://api.revdoku.com/v1/account/limits" \
   "data": {
     "account_id": "acct_example",
     "limits": {
-      "max_mailboxes": 3,
-      "max_mailbox_creations_per_month": 12,
-      "max_files_per_mailbox": 25000,
+      "max_buckets": 3,
+      "max_bucket_creations_per_month": 12,
+      "max_files_per_bucket": 25000,
       "max_current_files": 40000,
       "max_storage_bytes": 2147483648,
       "max_file_size_bytes": 52428800,
       "max_pdf_size_bytes": 52428800,
       "max_file_versions_per_file": 15,
-      "max_email_aliases_per_mailbox": 4,
+      "max_email_aliases_per_bucket": 4,
       "max_email_domains": 3,
       "max_received_emails_per_month": 1500,
       "max_received_email_bytes_per_month": 268435456,
@@ -514,7 +514,7 @@ curl "https://api.revdoku.com/v1/account/limits" \
       "audit_retention_days": 45
     },
     "usage": {
-      "mailbox_creations": {
+      "bucket_creations": {
         "monthly_limit": 12,
         "used": 2,
         "remaining": 10,

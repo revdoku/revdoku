@@ -1,6 +1,6 @@
 # Privacy Policy
 
-*Version: 2026-10-27 · Updated: October 27, 2026*
+*Version: 2026-11-05 · Updated: November 5, 2026*
 
 Revdoku, at [revdoku.com](https://revdoku.com), provides mailboxes for AI agents, with private file storage and collaboration for people and authorized agents. Revdoku, Armenia operates the website and the Service. This notice covers personal information on our website and Service. Contact [support@revdoku.com](mailto:support@revdoku.com?subject=Privacy) with privacy questions or requests.
 
@@ -27,18 +27,18 @@ Where applicable, our legal bases are providing a requested contract, legitimate
 
 **We do not sell your personal information, share it for cross-context behavioral advertising, or use private files or emails to train general-purpose AI models.**
 
-Our servers, database and file storage run on Amazon Web Services in Frankfurt, Germany. File backups are in Ireland. These providers process personal information for us:
+Our servers, database and email receiving and sending run on Amazon Web Services in Northern Virginia, United States. Files, email messages and attachments, published websites and their backups are stored in Cloudflare R2 in the eastern United States. These providers process personal information for us:
 
 | Provider | Purpose | Location |
 | --- | --- | --- |
-| Amazon Web Services | Servers, database, file storage and backups, incoming and outgoing email, spam and virus checks, encryption keys and AI agents (Amazon Bedrock) | Frankfurt, Germany. Backups in Ireland. |
-| Cloudflare | Network, DNS, and protection from attacks and bots (Turnstile). It carries app, API and MCP traffic to our servers. We do not use Cloudflare to store it. | The Cloudflare data center nearest to each visitor |
+| Amazon Web Services | Servers, database and database backups, incoming and outgoing email, spam and virus checks, encryption keys and AI agents (Amazon Bedrock) | Northern Virginia, United States |
+| Cloudflare | File storage and file backups (R2), published websites, network, DNS, and protection from attacks and bots (Turnstile). It carries app, API and MCP traffic to our servers. | Files and backups: eastern United States. Network: the Cloudflare data center nearest to each visitor |
 | Polar | Payments, as merchant of record | United States |
 | Google | Our support and business email (Google Workspace), including service alerts | United States and other countries |
 | Google | Sign in with Google, only if you use it | United States and other countries |
 | GitHub | Sign in with GitHub, only if you use it | United States |
 
-Cloudflare handles each request in the data center nearest to the visitor, so requests from outside the EU can pass through Cloudflare data centers outside the EU before they reach Frankfurt. File and attachment uploads and downloads go directly between your browser or agent and Amazon storage in Frankfurt, without Cloudflare. Cloudflare R2 storage in the EU also keeps an older copy of files from before our move to Amazon storage. We plan to delete it by November 11, 2026.
+Cloudflare handles each request in the data center nearest to the visitor before it reaches our servers in the United States. File and attachment uploads and downloads go directly between your browser or agent and Cloudflare R2 storage. Our earlier deployment in Frankfurt, Germany, with the accounts and files created there before November 2026, is kept only until we have confirmed the move. We plan to delete it by December 5, 2026.
 
 Revdoku is operated from Armenia, so our personnel can access data from there. Email transmission, external integrations, authorized recipients and providers' support or operational processing may involve other countries. Where personal data leaves the EU, we use the safeguards the law requires, such as Standard Contractual Clauses or the EU-U.S. Data Privacy Framework.
 

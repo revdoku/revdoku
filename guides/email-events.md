@@ -7,13 +7,13 @@ Read contents through the existing email API.
 
 | Endpoint | Permission | Result |
 | --- | --- | --- |
-| GET /v1/mailboxes/:mailbox_id/email/webhook | Mailbox admin | Endpoint, or webhook: null; excludes the signing secret. |
-| PUT /v1/mailboxes/:mailbox_id/email/webhook | Mailbox admin | Set one URL; returns the endpoint and signing secret. |
-| DELETE /v1/mailboxes/:mailbox_id/email/webhook | Mailbox admin | Disable delivery; 200 with data.deleted and data.id (the mailbox ID). |
-| GET /v1/mailboxes/:mailbox_id/email/subscription | Mailbox read | Signed WebSocket ticket valid for 60 seconds. |
+| GET /v1/buckets/:bucket_id/mailbox/webhook | Mailbox admin | Endpoint, or webhook: null; excludes the signing secret. |
+| PUT /v1/buckets/:bucket_id/mailbox/webhook | Mailbox admin | Set one URL; returns the endpoint and signing secret. |
+| DELETE /v1/buckets/:bucket_id/mailbox/webhook | Mailbox admin | Disable delivery; 200 with data.deleted and data.id (the bucket ID). |
+| GET /v1/buckets/:bucket_id/mailbox/subscription | Mailbox read | Signed WebSocket ticket valid for 60 seconds. |
 
 Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for
-example `https://api.revdoku.com/v1/mailboxes`. Use your normal bearer API key.
+example `https://api.revdoku.com/v1/buckets`. Use your normal bearer API key.
 Select another granted account with account_id in
 the query for GET/DELETE, or in the JSON body for PUT. Endpoints must use public
 HTTPS, including explicit ports such as 8443, with no URL user/password or fragment. Local/private addresses
@@ -34,7 +34,7 @@ and redirects are rejected. Invalid configuration returns INVALID_ARGUMENT (422)
    old-endpoint deliveries.
 3. Verify the exact request bytes before parsing JSON.
 4. Deduplicate the event ID, durably accept the event, and return any 2xx.
-5. Fetch /v1/mailboxes/:mailbox_id/emails/:email_id with your own API key.
+5. Fetch /v1/buckets/:bucket_id/mailbox/emails/:email_id with your own API key.
 
 ~~~json
 {
@@ -43,7 +43,7 @@ and redirects are rejected. Invalid configuration returns INVALID_ARGUMENT (422)
   "created_at": "2026-10-01T12:00:00.000000Z",
   "data": {
     "account_id": "acct_example",
-    "mailbox_id": "bkt_example",
+    "bucket_id": "bkt_example",
     "email_id": "eml_example",
     "received_at": "2026-10-01T11:59:58.000000Z",
     "attachment_count": 1
@@ -56,7 +56,7 @@ and redirects are rejected. Invalid configuration returns INVALID_ARGUMENT (422)
 | id | Stable event ID for deduplication; unchanged on retries. |
 | type | email.received. |
 | created_at | UTC time when intake queued the event. |
-| data.account_id, data.mailbox_id | Account and mailbox that saved the message. |
+| data.account_id, data.bucket_id | Account and mailbox that saved the message. |
 | data.email_id | Stable email ID for the existing read endpoint. |
 | data.received_at | UTC email receipt time. |
 | data.attachment_count | Number of saved attachments. |
@@ -104,8 +104,8 @@ Delivery can repeat or arrive out of order; deduplicate by event ID.
 
 | Allowance | Effective value |
 | --- | --- |
-| Mailboxes with a webhook | Existing active-mailbox capacity; read `limits.max_mailboxes`. |
-| Endpoints per mailbox | One. |
+| Buckets with a webhook | Existing active-mailbox capacity; read `limits.max_buckets`. |
+| Endpoints per bucket | One. |
 | New email events | Follow accepted messages within incoming count, byte and storage limits. |
 | Delivery history | Read `limits.audit_retention_days`. |
 
@@ -118,7 +118,7 @@ Delivery history is available in **Analytics → Webhooks**.
 1. GET a subscription ticket with your read-authorized API key.
 2. Open the returned `websocket_url`, adding `email_subscription_token=TICKET`
    within 60 seconds, using the `actioncable-v1-json` subprotocol.
-3. Subscribe to EmailReceivedChannel with the returned account_id and mailbox_id.
+3. Subscribe to EmailReceivedChannel with the returned account_id and bucket_id.
    Wait for confirm_subscription.
 4. List messages with your saved ascending arrival cursor and process every page.
    Deduplicate email IDs against live events received during catch-up.
@@ -130,7 +130,7 @@ Runnable [JavaScript/TypeScript and Python examples](https://github.com/revdoku/
 | Client guard | Limit |
 | --- | --- |
 | Duplicate mailbox subscriptions | One per connection |
-| Mailbox subscriptions | 32 per connection; tickets authorize one mailbox |
+| Mailbox subscriptions | 32 per connection; tickets authorize one bucket |
 | Connections | 32 per credential per web process |
 | Handshakes | 120 per minute per source IP |
 | Client commands | 120 per minute per connection; 4 KiB maximum per command |
@@ -140,7 +140,7 @@ Keep account, mailbox and filters unchanged when reusing a cursor. Preserve `pag
 Ticket expiry limits connection establishment; an established subscription lasts
 until disconnect or access revocation. Credentials and membership are checked before
 each transmitted event. Treat the ticket as a temporary credential: it authorizes
-only its selected mailbox channel, never account notification streams.
+only its selected bucket channel, never account notification streams.
 
 
 [API guide](https://revdoku.com/api.md) · [API reference](https://revdoku.com/api/reference.md)

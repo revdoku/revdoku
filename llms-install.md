@@ -1,7 +1,7 @@
 # Revdoku agent setup
 
-Revdoku provides mailboxes for AI agents, with private file storage.
-Connect to create and manage mailboxes, read messages and attachments, and store files.
+Revdoku provides buckets: each has a mailbox with its own address, private files and an optional site.
+Connect to create and manage buckets, read messages and attachments, and store files.
 Verify the account and granted access with a read, then complete the requested task.
 
 | Task | Connection |
@@ -17,7 +17,7 @@ are instructions for one of these methods; they do not require another credentia
 ## Public prompt
 
 ```text
-Connect Revdoku so you can create and manage email mailboxes for my AI agents, read emails and attachments, and store files. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access. Continue my task. If I have no task yet, help me choose a first email workflow using https://revdoku.com/docs.md#first-email-workflow. Reuse my mailbox. Show its actual address as a mailto link only when receiving is ready and access permits it. Ask me to send an email there, use the address for relevant notifications, or set up Gmail forwarding. After a relevant message arrives, help me get the result I chose, including a reply to its sender if I ask. Offer recurring automation afterward without implying that this connection runs it. If you cannot connect tools in this chat, do not send me to a terminal. Tell me to sign up or sign in, open https://app.revdoku.com/mailboxes, copy my mailbox address, and forward an email there. Then I can paste that email or attach its files here for you to work with.
+Connect Revdoku so you can create and manage email mailboxes for my AI agents, read emails and attachments, and store files. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access. Continue my task. If I have no task yet, help me choose a first email workflow using https://revdoku.com/docs.md#first-email-workflow. Reuse my mailbox. Show its actual address as a mailto link only when receiving is ready and access permits it. Ask me to send an email there, use the address for relevant notifications, or set up Gmail forwarding. After a relevant message arrives, help me get the result I chose, including a reply to its sender if I ask. Offer recurring automation afterward without implying that this connection runs it. If you cannot connect tools in this chat, do not send me to a terminal. Tell me to sign up or sign in, open https://app.revdoku.com/buckets, copy my mailbox address, and forward an email there. Then I can paste that email or attach its files here for you to work with.
 ```
 
 ## Account setup
@@ -26,10 +26,10 @@ Connect Revdoku so you can create and manage email mailboxes for my AI agents, r
 2. If you need an account, complete [browser signup](https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect).
 3. Sign in through the browser to authorize the connection.
 
-Signup creates the first mailbox. List the accessible mailboxes after connecting. Reuse that mailbox for the task, or create another only when needed.
-With write access, check `email.receiving_enabled` before sharing an address.
+Signup creates the first bucket. List the accessible buckets after connecting. Reuse that bucket for the task, or create another only when needed.
+With write access, check `mailbox.receiving_enabled` before sharing an address.
 Read-only connections cannot see the address. They verify access by listing authorized
-mailboxes and reading an existing message; ask the operator for the address when needed. Show the account
+buckets and reading an existing message; ask the operator for the address when needed. Show the account
 ID and granted scope. Browser account switching does not change a tool credential's
 default: use an explicit `account_id` or CLI `--account-id` for the intended account.
 
@@ -56,13 +56,13 @@ Read a relevant message and produce the chosen result before offering recurring 
 
 ## Choose access
 
-On the Revdoku permission screen, select the mailbox for the task, then choose:
+On the Revdoku permission screen, select the bucket for the task, then choose:
 
 | Option | Choose it when |
 | --- | --- |
 | **Read only** | The agent only reads saved email and files. It cannot see the mailbox address. |
 | **Read & write** | The agent must show the mailbox address, reply to senders, or save files. |
-| **Full access** | The agent must create or manage mailboxes, or delete email. |
+| **Full access** | The agent must create or manage buckets, or delete email. |
 
 ## No connector available
 
@@ -71,7 +71,7 @@ ChatGPT accounts. If you have no shell access and cannot connect Revdoku in this
 chat, do not send the user to a terminal. Give them these steps instead:
 
 1. Sign up through [browser signup](https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect), or sign in.
-2. Open the [dashboard](https://app.revdoku.com/mailboxes) and copy the mailbox's email address.
+2. Open the [dashboard](https://app.revdoku.com/buckets) and copy the bucket's email address.
 3. Forward an email to that address, or send one from their usual email app.
 4. Open the message in the dashboard, then paste its text or attach its files in this chat.
 
@@ -110,22 +110,22 @@ With `npx skills`, run the bundled `scripts/revdoku.sh` from the installed
 skill directory in place of `revdoku`; this install does not add a CLI to `PATH`.
 
 Without credentials, the CLI opens browser sign-in. Re-running the upload
-updates the same mailbox. Use `revdoku files`, `revdoku read PATH`, and
+updates the same bucket. Use `revdoku files`, `revdoku read PATH`, and
 `revdoku versions PATH` to inspect its files and their history.
 
 ## Hosted MCP agent
 
 Endpoint: `https://mcp.revdoku.com`
 
-Authenticate with OAuth before calling account tools. Select only the mailboxes
+Authenticate with OAuth before calling account tools. Select only the buckets
 the task needs, and [choose access](#choose-access) for the task: **Read only** to
 read saved email, **Read & write** when you must show the mailbox address.
 Call `account_list`, choose an account, pass its `account_id` on later calls, and
-list its authorized mailboxes. Read an existing message before making requested changes. Mailbox creation
-returns its incoming email address and receiving state. For an existing mailbox, use `mailbox_get(include_email: true)` with write access.
-Check `receiving_enabled`, then use `mailbox_email_list` with a saved `pagination.next_cursor`
-to poll. Read `eml_` IDs with `mailbox_email_get`; download attachments or the original
-with `mailbox_email_download`.
+list its authorized buckets. Read an existing message before making requested changes. Bucket creation
+returns its incoming email address and receiving state. For an existing mailbox, use `bucket_get(include_email: true)` with write access.
+Check `receiving_enabled`, then use `bucket_email_list` with a saved `pagination.next_cursor`
+to poll. Read `eml_` IDs with `bucket_email_get`; download attachments or the original
+with `bucket_email_download`.
 If not ready, explain `blocked_reason`; do not assume a paused or unknown mailbox
 can receive. Read quotas with `account_limits`. Personal
 notification frequency is managed in Account Settings → Notifications.

@@ -1,7 +1,7 @@
 # Authentication for existing accounts
 
 API requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for
-example `https://api.revdoku.com/v1/mailboxes`. OAuth endpoints (paths that
+example `https://api.revdoku.com/v1/buckets`. OAuth endpoints (paths that
 start with `/oauth/`) use `https://app.revdoku.com`.
 
 Most REST clients use an API key from **Account → Access**. Send it as
@@ -80,19 +80,19 @@ Pending poll responses use standard device-flow errors:
 
 Successful device-code token responses include normal OAuth fields plus
 `revdoku_api_key`, a durable `revdoku_...` key for local REST API clients.
-The browser approval screen defaults to selected mailboxes and `mailbox_read` when
-the client does not request a scope. Choose the mailboxes and permission on that
-screen. Selecting all existing mailboxes keeps a fixed selection; **All current and
-future mailboxes** is a separate choice. Read access supports message/file reads;
-provisioning new mailboxes requires account-wide `mailbox_admin`.
+The browser approval screen defaults to selected buckets and `bucket_read` when
+the client does not request a scope. Choose the buckets and permission on that
+screen. Selecting all existing buckets keeps a fixed selection; **All current and
+future buckets** is a separate choice. Read access supports message/file reads;
+provisioning new buckets requires account-wide `bucket_admin`.
 
 ## Permission scopes
 
 | Scope | Meaning |
 | --- | --- |
-| `mailbox_read` | List and read allowed mailbox files only. |
-| `mailbox_write` | Create and update allowed mailbox files. |
-| `mailbox_admin` | Create, update, and manage allowed mailboxes. |
+| `bucket_read` | List and read allowed bucket files only. |
+| `bucket_write` | Create and update allowed bucket files. |
+| `bucket_admin` | Create, update, and manage allowed buckets. |
 
 | Input | Purpose |
 | --- | --- |
@@ -100,9 +100,9 @@ provisioning new mailboxes requires account-wide `mailbox_admin`.
 | OAuth `scope` | Protocol scope: `revdoku:mcp`, optionally `offline_access`. |
 
 OAuth/device requests and dashboard one-time connection prompts default to
-`mailbox_read` when permission is omitted. Legacy email-code login and raw API-key creation default to `mailbox_admin`;
+`bucket_read` when permission is omitted. Legacy email-code login and raw API-key creation default to `bucket_admin`;
 request an explicit permission for those flows. Invalid values are rejected. Account → Access defaults
-new keys to selected mailboxes and read permission.
+new keys to selected buckets and read permission.
 
 ## POST /v1/agent_auth/request_code
 
@@ -141,8 +141,8 @@ Use browser device sign-in after verification fails; do not repeatedly submit co
   "email": "person@example.com",
   "code": "123456",
   "label": "Codex on laptop",
-  "permission_scope": "mailbox_admin",
-  "mailbox_access": "all"
+  "permission_scope": "bucket_admin",
+  "bucket_access": "all"
 }
 ```
 
@@ -150,11 +150,11 @@ For selected-mailbox access, use:
 
 ```json
 {
-  "mailbox_access": "selected",
-  "mailbox_ids": [
+  "bucket_access": "selected",
+  "bucket_ids": [
     "bkt_..."
   ],
-  "mailbox_permissions": {
+  "bucket_permissions": {
     "bkt_...": "write"
   }
 }
@@ -176,13 +176,13 @@ Common `redirect_path` values:
 
 | Path | Destination |
 | --- | --- |
-| `/mailboxes` | Mailbox dashboard. |
+| `/buckets` | Mailbox dashboard. |
 | `/account/access` | Members, agents, and API keys. |
 
 ## Activity attribution
 
 Optional: identify your client in activity logs. These headers are not required
-to create a mailbox or read email.
+to create a bucket or read email.
 
 ```http
 User-Agent: MyRevdokuClient/1.0 (codex)

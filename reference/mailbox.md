@@ -1,37 +1,37 @@
-# Email settings API reference
+# Mailbox API reference
 
 Addresses, aliases, allowed senders, webhooks and live subscriptions.
 
-Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example `https://api.revdoku.com/v1/mailboxes`. Send `Authorization: Bearer $REVDOKU_API_KEY` from your server. Tables use JSON names; where TypeScript differs, a field shows `json_name` / `typescriptName`. Python uses the JSON names.
+Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example `https://api.revdoku.com/v1/buckets`. Send `Authorization: Bearer $REVDOKU_API_KEY` from your server. Tables use JSON names; where TypeScript differs, a field shows `json_name` / `typescriptName`. Python uses the JSON names.
 
 [All operations](https://revdoku.com/api/reference.md) · [API guide](https://revdoku.com/api.md) · [Errors](https://revdoku.com/api.md#errors) · [OpenAPI](https://revdoku.com/openapi.json)
 
-- [Read address settings](#read-address-settings): `GET /v1/mailboxes/{mailbox_id}/email`
-- [Change the primary address](#change-the-primary-address): `POST /v1/mailboxes/{mailbox_id}/email/rotate`
-- [Add an alias address](#add-an-alias-address): `POST /v1/mailboxes/{mailbox_id}/email/aliases`
-- [Remove an alias address](#remove-an-alias-address): `DELETE /v1/mailboxes/{mailbox_id}/email/aliases/{alias_id}`
-- [Replace the allowed senders](#replace-the-allowed-senders): `PATCH /v1/mailboxes/{mailbox_id}/email/allowlist`
-- [Read the email webhook](#read-the-email-webhook): `GET /v1/mailboxes/{mailbox_id}/email/webhook`
-- [Set the email webhook](#set-the-email-webhook): `PUT /v1/mailboxes/{mailbox_id}/email/webhook`
-- [Remove the email webhook](#remove-the-email-webhook): `DELETE /v1/mailboxes/{mailbox_id}/email/webhook`
-- [Get a live email subscription ticket](#get-a-live-email-subscription-ticket): `GET /v1/mailboxes/{mailbox_id}/email/subscription`
+- [Read address settings](#read-address-settings): `GET /v1/buckets/{bucket_id}/mailbox`
+- [Change the primary address](#change-the-primary-address): `POST /v1/buckets/{bucket_id}/mailbox/rotate`
+- [Add an alias address](#add-an-alias-address): `POST /v1/buckets/{bucket_id}/mailbox/aliases`
+- [Remove an alias address](#remove-an-alias-address): `DELETE /v1/buckets/{bucket_id}/mailbox/aliases/{alias_id}`
+- [Replace the allowed senders](#replace-the-allowed-senders): `PATCH /v1/buckets/{bucket_id}/mailbox/allowlist`
+- [Read the email webhook](#read-the-email-webhook): `GET /v1/buckets/{bucket_id}/mailbox/webhook`
+- [Set the email webhook](#set-the-email-webhook): `PUT /v1/buckets/{bucket_id}/mailbox/webhook`
+- [Remove the email webhook](#remove-the-email-webhook): `DELETE /v1/buckets/{bucket_id}/mailbox/webhook`
+- [Get a live email subscription ticket](#get-a-live-email-subscription-ticket): `GET /v1/buckets/{bucket_id}/mailbox/subscription`
 
 ## Read address settings
 
-`GET /v1/mailboxes/{mailbox_id}/email`
+`GET /v1/buckets/{bucket_id}/mailbox`
 
-Requires mailbox write permission.
+Requires bucket write permission.
 
 | Language | Call |
 | --- | --- |
-| TypeScript | `client.api.getMailboxEmailSettings({ mailboxId })` |
-| Python | `client.api.get_mailbox_email_settings(mailbox_id)` |
+| TypeScript | `client.api.getMailbox({ bucketId })` |
+| Python | `client.api.get_mailbox(bucket_id)` |
 
 **Parameters**
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| `mailbox_id` / `mailboxId` | string | yes |  |
+| `bucket_id` / `bucketId` | string | yes |  |
 | `account_id` / `accountId` | string | no | Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. |
 | `reason` | string or null | no | Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. |
 
@@ -43,9 +43,7 @@ Requires mailbox write permission.
 import { Revdoku } from 'revdoku';
 
 const client = new Revdoku();
-const { data } = await client.api.getMailboxEmailSettings({
-  mailboxId: 'bkt_example',
-});
+const { data } = await client.api.getMailbox({ bucketId: 'bkt_example' });
 console.log(data);
 ```
 
@@ -55,14 +53,14 @@ console.log(data);
 from revdoku import Revdoku
 
 client = Revdoku()
-response = client.api.get_mailbox_email_settings("bkt_example")
+response = client.api.get_mailbox("bkt_example")
 print(response.data)
 ```
 
 **cURL**
 
 ```sh
-curl "https://api.revdoku.com/v1/mailboxes/bkt_example/email" \
+curl "https://api.revdoku.com/v1/buckets/bkt_example/mailbox" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -70,7 +68,7 @@ curl "https://api.revdoku.com/v1/mailboxes/bkt_example/email" \
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `address` | string | Primary address. Present when the credential has write access to the mailbox. Show it after the title. |
+| `address` | string | Primary address. Present when the credential has write access to the bucket. Show it after the title. |
 | `message_count` / `messageCount` | integer (int64) or null | Emails currently stored. Null while the email index is being prepared. |
 | `unread_count` / `unreadCount` | integer (int64) or null | Stored emails with shared unread status. Null while the email index is being prepared. |
 | `last_received_at` / `lastReceivedAt` | string (date-time) or null | Receipt time of the latest saved email; null before the first email. |
@@ -95,7 +93,7 @@ curl "https://api.revdoku.com/v1/mailboxes/bkt_example/email" \
 | `customization.allowed` | boolean |  |
 | `customization.blocked_reason` / `blockedReason` | string or null |  |
 | `customization.settings_url` / `settingsUrl` | string or null | Account-domain settings link for administrators; null otherwise. |
-| `sender_allowlist` / `senderAllowlist` | EmailSenderAllowlist | Returned to account administrators with mailbox-admin permission. |
+| `sender_allowlist` / `senderAllowlist` | EmailSenderAllowlist | Returned to account administrators with bucket-admin permission. |
 | `sender_allowlist.enabled` | boolean |  |
 | `sender_allowlist.entries` | array of string |  |
 | `sender_allowlist.version` | string |  |
@@ -108,26 +106,24 @@ curl "https://api.revdoku.com/v1/mailboxes/bkt_example/email" \
 | --- | --- |
 | 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
 
-Guide: [Email settings](https://revdoku.com/api.md#email-settings)
-
 ## Change the primary address
 
-`POST /v1/mailboxes/{mailbox_id}/email/rotate`
+`POST /v1/buckets/{bucket_id}/mailbox/rotate`
 
-Requires mailbox admin permission and a paid plan, except for a change back to revdokumail.
+Requires bucket-admin permission and a paid plan, except for a change back to revdokumail.
 
 com. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address. A change from revdokumail.com to a customer domain always keeps the old address as the revdokumail.com base address, which uses no alias slot. A change from a customer domain back to revdokumail.com makes that base address the main address again at once (200, assignment.status active): username is ignored, no address change is counted and it works on every plan.
 
 | Language | Call |
 | --- | --- |
-| TypeScript | `client.api.changeMailboxAddress({ mailboxId, changeMailboxAddressRequest })` |
-| Python | `client.api.change_mailbox_address(mailbox_id, change_mailbox_address_request)` |
+| TypeScript | `client.api.changeMailboxAddress({ bucketId, changeMailboxAddressRequest })` |
+| Python | `client.api.change_mailbox_address(bucket_id, change_mailbox_address_request)` |
 
 **Parameters**
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| `mailbox_id` / `mailboxId` | string | yes |  |
+| `bucket_id` / `bucketId` | string | yes |  |
 
 **Request body**: TypeScript `changeMailboxAddressRequest: ChangeMailboxAddressRequest`, Python `change_mailbox_address_request=ChangeMailboxAddressRequest(...)`.
 
@@ -150,7 +146,7 @@ import { Revdoku } from 'revdoku';
 
 const client = new Revdoku();
 const { data } = await client.api.changeMailboxAddress({
-  mailboxId: 'bkt_example',
+  bucketId: 'bkt_example',
   changeMailboxAddressRequest: { confirm: true, expectedAddress: 'support.k7x2@revdokumail.com' },
 });
 console.log(data);
@@ -175,7 +171,7 @@ print(response.data)
 **cURL**
 
 ```sh
-curl -X POST "https://api.revdoku.com/v1/mailboxes/bkt_example/email/rotate" \
+curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/mailbox/rotate" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -188,7 +184,7 @@ curl -X POST "https://api.revdoku.com/v1/mailboxes/bkt_example/email/rotate" \
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `address` | string | Primary address. Present when the credential has write access to the mailbox. Show it after the title. |
+| `address` | string | Primary address. Present when the credential has write access to the bucket. Show it after the title. |
 | `message_count` / `messageCount` | integer (int64) or null | Emails currently stored. Null while the email index is being prepared. |
 | `unread_count` / `unreadCount` | integer (int64) or null | Stored emails with shared unread status. Null while the email index is being prepared. |
 | `last_received_at` / `lastReceivedAt` | string (date-time) or null | Receipt time of the latest saved email; null before the first email. |
@@ -210,7 +206,7 @@ curl -X POST "https://api.revdoku.com/v1/mailboxes/bkt_example/email/rotate" \
 | `customization.allowed` | boolean |  |
 | `customization.blocked_reason` / `blockedReason` | string or null |  |
 | `customization.settings_url` / `settingsUrl` | string or null | Account-domain settings link for administrators; null otherwise. |
-| `sender_allowlist` / `senderAllowlist` | EmailSenderAllowlist | Returned to account administrators with mailbox-admin permission. Fields as in [Read address settings](#read-address-settings). |
+| `sender_allowlist` / `senderAllowlist` | EmailSenderAllowlist | Returned to account administrators with bucket-admin permission. Fields as in [Read address settings](#read-address-settings). |
 
 **Errors**
 
@@ -224,22 +220,22 @@ Guide: [Change the address](https://revdoku.com/api.md#change-the-address)
 
 ## Add an alias address
 
-`POST /v1/mailboxes/{mailbox_id}/email/aliases`
+`POST /v1/buckets/{bucket_id}/mailbox/aliases`
 
-Requires a paid plan and a full-account owner or administrator with mailbox-admin permission.
+Requires a paid plan and a full-account owner or administrator with bucket-admin permission.
 
 The primary address stays unchanged. On a mailbox whose primary address is on your domain, the first revdokumail.com alias becomes its base address and uses no alias slot.
 
 | Language | Call |
 | --- | --- |
-| TypeScript | `client.api.createEmailAlias({ mailboxId, createEmailAliasRequest })` |
-| Python | `client.api.create_email_alias(mailbox_id, create_email_alias_request)` |
+| TypeScript | `client.api.createEmailAlias({ bucketId, createEmailAliasRequest })` |
+| Python | `client.api.create_email_alias(bucket_id, create_email_alias_request)` |
 
 **Parameters**
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| `mailbox_id` / `mailboxId` | string | yes |  |
+| `bucket_id` / `bucketId` | string | yes |  |
 
 **Request body**: TypeScript `createEmailAliasRequest: CreateEmailAliasRequest`, Python `create_email_alias_request=CreateEmailAliasRequest(...)`.
 
@@ -259,7 +255,7 @@ import { Revdoku } from 'revdoku';
 
 const client = new Revdoku();
 const { data } = await client.api.createEmailAlias({
-  mailboxId: 'bkt_example',
+  bucketId: 'bkt_example',
   createEmailAliasRequest: { username: 'support' },
 });
 console.log(data);
@@ -281,7 +277,7 @@ print(response.data)
 **cURL**
 
 ```sh
-curl -X POST "https://api.revdoku.com/v1/mailboxes/bkt_example/email/aliases" \
+curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/mailbox/aliases" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"username": "support"}'
@@ -291,7 +287,7 @@ curl -X POST "https://api.revdoku.com/v1/mailboxes/bkt_example/email/aliases" \
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `address` | string | Primary address. Present when the credential has write access to the mailbox. Show it after the title. |
+| `address` | string | Primary address. Present when the credential has write access to the bucket. Show it after the title. |
 | `message_count` / `messageCount` | integer (int64) or null | Emails currently stored. Null while the email index is being prepared. |
 | `unread_count` / `unreadCount` | integer (int64) or null | Stored emails with shared unread status. Null while the email index is being prepared. |
 | `last_received_at` / `lastReceivedAt` | string (date-time) or null | Receipt time of the latest saved email; null before the first email. |
@@ -313,7 +309,7 @@ curl -X POST "https://api.revdoku.com/v1/mailboxes/bkt_example/email/aliases" \
 | `customization.allowed` | boolean |  |
 | `customization.blocked_reason` / `blockedReason` | string or null |  |
 | `customization.settings_url` / `settingsUrl` | string or null | Account-domain settings link for administrators; null otherwise. |
-| `sender_allowlist` / `senderAllowlist` | EmailSenderAllowlist | Returned to account administrators with mailbox-admin permission. Fields as in [Read address settings](#read-address-settings). |
+| `sender_allowlist` / `senderAllowlist` | EmailSenderAllowlist | Returned to account administrators with bucket-admin permission. Fields as in [Read address settings](#read-address-settings). |
 
 **Errors**
 
@@ -325,20 +321,20 @@ Guide: [Aliases](https://revdoku.com/api.md#aliases)
 
 ## Remove an alias address
 
-`DELETE /v1/mailboxes/{mailbox_id}/email/aliases/{alias_id}`
+`DELETE /v1/buckets/{bucket_id}/mailbox/aliases/{alias_id}`
 
 Stops new and queued deliveries to the alias. Saved emails stay. The base address of a mailbox whose primary address is on your domain cannot be removed (`409 EMAIL_ALIAS_BASE`).
 
 | Language | Call |
 | --- | --- |
-| TypeScript | `client.api.deleteEmailAlias({ mailboxId, aliasId })` |
-| Python | `client.api.delete_email_alias(mailbox_id, alias_id)` |
+| TypeScript | `client.api.deleteEmailAlias({ bucketId, aliasId })` |
+| Python | `client.api.delete_email_alias(bucket_id, alias_id)` |
 
 **Parameters**
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| `mailbox_id` / `mailboxId` | string | yes |  |
+| `bucket_id` / `bucketId` | string | yes |  |
 | `alias_id` / `aliasId` | string | yes |  |
 | `account_id` / `accountId` | string | no | Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. |
 | `reason` | string or null | no | Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. |
@@ -352,7 +348,7 @@ import { Revdoku } from 'revdoku';
 
 const client = new Revdoku();
 const { data } = await client.api.deleteEmailAlias({
-  mailboxId: 'bkt_example',
+  bucketId: 'bkt_example',
   aliasId: 'ema_example',
 });
 console.log(data);
@@ -371,7 +367,7 @@ print(response.data)
 **cURL**
 
 ```sh
-curl -X DELETE "https://api.revdoku.com/v1/mailboxes/bkt_example/email/aliases/ema_example" \
+curl -X DELETE "https://api.revdoku.com/v1/buckets/bkt_example/mailbox/aliases/ema_example" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -380,7 +376,7 @@ curl -X DELETE "https://api.revdoku.com/v1/mailboxes/bkt_example/email/aliases/e
 | Field | Type | Description |
 | --- | --- | --- |
 | `deleted` | boolean `true` |  |
-| `id` | string | ID of the deleted resource. A webhook delete returns the mailbox ID. |
+| `id` | string | ID of the deleted resource. A webhook delete returns the bucket ID. |
 
 **Errors**
 
@@ -394,22 +390,22 @@ Guide: [Aliases](https://revdoku.com/api.md#aliases)
 
 ## Replace the allowed senders
 
-`PATCH /v1/mailboxes/{mailbox_id}/email/allowlist`
+`PATCH /v1/buckets/{bucket_id}/mailbox/allowlist`
 
-Requires an account owner or administrator with mailbox-admin permission.
+Requires an account owner or administrator with bucket-admin permission.
 
 Send sender_allowlist.version from the settings read as expected_version.
 
 | Language | Call |
 | --- | --- |
-| TypeScript | `client.api.updateEmailAllowlist({ mailboxId, updateEmailAllowlistRequest })` |
-| Python | `client.api.update_email_allowlist(mailbox_id, update_email_allowlist_request)` |
+| TypeScript | `client.api.updateEmailAllowlist({ bucketId, updateEmailAllowlistRequest })` |
+| Python | `client.api.update_email_allowlist(bucket_id, update_email_allowlist_request)` |
 
 **Parameters**
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| `mailbox_id` / `mailboxId` | string | yes |  |
+| `bucket_id` / `bucketId` | string | yes |  |
 
 **Request body**: TypeScript `updateEmailAllowlistRequest: UpdateEmailAllowlistRequest`, Python `update_email_allowlist_request=UpdateEmailAllowlistRequest(...)`.
 
@@ -431,7 +427,7 @@ import { Revdoku } from 'revdoku';
 
 const client = new Revdoku();
 const { data } = await client.api.updateEmailAllowlist({
-  mailboxId: 'bkt_example',
+  bucketId: 'bkt_example',
   updateEmailAllowlistRequest: {
     senderAllowlist: { enabled: true, entries: ['example.com'] },
     expectedVersion: 'VERSION_FROM_SETTINGS_READ',
@@ -462,7 +458,7 @@ print(response.data)
 **cURL**
 
 ```sh
-curl -X PATCH "https://api.revdoku.com/v1/mailboxes/bkt_example/email/allowlist" \
+curl -X PATCH "https://api.revdoku.com/v1/buckets/bkt_example/mailbox/allowlist" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -487,22 +483,22 @@ Guide: [Allowed senders](https://revdoku.com/api.md#allowed-senders)
 
 ## Read the email webhook
 
-`GET /v1/mailboxes/{mailbox_id}/email/webhook`
+`GET /v1/buckets/{bucket_id}/mailbox/webhook`
 
-Requires mailbox-admin permission.
+Requires bucket-admin permission.
 
 webhook is null when no webhook is set. The signing secret is never returned here.
 
 | Language | Call |
 | --- | --- |
-| TypeScript | `client.api.getEmailWebhook({ mailboxId })` |
-| Python | `client.api.get_email_webhook(mailbox_id)` |
+| TypeScript | `client.api.getEmailWebhook({ bucketId })` |
+| Python | `client.api.get_email_webhook(bucket_id)` |
 
 **Parameters**
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| `mailbox_id` / `mailboxId` | string | yes |  |
+| `bucket_id` / `bucketId` | string | yes |  |
 | `account_id` / `accountId` | string | no | Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. |
 
 **Examples**
@@ -513,7 +509,7 @@ webhook is null when no webhook is set. The signing secret is never returned her
 import { Revdoku } from 'revdoku';
 
 const client = new Revdoku();
-const { data } = await client.api.getEmailWebhook({ mailboxId: 'bkt_example' });
+const { data } = await client.api.getEmailWebhook({ bucketId: 'bkt_example' });
 console.log(data);
 ```
 
@@ -530,7 +526,7 @@ print(response.data)
 **cURL**
 
 ```sh
-curl "https://api.revdoku.com/v1/mailboxes/bkt_example/email/webhook" \
+curl "https://api.revdoku.com/v1/buckets/bkt_example/mailbox/webhook" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -550,22 +546,22 @@ Guide: [Webhooks and live subscriptions](https://revdoku.com/api.md#webhooks-and
 
 ## Set the email webhook
 
-`PUT /v1/mailboxes/{mailbox_id}/email/webhook`
+`PUT /v1/buckets/{bucket_id}/mailbox/webhook`
 
-Requires mailbox-admin permission and a public HTTPS URL.
+Requires bucket-admin permission and a public HTTPS URL.
 
 A new URL or rotate_secret=true creates a new signing secret, returns it once and cancels pending deliveries. The same URL without rotate_secret returns the webhook without a secret.
 
 | Language | Call |
 | --- | --- |
-| TypeScript | `client.api.setEmailWebhook({ mailboxId, setEmailWebhookRequest })` |
-| Python | `client.api.set_email_webhook(mailbox_id, set_email_webhook_request)` |
+| TypeScript | `client.api.setEmailWebhook({ bucketId, setEmailWebhookRequest })` |
+| Python | `client.api.set_email_webhook(bucket_id, set_email_webhook_request)` |
 
 **Parameters**
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| `mailbox_id` / `mailboxId` | string | yes |  |
+| `bucket_id` / `bucketId` | string | yes |  |
 
 **Request body**: TypeScript `setEmailWebhookRequest: SetEmailWebhookRequest`, Python `set_email_webhook_request=SetEmailWebhookRequest(...)`.
 
@@ -585,7 +581,7 @@ import { Revdoku } from 'revdoku';
 
 const client = new Revdoku();
 const { data } = await client.api.setEmailWebhook({
-  mailboxId: 'bkt_example',
+  bucketId: 'bkt_example',
   setEmailWebhookRequest: { webhookUrl: 'https://example.com/revdoku/webhook' },
 });
 console.log(data);
@@ -609,7 +605,7 @@ print(response.data)
 **cURL**
 
 ```sh
-curl -X PUT "https://api.revdoku.com/v1/mailboxes/bkt_example/email/webhook" \
+curl -X PUT "https://api.revdoku.com/v1/buckets/bkt_example/mailbox/webhook" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"webhook_url": "https://example.com/revdoku/webhook"}'
@@ -634,20 +630,20 @@ Guide: [Webhooks and live subscriptions](https://revdoku.com/api.md#webhooks-and
 
 ## Remove the email webhook
 
-`DELETE /v1/mailboxes/{mailbox_id}/email/webhook`
+`DELETE /v1/buckets/{bucket_id}/mailbox/webhook`
 
-Cancels queued deliveries. A delivery already in progress can finish. Returns the mailbox ID, also when no webhook is set.
+Cancels queued deliveries. A delivery already in progress can finish. Returns the bucket ID, also when no webhook is set.
 
 | Language | Call |
 | --- | --- |
-| TypeScript | `client.api.deleteEmailWebhook({ mailboxId })` |
-| Python | `client.api.delete_email_webhook(mailbox_id)` |
+| TypeScript | `client.api.deleteEmailWebhook({ bucketId })` |
+| Python | `client.api.delete_email_webhook(bucket_id)` |
 
 **Parameters**
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| `mailbox_id` / `mailboxId` | string | yes |  |
+| `bucket_id` / `bucketId` | string | yes |  |
 | `account_id` / `accountId` | string | no | Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. |
 
 **Examples**
@@ -659,7 +655,7 @@ import { Revdoku } from 'revdoku';
 
 const client = new Revdoku();
 const { data } = await client.api.deleteEmailWebhook({
-  mailboxId: 'bkt_example',
+  bucketId: 'bkt_example',
 });
 console.log(data);
 ```
@@ -677,7 +673,7 @@ print(response.data)
 **cURL**
 
 ```sh
-curl -X DELETE "https://api.revdoku.com/v1/mailboxes/bkt_example/email/webhook" \
+curl -X DELETE "https://api.revdoku.com/v1/buckets/bkt_example/mailbox/webhook" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -686,7 +682,7 @@ curl -X DELETE "https://api.revdoku.com/v1/mailboxes/bkt_example/email/webhook" 
 | Field | Type | Description |
 | --- | --- | --- |
 | `deleted` | boolean `true` |  |
-| `id` | string | ID of the deleted resource. A webhook delete returns the mailbox ID. |
+| `id` | string | ID of the deleted resource. A webhook delete returns the bucket ID. |
 
 **Errors**
 
@@ -698,22 +694,22 @@ Guide: [Webhooks and live subscriptions](https://revdoku.com/api.md#webhooks-and
 
 ## Get a live email subscription ticket
 
-`GET /v1/mailboxes/{mailbox_id}/email/subscription`
+`GET /v1/buckets/{bucket_id}/mailbox/subscription`
 
-Requires mailbox read permission.
+Requires bucket read permission.
 
 Connect to websocket_url with email_subscription_token=TOKEN within 60 seconds, then subscribe to EmailReceivedChannel. Catch up with the email list cursor after every connect.
 
 | Language | Call |
 | --- | --- |
-| TypeScript | `client.api.getEmailSubscription({ mailboxId })` |
-| Python | `client.api.get_email_subscription(mailbox_id)` |
+| TypeScript | `client.api.getEmailSubscription({ bucketId })` |
+| Python | `client.api.get_email_subscription(bucket_id)` |
 
 **Parameters**
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| `mailbox_id` / `mailboxId` | string | yes |  |
+| `bucket_id` / `bucketId` | string | yes |  |
 | `account_id` / `accountId` | string | no | Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. |
 
 **Examples**
@@ -725,7 +721,7 @@ import { Revdoku } from 'revdoku';
 
 const client = new Revdoku();
 const { data } = await client.api.getEmailSubscription({
-  mailboxId: 'bkt_example',
+  bucketId: 'bkt_example',
 });
 console.log(data);
 ```
@@ -743,7 +739,7 @@ print(response.data)
 **cURL**
 
 ```sh
-curl "https://api.revdoku.com/v1/mailboxes/bkt_example/email/subscription" \
+curl "https://api.revdoku.com/v1/buckets/bkt_example/mailbox/subscription" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -756,7 +752,7 @@ curl "https://api.revdoku.com/v1/mailboxes/bkt_example/email/subscription" \
 | `subscription.expires_in` / `expiresIn` | integer `60` |  |
 | `subscription.channel` | string `"EmailReceivedChannel"` |  |
 | `subscription.account_id` / `accountId` | string |  |
-| `subscription.mailbox_id` / `mailboxId` | string |  |
+| `subscription.bucket_id` / `bucketId` | string |  |
 | `subscription.websocket_url` / `websocketUrl` | string (uri) | Base WebSocket endpoint. Append email_subscription_token as a query parameter. |
 
 **Errors**

@@ -8,8 +8,8 @@ Your own domain? Starter. A team of agents? Standard. Apps or clients? Business.
 | Price | $0 | $4.99/mo | $19.99/mo | $49.99/mo |
 | Annual price (2 months free) | — | $49.90/yr | $199.90/yr | $499.90/yr |
 | Limited-time offer price | — | $24.95/yr | $9.99/mo or $99.95/yr | $24.99/mo or $249.95/yr |
-| Incoming emails / month | 3,000 (768 MB) | 5,000 (1 GB) | 10,000 (3 GB) | 30,000 (8 GB) |
-| Sent emails / month | 500 | 1,000 | 5,000 | 15,000 |
+| Incoming emails / month | 50 (256 MB) | 500 (1 GB) | 2,000 (3 GB) | 10,000 (8 GB) |
+| Sent emails / month | 10 | 100 | 500 | 2,000 |
 | Replies to people who email the mailbox | Yes | Yes | Yes | Yes |
 | Revdoku footer on sent email | One line | No | No | No |
 | Mailboxes | 3 | 3 | 10 | 125 |

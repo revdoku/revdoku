@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API tester</title>
+  <style>
+    :root { color-scheme: light dark; --border: #d1d5db; --muted: #6b7280; --accent: #4f46e5; }
+    body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    p { margin: 0 0 16px; color: var(--muted); }
+    form { display: grid; gap: 10px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; }
+    input, select, textarea { font: inherit; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: inherit; }
+    textarea { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; min-height: 90px; resize: vertical; }
+    .grow { flex: 1; min-width: 220px; }
+    button { font: inherit; padding: 9px 16px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; cursor: pointer; justify-self: start; }
+    button:disabled { opacity: .6; cursor: default; }
+    pre { margin: 16px 0 0; padding: 12px; border: 1px solid var(--border); border-radius: 8px; overflow: auto; font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+    .status { margin-top: 16px; font-weight: 600; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>API tester</h1>
+  <p>Send a request to the API and see the answer. Your API key stays in this page and is never saved.</p>
+  <form id="request">
+    <div class="row">
+      <label>Method
+        <select id="method"><option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option></select>
+      </label>
+      <label class="grow">URL
+        <input id="url" type="url" required value="https://api.example.com/v1/plants">
+      </label>
+    </div>
+    <div class="row">
+      <label class="grow">API key
+        <input id="key" type="password" autocomplete="off" placeholder="Sent as Authorization: Bearer …">
+      </label>
+      <label>Route
+        <select id="route"><option value="site">Through this site</option><option value="direct">Directly from the browser</option></select>
+      </label>
+    </div>
+    <label>JSON body (POST, PUT and PATCH)
+      <textarea id="body" spellcheck="false">{ "name": "Fern" }</textarea>
+    </label>
+    <button id="send" type="submit">Send</button>
+  </form>
+  <div class="status" id="status" aria-live="polite"></div>
+  <pre id="output" hidden></pre>
+</main>
+<script>
+(function () {
+  "use strict";
+  var form = document.getElementById("request");
+  var output = document.getElementById("output");
+  var status = document.getElementById("status");
+  var send = document.getElementById("send");
+
+  // A Revdoku docs site forwards requests to the API servers of its OpenAPI document (/_revdoku/api-proxy).
+  function requestUrl(target) {
+    if (document.getElementById("route").value !== "site" || location.protocol === "file:") return target;
+    return "/_revdoku/api-proxy?scalar_url=" + encodeURIComponent(target);
+  }
+
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+    var method = document.getElementById("method").value;
+    var key = document.getElementById("key").value.trim();
+    var headers = { Accept: "application/json" };
+    if (key) headers.Authorization = "Bearer " + key;
+    var init = { method: method, headers: headers };
+    if (["POST", "PUT", "PATCH"].indexOf(method) >= 0) {
+      headers["Content-Type"] = "application/json";
+      init.body = document.getElementById("body").value;
+    }
+    var started = Date.now();
+    send.disabled = true;
+    status.textContent = "Sending…";
+    output.hidden = true;
+    fetch(requestUrl(document.getElementById("url").value), init)
+      .then(function (response) {
+        return response.text().then(function (text) {
+          status.textContent = response.status + " " + response.statusText + " · " + (Date.now() - started) + " ms";
+          try { text = JSON.stringify(JSON.parse(text), null, 2); } catch (error) { /* not JSON */ }
+          output.textContent = text || "(empty body)";
+          output.hidden = false;
+        });
+      })
+      .catch(function (error) {
+        status.textContent = "The request failed: " + error.message;
+      })
+      .finally(function () { send.disabled = false; });
+  });
+})();
+</script>
+</body>
+</html>

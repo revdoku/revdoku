@@ -2,7 +2,7 @@
 
 Custom domains for mailbox addresses.
 
-Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example `https://api.revdoku.com/v1/mailboxes`. Send `Authorization: Bearer $REVDOKU_API_KEY` from your server. Tables use JSON names; where TypeScript differs, a field shows `json_name` / `typescriptName`. Python uses the JSON names.
+Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example `https://api.revdoku.com/v1/buckets`. Send `Authorization: Bearer $REVDOKU_API_KEY` from your server. Tables use JSON names; where TypeScript differs, a field shows `json_name` / `typescriptName`. Python uses the JSON names.
 
 [All operations](https://revdoku.com/api/reference.md) · [API guide](https://revdoku.com/api.md) · [Errors](https://revdoku.com/api.md#errors) · [OpenAPI](https://revdoku.com/openapi.json)
 
@@ -84,7 +84,7 @@ curl "https://api.revdoku.com/v1/account/email_domains" \
 | `domains[].required_dns_records` / `requiredDnsRecords` | array of DnsRecord | Fields: `type`, `name`, `value`, `purpose`, `zone`, `relative_name`. |
 | `domains[].setup_provider` / `setupProvider` | string or null | DNS provider of the domain's zone that supports one-click setup, such as Cloudflare. Null otherwise, also while the deployment cannot sign setup links. Get the link with `getEmailDomainSetupLink`; it can still return an error. |
 | `domains[].error` | object or null |  |
-| `domains[].assigned_mailboxes` / `assignedMailboxes` | array of object | Fields: `id`, `email`. |
+| `domains[].assigned_buckets` / `assignedBuckets` | array of object | Fields: `id`, `email`. |
 | `enabled` | boolean | Whether this account can use custom email domains. |
 | `guidance` | string |  |
 | `pagination` | Pagination | One page of a list. Request the next page with cursor=next_cursor and the same filters. Cursors are opaque strings: do not build or decode them. |
@@ -140,7 +140,7 @@ curl "https://api.revdoku.com/v1/account/email_domains" \
         "setup_expires_at": "2026-10-18T12:00:00.000Z",
         "ready_at": null,
         "error": null,
-        "assigned_mailboxes": []
+        "assigned_buckets": []
       }
     ],
     "enabled": true,
@@ -428,7 +428,7 @@ curl -X DELETE "https://api.revdoku.com/v1/account/email_domains/ied_example" \
 | Field | Type | Description |
 | --- | --- | --- |
 | `deleted` | boolean `true` |  |
-| `id` | string | ID of the deleted resource. A webhook delete returns the mailbox ID. |
+| `id` | string | ID of the deleted resource. A webhook delete returns the bucket ID. |
 
 **Errors**
 

@@ -3,7 +3,7 @@
   "info": {
     "title": "Revdoku API",
     "version": "2.0.0",
-    "description": "Mailboxes for AI agents, with private file storage. Create mailboxes, read and reply to email, and store files. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up."
+    "description": "Buckets with a mailbox, private files and a site. Create buckets, read and reply to email, store files and publish sites. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up."
   },
   "servers": [
     {
@@ -26,11 +26,11 @@
       "description": "Connection status, granted accounts and limits."
     },
     {
-      "name": "Mailboxes",
-      "description": "Create, read, archive and delete mailboxes."
+      "name": "Buckets",
+      "description": "Create, read, archive and delete buckets."
     },
     {
-      "name": "Email settings",
+      "name": "Mailbox",
       "description": "Addresses, aliases, allowed senders, webhooks and live subscriptions."
     },
     {
@@ -44,6 +44,10 @@
     {
       "name": "Email domains",
       "description": "Custom domains for mailbox addresses."
+    },
+    {
+      "name": "Publications",
+      "description": "A bucket's site: publish its files, preview them for 24 hours, or take the site down."
     }
   ],
   "paths": {
@@ -143,13 +147,13 @@
                   "permission_scope": {
                     "type": "string",
                     "enum": [
-                      "mailbox_read",
-                      "mailbox_write",
-                      "mailbox_admin"
+                      "bucket_read",
+                      "bucket_write",
+                      "bucket_admin"
                     ],
-                    "default": "mailbox_admin"
+                    "default": "bucket_admin"
                   },
-                  "mailbox_access": {
+                  "bucket_access": {
                     "type": "string",
                     "enum": [
                       "all",
@@ -157,14 +161,14 @@
                     ],
                     "default": "all"
                   },
-                  "mailbox_ids": {
+                  "bucket_ids": {
                     "type": "array",
                     "items": {
                       "type": "string"
                     },
-                    "description": "Required when mailbox_access is selected."
+                    "description": "Required when bucket_access is selected."
                   },
-                  "mailbox_permissions": {
+                  "bucket_permissions": {
                     "type": "object",
                     "additionalProperties": {
                       "type": "string",
@@ -173,7 +177,7 @@
                         "write"
                       ]
                     },
-                    "description": "Optional access per selected mailbox ID: read or write. Without an entry, a mailbox gets write, or read when permission_scope is mailbox_read."
+                    "description": "Optional access per selected bucket ID: read or write. Without an entry, a bucket gets write, or read when permission_scope is bucket_read."
                   },
                   "account_id": {
                     "type": "string",
@@ -295,7 +299,7 @@
           "Authentication"
         ],
         "summary": "Create a dashboard link for the user",
-        "description": "Returns a dashboard URL for a path such as /mailboxes. The user signs in normally; the link grants no access.",
+        "description": "Returns a dashboard URL for a path such as /buckets. The user signs in normally; the link grants no access.",
         "requestBody": {
           "required": true,
           "content": {
@@ -305,7 +309,7 @@
                 "properties": {
                   "redirect_path": {
                     "type": "string",
-                    "default": "/mailboxes"
+                    "default": "/buckets"
                   },
                   "account_id": {
                     "type": "string",
@@ -356,7 +360,7 @@
           "Accounts"
         ],
         "summary": "Read the connection and selected account",
-        "description": "Works with every API key, including mailbox-scoped keys. Read quotas with GET /v1/account/limits.",
+        "description": "Works with every API key, including bucket-scoped keys. Read quotas with GET /v1/account/limits.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AccountId"
@@ -424,18 +428,18 @@
                       "email": "ada@example.com",
                       "name": "Ada Lovelace"
                     },
-                    "dashboard_url": "https://app.revdoku.com/mailboxes?account_id=acct_example",
+                    "dashboard_url": "https://app.revdoku.com/buckets?account_id=acct_example",
                     "connection": {
                       "api_key_id": "atok_example",
                       "label": "Orders backend",
                       "token_type": "api",
-                      "scope": "mailbox_admin",
+                      "scope": "bucket_admin",
                       "expires_at": "2027-10-11T12:00:00Z",
                       "last_used_at": "2026-10-11T12:20:00Z",
-                      "mailbox_access": "all",
-                      "mailbox_ids": [],
-                      "denied_mailbox_ids": [],
-                      "mailbox_permissions": {},
+                      "bucket_access": "all",
+                      "bucket_ids": [],
+                      "denied_bucket_ids": [],
+                      "bucket_permissions": {},
                       "permissions": {
                         "read": true,
                         "write": true,
@@ -509,9 +513,9 @@
                         "region": "eu",
                         "status": "active",
                         "permissions": {
-                          "scope": "mailbox_admin",
-                          "mailbox_access": "all",
-                          "can_create_mailboxes": true
+                          "scope": "bucket_admin",
+                          "bucket_access": "all",
+                          "can_create_buckets": true
                         }
                       }
                     ],
@@ -660,9 +664,9 @@
                       "region": "eu",
                       "status": "active",
                       "permissions": {
-                        "scope": "mailbox_admin",
-                        "mailbox_access": "all",
-                        "can_create_mailboxes": true
+                        "scope": "bucket_admin",
+                        "bucket_access": "all",
+                        "can_create_buckets": true
                       }
                     }
                   }
@@ -683,7 +687,7 @@
           "Accounts"
         ],
         "summary": "Read effective account limits",
-        "description": "Values come from the plan and account overrides. Zero means no allowance; null means no cap. Storage, mailbox and email traffic allowances are shared within a billing group.",
+        "description": "Values come from the plan and account overrides. Zero means no allowance; null means no cap. Storage, bucket and email traffic allowances are shared within a billing group.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AccountId"
@@ -721,7 +725,7 @@
                         "usage": {
                           "type": "object",
                           "properties": {
-                            "mailbox_creations": {
+                            "bucket_creations": {
                               "type": "object",
                               "properties": {
                                 "monthly_limit": {
@@ -756,15 +760,15 @@
                   "data": {
                     "account_id": "acct_example",
                     "limits": {
-                      "max_mailboxes": 3,
-                      "max_mailbox_creations_per_month": 12,
-                      "max_files_per_mailbox": 25000,
+                      "max_buckets": 3,
+                      "max_bucket_creations_per_month": 12,
+                      "max_files_per_bucket": 25000,
                       "max_current_files": 40000,
                       "max_storage_bytes": 2147483648,
                       "max_file_size_bytes": 52428800,
                       "max_pdf_size_bytes": 52428800,
                       "max_file_versions_per_file": 15,
-                      "max_email_aliases_per_mailbox": 4,
+                      "max_email_aliases_per_bucket": 4,
                       "max_email_domains": 3,
                       "max_received_emails_per_month": 1500,
                       "max_received_email_bytes_per_month": 268435456,
@@ -778,7 +782,7 @@
                       "audit_retention_days": 45
                     },
                     "usage": {
-                      "mailbox_creations": {
+                      "bucket_creations": {
                         "monthly_limit": 12,
                         "used": 2,
                         "remaining": 10,
@@ -883,7 +887,7 @@
                         "setup_expires_at": "2026-10-18T12:00:00.000Z",
                         "ready_at": null,
                         "error": null,
-                        "assigned_mailboxes": []
+                        "assigned_buckets": []
                       }
                     ],
                     "enabled": true,
@@ -1300,14 +1304,14 @@
         }
       }
     },
-    "/v1/mailboxes": {
+    "/v1/buckets": {
       "get": {
-        "operationId": "listMailboxes",
+        "operationId": "listBuckets",
         "tags": [
-          "Mailboxes"
+          "Buckets"
         ],
-        "summary": "List mailboxes",
-        "description": "Lists active mailboxes by default, newest first. Counts and pages cover only mailboxes this credential can access. Reads no email content.",
+        "summary": "List buckets",
+        "description": "Lists active buckets by default, newest first. Counts and pages cover only buckets this credential can access. Reads no email content.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AccountId"
@@ -1337,7 +1341,7 @@
               "type": "string",
               "maxLength": 500
             },
-            "description": "Case-insensitive text in the mailbox ID, or in the title or address when the key can see the address."
+            "description": "Case-insensitive text in the bucket ID, or in the title or address when the key can see the address."
           },
           {
             "$ref": "#/components/parameters/Limit"
@@ -1363,14 +1367,14 @@
                       "const": true
                     },
                     "data": {
-                      "$ref": "#/components/schemas/MailboxList"
+                      "$ref": "#/components/schemas/BucketList"
                     }
                   }
                 },
                 "example": {
                   "success": true,
                   "data": {
-                    "mailboxes": [
+                    "buckets": [
                       {
                         "id": "bkt_example",
                         "account_id": "acct_example",
@@ -1378,7 +1382,7 @@
                         "description": null,
                         "metadata": {},
                         "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-                        "email": {
+                        "mailbox": {
                           "address": "acme-orders.k7m2@revdokumail.com",
                           "message_count": 1,
                           "unread_count": 1,
@@ -1397,7 +1401,7 @@
                         "version_number": 0,
                         "created_at": "2026-10-11T12:00:00.000000Z",
                         "updated_at": "2026-10-11T12:05:00.000000Z",
-                        "dashboard_url": "https://app.revdoku.com/mailboxes/view?account_id=acct_example&id=bkt_example",
+                        "dashboard_url": "https://app.revdoku.com/buckets/view?account_id=acct_example&id=bkt_example",
                         "archive": {
                           "allowed": true
                         },
@@ -1434,12 +1438,12 @@
         }
       },
       "post": {
-        "operationId": "createMailbox",
+        "operationId": "createBucket",
         "tags": [
-          "Mailboxes"
+          "Buckets"
         ],
-        "summary": "Create a mailbox",
-        "description": "Waits until the address can receive email. On revdokumail.com, email.username is a prefix with a permanent 4-character random suffix on every plan; a custom domain takes the exact name. If confirmation does not finish, EMAIL_NOT_READY returns the created mailbox_id in error.details: read that mailbox instead of creating another. The title defaults to email.username; a title that another active mailbox uses returns 409 MAILBOX_TITLE_TAKEN. Never retry a creation automatically.",
+        "summary": "Create a bucket",
+        "description": "Waits until the address can receive email. On revdokumail.com, mailbox.username is a prefix with a permanent 4-character random suffix on every plan; a custom domain takes the exact name. If confirmation does not finish, EMAIL_NOT_READY returns the created bucket_id in error.details: read that bucket instead of creating another. The title defaults to mailbox.username; a title that another active bucket uses returns 409 BUCKET_TITLE_TAKEN. Never retry a creation automatically.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1447,8 +1451,8 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "mailbox": {
-                    "$ref": "#/components/schemas/MailboxCreate"
+                  "bucket": {
+                    "$ref": "#/components/schemas/BucketCreate"
                   },
                   "account_id": {
                     "type": "string",
@@ -1481,11 +1485,11 @@
                     "data": {
                       "type": "object",
                       "required": [
-                        "mailbox"
+                        "bucket"
                       ],
                       "properties": {
-                        "mailbox": {
-                          "$ref": "#/components/schemas/Mailbox"
+                        "bucket": {
+                          "$ref": "#/components/schemas/Bucket"
                         }
                       }
                     }
@@ -1494,14 +1498,14 @@
                 "example": {
                   "success": true,
                   "data": {
-                    "mailbox": {
+                    "bucket": {
                       "id": "bkt_example",
                       "account_id": "acct_example",
                       "title": "acme-orders",
                       "description": null,
                       "metadata": {},
                       "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-                      "email": {
+                      "mailbox": {
                         "address": "acme-orders.k7m2@revdokumail.com",
                         "message_count": 0,
                         "unread_count": 0,
@@ -1520,7 +1524,7 @@
                       "version_number": 0,
                       "created_at": "2026-10-11T12:00:00.000000Z",
                       "updated_at": "2026-10-11T12:00:00.000000Z",
-                      "dashboard_url": "https://app.revdoku.com/mailboxes/view?account_id=acct_example&id=bkt_example",
+                      "dashboard_url": "https://app.revdoku.com/buckets/view?account_id=acct_example&id=bkt_example",
                       "archive": {
                         "allowed": true
                       },
@@ -1564,17 +1568,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}": {
+    "/v1/buckets/{bucket_id}": {
       "get": {
-        "operationId": "getMailbox",
+        "operationId": "getBucket",
         "tags": [
-          "Mailboxes"
+          "Buckets"
         ],
-        "summary": "Read a mailbox",
-        "description": "Reading never changes the mailbox. Read address settings, emails and files through their own endpoints.",
+        "summary": "Read a bucket",
+        "description": "Reading never changes the bucket. Read address settings, emails and files through their own endpoints.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/AccountId"
@@ -1602,11 +1606,11 @@
                     "data": {
                       "type": "object",
                       "required": [
-                        "mailbox"
+                        "bucket"
                       ],
                       "properties": {
-                        "mailbox": {
-                          "$ref": "#/components/schemas/Mailbox"
+                        "bucket": {
+                          "$ref": "#/components/schemas/Bucket"
                         }
                       }
                     }
@@ -1615,14 +1619,14 @@
                 "example": {
                   "success": true,
                   "data": {
-                    "mailbox": {
+                    "bucket": {
                       "id": "bkt_example",
                       "account_id": "acct_example",
                       "title": "acme-orders",
                       "description": null,
                       "metadata": {},
                       "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-                      "email": {
+                      "mailbox": {
                         "address": "acme-orders.k7m2@revdokumail.com",
                         "message_count": 1,
                         "unread_count": 1,
@@ -1641,7 +1645,7 @@
                       "version_number": 0,
                       "created_at": "2026-10-11T12:00:00.000000Z",
                       "updated_at": "2026-10-11T12:05:00.000000Z",
-                      "dashboard_url": "https://app.revdoku.com/mailboxes/view?account_id=acct_example&id=bkt_example",
+                      "dashboard_url": "https://app.revdoku.com/buckets/view?account_id=acct_example&id=bkt_example",
                       "archive": {
                         "allowed": true
                       },
@@ -1667,15 +1671,15 @@
         }
       },
       "patch": {
-        "operationId": "updateMailbox",
+        "operationId": "updateBucket",
         "tags": [
-          "Mailboxes"
+          "Buckets"
         ],
-        "summary": "Update a mailbox title, description or metadata",
-        "description": "metadata must be a JSON object. It replaces the stored object; {} clears it. Send expected_metadata_version from your last read; a stale value changes nothing and returns MAILBOX_METADATA_CONFLICT. Titles are unique among active mailboxes; a used title returns 409 MAILBOX_TITLE_TAKEN.",
+        "summary": "Update a bucket title, description or metadata",
+        "description": "metadata must be a JSON object. It replaces the stored object; {} clears it. Send expected_metadata_version from your last read; a stale value changes nothing and returns BUCKET_METADATA_CONFLICT. Titles are unique among active buckets; a used title returns 409 BUCKET_TITLE_TAKEN.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           }
         ],
         "requestBody": {
@@ -1685,8 +1689,8 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "mailbox": {
-                    "$ref": "#/components/schemas/MailboxUpdate"
+                  "bucket": {
+                    "$ref": "#/components/schemas/BucketUpdate"
                   },
                   "expected_metadata_version": {
                     "type": "string"
@@ -1700,7 +1704,7 @@
                   }
                 },
                 "required": [
-                  "mailbox"
+                  "bucket"
                 ]
               }
             }
@@ -1725,11 +1729,11 @@
                     "data": {
                       "type": "object",
                       "required": [
-                        "mailbox"
+                        "bucket"
                       ],
                       "properties": {
-                        "mailbox": {
-                          "$ref": "#/components/schemas/Mailbox"
+                        "bucket": {
+                          "$ref": "#/components/schemas/Bucket"
                         }
                       }
                     }
@@ -1744,15 +1748,15 @@
         }
       },
       "delete": {
-        "operationId": "deleteMailbox",
+        "operationId": "deleteBucket",
         "tags": [
-          "Mailboxes"
+          "Buckets"
         ],
-        "summary": "Permanently delete an archived mailbox",
-        "description": "Archive the mailbox first. Send delete.confirmation from the mailbox read after the user confirms. Large mailboxes finish deleting in the background.",
+        "summary": "Permanently delete an archived bucket",
+        "description": "Archive the bucket first. Send delete.confirmation from the bucket read after the user confirms. Large buckets finish deleting in the background.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           }
         ],
         "requestBody": {
@@ -1810,17 +1814,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/archive": {
+    "/v1/buckets/{bucket_id}/archive": {
       "post": {
-        "operationId": "archiveMailbox",
+        "operationId": "archiveBucket",
         "tags": [
-          "Mailboxes"
+          "Buckets"
         ],
-        "summary": "Archive a mailbox",
-        "description": "Archived mailboxes keep their files and emails and become read-only.",
+        "summary": "Archive a bucket",
+        "description": "Archived buckets keep their files and emails and become read-only.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           }
         ],
         "requestBody": {
@@ -1852,11 +1856,11 @@
                     "data": {
                       "type": "object",
                       "required": [
-                        "mailbox"
+                        "bucket"
                       ],
                       "properties": {
-                        "mailbox": {
-                          "$ref": "#/components/schemas/Mailbox"
+                        "bucket": {
+                          "$ref": "#/components/schemas/Bucket"
                         }
                       }
                     }
@@ -1871,17 +1875,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/unarchive": {
+    "/v1/buckets/{bucket_id}/unarchive": {
       "post": {
-        "operationId": "unarchiveMailbox",
+        "operationId": "unarchiveBucket",
         "tags": [
-          "Mailboxes"
+          "Buckets"
         ],
-        "summary": "Unarchive a mailbox",
-        "description": "Requires mailbox-admin permission. The mailbox becomes writable again. If another active mailbox has the same title, the title gets a number suffix. A mailbox that is not archived returns MAILBOX_NOT_ARCHIVED.",
+        "summary": "Unarchive a bucket",
+        "description": "Requires bucket-admin permission. The bucket becomes writable again. If another active bucket has the same title, the title gets a number suffix. A bucket that is not archived returns BUCKET_NOT_ARCHIVED.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           }
         ],
         "requestBody": {
@@ -1913,11 +1917,11 @@
                     "data": {
                       "type": "object",
                       "required": [
-                        "mailbox"
+                        "bucket"
                       ],
                       "properties": {
-                        "mailbox": {
-                          "$ref": "#/components/schemas/Mailbox"
+                        "bucket": {
+                          "$ref": "#/components/schemas/Bucket"
                         }
                       }
                     }
@@ -1932,17 +1936,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/email": {
+    "/v1/buckets/{bucket_id}/mailbox": {
       "get": {
-        "operationId": "getMailboxEmailSettings",
+        "operationId": "getMailbox",
         "tags": [
-          "Email settings"
+          "Mailbox"
         ],
         "summary": "Read address settings",
-        "description": "Requires mailbox write permission.",
+        "description": "Requires bucket write permission.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/AccountId"
@@ -1968,7 +1972,7 @@
                       "const": true
                     },
                     "data": {
-                      "$ref": "#/components/schemas/MailboxEmailSettings"
+                      "$ref": "#/components/schemas/MailboxSettings"
                     }
                   }
                 }
@@ -1981,17 +1985,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/email/rotate": {
+    "/v1/buckets/{bucket_id}/mailbox/rotate": {
       "post": {
         "operationId": "changeMailboxAddress",
         "tags": [
-          "Email settings"
+          "Mailbox"
         ],
         "summary": "Change the primary address",
-        "description": "Requires mailbox admin permission and a paid plan, except for a change back to revdokumail.com. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address. A change from revdokumail.com to a customer domain always keeps the old address as the revdokumail.com base address, which uses no alias slot. A change from a customer domain back to revdokumail.com makes that base address the main address again at once (200, assignment.status active): username is ignored, no address change is counted and it works on every plan.",
+        "description": "Requires bucket-admin permission and a paid plan, except for a change back to revdokumail.com. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address. A change from revdokumail.com to a customer domain always keeps the old address as the revdokumail.com base address, which uses no alias slot. A change from a customer domain back to revdokumail.com makes that base address the main address again at once (200, assignment.status active): username is ignored, no address change is counted and it works on every plan.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           }
         ],
         "requestBody": {
@@ -2056,7 +2060,7 @@
                       "const": true
                     },
                     "data": {
-                      "$ref": "#/components/schemas/MailboxEmailSettings"
+                      "$ref": "#/components/schemas/MailboxSettings"
                     }
                   }
                 }
@@ -2079,7 +2083,7 @@
                       "const": true
                     },
                     "data": {
-                      "$ref": "#/components/schemas/MailboxEmailSettings"
+                      "$ref": "#/components/schemas/MailboxSettings"
                     }
                   }
                 }
@@ -2092,17 +2096,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/email/aliases": {
+    "/v1/buckets/{bucket_id}/mailbox/aliases": {
       "post": {
         "operationId": "createEmailAlias",
         "tags": [
-          "Email settings"
+          "Mailbox"
         ],
         "summary": "Add an alias address",
-        "description": "Requires a paid plan and a full-account owner or administrator with mailbox-admin permission. The primary address stays unchanged. On a mailbox whose primary address is on your domain, the first revdokumail.com alias becomes its base address and uses no alias slot.",
+        "description": "Requires a paid plan and a full-account owner or administrator with bucket-admin permission. The primary address stays unchanged. On a mailbox whose primary address is on your domain, the first revdokumail.com alias becomes its base address and uses no alias slot.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           }
         ],
         "requestBody": {
@@ -2151,7 +2155,7 @@
                       "const": true
                     },
                     "data": {
-                      "$ref": "#/components/schemas/MailboxEmailSettings"
+                      "$ref": "#/components/schemas/MailboxSettings"
                     }
                   }
                 }
@@ -2164,17 +2168,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/email/aliases/{alias_id}": {
+    "/v1/buckets/{bucket_id}/mailbox/aliases/{alias_id}": {
       "delete": {
         "operationId": "deleteEmailAlias",
         "tags": [
-          "Email settings"
+          "Mailbox"
         ],
         "summary": "Remove an alias address",
         "description": "Stops new and queued deliveries to the alias. Saved emails stay. The base address of a mailbox whose primary address is on your domain cannot be removed (`409 EMAIL_ALIAS_BASE`).",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/AliasId"
@@ -2216,17 +2220,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/email/allowlist": {
+    "/v1/buckets/{bucket_id}/mailbox/allowlist": {
       "patch": {
         "operationId": "updateEmailAllowlist",
         "tags": [
-          "Email settings"
+          "Mailbox"
         ],
         "summary": "Replace the allowed senders",
-        "description": "Requires an account owner or administrator with mailbox-admin permission. Send sender_allowlist.version from the settings read as expected_version.",
+        "description": "Requires an account owner or administrator with bucket-admin permission. Send sender_allowlist.version from the settings read as expected_version.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           }
         ],
         "requestBody": {
@@ -2312,17 +2316,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/email/webhook": {
+    "/v1/buckets/{bucket_id}/mailbox/webhook": {
       "get": {
         "operationId": "getEmailWebhook",
         "tags": [
-          "Email settings"
+          "Mailbox"
         ],
         "summary": "Read the email webhook",
-        "description": "Requires mailbox-admin permission. webhook is null when no webhook is set. The signing secret is never returned here.",
+        "description": "Requires bucket-admin permission. webhook is null when no webhook is set. The signing secret is never returned here.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/AccountId"
@@ -2375,13 +2379,13 @@
       "put": {
         "operationId": "setEmailWebhook",
         "tags": [
-          "Email settings"
+          "Mailbox"
         ],
         "summary": "Set the email webhook",
-        "description": "Requires mailbox-admin permission and a public HTTPS URL. A new URL or rotate_secret=true creates a new signing secret, returns it once and cancels pending deliveries. The same URL without rotate_secret returns the webhook without a secret.",
+        "description": "Requires bucket-admin permission and a public HTTPS URL. A new URL or rotate_secret=true creates a new signing secret, returns it once and cancels pending deliveries. The same URL without rotate_secret returns the webhook without a secret.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           }
         ],
         "requestBody": {
@@ -2455,13 +2459,13 @@
       "delete": {
         "operationId": "deleteEmailWebhook",
         "tags": [
-          "Email settings"
+          "Mailbox"
         ],
         "summary": "Remove the email webhook",
-        "description": "Cancels queued deliveries. A delivery already in progress can finish. Returns the mailbox ID, also when no webhook is set.",
+        "description": "Cancels queued deliveries. A delivery already in progress can finish. Returns the bucket ID, also when no webhook is set.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/AccountId"
@@ -2497,17 +2501,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/email/subscription": {
+    "/v1/buckets/{bucket_id}/mailbox/subscription": {
       "get": {
         "operationId": "getEmailSubscription",
         "tags": [
-          "Email settings"
+          "Mailbox"
         ],
         "summary": "Get a live email subscription ticket",
-        "description": "Requires mailbox read permission. Connect to websocket_url with email_subscription_token=TOKEN within 60 seconds, then subscribe to EmailReceivedChannel. Catch up with the email list cursor after every connect.",
+        "description": "Requires bucket read permission. Connect to websocket_url with email_subscription_token=TOKEN within 60 seconds, then subscribe to EmailReceivedChannel. Catch up with the email list cursor after every connect.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/AccountId"
@@ -2551,17 +2555,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/emails": {
+    "/v1/buckets/{bucket_id}/mailbox/emails": {
       "get": {
         "operationId": "listEmails",
         "tags": [
           "Emails"
         ],
         "summary": "List emails",
-        "description": "Requires mailbox read permission. Lists received email by default. To poll, list in ascending order, save pagination.next_cursor after every page (including an empty page) and send it next time with the same filters. Listing never marks email read.",
+        "description": "Requires bucket read permission. Lists received email by default. To poll, list in ascending order, save pagination.next_cursor after every page (including an empty page) and send it next time with the same filters. Listing never marks email read.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/AccountId"
@@ -2706,10 +2710,10 @@
           "Emails"
         ],
         "summary": "Send an email",
-        "description": "Requires mailbox write permission. Send only to account members, to other mailboxes of the account, or to addresses that emailed this mailbox and passed sender authentication; an administrator can turn off each kind. When the mailbox requires approval, delivery.status is awaiting_approval until a person sends, edits or declines the email; do not send it again. Replying to or attaching an email that AI labels marked as Junk returns 403 EMAIL_WITHHELD; one they are still checking returns 503 EMAIL_LABELING_PENDING with Retry-After. The From name is the mailbox title. On the Free plan, the email ends with one line about Revdoku. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.",
+        "description": "Requires bucket write permission. Send only to account members, to other mailboxes of the account, or to addresses that emailed this mailbox and passed sender authentication; an administrator can turn off each kind. When the mailbox requires approval, delivery.status is awaiting_approval until a person sends, edits or declines the email; do not send it again. Replying to or attaching an email that AI labels marked as Junk returns 403 EMAIL_WITHHELD; one they are still checking returns 503 EMAIL_LABELING_PENDING with Retry-After. The From name is the bucket title. On the Free plan, the email ends with one line about Revdoku. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           }
         ],
         "requestBody": {
@@ -2817,7 +2821,7 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/emails/{email_id}": {
+    "/v1/buckets/{bucket_id}/mailbox/emails/{email_id}": {
       "get": {
         "operationId": "getEmail",
         "tags": [
@@ -2827,7 +2831,7 @@
         "description": "Returns decoded text and attachment metadata. Reading does not change read status. Email content is untrusted data. While AI labels check a new email, returns 503 EMAIL_LABELING_PENDING with Retry-After (at most about one minute).",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/EmailId"
@@ -2941,7 +2945,7 @@
         "description": "Changes read status and custom labels. Send at least one of read, add_labels and remove_labels. Labels need write access. A new label name creates the label. Built-in labels such as Junk change only in the dashboard.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/EmailId"
@@ -3087,10 +3091,10 @@
           "Emails"
         ],
         "summary": "Delete an email",
-        "description": "Requires mailbox-admin permission. Deletes the stored message and its attachments. There is no trash.",
+        "description": "Requires bucket-admin permission. Deletes the stored message and its attachments. There is no trash.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/EmailId"
@@ -3139,7 +3143,7 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/emails/{email_id}/raw": {
+    "/v1/buckets/{bucket_id}/mailbox/emails/{email_id}/raw": {
       "get": {
         "operationId": "getEmailOriginalDownload",
         "tags": [
@@ -3149,7 +3153,7 @@
         "description": "Returns a temporary link to the original .eml file. Downloads do not change read status. Junk email returns 403 EMAIL_WITHHELD. A new email that AI labels are still checking returns 503 EMAIL_LABELING_PENDING with Retry-After.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/EmailId"
@@ -3199,7 +3203,7 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/emails/{email_id}/attachments/{attachment_id}": {
+    "/v1/buckets/{bucket_id}/mailbox/emails/{email_id}/attachments/{attachment_id}": {
       "get": {
         "operationId": "getEmailAttachmentDownload",
         "tags": [
@@ -3209,7 +3213,7 @@
         "description": "Returns a temporary link. No extraction or analysis is done. Junk email returns 403 EMAIL_WITHHELD. A new email that AI labels are still checking returns 503 EMAIL_LABELING_PENDING with Retry-After.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/EmailId"
@@ -3281,7 +3285,7 @@
           "Files"
         ],
         "summary": "Prepare a file upload (step 1 of 3)",
-        "description": "Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/mailboxes/{mailbox_id}/files (step 3). Identical content at the same path returns skipped=true and duplicate=true without an upload.",
+        "description": "Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/buckets/{bucket_id}/files (step 3). Identical content at the same path returns skipped=true and duplicate=true without an upload.",
         "requestBody": {
           "required": true,
           "content": {
@@ -3363,17 +3367,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/files": {
+    "/v1/buckets/{bucket_id}/files": {
       "get": {
         "operationId": "listFiles",
         "tags": [
           "Files"
         ],
         "summary": "List files",
-        "description": "Lists current files, including stored emails under _email/. Listing never marks files read.",
+        "description": "Lists current files, including stored emails under _mailbox/. Listing never marks files read.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/AccountId"
@@ -3431,7 +3435,7 @@
                     "files": [
                       {
                         "id": "df_example",
-                        "mailbox_id": "bkt_example",
+                        "bucket_id": "bkt_example",
                         "basename": "summary.txt",
                         "path": "reports/summary.txt",
                         "role": "source",
@@ -3535,7 +3539,7 @@
         "description": "Saves the uploaded blob at path. An existing path gets a new version.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           }
         ],
         "requestBody": {
@@ -3574,7 +3578,7 @@
                   "data": {
                     "file": {
                       "id": "df_example",
-                      "mailbox_id": "bkt_example",
+                      "bucket_id": "bkt_example",
                       "basename": "summary.txt",
                       "path": "reports/summary.txt",
                       "role": "source",
@@ -3732,7 +3736,7 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/files/by_path": {
+    "/v1/buckets/{bucket_id}/files/by_path": {
       "get": {
         "operationId": "getFileByPath",
         "tags": [
@@ -3742,7 +3746,7 @@
         "description": "Returns file metadata only. Read content with the download endpoint. The disposition and content_url parameters return INVALID_ARGUMENT.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "name": "path",
@@ -3782,7 +3786,7 @@
                       ],
                       "properties": {
                         "file": {
-                          "$ref": "#/components/schemas/MailboxFile"
+                          "$ref": "#/components/schemas/BucketFile"
                         }
                       }
                     }
@@ -3797,17 +3801,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/files/append_text": {
+    "/v1/buckets/{bucket_id}/files/append_text": {
       "post": {
         "operationId": "appendText",
         "tags": [
           "Files"
         ],
         "summary": "Append text to a file",
-        "description": "Appends UTF-8 text to an existing text file and creates a new version. A missing file returns MAILBOX_FILE_NOT_FOUND.",
+        "description": "Appends UTF-8 text to an existing text file and creates a new version. A missing file returns BUCKET_FILE_NOT_FOUND.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           }
         ],
         "requestBody": {
@@ -3827,9 +3831,9 @@
                     "type": "boolean",
                     "default": true
                   },
-                  "expected_mailbox_version": {
+                  "expected_bucket_version": {
                     "type": "string",
-                    "description": "Mailbox version_id from your last read."
+                    "description": "Bucket version_id from your last read."
                   },
                   "account_id": {
                     "type": "string",
@@ -3877,7 +3881,7 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/files/{file_id}": {
+    "/v1/buckets/{bucket_id}/files/{file_id}": {
       "get": {
         "operationId": "getFile",
         "tags": [
@@ -3887,7 +3891,7 @@
         "description": "Reading metadata never marks the file read.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/FileId"
@@ -3922,7 +3926,7 @@
                       ],
                       "properties": {
                         "file": {
-                          "$ref": "#/components/schemas/MailboxFile"
+                          "$ref": "#/components/schemas/BucketFile"
                         }
                       }
                     }
@@ -3942,10 +3946,10 @@
           "Files"
         ],
         "summary": "Delete a file",
-        "description": "Requires mailbox-admin permission. Files under _email/ return EMAIL_PATH_READ_ONLY; delete the email instead. Other top-level folders that start with _ return RESERVED_PATH.",
+        "description": "Requires bucket-admin permission. Files under _mailbox/ return MAILBOX_PATH_READ_ONLY; delete the email instead. Files under _agents/ and _revdoku/ return RESERVED_PATH.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/FileId"
@@ -3987,7 +3991,7 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/files/{file_id}/download": {
+    "/v1/buckets/{bucket_id}/files/{file_id}/download": {
       "get": {
         "operationId": "getFileDownload",
         "tags": [
@@ -3997,7 +4001,7 @@
         "description": "Returns a temporary link and marks this version read. Send version_id for an older version.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/FileId"
@@ -4046,17 +4050,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/files/{file_id}/rename": {
+    "/v1/buckets/{bucket_id}/files/{file_id}/rename": {
       "post": {
         "operationId": "renameFile",
         "tags": [
           "Files"
         ],
-        "summary": "Rename or move a file in the same mailbox",
+        "summary": "Rename or move a file in the same bucket",
         "description": "Changes the path without uploading the content again.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/FileId"
@@ -4117,17 +4121,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/files/{file_id}/move": {
+    "/v1/buckets/{bucket_id}/files/{file_id}/move": {
       "post": {
         "operationId": "moveFile",
         "tags": [
           "Files"
         ],
         "summary": "Move a file",
-        "description": "Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.",
+        "description": "Works in the same bucket or into target_bucket_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/FileId"
@@ -4140,7 +4144,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "target_mailbox_id": {
+                  "target_bucket_id": {
                     "type": "string"
                   },
                   "target_path": {
@@ -4191,17 +4195,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/files/{file_id}/copy": {
+    "/v1/buckets/{bucket_id}/files/{file_id}/copy": {
       "post": {
         "operationId": "copyFile",
         "tags": [
           "Files"
         ],
         "summary": "Copy a file",
-        "description": "Works in the same mailbox or into target_mailbox_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.",
+        "description": "Works in the same bucket or into target_bucket_id. Content is not uploaded again. Send target_path for an exact path or target_folder to keep the name.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/FileId"
@@ -4214,7 +4218,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "target_mailbox_id": {
+                  "target_bucket_id": {
                     "type": "string"
                   },
                   "target_path": {
@@ -4265,7 +4269,7 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/files/{file_id}/versions": {
+    "/v1/buckets/{bucket_id}/files/{file_id}/versions": {
       "get": {
         "operationId": "listFileVersions",
         "tags": [
@@ -4275,7 +4279,7 @@
         "description": "Newest first.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/FileId"
@@ -4323,7 +4327,7 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/files/{file_id}/versions/{version_id}/restore": {
+    "/v1/buckets/{bucket_id}/files/{file_id}/versions/{version_id}/restore": {
       "post": {
         "operationId": "restoreFileVersion",
         "tags": [
@@ -4333,7 +4337,7 @@
         "description": "Creates a new current version with the content of the selected version. History is kept. Requires a plan with version restore.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "$ref": "#/components/parameters/FileId"
@@ -4382,17 +4386,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/upload_sessions": {
+    "/v1/buckets/{bucket_id}/upload_sessions": {
       "post": {
         "operationId": "createUploadSession",
         "tags": [
           "Files"
         ],
         "summary": "Start a batch upload",
-        "description": "Starts an upload session for many files and returns storage targets for the first files. The session locks the mailbox for other writers; incoming email still arrives. Send files in batches with POST .../uploads, PUT the bytes to each upload.url, save each batch with POST .../finalize_batch, then call POST .../finalize. Unsaved uploads are discarded when the session expires.",
+        "description": "Starts an upload session for many files and returns storage targets for the first files. The session locks the bucket for other writers; incoming email still arrives. Send files in batches with POST .../uploads, PUT the bytes to each upload.url, save each batch with POST .../finalize_batch, then call POST .../finalize. Unsaved uploads are discarded when the session expires.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           }
         ],
         "requestBody": {
@@ -4429,9 +4433,9 @@
                     "default": "replace",
                     "description": "skip keeps existing files at the same paths."
                   },
-                  "expected_mailbox_version": {
+                  "expected_bucket_version": {
                     "type": "string",
-                    "description": "Mailbox version_id from your last read. A different current version returns MAILBOX_VERSION_CONFLICT."
+                    "description": "Bucket version_id from your last read. A different current version returns BUCKET_VERSION_CONFLICT."
                   },
                   "account_id": {
                     "type": "string",
@@ -4482,12 +4486,12 @@
                 "example": {
                   "success": true,
                   "data": {
-                    "mailbox_upload_session": {
+                    "bucket_upload_session": {
                       "id": "bus_example",
-                      "mailbox_id": "bkt_example",
+                      "bucket_id": "bkt_example",
                       "status": "pending",
-                      "base_mailbox_version_id": "bktrv_example",
-                      "target_mailbox_version_id": null,
+                      "base_bucket_version_id": "bktrv_example",
+                      "target_bucket_version_id": null,
                       "uploads_expire_at": "2026-10-11T14:00:00Z",
                       "session_closed_at": null,
                       "files_count": 2,
@@ -4532,7 +4536,7 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/uploads": {
+    "/v1/buckets/{bucket_id}/upload_sessions/{session_id}/uploads": {
       "post": {
         "operationId": "addUploadSessionFiles",
         "tags": [
@@ -4542,7 +4546,7 @@
         "description": "Returns upload.url and upload.headers for each file that needs bytes. Repeating a path returns a fresh target, for example after a failed PUT. Files with identical content are skipped.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "name": "session_id",
@@ -4552,7 +4556,7 @@
               "type": "string",
               "pattern": "^bus_"
             },
-            "description": "mailbox_upload_session.id from the create response."
+            "description": "bucket_upload_session.id from the create response."
           }
         ],
         "requestBody": {
@@ -4614,7 +4618,7 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize_batch": {
+    "/v1/buckets/{bucket_id}/upload_sessions/{session_id}/finalize_batch": {
       "post": {
         "operationId": "saveUploadSessionBatch",
         "tags": [
@@ -4624,7 +4628,7 @@
         "description": "Saves up to limit files whose bytes were uploaded. Call it after each batch to keep each request short. DIRECT_UPLOAD_NOT_FOUND names a file whose bytes are missing in error.details.path; upload it again and retry.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "name": "session_id",
@@ -4634,7 +4638,7 @@
               "type": "string",
               "pattern": "^bus_"
             },
-            "description": "mailbox_upload_session.id from the create response."
+            "description": "bucket_upload_session.id from the create response."
           }
         ],
         "requestBody": {
@@ -4693,17 +4697,17 @@
         }
       }
     },
-    "/v1/mailboxes/{mailbox_id}/upload_sessions/{session_id}/finalize": {
+    "/v1/buckets/{bucket_id}/upload_sessions/{session_id}/finalize": {
       "post": {
         "operationId": "finalizeUploadSession",
         "tags": [
           "Files"
         ],
         "summary": "Finish or cancel a batch upload",
-        "description": "complete=true saves the remaining uploaded files, creates one mailbox version and releases the lock. A 202 response with finalize_pending=true means more files remain: call finalize again after Retry-After. complete=false cancels the session and discards its unsaved files. Finalizing a finished session returns it unchanged.",
+        "description": "complete=true saves the remaining uploaded files, creates one bucket version and releases the lock. A 202 response with finalize_pending=true means more files remain: call finalize again after Retry-After. complete=false cancels the session and discards its unsaved files. Finalizing a finished session returns it unchanged.",
         "parameters": [
           {
-            "$ref": "#/components/parameters/MailboxId"
+            "$ref": "#/components/parameters/BucketId"
           },
           {
             "name": "session_id",
@@ -4713,7 +4717,7 @@
               "type": "string",
               "pattern": "^bus_"
             },
-            "description": "mailbox_upload_session.id from the create response."
+            "description": "bucket_upload_session.id from the create response."
           }
         ],
         "requestBody": {
@@ -4792,6 +4796,310 @@
           }
         }
       }
+    },
+    "/v1/buckets/{bucket_id}/publication": {
+      "get": {
+        "operationId": "getPublication",
+        "tags": [
+          "Publications"
+        ],
+        "summary": "Get the site",
+        "description": "Returns the bucket's site and its build state.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The site",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "publication"
+                      ],
+                      "properties": {
+                        "publication": {
+                          "$ref": "#/components/schemas/Publication"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "publishBucket",
+        "tags": [
+          "Publications"
+        ],
+        "summary": "Publish the site",
+        "description": "Publishes the bucket's files as its site, or republishes them. The build runs in the background: get the site until publish_state is ready or failed.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Publishing started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "publication"
+                      ],
+                      "properties": {
+                        "publication": {
+                          "$ref": "#/components/schemas/Publication"
+                        },
+                        "plan_notice": {
+                          "type": "object",
+                          "description": "Present when site settings of the bucket stay preview-only on the current plan.",
+                          "properties": {
+                            "message": {
+                              "type": "string",
+                              "description": "What stays preview-only and how to apply it."
+                            },
+                            "required_plan": {
+                              "type": "string",
+                              "description": "The plan that applies the settings to the live site."
+                            },
+                            "upgrade_plan_name": {
+                              "type": "string",
+                              "description": "The same plan name, for upgrade buttons."
+                            },
+                            "upgrade_url": {
+                              "type": "string",
+                              "format": "uri",
+                              "description": "The pricing page."
+                            },
+                            "preview_available": {
+                              "type": "boolean",
+                              "description": "True: a preview shows the settings."
+                            },
+                            "requirements": {
+                              "type": "array",
+                              "description": "The settings that stay preview-only.",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "unpublishBucket",
+        "tags": [
+          "Publications"
+        ],
+        "summary": "Unpublish the site",
+        "description": "Takes the site down. The bucket's files stay.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Unpublishing started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "publication"
+                      ],
+                      "properties": {
+                        "publication": {
+                          "$ref": "#/components/schemas/Publication"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/buckets/{bucket_id}/publication/preview": {
+      "get": {
+        "operationId": "getPublicationPreview",
+        "tags": [
+          "Publications"
+        ],
+        "summary": "Get the preview",
+        "description": "Returns the bucket's latest preview and its build state.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The preview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "publication"
+                      ],
+                      "properties": {
+                        "publication": {
+                          "$ref": "#/components/schemas/Publication"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "previewBucket",
+        "tags": [
+          "Publications"
+        ],
+        "summary": "Preview the site",
+        "description": "Publishes the bucket's current files at a separate preview address for 24 hours. The site does not change.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Preview build started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "publication"
+                      ],
+                      "properties": {
+                        "publication": {
+                          "$ref": "#/components/schemas/Publication"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4851,7 +5159,7 @@
           },
           "id": {
             "type": "string",
-            "description": "ID of the deleted resource. A webhook delete returns the mailbox ID."
+            "description": "ID of the deleted resource. A webhook delete returns the bucket ID."
           }
         }
       },
@@ -4904,6 +5212,47 @@
           "ACCOUNT_SUSPENDED",
           "AGENCY_ACCOUNT_REQUIRED",
           "AGENT_CONNECTION_LIMIT_REACHED",
+          "BUCKETS_NOT_FOUND",
+          "BUCKET_ACCESS_DENIED",
+          "BUCKET_ACCOUNT_CHANGED",
+          "BUCKET_ALREADY_ARCHIVED",
+          "BUCKET_ARCHIVED",
+          "BUCKET_CREATION_LIMIT_REACHED",
+          "BUCKET_DELETE_ADMIN_REQUIRED",
+          "BUCKET_DELETE_BUSY",
+          "BUCKET_DELETE_CONFIRMATION_REQUIRED",
+          "BUCKET_DELETE_ENQUEUE_FAILED",
+          "BUCKET_DELETE_IN_PROGRESS",
+          "BUCKET_FILE_DELETE_ENQUEUE_FAILED",
+          "BUCKET_FILE_LIMIT_EXCEEDED",
+          "BUCKET_FILE_NOT_FOUND",
+          "BUCKET_FILE_PATH_EXISTS",
+          "BUCKET_FILE_VERSION_NOT_FOUND",
+          "BUCKET_LIMIT_REACHED",
+          "BUCKET_LOCKED",
+          "BUCKET_METADATA_CONFLICT",
+          "BUCKET_MOVING",
+          "BUCKET_NOT_ARCHIVED",
+          "BUCKET_NOT_FOUND",
+          "BUCKET_PERMISSION_DENIED",
+          "BUCKET_PUBLICATION_ACTIVE",
+          "BUCKET_PUBLICATION_SUSPENDED",
+          "BUCKET_TITLE_TAKEN",
+          "BUCKET_TOO_LARGE",
+          "BUCKET_UNAVAILABLE",
+          "BUCKET_UPLOAD_EXISTING_FILE_SKIPPED",
+          "BUCKET_UPLOAD_FILE_ALREADY_FINALIZED",
+          "BUCKET_UPLOAD_FILE_FAILED",
+          "BUCKET_UPLOAD_FILE_SKIPPED",
+          "BUCKET_UPLOAD_SESSION_CANCELED",
+          "BUCKET_UPLOAD_SESSION_EXPIRED",
+          "BUCKET_UPLOAD_SESSION_INCOMPLETE",
+          "BUCKET_UPLOAD_SESSION_LOCK_LOST",
+          "BUCKET_UPLOAD_SESSION_NOT_PENDING",
+          "BUCKET_UPLOAD_SHA256_MISMATCH",
+          "BUCKET_UPLOAD_SIZE_MISMATCH",
+          "BUCKET_VERSION_CONFLICT",
+          "BUCKET_VISIBILITY_CHANGE_LOCKED",
           "CLIENT_ACCOUNT_LIMIT_REACHED",
           "CONFLICT",
           "CONTENT_SEARCH_DISABLED",
@@ -4923,12 +5272,12 @@
           "EMAIL_ALLOWLIST_INVALID",
           "EMAIL_ALLOWLIST_UNAVAILABLE",
           "EMAIL_ALREADY_EXISTS",
-          "EMAIL_ASSIGNMENT_CANCELED",
           "EMAIL_ASSIGNMENT_EXPIRED",
           "EMAIL_ASSIGNMENT_FORBIDDEN",
           "EMAIL_ASSIGNMENT_PENDING",
           "EMAIL_ASSIGNMENT_UNAVAILABLE",
           "EMAIL_ATTACHMENT_NOT_FOUND",
+          "EMAIL_BUCKET_UNAVAILABLE",
           "EMAIL_CHANGED",
           "EMAIL_DNS_CONFLICT",
           "EMAIL_DNS_TEMPORARY",
@@ -4947,14 +5296,13 @@
           "EMAIL_INDEX_BUILDING",
           "EMAIL_LABELING_PENDING",
           "EMAIL_LOOP_DETECTED",
-          "EMAIL_MAILBOX_UNAVAILABLE",
           "EMAIL_NAMES_UNAVAILABLE",
           "EMAIL_NAMES_UPGRADE_REQUIRED",
           "EMAIL_NAME_FORBIDDEN",
           "EMAIL_NAME_INVALID",
           "EMAIL_NOT_READY",
           "EMAIL_OWNERSHIP_PENDING",
-          "EMAIL_PATH_READ_ONLY",
+          "MAILBOX_PATH_READ_ONLY",
           "EMAIL_PROVIDER_DNS_PENDING",
           "EMAIL_PROVIDER_PENDING",
           "EMAIL_PROVIDER_TEMPORARY",
@@ -4980,6 +5328,7 @@
           "FILE_VERSION_ENCRYPTION_MISMATCH",
           "FILE_VERSION_NOT_RESTORABLE",
           "FORBIDDEN",
+          "INSUFFICIENT_CREDITS",
           "INTERNAL_ERROR",
           "INVALID_ARGUMENT",
           "INVALID_CHECKSUM",
@@ -4989,51 +5338,31 @@
           "INVALID_SHA256",
           "INVALID_TEXT_ENCODING",
           "LOCKED",
-          "MAILBOXES_NOT_FOUND",
-          "MAILBOX_ACCESS_DENIED",
-          "MAILBOX_ACCOUNT_CHANGED",
-          "MAILBOX_ALREADY_ARCHIVED",
-          "MAILBOX_ARCHIVED",
-          "MAILBOX_CREATION_LIMIT_REACHED",
-          "MAILBOX_DELETE_ADMIN_REQUIRED",
-          "MAILBOX_DELETE_BUSY",
-          "MAILBOX_DELETE_CONFIRMATION_REQUIRED",
-          "MAILBOX_DELETE_ENQUEUE_FAILED",
-          "MAILBOX_DELETE_IN_PROGRESS",
-          "MAILBOX_FILE_DELETE_ENQUEUE_FAILED",
-          "MAILBOX_FILE_LIMIT_EXCEEDED",
-          "MAILBOX_FILE_NOT_FOUND",
-          "MAILBOX_FILE_PATH_EXISTS",
-          "MAILBOX_FILE_VERSION_NOT_FOUND",
-          "MAILBOX_LIMIT_REACHED",
-          "MAILBOX_LOCKED",
-          "MAILBOX_METADATA_CONFLICT",
-          "MAILBOX_TITLE_TAKEN",
-          "MAILBOX_MOVING",
-          "MAILBOX_NOT_ARCHIVED",
-          "MAILBOX_NOT_FOUND",
-          "MAILBOX_PERMISSION_DENIED",
-          "MAILBOX_TOO_LARGE",
-          "MAILBOX_UNAVAILABLE",
-          "MAILBOX_UPLOAD_EXISTING_FILE_SKIPPED",
-          "MAILBOX_UPLOAD_FILE_ALREADY_FINALIZED",
-          "MAILBOX_UPLOAD_FILE_FAILED",
-          "MAILBOX_UPLOAD_FILE_SKIPPED",
-          "MAILBOX_UPLOAD_SESSION_CANCELED",
-          "MAILBOX_UPLOAD_SESSION_EXPIRED",
-          "MAILBOX_UPLOAD_SESSION_INCOMPLETE",
-          "MAILBOX_UPLOAD_SESSION_LOCK_LOST",
-          "MAILBOX_UPLOAD_SESSION_NOT_PENDING",
-          "MAILBOX_UPLOAD_SHA256_MISMATCH",
-          "MAILBOX_UPLOAD_SIZE_MISMATCH",
-          "MAILBOX_VERSION_CONFLICT",
           "MIME_TYPE_MISMATCH",
           "NOT_FOUND",
           "OTP_RATE_LIMITED",
           "PAYLOAD_TOO_LARGE",
+          "PRIVATE_PUBLICATION_LIMIT_REACHED",
+          "PRIVATE_PUBLICATION_STORAGE_NOT_CONFIGURED",
           "PROHIBITED_FILE_EXTENSION",
           "PROJECT_STORAGE_QUOTA_EXCEEDED",
+          "PUBLICATION_ACCESS_MODE_INVALID",
+          "PUBLICATION_ACCESS_MODE_NOT_SUPPORTED",
+          "PUBLICATION_FAILED",
+          "PUBLICATION_LIMIT_REACHED",
+          "PUBLICATION_LIVE",
+          "PUBLICATION_NOT_FOUND",
+          "PUBLICATION_PASSWORD_INVALID",
+          "PUBLICATION_POLICY_REVIEW",
+          "PUBLICATION_PUBLISH_IN_PROGRESS",
+          "PUBLICATION_SOURCE_CHANGED",
+          "PUBLICATION_SUSPENDED",
+          "PUBLICATION_UPGRADE_REQUIRED",
+          "PUBLIC_STORAGE_NOT_CONFIGURED",
+          "PUBLISH_COOLDOWN",
+          "PUBLISH_RATE_LIMIT_EXCEEDED",
           "RATE_LIMIT_EXCEEDED",
+          "REPUBLISH_LIMIT_REACHED",
           "RESERVED_PATH",
           "SERVICE_UNAVAILABLE",
           "STORAGE_QUOTA_EXCEEDED",
@@ -5041,7 +5370,12 @@
           "UNSUPPORTED_MIME",
           "UNSUPPORTED_TEXT_APPEND_TYPE",
           "UPLOAD_RATE_LIMIT_EXCEEDED",
-          "VERSION_ROLLBACK_UNAVAILABLE"
+          "VERSION_ROLLBACK_UNAVAILABLE",
+          "WEBSITE_PREVIEW_UNAVAILABLE",
+          "WEBSITE_PUBLISHING_DISABLED",
+          "EMAIL_LOCKED",
+          "PUBLIC_SLUG_REQUIRES_CHANGE",
+          "SYNCED_COPY_READ_ONLY"
         ]
       },
       "ApiError": {
@@ -5201,19 +5535,19 @@
               "scope": {
                 "type": "string",
                 "enum": [
-                  "mailbox_read",
-                  "mailbox_write",
-                  "mailbox_admin"
+                  "bucket_read",
+                  "bucket_write",
+                  "bucket_admin"
                 ]
               },
-              "mailbox_access": {
+              "bucket_access": {
                 "type": "string",
                 "enum": [
                   "all",
                   "selected"
                 ]
               },
-              "can_create_mailboxes": {
+              "can_create_buckets": {
                 "type": "boolean"
               }
             }
@@ -5250,9 +5584,9 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "max_mailboxes",
-          "max_mailbox_creations_per_month",
-          "max_files_per_mailbox",
+          "max_buckets",
+          "max_bucket_creations_per_month",
+          "max_files_per_bucket",
           "max_current_files",
           "max_storage_bytes",
           "max_file_size_bytes",
@@ -5269,24 +5603,24 @@
           "max_agent_connections",
           "api_rate_limit_requests_per_minute",
           "audit_retention_days",
-          "max_email_aliases_per_mailbox"
+          "max_email_aliases_per_bucket"
         ],
         "properties": {
-          "max_mailboxes": {
+          "max_buckets": {
             "type": [
               "integer",
               "null"
             ],
             "minimum": 0
           },
-          "max_mailbox_creations_per_month": {
+          "max_bucket_creations_per_month": {
             "type": [
               "integer",
               "null"
             ],
             "minimum": 0
           },
-          "max_files_per_mailbox": {
+          "max_files_per_bucket": {
             "type": [
               "integer",
               "null"
@@ -5411,7 +5745,7 @@
             ],
             "minimum": 0
           },
-          "max_email_aliases_per_mailbox": {
+          "max_email_aliases_per_bucket": {
             "type": "integer",
             "minimum": 0,
             "description": "Active retained email addresses (aliases) per mailbox. Zero means that the plan has no aliases."
@@ -5449,9 +5783,9 @@
               "null"
             ],
             "enum": [
-              "mailbox_read",
-              "mailbox_write",
-              "mailbox_admin",
+              "bucket_read",
+              "bucket_write",
+              "bucket_admin",
               null
             ]
           },
@@ -5469,7 +5803,7 @@
             ],
             "format": "date-time"
           },
-          "mailbox_access": {
+          "bucket_access": {
             "type": [
               "string",
               "null"
@@ -5480,19 +5814,19 @@
               null
             ]
           },
-          "mailbox_ids": {
+          "bucket_ids": {
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "denied_mailbox_ids": {
+          "denied_bucket_ids": {
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "mailbox_permissions": {
+          "bucket_permissions": {
             "type": "object",
             "additionalProperties": {
               "type": "string"
@@ -5611,7 +5945,7 @@
           "connection"
         ]
       },
-      "MailboxAction": {
+      "BucketAction": {
         "type": "object",
         "properties": {
           "allowed": {
@@ -5625,16 +5959,16 @@
           },
           "confirmation": {
             "type": "string",
-            "description": "Delete only: send this value as confirmation in DELETE /v1/mailboxes/{mailbox_id} after the user confirms."
+            "description": "Delete only: send this value as confirmation in DELETE /v1/buckets/{bucket_id} after the user confirms."
           }
         },
         "required": [
           "allowed"
         ]
       },
-      "MailboxEmail": {
+      "Mailbox": {
         "type": "object",
-        "description": "Receiving and sending state of a mailbox. Counts read the email index without reading content.",
+        "description": "Receiving and sending state of a bucket's mailbox. Counts read the email index without reading content.",
         "required": [
           "message_count",
           "unread_count",
@@ -5645,7 +5979,7 @@
         "properties": {
           "address": {
             "type": "string",
-            "description": "Primary address. Present when the credential has write access to the mailbox. Show it after the title."
+            "description": "Primary address. Present when the credential has write access to the bucket. Show it after the title."
           },
           "message_count": {
             "type": [
@@ -5691,7 +6025,7 @@
           }
         }
       },
-      "MailboxLock": {
+      "BucketLock": {
         "type": "object",
         "required": [
           "locked"
@@ -5706,7 +6040,7 @@
           },
           "kind": {
             "type": "string",
-            "description": "For example mailbox_delete while a permanent delete runs."
+            "description": "For example bucket_delete while a permanent delete runs."
           },
           "message": {
             "type": "string"
@@ -5723,13 +6057,13 @@
           }
         }
       },
-      "Mailbox": {
+      "Bucket": {
         "type": "object",
-        "description": "A mailbox: one receiving address with private file storage. Label it as title (email.address), or by email.address alone when title is null. Use id in API calls.",
+        "description": "A bucket: private files, a mailbox with its own address, and a site. Label it as title (mailbox.address), or by mailbox.address alone when title is null. Use id in API calls.",
         "required": [
           "id",
           "account_id",
-          "email",
+          "mailbox",
           "archived",
           "version_id",
           "version_number",
@@ -5752,7 +6086,7 @@
               "null"
             ],
             "maxLength": 255,
-            "description": "Mailbox title chosen by people. Defaults to the email username given at creation. Null when unset or when the caller cannot see email.address."
+            "description": "Bucket title chosen by people. Defaults to the email username given at creation. Null when unset or when the caller cannot see mailbox.address."
           },
           "description": {
             "type": [
@@ -5769,8 +6103,8 @@
             "type": "string",
             "description": "Send as expected_metadata_version on PATCH. Changes only when description or metadata changes."
           },
-          "email": {
-            "$ref": "#/components/schemas/MailboxEmail"
+          "mailbox": {
+            "$ref": "#/components/schemas/Mailbox"
           },
           "archived": {
             "type": "boolean"
@@ -5783,7 +6117,7 @@
             "format": "date-time"
           },
           "lock": {
-            "$ref": "#/components/schemas/MailboxLock"
+            "$ref": "#/components/schemas/BucketLock"
           },
           "storage_bytes": {
             "type": "integer",
@@ -5801,7 +6135,7 @@
               "string",
               "null"
             ],
-            "description": "Current mailbox file-tree version. Send as expected_mailbox_version on file writes to detect concurrent changes."
+            "description": "Current bucket file-tree version. Send as expected_bucket_version on file writes to detect concurrent changes."
           },
           "version_number": {
             "type": "integer",
@@ -5824,22 +6158,22 @@
           "dashboard_url": {
             "type": "string",
             "format": "uri",
-            "description": "Opens the mailbox for signed-in members. It does not grant access."
+            "description": "Opens the bucket for signed-in members. It does not grant access."
           },
           "archive": {
-            "$ref": "#/components/schemas/MailboxAction"
+            "$ref": "#/components/schemas/BucketAction"
           },
           "unarchive": {
-            "$ref": "#/components/schemas/MailboxAction"
+            "$ref": "#/components/schemas/BucketAction"
           },
           "delete": {
-            "$ref": "#/components/schemas/MailboxAction"
+            "$ref": "#/components/schemas/BucketAction"
           }
         }
       },
-      "MailboxCounts": {
+      "BucketCounts": {
         "type": "object",
-        "description": "Exact authorized mailbox totals after query filtering, before status filtering and pagination.",
+        "description": "Exact authorized bucket totals after query filtering, before status filtering and pagination.",
         "properties": {
           "active": {
             "type": "integer",
@@ -5863,29 +6197,29 @@
           "total"
         ]
       },
-      "MailboxList": {
+      "BucketList": {
         "type": "object",
         "required": [
-          "mailboxes",
+          "buckets",
           "counts",
           "pagination"
         ],
         "properties": {
-          "mailboxes": {
+          "buckets": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Mailbox"
+              "$ref": "#/components/schemas/Bucket"
             }
           },
           "counts": {
-            "$ref": "#/components/schemas/MailboxCounts"
+            "$ref": "#/components/schemas/BucketCounts"
           },
           "pagination": {
             "$ref": "#/components/schemas/Pagination"
           }
         }
       },
-      "MailboxEmailOptions": {
+      "MailboxOptions": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -5901,14 +6235,14 @@
           }
         }
       },
-      "MailboxCreate": {
+      "BucketCreate": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
           "title": {
             "type": "string",
             "maxLength": 255,
-            "description": "Optional title. Defaults to email.username as given, or to the generated name without its random suffix. A title that another active mailbox uses returns 409 MAILBOX_TITLE_TAKEN."
+            "description": "Optional title. Defaults to mailbox.username as given, or to the generated name without its random suffix. A title that another active bucket uses returns 409 BUCKET_TITLE_TAKEN."
           },
           "description": {
             "type": "string",
@@ -5918,12 +6252,12 @@
             "type": "object",
             "additionalProperties": true
           },
-          "email": {
-            "$ref": "#/components/schemas/MailboxEmailOptions"
+          "mailbox": {
+            "$ref": "#/components/schemas/MailboxOptions"
           }
         }
       },
-      "MailboxUpdate": {
+      "BucketUpdate": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -5933,7 +6267,7 @@
               "null"
             ],
             "maxLength": 255,
-            "description": "New title. An empty string or null clears it. A title that another active mailbox uses returns 409 MAILBOX_TITLE_TAKEN."
+            "description": "New title. An empty string or null clears it. A title that another active bucket uses returns 409 BUCKET_TITLE_TAKEN."
           },
           "description": {
             "type": "string",
@@ -5996,9 +6330,9 @@
           }
         }
       },
-      "MailboxEmailSettings": {
+      "MailboxSettings": {
         "type": "object",
-        "description": "Address settings of one mailbox.",
+        "description": "Address settings of a bucket's mailbox.",
         "required": [
           "message_count",
           "unread_count",
@@ -6010,7 +6344,7 @@
         "properties": {
           "address": {
             "type": "string",
-            "description": "Primary address. Present when the credential has write access to the mailbox. Show it after the title."
+            "description": "Primary address. Present when the credential has write access to the bucket. Show it after the title."
           },
           "message_count": {
             "type": [
@@ -6143,7 +6477,7 @@
           },
           "sender_allowlist": {
             "$ref": "#/components/schemas/EmailSenderAllowlist",
-            "description": "Returned to account administrators with mailbox-admin permission."
+            "description": "Returned to account administrators with bucket-admin permission."
           }
         }
       },
@@ -6192,7 +6526,7 @@
           "expires_in",
           "channel",
           "account_id",
-          "mailbox_id",
+          "bucket_id",
           "websocket_url"
         ],
         "properties": {
@@ -6210,7 +6544,7 @@
           "account_id": {
             "type": "string"
           },
-          "mailbox_id": {
+          "bucket_id": {
             "type": "string"
           },
           "websocket_url": {
@@ -6245,7 +6579,7 @@
             "type": "object",
             "required": [
               "account_id",
-              "mailbox_id",
+              "bucket_id",
               "email_id",
               "received_at",
               "attachment_count"
@@ -6254,7 +6588,7 @@
               "account_id": {
                 "type": "string"
               },
-              "mailbox_id": {
+              "bucket_id": {
                 "type": "string"
               },
               "email_id": {
@@ -6474,7 +6808,7 @@
               "type": "string",
               "pattern": "^df_"
             },
-            "description": "Existing file IDs in this mailbox to attach."
+            "description": "Existing file IDs in this bucket to attach."
           },
           "account_id": {
             "type": "string"
@@ -6624,7 +6958,7 @@
               "null"
             ],
             "pattern": "^thr_[0-9a-f]{64}$",
-            "description": "thr_ plus SHA-256 of thread_anchor_message_id. Best-effort header-derived grouping hint, not authoritative conversation membership or an access grant. Missing ancestry or reused IDs can split/merge hints. Scope lookups to accessible mailboxes."
+            "description": "thr_ plus SHA-256 of thread_anchor_message_id. Best-effort header-derived grouping hint, not authoritative conversation membership or an access grant. Missing ancestry or reused IDs can split/merge hints. Scope lookups to accessible buckets."
           },
           "thread_id_source": {
             "type": [
@@ -7059,7 +7393,7 @@
           "purpose": {
             "type": "string",
             "enum": [
-              "mailbox_file"
+              "bucket_file"
             ]
           }
         },
@@ -7223,13 +7557,13 @@
           "version_number"
         ]
       },
-      "MailboxFile": {
+      "BucketFile": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "mailbox_id": {
+          "bucket_id": {
             "type": "string",
             "pattern": "^bkt_"
           },
@@ -7345,7 +7679,7 @@
           "files": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/MailboxFile"
+              "$ref": "#/components/schemas/BucketFile"
             }
           },
           "pagination": {
@@ -7393,17 +7727,17 @@
       "PrepareFileUploadRequest": {
         "type": "object",
         "required": [
-          "mailbox_id",
+          "bucket_id",
           "path",
           "blob"
         ],
         "properties": {
-          "mailbox_id": {
+          "bucket_id": {
             "type": "string"
           },
           "path": {
             "type": "string",
-            "description": "Destination path in the mailbox. Paths under _email/ return EMAIL_PATH_READ_ONLY; other top-level folders that start with _ return RESERVED_PATH."
+            "description": "Destination path in the bucket. Paths under _mailbox/ return MAILBOX_PATH_READ_ONLY; paths under _agents/ and _revdoku/ return RESERVED_PATH."
           },
           "existing_file_policy": {
             "type": "string",
@@ -7448,7 +7782,7 @@
             "$ref": "#/components/schemas/StorageUpload"
           },
           "file": {
-            "$ref": "#/components/schemas/MailboxFile"
+            "$ref": "#/components/schemas/BucketFile"
           },
           "version": {
             "$ref": "#/components/schemas/FileVersion"
@@ -7478,7 +7812,7 @@
         "properties": {
           "path": {
             "type": "string",
-            "description": "Destination path. An existing path receives a new version. Paths under _email/ return EMAIL_PATH_READ_ONLY; other top-level folders that start with _ return RESERVED_PATH."
+            "description": "Destination path. An existing path receives a new version. Paths under _mailbox/ return MAILBOX_PATH_READ_ONLY; paths under _agents/ and _revdoku/ return RESERVED_PATH."
           },
           "signed_blob_id": {
             "type": "string",
@@ -7508,9 +7842,9 @@
             ],
             "default": "replace"
           },
-          "expected_mailbox_version": {
+          "expected_bucket_version": {
             "type": "string",
-            "description": "Mailbox version_id from your last read. A different current version returns MAILBOX_VERSION_CONFLICT and saves nothing."
+            "description": "Bucket version_id from your last read. A different current version returns BUCKET_VERSION_CONFLICT and saves nothing."
           },
           "account_id": {
             "type": "string"
@@ -7524,7 +7858,7 @@
         "type": "object",
         "properties": {
           "file": {
-            "$ref": "#/components/schemas/MailboxFile"
+            "$ref": "#/components/schemas/BucketFile"
           },
           "version": {
             "$ref": "#/components/schemas/FileVersion"
@@ -7557,7 +7891,7 @@
         ],
         "properties": {
           "file": {
-            "$ref": "#/components/schemas/MailboxFile"
+            "$ref": "#/components/schemas/BucketFile"
           },
           "version": {
             "$ref": "#/components/schemas/FileVersion"
@@ -7604,17 +7938,17 @@
           "path": {
             "type": "string"
           },
-          "source_mailbox_id": {
+          "source_bucket_id": {
             "type": "string"
           },
-          "target_mailbox_id": {
+          "target_bucket_id": {
             "type": "string"
           },
           "source_file": {
-            "$ref": "#/components/schemas/MailboxFile"
+            "$ref": "#/components/schemas/BucketFile"
           },
           "file": {
-            "$ref": "#/components/schemas/MailboxFile"
+            "$ref": "#/components/schemas/BucketFile"
           },
           "version": {
             "$ref": "#/components/schemas/FileVersion"
@@ -7630,7 +7964,7 @@
         ],
         "properties": {
           "file": {
-            "$ref": "#/components/schemas/MailboxFile"
+            "$ref": "#/components/schemas/BucketFile"
           },
           "version": {
             "$ref": "#/components/schemas/FileVersion"
@@ -7803,7 +8137,7 @@
               }
             ]
           },
-          "assigned_mailboxes": {
+          "assigned_buckets": {
             "type": "array",
             "items": {
               "type": "object",
@@ -7897,25 +8231,25 @@
           "scope": {
             "type": "string",
             "enum": [
-              "mailbox_read",
-              "mailbox_write",
-              "mailbox_admin"
+              "bucket_read",
+              "bucket_write",
+              "bucket_admin"
             ]
           },
-          "mailbox_access": {
+          "bucket_access": {
             "type": "string",
             "enum": [
               "all",
               "selected"
             ]
           },
-          "mailbox_ids": {
+          "bucket_ids": {
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "mailbox_permissions": {
+          "bucket_permissions": {
             "type": "object",
             "additionalProperties": {
               "type": "string"
@@ -7936,7 +8270,7 @@
             "type": "object",
             "additionalProperties": true
           },
-          "mailboxes": {
+          "buckets": {
             "type": "array",
             "items": {
               "type": "object",
@@ -7986,7 +8320,7 @@
         "properties": {
           "path": {
             "type": "string",
-            "description": "Destination path in the mailbox. Paths under _email/ return EMAIL_PATH_READ_ONLY; other top-level folders that start with _ return RESERVED_PATH."
+            "description": "Destination path in the bucket. Paths under _mailbox/ return MAILBOX_PATH_READ_ONLY; paths under _agents/ and _revdoku/ return RESERVED_PATH."
           },
           "byte_size": {
             "type": "integer",
@@ -8035,7 +8369,7 @@
         "type": "object",
         "required": [
           "id",
-          "mailbox_id",
+          "bucket_id",
           "status"
         ],
         "properties": {
@@ -8043,7 +8377,7 @@
             "type": "string",
             "pattern": "^bus_"
           },
-          "mailbox_id": {
+          "bucket_id": {
             "type": "string",
             "pattern": "^bkt_"
           },
@@ -8057,19 +8391,19 @@
             ],
             "description": "pending accepts uploads. failed means canceled; its unsaved files were discarded."
           },
-          "base_mailbox_version_id": {
+          "base_bucket_version_id": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Mailbox version when the session started."
+            "description": "Bucket version when the session started."
           },
-          "target_mailbox_version_id": {
+          "target_bucket_version_id": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Mailbox version created by the final save."
+            "description": "Bucket version created by the final save."
           },
           "uploads_expire_at": {
             "type": [
@@ -8135,7 +8469,7 @@
             "type": "string"
           },
           "file": {
-            "$ref": "#/components/schemas/MailboxFile"
+            "$ref": "#/components/schemas/BucketFile"
           },
           "version": {
             "$ref": "#/components/schemas/FileVersion"
@@ -8149,14 +8483,14 @@
       "UploadSessionResult": {
         "type": "object",
         "required": [
-          "mailbox_upload_session",
+          "bucket_upload_session",
           "uploaded",
           "uploaded_count",
           "skipped",
           "skipped_count"
         ],
         "properties": {
-          "mailbox_upload_session": {
+          "bucket_upload_session": {
             "$ref": "#/components/schemas/UploadSession"
           },
           "uploads": {
@@ -8227,6 +8561,123 @@
             "$ref": "#/components/schemas/ActionReason"
           }
         }
+      },
+      "Publication": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "bucket_id",
+          "url",
+          "preview",
+          "publish_state",
+          "live",
+          "access_mode",
+          "password_configured",
+          "publish_error",
+          "expires_at",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Publication ID."
+          },
+          "url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The site address."
+          },
+          "preview": {
+            "type": "boolean",
+            "description": "True for a 24-hour preview."
+          },
+          "publish_state": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "queued",
+              "processing",
+              "failed",
+              "unpublishing"
+            ],
+            "description": "Build state. A publish runs in the background: poll until ready or failed."
+          },
+          "live": {
+            "type": "boolean",
+            "description": "True while the site serves visitors."
+          },
+          "access_mode": {
+            "type": "string",
+            "enum": [
+              "public",
+              "password",
+              "require_email"
+            ],
+            "description": "Who can open the site."
+          },
+          "password_configured": {
+            "type": "boolean",
+            "description": "True when a password protects the site."
+          },
+          "publish_error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why the last build failed."
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When a preview stops serving."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "bucket_id": {
+            "type": "string",
+            "description": "The bucket whose files the site publishes."
+          }
+        },
+        "description": "A bucket's published site, or its 24-hour preview."
+      },
+      "PublishRequest": {
+        "type": "object",
+        "properties": {
+          "access_mode": {
+            "type": "string",
+            "enum": [
+              "public",
+              "password",
+              "require_email"
+            ],
+            "description": "Who can open the site. Omit to keep the current setting."
+          },
+          "password": {
+            "type": "string",
+            "writeOnly": true,
+            "minLength": 8,
+            "maxLength": 128,
+            "description": "Password for access_mode password, 8 to 128 characters. Omit to generate one."
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Why you publish, for the activity log."
+          }
+        }
       }
     },
     "parameters": {
@@ -8267,8 +8718,8 @@
         },
         "description": "pagination.next_cursor from the previous page."
       },
-      "MailboxId": {
-        "name": "mailbox_id",
+      "BucketId": {
+        "name": "bucket_id",
         "in": "path",
         "required": true,
         "schema": {

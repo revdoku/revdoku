@@ -1,15 +1,15 @@
-# Customer mailboxes for your SaaS
+# Customer buckets for your SaaS
 
-Give each customer a private mailbox. Your backend creates mailboxes, reads messages
+Give each customer a private mailbox. Your backend creates buckets, reads messages
 and downloads attachments. Customers need no separate Revdoku signup.
 Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for
-example `https://api.revdoku.com/v1/mailboxes`.
+example `https://api.revdoku.com/v1/buckets`.
 
 ## Start with the examples
 
 1. Select your development account. In **Account → Access**, create an API key
-   with **All current and future mailboxes** and **Manage mailboxes and files**
-   (`mailbox_admin`) for provisioning. The setup steps after signup create your first mailbox.
+   with **All current and future buckets** and **Manage buckets and files**
+   (`bucket_admin`) for provisioning. The setup steps after signup create your first bucket.
 2. Clone the [repository](https://github.com/revdoku/revdoku). In `examples`, copy
    `.env.example` to `.env`. With Node.js 22+, set
    `REVDOKU_API_KEY` and `REVDOKU_ACCOUNT_ID` locally. Keep keys off browsers and Git.
@@ -29,14 +29,14 @@ the [quickstart](https://revdoku.com/docs/quickstart.md). Run one process at a t
 verify its process stopped before removing a leftover lock.
 
 Send test mail to a confirmed address. The processor saves summaries and arrival
-cursors for mapped mailboxes. Rerun it periodically and after restarts. External
+cursors for mapped buckets. Rerun it periodically and after restarts. External
 side effects need their own deduplication.
 
 ## Map customers and choose access
 
-Store `customer_id`, `account_id`, `mailbox_id`, confirmed address, provisioning
+Store `customer_id`, `account_id`, `bucket_id`, confirmed address, provisioning
 state and cursor. Authenticate every customer request and resolve its mapping
-server-side; reject another customer's mailbox ID.
+server-side; reject another customer's bucket ID.
 
 Use a separate Revdoku account when ownership, membership, administration or the
 account encryption boundary must differ. Eligible managed accounts share
@@ -45,14 +45,14 @@ billing-group capacity while retaining separate files and memberships.
 
 | Task | Credential needed |
 | --- | --- |
-| List/read messages, download attachments | `mailbox_read` with the mapped mailbox selected |
+| List/read messages, download attachments | `bucket_read` with the mapped mailbox selected |
 | Discover an address or receiving state | Mailbox write access; store the address during provisioning for readers |
-| Create a mailbox | Account-wide `mailbox_admin` access and an eligible account membership |
+| Create a bucket | Account-wide `bucket_admin` access and an eligible account membership |
 | Configure a webhook or delete a message | Mailbox admin access |
 | Manage aliases/custom domains | Full-account owner/administrator with mailbox-admin access |
 
 Use separate provisioning and reading credentials. Selected-mailbox access does
-not permit creating mailboxes. A normal API key consumes `max_api_keys`; an
+not permit creating buckets. A normal API key consumes `max_api_keys`; an
 agent-labelled OAuth/device connection consumes
 `max_agent_connections`, even when its bearer token calls REST. Human memberships
 have their own allowance.
@@ -63,28 +63,28 @@ Namespace mappings, cursors and work records by account and mailbox.
 
 ## Provision once and recover
 
-The [minimal creation request](https://revdoku.com/api.md#create-a-mailbox) sends `{"mailbox":{}}`.
+The [minimal creation request](https://revdoku.com/api.md#create-a-bucket) sends `{"mailbox":{}}`.
 For a connected custom domain, set `REVDOKU_EMAIL_DOMAIN` before provisioning.
 
 | Outcome | Next action |
 | --- | --- |
-| `201` | Persist the mailbox ID and confirmed receiving address. |
-| `503 EMAIL_NOT_READY` | Persist `error.details.mailbox_id`; inspect its receiving state with `GET /v1/mailboxes/:id/email?account_id=…`. |
-| Timeout, broken connection or unreadable response | Retain an unknown outcome; reconcile existing mailboxes. Do not repeat the POST. |
+| `201` | Persist the bucket ID and confirmed receiving address. |
+| `503 EMAIL_NOT_READY` | Persist `error.details.bucket_id`; inspect its receiving state with `GET /v1/buckets/:id/mailbox?account_id=…`. |
+| Timeout, broken connection or unreadable response | Retain an unknown outcome; reconcile existing buckets. Do not repeat the POST. |
 | Capacity/permission error | Resolve the returned condition before an explicitly chosen new attempt. |
 
 The example saves intent and a unique email username before sending. After an
-unknown result, rerunning searches that username and requires one mailbox whose
+unknown result, rerunning searches that username and requires one bucket whose
 title or address name equals it; it never repeats the POST. On `revdokumail.com`
 the address adds a random suffix, so the default title (the username as sent)
-identifies the mailbox. The username is not a retry key. Missing
+identifies the bucket. The username is not a retry key. Missing
 or multiple matches need human review; an empty list does not prove creation
-failed. A known mailbox ID is checked with GET. Structured 4xx rejection permits a
+failed. A known bucket ID is checked with GET. Structured 4xx rejection permits a
 later explicit new attempt. Use only confirmed addresses.
 
 Aliases share a mailbox's messages, restrictions and quotas; they provide no
 isolation. Follow the [alias workflow](https://revdoku.com/api.md#aliases),
-check `max_email_aliases_per_mailbox`, and wait for routing confirmation. Keeping an
+check `max_email_aliases_per_bucket`, and wait for routing confirmation. Keeping an
 old primary also uses rotation capacity. Removal stops new/queued deliveries;
 existing mail remains.
 
@@ -92,11 +92,11 @@ existing mail remains.
 
 Read `GET /v1/account/limits?account_id=…`; use effective values rather than copied
 plan numbers. Full-account admin connections and browser sessions also receive
-`data.usage.mailbox_creations`, including remaining creations and the UTC reset.
+`data.usage.bucket_creations`, including remaining creations and the UTC reset.
 
 | Dimension | Scope and timing |
 | --- | --- |
-| `max_mailboxes` | Active mailboxes across the billing group |
+| `max_buckets` | Active buckets across the billing group |
 | Creation allowance | Billing group, UTC calendar month; deleting/archiving refunds nothing |
 | Incoming count and raw bytes | Billing period; MIME encoding and matched rejected attempts can consume traffic |
 | Stored bytes/current files | Retained content, including EML, JSON, Markdown, attachments and versions |
@@ -104,13 +104,13 @@ plan numbers. Full-account admin connections and browser sessions also receive
 | Domains/aliases | Domain slots per account; aliases per mailbox |
 | Request/arrival throttles | API request limits and separate fixed-minute receiving limits |
 
-For illustration, 5 GiB divided by a 0.5 MiB average raw message permits about
-10,240 messages, even with a count allowance of 15,000.
+For illustration, 8 GB divided by a 0.5 MB average raw message permits about
+16,000 messages, so a count allowance of 10,000 is reached first.
 Measure MIME and saved artifact sizes; there is no fixed attachment multiplier.
 Allow headroom for spikes and versions. The server decides capacity under concurrency.
-Stop on `MAILBOX_CREATION_LIMIT_REACHED` and report `resets_at`.
+Stop on `BUCKET_CREATION_LIMIT_REACHED` and report `resets_at`.
 
-For larger workloads, send [support](mailto:support@revdoku.com) your mailbox count, creation rate,
+For larger workloads, send [support](mailto:support@revdoku.com) your bucket count, creation rate,
 monthly messages/raw bytes, stored bytes, peak arrivals, domains, webhook load
 and support needs. Confirm allowances and [pricing](https://app.revdoku.com/pricing) before promising capacity.
 
@@ -123,7 +123,7 @@ and support needs. Confirm allowances and [pricing](https://app.revdoku.com/pric
 | Application work record | Which business work completed |
 
 Do not use unread filters as a job queue. Deduplicate business work by
-`account_id/mailbox_id/email_id`, and webhook delivery by event ID. Separate mailbox
+`account_id/bucket_id/email_id`, and webhook delivery by event ID. Separate mailbox
 deliveries must not collapse solely because they share a sender Message-ID.
 
 For webhooks, verify the signature/timestamp and mapped account/mailbox, durably
@@ -154,7 +154,7 @@ individual message/file deletion is an explicit action, never processing acknowl
 ## When receiving stops
 
 A rolling hour reaching 30% of either effective monthly traffic allowance
-automatically pauses that mailbox. The owner receives email and an in-app alert.
+automatically pauses that bucket. The owner receives email and an in-app alert.
 An owner/administrator must resume in the browser after cooldown and other holds
 clear. Pause/Resume and detailed diagnostic logs are dashboard-only. Mail rejected
 while paused must be resent; there is no replay queue.
@@ -173,7 +173,7 @@ credentials and signed URLs from the handoff.
 
 ## Development and CI
 
-Reuse development mailboxes. Run `npm ci`, `npm run build`, and `npm run check` in
+Reuse development buckets. Run `npm ci`, `npm run build`, and `npm run check` in
 `examples` for offline fixtures. Cover duplicates, bad signatures, empty pages,
 restarts, uncertain creation and cross-customer denial. For live smoke tests,
 externally send/read mail, download an attachment, then restart/catch up. Delete
