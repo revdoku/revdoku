@@ -1,5 +1,16 @@
 # Revdoku Changelog
 
+## 1.0.623 — 2026-11-07
+
+### Improved
+
+- Republish a site faster after a small change.
+
+### Fixed
+
+- A file that is too large for your plan no longer stops automatic publishing of your site. The file is left out, and the GitHub panel lists it.
+- Files stored in Git LFS show as skipped in the GitHub panel instead of syncing as small pointer files.
+
 ## 1.0.622 — 2026-11-07
 
 ### Improved
