@@ -1,5 +1,21 @@
 # Revdoku Changelog
 
+## 1.0.622 — 2026-11-07
+
+### Improved
+
+- Find a site's pages in the sidebar under **Site**: Previews, GitHub, Domain, Access and Settings. They replace the Website settings dialog.
+- See your site and its GitHub repository at a glance on the Site page: the address, when it was published and synced, and how many pages and files it has.
+- See what needs you in one line on the Site page: a failed sync with **Try again**, or edits that are not on GitHub with **Review**.
+- See every 24-hour preview on the **Previews** page, also the previews of your GitHub branches.
+- See the commits that Revdoku sends to GitHub as **Verified**.
+
+### Fixed
+
+- GitHub sync works again. Earlier releases could not copy a repository.
+- A bucket connected to GitHub no longer asks you to connect GitHub or add docs while its first sync runs.
+- A failed GitHub sync shows a readable message instead of an error from the server.
+
 ## 1.0.621 — 2026-11-06
 
 ### Added
