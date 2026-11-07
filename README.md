@@ -101,7 +101,7 @@ each AI connection separately for the intended buckets. A dashboard link does no
 grant access by itself. Agents can work on the same files with locks and version
 checks to coordinate changes.
 
-See the [storage quick start](./docs.md#storing-files-inside-a-mailbox) and
+See the [storage quick start](./docs.md#store-files-in-a-bucket) and
 [sharing access and coordinating edits](./docs.md#share-access-and-coordinate-edits).
 
 ## Plans
