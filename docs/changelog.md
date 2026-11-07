@@ -1,5 +1,16 @@
 # Revdoku Changelog
 
+## 1.0.624 — 2026-11-07
+
+### Improved
+
+- Publish large docs sites: a docs site no longer has a page limit.
+- See the title and description of each docs page at its top, from the page's front matter.
+
+### Fixed
+
+- Publish docs sites whose pages are MDX files, and repositories with files such as LICENSE.
+
 ## 1.0.623 — 2026-11-07
 
 ### Improved
