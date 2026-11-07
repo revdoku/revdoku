@@ -328,5 +328,5 @@
 - Read decoded message bodies and originals through the CLI, API, or hosted MCP.
 - Coordinate authorized agents with account selection, locks, and revision checks.
 
-Current setup and usage: [README](./README.md), [mailbox guide](./docs.md),
-[API](./api.md), and [MCP](./mcp.md).
+Current setup and usage: [README](https://github.com/revdoku/revdoku), [mailbox guide](https://revdoku.com/docs.md),
+[API](https://revdoku.com/api.md), and [MCP](https://revdoku.com/mcp.md).

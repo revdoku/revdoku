@@ -5,8 +5,9 @@ MCP lets an AI app use outside tools. Add the Revdoku server address
 The server uses Streamable HTTP and OAuth. Each agent needs its own authorized
 connection. Compare plans on the [pricing page](https://app.revdoku.com/pricing).
 
-Every public docs site also has its own MCP server at `<site>/mcp`, without sign-in. Its tools `search_docs` and
-`get_page` read the published pages, so readers can connect their AI apps to your docs.
+Every public docs site also has its own MCP server at `<site>/mcp`, without sign-in. Its read-only tools
+`search_docs`, `read_page` and `list_pages` read the published pages, so readers can connect their AI apps
+to your docs. See [Docs for AI agents](https://revdoku.com/docs.md#docs-for-ai-agents).
 
 ## Connect without a terminal
 

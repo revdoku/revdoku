@@ -1,9 +1,10 @@
 # Revdoku API
 
-Revdoku provides **buckets**. Each bucket has a mailbox with its own address,
-private file storage and an optional site. The REST API creates buckets, lists and
-reads email, downloads attachments, sends email to allowed recipients, stores files
-and publishes sites.
+Revdoku publishes API and integration docs as sites for people and AI agents.
+Each **bucket** holds the docs files, publishes them as a site and has a support
+mailbox with its own address. The REST API publishes sites, stores files, creates
+buckets, lists and reads email, downloads attachments and sends email to allowed
+recipients.
 
 This guide explains the concepts and the main workflows, with TypeScript, Python
 and HTTP examples. The [API reference](https://revdoku.com/api/reference.md) has
@@ -16,6 +17,7 @@ operation and field.
 | Task | Read |
 | --- | --- |
 | Make your first request | [Quickstart](https://revdoku.com/docs/quickstart.md) |
+| Publish a docs site | [Sites](#sites) · [Docs for AI agents](https://revdoku.com/docs.md#docs-for-ai-agents) |
 | Install and use an SDK | [TypeScript SDK](https://revdoku.com/docs/sdks/typescript.md) · [Python SDK](https://revdoku.com/docs/sdks/python.md) |
 | Look up one operation | [API reference](https://revdoku.com/api/reference.md) |
 | Build with Claude Code or Codex | [Coding agents](https://revdoku.com/docs/coding-agents.md) |
@@ -29,7 +31,6 @@ operation and field.
 | Upload and organize files | [Files](#files) |
 | Upload a folder or many files | [Upload many files](#upload-many-files) · [Bulk uploads guide](https://revdoku.com/guides/bulk-uploads.md) |
 | Use your own domain | [Custom email domains](#custom-email-domains) · [Custom domains guide](https://revdoku.com/guides/custom-email-domains.md) |
-| Publish the files as a site | [Sites](#sites) |
 | Give each customer of your app a mailbox | [SaaS mailbox guide](https://revdoku.com/guides/saas-mailboxes.md) |
 | Choose between the SDKs, n8n and Zapier | [Packages and integrations](https://revdoku.com/guides/api-packages.md) |
 
@@ -46,7 +47,7 @@ Create an API key in the dashboard with **Connect via API** or in
 [sign up in your browser](https://app.revdoku.com/users/sign_up). The setup
 steps after signup create your first bucket. The
 [quickstart](https://revdoku.com/docs/quickstart.md) takes you from a new key to
-your first received email.
+a published docs site and your first support email.
 
 ### Install an SDK
 
@@ -117,11 +118,11 @@ credential, and dashboard routes are not part of this API: an API key receives
 | --- | --- |
 | `bucket_read` | Read permitted buckets, email and files. |
 | `bucket_write` | Also write files, send email and read address settings. |
-| `bucket_admin` | Also manage permitted buckets. Creating a bucket needs access to all buckets. |
+| `bucket_admin` | Also manage permitted buckets and publish their sites. Creating a bucket needs access to all buckets. |
 
 A key can be limited to selected buckets. **Connect via API** in the dashboard
-creates a `bucket_admin` key for all buckets by default. In a mailbox, its
-**This mailbox** choice creates a `bucket_write` key for that bucket only.
+creates a `bucket_admin` key for all buckets by default. In a bucket, its
+**This bucket** choice creates a `bucket_write` key for that bucket only.
 `GET /v1/status` shows the scope and mailbox access of the key.
 
 The CLI and AI agents sign in with the operations below. Backend applications use
@@ -977,10 +978,10 @@ See the [custom email domains guide](https://revdoku.com/guides/custom-email-dom
 
 ## Sites
 
-A bucket can publish its files as a site: at `https://<slug>.revdoku.site/` or on a custom domain.
+A bucket publishes its files as a site: at `https://<slug>.revdoku.site/` or on a custom domain.
 The system folders (`_mailbox/`, `_agents/`, `_revdoku/`) are never published.
-Sites are a beta: an account without it gets `403 WEBSITE_PUBLISHING_DISABLED`, but it can still
-read and unpublish an existing site.
+Publishing needs the `bucket_admin` scope. When sites are turned off for an account, a publish answers
+`403 WEBSITE_PUBLISHING_DISABLED`. The account can still read and unpublish an existing site.
 
 | Method | Path | SDK | Purpose |
 | --- | --- | --- | --- |
@@ -994,11 +995,25 @@ read and unpublish an existing site.
 2. Read the site until `publish_state` is `ready` and `live` is `true`, or `failed` with `publish_error`.
 3. When `data.plan_notice` is present, some site settings stay preview-only on the current plan.
 
+Before the first publish, a read of the site answers `404 PUBLICATION_NOT_FOUND`.
+A publish while another publish or unpublish runs answers `409 PUBLICATION_PUBLISH_IN_PROGRESS`.
+
+Connect a GitHub repository on the bucket's **Site** → **GitHub** page in the dashboard. After the first publish,
+each push to the connected branch publishes the site again, and a push to another branch makes a 24-hour preview.
+With a GitHub link, the site shows the connected branch: edits made in Revdoku reach the site after they are on the branch.
+On Free, sites publish from a connected GitHub repository that synced at least once. Previews come from its branches.
+On Free, these requests answer `403 PUBLICATION_UPGRADE_REQUIRED` with `details.github_required: true` and `details.upgrade_url`:
+a publish of a bucket without such a repository, and a preview of the bucket's files.
+On paid plans you can also publish and preview uploaded files.
+
 A bucket with `docs.json` (or `mint.json`), or with Markdown pages and no `index.html`, publishes as a docs site:
 every page gets HTML and Markdown, `llms.txt`, `llms-full.txt`, a search index and one reference page per OpenAPI tag
 (`openapi.json` or `openapi.yaml` in the root). `layout` in `docs.json` chooses `sidebar` (default), `notebook` (one tab per navigation group)
 or `minimal` (one column). The bucket metadata key `publication_docs_layout` (the Site tab) wins over it.
-An OpenAPI document also adds `/api-reference/console/`: an interactive console that sends requests from the browser to your API,
+An OpenAPI document also adds `/api-reference/console/`: an interactive console that sends real requests to your API.
+On a public site, the console sends them through the site to the public HTTPS hosts in the document's `servers`,
+so your API needs no CORS setup. This proxy sends no cookies and follows no redirects.
+On a site with a password or an email code, or without such `servers`, requests go from the browser,
 so your API has to allow the site's origin (CORS).
 
 A public docs site also serves AI agents, without sign-in:
