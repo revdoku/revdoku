@@ -1,5 +1,12 @@
 # Revdoku Changelog
 
+## 1.0.626 — 2026-11-08
+
+### Improved
+
+- Get answers from Ask AI on docs sites also when a question uses other words than your docs. Each answer links the section that it comes from.
+- See links to the exact sections of your docs in the support agent's draft replies.
+
 ## 1.0.625 — 2026-11-08
 
 ### Added
