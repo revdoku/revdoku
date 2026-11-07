@@ -1,5 +1,17 @@
 # Revdoku Changelog
 
+## 1.0.625 — 2026-11-08
+
+### Added
+
+- Start a docs site from the docs template on GitHub: GitHub makes your own copy, then you connect it to a bucket.
+
+### Improved
+
+- Publish large docs sites faster.
+- Publish sites on the Free plan from a connected GitHub repository. Paid plans also publish uploaded files. See https://app.revdoku.com/pricing.
+- The Terms of Use cover docs sites, and the Website Publishing Policy is public at https://revdoku.com/website-publishing-policy/.
+
 ## 1.0.624 — 2026-11-07
 
 ### Improved

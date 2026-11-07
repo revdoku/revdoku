@@ -1,10 +1,10 @@
 # Terms of Use
 
-*Version: 2026-10-17 · Updated: October 17, 2026 · Effective for existing users: November 16, 2026*
+*Version: 2026-11-07 · Updated: November 7, 2026 · Effective for existing users: December 7, 2026*
 
-Existing users stay on the [previous Terms](https://revdoku.com/policies/terms-2026-10-16.md) until November 16, 2026.
+Existing users stay on the [previous Terms](https://revdoku.com/policies/terms-2026-10-17.md) until December 7, 2026.
 
-These Terms are between you and Revdoku, Armenia (**Revdoku**, **we** or **us**). They govern Revdoku's cloud storage, incoming email, collaboration, APIs, CLI and connected agents (the **Service**). They include the [Acceptable Use Policy](https://revdoku.com/acceptable-use/) (**AUP**). Our [Privacy Policy](https://revdoku.com/privacy/) explains personal-data handling. These Terms apply when you accept them; changes for existing users follow the notice process below.
+These Terms are between you and Revdoku, Armenia (**Revdoku**, **we** or **us**). They govern Revdoku's docs sites and website publishing, cloud storage, incoming email, collaboration, APIs, CLI and connected agents (the **Service**). They include the [Acceptable Use Policy](https://revdoku.com/acceptable-use/) (**AUP**) and, for published sites, the [Website Publishing Policy](https://revdoku.com/website-publishing-policy/). Our [Privacy Policy](https://revdoku.com/privacy/) explains personal-data handling. These Terms apply when you accept them; changes for existing users follow the notice process below.
 
 ## 1. Accounts and responsibility
 
@@ -16,19 +16,19 @@ Provide accurate account information, secure your credentials, choose access per
 
 You retain your rights in your files, messages, attachments and other content. You grant Revdoku and its service providers a worldwide, nonexclusive license to store, copy, process, transmit and display that content only as necessary to provide, maintain, secure and support the Service, carry out your instructions, enforce these Terms or comply with law. This does not authorize selling your content or training general-purpose AI models on private files or emails.
 
-Have the rights and lawful basis to use content and personal data, including incoming messages, and give required notices. Administrators, collaborators and agents access content within their permissions. Connecting an external tool authorizes that access; its provider's terms and privacy practices apply. Saving a file does not make it public. Website publishing is unavailable.
+Have the rights and lawful basis to use content and personal data, including incoming messages, and give required notices. Administrators, collaborators and agents access content within their permissions. Connecting an external tool authorizes that access; its provider's terms and privacy practices apply. Saving a file does not make it public. When you publish a site, its pages and files are available to the visitors your access settings allow, and to everyone for a public site; visitors, search engines and AI agents can read, copy and index what you publish. You choose what to publish and remain responsible for it.
 
 ## 3. Acceptable use and enforcement
 
-Comply with the AUP and law. Lawful personal, political, professional and research files are permitted; unlawful activity is not. You are responsible for your misuse; Revdoku does not endorse user content or act as your representative.
+Comply with the AUP, the Website Publishing Policy for published sites, and law. Lawful personal, political, professional and research files are permitted; unlawful activity is not. You are responsible for your misuse; Revdoku does not endorse user content or act as your representative.
 
-We may investigate reports and access relevant content or records as described in the Privacy Policy. We may reject incoming mail, restrict access, quarantine or remove content, revoke credentials, suspend features or terminate accounts for a breach, nonpayment, fraud, security threats, legal requirements or a reasonable risk of harm to others or the Service. This applies to all plans; we do not promise to detect every violation.
+We may investigate reports and access relevant content or records as described in the Privacy Policy. We review published sites, also with automated and AI tools. We may reject incoming mail, restrict access, quarantine or remove content, refuse, unpublish or suspend sites, revoke credentials, suspend features or terminate accounts for a breach, nonpayment, fraud, security threats, legal requirements or a reasonable risk of harm to others or the Service. This applies to all plans; we do not promise to detect every violation.
 
 Where reasonable and lawful, we will explain the action and allow correction or appeal through [support@revdoku.com](mailto:support@revdoku.com?subject=Appeal). Urgent security, legal or abuse concerns may require action without advance notice. Copyright complaints, counter-notices and repeat infringement follow our incorporated [DMCA Copyright Policy](https://revdoku.com/dmca/); ordinary enforcement discretion does not replace that process.
 
 ## 4. Email, limits and backups
 
-Storage, file versions, APIs and incoming email are subject to plan limits and abuse controls. Incoming usage includes message data and attachments; identifiable receipts may count even if rejected or not saved, while provider retries count once. Agency/client accounts share receiving allowances. Deletion, address rotation and mailbox moves do not refund usage. We do not automatically buy overages or reply to senders.
+Storage, file versions, sites, APIs and incoming email are subject to plan limits and abuse controls. Incoming usage includes message data and attachments; identifiable receipts may count even if rejected or not saved, while provider retries count once. Agency/client accounts share receiving allowances. Deletion, address rotation and mailbox moves do not refund usage. We do not automatically buy overages or reply to senders.
 
 Email can be delayed, filtered, rejected or lost, including while receiving is paused or limits are exhausted; later delivery is not guaranteed. Keep independent backups and check important messages. The Service is not for emergencies or guaranteed archiving; your retention obligations remain yours. Use regulated data only with appropriate contractual terms, configurations and legal safeguards. Do not store protected health information in an account that is not HIPAA-enabled; for HIPAA, contact [support@revdoku.com](mailto:support@revdoku.com?subject=HIPAA). Spam, virus and AI screening can miss threats or label email wrongly. Do not rely on them alone.
 
@@ -46,7 +46,7 @@ Revdoku is in beta. Features may contain errors or become unavailable; we may ch
 
 You may request account deletion; cancel subscriptions separately. Following termination or inactivity, content may be deleted, subject to the Privacy Policy's retention provisions. Keep copies before closing an account.
 
-**Inactive Free accounts.** We may delete an account on the Free plan, with its mailboxes, emails and files, when nobody has used it for 60 days. A sign-in by any member, or a request from the account's API keys or connected AI agents, counts as use and starts a new 60-day period. Incoming email alone does not count as use. The notice described above does not apply to this deletion, and we do not restore deleted accounts. For accounts created before November 16, 2026, the first 60-day period starts on that date.
+**Inactive Free accounts.** We may delete an account on the Free plan, with its mailboxes, emails and files, when nobody has used it for 60 days. A sign-in by any member, a push to a GitHub repository connected to one of the account's buckets, or a request from the account's API keys or connected AI agents counts as use and starts a new 60-day period. Incoming email alone does not count as use. The notice described above does not apply to this deletion, and we do not restore deleted accounts. For accounts created before November 16, 2026, the first 60-day period starts on that date.
 
 ## 7. Warranties and liability
 

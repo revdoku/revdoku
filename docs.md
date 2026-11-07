@@ -21,9 +21,11 @@ Use the TypeScript or Python SDK, the REST API, CLI, MCP, or dashboard to create
 ## First docs site
 
 1. Open the [dashboard](https://app.revdoku.com/buckets). The setup asks where your docs come from.
-2. Choose **Connect a GitHub repository** (a Mintlify repository works as it is), **Upload files**, or **Start from the docs template**.
+2. Choose **Connect a GitHub repository** (a Mintlify repository works as it is) or **Start from the docs template**.
+   On paid plans you can also **Upload files**. On Free, sites publish from a connected GitHub repository.
    Markdown and MDX pages, `docs.json` navigation and an OpenAPI document become a docs site.
-3. Choose a layout and **Publish**. The site is at `https://<name>.revdoku.site`, and a paid plan adds your own domain and access protection.
+3. Choose a layout and **Publish**. The site is at `https://<name>.revdoku.site`. Connect your own domain on the site's Domain page.
+   [Pricing](https://app.revdoku.com/pricing) lists what each plan includes, such as password protection.
 4. With GitHub, each push to the connected branch publishes again, and each pull request gets a 24-hour preview.
 5. Visitors search the site and use **Ask AI**. AI agents read it at `<site>/llms.txt`, as Markdown, or through its MCP server at `<site>/mcp`.
 
