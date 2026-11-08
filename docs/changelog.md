@@ -1,5 +1,15 @@
 # Revdoku Changelog
 
+## 1.0.631 — 2026-11-08
+
+### Improved
+
+- Read docs sites on phones: the list of pages folds behind a Pages button, and the search has its own row.
+
+### Fixed
+
+- Show the Visibility blocks of Mintlify pages to the right readers: content for AI agents appears only in the Markdown of a page, and content for people only on the page.
+
 ## 1.0.630 — 2026-11-08
 
 ### Improved
