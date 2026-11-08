@@ -598,7 +598,7 @@ with a signature line, after the standard `-- ` separator: "Sent with Revdoku, m
 2. Send the reply with `in_reply_to`. Pass `to` when the original sender did not pass SPF or DMARC.
 3. Read the email later and check `delivery.status`.
 
-An account administrator can require a person to approve each email of a mailbox.
+A person must approve each email first on the Free plan, and in a mailbox where an account administrator requires it.
 The send then returns `delivery.status` `awaiting_approval`. A person sends, edits or declines
 the email in the dashboard. Do not send it again. Any number of emails can wait, but the per-minute
 limit applies when you send them, also to emails that were deleted or declined since. The other
@@ -665,6 +665,7 @@ Content-Type: application/json
 | `403 EMAIL_REPLY_UPGRADE_REQUIRED` | A recipient emailed this mailbox, but the plan of the account does not include replies to senders. All current plans include them. `error.details.upgrade_url` links to the pricing page. |
 | `409 EMAIL_RECIPIENT_UNAVAILABLE` | A recipient is a Revdoku mailbox that cannot receive email now. |
 | `403 EMAIL_SEND_LIMIT_REACHED` | The account used its monthly sent email allowance. `error.details` has `monthly_limit`, `resets_at` and, when a higher plan raises the limit, `upgrade_url`. |
+| `402 INSUFFICIENT_CREDITS` | The account has too few credits for these recipients: each recipient of a sent email uses credits. Nothing was sent. `error.details` has `credits_required`, `credits_available` and, when a higher plan has more credits, `upgrade_url`. |
 | `429 EMAIL_SEND_RATE_LIMITED` | Too many emails from this bucket or to one recipient, per minute, hour or day. There is no `Retry-After`. Wait before you send again. |
 | `409 EMAIL_SENDING_RULES_CHANGED` | An administrator changed the bucket's sending rules while Revdoku checked the email. Send it again. |
 | `429 EMAIL_LOOP_DETECTED` | In the last 24 hours, this bucket and a recipient each sent the other 20 emails. Stop automatic replies to that address. Never retry it. |
@@ -1028,7 +1029,7 @@ A public docs site also serves AI agents, without sign-in:
 | `GET /sitemap.xml` | Every page URL, when the site allows search indexing. |
 
 Too many requests from one network answer `429 RATE_LIMITED` with `Retry-After`. A site with a password or an email gate has no agent endpoints.
-A site never shows the bucket's email address. Visitors whom Ask AI did not help leave a message on the site; it arrives in the bucket's mailbox as a support ticket.
+A site never shows the bucket's email address. Visitors whom Ask did not help leave a message on the site; it arrives in the bucket's mailbox as a support ticket.
 A password needs `access_mode` `password`; otherwise the publish returns `422 INVALID_ARGUMENT`.
 A password has 8 to 128 characters (`422 PUBLICATION_PASSWORD_INVALID`). Omit it to get a generated password.
 Never retry a publish automatically after an uncertain result: read the site first.
@@ -1038,6 +1039,7 @@ Never retry a publish automatically after an uncertain result: read the site fir
 | HTTP | Code | Meaning |
 | --- | --- | --- |
 | `401` | `UNAUTHORIZED` | Missing, invalid or expired API key. |
+| `402` | `INSUFFICIENT_CREDITS` | The account has too few credits, for example to send an email. Nothing changed. Do not retry automatically. See `error.details`. |
 | `403` | `FORBIDDEN`, `BUCKET_PERMISSION_DENIED`, `BUCKET_ACCESS_DENIED` | The key cannot do this. |
 | `404` | `NOT_FOUND`, `BUCKET_NOT_FOUND`, `BUCKET_FILE_NOT_FOUND` | Unknown route or resource, or not visible to this key. |
 | `409` | `BUCKET_METADATA_CONFLICT`, `BUCKET_VERSION_CONFLICT`, `EMAIL_ADDRESS_CHANGED` | A concurrent change. Read again. |

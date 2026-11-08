@@ -336,7 +336,7 @@ See [Docs for AI agents](https://revdoku.com/docs.md#docs-for-ai-agents) for eve
 
 ## 7. Read support email
 
-The bucket's mailbox is the support channel of your docs. When **Ask AI** does not answer a reader's question,
+The bucket's mailbox is the support channel of your docs. When **Ask** does not answer a reader's question,
 the reader can leave a message on the site, and it arrives here as an email. People can also email the address directly.
 
 From your own email app, send an email with a small attachment, such as a PDF or

@@ -1,7 +1,7 @@
 # Revdoku
 
 **Docs sites for API products, with a support mailbox.** Publish your docs from a GitHub
-repository or uploaded files, with search, Ask AI, an API console, previews and an MCP server.
+repository or uploaded files, with search, Ask (AI answers from your docs), an API console, previews and an MCP server.
 Each bucket also has an email address for support: a built-in AI agent drafts replies from
 your docs for a person to approve. Buckets store private files that you share with authorized people and agents.
 

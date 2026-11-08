@@ -76,10 +76,10 @@ Other files publish as an ordinary site.
 | API reference | One page for each tag of your OpenAPI document. |
 | API console | At `/api-reference/console/`, people send real requests to your API. On a public site, the requests go through the site, so your API needs no CORS setup. See [Sites](https://revdoku.com/api.md#sites). |
 | Search and layouts | Full-text search on every site. The `sidebar`, `notebook` or `minimal` layout, set by `layout` in `docs.json` or when you publish. |
-| Ask AI | On a public site, readers ask questions and get answers from your pages. |
+| Ask | On a public site, readers ask questions. While the account has credits, AI answers from your pages; without credits, Ask shows the matching pages. |
 | Previews | A 24-hour preview for each pushed branch. |
 | Domain and access | Your own domain. A public site, or a site protected with a password or an email code. |
-| Analytics | Page views, searches, Ask AI questions and the AI agents that read your docs. |
+| Analytics | Page views, searches, questions asked with Ask and the AI agents that read your docs. |
 
 ## Docs for AI agents
 
@@ -111,7 +111,7 @@ The MCP server of a docs site reads only that site. To manage your buckets from 
 
 The bucket's mailbox is the support channel of its docs.
 
-1. A reader asks **Ask AI** on a public docs site. The answer comes from your pages and names them.
+1. A reader asks a question with **Ask** on a public docs site. The answer comes from your pages and names them.
 2. When the answer does not help, the reader chooses **Leave a message**. The reader enters a name and an email address and confirms the address with a code.
    **Leave a message** shows while the bucket's mailbox can receive email and reply to its senders.
 3. The message arrives in the bucket's mailbox as an email. The dashboard shows each conversation as a support ticket.
