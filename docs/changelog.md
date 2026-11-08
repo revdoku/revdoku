@@ -1,5 +1,11 @@
 # Revdoku Changelog
 
+## 1.0.632 — 2026-11-08
+
+### Fixed
+
+- Keep a site online while it publishes again. After each publish, a site showed "Site unpublished" for a minute or two.
+
 ## 1.0.631 — 2026-11-08
 
 ### Improved
