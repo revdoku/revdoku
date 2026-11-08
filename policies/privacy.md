@@ -1,6 +1,6 @@
 # Privacy Policy
 
-*Version: 2026-11-05 · Updated: November 5, 2026*
+*Version: 2026-11-08 · Updated: November 8, 2026*
 
 Revdoku, at [revdoku.com](https://revdoku.com), provides mailboxes for AI agents, with private file storage and collaboration for people and authorized agents. Revdoku, Armenia operates the website and the Service. This notice covers personal information on our website and Service. Contact [support@revdoku.com](mailto:support@revdoku.com?subject=Privacy) with privacy questions or requests.
 
@@ -19,7 +19,7 @@ Private storage is not public publication. Administrators, members and agents ac
 
 Revdoku controls account, website, security and billing processing. We generally process customers' files and emails on their instructions; customers remain responsible for their lawful basis and notices. A [Data Processing Agreement](https://revdoku.com/data-processing-agreement/) is available on request for business customers.
 
-**AI agents.** A built-in AI agent checks incoming email for prompt injection and similar risks and labels it, for example as Junk. It is on by default, and account administrators can turn it off. AI agents that you set up read email only as their settings allow. All AI runs on Amazon Web Services (Amazon Bedrock) in the same region as your account's data, and AWS does not keep the data or use it to train models. AI can miss harmful content or label an email wrongly. We do not guarantee its results and, to the extent the law permits, are not responsible for them (see section 7 of the [Terms of Use](https://revdoku.com/terms/)). We do not use AI on high-security accounts.
+**AI agents.** A built-in AI agent checks incoming email for prompt injection and similar risks and labels it, for example as Junk. It is off by default, and account administrators can turn it on. AI agents that you set up read email only as their settings allow. All AI runs on Amazon Web Services (Amazon Bedrock) in the same region as your account's data, and AWS does not keep the data or use it to train models. AI can miss harmful content or label an email wrongly. We do not guarantee its results and, to the extent the law permits, are not responsible for them (see section 7 of the [Terms of Use](https://revdoku.com/terms/)). We do not use AI on high-security accounts.
 
 Where applicable, our legal bases are providing a requested contract, legitimate interests in operating and protecting the Service, compliance with legal duties, and consent where required. Acknowledging this notice is not consent to unrelated optional processing.
 

@@ -1,5 +1,29 @@
 # Revdoku Changelog
 
+## 1.0.629 — 2026-11-08
+
+### Added
+
+- Add a chat to any website from Email Settings → Website chat. Visitors confirm their email with a code, each message arrives in the bucket's Support, and the replies show in the chat.
+
+### Improved
+
+- Publish Mintlify repositories with more of their docs.json: files that it includes with $ref, languages with a language menu, tab menus, hidden tabs and redirects. Endpoint pages show the operation of the OpenAPI file that they name.
+- Connect a large GitHub repository faster: the first sync and branch previews download the repository at once.
+- Publish large docs sites faster: the files of a site upload at the same time.
+- Ask questions on public docs sites with the Ask button, now on by default. Ask answers with AI while the account has credits. Without credits it shows the matching pages, and visitors can still leave a message. Turn it off in the Publish dialog.
+- Show the Revdoku badge of a site as a "Published with Revdoku" line at the bottom right of the page footer, not as a floating icon over the page.
+- Turn off the Revdoku badge in the Settings of a site on a paid plan. The site changes at once, without a republish. See https://app.revdoku.com/pricing.
+- Use one balance of credits for messages and AI: chat messages, received email and sent email now use credits too. When the credits run out, chat messages and email still arrive, and sending waits for credits. See https://app.revdoku.com/pricing.
+- See the credits that are left, and when they refill, in Account Settings → Subscription.
+- On the Free plan, a person approves each email that an API key, an MCP connection or an agent sends. See https://app.revdoku.com/pricing.
+- New accounts start with the built-in AI filter off. Administrators turn it on in the Agents view of a bucket.
+
+### Fixed
+
+- Show docs sites with their styles: browsers refused the stylesheet of docs pages.
+- Get AI answers from Ask on docs sites.
+
 ## 1.0.626 — 2026-11-08
 
 ### Improved
