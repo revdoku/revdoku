@@ -1,5 +1,15 @@
 # Revdoku Changelog
 
+## 1.0.630 — 2026-11-08
+
+### Improved
+
+- Open the pages of docs sites faster, and publish large docs sites faster.
+
+### Fixed
+
+- Publish docs sites whose docs.json has redirects. Their publish stopped with "Publication settings changed during review."
+
 ## 1.0.629 — 2026-11-08
 
 ### Added
