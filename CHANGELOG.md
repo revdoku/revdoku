@@ -1,5 +1,13 @@
 # Revdoku Changelog
 
+## 1.0.641 — 2026-11-10
+
+### Improved
+
+- Choose a bucket's GitHub repository from a dropdown with a search field. The branch and the folder sit in one row with Import and sync.
+- See a connected repository and the progress of its sync in one short block on the GitHub page.
+- Choose how edits made in Revdoku reach GitHub on the site's Settings page, next to Auto-publish GitHub updates.
+
 ## 1.0.640 — 2026-11-09
 
 ### Added
