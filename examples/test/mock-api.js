@@ -26,10 +26,10 @@ globalThis.fetch = async (input, options = {}) => {
       if (options.method === 'POST') {
         assert.equal(body.idempotency_key, undefined);
         assert.equal(body.bucket.title, undefined);
-        // revdokumail.com adds a random suffix; a custom domain keeps the exact name. The title is the username.
+        // revdokumail.com takes the username as the bucket's name, with hyphens; a custom domain keeps the exact name. The title is the username.
         const { username, domain } = body.bucket.mailbox;
         const mailbox = { id: `bkt_${mailboxes.length + 1}`, title: username,
-          mailbox: { address: domain ? `${username}@${domain}` : `${username.replace(/[-_]/g, '.')}.k7x2@revdokumail.com`, receiving_enabled: true } };
+          mailbox: { address: domain ? `${username}@${domain}` : `${username.replace(/[._]+/g, '-')}@revdokumail.com`, receiving_enabled: true } };
         mailboxes.push(mailbox);
         writeFileSync('.fixture-mailboxes.json', JSON.stringify(mailboxes));
         if (process.env.FIXTURE_CREATE === 'lost') throw new TypeError('Connection dropped after commit');

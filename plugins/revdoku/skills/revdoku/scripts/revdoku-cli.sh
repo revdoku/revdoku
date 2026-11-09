@@ -101,6 +101,14 @@ EMAIL_IN_REPLY_TO=""
 BUCKET_LIST_STATUS="active"
 BUCKET_LIST_QUERY=""
 BUCKET_LIST_OPTIONS="false"
+GITHUB_ACTION=""
+GITHUB_REPOSITORY=""
+GITHUB_INSTALLATION_ID=""
+GITHUB_BRANCH=""
+GITHUB_REPO_PATH=""
+GITHUB_PUSH_EDITS=""
+GITHUB_AUTO_PUBLISH=""
+GITHUB_AUTO_COMMIT=""
 OUTPUT_PATH=""
 SHOW_UPLOAD_HINT="false"
 # Project-local binding (.revdoku): remembers the bucket so `revdoku upload`
@@ -242,6 +250,15 @@ Usage: revdoku <command> [PATH] [options]
   preview               Make a 24-hour preview with the same options.
   site                  Show the site: URL, build state and access; --preview for the preview.
   unpublish             Take the site down.
+  github                Show the GitHub repository whose branch is the bucket's files.
+  github accounts       List GitHub accounts connected to the account.
+  github repos ID       List the repositories of one connected GitHub account.
+  github setup-link     Print the links a person opens to add a GitHub account.
+  github connect OWNER/NAME  Copy a repository into an empty bucket. Optional --branch,
+                        --repo-path, --installation-id, --push-revdoku-edits false.
+  github set            Change --auto-publish, --push-revdoku-edits or --auto-commit.
+  github sync           Sync the repository now.
+  github disconnect     Stop syncing; requires --confirm-delete BUCKET_ID. Files stay.
   delete                Preview permanent deletion; requires explicit account/bucket.
   accounts              List accounts granted to this credential.
   account limits                 Read effective bucket and storage quotas
@@ -322,6 +339,22 @@ while [[ $# -gt 0 ]]; do
       [[ $# -ge 2 ]] || die "--password-file requires a path, or - for standard input"
       PASSWORD_FILE="$2"; shift 2 ;;
     --preview) SITE_PREVIEW="true"; shift ;;
+    --branch|--repo-path|--installation-id)
+      [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "$1 requires a value"
+      case "$1" in
+        --branch) GITHUB_BRANCH="$2" ;;
+        --repo-path) GITHUB_REPO_PATH="$2" ;;
+        --installation-id) [[ "$2" =~ ^[1-9][0-9]{0,18}$ ]] || die "--installation-id must be the number from revdoku github accounts"; GITHUB_INSTALLATION_ID="$2" ;;
+      esac
+      shift 2 ;;
+    --auto-publish|--push-revdoku-edits|--auto-commit)
+      [[ $# -ge 2 && ( "$2" == "true" || "$2" == "false" ) ]] || die "$1 must be true or false"
+      case "$1" in
+        --auto-publish) GITHUB_AUTO_PUBLISH="$2" ;;
+        --push-revdoku-edits) GITHUB_PUSH_EDITS="$2" ;;
+        --auto-commit) GITHUB_AUTO_COMMIT="$2" ;;
+      esac
+      shift 2 ;;
     --url)
       [[ $# -ge 2 ]] || die "--url requires a value"
       BASE_URL="$2"
@@ -487,6 +520,19 @@ while [[ $# -gt 0 ]]; do
           upload|put)     shift ;;
           publish|preview|site) ACTION="$1"; shift ;;
           unpublish|down) ACTION="unpublish"; shift ;;
+          github)
+            shift
+            ACTION="github"; GITHUB_ACTION="get"
+            case "${1:-}" in
+              accounts|setup-link|set|sync|disconnect) GITHUB_ACTION="$1"; shift ;;
+              repos)
+                [[ $# -ge 2 && "$2" =~ ^[1-9][0-9]{0,18}$ ]] || die "github repos needs an installation ID from revdoku github accounts"
+                GITHUB_ACTION="repos"; GITHUB_INSTALLATION_ID="$2"; shift 2 ;;
+              connect)
+                [[ $# -ge 2 && "$2" =~ ^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+$ ]] || die "github connect needs OWNER/NAME, for example acme/docs"
+                GITHUB_ACTION="connect"; GITHUB_REPOSITORY="$2"; shift 2 ;;
+            esac
+            ;;
           p|sites|analytics|i|init)
             die "This command is unavailable. Use revdoku --help for the available commands." ;;
           ls|list)        ACTION="list_buckets"; shift ;;
@@ -566,7 +612,7 @@ if [[ "$ACTION" == "store" && "$LOGIN" != "true" && "$PATH_EXPLICIT" != "true" ]
   die "upload requires an explicit PATH; use 'revdoku upload .' for this folder"
 fi
 [[ "$DRY_RUN" != "true" || ( "$ACTION" == "store" && "$LOGIN" != "true" ) ]] || die "--dry-run is only available with upload PATH"
-[[ -z "$DELETE_CONFIRMATION" || "$ACTION" == "delete_bucket" || "$ACTION" == "email-delete" || "$ACTION" == "webhook-delete" ]] || die "--confirm-delete is only available with delete, email-delete or webhook-delete"
+[[ -z "$DELETE_CONFIRMATION" || "$ACTION" == "delete_bucket" || "$ACTION" == "email-delete" || "$ACTION" == "webhook-delete" || "$GITHUB_ACTION" == "disconnect" ]] || die "--confirm-delete is only available with delete, email-delete, webhook-delete or github disconnect"
 if [[ ( -n "$WEBHOOK_URL" || "$ROTATE_SECRET" == "true" ) && "$ACTION" != "webhook-set" ]]; then
   die "--webhook-url and --rotate-secret require webhook-set"
 fi
@@ -578,10 +624,15 @@ fi
 if [[ "$BUCKET_LIST_OPTIONS" == "true" && "$ACTION" != "list_buckets" ]]; then
   die "--status and --query require ls or list"
 fi
-case "$ACTION" in
-  list_buckets|list_files|list_emails|list_versions) ;;
-  *) [[ -z "$LIST_LIMIT$LIST_CURSOR" ]] || die "--limit and --cursor require ls, files, emails or versions" ;;
+case "$ACTION:$GITHUB_ACTION" in
+  list_buckets:|list_files:|list_emails:|list_versions:|github:accounts|github:repos) ;;
+  *) [[ -z "$LIST_LIMIT$LIST_CURSOR" ]] || die "--limit and --cursor require ls, files, emails, versions, github accounts or github repos" ;;
 esac
+# Each GitHub option belongs to one or two github commands, so none is silently ignored.
+[[ -z "$GITHUB_BRANCH$GITHUB_REPO_PATH" && ( -z "$GITHUB_INSTALLATION_ID" || "$GITHUB_ACTION" == "repos" ) || "$GITHUB_ACTION" == "connect" ]] ||
+  die "--branch, --repo-path and --installation-id require github connect"
+[[ -z "$GITHUB_AUTO_PUBLISH$GITHUB_AUTO_COMMIT" || "$GITHUB_ACTION" == "set" ]] || die "--auto-publish and --auto-commit require github set"
+[[ -z "$GITHUB_PUSH_EDITS" || "$GITHUB_ACTION" == "connect" || "$GITHUB_ACTION" == "set" ]] || die "--push-revdoku-edits requires github connect or github set"
 if [[ "$ACTION" == "restore_version" ]]; then
   VERSION_ID="${VERSION_ID:-$RESTORE_VERSION_ID}"
   [[ -n "$VERSION_ID" ]] || die "restore requires --version-id ID (see revdoku versions PATH)"
@@ -871,10 +922,11 @@ http_json() {
   if [[ "$method" == "POST" && "$path" == "/api/v1/buckets" ]]; then
     HTTP_TRANSIENT_MAX_ATTEMPTS=0
   fi
-  # Never send an email or a publish twice: a publish may already be queued and charged after a
-  # lost response. Rate limits also return without a retry (the hourly publish limit waits an hour).
+  # Never send an email, a publish or a GitHub connect twice: a publish may already be queued and charged after a
+  # lost response, and a connect may already copy the repository. Rate limits also return without a retry
+  # (the hourly publish limit waits an hour).
   local send_once="false"
-  if [[ "$method" == "POST" && "$path" =~ ^/api/v1/buckets/[^/?]+/(mailbox/emails|publication(/preview)?)$ ]]; then
+  if [[ "$method" == "POST" && "$path" =~ ^/api/v1/buckets/[^/?]+/(mailbox/emails|publication(/preview)?|github_sync)$ ]]; then
     HTTP_TRANSIENT_MAX_ATTEMPTS=0
     send_once="true"
   fi
@@ -1006,6 +1058,10 @@ http_json() {
     echo "error: $message" >&2
     upgrade_url="$("$JQ_BIN" -r '.upgrade_url? // empty | strings | select(test("^https?://[^\\s\\p{Cc}]+$"))' <<<"$details_json" 2>/dev/null || true)"
     [[ -z "$upgrade_url" ]] || echo "Upgrade: $upgrade_url" >&2
+    # A person's step on GitHub (GITHUB_APP_NOT_INSTALLED, GITHUB_SYNC_REPO_UNAVAILABLE): the links to give them.
+    "$JQ_BIN" -r '[["Install the Revdoku GitHub App", .install_url?], ["Or connect a GitHub account that has it", .authorization_url?],
+      ["Give the App access on GitHub", .settings_url?]][] | select((.[1] | type) == "string" and (.[1] | test("^https://[^\\s\\p{Cc}]+$")))
+      | "\(.[0]): \(.[1])"' <<<"$details_json" >&2 2>/dev/null || true
     if [[ "$status" == "423" && ( "$code" == "BUCKET_LOCKED" || "$code" == "FILE_LOCKED" ) ]]; then
       echo "Lock details: $(lock_detail_summary "$details_json")" >&2
     fi
@@ -1288,6 +1344,50 @@ query_string() {
 
 list_buckets() {
   http_json GET "/api/v1/buckets?$(query_string status "$BUCKET_LIST_STATUS" q "$BUCKET_LIST_QUERY" limit "$LIST_LIMIT" cursor "$LIST_CURSOR")" "{}"
+}
+
+# GitHub (REST /buckets/ID/github_sync and /account/github_installations): the repository whose branch, or one
+# folder of it, is the bucket's files. A person adds a GitHub account on GitHub: setup-link prints their links.
+github_command() {
+  local path body query
+  case "$GITHUB_ACTION" in
+    accounts|repos)
+      query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
+      path="/api/v1/account/github_installations"
+      [[ "$GITHUB_ACTION" == "accounts" ]] || path="${path}/${GITHUB_INSTALLATION_ID}/repositories"
+      http_json GET "${path}${query:+?$query}" "{}"
+      return
+      ;;
+  esac
+  [[ "$BUCKET_ID" =~ ^bkt_[A-Za-z0-9]+$ ]] || die "Provide --bucket-id ID"
+  path="/api/v1/buckets/${BUCKET_ID}/github_sync"
+  case "$GITHUB_ACTION" in
+    get) http_json GET "$path" "{}" ;;
+    setup-link) http_json GET "${path}/setup_link" "{}" ;;
+    sync) http_json POST "${path}/sync" "{}" ;;
+    connect)
+      body="$("$JQ_BIN" -n --arg owner "${GITHUB_REPOSITORY%%/*}" --arg name "${GITHUB_REPOSITORY#*/}" --arg branch "$GITHUB_BRANCH" \
+        --arg repo_path "$GITHUB_REPO_PATH" --arg installation "$GITHUB_INSTALLATION_ID" --arg edits "$GITHUB_PUSH_EDITS" \
+        '{github_sync: ({repo_owner: $owner, repo_name: $name}
+          + (if $branch != "" then {branch: $branch} else {} end)
+          + (if $repo_path != "" then {repo_path: $repo_path} else {} end)
+          + (if $installation != "" then {installation_id: ($installation | tonumber)} else {} end)
+          + (if $edits != "" then {push_revdoku_edits: ($edits == "true")} else {} end))}')"
+      http_json POST "$path" "$body"
+      ;;
+    set)
+      [[ -n "$GITHUB_AUTO_PUBLISH$GITHUB_PUSH_EDITS$GITHUB_AUTO_COMMIT" ]] || die "github set needs --auto-publish, --push-revdoku-edits or --auto-commit"
+      body="$("$JQ_BIN" -n --arg publish "$GITHUB_AUTO_PUBLISH" --arg edits "$GITHUB_PUSH_EDITS" --arg commit "$GITHUB_AUTO_COMMIT" \
+        '{github_sync: ((if $publish != "" then {auto_publish: ($publish == "true")} else {} end)
+          + (if $edits != "" then {push_revdoku_edits: ($edits == "true")} else {} end)
+          + (if $commit != "" then {auto_commit: ($commit == "true")} else {} end))}')"
+      http_json PATCH "$path" "$body"
+      ;;
+    disconnect)
+      [[ "$DELETE_CONFIRMATION" == "$BUCKET_ID" ]] || die "Repeat with --confirm-delete $BUCKET_ID to disconnect the repository. The bucket keeps its files."
+      http_json DELETE "$path" "{}"
+      ;;
+  esac
 }
 
 list_files() {
@@ -1732,6 +1832,10 @@ case "$ACTION" in
         http_json POST "/api/v1/buckets/$BUCKET_ID/publication$([[ "$ACTION" == "preview" ]] && printf '/preview')" "$publish_body" ;;
     esac
     exit 0 ;;
+  github)
+    github_command
+    exit 0
+    ;;
   account_limits)
     http_json GET "/api/v1/account/limits" "{}"
     exit 0

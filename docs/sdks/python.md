@@ -77,16 +77,45 @@ print(publication.publish_state, publication.url or publication.publish_error)
 | `client.api.get_publication_preview(bucket_id)` | The latest preview and its build state. |
 | `client.api.unpublish_bucket(bucket_id)` | Takes the site down. The files stay in the bucket. |
 
-- Add the docs to the bucket first. Connect a GitHub repository on the bucket's
-  **Site** → **GitHub** page in the dashboard. After the first publish, each push to
-  the branch publishes the site again. On paid plans you can also upload the files
-  with `upload_file` (see Files below) and publish them.
+- Add the docs to the bucket first: connect a GitHub repository (below). After the first
+  publish, each push to the branch publishes the site again. On paid plans you can also
+  upload the files with `upload_file` (see Files below) and publish them.
 - On Free, sites and previews come from a connected GitHub repository. A publish of
   uploaded files raises `RevdokuError` with the code `PUBLICATION_UPGRADE_REQUIRED`
   and `details.github_required: true`.
 - Do not repeat `publish_bucket` after a timeout or an unknown result: read the site first.
 - A public docs site also serves AI agents: an MCP server at `<site>/mcp` and
   `<site>/llms.txt`. See [Docs for AI agents](https://revdoku.com/docs.md#docs-for-ai-agents).
+
+### GitHub repository
+
+The bucket's files can be a copy of one branch of a repository, or of one folder of it.
+A person installs the Revdoku GitHub App on the GitHub account or organization; the API gives the link.
+
+```python
+from revdoku import ConnectGithubRepositoryRequest, GithubConnect
+
+bucket_id = "bkt_..."
+accounts = client.api.list_github_installations().data.installations
+if not any(account.github_account_login == "acme" for account in accounts):
+    link = client.api.get_github_setup_link(bucket_id).data.setup_link
+    print("Open this link while signed in to Revdoku:", link.install_url)
+else:
+    request = ConnectGithubRepositoryRequest(github_sync=GithubConnect(repo_owner="acme", repo_name="docs"))
+    link = client.api.connect_github_repository(bucket_id, request).data.github_sync
+    print(link.sync_state, link.branch)
+```
+
+| Method | Result |
+| --- | --- |
+| `client.api.list_github_installations()` | `data.installations`: the connected GitHub accounts. `list_github_repositories(installation_id)` lists one account's repositories. |
+| `client.api.get_github_setup_link(bucket_id)` | `data.setup_link`: `install_url` and `authorization_url` for the person, for 30 minutes. |
+| `client.api.connect_github_repository(bucket_id, request)` | Connects `repo_owner`/`repo_name` to a bucket without files. Optional `branch`, `repo_path` and `push_revdoku_edits`. |
+| `client.api.get_github_sync(bucket_id)` | `data.github_sync`: `sync_state` and `last_synced_at`. Publish after `last_synced_at` is set. |
+| `client.api.sync_github_repository(bucket_id)`, `update_github_sync`, `disconnect_github_repository` | Sync now, change `auto_publish`, `push_revdoku_edits` or `auto_commit`, or stop the sync. |
+
+These calls need a key of an account owner or administrator with admin access to all buckets.
+`GITHUB_APP_NOT_INSTALLED` has `details["install_url"]` for the person. See [GitHub repositories](https://revdoku.com/api.md#github-repositories).
 
 ## Support email
 

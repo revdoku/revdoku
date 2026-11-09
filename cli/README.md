@@ -102,8 +102,8 @@ and selection state otherwise live under `~/.revdoku/`; keep them private.
 
 Uploading without an existing mailbox binding can create a bucket and consume
 creation capacity. Pass `--bucket-id` to store files in an existing mailbox. `revdoku create` creates an empty bucket. Omit `--username` to
-generate a name. On `revdokumail.com`, Revdoku adds a permanent 4-character random
-suffix to the requested prefix on every plan. A custom domain takes the exact name.
+use the title's name or a generated name. On `revdokumail.com`, the username is the bucket's name, with no
+suffix: `--username acme-docs` gives `acme-docs@revdokumail.com`, and its site uses the same name. A custom domain takes the exact name.
 An unavailable name returns `EMAIL_ALREADY_EXISTS`.
 `--title TEXT` names the bucket; without it, the title is the username.
 Creation returns when receiving is ready. Use the returned address.
@@ -138,3 +138,21 @@ Returns effective mailbox and file quotas under `data.limits`.
 | `revdoku email-subscription --bucket-id ID` | Get a WebSocket URL and short-lived ticket |
 
 Use `--account-id ID` to select an authorized account. A running receiver is required. See the [examples](../examples/README.md) for signature verification and WebSocket reconnect/catch-up. Human administrators can inspect delivery attempts and retry failures in **Analytics → Webhooks**.
+
+### GitHub repository
+
+A bucket's files can be a copy of one branch of a GitHub repository, or of one folder of it.
+These commands need an account owner or administrator key with admin access to all buckets.
+
+| Command | Purpose |
+| --- | --- |
+| `revdoku github accounts` | List the GitHub accounts connected to the account |
+| `revdoku github setup-link --bucket-id ID` | Print the links that a person opens, signed in to Revdoku, to add a GitHub account |
+| `revdoku github repos INSTALLATION_ID` | List the repositories that one GitHub account lets Revdoku read |
+| `revdoku github connect OWNER/NAME --bucket-id ID` | Copy the repository into a bucket without files. Add `--branch`, `--repo-path` or `--push-revdoku-edits false` |
+| `revdoku github --bucket-id ID` | Show the repository and its sync state. Publish after `last_synced_at` is set |
+| `revdoku github sync --bucket-id ID` | Sync now |
+| `revdoku github set --bucket-id ID --auto-commit true` | Change `--auto-publish`, `--push-revdoku-edits` or `--auto-commit` |
+| `revdoku github disconnect --bucket-id ID --confirm-delete ID` | Stop the sync. The bucket keeps its files |
+
+`github connect` never retries. When the GitHub account is not connected, it prints the links for the person.

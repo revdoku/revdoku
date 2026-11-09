@@ -173,7 +173,7 @@ Send only to account members, to other mailboxes of the account, or to addresses
 | `subject` | string | no | Required without in_reply_to. Defaults to "Re: " plus the original subject. |
 | `text` | string | yes | Plain-text body, up to 1 MiB. |
 | `html` | string | no | Optional HTML body, up to 1 MiB. |
-| `in_reply_to` / `inReplyTo` | string | no | Received email ID to reply to. Sets the reply headers and subject, and links the reply to the conversation. |
+| `in_reply_to` / `inReplyTo` | string | no | Received email ID to reply to. Sets the reply headers and subject, and links the reply to the conversation. A reply in a support conversation ends its subject with the request number, such as [#3]. |
 | `attachment_ids` / `attachmentIds` | array of string | no | Existing file IDs in this bucket to attach. |
 | `account_id` / `accountId` | string | no |  |
 | `reason` | string or null | no | Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. |
@@ -249,12 +249,7 @@ curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/mailbox/emails" \
       "conversation_id": "eml_example",
       "direction": "sent",
       "subject": "Re: Invoice INV-1042",
-      "from_addresses": [
-        {
-          "address": "acme-orders.k7m2@revdokumail.com",
-          "name": "acme-orders"
-        }
-      ],
+      "from_addresses": [{"address": "acme-orders@revdokumail.com", "name": "acme-orders"}],
       "to_addresses": [{"address": "billing@example.com", "name": null}],
       "cc_addresses": [],
       "reply_to_addresses": [],
@@ -264,7 +259,7 @@ curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/mailbox/emails" \
         "inv-1042@example.com",
         "5f0c2e7a-3b1d-4c8e-9a6f-2d4b7e1c9a30@revdokumail.com"
       ],
-      "delivered_to": "acme-orders.k7m2@revdokumail.com",
+      "delivered_to": "acme-orders@revdokumail.com",
       "received_at": "2026-10-11T12:15:00.000000Z",
       "body_status": "complete",
       "attachment_count": 0,
@@ -399,13 +394,13 @@ curl "https://api.revdoku.com/v1/buckets/bkt_example/mailbox/emails/eml_example"
       "direction": "received",
       "subject": "Invoice INV-1042",
       "from_addresses": [{"address": "billing@example.com", "name": "Example Billing"}],
-      "to_addresses": [{"address": "acme-orders.k7m2@revdokumail.com", "name": null}],
+      "to_addresses": [{"address": "acme-orders@revdokumail.com", "name": null}],
       "cc_addresses": [],
       "reply_to_addresses": [],
       "message_id": "inv-1042@example.com",
       "in_reply_to": [],
       "references": [],
-      "delivered_to": "acme-orders.k7m2@revdokumail.com",
+      "delivered_to": "acme-orders@revdokumail.com",
       "received_at": "2026-10-11T12:05:00.000000Z",
       "body_status": "complete",
       "attachment_count": 1,
@@ -523,13 +518,13 @@ curl -X PATCH "https://api.revdoku.com/v1/buckets/bkt_example/mailbox/emails/eml
       "direction": "received",
       "subject": "Invoice INV-1042",
       "from_addresses": [{"address": "billing@example.com", "name": "Example Billing"}],
-      "to_addresses": [{"address": "acme-orders.k7m2@revdokumail.com", "name": null}],
+      "to_addresses": [{"address": "acme-orders@revdokumail.com", "name": null}],
       "cc_addresses": [],
       "reply_to_addresses": [],
       "message_id": "inv-1042@example.com",
       "in_reply_to": [],
       "references": [],
-      "delivered_to": "acme-orders.k7m2@revdokumail.com",
+      "delivered_to": "acme-orders@revdokumail.com",
       "received_at": "2026-10-11T12:05:00.000000Z",
       "body_status": "complete",
       "attachment_count": 1,

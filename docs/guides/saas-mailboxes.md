@@ -76,8 +76,8 @@ For a connected custom domain, set `REVDOKU_EMAIL_DOMAIN` before provisioning.
 The example saves intent and a unique email username before sending. After an
 unknown result, rerunning searches that username and requires one bucket whose
 title or address name equals it; it never repeats the POST. On `revdokumail.com`
-the address adds a random suffix, so the default title (the username as sent)
-identifies the bucket. The username is not a retry key. Missing
+the address name is the username, with dots and underscores as hyphens, and the default title (the username as sent)
+identifies the bucket too. The username is not a retry key. Missing
 or multiple matches need human review; an empty list does not prove creation
 failed. A known bucket ID is checked with GET. Structured 4xx rejection permits a
 later explicit new attempt. Use only confirmed addresses.

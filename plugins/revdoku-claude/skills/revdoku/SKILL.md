@@ -138,6 +138,16 @@ bypass a limit. On `ACCOUNT_SUSPENDED`, relay only the returned notice, Terms,
 support route and bucket-download reminder, without guessing reasons or revealing
 review details.
 
+## Connect a GitHub repository
+
+`bucket_github` makes a bucket's files a copy of one GitHub branch, or of one folder of it. Only an
+account owner or administrator connection sets it up. Call `action: "accounts"` for the connected GitHub
+accounts and `"repositories"` with `installation_id` for their repositories. When the account that owns
+the repository is missing, call `"setup_link"` and give `install_url` to the user: they open it signed in
+to Revdoku and install the Revdoku GitHub App on GitHub. Never ask for GitHub passwords or tokens.
+`"connect"` copies `repo_owner`/`repo_name` into a bucket without files; never retry it after an uncertain
+result. Read `"get"` until `last_synced_at` is set, then publish with `bucket_publish`.
+
 ## Archive and permanently delete
 
 Archive only when requested, with `bucket_update(archived: true)`. Permanent deletion needs explicit approval for the

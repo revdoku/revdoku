@@ -18,6 +18,7 @@ operation and field.
 | --- | --- |
 | Make your first request | [Quickstart](https://revdoku.com/docs/quickstart.md) |
 | Publish a docs site | [Sites](#sites) · [Docs for AI agents](https://revdoku.com/docs.md#docs-for-ai-agents) |
+| Connect a GitHub repository | [GitHub repositories](#github-repositories) |
 | Install and use an SDK | [TypeScript SDK](https://revdoku.com/docs/sdks/typescript.md) · [Python SDK](https://revdoku.com/docs/sdks/python.md) |
 | Look up one operation | [API reference](https://revdoku.com/api/reference.md) |
 | Build with Claude Code or Codex | [Coding agents](https://revdoku.com/docs/coding-agents.md) |
@@ -343,7 +344,7 @@ Content-Type: application/json
     "bucket": {
       "id": "bkt_example",
       "mailbox": {
-        "address": "acme-orders.k7m2@revdokumail.com",
+        "address": "acme-orders@revdokumail.com",
         "receiving_enabled": true,
         "sending_enabled": true
       }
@@ -354,17 +355,21 @@ Content-Type: application/json
 
 | Field | Default | Purpose |
 | --- | --- | --- |
-| `bucket.mailbox.username` | Generated name | On `revdokumail.com`, a prefix: Revdoku adds a permanent 4-character random suffix on every plan. On a ready custom domain, the exact name before `@`. |
+| `bucket.mailbox.username` | The title's name, or a generated name | On `revdokumail.com`, the bucket's name, with no suffix: lowercase letters, digits and single hyphens, 3 to 63 characters (`Acme.Docs` becomes `acme-docs`). The bucket's site uses the same name. On a ready custom domain, the exact name before `@`. |
 | `bucket.mailbox.domain` | Platform domain | `revdokumail.com`, or a ready custom domain of this account. |
-| `bucket.title` | The username | Optional title, at most 255 characters. Without it, the title is `mailbox.username` as given, or the generated name without its random suffix. |
+| `bucket.title` | The username | Optional title, at most 255 characters. Without it, the title is `mailbox.username` as given, or the generated name. |
 | `bucket.description` | Empty | Optional description, at most 2,000 characters. |
 | `bucket.metadata` | `{}` | Your application data. |
 
 | Username rule | Behavior |
 | --- | --- |
-| Characters | ASCII letters, digits, dots, hyphens and underscores. Stored in lowercase. |
+| Characters | ASCII letters, digits, dots, hyphens and underscores. Stored in lowercase. On `revdokumail.com`, dots and underscores become hyphens. |
 | Empty or `null` | `422 EMAIL_NAME_INVALID`. |
-| Address unavailable | `409 EMAIL_ALREADY_EXISTS`. |
+| Fewer than 3 letters or digits on `revdokumail.com` | `422 EMAIL_NAME_INVALID`. |
+| Address unavailable | `409 EMAIL_ALREADY_EXISTS`. A name on `revdokumail.com` is unavailable while another bucket uses it as an address or a site address, and always after another account used it. Your account can use its own earlier names again. |
+
+Without `mailbox.username`, the address takes the name of the title when that name is free,
+else two readable words, such as `clever-otter@revdokumail.com`.
 
 Titles are unique among the account's active buckets, ignoring case and
 surrounding spaces. A title that another active bucket uses returns
@@ -592,7 +597,7 @@ An account administrator can turn off each kind of recipient for a mailbox in th
 The API cannot send the first email to a new address. A person sends it from the Revdoku dashboard.
 After the address replies, it is a sender, and the API can answer it.
 A mailbox cannot send to its own addresses. On the Free plan, each sent email ends
-with a signature line, after the standard `-- ` separator: "Sent with Revdoku, mailboxes for AI agents: https://revdoku.com".
+with a signature line, after the standard `-- ` separator: "Sent with Revdoku: https://revdoku.com".
 
 1. List received email and keep the `id` of the email to answer.
 2. Send the reply with `in_reply_to`. Pass `to` when the original sender did not pass SPF or DMARC.
@@ -645,7 +650,7 @@ Content-Type: application/json
 | Field | Required | Meaning |
 | --- | --- | --- |
 | `text` | Yes | Plain-text body, up to 1 MiB. |
-| `in_reply_to` | No | Received `eml_` ID. Sets the reply headers and subject. The recipient defaults to the original sender only when that sender passed SPF or DMARC. Otherwise pass `to`. |
+| `in_reply_to` | No | Received `eml_` ID. Sets the reply headers and subject. The recipient defaults to the original sender only when that sender passed SPF or DMARC. Otherwise pass `to`. A reply in a support conversation ends its subject with the request number, such as ` [#3]`, so an answer without reply headers finds the request. |
 | `to`, `cc` | `to`, when there is no default recipient | Up to 10 addresses together. |
 | `subject` | Without `in_reply_to` | Up to 255 characters. |
 | `html` | No | HTML body, up to 1 MiB. |
@@ -722,7 +727,7 @@ Requires a paid plan and bucket admin.
 | --- | --- | --- |
 | `confirm` | Yes | `true`. |
 | `expected_address` | Yes | Current `address` from step 1. |
-| `username` | No | New name. Omit for a generated name. On `revdokumail.com`, it gets a new 4-character random suffix. |
+| `username` | No | New name on your own domain. Omit for a generated name. On `revdokumail.com` the name follows the site address, so a `username` returns `422 INVALID_ARGUMENT`. |
 | `domain` | No | Available platform domain, a ready custom domain, or `platform`. |
 | `keep_old_as_alias` | No | Keep the old address as an alias. Default `true` for account owners and administrators, otherwise `false`. Send `false` to retire it. A change from `revdokumail.com` to your own domain always keeps it. |
 
@@ -746,7 +751,7 @@ every plan.
 ### Aliases
 
 Add an alias with `username` and an optional `domain`. On `revdokumail.com`, the
-alias gets a 4-character random suffix. The request returns `202`. Read the
+alias name follows the rules of a bucket name, with no suffix. The request returns `202`. Read the
 settings until the alias is ready. After an uncertain result, read the settings
 before you try again. Removing an alias stops it receiving at once. Saved email
 stays. Aliases need a paid plan and a full-account owner or administrator with
@@ -981,6 +986,9 @@ See the [custom email domains guide](https://revdoku.com/guides/custom-email-dom
 ## Sites
 
 A bucket publishes its files as a site: at `https://<slug>.revdoku.site/` or on a custom domain.
+The site address and the bucket's `revdokumail.com` address have one name: the first publish uses the
+bucket's name, such as `https://acme-docs.revdoku.site/` for `acme-docs@revdokumail.com`. When you change
+the site address in the dashboard, the email address moves to the new name. The earlier address keeps receiving.
 The system folders (`_mailbox/`, `_agents/`, `_revdoku/`) are never published.
 Publishing needs the `bucket_admin` scope. When sites are turned off for an account, a publish answers
 `403 WEBSITE_PUBLISHING_DISABLED`. The account can still read and unpublish an existing site.
@@ -1000,7 +1008,7 @@ Publishing needs the `bucket_admin` scope. When sites are turned off for an acco
 Before the first publish, a read of the site answers `404 PUBLICATION_NOT_FOUND`.
 A publish while another publish or unpublish runs answers `409 PUBLICATION_PUBLISH_IN_PROGRESS`.
 
-Connect a GitHub repository on the bucket's **Site** → **GitHub** page in the dashboard. After the first publish,
+Connect a GitHub repository with the API (see [GitHub repositories](#github-repositories)) or on the bucket's **Site** → **GitHub** page in the dashboard. After the first publish,
 each push to the connected branch publishes the site again, and a push to another branch makes a 24-hour preview.
 With a GitHub link, the site shows the connected branch: edits made in Revdoku reach the site after they are on the branch.
 On Free, sites publish from a connected GitHub repository that synced at least once. Previews come from its branches.
@@ -1034,6 +1042,64 @@ A site never shows the bucket's email address. Visitors whom Ask did not help le
 A password needs `access_mode` `password`; otherwise the publish returns `422 INVALID_ARGUMENT`.
 A password has 8 to 128 characters (`422 PUBLICATION_PASSWORD_INVALID`). Omit it to get a generated password.
 Never retry a publish automatically after an uncertain result: read the site first.
+
+## GitHub repositories
+
+A bucket can be a copy of one branch of a GitHub repository, or of one folder of it. Each push to the branch syncs
+the files. With `auto_publish` on, the site then publishes again. GitHub is the source: Revdoku copies a repository
+into a bucket, never a bucket into a repository.
+
+The Revdoku GitHub App reads the repositories. A person installs it on a GitHub account or organization. That step
+happens on GitHub, so an API key cannot do it: the API gives the links for the person. Reading a bucket's link needs
+read access. Every other operation below needs a key of an account owner or administrator with admin access to all
+buckets.
+
+| Method | Path | SDK | Purpose |
+| --- | --- | --- | --- |
+| GET | `/v1/account/github_installations` | [`listGithubInstallations` / `list_github_installations`](https://revdoku.com/api/reference/github.md#list-connected-github-accounts) | `data.installations`: the GitHub accounts connected to this account, with `installation_id`, `repository_selection` and `settings_url`. |
+| GET | `/v1/account/github_installations/{installation_id}/repositories` | [`listGithubRepositories` / `list_github_repositories`](https://revdoku.com/api/reference/github.md#list-the-repositories-of-a-github-account) | `data.repositories` that one GitHub account lets Revdoku read, A-Z. |
+| GET | `/v1/buckets/{bucket_id}/github_sync/setup_link` | [`getGithubSetupLink` / `get_github_setup_link`](https://revdoku.com/api/reference/github.md#get-the-links-to-add-a-github-account) | `data.setup_link`: `install_url` and `authorization_url` for the person's step on GitHub. |
+| POST | `/v1/buckets/{bucket_id}/github_sync` | [`connectGithubRepository` / `connect_github_repository`](https://revdoku.com/api/reference/github.md#connect-a-github-repository) | Connect `github_sync.repo_owner` and `github_sync.repo_name`. Optional: `branch` (default: the repository's default branch), `repo_path` (one folder), `installation_id` and `push_revdoku_edits`. Answers `201`. |
+| GET | `/v1/buckets/{bucket_id}/github_sync` | [`getGithubSync` / `get_github_sync`](https://revdoku.com/api/reference/github.md#read-the-github-repository-of-a-bucket) | `data.github_sync`: the repository, `sync_state` and `last_synced_at`, or `null`. |
+| PATCH | `/v1/buckets/{bucket_id}/github_sync` | [`updateGithubSync` / `update_github_sync`](https://revdoku.com/api/reference/github.md#change-github-sync-settings) | Change `auto_publish`, `push_revdoku_edits` or `auto_commit`. |
+| POST | `/v1/buckets/{bucket_id}/github_sync/sync` | [`syncGithubRepository` / `sync_github_repository`](https://revdoku.com/api/reference/github.md#sync-the-github-repository-now) | Sync now, or try a failed sync again. Answers `202`. |
+| DELETE | `/v1/buckets/{bucket_id}/github_sync` | [`disconnectGithubRepository` / `disconnect_github_repository`](https://revdoku.com/api/reference/github.md#disconnect-the-github-repository) | Stop the sync. The bucket keeps its files and its site. |
+
+1. List the connected GitHub accounts. If the account or organization that owns the repository is not in the list,
+   get the setup link of the bucket. Give `install_url` to the person who owns your API key or AI connection.
+   They open it while signed in to Revdoku, install the App on that account or organization, and choose its repositories.
+   When the App is already installed there, give `authorization_url`: after it, the person selects **Connect** on the
+   bucket's GitHub page. The links work for 30 minutes. Another owner or administrator can instead add the account on
+   the bucket's GitHub page (`dashboard_url`). List the accounts again until the new one shows.
+2. List the repositories of that account. If the repository is not in the list, the owner gives the App access to it
+   on GitHub, at the account's `settings_url`.
+3. Connect the repository to a bucket without files of its own. Its email and agent folders may stay. Create a new
+   bucket for a repository when you need one.
+4. Read the link until `last_synced_at` is set: the first copy is done. Then publish the site. After that, each push to
+   the branch publishes it again while `auto_publish` is on.
+
+Edits made in Revdoku, with the API or in the dashboard, follow two settings:
+
+| Setting | Effect |
+| --- | --- |
+| `push_revdoku_edits: false` | The bucket's files are a read-only copy of the repository. File writes answer `422 SYNCED_COPY_READ_ONLY`. |
+| `auto_commit: true` | Each sync commits the edits to the branch. |
+| `auto_commit: false` (default) | The edits wait in `pending_changes` until a person publishes them in the dashboard. |
+
+| HTTP | Code | Meaning |
+| --- | --- | --- |
+| `403` | `GITHUB_APP_NOT_INSTALLED` | No connected GitHub account owns the repository. `error.details` has `install_url` and `authorization_url`, and `error.next_action` is `install_github_app`. |
+| `422` | `GITHUB_SYNC_REPO_UNAVAILABLE` | The App cannot read the repository. `error.details.settings_url` is the GitHub page where its owner gives access. |
+| `422` | `GITHUB_SYNC_BRANCH_UNAVAILABLE` | The branch is not in the repository. |
+| `409` | `GITHUB_SYNC_BUCKET_NOT_EMPTY` | The bucket has files of its own. Connect the repository to a new bucket. |
+| `409` | `GITHUB_SYNC_REPO_TAKEN` | Another bucket is a copy of this repository branch. |
+| `403` | `ACCOUNT_ADMIN_REQUIRED` | The key is not the key of an owner or administrator with admin access to all buckets. |
+| `404` | `GITHUB_SYNC_NOT_CONNECTED` | No repository is connected to the bucket. |
+| `502` | `GITHUB_UNAVAILABLE` | GitHub did not answer. Nothing changed. Try again after a minute. |
+
+A failed sync has `sync_state` `error` and a readable `last_error`. It tries again at `next_retry_at`. When
+`next_retry_at` is `null`, fix the cause and sync again. Never retry a connect automatically after an uncertain result:
+read the link first.
 
 ## Errors
 

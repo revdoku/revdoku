@@ -117,7 +117,7 @@ curl "https://api.revdoku.com/v1/buckets" \
         "metadata": {},
         "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
         "mailbox": {
-          "address": "acme-orders.k7m2@revdokumail.com",
+          "address": "acme-orders@revdokumail.com",
           "message_count": 1,
           "unread_count": 1,
           "last_received_at": "2026-10-11T12:05:00.000000Z",
@@ -162,7 +162,7 @@ Guide: [Buckets](https://revdoku.com/api.md#buckets)
 
 `POST /v1/buckets`
 
-Waits until the address can receive email. On revdokumail.com, mailbox.username is a prefix with a permanent 4-character random suffix on every plan; a custom domain takes the exact name. If confirmation does not finish, EMAIL_NOT_READY returns the created bucket_id in error.details: read that bucket instead of creating another. The title defaults to mailbox.username; a title that another active bucket uses returns 409 BUCKET_TITLE_TAKEN. Never retry a creation automatically.
+Waits until the address can receive email. On revdokumail.com, mailbox.username is the bucket's name, with no suffix: lowercase letters, digits and single hyphens, 3 to 63 characters, also the name of its site. A name that another bucket uses as an address or a site address, or that another account used, returns EMAIL_ALREADY_EXISTS; your account can use its own earlier names again. Without mailbox.username the address takes the title's name when it is free, else two readable words. A custom domain takes the exact name. If confirmation does not finish, EMAIL_NOT_READY returns the created bucket_id in error.details: read that bucket instead of creating another. The title defaults to mailbox.username; a title that another active bucket uses returns 409 BUCKET_TITLE_TAKEN. Never retry a creation automatically.
 
 | Language | Call |
 | --- | --- |
@@ -176,7 +176,7 @@ Waits until the address can receive email. On revdokumail.com, mailbox.username 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | `bucket` | BucketCreate | no |  |
-| `bucket.title` | string | no | Optional title. Defaults to mailbox.username as given, or to the generated name without its random suffix. A title that another active bucket uses returns 409 BUCKET_TITLE_TAKEN. |
+| `bucket.title` | string | no | Optional title. Defaults to mailbox.username as given, or to the generated name. A title that another active bucket uses returns 409 BUCKET_TITLE_TAKEN. |
 | `bucket.description` | string | no |  |
 | `bucket.metadata` | object | no |  |
 | `bucket.mailbox` | MailboxOptions | no | Fields: `username`, `domain`. |
@@ -215,7 +215,7 @@ curl -X POST "https://api.revdoku.com/v1/buckets" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-  "bucket": {"title": "Support", "mailbox": {"username": "support"}}
+  "bucket": {"title": "Acme docs", "mailbox": {"username": "acme-docs"}}
 }'
 ```
 
@@ -237,7 +237,7 @@ curl -X POST "https://api.revdoku.com/v1/buckets" \
       "metadata": {},
       "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "mailbox": {
-        "address": "acme-orders.k7m2@revdokumail.com",
+        "address": "acme-orders@revdokumail.com",
         "message_count": 0,
         "unread_count": 0,
         "last_received_at": null,
@@ -274,7 +274,7 @@ curl -X POST "https://api.revdoku.com/v1/buckets" \
 | `401` | Missing or invalid API key |
 | Other 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
 
-Error codes named above: `BUCKET_TITLE_TAKEN`, `EMAIL_NOT_READY`.
+Error codes named above: `BUCKET_TITLE_TAKEN`, `EMAIL_ALREADY_EXISTS`, `EMAIL_NOT_READY`.
 
 Guide: [Create a bucket](https://revdoku.com/api.md#create-a-bucket)
 
@@ -347,7 +347,7 @@ curl "https://api.revdoku.com/v1/buckets/bkt_example" \
       "metadata": {},
       "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "mailbox": {
-        "address": "acme-orders.k7m2@revdokumail.com",
+        "address": "acme-orders@revdokumail.com",
         "message_count": 1,
         "unread_count": 1,
         "last_received_at": "2026-10-11T12:05:00.000000Z",

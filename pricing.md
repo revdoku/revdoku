@@ -39,11 +39,11 @@ but AI and sending pause.
 
 Every plan can send to account members, the account's other mailboxes and
 people who emailed the mailbox. On the Free plan, each sent email ends with a signature line, after the standard `-- ` separator:
-"Sent with Revdoku, mailboxes for AI agents: https://revdoku.com".
+"Sent with Revdoku: https://revdoku.com".
 
-A mailbox address on `revdokumail.com` is the name you choose plus a 4-character
-random suffix, such as `sales.agent.x7k2@revdokumail.com`. On paid plans you can
-use your own domain for an exact name, change an address later and add aliases.
+A mailbox address on `revdokumail.com` is the bucket's name, with no suffix, such as
+`acme-docs@revdokumail.com`. The bucket's site uses the same name. On paid plans you can
+use your own domain, change an address later and add aliases.
 
 The [pricing page](https://app.revdoku.com/pricing) is the source of truth for
 current plans and every limit.

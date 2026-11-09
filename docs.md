@@ -43,13 +43,16 @@ A publish builds the site in the background. Publish, then read the site until `
 
 | Task | REST | SDK (TypeScript / Python) | CLI | MCP |
 | --- | --- | --- | --- | --- |
+| Connect a GitHub repository | `POST /v1/buckets/{bucket_id}/github_sync` | `connectGithubRepository` / `connect_github_repository` | `revdoku github connect OWNER/NAME --bucket-id ID` | `bucket_github` with `action: "connect"` |
+| Read the GitHub sync state | `GET /v1/buckets/{bucket_id}/github_sync` | `getGithubSync` / `get_github_sync` | `revdoku github --bucket-id ID` | `bucket_github` |
 | Publish or republish | `POST /v1/buckets/{bucket_id}/publication` | `client.api.publishBucket` / `client.api.publish_bucket` | `revdoku publish --bucket-id ID` | `bucket_publish` |
 | Read the site and its build state | `GET /v1/buckets/{bucket_id}/publication` | `getPublication` / `get_publication` | `revdoku site --bucket-id ID` | `bucket_publication_get` |
 | Make a 24-hour preview | `POST /v1/buckets/{bucket_id}/publication/preview` | `previewBucket` / `preview_bucket` | `revdoku preview --bucket-id ID` | `bucket_publish` with `action: "preview"` |
 | Read the preview | `GET /v1/buckets/{bucket_id}/publication/preview` | `getPublicationPreview` / `get_publication_preview` | `revdoku site --preview --bucket-id ID` | `bucket_publication_get` with `preview: true` |
 | Take the site down | `DELETE /v1/buckets/{bucket_id}/publication` | `unpublishBucket` / `unpublish_bucket` | `revdoku unpublish --bucket-id ID` | `bucket_publish` with `action: "unpublish"` |
 
-1. Add the docs to the bucket. Connect a GitHub repository in the dashboard, or [upload files](https://revdoku.com/api.md#upload-a-file).
+1. Add the docs to the bucket. Connect a GitHub repository (see [GitHub repositories](https://revdoku.com/api.md#github-repositories)),
+   or [upload files](https://revdoku.com/api.md#upload-a-file). Publish after the link has `last_synced_at`.
 2. Publish. The response has `publish_state` `queued`.
 3. Read the site every few seconds. When `publish_state` is `ready`, `url` is the site address.
    When it is `failed`, `publish_error` says why.
@@ -200,8 +203,8 @@ Content-Type: application/json
 
 | Choice | Behavior |
 | --- | --- |
-| Supply `bucket.mailbox.username` | On `revdokumail.com`, Revdoku adds a permanent 4-character random suffix to the name (letters, digits, dots, hyphens and underscores) on every plan. A ready custom domain takes the exact name. An unavailable name returns `EMAIL_ALREADY_EXISTS`. |
-| Send `{"mailbox": {}}` | Generate a username automatically. |
+| Supply `bucket.mailbox.username` | On `revdokumail.com`, the name is the bucket's name, with no suffix: `acme-docs` gives `acme-docs@revdokumail.com`, and the bucket's site uses the same name. Dots and underscores become hyphens. A ready custom domain takes the exact name. A name that another bucket uses returns `EMAIL_ALREADY_EXISTS`. |
+| Send `{"mailbox": {}}` | Use the title's name when it is free, else generate a name. |
 
 Creation waits for receiving confirmation. Use the returned address after a
 successful response. On `EMAIL_NOT_READY`, save the returned bucket ID and inspect
