@@ -32,8 +32,8 @@ Your first paid subscription has a 30-day money-back guarantee on its first paym
 On the Free plan, sites publish from a connected GitHub repository, and each page
 shows a small Revdoku badge. On paid plans you can also publish uploaded files and turn the badge off.
 
-Credits pay for messages and AI work: 1 per chat message (also a reply that the visitor reads in the chat),
-2 per new chat, 2 per received email, 2 per recipient of a sent email and 10 per AI check of an email.
+Credits pay for messages and AI work: 1 per chat message, 2 per received email,
+2 per recipient of a sent email and 10 per AI check of an email.
 Ask AI and AI agents use credits by usage. Without credits, chat messages and email still arrive,
 but AI and sending pause.
 

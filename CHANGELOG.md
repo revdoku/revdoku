@@ -1,5 +1,34 @@
 # Revdoku Changelog
 
+## 1.0.642 — 2026-11-10
+
+### Improved
+
+- Preview any branch of your GitHub repository from New preview on the site's Previews page. Revdoku builds a 24-hour preview of the branch, as after a push to it.
+- Publish a site from a shorter dialog: its address, the docs layout and Ask AI. A new site is public.
+- Republish a site in one click. Change its docs layout and Ask AI on the site's Settings page.
+- Read what visitors were looking for when a docs page did not help them. Their comment arrives in Support as an anonymous email that cannot be replied to, and the site's Analytics lists it with its page. No AI answers it.
+- See the site's address at the top right of every bucket page, next to the page's own actions. Pages no longer repeat their name above the content.
+- Choose a docs layout from a dropdown with a small preview of the layout.
+- Site analytics are always on, so the Settings page no longer has a switch for them.
+- Reply to support requests from Support. Support only answers requests that come in, so it has no Compose button.
+- Find a draft that waits for your approval in its conversation in Support. The Drafts folder is gone, and links to it open the draft.
+- Open Email Settings from the gear button at the top right of Support.
+- Remove the website chat button for other websites and its Email Settings tab. Visitors of your docs sites still reach you with Leave a message.
+- Email your reply to a visitor who left a message at once.
+- Open public sites faster. Browsers keep their logo, icons, images and search index between visits.
+- Choose Last 12 Months in a site's Analytics. A chart of more than 90 days shows one point per week.
+- See more of the referrers, bots and AI agents that reach your sites in a site's Analytics.
+- Compare this week with last week at the top of Manage buckets: AI agent requests, views and visitors of all your sites, per day. Its period menu also sets the totals below it.
+- See the same comparison for one site at the top of its Site page. Click it to open the site's Analytics.
+- Read the transcript of every Ask AI conversation in the site's Analytics, answered or not: each question, what the visitor saw, the pages and the vote.
+- Show only the Ask AI conversations that got no answer, and open the support ticket of a visitor who left a message.
+
+### Fixed
+
+- See every site setting on the Settings page again, including the Revdoku badge and the GitHub options.
+- Get Ask AI answers to short questions and questions with typos, such as "how to publishw ebsite". Before, Ask AI often said that the docs did not answer them.
+
 ## 1.0.641 — 2026-11-10
 
 ### Improved
