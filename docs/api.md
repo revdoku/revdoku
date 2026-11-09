@@ -598,7 +598,8 @@ with a signature line, after the standard `-- ` separator: "Sent with Revdoku, m
 2. Send the reply with `in_reply_to`. Pass `to` when the original sender did not pass SPF or DMARC.
 3. Read the email later and check `delivery.status`.
 
-A person must approve each email first on the Free plan, and in a mailbox where an account administrator requires it.
+A person must approve each email first on the Free plan, in a mailbox where an account administrator requires it,
+and to an address that a site visitor gave in **Leave a message** without confirming it.
 The send then returns `delivery.status` `awaiting_approval`. A person sends, edits or declines
 the email in the dashboard. Do not send it again. Any number of emails can wait, but the per-minute
 limit applies when you send them, also to emails that were deleted or declined since. The other

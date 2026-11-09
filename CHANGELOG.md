@@ -1,5 +1,22 @@
 # Revdoku Changelog
 
+## 1.0.638 — 2026-11-09
+
+### Added
+
+- Press Cmd+K (Ctrl+K on Windows and Linux) on a docs site to search.
+- Ask your search from the last search result of a docs site, also when no page matches.
+- Use the header, footer and banner of a Mintlify `docs.json` on docs sites: navbar links and button, footer links, and a banner that visitors can close.
+- Copy a docs page as Markdown, or open it in ChatGPT, Claude or Perplexity, from the page menu.
+
+### Improved
+
+- Leave a message on a docs site with a name, an email address and the message, without a code. A person reviews and sends every reply.
+- Ask answers a question about the page you are reading, such as "what is that?".
+- Show a docs page's own card components, such as hero cards, as cards.
+- Keep the security check of Ask right above the question box.
+- Move the theme switch of a docs site to the bottom of the page list. Switching back to your system theme makes the site follow the system again.
+
 ## 1.0.637 — 2026-11-09
 
 ### Improved
