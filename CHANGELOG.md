@@ -1,5 +1,11 @@
 # Revdoku Changelog
 
+## 1.0.635 — 2026-11-09
+
+### Fixed
+
+- Update the pages of a docs site at its next publish after an improvement to docs sites, also when the site's own files did not change.
+
 ## 1.0.634 — 2026-11-09
 
 ### Fixed
