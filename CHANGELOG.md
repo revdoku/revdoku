@@ -1,5 +1,11 @@
 # Revdoku Changelog
 
+## 1.0.634 — 2026-11-09
+
+### Fixed
+
+- Show no extra API reference on a Mintlify site whose docs.json names no OpenAPI file. Its links led to missing pages.
+
 ## 1.0.632 — 2026-11-08
 
 ### Fixed
