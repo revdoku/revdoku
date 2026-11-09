@@ -1,5 +1,21 @@
 # Revdoku Changelog
 
+## 1.0.636 — 2026-11-09
+
+### Improved
+
+- Show matching pages as you type in a docs site's search box and in Ask. The search box opens faster on large sites.
+- Fit a docs site's header on one row on phones, with icons for Ask, the language menu and the theme switch. The page no longer zooms in when you tap the search box or Ask.
+- Copy code with an icon button. A code block shows its title, and the tabs of a code group show the file names.
+- Show a docs site's own logo alone in the header, and its dark logo in the dark theme.
+- Open a page's Markdown as plain text. It starts with the page title and description, and docs pages name it in their headers for AI agents.
+- Make the Revdoku badge smaller and lighter.
+
+### Fixed
+
+- Show the text and code inside Mintlify components such as Steps correctly when they are indented. Code examples that contain code blocks also show correctly.
+- Keep braces in their place in highlighted code on docs sites. Show the tabs of a Tabs component above their content.
+
 ## 1.0.635 — 2026-11-09
 
 ### Fixed
