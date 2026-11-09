@@ -1,8 +1,8 @@
 # Privacy Policy
 
-*Version: 2026-11-08 · Updated: November 8, 2026*
+*Version: 2026-11-09 · Updated: November 9, 2026*
 
-Revdoku, at [revdoku.com](https://revdoku.com), provides mailboxes for AI agents, with private file storage and collaboration for people and authorized agents. Revdoku, Armenia operates the website and the Service. This notice covers personal information on our website and Service. Contact [support@revdoku.com](mailto:support@revdoku.com?subject=Privacy) with privacy questions or requests.
+Revdoku, at [revdoku.com](https://revdoku.com), publishes documentation sites from GitHub repositories, with a support mailbox for each site, private file storage and collaboration for people and authorized agents. Revdoku, Armenia operates the website and the Service. This notice covers personal information on our website and Service. Contact [support@revdoku.com](mailto:support@revdoku.com?subject=Privacy) with privacy questions or requests.
 
 ## Information we handle
 

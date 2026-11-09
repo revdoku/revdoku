@@ -117,6 +117,10 @@ Use GitHub on every plan. On Free, sites publish only from a connected GitHub re
 3. Choose the repository and the branch. If your docs are in a folder of the repository, choose that folder.
 4. Wait for the first sync. Revdoku copies the files into the bucket, and the **Site** page shows the time of the sync.
 
+From code or a coding agent, use the API instead: list the connected GitHub accounts, connect the repository with
+`connectGithubRepository`, and read the link until `last_synced_at` is set. A person still installs the Revdoku GitHub App
+on GitHub, with a link that the API gives. See [GitHub repositories](https://revdoku.com/api.md#github-repositories).
+
 After the first publish (step 5), each push to the branch publishes the site again.
 
 ### Or upload files

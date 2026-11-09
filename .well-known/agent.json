@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Create and manage mailboxes for AI agents, with cloud storage for emails, attachments, and files.",
+  "description": "Publish docs sites from GitHub, with Ask AI, an MCP server and support email.",
   "homepage": "https://revdoku.com/",
   "docs": "https://revdoku.com/docs",
   "pricing": "https://app.revdoku.com/pricing",
@@ -26,7 +26,7 @@
     "source": "https://github.com/revdoku/revdoku/tree/main/skills/revdoku"
   },
   "capabilities": [
-    "Create and manage email mailboxes for AI agents",
+    "Publish docs sites from GitHub or uploaded files",
     "Receive email and attachments at each mailbox's incoming address",
     "List messages with polling cursors, read decoded email, and download originals and attachments with email tools",
     "Store documents, data, and source files in private cloud mailboxes",

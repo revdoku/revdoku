@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "name": "Revdoku",
-  "description": "Mailboxes for AI agents, with private file storage. Receive and read messages and attachments, and share files through authorized mailbox access. ",
+  "description": "Docs sites from GitHub, with support email and private files. Receive and read messages and attachments, and share files through authorized bucket access.",
   "url": "https://revdoku.com/",
   "documentation_url": "https://revdoku.com/docs",
   "mcp_url": "https://mcp.revdoku.com",
@@ -13,7 +13,7 @@
   "skills": [
     {
       "id": "email",
-      "name": "Mailboxes for AI agents",
+      "name": "Support email of docs sites",
       "description": "Create a bucket with bucket_create and check mailbox.receiving_enabled. Use bucket_email_list with a saved cursor, bucket_email_get for decoded messages, and bucket_email_download for originals and attachments. ",
       "account_required": true
     },

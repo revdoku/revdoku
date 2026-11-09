@@ -53,8 +53,6 @@ metadata:
 
 # Revdoku
 
-Receive email and attachments in shared private buckets.
-
 ## Capabilities and authorization
 
 Stay within the requested account, bucket, paths and action.
@@ -109,14 +107,11 @@ Never report a partial page as complete.
 Use `counts.*` for exact authorized totals.
 
 Label buckets `title (mailbox.address)`, or the address alone, linked to `dashboard_url`.
-Keep IDs for tool calls unless requested.
 Never use descriptions as names.
 Without an address, label the link Open bucket and explain why.
-Keep existing permissions.
 Show `mailbox.message_count` as stored emails and `mailbox.unread_count` as unread emails.
 Null counts mean indexing is incomplete.
-File counts include email representations and attachments.
-Do not add file and email counts.
+File counts include email representations and attachments; never add them to email counts.
 
 ## Receive and read email
 
@@ -131,10 +126,9 @@ Do not assume Gmail access.
 Poll with a deadline for a relevant message.
 Produce results before offering automation.
 Gmail verification alone does not prove forwarding works.
-See the [first email workflow](https://revdoku.com/docs.md#first-email-workflow).
 
-`bucket_create(mailbox: {username: "project.alerts"})` returns a ready bucket.
-Revdoku adds a permanent 4-character suffix on `revdokumail.com`.
+`bucket_create(mailbox: {username: "project-alerts"})` returns a ready bucket.
+Its address is `project-alerts@revdokumail.com`, also its site name.
 Omit `mailbox` to generate one. Use the returned address.
 `EMAIL_ALREADY_EXISTS` means the name is unavailable. Ask for another name. Do not silently replace rejected names.
 CLI: `create --username NAME`.
@@ -161,8 +155,6 @@ its owned files/attachments. CLI:
 `email-delete EMAIL_ID --bucket-id ID --confirm-delete EMAIL_ID`.
 Admin access is required.
 
-See the [email contract](https://revdoku.com/api.md#emails).
-
 ## Send email
 
 Recipients: account members, other account buckets, or this bucket's authenticated
@@ -174,6 +166,12 @@ that address.
 2. Track `delivery.status`: `bucket_email_list(direction: "sent")` (CLI `emails --direction sent`).
 
 Never resend `awaiting_approval` (a person decides) or `declined` (unless asked); after `uncertain`, check the sent list.
+
+## Docs from GitHub
+
+Admin keys: `github accounts`, `github repos ID`, `github connect OWNER/NAME --bucket-id ID`
+(empty bucket; never retried). Missing account: give the person `github setup-link` `install_url`.
+Poll `github` until `last_synced_at`, then `publish`.
 
 ## Additional private file storage
 
@@ -188,7 +186,6 @@ conflict, reread and reconcile. Use `bucket_lock` (optional `paths`), respect
 others' locks, release yours. `bucket_file_reorganize` renames/copies/moves server-side. `_mailbox/` is
 read-only; `bucket_file_delete` deletes one other authorized file.
 CLI `files`, `read`, `versions`, and `restore` expose inspection/history.
-Storage follows the [Terms](https://revdoku.com/terms.md).
 
 ## Accounts and administration
 
@@ -241,7 +238,6 @@ pending setup until active/failed. See the [domain contract](https://revdoku.com
 
 Supply the known purpose through CLI `--reason` or MCP/REST `reason`.
 Omit unknown reasons, secrets, contents and transcripts.
-See [API details](https://revdoku.com/api.md#action-reasons).
 
 Read quotas with CLI `account limits` or MCP `account_limits`; relay an error's `upgrade_url`.
 

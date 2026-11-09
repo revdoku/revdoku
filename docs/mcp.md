@@ -234,6 +234,23 @@ Reconnect the MCP client after updates to refresh its discovered tools.
 See the [API contract](https://revdoku.com/api.md#emails) and
 [storage and mailbox guide](https://revdoku.com/docs.md).
 
+## Connect a GitHub repository
+
+`bucket_github` makes a bucket's files a copy of one branch of a GitHub repository, or of one folder of it.
+Each push to the branch syncs the files. Only an account owner or administrator connection can set it up.
+
+1. `bucket_github(action: "accounts")` lists the GitHub accounts connected to the account.
+2. If the account that owns the repository is missing, `bucket_github(action: "setup_link", bucket_id)` returns
+   `install_url`. Give it to the user. They open it while signed in to Revdoku and install the Revdoku GitHub App
+   on that account or organization. Never ask for GitHub passwords or tokens. Then list the accounts again.
+3. `bucket_github(action: "repositories", installation_id)` lists the repositories that the App can read.
+4. `bucket_github(action: "connect", bucket_id, repo_owner, repo_name)` connects a bucket without files of its own.
+   Optional: `branch`, `repo_path` and `push_revdoku_edits: false` (a read-only copy).
+5. `bucket_github(action: "get", bucket_id)` until `last_synced_at` is set. Then publish with `bucket_publish`.
+
+`action: "sync"` syncs now, `"update"` changes `auto_publish`, `push_revdoku_edits` or `auto_commit`,
+and `"disconnect"` stops the sync. The bucket keeps its files.
+
 ## Same contract as the REST API
 
 MCP tools return the REST resources: the same `bucket`, `email`, `file`,
@@ -256,8 +273,9 @@ links to the pricing page. Give it to the user. Each tool covers these REST oper
 | `bucket_file_write` | Text files with `uploaded` and `skipped` rows, as an upload-session finalize. `append: true` is `.../files/append_text` |
 | `bucket_file_reorganize` | `.../files/{file_id}/rename`, `/move` and `/copy`, one `operations` item each |
 | `bucket_publication_get`, `bucket_publish` | `GET .../publication` (`preview: true`: `.../publication/preview`); `POST .../publication`, `POST .../publication/preview` and `DELETE .../publication` by `action` |
+| `bucket_github` | By `action`: `GET`, `POST`, `PATCH` and `DELETE .../github_sync`, `POST .../github_sync/sync`, `GET .../github_sync/setup_link`, and `GET /v1/account/github_installations` (`accounts`) and `.../{installation_id}/repositories` |
 
-The site tools are listed only where the deployment serves sites. `bucket_lock` exists only in MCP. Email settings, custom
+The site tools are listed only where the deployment serves sites, and `bucket_github` only where it also syncs GitHub. `bucket_lock` exists only in MCP. Email settings, custom
 domains, file versions and batch uploads exist only in REST.
 
 ## Explain the action

@@ -112,7 +112,7 @@ curl "https://api.revdoku.com/v1/buckets/bkt_example/mailbox" \
 
 Requires bucket-admin permission and a paid plan, except for a change back to revdokumail.
 
-com. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address. A change from revdokumail.com to a customer domain always keeps the old address as the revdokumail.com base address, which uses no alias slot. A change from a customer domain back to revdokumail.com makes that base address the main address again at once (200, assignment.status active): username is ignored, no address change is counted and it works on every plan.
+com. Send the current address as expected_address. Omit username for a generated name. On revdokumail.com the name follows the site address, so a username there returns 422 INVALID_ARGUMENT. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address. A change from revdokumail.com to a customer domain always keeps the old address as the revdokumail.com base address, which uses no alias slot. A change from a customer domain back to revdokumail.com makes that base address the main address again at once (200, assignment.status active): username is ignored, no address change is counted and it works on every plan.
 
 | Language | Call |
 | --- | --- |
@@ -131,7 +131,7 @@ com. Send the current address as expected_address. Omit username for a generated
 | --- | --- | --- | --- |
 | `confirm` | boolean `true` | yes |  |
 | `expected_address` / `expectedAddress` | string | yes | Current address from your last settings read. A different current address returns EMAIL_ADDRESS_CHANGED. |
-| `username` | string | no | New name before @. On revdokumail.com, a prefix with a new 4-character random suffix; on a custom domain, the exact name. |
+| `username` | string | no | New name before @ on a custom domain: the exact name. On revdokumail.com the name follows the site address, so a username returns INVALID_ARGUMENT. |
 | `domain` | string | no | Available platform domain, a ready domain of this account, or platform. |
 | `keep_old_as_alias` / `keepOldAsAlias` | boolean | no | Keep the old address as an alias. Defaults to true for account owners and administrators while the old domain still receives email, otherwise false. Keeping it needs a free alias slot and an account owner or administrator. A change from revdokumail.com to a customer domain always keeps the old address as the base address. That needs no alias slot and no administrator. |
 | `account_id` / `accountId` | string | no | Select another granted account for this request. |
@@ -147,7 +147,7 @@ import { Revdoku } from 'revdoku';
 const client = new Revdoku();
 const { data } = await client.api.changeMailboxAddress({
   bucketId: 'bkt_example',
-  changeMailboxAddressRequest: { confirm: true, expectedAddress: 'support.k7x2@revdokumail.com' },
+  changeMailboxAddressRequest: { confirm: true, expectedAddress: 'acme-docs@revdokumail.com' },
 });
 console.log(data);
 ```
@@ -162,7 +162,7 @@ response = client.api.change_mailbox_address(
     "bkt_example",
     ChangeMailboxAddressRequest(
         confirm=True,
-        expected_address="support.k7x2@revdokumail.com",
+        expected_address="acme-docs@revdokumail.com",
     ),
 )
 print(response.data)
@@ -176,7 +176,7 @@ curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/mailbox/rotate" \
   -H "Content-Type: application/json" \
   -d '{
   "confirm": true,
-  "expected_address": "support.k7x2@revdokumail.com"
+  "expected_address": "acme-docs@revdokumail.com"
 }'
 ```
 
@@ -214,7 +214,7 @@ curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/mailbox/rotate" \
 | --- | --- |
 | 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
 
-Error codes named above: `EMAIL_ALIAS_LIMIT`.
+Error codes named above: `EMAIL_ALIAS_LIMIT`, `INVALID_ARGUMENT`.
 
 Guide: [Change the address](https://revdoku.com/api.md#change-the-address)
 
@@ -241,7 +241,7 @@ The primary address stays unchanged. On a mailbox whose primary address is on yo
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `username` | string | yes | Alias name before @. On revdokumail.com, a prefix with a 4-character random suffix; on a custom domain, the exact name. |
+| `username` | string | yes | Alias name before @. On revdokumail.com, a bucket name with no suffix: lowercase letters, digits and single hyphens, 3 to 63 characters, free as an address and as a site address. On a custom domain, the exact name. |
 | `domain` | string | no |  |
 | `account_id` / `accountId` | string | no | Select another granted account for this request. |
 | `reason` | string or null | no | Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. |
@@ -256,7 +256,7 @@ import { Revdoku } from 'revdoku';
 const client = new Revdoku();
 const { data } = await client.api.createEmailAlias({
   bucketId: 'bkt_example',
-  createEmailAliasRequest: { username: 'support' },
+  createEmailAliasRequest: { username: 'acme-docs' },
 });
 console.log(data);
 ```
@@ -269,7 +269,7 @@ from revdoku import Revdoku, CreateEmailAliasRequest
 client = Revdoku()
 response = client.api.create_email_alias(
     "bkt_example",
-    CreateEmailAliasRequest(username="support"),
+    CreateEmailAliasRequest(username="acme-docs"),
 )
 print(response.data)
 ```
@@ -280,7 +280,7 @@ print(response.data)
 curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/mailbox/aliases" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"username": "support"}'
+  -d '{"username": "acme-docs"}'
 ```
 
 **Response** `202`

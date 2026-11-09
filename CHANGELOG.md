@@ -1,5 +1,57 @@
 # Revdoku Changelog
 
+## 1.0.640 — 2026-11-09
+
+### Added
+
+- Connect a GitHub repository to a bucket from the API, the TypeScript and Python SDKs, the `revdoku github` CLI commands and the `bucket_github` MCP tool. Your AI agent lists your connected GitHub accounts and their repositories, connects a repository, reads the sync state, syncs, changes the settings and disconnects. See [GitHub repositories](https://revdoku.com/api.md#github-repositories).
+- Get the link to add a GitHub account from the API: your agent gives it to you, and you install the Revdoku GitHub App on GitHub while signed in to Revdoku.
+- See how many searches visitors made in your site's search box, as a number in the site's Analytics.
+- See the request number at the end of each reply's subject, such as `[#3]`. An answer from the same person that keeps the number joins the same request, also without reply headers.
+- Search or ask from a small bar at the bottom of every docs page. It shows the matching pages as you type, and asks AI only when you choose Ask.
+- Rate an Ask AI answer with Helpful or Not helpful. The site's Analytics shows the vote next to the question.
+
+### Improved
+
+- Give a bucket one name for its site and its email: the bucket `acme-docs` gets the site `acme-docs.revdoku.site` and the address `acme-docs@revdokumail.com`, with no random characters.
+- Change a site's address, and the bucket's revdokumail.com address follows it. The earlier address keeps receiving, so replies to old emails still arrive.
+- Use your account's earlier names again: the name of a deleted bucket, an earlier site address or a removed alias. No other account can take them.
+- See your GitHub accounts first on a bucket's GitHub page, then the repositories, then Import and sync.
+- Refresh your GitHub accounts and their repositories with one Refresh button at the top right, next to Add GitHub account.
+- Connect each GitHub account that you own with its own Connect button, and choose its repositories on GitHub with Manage access.
+- Add a GitHub account in a new tab. When you come back, the page shows the new account and its repositories.
+- Choose a repository from a list with icons and a search field. The branch and the folder stay folded until you change them.
+- Start every GitHub connection from the repository. Revdoku no longer offers to copy a bucket into an empty repository.
+- Open a docs site's search from the icon in the header, with Cmd+K or Ctrl+K, or with /. Each result shows its section, page and group.
+- Read Ask AI answers as a chat, with code blocks, lists and links to the pages that they cite. Copy an answer or ask again, and keep the conversation while you move between pages.
+- Open a matching page while you type a question in Ask, or press Enter to ask.
+- Copy a docs page, or open it in an AI app, from one button next to the page title. Each menu item says what it does.
+- Switch a docs site's language from the menu next to the logo, and its theme from the top right of the header.
+- See the section that you read in On this page, the page's group above its title, and the method of each API endpoint page in the page list.
+- See exact counts of people's views, bot requests, AI agent requests and searches in a site's Analytics. A number stays the same when you reload the page, and the lists of pages, referrers, countries, bots and AI agents add up to it.
+- See today's visitors so far in a site's Analytics. Before, the number showed "—" until enough of the day was counted.
+- Open Buckets, Activity and Settings from the sidebar of Manage buckets and Account Settings. The bucket list says Bucket instead of Mailbox, and the date range of its totals sits next to the page title.
+- Read each bucket's name in the Grid view of Manage buckets: the email buttons now sit beside the email count. Logs, the account list of the bucket switcher, the Webhooks table and the API's "Bucket not found" error name buckets, not mailboxes.
+
+### Fixed
+
+- Receive email, chat messages and messages left on a docs site, and send replies, while the bucket's site publishes. Before, they could fail during a long publish.
+
+## 1.0.639 — 2026-11-09
+
+### Added
+
+- Ask readers "Was this page helpful?" at the end of every docs page. A reader who answers No can say what they were looking for, and Ask answers it.
+
+### Improved
+
+- Name notifications by what needs you: "Draft of reply awaiting approval" and "Needs a reply". A message left on a docs site arrives as "Question: …".
+- End emails sent from the Free plan with a shorter line: "Sent with Revdoku".
+- Pick the date range of a site's analytics from one dropdown.
+- See the totals of all your buckets at the top of the Buckets page.
+- Open a bucket's Logs, Notifications and Webhooks under Activity in the bucket's sidebar, and go back to its site, support or files from there.
+- Create a bucket from New bucket at the bottom of the sidebar.
+
 ## 1.0.638 — 2026-11-09
 
 ### Added

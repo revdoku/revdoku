@@ -48,6 +48,10 @@
     {
       "name": "Publications",
       "description": "A bucket's site: publish its files, preview them for 24 hours, or take the site down."
+    },
+    {
+      "name": "GitHub",
+      "description": "Connect a GitHub repository to a bucket: its files become a copy of one branch, and each push updates them."
     }
   ],
   "paths": {
@@ -1383,7 +1387,7 @@
                         "metadata": {},
                         "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
                         "mailbox": {
-                          "address": "acme-orders.k7m2@revdokumail.com",
+                          "address": "acme-orders@revdokumail.com",
                           "message_count": 1,
                           "unread_count": 1,
                           "last_received_at": "2026-10-11T12:05:00.000000Z",
@@ -1443,7 +1447,7 @@
           "Buckets"
         ],
         "summary": "Create a bucket",
-        "description": "Waits until the address can receive email. On revdokumail.com, mailbox.username is a prefix with a permanent 4-character random suffix on every plan; a custom domain takes the exact name. If confirmation does not finish, EMAIL_NOT_READY returns the created bucket_id in error.details: read that bucket instead of creating another. The title defaults to mailbox.username; a title that another active bucket uses returns 409 BUCKET_TITLE_TAKEN. Never retry a creation automatically.",
+        "description": "Waits until the address can receive email. On revdokumail.com, mailbox.username is the bucket's name, with no suffix: lowercase letters, digits and single hyphens, 3 to 63 characters, also the name of its site. A name that another bucket uses as an address or a site address, or that another account used, returns EMAIL_ALREADY_EXISTS; your account can use its own earlier names again. Without mailbox.username the address takes the title's name when it is free, else two readable words. A custom domain takes the exact name. If confirmation does not finish, EMAIL_NOT_READY returns the created bucket_id in error.details: read that bucket instead of creating another. The title defaults to mailbox.username; a title that another active bucket uses returns 409 BUCKET_TITLE_TAKEN. Never retry a creation automatically.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1506,7 +1510,7 @@
                       "metadata": {},
                       "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
                       "mailbox": {
-                        "address": "acme-orders.k7m2@revdokumail.com",
+                        "address": "acme-orders@revdokumail.com",
                         "message_count": 0,
                         "unread_count": 0,
                         "last_received_at": null,
@@ -1627,7 +1631,7 @@
                       "metadata": {},
                       "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
                       "mailbox": {
-                        "address": "acme-orders.k7m2@revdokumail.com",
+                        "address": "acme-orders@revdokumail.com",
                         "message_count": 1,
                         "unread_count": 1,
                         "last_received_at": "2026-10-11T12:05:00.000000Z",
@@ -1992,7 +1996,7 @@
           "Mailbox"
         ],
         "summary": "Change the primary address",
-        "description": "Requires bucket-admin permission and a paid plan, except for a change back to revdokumail.com. Send the current address as expected_address. Omit username for a generated name. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address. A change from revdokumail.com to a customer domain always keeps the old address as the revdokumail.com base address, which uses no alias slot. A change from a customer domain back to revdokumail.com makes that base address the main address again at once (200, assignment.status active): username is ignored, no address change is counted and it works on every plan.",
+        "description": "Requires bucket-admin permission and a paid plan, except for a change back to revdokumail.com. Send the current address as expected_address. Omit username for a generated name. On revdokumail.com the name follows the site address, so a username there returns 422 INVALID_ARGUMENT. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address. A change from revdokumail.com to a customer domain always keeps the old address as the revdokumail.com base address, which uses no alias slot. A change from a customer domain back to revdokumail.com makes that base address the main address again at once (200, assignment.status active): username is ignored, no address change is counted and it works on every plan.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BucketId"
@@ -2017,7 +2021,7 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64,
-                    "description": "New name before @. On revdokumail.com, a prefix with a new 4-character random suffix; on a custom domain, the exact name."
+                    "description": "New name before @ on a custom domain: the exact name. On revdokumail.com the name follows the site address, so a username returns INVALID_ARGUMENT."
                   },
                   "domain": {
                     "type": "string",
@@ -2118,7 +2122,7 @@
                 "properties": {
                   "username": {
                     "type": "string",
-                    "description": "Alias name before @. On revdokumail.com, a prefix with a 4-character random suffix; on a custom domain, the exact name."
+                    "description": "Alias name before @. On revdokumail.com, a bucket name with no suffix: lowercase letters, digits and single hyphens, 3 to 63 characters, free as an address and as a site address. On a custom domain, the exact name."
                   },
                   "domain": {
                     "type": "string"
@@ -2765,7 +2769,7 @@
                       "subject": "Re: Invoice INV-1042",
                       "from_addresses": [
                         {
-                          "address": "acme-orders.k7m2@revdokumail.com",
+                          "address": "acme-orders@revdokumail.com",
                           "name": "acme-orders"
                         }
                       ],
@@ -2785,7 +2789,7 @@
                         "inv-1042@example.com",
                         "5f0c2e7a-3b1d-4c8e-9a6f-2d4b7e1c9a30@revdokumail.com"
                       ],
-                      "delivered_to": "acme-orders.k7m2@revdokumail.com",
+                      "delivered_to": "acme-orders@revdokumail.com",
                       "received_at": "2026-10-11T12:15:00.000000Z",
                       "body_status": "complete",
                       "attachment_count": 0,
@@ -2891,7 +2895,7 @@
                       ],
                       "to_addresses": [
                         {
-                          "address": "acme-orders.k7m2@revdokumail.com",
+                          "address": "acme-orders@revdokumail.com",
                           "name": null
                         }
                       ],
@@ -2900,7 +2904,7 @@
                       "message_id": "inv-1042@example.com",
                       "in_reply_to": [],
                       "references": [],
-                      "delivered_to": "acme-orders.k7m2@revdokumail.com",
+                      "delivered_to": "acme-orders@revdokumail.com",
                       "received_at": "2026-10-11T12:05:00.000000Z",
                       "body_status": "complete",
                       "attachment_count": 1,
@@ -3041,7 +3045,7 @@
                       ],
                       "to_addresses": [
                         {
-                          "address": "acme-orders.k7m2@revdokumail.com",
+                          "address": "acme-orders@revdokumail.com",
                           "name": null
                         }
                       ],
@@ -3050,7 +3054,7 @@
                       "message_id": "inv-1042@example.com",
                       "in_reply_to": [],
                       "references": [],
-                      "delivered_to": "acme-orders.k7m2@revdokumail.com",
+                      "delivered_to": "acme-orders@revdokumail.com",
                       "received_at": "2026-10-11T12:05:00.000000Z",
                       "body_status": "complete",
                       "attachment_count": 1,
@@ -5100,6 +5104,565 @@
           }
         }
       }
+    },
+    "/v1/account/github_installations": {
+      "get": {
+        "operationId": "listGithubInstallations",
+        "tags": [
+          "GitHub"
+        ],
+        "summary": "List connected GitHub accounts",
+        "description": "Returns the GitHub accounts and organizations where a person installed the Revdoku GitHub App for this account. Each one reads the repositories that its owner chose on GitHub. Needs an account owner or administrator key with admin access to all buckets. To add a GitHub account, get the links with getGithubSetupLink.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Connected GitHub accounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "installations",
+                        "pagination"
+                      ],
+                      "properties": {
+                        "installations": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/GithubInstallation"
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/Pagination"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "installations": [
+                      {
+                        "installation_id": 51234567,
+                        "github_account_login": "acme",
+                        "github_account_type": "Organization",
+                        "settings_url": "https://github.com/organizations/acme/settings/installations/51234567",
+                        "repository_selection": "selected"
+                      }
+                    ],
+                    "pagination": {
+                      "limit": 50,
+                      "has_more": false,
+                      "next_cursor": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/account/github_installations/{installation_id}/repositories": {
+      "get": {
+        "operationId": "listGithubRepositories",
+        "tags": [
+          "GitHub"
+        ],
+        "summary": "List the repositories of a GitHub account",
+        "description": "Returns the repositories that one connected GitHub account lets Revdoku read, A-Z by full name. A repository that is not listed needs access on GitHub: give the account's settings_url to its owner. Needs an account owner or administrator key with admin access to all buckets.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InstallationId"
+          },
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/Limit"
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repositories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "repositories",
+                        "pagination"
+                      ],
+                      "properties": {
+                        "repositories": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/GithubRepository"
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/Pagination"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/buckets/{bucket_id}/github_sync": {
+      "get": {
+        "operationId": "getGithubSync",
+        "tags": [
+          "GitHub"
+        ],
+        "summary": "Read the GitHub repository of a bucket",
+        "description": "Returns the bucket's GitHub repository and its sync state. github_sync is null when the bucket never had one. After connectGithubRepository, read it until last_synced_at is set (the first copy is done) or sync_state is error.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          },
+          {
+            "$ref": "#/components/parameters/AccountId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The GitHub repository of the bucket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "github_sync"
+                      ],
+                      "properties": {
+                        "github_sync": {
+                          "anyOf": [
+                            {
+                              "$ref": "#/components/schemas/GithubSync"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "github_sync": {
+                      "id": "bgh_8xQ2kL4mN7pR",
+                      "bucket_id": "bkt_5Gh3Lm9Qx2Tz",
+                      "installation_id": 51234567,
+                      "repo_owner": "acme",
+                      "repo_name": "docs",
+                      "repo_full_name": "acme/docs",
+                      "repository_url": "https://github.com/acme/docs",
+                      "branch": "main",
+                      "repo_path": null,
+                      "sync_state": "idle",
+                      "last_error": null,
+                      "next_retry_at": null,
+                      "last_synced_at": "2026-11-09T10:15:00Z",
+                      "last_synced_commit_sha": "4f1c2e9a7b3d5f6081a2c3d4e5f60718293a4b5c",
+                      "last_synced_commit_message": "Add the quickstart page",
+                      "auto_publish": true,
+                      "push_revdoku_edits": false,
+                      "auto_commit": false,
+                      "pending_count": 0,
+                      "pending_changes": [],
+                      "pull_request": null,
+                      "skipped_files": [],
+                      "auto_publish_error": null,
+                      "dashboard_url": "https://app.revdoku.com/buckets/view?account_id=acct_3Fh8Qm2Lx9Tw&id=bkt_5Gh3Lm9Qx2Tz&site=github&view=site",
+                      "created_at": "2026-11-09T10:14:20Z",
+                      "updated_at": "2026-11-09T10:15:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "connectGithubRepository",
+        "tags": [
+          "GitHub"
+        ],
+        "summary": "Connect a GitHub repository",
+        "description": "Makes the bucket's files a copy of one branch of a repository, or of one folder of it. The first sync copies the files, and each later push to the branch updates them. The bucket must have no files of its own; its email and agent folders may stay. GitHub stays the source: Revdoku never copies a bucket into a repository. Needs an account owner or administrator key with admin access to all buckets. A connected GitHub account must read the repository: 403 GITHUB_APP_NOT_INSTALLED gives the links for the person in error.details.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "github_sync": {
+                    "$ref": "#/components/schemas/GithubConnect"
+                  },
+                  "account_id": {
+                    "type": "string",
+                    "description": "Select another granted account for this request."
+                  },
+                  "reason": {
+                    "$ref": "#/components/schemas/ActionReason"
+                  }
+                },
+                "required": [
+                  "github_sync"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Connected. The first sync is queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "github_sync"
+                      ],
+                      "properties": {
+                        "github_sync": {
+                          "$ref": "#/components/schemas/GithubSync"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateGithubSync",
+        "tags": [
+          "GitHub"
+        ],
+        "summary": "Change GitHub sync settings",
+        "description": "Sets auto_publish and the mode of edits made in Revdoku: push_revdoku_edits false makes the files a read-only copy, auto_commit true commits edits to the branch at each sync, and auto_commit false keeps them in pending_changes until a person publishes them in the dashboard. Needs an account owner or administrator key with admin access to all buckets.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "github_sync": {
+                    "$ref": "#/components/schemas/GithubSyncSettings"
+                  },
+                  "account_id": {
+                    "type": "string",
+                    "description": "Select another granted account for this request."
+                  },
+                  "reason": {
+                    "$ref": "#/components/schemas/ActionReason"
+                  }
+                },
+                "required": [
+                  "github_sync"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The changed settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "github_sync"
+                      ],
+                      "properties": {
+                        "github_sync": {
+                          "$ref": "#/components/schemas/GithubSync"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "disconnectGithubRepository",
+        "tags": [
+          "GitHub"
+        ],
+        "summary": "Disconnect the GitHub repository",
+        "description": "Stops the sync. The bucket keeps its files and its site. A later read shows the link with sync_state disconnected; connect the same repository again to continue its copy. Needs an account owner or administrator key with admin access to all buckets.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          },
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/Reason"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Disconnected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DeleteResult"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/buckets/{bucket_id}/github_sync/sync": {
+      "post": {
+        "operationId": "syncGithubRepository",
+        "tags": [
+          "GitHub"
+        ],
+        "summary": "Sync the GitHub repository now",
+        "description": "Copies new commits of the branch now and tries a failed sync again. Pushes sync without this call; use it after an error, or after a person changed access on GitHub. enqueued is false when a sync already runs. Needs an account owner or administrator key with admin access to all buckets.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Sync queued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "github_sync",
+                        "enqueued"
+                      ],
+                      "properties": {
+                        "github_sync": {
+                          "$ref": "#/components/schemas/GithubSync"
+                        },
+                        "enqueued": {
+                          "type": "boolean",
+                          "description": "False when a sync already runs."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/buckets/{bucket_id}/github_sync/setup_link": {
+      "get": {
+        "operationId": "getGithubSetupLink",
+        "tags": [
+          "GitHub"
+        ],
+        "summary": "Get the links to add a GitHub account",
+        "description": "Returns the links that a person opens to add a GitHub account or organization to this Revdoku account. Only the person who owns this key or AI connection can finish the step, signed in to Revdoku, within 30 minutes. Give install_url to install the Revdoku GitHub App; on GitHub the person chooses the account and the repositories. Give authorization_url when the App is already installed on that GitHub account; the person then selects Connect on the bucket's GitHub page. Then list the connected GitHub accounts until the new one shows. Needs an account owner or administrator key with admin access to all buckets.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          },
+          {
+            "$ref": "#/components/parameters/AccountId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Links for the person",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "setup_link"
+                      ],
+                      "properties": {
+                        "setup_link": {
+                          "$ref": "#/components/schemas/GithubSetupLink"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5328,6 +5891,17 @@
           "FILE_VERSION_ENCRYPTION_MISMATCH",
           "FILE_VERSION_NOT_RESTORABLE",
           "FORBIDDEN",
+          "GITHUB_APP_NOT_INSTALLED",
+          "GITHUB_INSTALLATION_NOT_FOUND",
+          "GITHUB_SYNC_BRANCH_UNAVAILABLE",
+          "GITHUB_SYNC_BUCKET_NOT_EMPTY",
+          "GITHUB_SYNC_DISABLED",
+          "GITHUB_SYNC_ENCRYPTED_ACCOUNT",
+          "GITHUB_SYNC_NOT_CONNECTED",
+          "GITHUB_SYNC_REPO_TAKEN",
+          "GITHUB_SYNC_REPO_UNAVAILABLE",
+          "GITHUB_SYNC_UNAVAILABLE",
+          "GITHUB_UNAVAILABLE",
           "INSUFFICIENT_CREDITS",
           "INTERNAL_ERROR",
           "INVALID_ARGUMENT",
@@ -6227,7 +6801,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 64,
-            "description": "On revdokumail.com, every plan: a prefix that keeps letters, digits, dots, hyphens and underscores (other characters become dots), shortened to 59 characters, with a permanent 4-character random lowercase letter/digit suffix added. On a custom domain: the exact name before @, normalized to lowercase. Omit to generate; blank/null is invalid. Unavailable names return EMAIL_ALREADY_EXISTS."
+            "description": "On revdokumail.com, every plan: the bucket's name, with no suffix and the same name as its site. Dots and underscores become hyphens; it needs 3 to 63 lowercase letters, digits and single hyphens (fewer than 3 returns EMAIL_NAME_INVALID). On a custom domain: the exact name before @, normalized to lowercase. Omit to use the title's name or two readable words; blank/null is invalid. Unavailable names return EMAIL_ALREADY_EXISTS."
           },
           "domain": {
             "type": "string",
@@ -6242,7 +6816,7 @@
           "title": {
             "type": "string",
             "maxLength": 255,
-            "description": "Optional title. Defaults to mailbox.username as given, or to the generated name without its random suffix. A title that another active bucket uses returns 409 BUCKET_TITLE_TAKEN."
+            "description": "Optional title. Defaults to mailbox.username as given, or to the generated name. A title that another active bucket uses returns 409 BUCKET_TITLE_TAKEN."
           },
           "description": {
             "type": "string",
@@ -6799,7 +7373,7 @@
           "in_reply_to": {
             "type": "string",
             "pattern": "^eml_",
-            "description": "Received email ID to reply to. Sets the reply headers and subject, and links the reply to the conversation."
+            "description": "Received email ID to reply to. Sets the reply headers and subject, and links the reply to the conversation. A reply in a support conversation ends its subject with the request number, such as [#3]."
           },
           "attachment_ids": {
             "type": "array",
@@ -8678,6 +9252,442 @@
             "description": "Why you publish, for the activity log."
           }
         }
+      },
+      "GithubSyncError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message"
+        ],
+        "description": "Why a sync or a publish after a sync failed: a stable code and one readable sentence.",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "For example REMOTE_BRANCH_GONE, GITHUB_REPO_ACCESS_REMOVED, GITHUB_APP_UNINSTALLED or GITHUB_SYNC_FAILED."
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "GithubSync": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "The GitHub repository of a bucket. The bucket's files are a copy of one branch, or of one folder of it.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Link ID."
+          },
+          "bucket_id": {
+            "type": "string"
+          },
+          "installation_id": {
+            "type": "integer",
+            "description": "The connected GitHub account (Revdoku GitHub App installation) that reads the repository."
+          },
+          "repo_owner": {
+            "type": "string",
+            "description": "The GitHub account or organization that owns the repository."
+          },
+          "repo_name": {
+            "type": "string"
+          },
+          "repo_full_name": {
+            "type": "string",
+            "description": "owner/name."
+          },
+          "repository_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "branch": {
+            "type": "string"
+          },
+          "repo_path": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The repository folder that is the bucket root. Null: the whole repository."
+          },
+          "sync_state": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "syncing",
+              "waiting_locked",
+              "error",
+              "disconnected"
+            ],
+            "description": "idle: nothing runs. syncing: a sync runs. waiting_locked: the bucket is locked and the sync tries again later. error: see last_error and next_retry_at. disconnected: the repository is no longer connected."
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GithubSyncError"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why the last sync failed or waits, or why GitHub disconnected the repository."
+          },
+          "next_retry_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When a failed sync tries again. Null after the last try: sync again after the cause is fixed."
+          },
+          "last_synced_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the last sync finished. Null until the first copy is done."
+          },
+          "last_synced_commit_sha": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The commit of the branch that the files show."
+          },
+          "last_synced_commit_message": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "auto_publish": {
+            "type": "boolean",
+            "description": "The site publishes again after each sync. The first publish is publishBucket."
+          },
+          "push_revdoku_edits": {
+            "type": "boolean",
+            "description": "Edits made in Revdoku can go to GitHub. False: the files are a read-only copy of the repository."
+          },
+          "auto_commit": {
+            "type": "boolean",
+            "description": "Each sync commits the edits made in Revdoku to the branch. False: they wait in pending_changes until a person publishes them in the dashboard."
+          },
+          "pending_count": {
+            "type": "integer",
+            "description": "Edits made in Revdoku that are not on the branch."
+          },
+          "pending_changes": {
+            "type": "array",
+            "description": "The first 200 of these edits.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "status"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "description": "For example added, modified or deleted."
+                }
+              }
+            }
+          },
+          "pull_request": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "number",
+                  "branch",
+                  "url"
+                ],
+                "description": "Revdoku's open pull request with edits made in Revdoku.",
+                "properties": {
+                  "number": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "Null until GitHub accepted the pull request."
+                  },
+                  "branch": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "uri"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "skipped_files": {
+            "type": "array",
+            "description": "Repository files that the last sync left out, for example files that are too large or stored in Git LFS.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "code",
+                "reason"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "reason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "auto_publish_error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GithubSyncError"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Why the site was not published again after the last sync."
+          },
+          "dashboard_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The bucket's GitHub page in the dashboard. It grants no access."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "bucket_id",
+          "installation_id",
+          "repo_owner",
+          "repo_name",
+          "repo_full_name",
+          "repository_url",
+          "branch",
+          "repo_path",
+          "sync_state",
+          "last_error",
+          "next_retry_at",
+          "last_synced_at",
+          "last_synced_commit_sha",
+          "last_synced_commit_message",
+          "auto_publish",
+          "push_revdoku_edits",
+          "auto_commit",
+          "pending_count",
+          "pending_changes",
+          "pull_request",
+          "skipped_files",
+          "auto_publish_error",
+          "dashboard_url",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "GithubInstallation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "installation_id",
+          "settings_url"
+        ],
+        "description": "A GitHub account or organization where a person installed the Revdoku GitHub App for this account.",
+        "properties": {
+          "installation_id": {
+            "type": "integer",
+            "description": "Pass it to listGithubRepositories, and optionally to connectGithubRepository."
+          },
+          "github_account_login": {
+            "type": "string"
+          },
+          "github_account_type": {
+            "type": "string",
+            "description": "User or Organization."
+          },
+          "settings_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "The installation's page on GitHub, where its owner chooses the repositories that Revdoku can read."
+          },
+          "repository_selection": {
+            "type": "string",
+            "enum": [
+              "all",
+              "selected"
+            ],
+            "description": "all: every repository of the account. selected: only the repositories that its owner chose."
+          }
+        }
+      },
+      "GithubRepository": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "owner",
+          "name",
+          "full_name",
+          "default_branch",
+          "private",
+          "archived"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "GitHub repository ID."
+          },
+          "owner": {
+            "type": "string",
+            "description": "Pass as repo_owner to connectGithubRepository."
+          },
+          "name": {
+            "type": "string",
+            "description": "Pass as repo_name."
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "default_branch": {
+            "type": "string"
+          },
+          "private": {
+            "type": "boolean"
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "html_url": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "GithubSetupLink": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "install_url",
+          "authorization_url",
+          "expires_at",
+          "dashboard_url"
+        ],
+        "description": "Links for a person's step on GitHub. Only the person who owns this key or AI connection can finish it, signed in to Revdoku. Never ask for GitHub passwords or tokens.",
+        "properties": {
+          "install_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Installs the Revdoku GitHub App on a GitHub account or organization and connects it. On GitHub the person chooses the repositories."
+          },
+          "authorization_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "For a GitHub account where the App is already installed. After it, the person selects Connect on the bucket's GitHub page."
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The links work for 30 minutes."
+          },
+          "dashboard_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The bucket's GitHub page in the dashboard. The person sees the result there, and another owner or administrator can add the GitHub account there."
+          }
+        }
+      },
+      "GithubConnect": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "repo_owner",
+          "repo_name"
+        ],
+        "properties": {
+          "repo_owner": {
+            "type": "string",
+            "description": "The GitHub account or organization that owns the repository."
+          },
+          "repo_name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "branch": {
+            "type": "string",
+            "description": "The branch to copy. Default: the repository's default branch."
+          },
+          "repo_path": {
+            "type": "string",
+            "description": "One folder of the repository as the bucket root, such as docs. Default: the whole repository."
+          },
+          "installation_id": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "The connected GitHub account that reads the repository. Default: the connected account of repo_owner."
+          },
+          "push_revdoku_edits": {
+            "type": "boolean",
+            "description": "False makes the files a read-only copy of the repository. Default: true."
+          }
+        }
+      },
+      "GithubSyncSettings": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "auto_publish": {
+            "type": "boolean",
+            "description": "Publish the site again after each sync."
+          },
+          "push_revdoku_edits": {
+            "type": "boolean",
+            "description": "False makes the files a read-only copy of the repository."
+          },
+          "auto_commit": {
+            "type": "boolean",
+            "description": "True commits the edits made in Revdoku to the branch at each sync. False keeps them for a person to publish in the dashboard."
+          }
+        }
       }
     },
     "parameters": {
@@ -8797,6 +9807,16 @@
           "default": false
         },
         "description": "Include backing file IDs for file-browser integrations."
+      },
+      "InstallationId": {
+        "name": "installation_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "description": "installation_id of a connected GitHub account."
       }
     },
     "responses": {

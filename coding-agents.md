@@ -42,8 +42,9 @@ agents read these files before they change code.
 - Keep the API key on the backend in `REVDOKU_API_KEY`. Never ask for it in chat, log it or send it to a browser.
 - Publish a site with `client.api.publishBucket` (`client.api.publish_bucket`). The build runs in the background: read the site with `client.api.getPublication` (`client.api.get_publication`) every few seconds, with a deadline, until `publish_state` is `ready` or `failed`. `publish_error` says why a build failed.
 - `getPublication` (`get_publication`) answers `404 PUBLICATION_NOT_FOUND` when the bucket has no site yet.
-- On Free, sites publish from a connected GitHub repository. A publish of uploaded files answers `403 PUBLICATION_UPGRADE_REQUIRED` with `details.github_required: true`. Do not retry it. Tell me to connect the repository in the dashboard, or to upgrade with `details.upgrade_url`.
+- On Free, sites publish from a connected GitHub repository. A publish of uploaded files answers `403 PUBLICATION_UPGRADE_REQUIRED` with `details.github_required: true`. Do not retry it. Connect the repository first, or tell me to upgrade with `details.upgrade_url`.
 - With a GitHub link, the site shows the connected branch. Changes reach the site after they are on the branch.
+- Connect a repository with `client.api.connectGithubRepository` (`connect_github_repository`) to a bucket without files, then read `getGithubSync` (`get_github_sync`) until `last_synced_at` is set before the first publish. On `403 GITHUB_APP_NOT_INSTALLED`, give me `error.details.install_url`: I install the Revdoku GitHub App on GitHub. Never ask for GitHub passwords or tokens.
 - Never retry `createBucket` (`create_bucket`), `publishBucket` (`publish_bucket`) or `sendEmail` (`send_email`) automatically after a timeout or an unknown result. List buckets, read the site, or list emails with `direction=sent`, first.
 - Poll `listEmails` (`list_emails`) with `order=asc` and the saved `pagination.next_cursor`. Save it after every page, also after an empty page.
 - Keep the filters the same for each cursor. Deduplicate by email `id`.

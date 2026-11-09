@@ -47,7 +47,7 @@ try {
         const pending = mailbox;
         const matches = result.data.buckets.filter((candidate) => {
             const [username, domain] = (candidate.mailbox?.address || '').split('@');
-            // revdokumail.com adds a random suffix to the address; the default title keeps the username as sent.
+            // On revdokumail.com the address name is the username; the default title keeps the username as sent.
             return (username === pending.username || candidate.title === pending.username) && (!pending.domain || domain === pending.domain);
         });
         if (matches.length !== 1 || !/^bkt_[A-Za-z0-9]+$/.test(matches[0].id))

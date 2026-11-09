@@ -124,3 +124,18 @@ A bucket's site: publish its files, preview them for 24 hours, or take the site 
 | [Unpublish the site](https://revdoku.com/api/reference/publications.md#unpublish-the-site) | `DELETE /v1/buckets/{bucket_id}/publication` | `client.api.unpublishBucket` | `client.api.unpublish_bucket` |
 | [Get the preview](https://revdoku.com/api/reference/publications.md#get-the-preview) | `GET /v1/buckets/{bucket_id}/publication/preview` | `client.api.getPublicationPreview` | `client.api.get_publication_preview` |
 | [Preview the site](https://revdoku.com/api/reference/publications.md#preview-the-site) | `POST /v1/buckets/{bucket_id}/publication/preview` | `client.api.previewBucket` | `client.api.preview_bucket` |
+
+## [GitHub](https://revdoku.com/api/reference/github.md)
+
+Connect a GitHub repository to a bucket: its files become a copy of one branch, and each push updates them.
+
+| Operation | HTTP | TypeScript | Python |
+| --- | --- | --- | --- |
+| [List connected GitHub accounts](https://revdoku.com/api/reference/github.md#list-connected-github-accounts) | `GET /v1/account/github_installations` | `client.api.listGithubInstallations` | `client.api.list_github_installations` |
+| [List the repositories of a GitHub account](https://revdoku.com/api/reference/github.md#list-the-repositories-of-a-github-account) | `GET /v1/account/github_installations/{installation_id}/repositories` | `client.api.listGithubRepositories` | `client.api.list_github_repositories` |
+| [Read the GitHub repository of a bucket](https://revdoku.com/api/reference/github.md#read-the-github-repository-of-a-bucket) | `GET /v1/buckets/{bucket_id}/github_sync` | `client.api.getGithubSync` | `client.api.get_github_sync` |
+| [Connect a GitHub repository](https://revdoku.com/api/reference/github.md#connect-a-github-repository) | `POST /v1/buckets/{bucket_id}/github_sync` | `client.api.connectGithubRepository` | `client.api.connect_github_repository` |
+| [Change GitHub sync settings](https://revdoku.com/api/reference/github.md#change-github-sync-settings) | `PATCH /v1/buckets/{bucket_id}/github_sync` | `client.api.updateGithubSync` | `client.api.update_github_sync` |
+| [Disconnect the GitHub repository](https://revdoku.com/api/reference/github.md#disconnect-the-github-repository) | `DELETE /v1/buckets/{bucket_id}/github_sync` | `client.api.disconnectGithubRepository` | `client.api.disconnect_github_repository` |
+| [Sync the GitHub repository now](https://revdoku.com/api/reference/github.md#sync-the-github-repository-now) | `POST /v1/buckets/{bucket_id}/github_sync/sync` | `client.api.syncGithubRepository` | `client.api.sync_github_repository` |
+| [Get the links to add a GitHub account](https://revdoku.com/api/reference/github.md#get-the-links-to-add-a-github-account) | `GET /v1/buckets/{bucket_id}/github_sync/setup_link` | `client.api.getGithubSetupLink` | `client.api.get_github_setup_link` |
