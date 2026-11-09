@@ -1,5 +1,17 @@
 # Revdoku Changelog
 
+## 1.0.637 — 2026-11-09
+
+### Improved
+
+- Open the Markdown of any docs page by replacing the last slash of its URL with `.md`, for example `/guides/setup.md`. It always shows the page as the site shows it, with its title.
+- See AI agents and bots first in a site's analytics, then people, with one chart of all three per day.
+- Simplify Analytics: Logs list every action, and the Timeline view is gone.
+
+### Fixed
+
+- Open a site's analytics from "View analytics" in the weekly report and in notifications. These links opened the account's activity instead.
+
 ## 1.0.636 — 2026-11-09
 
 ### Improved
