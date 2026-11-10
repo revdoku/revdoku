@@ -18,7 +18,7 @@ CLIENT_VERSION_FILE="${REVDOKU_CLIENT_VERSION_FILE:-${REVDOKU_CONFIG_DIR}/client
 UPDATE_CHECK_STAMP="${REVDOKU_CONFIG_DIR}/.update_check"
 
 installed_client_version() {
-  printf '%s' '1.0.574'
+  printf '%s' '1.0.575'
 }
 
 BASE_URL="${REVDOKU_URL:-$DEFAULT_URL}"
@@ -84,8 +84,6 @@ EMAIL_CONVERSATION=""
 EMAIL_READ=""
 EMAIL_DIRECTION=""
 # Newline-separated lists; Bash 3 rejects empty arrays under set -u.
-EMAIL_TO=""
-EMAIL_CC=""
 EMAIL_ATTACHMENTS=""
 EMAIL_ADD_LABELS=""
 EMAIL_REMOVE_LABELS=""
@@ -228,7 +226,8 @@ Usage: revdoku <command> [PATH] [options]
   email-status ID       Set read status (--read true|false) or labels (--add-label NAME).
   email-download ID     Download original EML or --attachment-id ID.
   email-delete ID       Delete an email and attachments; confirm with --confirm-delete ID.
-  email-send            Send from this mailbox to allowed recipients. Does not retry.
+  email-send            Reply to a received email; it goes to the sender. Does not retry.
+                        Uses credits; see https://app.revdoku.com/pricing.json.
   webhook               Show the mailbox webhook endpoint.
   webhook-set           Set --webhook-url HTTPS_URL; optionally --rotate-secret.
   webhook-delete        Disable the webhook; requires --confirm-delete BUCKET_ID.
@@ -242,7 +241,9 @@ Usage: revdoku <command> [PATH] [options]
   publish               Publish the bucket's files as its site, where the account can publish.
                         Optional --access-mode public|password|require_email and
                         --password-file FILE (- reads stdin). Does not retry.
+                        Uses credits; see https://app.revdoku.com/pricing.json.
   preview               Make a 24-hour preview with the same options.
+                        Uses credits; see https://app.revdoku.com/pricing.json.
   site                  Show the site: URL, build state and access; --preview for the preview.
   unpublish             Take the site down.
   github                Show the GitHub repository whose branch is the bucket's files.
@@ -275,12 +276,9 @@ Options:
   --sender ADDRESS     --subject TEXT  Email filters.
   --direction received|sent|all        Email direction filter (default received).
   --conversation-id ID                 Filter an email conversation.
-  --in-reply-to EMAIL_ID               email-send: reply to a received email.
-                                       Sets the default recipient and subject.
-  --to ADDRESS   --cc ADDRESS          email-send recipients; repeat (10 maximum).
-                                       Recipients must be addresses that emailed this
-                                       mailbox and passed sender authentication.
-  --subject TEXT                       email-send subject (optional for replies).
+  --in-reply-to EMAIL_ID               email-send: the received email to reply to (required).
+                                       The reply goes to its authenticated sender.
+  --subject TEXT                       email-send subject (default: Re: and the original).
   --text TEXT | --text-file PATH       email-send plain-text body (- reads stdin).
   --html-file PATH     --attach FILE_ID   Optional HTML body; attach bucket files.
   --read true|false                    Email filter or desired read status.
@@ -413,17 +411,15 @@ while [[ $# -gt 0 ]]; do
       esac
       shift 2
       ;;
-    --to|--cc|--attach|--in-reply-to|--direction|--text|--text-file|--html-file|--add-label|--remove-label)
+    --attach|--in-reply-to|--direction|--text|--text-file|--html-file|--add-label|--remove-label)
       [[ $# -ge 2 && -n "$2" ]] || die "$1 requires a value"
       case "$1" in
-        --to|--cc|--attach|--in-reply-to|--direction|--add-label|--remove-label)
+        --attach|--in-reply-to|--direction|--add-label|--remove-label)
           [[ "$2" != *$'\n'* ]] || die "$1 requires a single value" ;;
       esac
       case "$1" in
-        --to) EMAIL_TO+="$2"$'\n' ;;
         --add-label) EMAIL_ADD_LABELS+="$2"$'\n' ;;
         --remove-label) EMAIL_REMOVE_LABELS+="$2"$'\n' ;;
-        --cc) EMAIL_CC+="$2"$'\n' ;;
         --attach) [[ "$2" =~ ^df_[A-Za-z0-9]+$ ]] || die "--attach requires a bucket file id"; EMAIL_ATTACHMENTS+="$2"$'\n' ;;
         --in-reply-to) [[ "$2" =~ ^eml_[A-Za-z0-9]+$ ]] || die "--in-reply-to requires an email id"; EMAIL_IN_REPLY_TO="$2" ;;
         --direction) [[ "$2" =~ ^(received|sent|all)$ ]] || die "--direction must be received, sent or all"; EMAIL_DIRECTION="$2" ;;
@@ -611,8 +607,8 @@ fi
 if [[ ( -n "$WEBHOOK_URL" || "$ROTATE_SECRET" == "true" ) && "$ACTION" != "webhook-set" ]]; then
   die "--webhook-url and --rotate-secret require webhook-set"
 fi
-if [[ -n "$EMAIL_TO$EMAIL_CC$EMAIL_ATTACHMENTS$EMAIL_IN_REPLY_TO$EMAIL_TEXT$EMAIL_TEXT_FILE$EMAIL_HTML_FILE" && "$ACTION" != "email-send" ]]; then
-  die "--to, --cc, --attach, --in-reply-to, --text, --text-file and --html-file require email-send"
+if [[ -n "$EMAIL_ATTACHMENTS$EMAIL_IN_REPLY_TO$EMAIL_TEXT$EMAIL_TEXT_FILE$EMAIL_HTML_FILE" && "$ACTION" != "email-send" ]]; then
+  die "--attach, --in-reply-to, --text, --text-file and --html-file require email-send"
 fi
 [[ -z "$EMAIL_DIRECTION" || "$ACTION" == "list_emails" ]] || die "--direction requires emails"
 [[ -z "$EMAIL_ADD_LABELS$EMAIL_REMOVE_LABELS" || "$ACTION" == "email-status" ]] || die "--add-label and --remove-label require email-status"
@@ -1527,9 +1523,10 @@ email_command() {
   esac
 }
 
-# The server checks recipients, limits and permissions.
+# Revdoku sends only replies: the server sends to the sender of --in-reply-to and checks limits and permissions.
 send_email() {
   local path="$1" text_file html_file payload
+  [[ -n "$EMAIL_IN_REPLY_TO" ]] || die "email-send requires --in-reply-to EMAIL_ID: Revdoku sends only replies"
   [[ -n "$EMAIL_TEXT" || -n "$EMAIL_TEXT_FILE" ]] || die "email-send requires --text TEXT or --text-file PATH"
   [[ -z "$EMAIL_TEXT" || -z "$EMAIL_TEXT_FILE" ]] || die "Use --text or --text-file, not both"
   [[ -z "$EMAIL_TEXT_FILE" || "$EMAIL_TEXT_FILE" == "-" || -f "$EMAIL_TEXT_FILE" ]] || die "--text-file does not exist: $EMAIL_TEXT_FILE"
@@ -1547,11 +1544,10 @@ send_email() {
   fi
   [[ -z "$EMAIL_HTML_FILE" ]] || cat "$EMAIL_HTML_FILE" > "$html_file"
   payload="$("$JQ_BIN" -nc --rawfile text "$text_file" --rawfile html "$html_file" \
-    --arg to "$EMAIL_TO" --arg cc "$EMAIL_CC" --arg attachments "$EMAIL_ATTACHMENTS" \
-    --arg subject "$EMAIL_SUBJECT" --arg in_reply_to "$EMAIL_IN_REPLY_TO" '
+    --arg attachments "$EMAIL_ATTACHMENTS" --arg subject "$EMAIL_SUBJECT" --arg in_reply_to "$EMAIL_IN_REPLY_TO" '
     def list: split("\n") | map(select(. != ""));
-    {to: ($to | list), cc: ($cc | list), subject: $subject, text: $text, html: (if $html == "" then null else $html end),
-      in_reply_to: $in_reply_to, attachment_ids: ($attachments | list)}
+    {in_reply_to: $in_reply_to, subject: $subject, text: $text, html: (if $html == "" then null else $html end),
+      attachment_ids: ($attachments | list)}
     | with_entries(select(.value != null and .value != "" and .value != []))')" || payload=""
   rm -f "$text_file" "$html_file"
   [[ -n "$payload" ]] || die "Could not read the email body"
@@ -1668,7 +1664,7 @@ delete_bucket() {
         ($b.version_number | type == "number") and ($b.files_count | type == "number")) | not
     then error("Incomplete bucket deletion state; update the client or review in the dashboard") else
     {origin:$origin, account:($account | {id,name}),
-     bucket:($b | {id, mailbox:{address:.mailbox.address}, account_id, archived, archived_at, metadata_version,
+     bucket:($b | {id, email:{address:.email.address}, account_id, archived, archived_at, metadata_version,
        version_id, version_number, files_count, storage_bytes, delete, dashboard_url})}
     end')" || return 1
   "$JQ_BIN" -e --arg account "$ACCOUNT_ID" --arg bucket "$BUCKET_ID" '

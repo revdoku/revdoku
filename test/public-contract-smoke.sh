@@ -95,7 +95,7 @@ require_text "$API_FILE" '| GET | `/v1/buckets/{bucket_id}/files/{file_id}/versi
 require_text "$API_FILE" 'https://api.revdoku.com/v1'
 require_text "$API_FILE" 'POST /v1/buckets'
 require_text "$API_FILE" '201 Created'
-require_text "$API_FILE" '| POST | `/v1/buckets/{bucket_id}/github_sync` |'
+require_text "$API_FILE" '| POST | `/v1/buckets/{bucket_id}/github` |'
 require_text "$API_FILE" '`account.restriction`'
 for guidance in "$README_FILE" "$SKILL_FILE" "$API_FILE" "$SOURCE_CLIENT_DIR/docs.md" "$SOURCE_CLIENT_DIR/mcp.md" "$LLMS_INSTALL_FILE" "$CHANGELOG_FILE"; do
   reject_text "$guidance" 'mailbox_publish'

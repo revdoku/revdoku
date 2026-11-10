@@ -96,18 +96,19 @@ the user's authorized service and current attempt; never expose or retain codes.
 
 ## Send email
 
-Send only when the user asks. Recipients must be account members, other
-mailboxes of the account, or addresses that emailed this mailbox and passed
-sender authentication. When the account cannot reply to senders, the send returns
-`EMAIL_REPLY_UPGRADE_REQUIRED`; relay its `upgrade_url` to the user. Use at most 10 recipients; Bcc is unavailable. On
+Send only when the user asks. Revdoku sends only replies: each email answers a
+received email of the bucket and goes to its sender, when that sender passed
+sender authentication. There is no `to` or `cc`. When the account cannot reply to senders, the send returns
+`EMAIL_REPLY_UPGRADE_REQUIRED`; relay its `upgrade_url` to the user. On
 `EMAIL_LOOP_DETECTED`, stop automatic replies to that address. Send only when the bucket's `mailbox.sending_enabled` is true.
 Otherwise `bucket_email_send` returns `EMAIL_SENDING_UNAVAILABLE`, or the
 connector lists no send tool.
 
 1. Find the received `eml_` ID with `bucket_email_list`.
-2. Call `bucket_email_send` with `in_reply_to` and `text`. It sets the subject,
-   and the recipient only when the sender passed SPF or DMARC; otherwise add `to`.
-   Add `cc`, `subject`, `html` or bucket file `attachment_ids` only when needed.
+2. Call `bucket_email_send` with `in_reply_to` and `text`. It sets the subject
+   and the recipient. An email whose sender did not pass SPF or DMARC returns
+   `EMAIL_RECIPIENT_NOT_ALLOWED`. Add `subject`, `html` or bucket file
+   `attachment_ids` only when needed.
 3. Check `delivery.status` (`awaiting_approval`, `queued`, `sending`, `sent`, `failed`,
    `uncertain`, `declined`) with `bucket_email_list(direction: "sent")`.
 

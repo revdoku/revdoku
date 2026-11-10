@@ -6,7 +6,6 @@ Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for exam
 
 [All operations](https://revdoku.com/api/reference.md) · [API guide](https://revdoku.com/api.md) · [Errors](https://revdoku.com/api.md#errors) · [OpenAPI](https://revdoku.com/openapi.json)
 
-- [Prepare a file upload (step 1 of 3)](#prepare-a-file-upload-step-1-of-3): `POST /v1/direct_uploads`
 - [List files](#list-files): `GET /v1/buckets/{bucket_id}/files`
 - [Save an uploaded file (step 3 of 3)](#save-an-uploaded-file-step-3-of-3): `POST /v1/buckets/{bucket_id}/files`
 - [Find a file by path](#find-a-file-by-path): `GET /v1/buckets/{bucket_id}/files/by_path`
@@ -19,174 +18,11 @@ Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for exam
 - [Copy a file](#copy-a-file): `POST /v1/buckets/{bucket_id}/files/{file_id}/copy`
 - [List file versions](#list-file-versions): `GET /v1/buckets/{bucket_id}/files/{file_id}/versions`
 - [Restore a file version](#restore-a-file-version): `POST /v1/buckets/{bucket_id}/files/{file_id}/versions/{version_id}/restore`
+- [Prepare a file upload (step 1 of 3)](#prepare-a-file-upload-step-1-of-3): `POST /v1/buckets/{bucket_id}/uploads`
 - [Start a batch upload](#start-a-batch-upload): `POST /v1/buckets/{bucket_id}/upload_sessions`
 - [Get storage targets for a batch](#get-storage-targets-for-a-batch): `POST /v1/buckets/{bucket_id}/upload_sessions/{session_id}/uploads`
 - [Save uploaded files](#save-uploaded-files): `POST /v1/buckets/{bucket_id}/upload_sessions/{session_id}/finalize_batch`
 - [Finish or cancel a batch upload](#finish-or-cancel-a-batch-upload): `POST /v1/buckets/{bucket_id}/upload_sessions/{session_id}/finalize`
-
-## Prepare a file upload (step 1 of 3)
-
-`POST /v1/direct_uploads`
-
-Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/buckets/{bucket_id}/files (step 3). Identical content at the same path returns skipped=true and duplicate=true without an upload.
-
-| Language | Call |
-| --- | --- |
-| TypeScript | `client.uploadFile({ bucketId, path, content })` (runs all three upload steps) |
-| Python | `client.upload_file(bucket_id, path, content)` (runs all three upload steps) |
-| TypeScript, full API | `client.api.prepareFileUpload({ prepareFileUploadRequest })` |
-| Python, full API | `client.api.prepare_file_upload(prepare_file_upload_request)` |
-
-**Request body**: TypeScript `prepareFileUploadRequest: PrepareFileUploadRequest`, Python `prepare_file_upload_request=PrepareFileUploadRequest(...)`.
-
-| Field | Type | Required | Description |
-| --- | --- | --- | --- |
-| `bucket_id` / `bucketId` | string | yes |  |
-| `path` | string | yes | Destination path in the bucket. Paths under _mailbox/ return MAILBOX_PATH_READ_ONLY; paths under _agents/ and _revdoku/ return RESERVED_PATH. |
-| `existing_file_policy` / `existingFilePolicy` | string: `replace`, `skip` | no | skip returns the existing file without an upload when the path exists. |
-| `blob` | UploadBlob | yes |  |
-| `blob.filename` | string | yes |  |
-| `blob.byte_size` / `byteSize` | integer (int64) | yes |  |
-| `blob.checksum` | string | yes |  |
-| `blob.content_type` / `contentType` | string | yes |  |
-| `blob.sha256` | string | yes |  |
-| `blob.purpose` | string: `bucket_file` | yes |  |
-| `account_id` / `accountId` | string | no |  |
-| `reason` | string or null | no | Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. |
-
-**Examples**
-
-**TypeScript**
-
-```ts
-import { Revdoku } from 'revdoku';
-
-const client = new Revdoku();
-// uploadFile runs all three steps: prepare, PUT the bytes to storage, save.
-const { data } = await client.uploadFile({
-  bucketId: 'bkt_example',
-  path: 'notes/todo.txt',
-  content: 'Call the customer back.',
-  contentType: 'text/plain',
-});
-console.log(data.file.id, data.version.id);
-```
-
-**Python**
-
-```python
-from revdoku import Revdoku
-
-client = Revdoku()
-# upload_file runs all three steps: prepare, PUT the bytes to storage, save.
-response = client.upload_file("bkt_example", "notes/todo.txt", "Call the customer back.", content_type="text/plain")
-print(response.data.file.id, response.data.version.id)
-```
-
-**cURL**
-
-```sh
-# Step 1: prepare. checksum is the base64 MD5 and sha256 the hex SHA-256 of the bytes.
-curl -X POST "https://api.revdoku.com/v1/direct_uploads" \
-  -H "Authorization: Bearer $REVDOKU_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-  "bucket_id": "bkt_example",
-  "path": "notes/todo.txt",
-  "blob": {
-    "filename": "todo.txt",
-    "byte_size": 23,
-    "content_type": "text/plain",
-    "checksum": "BASE64_MD5_OF_CONTENT",
-    "sha256": "HEX_SHA256_OF_CONTENT",
-    "purpose": "bucket_file"
-  }
-}'
-
-# Step 2: PUT the bytes to direct_upload.url with exactly direct_upload.headers. Send no API key.
-curl -X PUT "DIRECT_UPLOAD_URL" \
-  -H "Content-Type: text/plain" \
-  -H "Content-MD5: BASE64_MD5_OF_CONTENT" \
-  --data-binary @todo.txt
-
-# Step 3: save the file with signed_id from step 1.
-curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/files" \
-  -H "Authorization: Bearer $REVDOKU_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"path": "notes/todo.txt", "signed_blob_id": "SIGNED_ID_FROM_STEP_1"}'
-```
-
-**Response** `201`, `200`
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `signed_id` / `signedId` | string |  |
-| `filename` | string |  |
-| `byte_size` / `byteSize` | integer (int64) |  |
-| `checksum` | string |  |
-| `content_type` / `contentType` | string |  |
-| `direct_upload` / `directUpload` | StorageUpload |  |
-| `direct_upload.url` | string (uri) |  |
-| `direct_upload.headers` | object |  |
-| `file` | BucketFile |  |
-| `file.id` | string |  |
-| `file.bucket_id` / `bucketId` | string |  |
-| `file.basename` | string |  |
-| `file.path` | string |  |
-| `file.role` | string |  |
-| `file.created_by_system` / `createdBySystem` | string |  |
-| `file.deleted` | boolean |  |
-| `file.version_reasons` / `versionReasons` | array of FileVersionReason | Fields: `version_id`, `reason`, `created_by_id`, `version_number`, `created_at`. |
-| `file.lock` | object |  |
-| `file.current_file_version` / `currentFileVersion` | FileVersion or null |  |
-| `file.created_by` / `createdBy` | FileActor | Fields: `id`, `name`, `email`. |
-| `file.created_at` / `createdAt` | string (date-time) |  |
-| `file.updated_at` / `updatedAt` | string (date-time) |  |
-| `file.deleted_at` / `deletedAt` | string (date-time) |  |
-| `file.created_by_agent` / `createdByAgent` | object |  |
-| `file.updated_by_agent` / `updatedByAgent` | object |  |
-| `file.created_by_api_key` / `createdByApiKey` | object |  |
-| `file.updated_by_api_key` / `updatedByApiKey` | object |  |
-| `file.read` | boolean |  |
-| `file.read_at` / `readAt` | string (date-time) or null |  |
-| `file.read_by` / `readBy` | FileActor or null |  |
-| `file.read_by_api_key` / `readByApiKey` | FileKey or null |  |
-| `version` | FileVersion | Its fields are in [OpenAPI](https://revdoku.com/openapi.json) under `FileVersion`. |
-| `skipped` | boolean |  |
-| `duplicate` | boolean |  |
-| `reason` | string |  |
-| `details` | object |  |
-
-Example `201`:
-
-```json
-{
-  "success": true,
-  "data": {
-    "signed_id": "eyJfcmFpbHMi...",
-    "filename": "document_7a77539cbd6d02a5.txt",
-    "byte_size": 1234,
-    "checksum": "rL0Y20zC+Fzt72VPzMSk2A==",
-    "content_type": "text/plain",
-    "direct_upload": {
-      "url": "https://storage.example/upload",
-      "headers": {
-        "Content-Type": "text/plain",
-        "Content-MD5": "rL0Y20zC+Fzt72VPzMSk2A==",
-        "Content-Disposition": "inline; filename=\"document_7a77539cbd6d02a5.txt\"; filename*=UTF-8''document_7a77539cbd6d02a5.txt"
-      }
-    }
-  }
-}
-```
-
-**Errors**
-
-| Status | Description |
-| --- | --- |
-| 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
-
-Guide: [Upload a file](https://revdoku.com/api.md#upload-a-file)
 
 ## List files
 
@@ -249,7 +85,29 @@ curl "https://api.revdoku.com/v1/buckets/bkt_example/files" \
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `files` | array of BucketFile | Fields as in [Prepare a file upload (step 1 of 3)](#prepare-a-file-upload-step-1-of-3). |
+| `files` | array of BucketFile |  |
+| `files[].id` | string |  |
+| `files[].bucket_id` / `bucketId` | string |  |
+| `files[].basename` | string |  |
+| `files[].path` | string |  |
+| `files[].role` | string |  |
+| `files[].created_by_system` / `createdBySystem` | string |  |
+| `files[].deleted` | boolean |  |
+| `files[].version_reasons` / `versionReasons` | array of FileVersionReason | Fields: `version_id`, `reason`, `created_by_id`, `version_number`, `created_at`. |
+| `files[].lock` | object |  |
+| `files[].current_file_version` / `currentFileVersion` | FileVersion or null |  |
+| `files[].created_by` / `createdBy` | FileActor | Fields: `id`, `name`, `email`. |
+| `files[].created_at` / `createdAt` | string (date-time) |  |
+| `files[].updated_at` / `updatedAt` | string (date-time) |  |
+| `files[].deleted_at` / `deletedAt` | string (date-time) |  |
+| `files[].created_by_agent` / `createdByAgent` | object |  |
+| `files[].updated_by_agent` / `updatedByAgent` | object |  |
+| `files[].created_by_api_key` / `createdByApiKey` | object |  |
+| `files[].updated_by_api_key` / `updatedByApiKey` | object |  |
+| `files[].read` | boolean |  |
+| `files[].read_at` / `readAt` | string (date-time) or null |  |
+| `files[].read_by` / `readBy` | FileActor or null |  |
+| `files[].read_by_api_key` / `readByApiKey` | FileKey or null |  |
 | `pagination` | Pagination | One page of a list. Request the next page with cursor=next_cursor and the same filters. Cursors are opaque strings: do not build or decode them. |
 | `pagination.limit` | integer |  |
 | `pagination.has_more` / `hasMore` | boolean | True when another page exists. |
@@ -369,7 +227,7 @@ Saves the uploaded blob at path. An existing path gets a new version.
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | `path` | string | yes | Destination path. An existing path receives a new version. Paths under _mailbox/ return MAILBOX_PATH_READ_ONLY; paths under _agents/ and _revdoku/ return RESERVED_PATH. |
-| `signed_blob_id` / `signedBlobId` | string | yes | data.signed_id from POST /v1/direct_uploads. |
+| `signed_blob_id` / `signedBlobId` | string | yes | data.signed_id from POST /v1/buckets/{bucket_id}/uploads. |
 | `name` | string | no | Display name; defaults to the last path segment. |
 | `role` | string: `source`, `reference`, `generated`, `agent_output`, `export`, `artifact` | no |  |
 | `existing_file_policy` / `existingFilePolicy` | string: `replace`, `skip` | no |  |
@@ -422,7 +280,7 @@ curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/files" \
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `file` | BucketFile | Fields as in [Prepare a file upload (step 1 of 3)](#prepare-a-file-upload-step-1-of-3). |
+| `file` | BucketFile | Fields as in [List files](#list-files). |
 | `version` | FileVersion |  |
 | `version.id` | string |  |
 | `version.file_id` / `fileId` | string |  |
@@ -628,7 +486,7 @@ curl -G "https://api.revdoku.com/v1/buckets/bkt_example/files/by_path" \
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `file` | BucketFile | Fields as in [Prepare a file upload (step 1 of 3)](#prepare-a-file-upload-step-1-of-3). |
+| `file` | BucketFile | Fields as in [List files](#list-files). |
 
 **Errors**
 
@@ -712,7 +570,7 @@ curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/files/append_text" 
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `file` | BucketFile | Fields as in [Prepare a file upload (step 1 of 3)](#prepare-a-file-upload-step-1-of-3). |
+| `file` | BucketFile | Fields as in [List files](#list-files). |
 | `version` | FileVersion | Fields as in [Save an uploaded file (step 3 of 3)](#save-an-uploaded-file-step-3-of-3). |
 | `path` | string |  |
 | `appended` | boolean `true` |  |
@@ -785,7 +643,7 @@ curl "https://api.revdoku.com/v1/buckets/bkt_example/files/df_example" \
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `file` | BucketFile | Fields as in [Prepare a file upload (step 1 of 3)](#prepare-a-file-upload-step-1-of-3). |
+| `file` | BucketFile | Fields as in [List files](#list-files). |
 
 **Errors**
 
@@ -801,7 +659,7 @@ Guide: [Files](https://revdoku.com/api.md#files)
 
 Requires bucket-admin permission.
 
-Files under _mailbox/ return MAILBOX_PATH_READ_ONLY; delete the email instead. Files under _agents/ and _revdoku/ return RESERVED_PATH.
+Files under _mailbox/ return MAILBOX_PATH_READ_ONLY; delete the ticket message instead. Files under _agents/ and _revdoku/ return RESERVED_PATH.
 
 | Language | Call |
 | --- | --- |
@@ -1015,8 +873,8 @@ curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/files/df_example/re
 | `path` | string |  |
 | `source_bucket_id` / `sourceBucketId` | string |  |
 | `target_bucket_id` / `targetBucketId` | string |  |
-| `source_file` / `sourceFile` | BucketFile | Fields as in [Prepare a file upload (step 1 of 3)](#prepare-a-file-upload-step-1-of-3). |
-| `file` | BucketFile | Fields as in [Prepare a file upload (step 1 of 3)](#prepare-a-file-upload-step-1-of-3). |
+| `source_file` / `sourceFile` | BucketFile | Fields as in [List files](#list-files). |
+| `file` | BucketFile | Fields as in [List files](#list-files). |
 | `version` | FileVersion | Fields as in [Save an uploaded file (step 3 of 3)](#save-an-uploaded-file-step-3-of-3). |
 
 **Errors**
@@ -1104,8 +962,8 @@ curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/files/df_example/mo
 | `path` | string |  |
 | `source_bucket_id` / `sourceBucketId` | string |  |
 | `target_bucket_id` / `targetBucketId` | string |  |
-| `source_file` / `sourceFile` | BucketFile | Fields as in [Prepare a file upload (step 1 of 3)](#prepare-a-file-upload-step-1-of-3). |
-| `file` | BucketFile | Fields as in [Prepare a file upload (step 1 of 3)](#prepare-a-file-upload-step-1-of-3). |
+| `source_file` / `sourceFile` | BucketFile | Fields as in [List files](#list-files). |
+| `file` | BucketFile | Fields as in [List files](#list-files). |
 | `version` | FileVersion | Fields as in [Save an uploaded file (step 3 of 3)](#save-an-uploaded-file-step-3-of-3). |
 
 **Errors**
@@ -1193,8 +1051,8 @@ curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/files/df_example/co
 | `path` | string |  |
 | `source_bucket_id` / `sourceBucketId` | string |  |
 | `target_bucket_id` / `targetBucketId` | string |  |
-| `source_file` / `sourceFile` | BucketFile | Fields as in [Prepare a file upload (step 1 of 3)](#prepare-a-file-upload-step-1-of-3). |
-| `file` | BucketFile | Fields as in [Prepare a file upload (step 1 of 3)](#prepare-a-file-upload-step-1-of-3). |
+| `source_file` / `sourceFile` | BucketFile | Fields as in [List files](#list-files). |
+| `file` | BucketFile | Fields as in [List files](#list-files). |
 | `version` | FileVersion | Fields as in [Save an uploaded file (step 3 of 3)](#save-an-uploaded-file-step-3-of-3). |
 
 **Errors**
@@ -1345,7 +1203,7 @@ curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/files/df_example/ve
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `file` | BucketFile | Fields as in [Prepare a file upload (step 1 of 3)](#prepare-a-file-upload-step-1-of-3). |
+| `file` | BucketFile | Fields as in [List files](#list-files). |
 | `version` | FileVersion | Fields as in [Save an uploaded file (step 3 of 3)](#save-an-uploaded-file-step-3-of-3). |
 | `restored_from` / `restoredFrom` | FileVersion | Fields as in [Save an uploaded file (step 3 of 3)](#save-an-uploaded-file-step-3-of-3). |
 
@@ -1356,6 +1214,152 @@ curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/files/df_example/ve
 | 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
 
 Guide: [Files](https://revdoku.com/api.md#files)
+
+## Prepare a file upload (step 1 of 3)
+
+`POST /v1/buckets/{bucket_id}/uploads`
+
+Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/buckets/{bucket_id}/files (step 3). Identical content at the same path returns skipped=true and duplicate=true without an upload.
+
+| Language | Call |
+| --- | --- |
+| TypeScript | `client.uploadFile({ bucketId, path, content })` (runs all three upload steps) |
+| Python | `client.upload_file(bucket_id, path, content)` (runs all three upload steps) |
+| TypeScript, full API | `client.api.prepareFileUpload({ bucketId, prepareFileUploadRequest })` |
+| Python, full API | `client.api.prepare_file_upload(bucket_id, prepare_file_upload_request)` |
+
+**Parameters**
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `bucket_id` / `bucketId` | string | yes |  |
+
+**Request body**: TypeScript `prepareFileUploadRequest: PrepareFileUploadRequest`, Python `prepare_file_upload_request=PrepareFileUploadRequest(...)`.
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `path` | string | yes | Destination path in the bucket. Paths under _mailbox/ return MAILBOX_PATH_READ_ONLY; paths under _agents/ and _revdoku/ return RESERVED_PATH. |
+| `existing_file_policy` / `existingFilePolicy` | string: `replace`, `skip` | no | skip returns the existing file without an upload when the path exists. |
+| `blob` | UploadBlob | yes |  |
+| `blob.filename` | string | yes |  |
+| `blob.byte_size` / `byteSize` | integer (int64) | yes |  |
+| `blob.checksum` | string | yes |  |
+| `blob.content_type` / `contentType` | string | yes |  |
+| `blob.sha256` | string | yes |  |
+| `blob.purpose` | string: `bucket_file` | yes |  |
+| `account_id` / `accountId` | string | no |  |
+| `reason` | string or null | no | Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. |
+
+**Examples**
+
+**TypeScript**
+
+```ts
+import { Revdoku } from 'revdoku';
+
+const client = new Revdoku();
+// uploadFile runs all three steps: prepare, PUT the bytes to storage, save.
+const { data } = await client.uploadFile({
+  bucketId: 'bkt_example',
+  path: 'notes/todo.txt',
+  content: 'Call the customer back.',
+  contentType: 'text/plain',
+});
+console.log(data.file.id, data.version.id);
+```
+
+**Python**
+
+```python
+from revdoku import Revdoku
+
+client = Revdoku()
+# upload_file runs all three steps: prepare, PUT the bytes to storage, save.
+response = client.upload_file("bkt_example", "notes/todo.txt", "Call the customer back.", content_type="text/plain")
+print(response.data.file.id, response.data.version.id)
+```
+
+**cURL**
+
+```sh
+# Step 1: prepare. checksum is the base64 MD5 and sha256 the hex SHA-256 of the bytes.
+curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/uploads" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+  "path": "notes/todo.txt",
+  "blob": {
+    "filename": "todo.txt",
+    "byte_size": 23,
+    "content_type": "text/plain",
+    "checksum": "BASE64_MD5_OF_CONTENT",
+    "sha256": "HEX_SHA256_OF_CONTENT",
+    "purpose": "bucket_file"
+  }
+}'
+
+# Step 2: PUT the bytes to direct_upload.url with exactly direct_upload.headers. Send no API key.
+curl -X PUT "DIRECT_UPLOAD_URL" \
+  -H "Content-Type: text/plain" \
+  -H "Content-MD5: BASE64_MD5_OF_CONTENT" \
+  --data-binary @todo.txt
+
+# Step 3: save the file with signed_id from step 1.
+curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/files" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"path": "notes/todo.txt", "signed_blob_id": "SIGNED_ID_FROM_STEP_1"}'
+```
+
+**Response** `201`, `200`
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `signed_id` / `signedId` | string |  |
+| `filename` | string |  |
+| `byte_size` / `byteSize` | integer (int64) |  |
+| `checksum` | string |  |
+| `content_type` / `contentType` | string |  |
+| `direct_upload` / `directUpload` | StorageUpload |  |
+| `direct_upload.url` | string (uri) |  |
+| `direct_upload.headers` | object |  |
+| `file` | BucketFile | Fields as in [List files](#list-files). |
+| `version` | FileVersion | Fields as in [Save an uploaded file (step 3 of 3)](#save-an-uploaded-file-step-3-of-3). |
+| `skipped` | boolean |  |
+| `duplicate` | boolean |  |
+| `reason` | string |  |
+| `details` | object |  |
+
+Example `201`:
+
+```json
+{
+  "success": true,
+  "data": {
+    "signed_id": "eyJfcmFpbHMi...",
+    "filename": "document_7a77539cbd6d02a5.txt",
+    "byte_size": 1234,
+    "checksum": "rL0Y20zC+Fzt72VPzMSk2A==",
+    "content_type": "text/plain",
+    "direct_upload": {
+      "url": "https://storage.example/upload",
+      "headers": {
+        "Content-Type": "text/plain",
+        "Content-MD5": "rL0Y20zC+Fzt72VPzMSk2A==",
+        "Content-Disposition": "inline; filename=\"document_7a77539cbd6d02a5.txt\"; filename*=UTF-8''document_7a77539cbd6d02a5.txt"
+      }
+    }
+  }
+}
+```
+
+**Errors**
+
+| Status | Description |
+| --- | --- |
+| 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
+
+Guide: [Upload a file](https://revdoku.com/api.md#upload-a-file)
 
 ## Start a batch upload
 

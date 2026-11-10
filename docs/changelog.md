@@ -1,5 +1,35 @@
 # Revdoku Changelog
 
+## 1.0.644 — 2026-11-10
+
+### Improved
+
+- See your site right after you connect GitHub: Import and sync publishes the site after the first sync, without a Publish click. Uncheck "Publish the site after the first sync" to publish later. You can change the address, layout and Ask AI afterwards.
+
+## 1.0.643 — 2026-11-10
+
+### Improved
+
+- Keep Ask AI conversations and feedback comments as long as your site's analytics. Your plan sets how much of this history the Analytics page shows, and an upgrade shows all of it at once. See https://app.revdoku.com/pricing.
+- Send only replies from a bucket: each reply answers a received message and goes to the person who sent it.
+- Read and answer support requests as tickets in the API and MCP. A ticket is one conversation that came by email, as a message left on your docs site or as page feedback. Use `GET /v1/buckets/{bucket_id}/tickets`, `GET` and `PATCH .../tickets/{ticket_id}` (solve, reopen, labels) and `POST .../tickets/{ticket_id}/messages` to reply to the requester. The MCP tools are `bucket_ticket_list`, `bucket_ticket_get`, `bucket_ticket_reply`, `bucket_ticket_update`, `bucket_ticket_download` and `bucket_ticket_message_delete`. They replace the `/mailbox/emails` endpoints and the `bucket_email_*` tools.
+- Get ticket events for every channel from one webhook and one live subscription per bucket: `/v1/buckets/{bucket_id}/webhook` and `/v1/buckets/{bucket_id}/events/subscription`, or the MCP tools `bucket_webhook` and `bucket_events_subscription`. Events are `ticket.created` and `ticket.message_received`, with `ticket_id`, `message_id` and `channel`. A message labeled Junk sends no event.
+- Use clearer API names. Sign-in for the CLI and AI agents is under `/v1/auth` (`sign_in_code`, `sign_in_code/verify`, `grant/exchange`, `dashboard_link`). GitHub is `/v1/buckets/{bucket_id}/github` and `/v1/account/github/installations`, with the JSON key `github`. A bucket's address is `bucket.email.address`, and a new bucket takes `email: {username, domain}`.
+- Upload one file with `POST /v1/buckets/{bucket_id}/uploads`, and lock or unlock a bucket or its files with `POST /v1/buckets/{bucket_id}/lock` and `.../unlock`.
+- Change a bucket's address, aliases, allowed senders and email domains in the dashboard. The API no longer has endpoints for them.
+- The SDKs and the CLI move to these names in their next versions.
+- Choose Send at once or Review first in the Replies tab of Email Settings. The Send only to tab is gone.
+- Let AI agents reply to the sender. The Email members action of agents is gone.
+- Get credits every month on the Free plan, in addition to the signup credits. Monthly credits are spent first and do not roll over. See https://app.revdoku.com/pricing.
+- Name a new bucket with the address of its first site. A bucket that got a made-up name at signup takes the address you choose at its first Publish, so the bucket, its site and its email have one name.
+- Publish and preview sites with credits: a publish or preview uses credits only when a new version goes live. An unchanged republish, a failed build and reading your site use none.
+- Pay a fixed number of credits for each Ask AI question that AI reads, answered or not. A question answered from search only uses none.
+- Index your docs for Ask AI as part of each publish, with no separate charge.
+- See what each action costs in the FAQ of the pricing page and in `credits.costs` of https://app.revdoku.com/pricing.json.
+- Get `402 INSUFFICIENT_CREDITS` from `POST /v1/buckets/{bucket_id}/publication`, `POST /v1/buckets/{bucket_id}/publication/preview`, the `bucket_publish` MCP tool, `revdoku publish` and `revdoku preview` when the account has too few credits. Nothing is built, and the dashboard shows the error with an upgrade link for people who manage billing.
+- See "Publishing paused: not enough credits" on the Site page when a GitHub push could not publish. The commit shows "Not enough credits to publish", and the site keeps its version. When credits arrive, the waiting push publishes.
+- Change the docs layout and Ask AI of a live site without credits: a settings save rebuilds the site with the files it already serves.
+
 ## 1.0.642 — 2026-11-10
 
 ### Improved

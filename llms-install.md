@@ -154,10 +154,10 @@ Use the client-specific instructions linked from the setup hub; desktop settings
 ## Verification prompt
 
 ```text
-Confirm my Revdoku account ID and granted access. List the mailboxes you can access,
+Confirm my Revdoku account ID and granted access. List the buckets you can access,
 ask which to use, and read its latest message if one exists. Do not change anything.
 ```
 
-Incoming email keeps arriving while a mailbox-wide edit lock is held. Prefer
+Incoming email keeps arriving while a bucket-wide edit lock is held. Prefer
 individual file locks or revision checks. Human administrators inspect receiving
 holds and logs in the dashboard.

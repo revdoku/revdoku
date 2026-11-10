@@ -157,8 +157,8 @@ Admin access is required.
 
 ## Send email
 
-Recipients: account members, other account buckets, or this bucket's authenticated
-senders. The Free plan adds one Revdoku line. Limit: 10 recipients, no Bcc. Send only when
+Replies only: an email answers a received email, to its authenticated sender;
+no to or cc. The Free plan adds one Revdoku line. Send only when
 `mailbox.sending_enabled` is true. On `EMAIL_LOOP_DETECTED`, stop auto-replies to
 that address.
 

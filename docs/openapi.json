@@ -3,7 +3,7 @@
   "info": {
     "title": "Revdoku API",
     "version": "2.0.0",
-    "description": "Buckets with a mailbox, private files and a site. Create buckets, read and reply to email, store files and publish sites. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up."
+    "description": "Buckets with an email address, private files and a site. Create buckets, read and reply to email, store files and publish sites. Guide: https://revdoku.com/api.md. Create an account at https://app.revdoku.com/users/sign_up."
   },
   "servers": [
     {
@@ -30,20 +30,16 @@
       "description": "Create, read, archive and delete buckets."
     },
     {
-      "name": "Mailbox",
-      "description": "Addresses, aliases, allowed senders, webhooks and live subscriptions."
+      "name": "Tickets",
+      "description": "Support tickets: each conversation that someone started with the bucket, by email, a message left on the docs site or page feedback. Read them, reply to the requester, solve and label them."
     },
     {
-      "name": "Emails",
-      "description": "List, read, reply to and delete email."
+      "name": "Events",
+      "description": "Ticket events of every channel: one signed webhook per bucket and live WebSocket subscriptions."
     },
     {
       "name": "Files",
       "description": "Upload, read, organize and restore files."
-    },
-    {
-      "name": "Email domains",
-      "description": "Custom domains for mailbox addresses."
     },
     {
       "name": "Publications",
@@ -55,7 +51,7 @@
     }
   ],
   "paths": {
-    "/v1/agent_auth/request_code": {
+    "/v1/auth/sign_in_code": {
       "post": {
         "operationId": "requestSignInCode",
         "tags": [
@@ -120,7 +116,7 @@
         }
       }
     },
-    "/v1/agent_auth/verify_code": {
+    "/v1/auth/sign_in_code/verify": {
       "post": {
         "operationId": "verifySignInCode",
         "tags": [
@@ -229,7 +225,7 @@
         }
       }
     },
-    "/v1/agent_auth/exchange_grant": {
+    "/v1/auth/grant/exchange": {
       "post": {
         "operationId": "exchangeConnectionGrant",
         "tags": [
@@ -296,13 +292,13 @@
         }
       }
     },
-    "/v1/agent_auth/browser_login_link": {
+    "/v1/auth/dashboard_link": {
       "post": {
-        "operationId": "createBrowserLink",
+        "operationId": "createDashboardLink",
         "tags": [
           "Authentication"
         ],
-        "summary": "Create a dashboard link for the user",
+        "summary": "Create a dashboard link",
         "description": "Returns a dashboard URL for a path such as /buckets. The user signs in normally; the link grants no access.",
         "requestBody": {
           "required": true,
@@ -804,510 +800,6 @@
         }
       }
     },
-    "/v1/account/email_domains": {
-      "get": {
-        "operationId": "listEmailDomains",
-        "tags": [
-          "Email domains"
-        ],
-        "summary": "List custom email domains",
-        "description": "Requires a full-account owner or administrator credential.",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/AccountId"
-          },
-          {
-            "$ref": "#/components/parameters/Limit"
-          },
-          {
-            "$ref": "#/components/parameters/Cursor"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/EmailDomainList"
-                    }
-                  }
-                },
-                "example": {
-                  "success": true,
-                  "data": {
-                    "domains": [
-                      {
-                        "id": "ied_example",
-                        "hostname": "inbox.example.com",
-                        "status": "pending_ownership",
-                        "receiving": false,
-                        "root_domain": false,
-                        "suggested_subdomain": null,
-                        "guidance": "Subdomain recommended. If your domain already handles email elsewhere, use a subdomain such as mailbox.example.com to avoid disrupting it. Otherwise, use a dedicated domain such as mycustomdomain-mail.com.",
-                        "root_guidance": null,
-                        "required_dns_records": [
-                          {
-                            "type": "TXT",
-                            "name": "_revdoku-inbound.inbox.example.com",
-                            "value": "revdoku-inbound=EXAMPLE_TOKEN",
-                            "purpose": "ownership",
-                            "zone": "example.com",
-                            "relative_name": "_revdoku-inbound.inbox"
-                          },
-                          {
-                            "type": "TXT",
-                            "name": "_amazonses.inbox.example.com",
-                            "value": "EXAMPLE_SES_TOKEN",
-                            "purpose": "ses_verification",
-                            "zone": "example.com",
-                            "relative_name": "_amazonses.inbox"
-                          },
-                          {
-                            "type": "MX",
-                            "name": "inbox.example.com",
-                            "value": "10 inbound-smtp.eu-central-1.amazonaws.com",
-                            "purpose": "receiving",
-                            "zone": "example.com",
-                            "relative_name": "inbox"
-                          }
-                        ],
-                        "setup_provider": null,
-                        "pause_reason": null,
-                        "paused_at": null,
-                        "last_checked_at": null,
-                        "ownership_verified_at": null,
-                        "setup_expires_at": "2026-10-18T12:00:00.000Z",
-                        "ready_at": null,
-                        "error": null,
-                        "assigned_buckets": []
-                      }
-                    ],
-                    "enabled": true,
-                    "guidance": "Subdomain recommended. If your domain already handles email elsewhere, use a subdomain such as mailbox.example.com to avoid disrupting it. Otherwise, use a dedicated domain such as mycustomdomain-mail.com.",
-                    "pagination": {
-                      "limit": 50,
-                      "has_more": false,
-                      "next_cursor": null
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      },
-      "post": {
-        "operationId": "createEmailDomain",
-        "tags": [
-          "Email domains"
-        ],
-        "summary": "Connect a custom email domain",
-        "description": "Claims an exact hostname and returns the ownership record. Read the domain again shortly after for all `required_dns_records`. Never change DNS without the domain owner's authorization.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "hostname": {
-                    "type": "string"
-                  },
-                  "account_id": {
-                    "type": "string",
-                    "description": "Select another granted account for this request."
-                  },
-                  "reason": {
-                    "$ref": "#/components/schemas/ActionReason"
-                  }
-                },
-                "required": [
-                  "hostname"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "domain"
-                      ],
-                      "properties": {
-                        "domain": {
-                          "$ref": "#/components/schemas/EmailDomain"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/v1/account/email_domains/check": {
-      "post": {
-        "operationId": "checkEmailDomain",
-        "tags": [
-          "Email domains"
-        ],
-        "summary": "Check a hostname for conflicting DNS",
-        "description": "Makes no claim and changes no DNS. If the root domain already receives email, use an unused subdomain such as inbox.example.com.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "hostname": {
-                    "type": "string"
-                  },
-                  "account_id": {
-                    "type": "string",
-                    "description": "Select another granted account for this request."
-                  },
-                  "reason": {
-                    "$ref": "#/components/schemas/ActionReason"
-                  }
-                },
-                "required": [
-                  "hostname"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/EmailDomainCheck"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/v1/account/email_domains/{domain_id}": {
-      "get": {
-        "operationId": "getEmailDomain",
-        "tags": [
-          "Email domains"
-        ],
-        "summary": "Read a custom email domain",
-        "description": "Requires a full-account owner or administrator credential. Returns the domain status and the DNS records to publish.",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/DomainId"
-          },
-          {
-            "$ref": "#/components/parameters/AccountId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "domain"
-                      ],
-                      "properties": {
-                        "domain": {
-                          "$ref": "#/components/schemas/EmailDomain"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      },
-      "delete": {
-        "operationId": "deleteEmailDomain",
-        "tags": [
-          "Email domains"
-        ],
-        "summary": "Remove an unused custom email domain",
-        "description": "Send the domain hostname and confirm=true. A domain that mailbox addresses still use returns EMAIL_DOMAIN_IN_USE.",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/DomainId"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "hostname": {
-                    "type": "string"
-                  },
-                  "confirm": {
-                    "type": "boolean",
-                    "const": true
-                  },
-                  "account_id": {
-                    "type": "string",
-                    "description": "Select another granted account for this request."
-                  },
-                  "reason": {
-                    "$ref": "#/components/schemas/ActionReason"
-                  }
-                },
-                "required": [
-                  "hostname",
-                  "confirm"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Deleted",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/DeleteResult"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/v1/account/email_domains/{domain_id}/verify": {
-      "post": {
-        "operationId": "verifyEmailDomain",
-        "tags": [
-          "Email domains"
-        ],
-        "summary": "Check DNS and provider setup again",
-        "description": "Queues the check and returns the current state. Read the domain again to see the result.",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/DomainId"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "account_id": {
-                    "type": "string",
-                    "description": "Select another granted account for this request."
-                  },
-                  "reason": {
-                    "$ref": "#/components/schemas/ActionReason"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "202": {
-            "description": "Accepted",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "domain"
-                      ],
-                      "properties": {
-                        "domain": {
-                          "$ref": "#/components/schemas/EmailDomain"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/v1/account/email_domains/{domain_id}/setup_link": {
-      "get": {
-        "operationId": "getEmailDomainSetupLink",
-        "tags": [
-          "Email domains"
-        ],
-        "summary": "Get a one-click DNS setup link",
-        "description": "Signs a Domain Connect link for a domain whose `setup_provider` is set. Give the URL to the domain owner to open in a browser. The DNS provider adds `required_dns_records` after the owner approves them, then returns to Account Settings → Domains. Errors: 422 `EMAIL_DOMAIN_SETUP_UNSUPPORTED` when the provider or the domain state does not allow one-click setup, 422 `EMAIL_DOMAIN_SETUP_UNAVAILABLE` while the deployment cannot sign links, 422 `EMAIL_DNS_CONFLICT` when the hostname has records of another mail provider, 403 `EMAIL_DOMAINS_UPGRADE_REQUIRED` when the plan no longer includes custom email domains, and 503 `EMAIL_DNS_TEMPORARY` when DNS cannot be checked. Add the records manually, or try again later after a 503.",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/DomainId"
-          },
-          {
-            "$ref": "#/components/parameters/AccountId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "setup_link"
-                      ],
-                      "properties": {
-                        "setup_link": {
-                          "type": "object",
-                          "required": [
-                            "provider",
-                            "url"
-                          ],
-                          "properties": {
-                            "provider": {
-                              "type": "string",
-                              "description": "DNS provider name, such as Cloudflare."
-                            },
-                            "url": {
-                              "type": "string",
-                              "format": "uri",
-                              "description": "Signed link for the domain owner to open in a browser."
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
     "/v1/buckets": {
       "get": {
         "operationId": "listBuckets",
@@ -1386,7 +878,7 @@
                         "description": null,
                         "metadata": {},
                         "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-                        "mailbox": {
+                        "email": {
                           "address": "acme-orders@revdokumail.com",
                           "message_count": 1,
                           "unread_count": 1,
@@ -1447,7 +939,7 @@
           "Buckets"
         ],
         "summary": "Create a bucket",
-        "description": "Waits until the address can receive email. On revdokumail.com, mailbox.username is the bucket's name, with no suffix: lowercase letters, digits and single hyphens, 3 to 63 characters, also the name of its site. A name that another bucket uses as an address or a site address, or that another account used, returns EMAIL_ALREADY_EXISTS; your account can use its own earlier names again. Without mailbox.username the address takes the title's name when it is free, else two readable words. A custom domain takes the exact name. If confirmation does not finish, EMAIL_NOT_READY returns the created bucket_id in error.details: read that bucket instead of creating another. The title defaults to mailbox.username; a title that another active bucket uses returns 409 BUCKET_TITLE_TAKEN. Never retry a creation automatically.",
+        "description": "Waits until the address can receive email. On revdokumail.com, email.username is the bucket's name, with no suffix: lowercase letters, digits and single hyphens, 3 to 63 characters, also the name of its site. A name that another bucket uses as an address or a site address, or that another account used, returns EMAIL_ALREADY_EXISTS; your account can use its own earlier names again. Without email.username the address takes the title's name when it is free, else two readable words. A custom domain takes the exact name. If confirmation does not finish, EMAIL_NOT_READY returns the created bucket_id in error.details: read that bucket instead of creating another. The title defaults to email.username; a title that another active bucket uses returns 409 BUCKET_TITLE_TAKEN. Never retry a creation automatically.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1509,7 +1001,7 @@
                       "description": null,
                       "metadata": {},
                       "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-                      "mailbox": {
+                      "email": {
                         "address": "acme-orders@revdokumail.com",
                         "message_count": 0,
                         "unread_count": 0,
@@ -1630,7 +1122,7 @@
                       "description": null,
                       "metadata": {},
                       "metadata_version": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-                      "mailbox": {
+                      "email": {
                         "address": "acme-orders@revdokumail.com",
                         "message_count": 1,
                         "unread_count": 1,
@@ -1940,63 +1432,14 @@
         }
       }
     },
-    "/v1/buckets/{bucket_id}/mailbox": {
-      "get": {
-        "operationId": "getMailbox",
-        "tags": [
-          "Mailbox"
-        ],
-        "summary": "Read address settings",
-        "description": "Requires bucket write permission.",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/BucketId"
-          },
-          {
-            "$ref": "#/components/parameters/AccountId"
-          },
-          {
-            "$ref": "#/components/parameters/Reason"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/MailboxSettings"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/v1/buckets/{bucket_id}/mailbox/rotate": {
+    "/v1/buckets/{bucket_id}/lock": {
       "post": {
-        "operationId": "changeMailboxAddress",
+        "operationId": "lockBucket",
         "tags": [
-          "Mailbox"
+          "Buckets"
         ],
-        "summary": "Change the primary address",
-        "description": "Requires bucket-admin permission and a paid plan, except for a change back to revdokumail.com. Send the current address as expected_address. Omit username for a generated name. On revdokumail.com the name follows the site address, so a username there returns 422 INVALID_ARGUMENT. A custom-domain change returns 202; read the settings until assignment.status is active or failed. For account owners and administrators the old address becomes an alias unless keep_old_as_alias is false. Without a free alias slot the request returns EMAIL_ALIAS_LIMIT; send false to retire the old address. A change from revdokumail.com to a customer domain always keeps the old address as the revdokumail.com base address, which uses no alias slot. A change from a customer domain back to revdokumail.com makes that base address the main address again at once (200, assignment.status active): username is ignored, no address change is counted and it works on every plan.",
+        "summary": "Lock a bucket or some of its files",
+        "description": "Tells other people and agents to wait while you edit. Without paths it locks the whole bucket and requires bucket-admin permission; with paths it locks those files and requires write permission. Others get 423 BUCKET_LOCKED or FILE_LOCKED until you unlock or the lock expires. A lock of someone else also returns 423. Locks never block incoming email. A batch upload (upload_sessions) locks the bucket by itself until it finishes. The MCP tool bucket_lock has the same contract.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BucketId"
@@ -2007,92 +1450,14 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "confirm": {
-                    "type": "boolean",
-                    "const": true
-                  },
-                  "expected_address": {
-                    "type": "string",
-                    "description": "Current address from your last settings read. A different current address returns EMAIL_ADDRESS_CHANGED."
-                  },
-                  "username": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 64,
-                    "description": "New name before @ on a custom domain: the exact name. On revdokumail.com the name follows the site address, so a username returns INVALID_ARGUMENT."
-                  },
-                  "domain": {
-                    "type": "string",
-                    "description": "Available platform domain, a ready domain of this account, or platform."
-                  },
-                  "keep_old_as_alias": {
-                    "type": "boolean",
-                    "description": "Keep the old address as an alias. Defaults to true for account owners and administrators while the old domain still receives email, otherwise false. Keeping it needs a free alias slot and an account owner or administrator. A change from revdokumail.com to a customer domain always keeps the old address as the base address. That needs no alias slot and no administrator."
-                  },
-                  "account_id": {
-                    "type": "string",
-                    "description": "Select another granted account for this request."
-                  },
-                  "reason": {
-                    "$ref": "#/components/schemas/ActionReason"
-                  }
-                },
-                "required": [
-                  "confirm",
-                  "expected_address"
-                ]
+                "$ref": "#/components/schemas/LockRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/MailboxSettings"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "202": {
-            "description": "Change pending",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/MailboxSettings"
-                    }
-                  }
-                }
-              }
-            }
+            "$ref": "#/components/responses/LockResult"
           },
           "default": {
             "$ref": "#/components/responses/Error"
@@ -2100,14 +1465,14 @@
         }
       }
     },
-    "/v1/buckets/{bucket_id}/mailbox/aliases": {
+    "/v1/buckets/{bucket_id}/unlock": {
       "post": {
-        "operationId": "createEmailAlias",
+        "operationId": "unlockBucket",
         "tags": [
-          "Mailbox"
+          "Buckets"
         ],
-        "summary": "Add an alias address",
-        "description": "Requires a paid plan and a full-account owner or administrator with bucket-admin permission. The primary address stays unchanged. On a mailbox whose primary address is on your domain, the first revdokumail.com alias becomes its base address and uses no alias slot.",
+        "summary": "Remove your lock",
+        "description": "Removes your lock of the whole bucket (bucket-admin permission) or of the listed files (write permission). A lock of someone else, a running batch upload or a deletion returns 423 BUCKET_LOCKED or FILE_LOCKED. Unlocking an unlocked bucket returns its lock state.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BucketId"
@@ -2118,201 +1483,14 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "username": {
-                    "type": "string",
-                    "description": "Alias name before @. On revdokumail.com, a bucket name with no suffix: lowercase letters, digits and single hyphens, 3 to 63 characters, free as an address and as a site address. On a custom domain, the exact name."
-                  },
-                  "domain": {
-                    "type": "string"
-                  },
-                  "account_id": {
-                    "type": "string",
-                    "description": "Select another granted account for this request."
-                  },
-                  "reason": {
-                    "$ref": "#/components/schemas/ActionReason"
-                  }
-                },
-                "required": [
-                  "username"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "202": {
-            "description": "Accepted",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/MailboxSettings"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/v1/buckets/{bucket_id}/mailbox/aliases/{alias_id}": {
-      "delete": {
-        "operationId": "deleteEmailAlias",
-        "tags": [
-          "Mailbox"
-        ],
-        "summary": "Remove an alias address",
-        "description": "Stops new and queued deliveries to the alias. Saved emails stay. The base address of a mailbox whose primary address is on your domain cannot be removed (`409 EMAIL_ALIAS_BASE`).",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/BucketId"
-          },
-          {
-            "$ref": "#/components/parameters/AliasId"
-          },
-          {
-            "$ref": "#/components/parameters/AccountId"
-          },
-          {
-            "$ref": "#/components/parameters/Reason"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Deleted",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/DeleteResult"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/v1/buckets/{bucket_id}/mailbox/allowlist": {
-      "patch": {
-        "operationId": "updateEmailAllowlist",
-        "tags": [
-          "Mailbox"
-        ],
-        "summary": "Replace the allowed senders",
-        "description": "Requires an account owner or administrator with bucket-admin permission. Send sender_allowlist.version from the settings read as expected_version.",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/BucketId"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "sender_allowlist": {
-                    "type": "object",
-                    "required": [
-                      "enabled",
-                      "entries"
-                    ],
-                    "properties": {
-                      "enabled": {
-                        "type": "boolean"
-                      },
-                      "entries": {
-                        "type": "array",
-                        "maxItems": 500,
-                        "items": {
-                          "type": "string"
-                        }
-                      }
-                    }
-                  },
-                  "expected_version": {
-                    "type": "string"
-                  },
-                  "account_id": {
-                    "type": "string",
-                    "description": "Select another granted account for this request."
-                  },
-                  "reason": {
-                    "$ref": "#/components/schemas/ActionReason"
-                  }
-                },
-                "required": [
-                  "sender_allowlist",
-                  "expected_version"
-                ]
+                "$ref": "#/components/schemas/UnlockRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "sender_allowlist"
-                      ],
-                      "properties": {
-                        "sender_allowlist": {
-                          "$ref": "#/components/schemas/EmailSenderAllowlist"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
+            "$ref": "#/components/responses/LockResult"
           },
           "default": {
             "$ref": "#/components/responses/Error"
@@ -2320,13 +1498,13 @@
         }
       }
     },
-    "/v1/buckets/{bucket_id}/mailbox/webhook": {
+    "/v1/buckets/{bucket_id}/webhook": {
       "get": {
-        "operationId": "getEmailWebhook",
+        "operationId": "getWebhook",
         "tags": [
-          "Mailbox"
+          "Events"
         ],
-        "summary": "Read the email webhook",
+        "summary": "Read the webhook",
         "description": "Requires bucket-admin permission. webhook is null when no webhook is set. The signing secret is never returned here.",
         "parameters": [
           {
@@ -2381,12 +1559,12 @@
         }
       },
       "put": {
-        "operationId": "setEmailWebhook",
+        "operationId": "setWebhook",
         "tags": [
-          "Mailbox"
+          "Events"
         ],
-        "summary": "Set the email webhook",
-        "description": "Requires bucket-admin permission and a public HTTPS URL. A new URL or rotate_secret=true creates a new signing secret, returns it once and cancels pending deliveries. The same URL without rotate_secret returns the webhook without a secret.",
+        "summary": "Set the webhook",
+        "description": "Requires bucket-admin permission and a public HTTPS URL. The webhook receives the bucket's ticket events (TicketEvent): ticket.created and ticket.message_received, for every channel. A new URL or rotate_secret=true creates a new signing secret, returns it once and cancels pending deliveries. The same URL without rotate_secret returns the webhook without a secret.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BucketId"
@@ -2461,11 +1639,11 @@
         }
       },
       "delete": {
-        "operationId": "deleteEmailWebhook",
+        "operationId": "deleteWebhook",
         "tags": [
-          "Mailbox"
+          "Events"
         ],
-        "summary": "Remove the email webhook",
+        "summary": "Remove the webhook",
         "description": "Cancels queued deliveries. A delivery already in progress can finish. Returns the bucket ID, also when no webhook is set.",
         "parameters": [
           {
@@ -2505,14 +1683,14 @@
         }
       }
     },
-    "/v1/buckets/{bucket_id}/mailbox/subscription": {
+    "/v1/buckets/{bucket_id}/events/subscription": {
       "get": {
-        "operationId": "getEmailSubscription",
+        "operationId": "getEventSubscription",
         "tags": [
-          "Mailbox"
+          "Events"
         ],
-        "summary": "Get a live email subscription ticket",
-        "description": "Requires bucket read permission. Connect to websocket_url with email_subscription_token=TOKEN within 60 seconds, then subscribe to EmailReceivedChannel. Catch up with the email list cursor after every connect.",
+        "summary": "Get a live event subscription ticket",
+        "description": "Requires bucket read permission. Connect to websocket_url with subscription_token=TOKEN within 60 seconds, then subscribe to BucketEventsChannel with account_id and bucket_id. Each event is a TicketEvent. Catch up with GET /v1/buckets/{bucket_id}/tickets and updated_after after every connect.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BucketId"
@@ -2544,7 +1722,7 @@
                       ],
                       "properties": {
                         "subscription": {
-                          "$ref": "#/components/schemas/EmailSubscription"
+                          "$ref": "#/components/schemas/EventSubscription"
                         }
                       }
                     }
@@ -2559,14 +1737,14 @@
         }
       }
     },
-    "/v1/buckets/{bucket_id}/mailbox/emails": {
+    "/v1/buckets/{bucket_id}/tickets": {
       "get": {
-        "operationId": "listEmails",
+        "operationId": "listTickets",
         "tags": [
-          "Emails"
+          "Tickets"
         ],
-        "summary": "List emails",
-        "description": "Requires bucket read permission. Lists received email by default. To poll, list in ascending order, save pagination.next_cursor after every page (including an empty page) and send it next time with the same filters. Listing never marks email read.",
+        "summary": "List tickets",
+        "description": "Lists the bucket's support tickets, newest activity first. A ticket is one conversation that someone started: an email, a message left on the docs site, or anonymous page feedback. Tickets whose first message AI labels marked as Junk are left out unless label is Junk. To poll, pass the newest updated_at you have seen as updated_after. Reads no message content.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BucketId"
@@ -2584,85 +1762,295 @@
             "$ref": "#/components/parameters/Cursor"
           },
           {
-            "name": "order",
+            "name": "status",
             "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "enum": [
-                "asc",
-                "desc"
-              ],
-              "default": "asc"
-            },
-            "description": "Arrival order. Use asc to poll."
-          },
-          {
-            "name": "direction",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "received",
-                "sent",
+                "open",
+                "solved",
                 "all"
               ],
-              "default": "received"
-            }
-          },
-          {
-            "name": "sender",
-            "in": "query",
-            "schema": {
-              "type": "string"
+              "default": "all"
             },
-            "description": "Exact sender address, case insensitive."
+            "description": "Ticket status."
           },
           {
-            "name": "subject",
+            "name": "channel",
             "in": "query",
+            "required": false,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "email",
+                "chat",
+                "feedback"
+              ]
             },
-            "description": "Case-insensitive subject text."
+            "description": "Only tickets that started in this channel."
           },
           {
-            "name": "received_after",
+            "name": "label",
             "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "description": "Only tickets with a message that has this label, such as Junk."
+          },
+          {
+            "name": "updated_after",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "string",
               "format": "date-time"
-            }
-          },
-          {
-            "name": "received_before",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "date-time"
-            }
-          },
-          {
-            "name": "read",
-            "in": "query",
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "has_attachments",
-            "in": "query",
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "conversation_id",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "pattern": "^eml_"
             },
-            "description": "Return the emails of this conversation."
+            "description": "Only tickets with activity after this ISO 8601 time."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/TicketList"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "tickets": [
+                      {
+                        "id": "tkt_example",
+                        "number": 3,
+                        "status": "open",
+                        "subject": "How do I rotate my API key?",
+                        "channel": "email",
+                        "requester": {
+                          "address": "dev@example.com",
+                          "name": "Dana Developer"
+                        },
+                        "labels": [],
+                        "message_count": 2,
+                        "unread_count": 1,
+                        "created_at": "2026-10-11T12:05:00.000000Z",
+                        "updated_at": "2026-10-11T12:30:00.000000Z",
+                        "last_message_at": "2026-10-11T12:30:00.000000Z",
+                        "solved_at": null
+                      }
+                    ],
+                    "pagination": {
+                      "limit": 50,
+                      "has_more": false,
+                      "next_cursor": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/buckets/{bucket_id}/tickets/{ticket_id}": {
+      "get": {
+        "operationId": "getTicket",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Read a ticket",
+        "description": "Returns the ticket without its messages. List them with GET /v1/buckets/{bucket_id}/tickets/{ticket_id}/messages.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          },
+          {
+            "$ref": "#/components/parameters/TicketId"
+          },
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/Reason"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "ticket"
+                      ],
+                      "properties": {
+                        "ticket": {
+                          "$ref": "#/components/schemas/Ticket"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "ticket": {
+                      "id": "tkt_example",
+                      "number": 3,
+                      "status": "open",
+                      "subject": "How do I rotate my API key?",
+                      "channel": "email",
+                      "requester": {
+                        "address": "dev@example.com",
+                        "name": "Dana Developer"
+                      },
+                      "labels": [],
+                      "message_count": 2,
+                      "unread_count": 1,
+                      "created_at": "2026-10-11T12:05:00.000000Z",
+                      "updated_at": "2026-10-11T12:30:00.000000Z",
+                      "last_message_at": "2026-10-11T12:30:00.000000Z",
+                      "solved_at": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateTicket",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "Solve, reopen or label a ticket",
+        "description": "Requires bucket write permission. status solved or open changes every ticket of a merged conversation. add_labels labels the first message; remove_labels removes the labels from every message. Built-in labels such as Junk change only in the dashboard. While an agent works on a message, a label change returns 423 EMAIL_LOCKED.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          },
+          {
+            "$ref": "#/components/parameters/TicketId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "ticket"
+                      ],
+                      "properties": {
+                        "ticket": {
+                          "$ref": "#/components/schemas/Ticket"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/buckets/{bucket_id}/tickets/{ticket_id}/messages": {
+      "get": {
+        "operationId": "listTicketMessages",
+        "tags": [
+          "Tickets"
+        ],
+        "summary": "List the messages of a ticket",
+        "description": "Lists the ticket's messages oldest first, with body_text and attachment metadata. Does not change read status. Junk email and new email that AI labels still check are withheld: body_status is withheld.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          },
+          {
+            "$ref": "#/components/parameters/TicketId"
+          },
+          {
+            "$ref": "#/components/parameters/AccountId"
+          },
+          {
+            "$ref": "#/components/parameters/Reason"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            },
+            "description": "Page size, 1 to 50."
+          },
+          {
+            "$ref": "#/components/parameters/Cursor"
           },
           {
             "$ref": "#/components/parameters/IncludeStorage"
@@ -2685,18 +2073,7 @@
                       "const": true
                     },
                     "data": {
-                      "$ref": "#/components/schemas/EmailList"
-                    }
-                  }
-                },
-                "example": {
-                  "success": true,
-                  "data": {
-                    "emails": [],
-                    "pagination": {
-                      "limit": 50,
-                      "has_more": false,
-                      "next_cursor": "OPAQUE_CURSOR"
+                      "$ref": "#/components/schemas/TicketMessageList"
                     }
                   }
                 }
@@ -2709,15 +2086,18 @@
         }
       },
       "post": {
-        "operationId": "sendEmail",
+        "operationId": "replyToTicket",
         "tags": [
-          "Emails"
+          "Tickets"
         ],
-        "summary": "Send an email",
-        "description": "Requires bucket write permission. Send only to account members, to other mailboxes of the account, or to addresses that emailed this mailbox and passed sender authentication; an administrator can turn off each kind. When the mailbox requires approval, delivery.status is awaiting_approval until a person sends, edits or declines the email; do not send it again. Replying to or attaching an email that AI labels marked as Junk returns 403 EMAIL_WITHHELD; one they are still checking returns 503 EMAIL_LABELING_PENDING with Retry-After. The From name is the bucket title. On the Free plan, the email ends with one line about Revdoku. Set in_reply_to to reply. Delivery is asynchronous: read delivery.status later. After an unknown result, list direction=sent before you send again.",
+        "summary": "Reply to the requester",
+        "description": "Requires bucket write permission. Revdoku sends only replies: the reply goes to the ticket's requester, the verified sender of its newest received message. A ticket without one, such as anonymous feedback, returns 403 EMAIL_RECIPIENT_NOT_ALLOWED. When the bucket requires approval, delivery.status is awaiting_approval until a person sends, edits or declines the reply; do not send it again. A reply to Junk email returns 403 EMAIL_WITHHELD; one that AI labels are still checking returns 503 EMAIL_LABELING_PENDING with Retry-After. The subject ends with [#number]. On the Free plan, the email ends with one line about Revdoku. Delivery is asynchronous. After an unknown result, read the ticket before you send again. Uses credits; see https://app.revdoku.com/pricing.json.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BucketId"
+          },
+          {
+            "$ref": "#/components/parameters/TicketId"
           }
         ],
         "requestBody": {
@@ -2725,7 +2105,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SendEmailRequest"
+                "$ref": "#/components/schemas/TicketReplyRequest"
               }
             }
           }
@@ -2749,68 +2129,11 @@
                     "data": {
                       "type": "object",
                       "required": [
-                        "email"
+                        "message"
                       ],
                       "properties": {
-                        "email": {
-                          "$ref": "#/components/schemas/EmailSummary"
-                        }
-                      }
-                    }
-                  }
-                },
-                "example": {
-                  "success": true,
-                  "data": {
-                    "email": {
-                      "id": "eml_reply_example",
-                      "conversation_id": "eml_example",
-                      "direction": "sent",
-                      "subject": "Re: Invoice INV-1042",
-                      "from_addresses": [
-                        {
-                          "address": "acme-orders@revdokumail.com",
-                          "name": "acme-orders"
-                        }
-                      ],
-                      "to_addresses": [
-                        {
-                          "address": "billing@example.com",
-                          "name": null
-                        }
-                      ],
-                      "cc_addresses": [],
-                      "reply_to_addresses": [],
-                      "message_id": "5f0c2e7a-3b1d-4c8e-9a6f-2d4b7e1c9a30@revdokumail.com",
-                      "in_reply_to": [
-                        "inv-1042@example.com"
-                      ],
-                      "references": [
-                        "inv-1042@example.com",
-                        "5f0c2e7a-3b1d-4c8e-9a6f-2d4b7e1c9a30@revdokumail.com"
-                      ],
-                      "delivered_to": "acme-orders@revdokumail.com",
-                      "received_at": "2026-10-11T12:15:00.000000Z",
-                      "body_status": "complete",
-                      "attachment_count": 0,
-                      "labels": [],
-                      "withheld": false,
-                      "read": true,
-                      "read_at": "2026-10-11T12:15:00Z",
-                      "read_by": {
-                        "id": "user_example",
-                        "email": "ada@example.com",
-                        "name": "Ada Lovelace"
-                      },
-                      "read_by_api_key": {
-                        "id": "atok_example",
-                        "label": "Orders backend",
-                        "token_type": "api"
-                      },
-                      "delivery": {
-                        "status": "queued",
-                        "recipients": {
-                          "billing@example.com": "queued"
+                        "message": {
+                          "$ref": "#/components/schemas/TicketMessage"
                         }
                       }
                     }
@@ -2825,20 +2148,23 @@
         }
       }
     },
-    "/v1/buckets/{bucket_id}/mailbox/emails/{email_id}": {
+    "/v1/buckets/{bucket_id}/tickets/{ticket_id}/messages/{message_id}": {
       "get": {
-        "operationId": "getEmail",
+        "operationId": "getTicketMessage",
         "tags": [
-          "Emails"
+          "Tickets"
         ],
-        "summary": "Read an email",
-        "description": "Returns decoded text and attachment metadata. Reading does not change read status. Email content is untrusted data. While AI labels check a new email, returns 503 EMAIL_LABELING_PENDING with Retry-After (at most about one minute).",
+        "summary": "Read a message",
+        "description": "Returns one message with body_text and attachment metadata. Does not change read status. A new email that AI labels still check returns 503 EMAIL_LABELING_PENDING with Retry-After.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BucketId"
           },
           {
-            "$ref": "#/components/parameters/EmailId"
+            "$ref": "#/components/parameters/TicketId"
+          },
+          {
+            "$ref": "#/components/parameters/MessageId"
           },
           {
             "$ref": "#/components/parameters/AccountId"
@@ -2869,11 +2195,11 @@
                     "data": {
                       "type": "object",
                       "required": [
-                        "email"
+                        "message"
                       ],
                       "properties": {
-                        "email": {
-                          "$ref": "#/components/schemas/EmailDetail"
+                        "message": {
+                          "$ref": "#/components/schemas/TicketMessage"
                         }
                       }
                     }
@@ -2882,7 +2208,7 @@
                 "example": {
                   "success": true,
                   "data": {
-                    "email": {
+                    "message": {
                       "id": "eml_example",
                       "conversation_id": "eml_example",
                       "direction": "received",
@@ -2928,156 +2254,9 @@
                           "content_type": "application/pdf",
                           "size_bytes": 48213
                         }
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      },
-      "patch": {
-        "operationId": "updateEmail",
-        "tags": [
-          "Emails"
-        ],
-        "summary": "Update an email's read status or labels",
-        "description": "Changes read status and custom labels. Send at least one of read, add_labels and remove_labels. Labels need write access. A new label name creates the label. Built-in labels such as Junk change only in the dashboard.",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/BucketId"
-          },
-          {
-            "$ref": "#/components/parameters/EmailId"
-          },
-          {
-            "$ref": "#/components/parameters/IncludeStorage"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "read": {
-                    "type": "boolean"
-                  },
-                  "add_labels": {
-                    "type": "array",
-                    "maxItems": 10,
-                    "items": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 64
-                    },
-                    "description": "Label names to add."
-                  },
-                  "remove_labels": {
-                    "type": "array",
-                    "maxItems": 10,
-                    "items": {
-                      "type": "string",
-                      "minLength": 1,
-                      "maxLength": 64
-                    },
-                    "description": "Label names to remove."
-                  },
-                  "account_id": {
-                    "type": "string",
-                    "description": "Select another granted account for this request."
-                  },
-                  "reason": {
-                    "$ref": "#/components/schemas/ActionReason"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "email"
                       ],
-                      "properties": {
-                        "email": {
-                          "$ref": "#/components/schemas/EmailSummary"
-                        }
-                      }
-                    }
-                  }
-                },
-                "example": {
-                  "success": true,
-                  "data": {
-                    "email": {
-                      "id": "eml_example",
-                      "conversation_id": "eml_example",
-                      "direction": "received",
-                      "subject": "Invoice INV-1042",
-                      "from_addresses": [
-                        {
-                          "address": "billing@example.com",
-                          "name": "Example Billing"
-                        }
-                      ],
-                      "to_addresses": [
-                        {
-                          "address": "acme-orders@revdokumail.com",
-                          "name": null
-                        }
-                      ],
-                      "cc_addresses": [],
-                      "reply_to_addresses": [],
-                      "message_id": "inv-1042@example.com",
-                      "in_reply_to": [],
-                      "references": [],
-                      "delivered_to": "acme-orders@revdokumail.com",
-                      "received_at": "2026-10-11T12:05:00.000000Z",
-                      "body_status": "complete",
-                      "attachment_count": 1,
-                      "labels": [
-                        {
-                          "id": "tag_example",
-                          "name": "Receipts",
-                          "color": "yellow"
-                        }
-                      ],
-                      "withheld": false,
-                      "read": true,
-                      "read_at": "2026-10-11T12:10:00Z",
-                      "read_by": {
-                        "id": "user_example",
-                        "email": "ada@example.com",
-                        "name": "Ada Lovelace"
-                      },
-                      "read_by_api_key": {
-                        "id": "atok_example",
-                        "label": "Orders backend",
-                        "token_type": "api"
-                      }
+                      "ticket_id": "tkt_example",
+                      "channel": "email"
                     }
                   }
                 }
@@ -3090,18 +2269,21 @@
         }
       },
       "delete": {
-        "operationId": "deleteEmail",
+        "operationId": "deleteTicketMessage",
         "tags": [
-          "Emails"
+          "Tickets"
         ],
-        "summary": "Delete an email",
-        "description": "Requires bucket-admin permission. Deletes the stored message and its attachments. There is no trash.",
+        "summary": "Delete a message",
+        "description": "Requires bucket-admin permission. Deletes one message with its files and attachments.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BucketId"
           },
           {
-            "$ref": "#/components/parameters/EmailId"
+            "$ref": "#/components/parameters/TicketId"
+          },
+          {
+            "$ref": "#/components/parameters/MessageId"
           },
           {
             "$ref": "#/components/parameters/AccountId"
@@ -3147,11 +2329,11 @@
         }
       }
     },
-    "/v1/buckets/{bucket_id}/mailbox/emails/{email_id}/raw": {
+    "/v1/buckets/{bucket_id}/tickets/{ticket_id}/messages/{message_id}/raw": {
       "get": {
-        "operationId": "getEmailOriginalDownload",
+        "operationId": "getTicketMessageOriginalDownload",
         "tags": [
-          "Emails"
+          "Tickets"
         ],
         "summary": "Get a download link for the original email",
         "description": "Returns a temporary link to the original .eml file. Downloads do not change read status. Junk email returns 403 EMAIL_WITHHELD. A new email that AI labels are still checking returns 503 EMAIL_LABELING_PENDING with Retry-After.",
@@ -3160,7 +2342,10 @@
             "$ref": "#/components/parameters/BucketId"
           },
           {
-            "$ref": "#/components/parameters/EmailId"
+            "$ref": "#/components/parameters/TicketId"
+          },
+          {
+            "$ref": "#/components/parameters/MessageId"
           },
           {
             "$ref": "#/components/parameters/AccountId"
@@ -3207,11 +2392,11 @@
         }
       }
     },
-    "/v1/buckets/{bucket_id}/mailbox/emails/{email_id}/attachments/{attachment_id}": {
+    "/v1/buckets/{bucket_id}/tickets/{ticket_id}/messages/{message_id}/attachments/{attachment_id}": {
       "get": {
-        "operationId": "getEmailAttachmentDownload",
+        "operationId": "getTicketMessageAttachmentDownload",
         "tags": [
-          "Emails"
+          "Tickets"
         ],
         "summary": "Get a download link for an attachment",
         "description": "Returns a temporary link. No extraction or analysis is done. Junk email returns 403 EMAIL_WITHHELD. A new email that AI labels are still checking returns 503 EMAIL_LABELING_PENDING with Retry-After.",
@@ -3220,7 +2405,10 @@
             "$ref": "#/components/parameters/BucketId"
           },
           {
-            "$ref": "#/components/parameters/EmailId"
+            "$ref": "#/components/parameters/TicketId"
+          },
+          {
+            "$ref": "#/components/parameters/MessageId"
           },
           {
             "$ref": "#/components/parameters/AttachmentId"
@@ -3270,95 +2458,6 @@
                       "content_type": "application/pdf",
                       "size_bytes": 48213,
                       "expires_in": 900
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "default": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/v1/direct_uploads": {
-      "post": {
-        "operationId": "prepareFileUpload",
-        "tags": [
-          "Files"
-        ],
-        "summary": "Prepare a file upload (step 1 of 3)",
-        "description": "Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/buckets/{bucket_id}/files (step 3). Identical content at the same path returns skipped=true and duplicate=true without an upload.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PrepareFileUploadRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/PreparedFileUpload"
-                    }
-                  }
-                },
-                "example": {
-                  "success": true,
-                  "data": {
-                    "signed_id": "eyJfcmFpbHMi...",
-                    "filename": "document_7a77539cbd6d02a5.txt",
-                    "byte_size": 1234,
-                    "checksum": "rL0Y20zC+Fzt72VPzMSk2A==",
-                    "content_type": "text/plain",
-                    "direct_upload": {
-                      "url": "https://storage.example/upload",
-                      "headers": {
-                        "Content-Type": "text/plain",
-                        "Content-MD5": "rL0Y20zC+Fzt72VPzMSk2A==",
-                        "Content-Disposition": "inline; filename=\"document_7a77539cbd6d02a5.txt\"; filename*=UTF-8''document_7a77539cbd6d02a5.txt"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Identical content; nothing to upload",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "success",
-                    "data"
-                  ],
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "const": true
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/PreparedFileUpload"
                     }
                   }
                 }
@@ -3950,7 +3049,7 @@
           "Files"
         ],
         "summary": "Delete a file",
-        "description": "Requires bucket-admin permission. Files under _mailbox/ return MAILBOX_PATH_READ_ONLY; delete the email instead. Files under _agents/ and _revdoku/ return RESERVED_PATH.",
+        "description": "Requires bucket-admin permission. Files under _mailbox/ return MAILBOX_PATH_READ_ONLY; delete the ticket message instead. Files under _agents/ and _revdoku/ return RESERVED_PATH.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BucketId"
@@ -4388,6 +3487,100 @@
             "$ref": "#/components/responses/Error"
           }
         }
+      }
+    },
+    "/v1/buckets/{bucket_id}/uploads": {
+      "post": {
+        "operationId": "prepareFileUpload",
+        "tags": [
+          "Files"
+        ],
+        "summary": "Prepare a file upload (step 1 of 3)",
+        "description": "Returns a storage URL. Then PUT the bytes to direct_upload.url with exactly direct_upload.headers and no API key (step 2), and save the file with POST /v1/buckets/{bucket_id}/files (step 3). Identical content at the same path returns skipped=true and duplicate=true without an upload.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrepareFileUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PreparedFileUpload"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "signed_id": "eyJfcmFpbHMi...",
+                    "filename": "document_7a77539cbd6d02a5.txt",
+                    "byte_size": 1234,
+                    "checksum": "rL0Y20zC+Fzt72VPzMSk2A==",
+                    "content_type": "text/plain",
+                    "direct_upload": {
+                      "url": "https://storage.example/upload",
+                      "headers": {
+                        "Content-Type": "text/plain",
+                        "Content-MD5": "rL0Y20zC+Fzt72VPzMSk2A==",
+                        "Content-Disposition": "inline; filename=\"document_7a77539cbd6d02a5.txt\"; filename*=UTF-8''document_7a77539cbd6d02a5.txt"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Identical content; nothing to upload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PreparedFileUpload"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          }
+        ]
       }
     },
     "/v1/buckets/{bucket_id}/upload_sessions": {
@@ -4857,7 +4050,7 @@
           "Publications"
         ],
         "summary": "Publish the site",
-        "description": "Publishes the bucket's files as its site, or republishes them. The build runs in the background: get the site until publish_state is ready or failed.",
+        "description": "Publishes the bucket's files as its site, or republishes them. The build runs in the background: get the site until publish_state is ready or failed. Uses credits; see https://app.revdoku.com/pricing.json.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BucketId"
@@ -4935,6 +4128,30 @@
                         }
                       }
                     }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Not enough credits. Nothing was built. Do not retry automatically.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INSUFFICIENT_CREDITS",
+                    "message": "Not enough credits to publish: it needs 10 and the account has 4.",
+                    "details": {
+                      "credits_required": 10,
+                      "credits_available": 4,
+                      "upgrade_url": "https://app.revdoku.com/pricing?utm_source=limit_error&utm_content=credits"
+                    },
+                    "request_id": "req_example",
+                    "next_action": "upgrade_plan"
                   }
                 }
               }
@@ -5051,7 +4268,7 @@
           "Publications"
         ],
         "summary": "Preview the site",
-        "description": "Publishes the bucket's current files at a separate preview address for 24 hours. The site does not change.",
+        "description": "Publishes the bucket's current files at a separate preview address for 24 hours. The site does not change. Uses credits; see https://app.revdoku.com/pricing.json.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BucketId"
@@ -5099,13 +4316,37 @@
               }
             }
           },
+          "402": {
+            "description": "Not enough credits. Nothing was built. Do not retry automatically.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                },
+                "example": {
+                  "success": false,
+                  "error": {
+                    "code": "INSUFFICIENT_CREDITS",
+                    "message": "Not enough credits to publish: it needs 10 and the account has 4.",
+                    "details": {
+                      "credits_required": 10,
+                      "credits_available": 4,
+                      "upgrade_url": "https://app.revdoku.com/pricing?utm_source=limit_error&utm_content=credits"
+                    },
+                    "request_id": "req_example",
+                    "next_action": "upgrade_plan"
+                  }
+                }
+              }
+            }
+          },
           "default": {
             "$ref": "#/components/responses/Error"
           }
         }
       }
     },
-    "/v1/account/github_installations": {
+    "/v1/account/github/installations": {
       "get": {
         "operationId": "listGithubInstallations",
         "tags": [
@@ -5188,7 +4429,7 @@
         }
       }
     },
-    "/v1/account/github_installations/{installation_id}/repositories": {
+    "/v1/account/github/installations/{installation_id}/repositories": {
       "get": {
         "operationId": "listGithubRepositories",
         "tags": [
@@ -5255,14 +4496,14 @@
         }
       }
     },
-    "/v1/buckets/{bucket_id}/github_sync": {
+    "/v1/buckets/{bucket_id}/github": {
       "get": {
         "operationId": "getGithubSync",
         "tags": [
           "GitHub"
         ],
         "summary": "Read the GitHub repository of a bucket",
-        "description": "Returns the bucket's GitHub repository and its sync state. github_sync is null when the bucket never had one. After connectGithubRepository, read it until last_synced_at is set (the first copy is done) or sync_state is error.",
+        "description": "Returns the bucket's GitHub repository and its sync state. github is null when the bucket never had one. After connectGithubRepository, read it until last_synced_at is set (the first copy is done) or sync_state is error.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BucketId"
@@ -5290,10 +4531,10 @@
                     "data": {
                       "type": "object",
                       "required": [
-                        "github_sync"
+                        "github"
                       ],
                       "properties": {
-                        "github_sync": {
+                        "github": {
                           "anyOf": [
                             {
                               "$ref": "#/components/schemas/GithubSync"
@@ -5310,7 +4551,7 @@
                 "example": {
                   "success": true,
                   "data": {
-                    "github_sync": {
+                    "github": {
                       "id": "bgh_8xQ2kL4mN7pR",
                       "bucket_id": "bkt_5Gh3Lm9Qx2Tz",
                       "installation_id": 51234567,
@@ -5367,7 +4608,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "github_sync": {
+                  "github": {
                     "$ref": "#/components/schemas/GithubConnect"
                   },
                   "account_id": {
@@ -5379,7 +4620,7 @@
                   }
                 },
                 "required": [
-                  "github_sync"
+                  "github"
                 ]
               }
             }
@@ -5404,10 +4645,10 @@
                     "data": {
                       "type": "object",
                       "required": [
-                        "github_sync"
+                        "github"
                       ],
                       "properties": {
-                        "github_sync": {
+                        "github": {
                           "$ref": "#/components/schemas/GithubSync"
                         }
                       }
@@ -5441,7 +4682,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "github_sync": {
+                  "github": {
                     "$ref": "#/components/schemas/GithubSyncSettings"
                   },
                   "account_id": {
@@ -5453,7 +4694,7 @@
                   }
                 },
                 "required": [
-                  "github_sync"
+                  "github"
                 ]
               }
             }
@@ -5478,10 +4719,10 @@
                     "data": {
                       "type": "object",
                       "required": [
-                        "github_sync"
+                        "github"
                       ],
                       "properties": {
-                        "github_sync": {
+                        "github": {
                           "$ref": "#/components/schemas/GithubSync"
                         }
                       }
@@ -5544,7 +4785,7 @@
         }
       }
     },
-    "/v1/buckets/{bucket_id}/github_sync/sync": {
+    "/v1/buckets/{bucket_id}/github/sync": {
       "post": {
         "operationId": "syncGithubRepository",
         "tags": [
@@ -5586,11 +4827,11 @@
                     "data": {
                       "type": "object",
                       "required": [
-                        "github_sync",
+                        "github",
                         "enqueued"
                       ],
                       "properties": {
-                        "github_sync": {
+                        "github": {
                           "$ref": "#/components/schemas/GithubSync"
                         },
                         "enqueued": {
@@ -5610,7 +4851,7 @@
         }
       }
     },
-    "/v1/buckets/{bucket_id}/github_sync/setup_link": {
+    "/v1/buckets/{bucket_id}/github/setup_link": {
       "get": {
         "operationId": "getGithubSetupLink",
         "tags": [
@@ -6322,7 +5563,7 @@
           "max_email_aliases_per_bucket": {
             "type": "integer",
             "minimum": 0,
-            "description": "Active retained email addresses (aliases) per mailbox. Zero means that the plan has no aliases."
+            "description": "Active retained email addresses (aliases) per bucket. Zero means that the plan has no aliases."
           }
         }
       },
@@ -6540,9 +5781,9 @@
           "allowed"
         ]
       },
-      "Mailbox": {
+      "BucketEmail": {
         "type": "object",
-        "description": "Receiving and sending state of a bucket's mailbox. Counts read the email index without reading content.",
+        "description": "The bucket's email address and whether it can receive and send now. Counts read the email index without reading content.",
         "required": [
           "message_count",
           "unread_count",
@@ -6583,15 +5824,15 @@
           },
           "receiving_enabled": {
             "type": "boolean",
-            "description": "Whether the mailbox can receive email now."
+            "description": "Whether the address can receive email now."
           },
-          "blocked_reason": {
+          "receiving_blocked_reason": {
             "type": "string",
             "description": "Why receiving is unavailable. Omitted when receiving_enabled is true."
           },
           "sending_enabled": {
             "type": "boolean",
-            "description": "Whether the mailbox can send replies now."
+            "description": "Whether the bucket can send replies now."
           },
           "sending_blocked_reason": {
             "type": "string",
@@ -6633,11 +5874,11 @@
       },
       "Bucket": {
         "type": "object",
-        "description": "A bucket: private files, a mailbox with its own address, and a site. Label it as title (mailbox.address), or by mailbox.address alone when title is null. Use id in API calls.",
+        "description": "A bucket: private files, its own email address, and a site. Label it as title (email.address), or by email.address alone when title is null. Use id in API calls.",
         "required": [
           "id",
           "account_id",
-          "mailbox",
+          "email",
           "archived",
           "version_id",
           "version_number",
@@ -6660,7 +5901,7 @@
               "null"
             ],
             "maxLength": 255,
-            "description": "Bucket title chosen by people. Defaults to the email username given at creation. Null when unset or when the caller cannot see mailbox.address."
+            "description": "Bucket title chosen by people. Defaults to the email username given at creation. Null when unset or when the caller cannot see email.address."
           },
           "description": {
             "type": [
@@ -6677,8 +5918,8 @@
             "type": "string",
             "description": "Send as expected_metadata_version on PATCH. Changes only when description or metadata changes."
           },
-          "mailbox": {
-            "$ref": "#/components/schemas/Mailbox"
+          "email": {
+            "$ref": "#/components/schemas/BucketEmail"
           },
           "archived": {
             "type": "boolean"
@@ -6793,7 +6034,7 @@
           }
         }
       },
-      "MailboxOptions": {
+      "BucketEmailOptions": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -6816,7 +6057,7 @@
           "title": {
             "type": "string",
             "maxLength": 255,
-            "description": "Optional title. Defaults to mailbox.username as given, or to the generated name. A title that another active bucket uses returns 409 BUCKET_TITLE_TAKEN."
+            "description": "Optional title. Defaults to email.username as given, or to the generated name. A title that another active bucket uses returns 409 BUCKET_TITLE_TAKEN."
           },
           "description": {
             "type": "string",
@@ -6826,8 +6067,8 @@
             "type": "object",
             "additionalProperties": true
           },
-          "mailbox": {
-            "$ref": "#/components/schemas/MailboxOptions"
+          "email": {
+            "$ref": "#/components/schemas/BucketEmailOptions"
           }
         }
       },
@@ -6853,222 +6094,27 @@
           }
         }
       },
-      "EmailAlias": {
-        "type": "object",
-        "required": [
-          "id",
-          "address",
-          "active"
-        ],
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "address": {
-            "type": "string"
-          },
-          "active": {
-            "type": "boolean",
-            "description": "Within the current alias allowance. Mailbox receiving holds still apply."
-          }
-        }
-      },
-      "EmailSenderAllowlist": {
-        "type": "object",
-        "required": [
-          "enabled",
-          "entries",
-          "version",
-          "max_entries",
-          "editable"
-        ],
-        "properties": {
-          "enabled": {
-            "type": "boolean"
-          },
-          "entries": {
-            "type": "array",
-            "maxItems": 500,
-            "items": {
-              "type": "string"
-            }
-          },
-          "version": {
-            "type": "string"
-          },
-          "max_entries": {
-            "type": "integer"
-          },
-          "editable": {
-            "type": "boolean"
-          }
-        }
-      },
-      "MailboxSettings": {
-        "type": "object",
-        "description": "Address settings of a bucket's mailbox.",
-        "required": [
-          "message_count",
-          "unread_count",
-          "last_received_at",
-          "receiving_enabled",
-          "sending_enabled",
-          "aliases"
-        ],
-        "properties": {
-          "address": {
-            "type": "string",
-            "description": "Primary address. Present when the credential has write access to the bucket. Show it after the title."
-          },
-          "message_count": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int64",
-            "minimum": 0,
-            "description": "Emails currently stored. Null while the email index is being prepared."
-          },
-          "unread_count": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int64",
-            "minimum": 0,
-            "description": "Stored emails with shared unread status. Null while the email index is being prepared."
-          },
-          "last_received_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time",
-            "description": "Receipt time of the latest saved email; null before the first email."
-          },
-          "receiving_enabled": {
-            "type": "boolean",
-            "description": "Whether the mailbox can receive email now."
-          },
-          "blocked_reason": {
-            "type": "string",
-            "description": "Why receiving is unavailable. Omitted when receiving_enabled is true."
-          },
-          "sending_enabled": {
-            "type": "boolean",
-            "description": "Whether the mailbox can send replies now."
-          },
-          "sending_blocked_reason": {
-            "type": "string",
-            "description": "Why sending is unavailable. Omitted when sending_enabled is true."
-          },
-          "username": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The part of address before @."
-          },
-          "aliases": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EmailAlias"
-            }
-          },
-          "available_domains": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "hostname": {
-                  "type": "string"
-                },
-                "kind": {
-                  "type": "string",
-                  "enum": [
-                    "platform",
-                    "custom"
-                  ]
-                }
-              }
-            }
-          },
-          "assignment": {
-            "type": "object",
-            "description": "No candidate address is disclosed. Keep using address until status is active; on pending poll the email endpoint.",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "status": {
-                "type": "string",
-                "enum": [
-                  "pending",
-                  "active",
-                  "failed"
-                ]
-              },
-              "hostname": {
-                "type": "string"
-              },
-              "error": {
-                "type": "object",
-                "properties": {
-                  "code": {
-                    "type": "string"
-                  },
-                  "message": {
-                    "type": "string"
-                  },
-                  "retryable": {
-                    "type": "boolean"
-                  }
-                }
-              }
-            }
-          },
-          "customization": {
-            "type": "object",
-            "description": "Caller-specific customization capability on the dedicated email GET/rotate endpoints.",
-            "properties": {
-              "allowed": {
-                "type": "boolean"
-              },
-              "blocked_reason": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "settings_url": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "description": "Account-domain settings link for administrators; null otherwise."
-              }
-            }
-          },
-          "sender_allowlist": {
-            "$ref": "#/components/schemas/EmailSenderAllowlist",
-            "description": "Returned to account administrators with bucket-admin permission."
-          }
-        }
-      },
       "Webhook": {
         "type": "object",
         "required": [
           "url",
-          "event"
+          "events"
         ],
         "properties": {
           "url": {
             "type": "string",
             "format": "uri"
           },
-          "event": {
-            "type": "string",
-            "const": "email.received"
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ticket.created",
+                "ticket.message_received"
+              ]
+            },
+            "description": "The event types that the webhook receives."
           }
         }
       },
@@ -7076,16 +6122,23 @@
         "type": "object",
         "required": [
           "url",
-          "event"
+          "events"
         ],
         "properties": {
           "url": {
             "type": "string",
             "format": "uri"
           },
-          "event": {
-            "type": "string",
-            "const": "email.received"
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "ticket.created",
+                "ticket.message_received"
+              ]
+            },
+            "description": "The event types that the webhook receives."
           },
           "signing_secret": {
             "type": "string",
@@ -7093,7 +6146,7 @@
           }
         }
       },
-      "EmailSubscription": {
+      "EventSubscription": {
         "type": "object",
         "required": [
           "token",
@@ -7113,7 +6166,7 @@
           },
           "channel": {
             "type": "string",
-            "const": "EmailReceivedChannel"
+            "const": "BucketEventsChannel"
           },
           "account_id": {
             "type": "string"
@@ -7124,12 +6177,13 @@
           "websocket_url": {
             "type": "string",
             "format": "uri",
-            "description": "Base WebSocket endpoint. Append email_subscription_token as a query parameter."
+            "description": "Base WebSocket endpoint. Append subscription_token as a query parameter."
           }
         }
       },
-      "EmailReceivedEvent": {
+      "TicketEvent": {
         "type": "object",
+        "description": "A ticket event, sent to the webhook and to live subscribers. ticket.created is the first message of a new ticket; ticket.message_received is a later message of a ticket. While the AI filter is on for the account, an event waits until the filter has checked the message, at most one minute. A message that the filter labels Junk sends no event; if a person removes the Junk label, the event is sent then. Events carry only IDs: read the ticket with GET /v1/buckets/{bucket_id}/tickets/{ticket_id}.",
         "required": [
           "id",
           "type",
@@ -7143,7 +6197,10 @@
           },
           "type": {
             "type": "string",
-            "const": "email.received"
+            "enum": [
+              "ticket.created",
+              "ticket.message_received"
+            ]
           },
           "created_at": {
             "type": "string",
@@ -7154,7 +6211,9 @@
             "required": [
               "account_id",
               "bucket_id",
-              "email_id",
+              "ticket_id",
+              "message_id",
+              "channel",
               "received_at",
               "attachment_count"
             ],
@@ -7165,8 +6224,27 @@
               "bucket_id": {
                 "type": "string"
               },
-              "email_id": {
-                "type": "string"
+              "ticket_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^tkt_",
+                "description": "The ticket of the message."
+              },
+              "message_id": {
+                "type": "string",
+                "pattern": "^eml_",
+                "description": "The new message (GET /v1/buckets/{bucket_id}/tickets/{ticket_id}/messages/{message_id})."
+              },
+              "channel": {
+                "type": "string",
+                "enum": [
+                  "email",
+                  "chat",
+                  "feedback"
+                ],
+                "description": "How the message arrived: an email, a message left on the docs site or page feedback."
               },
               "received_at": {
                 "type": "string",
@@ -7329,66 +6407,6 @@
               "purple",
               "gray"
             ]
-          }
-        }
-      },
-      "SendEmailRequest": {
-        "type": "object",
-        "required": [
-          "text"
-        ],
-        "properties": {
-          "to": {
-            "type": "array",
-            "maxItems": 10,
-            "items": {
-              "type": "string",
-              "format": "email"
-            },
-            "description": "Recipient addresses, one per item. With in_reply_to, the recipient defaults to the original sender only when that sender passed SPF or DMARC; otherwise pass to. To and cc together allow at most 10 addresses."
-          },
-          "cc": {
-            "type": "array",
-            "maxItems": 10,
-            "items": {
-              "type": "string",
-              "format": "email"
-            },
-            "description": "Carbon-copy addresses. Bcc is not supported."
-          },
-          "subject": {
-            "type": "string",
-            "maxLength": 255,
-            "description": "Required without in_reply_to. Defaults to \"Re: \" plus the original subject."
-          },
-          "text": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Plain-text body, up to 1 MiB."
-          },
-          "html": {
-            "type": "string",
-            "description": "Optional HTML body, up to 1 MiB."
-          },
-          "in_reply_to": {
-            "type": "string",
-            "pattern": "^eml_",
-            "description": "Received email ID to reply to. Sets the reply headers and subject, and links the reply to the conversation. A reply in a support conversation ends its subject with the request number, such as [#3]."
-          },
-          "attachment_ids": {
-            "type": "array",
-            "maxItems": 10,
-            "items": {
-              "type": "string",
-              "pattern": "^df_"
-            },
-            "description": "Existing file IDs in this bucket to attach."
-          },
-          "account_id": {
-            "type": "string"
-          },
-          "reason": {
-            "$ref": "#/components/schemas/ActionReason"
           }
         }
       },
@@ -7732,14 +6750,14 @@
               "received",
               "sent"
             ],
-            "description": "received for incoming email; sent for email sent from this mailbox."
+            "description": "received for incoming email; sent for email sent from this bucket."
           },
           "delivery": {
             "$ref": "#/components/schemas/EmailDelivery"
           },
           "labels": {
             "type": "array",
-            "description": "Labels on the email files. When AI labels are on for the account, they add one built-in category label, such as Junk or Receipts, a few seconds after the email arrives, usually after the email.received event.",
+            "description": "Labels on the email files. When AI labels are on for the account, they add one built-in category label, such as Junk or Receipts, a few seconds after the email arrives, usually after the ticket event.",
             "items": {
               "$ref": "#/components/schemas/EmailLabel"
             }
@@ -7833,66 +6851,6 @@
           "read_by",
           "read_by_api_key"
         ]
-      },
-      "EmailDetail": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/EmailSummary"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "body_text": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "body_status": {
-                "type": "string",
-                "enum": [
-                  "complete",
-                  "empty",
-                  "truncated",
-                  "unavailable",
-                  "withheld"
-                ]
-              },
-              "attachments": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/EmailAttachment"
-                }
-              },
-              "forwarding": {
-                "$ref": "#/components/schemas/EmailForwardingContent"
-              }
-            },
-            "required": [
-              "body_text",
-              "body_status",
-              "attachments"
-            ]
-          }
-        ]
-      },
-      "EmailList": {
-        "type": "object",
-        "required": [
-          "emails",
-          "pagination"
-        ],
-        "properties": {
-          "emails": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EmailSummary"
-            }
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/Pagination"
-          }
-        }
       },
       "FileActor": {
         "type": "object",
@@ -8301,14 +7259,10 @@
       "PrepareFileUploadRequest": {
         "type": "object",
         "required": [
-          "bucket_id",
           "path",
           "blob"
         ],
         "properties": {
-          "bucket_id": {
-            "type": "string"
-          },
           "path": {
             "type": "string",
             "description": "Destination path in the bucket. Paths under _mailbox/ return MAILBOX_PATH_READ_ONLY; paths under _agents/ and _revdoku/ return RESERVED_PATH."
@@ -8390,7 +7344,7 @@
           },
           "signed_blob_id": {
             "type": "string",
-            "description": "data.signed_id from POST /v1/direct_uploads."
+            "description": "data.signed_id from POST /v1/buckets/{bucket_id}/uploads."
           },
           "name": {
             "type": "string",
@@ -8545,221 +7499,6 @@
           },
           "restored_from": {
             "$ref": "#/components/schemas/FileVersion"
-          }
-        }
-      },
-      "DnsRecord": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "value": {
-            "type": "string"
-          },
-          "purpose": {
-            "type": "string"
-          },
-          "zone": {
-            "type": "string"
-          },
-          "relative_name": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "type",
-          "name",
-          "value",
-          "purpose",
-          "zone",
-          "relative_name"
-        ]
-      },
-      "EmailDomainCheck": {
-        "type": "object",
-        "properties": {
-          "hostname": {
-            "type": "string"
-          },
-          "root_domain": {
-            "type": "boolean"
-          },
-          "suggested_subdomain": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "root_guidance": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "hostname",
-          "root_domain"
-        ]
-      },
-      "EmailDomain": {
-        "type": "object",
-        "properties": {
-          "suggested_subdomain": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "root_guidance": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "pause_reason": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "id": {
-            "type": "string"
-          },
-          "hostname": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "guidance": {
-            "type": "string"
-          },
-          "receiving": {
-            "type": "boolean"
-          },
-          "root_domain": {
-            "type": "boolean"
-          },
-          "paused_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "last_checked_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "ownership_verified_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "setup_expires_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "ready_at": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "required_dns_records": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DnsRecord"
-            }
-          },
-          "setup_provider": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "DNS provider of the domain's zone that supports one-click setup, such as Cloudflare. Null otherwise, also while the deployment cannot sign setup links. Get the link with `getEmailDomainSetupLink`; it can still return an error."
-          },
-          "error": {
-            "anyOf": [
-              {
-                "type": "object",
-                "properties": {
-                  "code": {
-                    "type": "string"
-                  },
-                  "message": {
-                    "type": "string"
-                  },
-                  "retryable": {
-                    "type": "boolean"
-                  }
-                }
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "assigned_buckets": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "email": {
-                  "type": "object",
-                  "properties": {
-                    "address": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "required": [
-          "id",
-          "hostname",
-          "status"
-        ]
-      },
-      "EmailDomainList": {
-        "type": "object",
-        "required": [
-          "domains",
-          "enabled",
-          "pagination"
-        ],
-        "properties": {
-          "domains": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EmailDomain"
-            }
-          },
-          "enabled": {
-            "type": "boolean",
-            "description": "Whether this account can use custom email domains."
-          },
-          "guidance": {
-            "type": "string"
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/Pagination"
           }
         }
       },
@@ -9237,7 +7976,7 @@
               "password",
               "require_email"
             ],
-            "description": "Who can open the site. Omit to keep the current setting."
+            "description": "Who can open the site. Omit to keep the current setting. Sites are public: password and require_email return 422 PUBLICATION_ACCESS_MODE_INVALID unless Revdoku turned on private sites for the account."
           },
           "password": {
             "type": "string",
@@ -9688,6 +8427,339 @@
             "description": "True commits the edits made in Revdoku to the branch at each sync. False keeps them for a person to publish in the dashboard."
           }
         }
+      },
+      "LockRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "Why you lock it. Shown to others."
+          },
+          "paths": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "File paths in the bucket. Omit for the whole bucket. Paths under _mailbox/ return MAILBOX_PATH_READ_ONLY; paths under _agents/ and _revdoku/ return RESERVED_PATH."
+          },
+          "duration_seconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 900,
+            "default": 900,
+            "description": "Lock length in seconds, at most 900. The lock expires by itself."
+          },
+          "account_id": {
+            "type": "string",
+            "description": "Select another granted account for this request."
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ActionReason"
+          }
+        }
+      },
+      "UnlockRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "paths": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "File paths to unlock. Omit to unlock the whole bucket."
+          },
+          "account_id": {
+            "type": "string",
+            "description": "Select another granted account for this request."
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ActionReason"
+          }
+        }
+      },
+      "Ticket": {
+        "type": "object",
+        "required": [
+          "id",
+          "number",
+          "status",
+          "subject",
+          "channel",
+          "requester",
+          "labels",
+          "message_count",
+          "unread_count",
+          "created_at",
+          "updated_at",
+          "last_message_at",
+          "solved_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^tkt_",
+            "description": "Ticket ID for API calls."
+          },
+          "number": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Ticket number in the bucket. Replies end their subject with [#number]."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "solved"
+            ],
+            "description": "A new message from the requester reopens a solved ticket."
+          },
+          "subject": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Subject of the first message. Null while that message is withheld."
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "email",
+              "chat",
+              "feedback"
+            ],
+            "description": "Where the ticket started: an email, a message left on the docs site, or anonymous page feedback."
+          },
+          "requester": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DecodedEmailAddress"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The person who wrote. Null for anonymous feedback, which nobody can reply to."
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmailLabel"
+            },
+            "description": "Labels of the ticket's messages."
+          },
+          "message_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unread_count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Received messages that nobody has read."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last activity: the newest message or a status change."
+          },
+          "last_message_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "solved_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "TicketList": {
+        "type": "object",
+        "required": [
+          "tickets",
+          "pagination"
+        ],
+        "properties": {
+          "tickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Ticket"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "TicketMessage": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/EmailSummary"
+          },
+          {
+            "type": "object",
+            "required": [
+              "ticket_id",
+              "channel"
+            ],
+            "properties": {
+              "ticket_id": {
+                "type": "string",
+                "pattern": "^tkt_"
+              },
+              "channel": {
+                "type": "string",
+                "enum": [
+                  "email",
+                  "chat",
+                  "feedback"
+                ]
+              },
+              "body_text": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "body_status": {
+                "type": "string",
+                "enum": [
+                  "complete",
+                  "empty",
+                  "truncated",
+                  "unavailable",
+                  "withheld"
+                ]
+              },
+              "attachments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/EmailAttachment"
+                }
+              },
+              "forwarding": {
+                "$ref": "#/components/schemas/EmailForwardingContent"
+              }
+            }
+          }
+        ],
+        "description": "One message of a ticket: an email of its conversation. Reads include body_text, body_status and attachments. Junk email and new email that AI labels still check are withheld."
+      },
+      "TicketMessageList": {
+        "type": "object",
+        "required": [
+          "messages",
+          "pagination"
+        ],
+        "properties": {
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketMessage"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "TicketReplyRequest": {
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Defaults to \"Re: \" plus the original subject."
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Plain-text body, up to 1 MiB."
+          },
+          "html": {
+            "type": "string",
+            "description": "Optional HTML body, up to 1 MiB."
+          },
+          "attachment_ids": {
+            "type": "array",
+            "maxItems": 10,
+            "items": {
+              "type": "string",
+              "pattern": "^df_"
+            },
+            "description": "Existing file IDs in this bucket to attach."
+          },
+          "account_id": {
+            "type": "string"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ActionReason"
+          }
+        },
+        "description": "A reply to the ticket's requester. There is no to, cc or in_reply_to: they return 422 INVALID_ARGUMENT."
+      },
+      "TicketUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "solved"
+            ]
+          },
+          "add_labels": {
+            "type": "array",
+            "maxItems": 10,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "description": "Label names to add to the ticket's first message. A new name creates the label."
+          },
+          "remove_labels": {
+            "type": "array",
+            "maxItems": 10,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "description": "Label names to remove from every message of the ticket."
+          },
+          "account_id": {
+            "type": "string",
+            "description": "Select another granted account for this request."
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ActionReason"
+          }
+        }
       }
     },
     "parameters": {
@@ -9737,15 +8809,6 @@
           "pattern": "^bkt_"
         }
       },
-      "EmailId": {
-        "name": "email_id",
-        "in": "path",
-        "required": true,
-        "schema": {
-          "type": "string",
-          "pattern": "^eml_"
-        }
-      },
       "FileId": {
         "name": "file_id",
         "in": "path",
@@ -9770,22 +8833,6 @@
         "schema": {
           "type": "string",
           "pattern": "^df_"
-        }
-      },
-      "AliasId": {
-        "name": "alias_id",
-        "in": "path",
-        "required": true,
-        "schema": {
-          "type": "string"
-        }
-      },
-      "DomainId": {
-        "name": "domain_id",
-        "in": "path",
-        "required": true,
-        "schema": {
-          "type": "string"
         }
       },
       "AccountPathId": {
@@ -9817,6 +8864,24 @@
           "minimum": 1
         },
         "description": "installation_id of a connected GitHub account."
+      },
+      "TicketId": {
+        "name": "ticket_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^tkt_"
+        }
+      },
+      "MessageId": {
+        "name": "message_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^eml_"
+        }
       }
     },
     "responses": {
@@ -9826,6 +8891,40 @@
           "application/json": {
             "schema": {
               "$ref": "#/components/schemas/ApiError"
+            }
+          }
+        }
+      },
+      "LockResult": {
+        "description": "Success: the bucket's lock, or the listed files with their locks.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "success",
+                "data"
+              ],
+              "properties": {
+                "success": {
+                  "type": "boolean",
+                  "const": true
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "lock": {
+                      "$ref": "#/components/schemas/BucketLock"
+                    },
+                    "files": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BucketFile"
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }

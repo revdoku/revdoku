@@ -6,18 +6,18 @@ Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for exam
 
 [All operations](https://revdoku.com/api/reference.md) · [API guide](https://revdoku.com/api.md) · [Errors](https://revdoku.com/api.md#errors) · [OpenAPI](https://revdoku.com/openapi.json)
 
-- [List connected GitHub accounts](#list-connected-github-accounts): `GET /v1/account/github_installations`
-- [List the repositories of a GitHub account](#list-the-repositories-of-a-github-account): `GET /v1/account/github_installations/{installation_id}/repositories`
-- [Read the GitHub repository of a bucket](#read-the-github-repository-of-a-bucket): `GET /v1/buckets/{bucket_id}/github_sync`
-- [Connect a GitHub repository](#connect-a-github-repository): `POST /v1/buckets/{bucket_id}/github_sync`
-- [Change GitHub sync settings](#change-github-sync-settings): `PATCH /v1/buckets/{bucket_id}/github_sync`
-- [Disconnect the GitHub repository](#disconnect-the-github-repository): `DELETE /v1/buckets/{bucket_id}/github_sync`
-- [Sync the GitHub repository now](#sync-the-github-repository-now): `POST /v1/buckets/{bucket_id}/github_sync/sync`
-- [Get the links to add a GitHub account](#get-the-links-to-add-a-github-account): `GET /v1/buckets/{bucket_id}/github_sync/setup_link`
+- [List connected GitHub accounts](#list-connected-github-accounts): `GET /v1/account/github/installations`
+- [List the repositories of a GitHub account](#list-the-repositories-of-a-github-account): `GET /v1/account/github/installations/{installation_id}/repositories`
+- [Read the GitHub repository of a bucket](#read-the-github-repository-of-a-bucket): `GET /v1/buckets/{bucket_id}/github`
+- [Connect a GitHub repository](#connect-a-github-repository): `POST /v1/buckets/{bucket_id}/github`
+- [Change GitHub sync settings](#change-github-sync-settings): `PATCH /v1/buckets/{bucket_id}/github`
+- [Disconnect the GitHub repository](#disconnect-the-github-repository): `DELETE /v1/buckets/{bucket_id}/github`
+- [Sync the GitHub repository now](#sync-the-github-repository-now): `POST /v1/buckets/{bucket_id}/github/sync`
+- [Get the links to add a GitHub account](#get-the-links-to-add-a-github-account): `GET /v1/buckets/{bucket_id}/github/setup_link`
 
 ## List connected GitHub accounts
 
-`GET /v1/account/github_installations`
+`GET /v1/account/github/installations`
 
 Returns the GitHub accounts and organizations where a person installed the Revdoku GitHub App for this account. Each one reads the repositories that its owner chose on GitHub. Needs an account owner or administrator key with admin access to all buckets. To add a GitHub account, get the links with getGithubSetupLink.
 
@@ -59,7 +59,7 @@ print(response.data)
 **cURL**
 
 ```sh
-curl "https://api.revdoku.com/v1/account/github_installations" \
+curl "https://api.revdoku.com/v1/account/github/installations" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -106,7 +106,7 @@ Guide: [GitHub repositories](https://revdoku.com/api.md#github-repositories)
 
 ## List the repositories of a GitHub account
 
-`GET /v1/account/github_installations/{installation_id}/repositories`
+`GET /v1/account/github/installations/{installation_id}/repositories`
 
 Returns the repositories that one connected GitHub account lets Revdoku read, A-Z by full name. A repository that is not listed needs access on GitHub: give the account's settings_url to its owner. Needs an account owner or administrator key with admin access to all buckets.
 
@@ -149,7 +149,7 @@ print(response.data)
 **cURL**
 
 ```sh
-curl "https://api.revdoku.com/v1/account/github_installations/1/repositories" \
+curl "https://api.revdoku.com/v1/account/github/installations/1/repositories" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -178,9 +178,9 @@ Guide: [GitHub repositories](https://revdoku.com/api.md#github-repositories)
 
 ## Read the GitHub repository of a bucket
 
-`GET /v1/buckets/{bucket_id}/github_sync`
+`GET /v1/buckets/{bucket_id}/github`
 
-Returns the bucket's GitHub repository and its sync state. github_sync is null when the bucket never had one. After connectGithubRepository, read it until last_synced_at is set (the first copy is done) or sync_state is error.
+Returns the bucket's GitHub repository and its sync state. github is null when the bucket never had one. After connectGithubRepository, read it until last_synced_at is set (the first copy is done) or sync_state is error.
 
 | Language | Call |
 | --- | --- |
@@ -219,7 +219,7 @@ print(response.data)
 **cURL**
 
 ```sh
-curl "https://api.revdoku.com/v1/buckets/bkt_example/github_sync" \
+curl "https://api.revdoku.com/v1/buckets/bkt_example/github" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -227,13 +227,13 @@ curl "https://api.revdoku.com/v1/buckets/bkt_example/github_sync" \
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `github_sync` / `githubSync` | GithubSync or null |  |
+| `github` | GithubSync or null |  |
 
 ```json
 {
   "success": true,
   "data": {
-    "github_sync": {
+    "github": {
       "id": "bgh_8xQ2kL4mN7pR",
       "bucket_id": "bkt_5Gh3Lm9Qx2Tz",
       "installation_id": 51234567,
@@ -275,7 +275,7 @@ Guide: [GitHub repositories](https://revdoku.com/api.md#github-repositories)
 
 ## Connect a GitHub repository
 
-`POST /v1/buckets/{bucket_id}/github_sync`
+`POST /v1/buckets/{bucket_id}/github`
 
 Makes the bucket's files a copy of one branch of a repository, or of one folder of it. The first sync copies the files, and each later push to the branch updates them. The bucket must have no files of its own; its email and agent folders may stay. GitHub stays the source: Revdoku never copies a bucket into a repository. Needs an account owner or administrator key with admin access to all buckets. A connected GitHub account must read the repository: 403 GITHUB_APP_NOT_INSTALLED gives the links for the person in error.details.
 
@@ -294,13 +294,13 @@ Makes the bucket's files a copy of one branch of a repository, or of one folder 
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `github_sync` / `githubSync` | GithubConnect | yes |  |
-| `github_sync.repo_owner` / `repoOwner` | string | yes | The GitHub account or organization that owns the repository. |
-| `github_sync.repo_name` / `repoName` | string | yes |  |
-| `github_sync.branch` | string | no | The branch to copy. Default: the repository's default branch. |
-| `github_sync.repo_path` / `repoPath` | string | no | One folder of the repository as the bucket root, such as docs. Default: the whole repository. |
-| `github_sync.installation_id` / `installationId` | integer | no | The connected GitHub account that reads the repository. Default: the connected account of repo_owner. |
-| `github_sync.push_revdoku_edits` / `pushRevdokuEdits` | boolean | no | False makes the files a read-only copy of the repository. Default: true. |
+| `github` | GithubConnect | yes |  |
+| `github.repo_owner` / `repoOwner` | string | yes | The GitHub account or organization that owns the repository. |
+| `github.repo_name` / `repoName` | string | yes |  |
+| `github.branch` | string | no | The branch to copy. Default: the repository's default branch. |
+| `github.repo_path` / `repoPath` | string | no | One folder of the repository as the bucket root, such as docs. Default: the whole repository. |
+| `github.installation_id` / `installationId` | integer | no | The connected GitHub account that reads the repository. Default: the connected account of repo_owner. |
+| `github.push_revdoku_edits` / `pushRevdokuEdits` | boolean | no | False makes the files a read-only copy of the repository. Default: true. |
 | `account_id` / `accountId` | string | no | Select another granted account for this request. |
 | `reason` | string or null | no | Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. |
 
@@ -314,7 +314,7 @@ import { Revdoku } from 'revdoku';
 const client = new Revdoku();
 const { data } = await client.api.connectGithubRepository({
   bucketId: 'bkt_example',
-  connectGithubRepositoryRequest: { githubSync: { repoOwner: 'example', repoName: 'example' } },
+  connectGithubRepositoryRequest: { github: { repoOwner: 'example', repoName: 'example' } },
 });
 console.log(data);
 ```
@@ -328,7 +328,7 @@ client = Revdoku()
 response = client.api.connect_github_repository(
     "bkt_example",
     ConnectGithubRepositoryRequest(
-        github_sync=GithubConnect(repo_owner="example", repo_name="example"),
+        github=GithubConnect(repo_owner="example", repo_name="example"),
     ),
 )
 print(response.data)
@@ -337,45 +337,43 @@ print(response.data)
 **cURL**
 
 ```sh
-curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/github_sync" \
+curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/github" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{
-  "github_sync": {"repo_owner": "example", "repo_name": "example"}
-}'
+  -d '{"github": {"repo_owner": "example", "repo_name": "example"}}'
 ```
 
 **Response** `201`
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `github_sync` / `githubSync` | GithubSync | The GitHub repository of a bucket. The bucket's files are a copy of one branch, or of one folder of it. |
-| `github_sync.id` | string | Link ID. |
-| `github_sync.bucket_id` / `bucketId` | string |  |
-| `github_sync.installation_id` / `installationId` | integer | The connected GitHub account (Revdoku GitHub App installation) that reads the repository. |
-| `github_sync.repo_owner` / `repoOwner` | string | The GitHub account or organization that owns the repository. |
-| `github_sync.repo_name` / `repoName` | string |  |
-| `github_sync.repo_full_name` / `repoFullName` | string | owner/name. |
-| `github_sync.repository_url` / `repositoryUrl` | string (uri) |  |
-| `github_sync.branch` | string |  |
-| `github_sync.repo_path` / `repoPath` | string or null | The repository folder that is the bucket root. Null: the whole repository. |
-| `github_sync.sync_state` / `syncState` | string: `idle`, `syncing`, `waiting_locked`, `error`, `disconnected` | idle: nothing runs. syncing: a sync runs. waiting_locked: the bucket is locked and the sync tries again later. error: see last_error and next_retry_at. disconnected: the repository is no longer connected. |
-| `github_sync.last_error` / `lastError` | GithubSyncError or null | Why the last sync failed or waits, or why GitHub disconnected the repository. |
-| `github_sync.next_retry_at` / `nextRetryAt` | string (date-time) or null | When a failed sync tries again. Null after the last try: sync again after the cause is fixed. |
-| `github_sync.last_synced_at` / `lastSyncedAt` | string (date-time) or null | When the last sync finished. Null until the first copy is done. |
-| `github_sync.last_synced_commit_sha` / `lastSyncedCommitSha` | string or null | The commit of the branch that the files show. |
-| `github_sync.last_synced_commit_message` / `lastSyncedCommitMessage` | string or null |  |
-| `github_sync.auto_publish` / `autoPublish` | boolean | The site publishes again after each sync. The first publish is publishBucket. |
-| `github_sync.push_revdoku_edits` / `pushRevdokuEdits` | boolean | Edits made in Revdoku can go to GitHub. False: the files are a read-only copy of the repository. |
-| `github_sync.auto_commit` / `autoCommit` | boolean | Each sync commits the edits made in Revdoku to the branch. False: they wait in pending_changes until a person publishes them in the dashboard. |
-| `github_sync.pending_count` / `pendingCount` | integer | Edits made in Revdoku that are not on the branch. |
-| `github_sync.pending_changes` / `pendingChanges` | array of object | The first 200 of these edits. Fields: `path`, `status`. |
-| `github_sync.pull_request` / `pullRequest` | object or null |  |
-| `github_sync.skipped_files` / `skippedFiles` | array of object | Repository files that the last sync left out, for example files that are too large or stored in Git LFS. Fields: `path`, `code`, `reason`. |
-| `github_sync.auto_publish_error` / `autoPublishError` | GithubSyncError or null | Why the site was not published again after the last sync. |
-| `github_sync.dashboard_url` / `dashboardUrl` | string or null | The bucket's GitHub page in the dashboard. It grants no access. |
-| `github_sync.created_at` / `createdAt` | string (date-time) |  |
-| `github_sync.updated_at` / `updatedAt` | string (date-time) |  |
+| `github` | GithubSync | The GitHub repository of a bucket. The bucket's files are a copy of one branch, or of one folder of it. |
+| `github.id` | string | Link ID. |
+| `github.bucket_id` / `bucketId` | string |  |
+| `github.installation_id` / `installationId` | integer | The connected GitHub account (Revdoku GitHub App installation) that reads the repository. |
+| `github.repo_owner` / `repoOwner` | string | The GitHub account or organization that owns the repository. |
+| `github.repo_name` / `repoName` | string |  |
+| `github.repo_full_name` / `repoFullName` | string | owner/name. |
+| `github.repository_url` / `repositoryUrl` | string (uri) |  |
+| `github.branch` | string |  |
+| `github.repo_path` / `repoPath` | string or null | The repository folder that is the bucket root. Null: the whole repository. |
+| `github.sync_state` / `syncState` | string: `idle`, `syncing`, `waiting_locked`, `error`, `disconnected` | idle: nothing runs. syncing: a sync runs. waiting_locked: the bucket is locked and the sync tries again later. error: see last_error and next_retry_at. disconnected: the repository is no longer connected. |
+| `github.last_error` / `lastError` | GithubSyncError or null | Why the last sync failed or waits, or why GitHub disconnected the repository. |
+| `github.next_retry_at` / `nextRetryAt` | string (date-time) or null | When a failed sync tries again. Null after the last try: sync again after the cause is fixed. |
+| `github.last_synced_at` / `lastSyncedAt` | string (date-time) or null | When the last sync finished. Null until the first copy is done. |
+| `github.last_synced_commit_sha` / `lastSyncedCommitSha` | string or null | The commit of the branch that the files show. |
+| `github.last_synced_commit_message` / `lastSyncedCommitMessage` | string or null |  |
+| `github.auto_publish` / `autoPublish` | boolean | The site publishes again after each sync. The first publish is publishBucket. |
+| `github.push_revdoku_edits` / `pushRevdokuEdits` | boolean | Edits made in Revdoku can go to GitHub. False: the files are a read-only copy of the repository. |
+| `github.auto_commit` / `autoCommit` | boolean | Each sync commits the edits made in Revdoku to the branch. False: they wait in pending_changes until a person publishes them in the dashboard. |
+| `github.pending_count` / `pendingCount` | integer | Edits made in Revdoku that are not on the branch. |
+| `github.pending_changes` / `pendingChanges` | array of object | The first 200 of these edits. Fields: `path`, `status`. |
+| `github.pull_request` / `pullRequest` | object or null |  |
+| `github.skipped_files` / `skippedFiles` | array of object | Repository files that the last sync left out, for example files that are too large or stored in Git LFS. Fields: `path`, `code`, `reason`. |
+| `github.auto_publish_error` / `autoPublishError` | GithubSyncError or null | Why the site was not published again after the last sync. |
+| `github.dashboard_url` / `dashboardUrl` | string or null | The bucket's GitHub page in the dashboard. It grants no access. |
+| `github.created_at` / `createdAt` | string (date-time) |  |
+| `github.updated_at` / `updatedAt` | string (date-time) |  |
 
 **Errors**
 
@@ -389,7 +387,7 @@ Guide: [GitHub repositories](https://revdoku.com/api.md#github-repositories)
 
 ## Change GitHub sync settings
 
-`PATCH /v1/buckets/{bucket_id}/github_sync`
+`PATCH /v1/buckets/{bucket_id}/github`
 
 Sets auto_publish and the mode of edits made in Revdoku: push_revdoku_edits false makes the files a read-only copy, auto_commit true commits edits to the branch at each sync, and auto_commit false keeps them in pending_changes until a person publishes them in the dashboard. Needs an account owner or administrator key with admin access to all buckets.
 
@@ -408,10 +406,10 @@ Sets auto_publish and the mode of edits made in Revdoku: push_revdoku_edits fals
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `github_sync` / `githubSync` | GithubSyncSettings | yes |  |
-| `github_sync.auto_publish` / `autoPublish` | boolean | no | Publish the site again after each sync. |
-| `github_sync.push_revdoku_edits` / `pushRevdokuEdits` | boolean | no | False makes the files a read-only copy of the repository. |
-| `github_sync.auto_commit` / `autoCommit` | boolean | no | True commits the edits made in Revdoku to the branch at each sync. False keeps them for a person to publish in the dashboard. |
+| `github` | GithubSyncSettings | yes |  |
+| `github.auto_publish` / `autoPublish` | boolean | no | Publish the site again after each sync. |
+| `github.push_revdoku_edits` / `pushRevdokuEdits` | boolean | no | False makes the files a read-only copy of the repository. |
+| `github.auto_commit` / `autoCommit` | boolean | no | True commits the edits made in Revdoku to the branch at each sync. False keeps them for a person to publish in the dashboard. |
 | `account_id` / `accountId` | string | no | Select another granted account for this request. |
 | `reason` | string or null | no | Optional purpose for this action. AI agents should explain intentional reads and changes when known; omit when unknown. Do not include secrets, file contents, or transcripts. |
 
@@ -425,7 +423,7 @@ import { Revdoku } from 'revdoku';
 const client = new Revdoku();
 const { data } = await client.api.updateGithubSync({
   bucketId: 'bkt_example',
-  updateGithubSyncRequest: { githubSync: {} },
+  updateGithubSyncRequest: { github: {} },
 });
 console.log(data);
 ```
@@ -438,7 +436,7 @@ from revdoku import Revdoku, GithubSyncSettings, UpdateGithubSyncRequest
 client = Revdoku()
 response = client.api.update_github_sync(
     "bkt_example",
-    UpdateGithubSyncRequest(github_sync=GithubSyncSettings()),
+    UpdateGithubSyncRequest(github=GithubSyncSettings()),
 )
 print(response.data)
 ```
@@ -446,17 +444,17 @@ print(response.data)
 **cURL**
 
 ```sh
-curl -X PATCH "https://api.revdoku.com/v1/buckets/bkt_example/github_sync" \
+curl -X PATCH "https://api.revdoku.com/v1/buckets/bkt_example/github" \
   -H "Authorization: Bearer $REVDOKU_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"github_sync": {}}'
+  -d '{"github": {}}'
 ```
 
 **Response** `200`
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `github_sync` / `githubSync` | GithubSync | The GitHub repository of a bucket. The bucket's files are a copy of one branch, or of one folder of it. Fields as in [Connect a GitHub repository](#connect-a-github-repository). |
+| `github` | GithubSync | The GitHub repository of a bucket. The bucket's files are a copy of one branch, or of one folder of it. Fields as in [Connect a GitHub repository](#connect-a-github-repository). |
 
 **Errors**
 
@@ -468,7 +466,7 @@ Guide: [GitHub repositories](https://revdoku.com/api.md#github-repositories)
 
 ## Disconnect the GitHub repository
 
-`DELETE /v1/buckets/{bucket_id}/github_sync`
+`DELETE /v1/buckets/{bucket_id}/github`
 
 Stops the sync. The bucket keeps its files and its site. A later read shows the link with sync_state disconnected; connect the same repository again to continue its copy. Needs an account owner or administrator key with admin access to all buckets.
 
@@ -512,7 +510,7 @@ print(response.data)
 **cURL**
 
 ```sh
-curl -X DELETE "https://api.revdoku.com/v1/buckets/bkt_example/github_sync" \
+curl -X DELETE "https://api.revdoku.com/v1/buckets/bkt_example/github" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -533,7 +531,7 @@ Guide: [GitHub repositories](https://revdoku.com/api.md#github-repositories)
 
 ## Sync the GitHub repository now
 
-`POST /v1/buckets/{bucket_id}/github_sync/sync`
+`POST /v1/buckets/{bucket_id}/github/sync`
 
 Copies new commits of the branch now and tries a failed sync again. Pushes sync without this call; use it after an error, or after a person changed access on GitHub. enqueued is false when a sync already runs. Needs an account owner or administrator key with admin access to all buckets.
 
@@ -582,7 +580,7 @@ print(response.data)
 **cURL**
 
 ```sh
-curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/github_sync/sync" \
+curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/github/sync" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 
@@ -590,7 +588,7 @@ curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/github_sync/sync" \
 
 | Field | Type | Description |
 | --- | --- | --- |
-| `github_sync` / `githubSync` | GithubSync | The GitHub repository of a bucket. The bucket's files are a copy of one branch, or of one folder of it. Fields as in [Connect a GitHub repository](#connect-a-github-repository). |
+| `github` | GithubSync | The GitHub repository of a bucket. The bucket's files are a copy of one branch, or of one folder of it. Fields as in [Connect a GitHub repository](#connect-a-github-repository). |
 | `enqueued` | boolean | False when a sync already runs. |
 
 **Errors**
@@ -603,7 +601,7 @@ Guide: [GitHub repositories](https://revdoku.com/api.md#github-repositories)
 
 ## Get the links to add a GitHub account
 
-`GET /v1/buckets/{bucket_id}/github_sync/setup_link`
+`GET /v1/buckets/{bucket_id}/github/setup_link`
 
 Returns the links that a person opens to add a GitHub account or organization to this Revdoku account. Only the person who owns this key or AI connection can finish the step, signed in to Revdoku, within 30 minutes. Give install_url to install the Revdoku GitHub App; on GitHub the person chooses the account and the repositories. Give authorization_url when the App is already installed on that GitHub account; the person then selects Connect on the bucket's GitHub page. Then list the connected GitHub accounts until the new one shows. Needs an account owner or administrator key with admin access to all buckets.
 
@@ -646,7 +644,7 @@ print(response.data)
 **cURL**
 
 ```sh
-curl "https://api.revdoku.com/v1/buckets/bkt_example/github_sync/setup_link" \
+curl "https://api.revdoku.com/v1/buckets/bkt_example/github/setup_link" \
   -H "Authorization: Bearer $REVDOKU_API_KEY"
 ```
 

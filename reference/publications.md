@@ -88,7 +88,7 @@ Guide: [Sites](https://revdoku.com/api.md#sites)
 
 `POST /v1/buckets/{bucket_id}/publication`
 
-Publishes the bucket's files as its site, or republishes them. The build runs in the background: get the site until publish_state is ready or failed.
+Publishes the bucket's files as its site, or republishes them. The build runs in the background: get the site until publish_state is ready or failed. Uses credits; see https://app.revdoku.com/pricing.json.
 
 | Language | Call |
 | --- | --- |
@@ -105,7 +105,7 @@ Publishes the bucket's files as its site, or republishes them. The build runs in
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `access_mode` / `accessMode` | string: `public`, `password`, `require_email` | no | Who can open the site. Omit to keep the current setting. |
+| `access_mode` / `accessMode` | string: `public`, `password`, `require_email` | no | Who can open the site. Omit to keep the current setting. Sites are public: password and require_email return 422 PUBLICATION_ACCESS_MODE_INVALID unless Revdoku turned on private sites for the account. |
 | `password` | string | no | Password for access_mode password, 8 to 128 characters. Omit to generate one. |
 | `reason` | string | no | Why you publish, for the activity log. |
 
@@ -155,7 +155,8 @@ curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/publication" \
 
 | Status | Description |
 | --- | --- |
-| 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
+| `402` | Not enough credits. Nothing was built. Do not retry automatically. |
+| Other 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
 
 Guide: [Sites](https://revdoku.com/api.md#sites)
 
@@ -285,7 +286,7 @@ Guide: [Sites](https://revdoku.com/api.md#sites)
 
 `POST /v1/buckets/{bucket_id}/publication/preview`
 
-Publishes the bucket's current files at a separate preview address for 24 hours. The site does not change.
+Publishes the bucket's current files at a separate preview address for 24 hours. The site does not change. Uses credits; see https://app.revdoku.com/pricing.json.
 
 | Language | Call |
 | --- | --- |
@@ -302,7 +303,7 @@ Publishes the bucket's current files at a separate preview address for 24 hours.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `access_mode` / `accessMode` | string: `public`, `password`, `require_email` | no | Who can open the site. Omit to keep the current setting. |
+| `access_mode` / `accessMode` | string: `public`, `password`, `require_email` | no | Who can open the site. Omit to keep the current setting. Sites are public: password and require_email return 422 PUBLICATION_ACCESS_MODE_INVALID unless Revdoku turned on private sites for the account. |
 | `password` | string | no | Password for access_mode password, 8 to 128 characters. Omit to generate one. |
 | `reason` | string | no | Why you publish, for the activity log. |
 
@@ -345,6 +346,7 @@ curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/publication/preview
 
 | Status | Description |
 | --- | --- |
-| 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
+| `402` | Not enough credits. Nothing was built. Do not retry automatically. |
+| Other 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
 
 Guide: [Sites](https://revdoku.com/api.md#sites)
