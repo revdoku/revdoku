@@ -85,10 +85,9 @@ See [incoming email](docs.md#receive-and-read-email)
 and the [API contract](api.md#emails).
 
 To reply, use `bucket_email_send` or `revdoku email-send --in-reply-to eml_... --text TEXT`.
-Recipients must be account members, other mailboxes of the account, or addresses
-that emailed this mailbox and passed sender authentication; an administrator can
-turn off each kind. When the mailbox requires approval, a person sends, edits or declines
-each email in the dashboard. See [Send email](api.md#send-email).
+Revdoku sends only replies: each email answers a received email and goes to its
+sender, when that sender passed sender authentication. When the mailbox requires approval,
+a person sends, edits or declines each email in the dashboard. See [Send email](api.md#send-email).
 
 ## Additional file storage
 

@@ -6,7 +6,7 @@
     "groups": [
       { "group": "Get started", "pages": ["index", "quickstart", "coding-agents"] },
       { "group": "Guides", "pages": ["api", "guides/authentication", "guides/bulk-uploads", "guides/email-events", "guides/custom-email-domains", "guides/saas-mailboxes", "guides/api-packages"] },
-      { "group": "API reference", "pages": ["api-reference/index", "api-reference/authentication", "api-reference/accounts", "api-reference/buckets", "api-reference/mailbox", "api-reference/emails", "api-reference/files", "api-reference/email-domains", "api-reference/publications", "api-reference/github"] },
+      { "group": "API reference", "pages": ["api-reference/index", "api-reference/authentication", "api-reference/accounts", "api-reference/buckets", "api-reference/tickets", "api-reference/events", "api-reference/files", "api-reference/publications", "api-reference/github"] },
       { "group": "SDKs and tools", "pages": ["sdks/typescript", "sdks/python", "mcp", "cli"] },
       { "group": "Changelog", "pages": ["changelog"] }
     ]

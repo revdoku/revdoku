@@ -27,10 +27,10 @@
   },
   "capabilities": [
     "Publish docs sites from GitHub or uploaded files",
-    "Receive email and attachments at each mailbox's incoming address",
+    "Receive email and attachments at each bucket's email address",
     "List messages with polling cursors, read decoded email, and download originals and attachments with email tools",
-    "Store documents, data, and source files in private cloud mailboxes",
-    "Share mailbox files with authorized people and AI connections",
+    "Store documents, data, and source files in private cloud buckets",
+    "Share bucket files with authorized people and AI connections",
     "Read, write, and append shared files; detect concurrent edits with version checks",
     "Inspect versions and change history; restore earlier files"
   ],

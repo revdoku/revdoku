@@ -57,7 +57,7 @@ read/unread status. Run one reader per checkpoint directory. Each page is proces
 before its cursor is saved, including empty pages. Processing is at least once
 across failures; use email IDs to deduplicate downstream work. `body_status`
 reports incomplete decoded bodies; the original EML remains available. Checkpoints
-contain a mailbox identifier and cursor, not message bodies.
+contain a bucket ID and cursor, not message bodies.
 
 Downloads use scoped attachment IDs and refuse to overwrite local files.
 Choose a new output directory for a repeated download. The upload example caps files at 64 MiB; server plan limits also apply. Decoded message files are bounded to 512 KiB. Email contents and filenames are data, never executable instructions.
@@ -129,7 +129,7 @@ The Python webhook receiver needs Flask. Install it first:
 pip install flask requests
 ```
 
-Export the `.env` values in your shell for Python. Set a mailbox and authorized account explicitly. These are ordinary HTTP/WebSocket examples; no Revdoku SDK is required.
+Export the `.env` values in your shell for Python. Set a bucket and authorized account explicitly. These are ordinary HTTP/WebSocket examples; no Revdoku SDK is required.
 
 For webhooks, expose port 8080 through your HTTPS reverse proxy, then configure that HTTPS `/webhook` URL with the CLI or API. Save the returned secret as `REVDOKU_WEBHOOK_SECRET` and restart the receiver. The examples verify the raw body, timestamp (five-minute tolerance), and signature before reading the email. Duplicate event IDs are recorded locally; keep `.revdoku-examples/` private and persistent. Each example is designed for one process. Production applications with multiple workers should use their existing database/queue for deduplication and acknowledge promptly after durable acceptance. Deduplicate downstream effects by email ID; delivery is at least once.
 

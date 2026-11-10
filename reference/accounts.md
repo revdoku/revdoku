@@ -482,7 +482,7 @@ curl "https://api.revdoku.com/v1/account/limits" \
 | `limits.max_agent_connections` / `maxAgentConnections` | integer or null |  |
 | `limits.api_rate_limit_requests_per_minute` / `apiRateLimitRequestsPerMinute` | integer or null |  |
 | `limits.audit_retention_days` / `auditRetentionDays` | integer or null |  |
-| `limits.max_email_aliases_per_bucket` / `maxEmailAliasesPerBucket` | integer | Active retained email addresses (aliases) per mailbox. Zero means that the plan has no aliases. |
+| `limits.max_email_aliases_per_bucket` / `maxEmailAliasesPerBucket` | integer | Active retained email addresses (aliases) per bucket. Zero means that the plan has no aliases. |
 | `usage` | object |  |
 | `usage.bucket_creations` / `bucketCreations` | object | Fields: `monthly_limit`, `used`, `remaining`, `resets_at`. |
 

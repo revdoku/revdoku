@@ -23,7 +23,7 @@ Publish uploaded files or use your own email domain? Starter. Password-protected
 | AI connections | 3 | 5 | 10 | 50 |
 | API keys | 1 | 2 | 3 | 15 |
 | Virus and malware scanning | Included | Included | Included | Included |
-| Credits for chat, email and AI | 1,000 one-time | 10,000/mo | 100,000/mo | 300,000/mo |
+| Credits for chat, email, AI and publishing | 1,000 + 200/mo | 10,000/mo | 100,000/mo | 300,000/mo |
 | Support | Community | Email support | Email support | Email support |
 
 Starter is billed once a year only. API, MCP and CLI are included on every plan.
@@ -32,13 +32,14 @@ Your first paid subscription has a 30-day money-back guarantee on its first paym
 On the Free plan, sites publish from a connected GitHub repository, and each page
 shows a small Revdoku badge. On paid plans you can also publish uploaded files and turn the badge off.
 
-Credits pay for messages and AI work: 1 per chat message, 2 per received email,
-2 per recipient of a sent email and 10 per AI check of an email.
-Ask AI and AI agents use credits by usage. Without credits, chat messages and email still arrive,
-but AI and sending pause.
+Credits pay for chat messages, email, Ask AI questions, attachment pages read with OCR, AI agents and each site publish or preview with changes.
+Reading your site is free. Monthly credits are spent first and do not roll over; the 1,000 signup credits of
+the Free plan last 12 months. The price of each action is in the FAQ of the pricing page and in
+`credits.costs` of https://app.revdoku.com/pricing.json. Without credits, chat messages and email still arrive,
+but AI, sending and publishing pause.
 
-Every plan can send to account members, the account's other mailboxes and
-people who emailed the mailbox. On the Free plan, each sent email ends with a signature line, after the standard `-- ` separator:
+Every plan can reply to people who emailed the mailbox. Revdoku sends only
+replies. On the Free plan, each sent email ends with a signature line, after the standard `-- ` separator:
 "Sent with Revdoku: https://revdoku.com".
 
 A mailbox address on `revdokumail.com` is the bucket's name, with no suffix, such as

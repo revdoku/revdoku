@@ -46,7 +46,7 @@ authorization. See the [official OpenAI instructions](https://developers.openai.
 In a new chat, turn on the connection and ask:
 
 ```text
-List my Revdoku accounts and mailboxes.
+List my Revdoku accounts and buckets.
 ```
 
 Select the intended account before reading or changing its contents.
@@ -72,8 +72,8 @@ Use `q` to filter the ID, or the title and email address when the connection can
 `pagination.next_cursor` as `cursor` with the same filters. Every MCP list uses
 this page shape.
 
-Label a mailbox as `title (mailbox.address)` linked to `dashboard_url`.
-Use `mailbox.address` alone when `title` is null.
+Label a bucket as `title (email.address)` linked to `dashboard_url`.
+Use `email.address` alone when `title` is null.
 Keep IDs for tool calls unless the user requests them.
 Descriptions provide optional context and are not mailbox names.
 If the address is unavailable, use an Open mailbox link and state that the address is unavailable.
@@ -114,8 +114,8 @@ Offer recurring automation after the first result.
 
 ### Reply to a sender
 
-Sending requires bucket write access. Recipients must be account members, other
-mailboxes of the account, or addresses that emailed this mailbox and passed sender
+Sending requires bucket write access. Revdoku sends only replies: each email answers
+a received email of the bucket and goes to its sender, when that sender passed sender
 authentication. Every current plan, the Free plan included, can reply to senders.
 A plan without replies to senders returns
 `EMAIL_REPLY_UPGRADE_REQUIRED` with `error.details.upgrade_url`. Send only when the bucket's
@@ -124,8 +124,8 @@ A plan without replies to senders returns
 
 1. Call `bucket_email_list` with `direction: "received"` and choose the message to answer.
 2. Call `bucket_email_send` with `in_reply_to` set to its email ID and `text`.
-   This sets the reply headers and the `Re:` subject. The recipient defaults to the
-   original sender only when that sender passed SPF or DMARC. Otherwise pass `to`.
+   This sets the reply headers, the `Re:` subject and the recipient: the original sender.
+   An email whose sender did not pass SPF or DMARC returns `EMAIL_RECIPIENT_NOT_ALLOWED`.
 3. Call `bucket_email_get` for the returned email ID and check `delivery.status`.
 4. If the result is unknown or `delivery.status` is `uncertain`, do not send again.
    Call `bucket_email_list` with `direction: "sent"` and check first.
@@ -136,7 +136,7 @@ A plan without replies to senders returns
 {"account_id":"acct_...","bucket_id":"bkt_...","in_reply_to":"eml_...","text":"Thanks, we received your invoice."}
 ```
 
-`to` and `cc` accept at most 10 addresses together. Bcc is not supported.
+The tool has no `to` or `cc`.
 `attachment_ids` attaches existing bucket files. See
 [Send email](https://revdoku.com/api.md#send-email) for limits and errors.
 
@@ -151,7 +151,7 @@ Pass them to `bucket_email_list`. Content and attachments remain stored as files
 Replace placeholders with returned values. For another granted account, include
 its `account_id` on every call. Omitting it uses the connection's default account.
 
-`bucket_list` and `bucket_get` show `mailbox.address` to connections with write
+`bucket_list` and `bucket_get` show `email.address` to connections with write
 access (**Read & write** or **Full access** on the permission screen). Use the
 address once `mailbox.receiving_enabled` is true. **Read only** connections can use
 saved messages without the address. See the

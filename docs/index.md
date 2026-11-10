@@ -29,9 +29,9 @@ Use the dashboard, the TypeScript or Python SDK, the REST API, the CLI or MCP.
    Or choose **Start from the docs template**. On Free, it first copies the template to a new repository in your GitHub account.
    On paid plans you can also **Upload files**. On Free, sites publish from a connected GitHub repository.
 3. Revdoku copies the files into the bucket. Markdown and MDX pages, `docs.json` or `mint.json` navigation and an OpenAPI document become a docs site.
-4. Choose **Publish**. Choose the name, the address, who can open the site and a layout.
+4. Choose **Publish**. Choose the address and a layout.
    The site is at `https://<name>.revdoku.site`. Connect your own domain on the site's **Domain** page.
-   [Pricing](https://app.revdoku.com/pricing) lists what each plan includes, such as password protection.
+   [Pricing](https://app.revdoku.com/pricing) lists what each plan includes.
 5. After the first publish, each push to the connected branch publishes the site again.
    A push to another branch makes a 24-hour preview, and GitHub shows its link on the commit.
 6. Edits that you make in Revdoku go back to the branch as a commit or a pull request.
@@ -58,6 +58,8 @@ A publish builds the site in the background. Publish, then read the site until `
    When it is `failed`, `publish_error` says why.
 4. Never repeat a publish automatically after an uncertain result, such as a timeout. Read the site first.
 
+Publishing and previews use credits; see the [pricing page](https://app.revdoku.com/pricing) and [`/pricing.json`](https://app.revdoku.com/pricing.json).
+
 - On Free, sites publish from a connected GitHub repository that synced at least once.
   A publish of uploaded files answers `403 PUBLICATION_UPGRADE_REQUIRED` with `details.github_required: true` and `details.upgrade_url`.
   On paid plans you can also publish uploaded files.
@@ -82,16 +84,14 @@ Other files publish as an ordinary site.
 | Header and footer | Set in `docs.json`, as on Mintlify: the `logo` and its link, the `favicon`, `navbar` links and a button, `footer` links and a `banner`. |
 | Page menu | Each page has Copy page and View as Markdown. On a public site it also opens the page in ChatGPT or Claude and gives editors the site's MCP server. Choose the items with `contextual.options` in `docs.json`. |
 | Ask | On a public site, readers ask questions. While the account has credits, AI answers from your pages; without credits, Ask shows the matching pages. When the AI cannot answer, Ask offers a message to your support. |
-| Page feedback | Each page asks "Was this page helpful?". On a public site with Ask, a reader who answers No can say what they were looking for, and Ask answers it. |
+| Page feedback | Each page asks "Was this page helpful?". On a public site with Ask, a reader who answers No can say what they were looking for. The comment reaches your support as anonymous feedback. |
 | Previews | A 24-hour preview for each pushed branch. |
-| Domain and access | Your own domain. A public site, or a site protected with a password or an email code. |
+| Domain | Your own domain for a public site. |
 | Analytics | Page views, searches, page feedback, questions asked with Ask and the AI agents that read your docs. |
 
 ## Docs for AI agents
 
 Every public docs site serves AI agents, without sign-in.
-A site with a password or an email code has no MCP server and no search endpoint.
-Its `llms.txt` and Markdown pages open only after the same password or email code.
 
 | Address | What it does |
 | --- | --- |
@@ -203,7 +203,7 @@ Content-Type: application/json
 
 | Choice | Behavior |
 | --- | --- |
-| Supply `bucket.mailbox.username` | On `revdokumail.com`, the name is the bucket's name, with no suffix: `acme-docs` gives `acme-docs@revdokumail.com`, and the bucket's site uses the same name. Dots and underscores become hyphens. A ready custom domain takes the exact name. A name that another bucket uses returns `EMAIL_ALREADY_EXISTS`. |
+| Supply `bucket.email.username` | On `revdokumail.com`, the name is the bucket's name, with no suffix: `acme-docs` gives `acme-docs@revdokumail.com`, and the bucket's site uses the same name. Dots and underscores become hyphens. A ready custom domain takes the exact name. A name that another bucket uses returns `EMAIL_ALREADY_EXISTS`. |
 | Send `{"mailbox": {}}` | Use the title's name when it is free, else generate a name. |
 
 Creation waits for receiving confirmation. Use the returned address after a
@@ -224,7 +224,7 @@ can send to it. Only people and agents with mailbox access can read the saved ma
 
 | Task | REST | CLI | MCP |
 | --- | --- | --- | --- |
-| Inspect an existing receiving address (write access) | `GET /v1/buckets/:id/mailbox` | `revdoku mailbox --bucket-id ID` | `bucket_get` (`mailbox.address`) |
+| Inspect an existing receiving address (write access) | `GET /v1/buckets/:id/mailbox` | `revdoku mailbox --bucket-id ID` | `bucket_get` (`email.address`) |
 | List received messages | `GET /v1/buckets/:id/mailbox/emails` | `revdoku emails --bucket-id ID` | `bucket_email_list` |
 | Read one message | `GET /v1/buckets/:id/mailbox/emails/:email_id` | `revdoku email EMAIL_ID --bucket-id ID` | `bucket_email_get` |
 | Mark read/unread or label | `PATCH /v1/buckets/:id/mailbox/emails/:email_id` | `revdoku email-status EMAIL_ID --read true --add-label Leads --bucket-id ID` | `bucket_email_update` |
@@ -243,19 +243,20 @@ can send to it. Only people and agents with mailbox access can read the saved ma
 ### Reply to a sender
 
 A mailbox sends email from its own address. Sending requires bucket write access.
-Recipients must be account members, other mailboxes of the account, or addresses
-that emailed this mailbox and passed sender authentication.
+Revdoku sends only replies: each email answers a received email and goes to its
+sender, when that sender passed sender authentication.
 
 1. List received messages and choose the message to answer.
 2. Send the reply with `in_reply_to` set to its email ID. This sets the reply
-   headers and the `Re:` subject. The recipient defaults to the original sender
-   only when that sender passed SPF or DMARC. Otherwise pass `to`.
+   headers, the `Re:` subject and the recipient: the original sender. An email whose
+   sender did not pass SPF or DMARC gets no reply (`EMAIL_RECIPIENT_NOT_ALLOWED`).
 3. Read the sent email again and check `delivery.status`.
 4. If the result is unknown or `delivery.status` is `uncertain`, do not send again.
    List sent messages and check first.
 5. If `delivery.status` is `awaiting_approval`, a person sends, edits or declines the email
    in the dashboard. Do not send it again. Do not send a `declined` email again unless a person asks.
 
+Sent email uses credits; see the [pricing page](https://app.revdoku.com/pricing) and [`/pricing.json`](https://app.revdoku.com/pricing.json).
 See [Send email](https://revdoku.com/api.md#send-email) for fields, limits and errors.
 
 ### Message and attachment behavior
@@ -353,8 +354,8 @@ The response groups effective quotas under `limits`. Mailbox responses describe
 the bucket. They do not repeat account quotas. See [limit fields](https://revdoku.com/api.md#limits).
 Full-account browser sessions and unrestricted admin connections also receive
 optional `usage.bucket_creations` with used, remaining, monthly limit and UTC
-reset time. Selected-mailbox/read-only connections retain their normal limits
-response. Deleting or archiving a mailbox does not lower the creation count.
+reset time. Selected-bucket/read-only connections retain their normal limits
+response. Deleting or archiving a bucket does not lower the creation count.
 
 ## Multiple accounts
 

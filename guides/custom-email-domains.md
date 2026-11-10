@@ -66,10 +66,10 @@ records after you approve them. A successful check does not activate receiving.
 
 #### Use a connected domain
 
-Connecting a domain preserves existing addresses. Select it when creating a mailbox,
-or use `POST /v1/buckets/:bucket_id/mailbox/rotate` for an existing mailbox.
+Connecting a domain preserves existing addresses. Select it when creating a bucket,
+or change the address of an existing bucket in the dashboard (Email Settings).
 A mailbox on your domain always keeps a `revdokumail.com` alias, the base address,
-which sends its email. Creating a mailbox on your domain adds one. A change from
+which sends its email. Creating a bucket on your domain adds one. A change from
 `revdokumail.com` keeps the old address as that alias. A change back to
 `revdokumail.com` makes that alias the main address again, at once and without a rotation,
 on every plan.
@@ -104,7 +104,7 @@ names; their reserved-name rules still apply.
 - Custom-domain names remain reserved to their original account. That account may reuse a released name once no primary, alias or pending assignment holds it; archived buckets retain their addresses.
 - Platform addresses cannot be reused, even after deletion.
 - A downgrade preserves assigned addresses but can block new domain setup or switching.
-- Switch to a platform address and remove custom-domain aliases before moving a mailbox to another account. Copies get fresh platform addresses without aliases.
+- Switch to a platform address and remove custom-domain aliases before moving a bucket to another account. Copies get fresh platform addresses without aliases.
 - Mail sent while receiving is paused is not automatically recovered.
 
 
