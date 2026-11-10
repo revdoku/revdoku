@@ -1,5 +1,25 @@
 # Revdoku Changelog
 
+## 1.0.646 — 2026-11-11
+
+### Added
+
+- Start a docs site from a template: name it, and it is live in one step. Then connect your AI app to change the pages, or connect a GitHub repository later.
+- Connect a GitHub repository to a bucket that already has files. The site and its address stay. When the repository has files, they replace the bucket's files, which stay in the bucket's versions. When the repository is empty, the bucket's files become its first commit. In the API, MCP and CLI, send `bucket_files` (`replace` or `copy`) after a person agrees; without it the answer is `409 GITHUB_SYNC_BUCKET_NOT_EMPTY` with the value that fits.
+
+### Improved
+
+- Publish a bucket's files without a GitHub repository. See https://app.revdoku.com/pricing.
+- Change files with your AI app or through GitHub. The file viewer shows Edit with AI in place of the editor.
+- See an AI answer on a docs site write itself out like a chat reply, with its sources after it.
+- See that Ask is working from the moment you send a question, also with reduced motion on your device.
+- Use the full width of the page for the site overview and its Analytics, with AI agents and people in the traffic widget.
+
+### Fixed
+
+- A redirect rule of a site matches its path with and without the trailing slash.
+- A GitHub sync that added and removed files at the same time no longer stops with a locked bucket.
+
 ## 1.0.645 — 2026-11-10
 
 ### Improved
