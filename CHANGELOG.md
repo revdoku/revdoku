@@ -1,6 +1,23 @@
 # Revdoku Changelog
 
+## 1.0.645 — 2026-11-10
+
+### Improved
+
+- Connect a GitHub repository with less setup: Revdoku finds the folder that holds your docs and names its format before the first sync. You can change the folder and the branch.
+- See and change the address of your site when you connect GitHub. You can add your own domain later.
+- Keep your code private: a repository that does not look like docs is not published automatically. Publish it yourself when you are ready.
+- Read and answer support tickets from the CLI: `revdoku tickets`, `ticket ID`, `ticket-messages ID`, `ticket-reply ID --text TEXT`, `ticket-update ID --status solved`, `ticket-download ID --message-id ID` and `ticket-message-delete ID`. They replace the `emails` and `email-*` commands.
+- Get a subscription token for live ticket events with `revdoku events-subscription`. It replaces `email-subscription`. The `webhook` commands set the webhook for ticket events.
+- Preview a branch of the connected repository from the CLI with `revdoku preview --branch NAME`, and list the branches with `revdoku github branches`.
+- Read a bucket's email address from `revdoku ls`. The `mailbox` command is gone.
+- Use the CLI, the skill, the guides and the examples with the current API names: tickets, `email` in a bucket, `/github` and `/v1/auth`.
+
 ## 1.0.644 — 2026-11-10
+
+### Added
+
+- Preview a branch of your GitHub repository from the API and MCP: `POST /v1/buckets/{bucket_id}/publication/preview` takes `branch`, and `GET /v1/buckets/{bucket_id}/github/branches` lists the branches. In MCP, use `bucket_publish` with `action: "preview"` and `branch`, and `bucket_github` with `action: "branches"`.
 
 ### Improved
 

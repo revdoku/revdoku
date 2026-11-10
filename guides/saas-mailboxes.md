@@ -63,13 +63,13 @@ Namespace mappings, cursors and work records by account and mailbox.
 
 ## Provision once and recover
 
-The [minimal creation request](https://revdoku.com/api.md#create-a-bucket) sends `{"mailbox":{}}`.
+The [minimal creation request](https://revdoku.com/api.md#create-a-bucket) sends `{"bucket":{"email":{}}}`.
 For a connected custom domain, set `REVDOKU_EMAIL_DOMAIN` before provisioning.
 
 | Outcome | Next action |
 | --- | --- |
 | `201` | Persist the bucket ID and confirmed receiving address. |
-| `503 EMAIL_NOT_READY` | Persist `error.details.bucket_id`; inspect its receiving state with `GET /v1/buckets/:id/mailbox?account_id=…`. |
+| `503 EMAIL_NOT_READY` | Persist `error.details.bucket_id`; inspect its receiving state (`bucket.email`) with `GET /v1/buckets/:id?account_id=…`. |
 | Timeout, broken connection or unreadable response | Retain an unknown outcome; reconcile existing buckets. Do not repeat the POST. |
 | Capacity/permission error | Resolve the returned condition before an explicitly chosen new attempt. |
 
@@ -83,7 +83,7 @@ failed. A known bucket ID is checked with GET. Structured 4xx rejection permits 
 later explicit new attempt. Use only confirmed addresses.
 
 Aliases share a mailbox's messages, restrictions and quotas; they provide no
-isolation. Follow the [alias workflow](https://revdoku.com/api.md#aliases),
+isolation. Follow the [alias workflow](https://revdoku.com/api.md#email-settings),
 check `max_email_aliases_per_bucket`, and wait for routing confirmation. Keeping an
 old primary also uses rotation capacity. Removal stops new/queued deliveries;
 existing mail remains.
@@ -134,7 +134,7 @@ keys to survive a crash before completion is recorded.
 Catch up with ascending cursors on startup and periodically, even with webhooks.
 Save cursors after durably handling each page, including empty pages. Read-state
 changes do not replay arrivals. See the
-[notification examples](https://github.com/revdoku/revdoku/blob/main/examples/README.md#new-email-notifications) for signed
+[notification examples](https://github.com/revdoku/revdoku/blob/main/examples/README.md#ticket-events) for signed
 receivers and local WebSocket reconnects.
 
 ## Display messages and attachments

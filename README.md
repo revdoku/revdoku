@@ -34,8 +34,8 @@ pip install revdoku
 import { Revdoku } from 'revdoku';
 
 const client = new Revdoku(); // reads REVDOKU_API_KEY
-const { data } = await client.listEmails({ bucketId: 'bkt_...' });
-for (const email of data.emails) console.log(email.receivedAt, email.subject);
+const { data } = await client.listTickets({ bucketId: 'bkt_...', status: 'open' });
+for (const ticket of data.tickets) console.log(ticket.number, ticket.channel, ticket.subject);
 ```
 
 Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example
@@ -64,30 +64,31 @@ Connect Revdoku so you can create and manage email mailboxes for my AI agents, r
 
 Each mailbox has its own incoming email address. Bucket creation returns the
 address and receiving state; for an existing mailbox, `bucket_get` and
-`bucket_list` return `mailbox.address` to connections with write access, and
-**Mailbox settings → Email** shows it. Check `mailbox.receiving_enabled` before
+`bucket_list` return `email.address` to connections with write access, and
+**Email Settings** of the bucket shows it. Check `email.receiving_enabled` before
 using the address.
 
-With the CLI, run `revdoku mailbox --bucket-id bkt_...` to retrieve the address,
-readiness, and activity. Use `revdoku emails --bucket-id bkt_...` to list mail and
-`revdoku email eml_... --bucket-id bkt_...` to read it.
+With the CLI, `revdoku ls` shows each bucket's address and receiving state.
+Use `revdoku tickets --bucket-id bkt_...` to list support tickets and
+`revdoku ticket-messages tkt_... --bucket-id bkt_...` to read their messages.
 
 Receive invoices, documents, project updates, or authorized service verification
 messages. Each accepted email is saved as original `message.eml`, decoded
-`message.json` and attachment files. Authorized people and agents can read these
-through the email API and tools; file tools also expose the stored representations.
+`message.json` and attachment files. Each conversation is a support ticket, also a
+message that a reader leaves on the docs site. Authorized people and agents read them
+through the ticket API and tools; file tools also expose the stored representations.
 
-Use `bucket_email_list` or the CLI `emails` command with a saved `next_cursor`
-to poll for incoming messages. `bucket_email_get` returns a message directly;
-`bucket_email_download` retrieves attachments or the original. Anyone
+Use `bucket_ticket_list` or the CLI `tickets` command with `updated_after`
+to poll for new tickets and messages. `bucket_ticket_get` returns a ticket with its messages;
+`bucket_ticket_download` retrieves attachments or the original. Anyone
 knowing the address can email the bucket; reading its contents requires access.
 See [incoming email](docs.md#receive-and-read-email)
-and the [API contract](api.md#emails).
+and the [API contract](api.md#tickets).
 
-To reply, use `bucket_email_send` or `revdoku email-send --in-reply-to eml_... --text TEXT`.
-Revdoku sends only replies: each email answers a received email and goes to its
-sender, when that sender passed sender authentication. When the mailbox requires approval,
-a person sends, edits or declines each email in the dashboard. See [Send email](api.md#send-email).
+To reply, use `bucket_ticket_reply` or `revdoku ticket-reply tkt_... --text TEXT`.
+Revdoku sends only replies: each reply answers a ticket and goes to its
+requester, when that requester passed sender authentication. When the bucket requires approval,
+a person sends, edits or declines each reply in the dashboard. See [Reply to a ticket](api.md#reply-to-a-ticket).
 
 ## Additional file storage
 
@@ -173,7 +174,7 @@ Useful commands:
 
 - `revdoku upload PATH` — store or update private files.
 - `revdoku files`, `revdoku read PATH` — list and read stored files and email.
-- `revdoku mailbox --bucket-id ID` — check the incoming address and receiving state.
+- `revdoku tickets --bucket-id ID`, `revdoku ticket-reply ID --text TEXT` — read and answer support tickets.
 - `revdoku versions PATH`, `revdoku restore PATH --version-id ID` — inspect and restore a file's history.
 - `revdoku status`, `revdoku ls` — inspect the connection and buckets.
 - `revdoku dashboard`, `revdoku --help` — open the dashboard or command reference.
@@ -244,7 +245,7 @@ user's authorization. Connecting a domain does not change existing mailbox addre
 Use only the full address returned by Revdoku and check `receiving_enabled`. A domain switch
 may return `assignment.status: pending`; poll until active or failed, keeping the
 current address in use meanwhile. Never construct aliases or use `+tag` variants.
-See [the email API contract](https://revdoku.com/api.md#custom-email-domains).
+See [the email API contract](https://revdoku.com/api.md#email-settings).
 
 ### CLI safety boundaries
 

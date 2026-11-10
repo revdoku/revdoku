@@ -8,9 +8,9 @@ const headers = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'applicatio
 const bucketId = process.env.REVDOKU_BUCKET_ID;
 if (!bucketId || !/^bkt_[A-Za-z0-9]+$/.test(bucketId)) throw new Error('Set REVDOKU_BUCKET_ID.');
 
-const [emailId, attachmentId, directory = 'downloads'] = process.argv.slice(2);
-if (!emailId || !attachmentId) throw new Error('Usage: download-attachments.js EMAIL_ID ATTACHMENT_ID [DIRECTORY]');
-const url = new URL(`https://api.revdoku.com/v1/buckets/${bucketId}/mailbox/emails/${encodeURIComponent(emailId)}/attachments/${encodeURIComponent(attachmentId)}`);
+const [ticketId, messageId, attachmentId, directory = 'downloads'] = process.argv.slice(2);
+if (!ticketId || !messageId || !attachmentId) throw new Error('Usage: download-attachments.js TICKET_ID MESSAGE_ID ATTACHMENT_ID [DIRECTORY]');
+const url = new URL(`https://api.revdoku.com/v1/buckets/${bucketId}/tickets/${encodeURIComponent(ticketId)}/messages/${encodeURIComponent(messageId)}/attachments/${encodeURIComponent(attachmentId)}`);
 if (accountId) url.searchParams.set('account_id', accountId);
 const response = await fetch(url, { headers, redirect: 'error', signal: AbortSignal.timeout(30000) });
 const result = await response.json();

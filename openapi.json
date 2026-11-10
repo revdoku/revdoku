@@ -4268,7 +4268,7 @@
           "Publications"
         ],
         "summary": "Preview the site",
-        "description": "Publishes the bucket's current files at a separate preview address for 24 hours. The site does not change. Uses credits; see https://app.revdoku.com/pricing.json.",
+        "description": "Publishes the bucket's current files at a separate preview address for 24 hours. With branch, the preview shows that branch of the connected GitHub repository at preview-<branch>-<site>. The site does not change. Uses credits; see https://app.revdoku.com/pricing.json.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BucketId"
@@ -4279,7 +4279,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PublishRequest"
+                "$ref": "#/components/schemas/PreviewRequest"
               }
             }
           }
@@ -4840,6 +4840,72 @@
                         }
                       }
                     }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/buckets/{bucket_id}/github/branches": {
+      "get": {
+        "operationId": "listGithubBranches",
+        "tags": [
+          "GitHub"
+        ],
+        "summary": "List the branches that can get a preview",
+        "description": "Returns the branches of the bucket's GitHub repository, without the linked branch (the site shows it), A-Z. Pass one as branch to previewBucket. Requires bucket publish permission. 404 GITHUB_SYNC_NOT_CONNECTED without a repository.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BucketId"
+          },
+          {
+            "$ref": "#/components/parameters/AccountId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "success",
+                    "data"
+                  ],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "branches"
+                      ],
+                      "properties": {
+                        "branches": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "branches": [
+                      "next",
+                      "pricing-page"
+                    ]
                   }
                 }
               }
@@ -7989,6 +8055,36 @@
             "type": "string",
             "maxLength": 2000,
             "description": "Why you publish, for the activity log."
+          }
+        }
+      },
+      "PreviewRequest": {
+        "type": "object",
+        "properties": {
+          "access_mode": {
+            "type": "string",
+            "enum": [
+              "public",
+              "password",
+              "require_email"
+            ],
+            "description": "Who can open the site. Omit to keep the current setting. Sites are public: password and require_email return 422 PUBLICATION_ACCESS_MODE_INVALID unless Revdoku turned on private sites for the account."
+          },
+          "password": {
+            "type": "string",
+            "writeOnly": true,
+            "minLength": 8,
+            "maxLength": 128,
+            "description": "Password for access_mode password, 8 to 128 characters. Omit to generate one."
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Why you publish, for the activity log."
+          },
+          "branch": {
+            "type": "string",
+            "description": "A branch of the connected GitHub repository, other than the linked branch (see listGithubBranches). The preview then shows that branch, as after a push to it, with the site's access. Needs a live site. Omit to preview the bucket's current files."
           }
         }
       },

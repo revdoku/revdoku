@@ -1,16 +1,18 @@
-# Email events
+# Ticket events
 
 Hosted applications receive signed HTTP webhooks. Local projects open an outbound
 WebSocket through Rails Action Cable; no public domain or tunnel is required.
-Both deliver the same event after the complete email and attachments are saved.
-Read contents through the existing email API.
+Both deliver the same event after the complete message and its attachments are saved:
+`ticket.created` for the first message of a new ticket and `ticket.message_received` for a later message.
+A ticket starts with an email, a message left on the docs site (`channel` `chat`) or page feedback.
+Read contents through the ticket API.
 
 | Endpoint | Permission | Result |
 | --- | --- | --- |
-| GET /v1/buckets/:bucket_id/mailbox/webhook | Mailbox admin | Endpoint, or webhook: null; excludes the signing secret. |
-| PUT /v1/buckets/:bucket_id/mailbox/webhook | Mailbox admin | Set one URL; returns the endpoint and signing secret. |
-| DELETE /v1/buckets/:bucket_id/mailbox/webhook | Mailbox admin | Disable delivery; 200 with data.deleted and data.id (the bucket ID). |
-| GET /v1/buckets/:bucket_id/mailbox/subscription | Mailbox read | Signed WebSocket ticket valid for 60 seconds. |
+| GET /v1/buckets/:bucket_id/webhook | Bucket admin | Endpoint, or webhook: null; excludes the signing secret. |
+| PUT /v1/buckets/:bucket_id/webhook | Bucket admin | Set one URL; returns the endpoint and signing secret. |
+| DELETE /v1/buckets/:bucket_id/webhook | Bucket admin | Disable delivery; 200 with data.deleted and data.id (the bucket ID). |
+| GET /v1/buckets/:bucket_id/events/subscription | Bucket read | Signed subscription token valid for 60 seconds. |
 
 Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for
 example `https://api.revdoku.com/v1/buckets`. Use your normal bearer API key.
@@ -28,23 +30,25 @@ and redirects are rejected. Invalid configuration returns INVALID_ARGUMENT (422)
 ### Hosted application workflow
 
 1. Implement an HTTPS POST receiver.
-2. PUT {"webhook_url":"https://example.org/email-events"} to configure it. Securely save
+2. PUT {"webhook_url":"https://example.org/ticket-events"} to configure it. Securely save
    data.webhook.signing_secret. Repeating PUT with the same URL retains the secret
    and does not return it again; replacing the URL rotates it and cancels pending
    old-endpoint deliveries.
 3. Verify the exact request bytes before parsing JSON.
 4. Deduplicate the event ID, durably accept the event, and return any 2xx.
-5. Fetch /v1/buckets/:bucket_id/mailbox/emails/:email_id with your own API key.
+5. Fetch /v1/buckets/:bucket_id/tickets/:ticket_id/messages/:message_id with your own API key.
 
 ~~~json
 {
-  "id": "email.received:eml_example",
-  "type": "email.received",
+  "id": "ticket.created:eml_example",
+  "type": "ticket.created",
   "created_at": "2026-10-01T12:00:00.000000Z",
   "data": {
     "account_id": "acct_example",
     "bucket_id": "bkt_example",
-    "email_id": "eml_example",
+    "ticket_id": "tkt_example",
+    "message_id": "eml_example",
+    "channel": "email",
     "received_at": "2026-10-01T11:59:58.000000Z",
     "attachment_count": 1
   }
@@ -54,12 +58,18 @@ and redirects are rejected. Invalid configuration returns INVALID_ARGUMENT (422)
 | Field | Meaning |
 | --- | --- |
 | id | Stable event ID for deduplication; unchanged on retries. |
-| type | email.received. |
+| type | ticket.created (the first message of a new ticket) or ticket.message_received (a later message). |
 | created_at | UTC time when intake queued the event. |
-| data.account_id, data.bucket_id | Account and mailbox that saved the message. |
-| data.email_id | Stable email ID for the existing read endpoint. |
-| data.received_at | UTC email receipt time. |
+| data.account_id, data.bucket_id | Account and bucket that saved the message. |
+| data.ticket_id | The ticket of the message. |
+| data.message_id | Stable message ID for the read endpoint. |
+| data.channel | email, chat or feedback: how the message arrived. |
+| data.received_at | UTC receipt time. |
 | data.attachment_count | Number of saved attachments. |
+
+While the AI filter is on for the account, an event waits until the filter has checked the
+message, at most one minute. A message labeled Junk sends no event; if a person removes the
+Junk label, the event is sent then.
 
 Events contain no subjects, senders, bodies, download links or API credentials.
 Only new accepted deliveries emit them. Edits, copies, backfills and read changes
@@ -106,7 +116,7 @@ Delivery can repeat or arrive out of order; deduplicate by event ID.
 | --- | --- |
 | Buckets with a webhook | Existing active-mailbox capacity; read `limits.max_buckets`. |
 | Endpoints per bucket | One. |
-| New email events | Follow accepted messages within incoming count, byte and storage limits. |
+| New ticket events | Follow accepted messages within incoming count, byte and storage limits. |
 | Delivery history | Read `limits.audit_retention_days`. |
 
 Webhook capacity follows the account's existing mailbox and incoming-email limits, including overrides and shared billing. There is no separate webhook event allowance.
@@ -115,31 +125,31 @@ Delivery history is available in **Analytics → Webhooks**.
 
 ### Local project workflow
 
-1. GET a subscription ticket with your read-authorized API key.
-2. Open the returned `websocket_url`, adding `email_subscription_token=TICKET`
+1. GET a subscription token (`data.subscription.token`) with your read-authorized API key.
+2. Open the returned `websocket_url`, adding `subscription_token=TOKEN`
    within 60 seconds, using the `actioncable-v1-json` subprotocol.
-3. Subscribe to EmailReceivedChannel with the returned account_id and bucket_id.
+3. Subscribe to BucketEventsChannel with the returned account_id and bucket_id.
    Wait for confirm_subscription.
-4. List messages with your saved ascending arrival cursor and process every page.
-   Deduplicate email IDs against live events received during catch-up.
-5. Handle each live event's message and fetch its email through REST.
-6. On a temporary disconnect, get a fresh ticket, reconnect, and repeat cursor catch-up. Stop if the server rejects the subscription or sends `reconnect: false`.
+4. List tickets with `updated_after` set to your saved last check time and process every page.
+   Deduplicate message IDs against live events received during catch-up.
+5. Handle each live event and fetch its message through REST.
+6. On a temporary disconnect, get a fresh token, reconnect, and repeat the catch-up. Stop if the server rejects the subscription or sends `reconnect: false`.
 
-Runnable [JavaScript/TypeScript and Python examples](https://github.com/revdoku/revdoku/tree/main/examples) cover signed receivers and reconnects. The Node `watch-mail.js` example waits for subscription confirmation, catches up with a saved cursor, detects stale connections, and requests a fresh ticket on reconnect.
+Runnable [JavaScript/TypeScript and Python examples](https://github.com/revdoku/revdoku/tree/main/examples) cover signed receivers and reconnects. The Node `watch-mail.js` example waits for subscription confirmation, catches up with a saved check time, detects stale connections, and requests a fresh subscription token on reconnect.
 
 | Client guard | Limit |
 | --- | --- |
-| Duplicate mailbox subscriptions | One per connection |
-| Mailbox subscriptions | 32 per connection; tickets authorize one bucket |
+| Duplicate bucket subscriptions | One per connection |
+| Bucket subscriptions | 32 per connection; a token authorizes one bucket |
 | Connections | 32 per credential per web process |
 | Handshakes | 120 per minute per source IP |
 | Client commands | 120 per minute per connection; 4 KiB maximum per command |
 
-Keep account, mailbox and filters unchanged when reusing a cursor. Preserve `pagination.next_cursor` even after an empty page. WebSocket events are live hints; REST catch-up supplies messages received while disconnected.
+Keep the account and bucket unchanged between checks, and save the last check time. WebSocket events are live hints; REST catch-up with `updated_after` supplies messages received while disconnected.
 
-Ticket expiry limits connection establishment; an established subscription lasts
+Token expiry limits connection establishment; an established subscription lasts
 until disconnect or access revocation. Credentials and membership are checked before
-each transmitted event. Treat the ticket as a temporary credential: it authorizes
+each transmitted event. Treat the token as a temporary credential: it authorizes
 only its selected bucket channel, never account notification streams.
 
 

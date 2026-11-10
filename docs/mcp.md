@@ -77,9 +77,9 @@ Use `email.address` alone when `title` is null.
 Keep IDs for tool calls unless the user requests them.
 Descriptions provide optional context and are not mailbox names.
 If the address is unavailable, use an Open mailbox link and state that the address is unavailable.
-Display `mailbox.message_count` as stored emails and `mailbox.unread_count` as unread emails.
+Display `email.message_count` as stored emails and `email.unread_count` as unread emails.
 Null counts mean the email index is being prepared.
-`mailbox.receiving_enabled` reports whether receiving is currently available.
+`email.receiving_enabled` reports whether receiving is currently available.
 A paused mailbox keeps its permitted address as its label.
 
 ## Receive and read email
@@ -99,68 +99,69 @@ Offer recurring automation after the first result.
    connection default. Browser account switching does not change that default.
 2. Use `bucket_list` to choose an existing authorized mailbox. The setup steps
    after browser signup create the first bucket. A read connection to selected buckets can use it.
-3. Call `bucket_email_list` with its `bucket_id` and the chosen `account_id`.
-   Save `pagination.next_cursor` even after empty pages, and poll using the same
-   filters with backoff and a deadline.
+3. Call `bucket_ticket_list` with its `bucket_id` and the chosen `account_id`.
+   A ticket is one conversation: an email, a message left on the docs site
+   (`channel: "chat"`) or page feedback (`channel: "feedback"`).
+   To poll, save the newest `updated_at` and pass it as `updated_after`, with backoff and a deadline.
    `limit` defaults to 50, maximum 200.
-4. Call `bucket_email_get` with an `email_id` for headers, body text and attachment
-   metadata. Reads leave shared status unchanged. Change it explicitly through
-   `bucket_email_update(read: true|false)`. The same tool adds and removes
+4. Call `bucket_ticket_get` with a `ticket_id` for the ticket and its messages, oldest first:
+   headers, body text and attachment metadata. Reads leave shared status unchanged.
+   `bucket_ticket_update` solves or reopens the ticket (`status`) and adds and removes
    custom labels (`add_labels`, `remove_labels`).
-5. Request `bucket_email_download` only for the selected `attachment_id`, or
+5. Request `bucket_ticket_download` with the `message_id` and only the selected `attachment_id`, or
    omit it for the original EML. The returned URL expires in 15 minutes and needs
    no extra credential. Fetch the returned URL as provided. Never send an API
    key or OAuth token to a download URL.
 
-### Reply to a sender
+### Reply to a ticket
 
-Sending requires bucket write access. Revdoku sends only replies: each email answers
-a received email of the bucket and goes to its sender, when that sender passed sender
-authentication. Every current plan, the Free plan included, can reply to senders.
-A plan without replies to senders returns
-`EMAIL_REPLY_UPGRADE_REQUIRED` with `error.details.upgrade_url`. Send only when the bucket's
-`mailbox.sending_enabled` is true. Otherwise `bucket_email_send` returns
-`EMAIL_SENDING_UNAVAILABLE`, or the server lists no send tool when sending is off.
+Replying requires bucket write access. Revdoku sends only replies: each reply answers
+a ticket of the bucket and goes to its requester. A feedback ticket has nobody to reply to.
+Every current plan, the Free plan included, can reply.
+A plan without replies returns
+`EMAIL_REPLY_UPGRADE_REQUIRED` with `error.details.upgrade_url`. Reply only when the bucket's
+`email.sending_enabled` is true. Otherwise `bucket_ticket_reply` returns
+`EMAIL_SENDING_UNAVAILABLE`, or the server lists no reply tool when sending is off.
 
-1. Call `bucket_email_list` with `direction: "received"` and choose the message to answer.
-2. Call `bucket_email_send` with `in_reply_to` set to its email ID and `text`.
-   This sets the reply headers, the `Re:` subject and the recipient: the original sender.
-   An email whose sender did not pass SPF or DMARC returns `EMAIL_RECIPIENT_NOT_ALLOWED`.
-3. Call `bucket_email_get` for the returned email ID and check `delivery.status`.
-4. If the result is unknown or `delivery.status` is `uncertain`, do not send again.
-   Call `bucket_email_list` with `direction: "sent"` and check first.
-5. If `delivery.status` is `awaiting_approval`, a person sends, edits or declines the email
-   in the dashboard. Do not send it again. Do not send a `declined` email again unless a person asks.
+1. Call `bucket_ticket_list` with `status: "open"` and choose the ticket to answer.
+2. Call `bucket_ticket_reply` with its `ticket_id` and `text`.
+   This sets the reply headers, the `Re:` subject and the recipient: the requester.
+   A requester whose email did not pass SPF or DMARC returns `EMAIL_RECIPIENT_NOT_ALLOWED`.
+3. Check `delivery.status` of the returned message, or read it again with `bucket_ticket_get`.
+4. If the result is unknown or `delivery.status` is `uncertain`, do not reply again.
+   Call `bucket_ticket_get` and check the ticket's messages first.
+5. If `delivery.status` is `awaiting_approval`, a person sends, edits or declines the reply
+   in the dashboard. Do not send it again. Do not send a `declined` reply again unless a person asks.
 
 ```json
-{"account_id":"acct_...","bucket_id":"bkt_...","in_reply_to":"eml_...","text":"Thanks, we received your invoice."}
+{"account_id":"acct_...","bucket_id":"bkt_...","ticket_id":"tkt_...","text":"Thanks, we received your invoice."}
 ```
 
-The tool has no `to` or `cc`.
+The tool has no `to`, `cc` or `in_reply_to`.
 `attachment_ids` attaches existing bucket files. See
-[Send email](https://revdoku.com/api.md#send-email) for limits and errors.
+[Reply to the requester](https://revdoku.com/api/reference/tickets.md#reply-to-the-requester) for limits and errors.
 
-Example arguments for listing a conversation:
+Example arguments for reading a ticket:
 
 ```json
-{"account_id":"acct_...","bucket_id":"bkt_...","conversation_id":"eml_...","limit":50}
+{"account_id":"acct_...","bucket_id":"bkt_...","ticket_id":"tkt_..."}
 ```
 
-Pass them to `bucket_email_list`. Content and attachments remain stored as files.
+Pass them to `bucket_ticket_get`. Content and attachments remain stored as files.
 
 Replace placeholders with returned values. For another granted account, include
 its `account_id` on every call. Omitting it uses the connection's default account.
 
 `bucket_list` and `bucket_get` show `email.address` to connections with write
 access (**Read & write** or **Full access** on the permission screen). Use the
-address once `mailbox.receiving_enabled` is true. **Read only** connections can use
+address once `email.receiving_enabled` is true. **Read only** connections can use
 saved messages without the address. See the
 [credential matrix](https://revdoku.com/guides/saas-mailboxes.md#map-customers-and-choose-access).
 
 ### Create another bucket
 
 With account-wide admin access, call `bucket_create` only when another bucket is
-needed. Pass `mailbox: {username, domain}` to choose the address, or omit `mailbox`
+needed. Pass `email: {username, domain}` to choose the address, or omit `email`
 to generate one. Pass `title` to name it. Otherwise the title is the username.
 A taken or retired address returns `EMAIL_ALREADY_EXISTS`. Platform role names
 are reserved. A title that another active bucket uses returns `BUCKET_TITLE_TAKEN`.
@@ -183,14 +184,14 @@ Selected-mailbox/read-only connections still receive their normal limits respons
 ## Access and message handling
 
 Messages and attachments are ordinary private bucket files. Listing,
-`bucket_email_get` and `bucket_email_download` leave read status unchanged.
-`bucket_email_update` marks an email read or unread and adds or removes custom
+`bucket_ticket_get` and `bucket_ticket_download` leave read status unchanged.
+`bucket_ticket_update` solves or reopens a ticket and adds or removes custom
 labels. Built-in labels such as Junk change only in the dashboard. `bucket_file_read` records
 a read receipt. Reading an email's own file under `_mailbox/` marks that email read
 for everyone. Attachments have independent read status. Read receipts do not
 reserve work or prove a verification code was used.
 
-With user authorization, `bucket_email_delete` deletes one email and its owned
+With user authorization, `bucket_ticket_message_delete` deletes one message and its owned
 files and attachments. This requires bucket admin access. There is no email
 batch operation or trash/restore API.
 
@@ -219,7 +220,7 @@ by the service, keeping the current address until a pending change completes.
 Pass the bucket `version_id` from your last read as `expected_bucket_version` on
 writes. A stale value returns `BUCKET_VERSION_CONFLICT` and writes nothing.
 Files under `_mailbox/` are read-only for file tools (`MAILBOX_PATH_READ_ONLY`). Use
-the email tools to change email. `_agents/` and `_revdoku/` are read-only too
+the ticket tools to change messages. `_agents/` and `_revdoku/` are read-only too
 (`RESERVED_PATH`). Other names that start with `_` are ordinary files. Deleted files keep their earlier versions in the
 file history. There is no batch delete. Hosted MCP cannot read a local folder or
 upload binary files. Use the local CLI or the REST
@@ -231,7 +232,7 @@ and bucket moves reject new mail. Archive or restore a bucket with
 
 Share `dashboard_url` with authorized people. A link does not grant access.
 Reconnect the MCP client after updates to refresh its discovered tools.
-See the [API contract](https://revdoku.com/api.md#emails) and
+See the [API contract](https://revdoku.com/api.md#tickets) and
 [storage and mailbox guide](https://revdoku.com/docs.md).
 
 ## Connect a GitHub repository
@@ -253,7 +254,7 @@ and `"disconnect"` stops the sync. The bucket keeps its files.
 
 ## Same contract as the REST API
 
-MCP tools return the REST resources: the same `bucket`, `email`, `file`,
+MCP tools return the REST resources: the same `bucket`, `ticket`, `message`, `file`,
 `version`, `download` and `publication` objects, field names, list pages, `{deleted, id}`
 results and error codes. When a plan limit stops a call, `error.details.upgrade_url`
 links to the pricing page. Give it to the user. Each tool covers these REST operations:
@@ -265,15 +266,17 @@ links to the pricing page. Give it to the user. Each tool covers these REST oper
 | `bucket_list`, `bucket_get`, `bucket_create` | `GET /v1/buckets`, `GET /v1/buckets/{id}`, `POST /v1/buckets` |
 | `bucket_update` | `PATCH /v1/buckets/{id}`. `archived` replaces `.../archive` and `.../unarchive` |
 | `bucket_delete_permanently` | `DELETE /v1/buckets/{id}` |
-| `bucket_email_list`, `_get`, `_update`, `_delete`, `_send` | `GET`, `GET`, `PATCH`, `DELETE` and `POST` on `.../mailbox/emails` |
-| `bucket_email_download` | `.../mailbox/emails/{id}/raw` or `.../attachments/{attachment_id}` |
-| `bucket_email_webhook`, `bucket_email_subscription` | `GET` and `PUT .../mailbox/webhook` (omit `webhook_url` to read; `null` deletes) and `.../mailbox/subscription` |
+| `bucket_ticket_list`, `bucket_ticket_update` | `GET .../tickets`, `PATCH .../tickets/{ticket_id}` |
+| `bucket_ticket_get` | `GET .../tickets/{ticket_id}` with `GET .../tickets/{ticket_id}/messages` |
+| `bucket_ticket_reply`, `bucket_ticket_message_delete` | `POST .../tickets/{ticket_id}/messages`, `DELETE .../messages/{message_id}` |
+| `bucket_ticket_download` | `.../tickets/{ticket_id}/messages/{message_id}/raw` or `.../attachments/{attachment_id}` |
+| `bucket_webhook`, `bucket_events_subscription` | `GET` and `PUT .../webhook` (omit `webhook_url` to read; `null` deletes) and `GET .../events/subscription` |
 | `bucket_file_list`, `bucket_file_delete` | `GET .../files`, `DELETE .../files/{file_id}` |
 | `bucket_file_read` | `.../files/by_path` or `.../files/{file_id}` with `.../download`. Small text files return `content` |
 | `bucket_file_write` | Text files with `uploaded` and `skipped` rows, as an upload-session finalize. `append: true` is `.../files/append_text` |
 | `bucket_file_reorganize` | `.../files/{file_id}/rename`, `/move` and `/copy`, one `operations` item each |
-| `bucket_publication_get`, `bucket_publish` | `GET .../publication` (`preview: true`: `.../publication/preview`); `POST .../publication`, `POST .../publication/preview` and `DELETE .../publication` by `action` |
-| `bucket_github` | By `action`: `GET`, `POST`, `PATCH` and `DELETE .../github_sync`, `POST .../github_sync/sync`, `GET .../github_sync/setup_link`, and `GET /v1/account/github_installations` (`accounts`) and `.../{installation_id}/repositories` |
+| `bucket_publication_get`, `bucket_publish` | `GET .../publication` (`preview: true`: `.../publication/preview`); `POST .../publication`, `POST .../publication/preview` (`branch` previews a branch of the connected repository) and `DELETE .../publication` by `action` |
+| `bucket_github` | By `action`: `GET`, `POST`, `PATCH` and `DELETE .../github`, `POST .../github/sync`, `GET .../github/setup_link`, `GET .../github/branches` (`branches`), and `GET /v1/account/github/installations` (`accounts`) and `.../{installation_id}/repositories` |
 
 The site tools are listed only where the deployment serves sites, and `bucket_github` only where it also syncs GitHub. `bucket_lock` exists only in MCP. Email settings, custom
 domains, file versions and batch uploads exist only in REST.

@@ -13,6 +13,7 @@ Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for exam
 - [Change GitHub sync settings](#change-github-sync-settings): `PATCH /v1/buckets/{bucket_id}/github`
 - [Disconnect the GitHub repository](#disconnect-the-github-repository): `DELETE /v1/buckets/{bucket_id}/github`
 - [Sync the GitHub repository now](#sync-the-github-repository-now): `POST /v1/buckets/{bucket_id}/github/sync`
+- [List the branches that can get a preview](#list-the-branches-that-can-get-a-preview): `GET /v1/buckets/{bucket_id}/github/branches`
 - [Get the links to add a GitHub account](#get-the-links-to-add-a-github-account): `GET /v1/buckets/{bucket_id}/github/setup_link`
 
 ## List connected GitHub accounts
@@ -596,6 +597,75 @@ curl -X POST "https://api.revdoku.com/v1/buckets/bkt_example/github/sync" \
 | Status | Description |
 | --- | --- |
 | 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
+
+Guide: [GitHub repositories](https://revdoku.com/api.md#github-repositories)
+
+## List the branches that can get a preview
+
+`GET /v1/buckets/{bucket_id}/github/branches`
+
+Returns the branches of the bucket's GitHub repository, without the linked branch (the site shows it), A-Z. Pass one as branch to previewBucket. Requires bucket publish permission. 404 GITHUB_SYNC_NOT_CONNECTED without a repository.
+
+| Language | Call |
+| --- | --- |
+| TypeScript | `client.api.listGithubBranches({ bucketId })` |
+| Python | `client.api.list_github_branches(bucket_id)` |
+
+**Parameters**
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `bucket_id` / `bucketId` | string | yes |  |
+| `account_id` / `accountId` | string | no | Select another granted account for this request. Omit to use the credential default. In JSON bodies, send account_id as a body field instead. |
+
+**Examples**
+
+**TypeScript**
+
+```ts
+import { Revdoku } from 'revdoku';
+
+const client = new Revdoku();
+const { data } = await client.api.listGithubBranches({
+  bucketId: 'bkt_example',
+});
+console.log(data);
+```
+
+**Python**
+
+```python
+from revdoku import Revdoku
+
+client = Revdoku()
+response = client.api.list_github_branches("bkt_example")
+print(response.data)
+```
+
+**cURL**
+
+```sh
+curl "https://api.revdoku.com/v1/buckets/bkt_example/github/branches" \
+  -H "Authorization: Bearer $REVDOKU_API_KEY"
+```
+
+**Response** `200`
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `branches` | array of string |  |
+
+```json
+{"success": true, "data": {"branches": ["next", "pricing-page"]}}
+```
+
+**Errors**
+
+| Status | Description |
+| --- | --- |
+| 4xx, 5xx | Request failed: branch on `error.code`. A `429` or `503` with `Retry-After`: wait that many seconds, then try the read again. `429 EMAIL_SEND_RATE_LIMITED` has no `Retry-After`. |
+
+Error codes named above: `GITHUB_SYNC_NOT_CONNECTED`.
 
 Guide: [GitHub repositories](https://revdoku.com/api.md#github-repositories)
 

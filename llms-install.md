@@ -27,7 +27,7 @@ Connect Revdoku so you can create and manage email mailboxes for my AI agents, r
 3. Sign in through the browser to authorize the connection.
 
 Signup creates the first bucket. List the accessible buckets after connecting. Reuse that bucket for the task, or create another only when needed.
-With write access, check `mailbox.receiving_enabled` before sharing an address.
+With write access, check `email.receiving_enabled` before sharing an address.
 Read-only connections cannot see the address. They verify access by listing authorized
 buckets and reading an existing message; ask the operator for the address when needed. Show the account
 ID and granted scope. Browser account switching does not change a tool credential's
@@ -122,14 +122,14 @@ the task needs, and [choose access](#choose-access) for the task: **Read only** 
 read saved email, **Read & write** when you must show the mailbox address.
 Call `account_list`, choose an account, pass its `account_id` on later calls, and
 list its authorized buckets. Read an existing message before making requested changes. Bucket creation
-returns its incoming email address and receiving state. For an existing mailbox, use `bucket_get(include_email: true)` with write access.
-Check `receiving_enabled`, then use `bucket_email_list` with a saved `pagination.next_cursor`
-to poll. Read `eml_` IDs with `bucket_email_get`; download attachments or the original
-with `bucket_email_download`.
-If not ready, explain `blocked_reason`; do not assume a paused or unknown mailbox
+returns its incoming email address and receiving state. For an existing bucket, `bucket_get` returns `email.address` with write access.
+Check `email.receiving_enabled`, then use `bucket_ticket_list` with `updated_after`
+to poll. Read `tkt_` IDs and their messages with `bucket_ticket_get`; download attachments or the original
+with `bucket_ticket_download`.
+If not ready, explain `receiving_blocked_reason`; do not assume a paused or unknown bucket
 can receive. Read quotas with `account_limits`. Personal
 notification frequency is managed in Account Settings → Notifications.
-See the [email contract](https://revdoku.com/api.md#emails).
+See the [email contract](https://revdoku.com/api.md#tickets).
 If the user has no account, follow Account setup above.
 
 If the host does not support MCP or the agent needs local/binary files, use the
