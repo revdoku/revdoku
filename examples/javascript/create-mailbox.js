@@ -9,7 +9,7 @@ const response = await fetch('https://api.revdoku.com/v1/buckets', {
     signal: AbortSignal.timeout(30000),
     body: JSON.stringify({
         account_id: process.env.REVDOKU_ACCOUNT_ID,
-        bucket: { mailbox: username ? { username } : {} },
+        bucket: { email: username ? { username } : {} },
     }),
 });
 const result = await response.json();
@@ -17,5 +17,5 @@ if (!response.ok)
     throw new Error(`${result.error.code}: ${result.error.message}`);
 const bucket = result.data.bucket;
 console.log(`Bucket: ${bucket.id}`);
-console.log(`Receiving ready: ${bucket.mailbox.address}`);
+console.log(`Receiving ready: ${bucket.email.address}`);
 export {};

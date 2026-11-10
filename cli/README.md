@@ -54,49 +54,30 @@ revdoku accounts
 revdoku account get acct_...
 revdoku ls
 revdoku create --username acme-orders
-revdoku mailbox --bucket-id bkt_...
 revdoku files --bucket-id bkt_...
-revdoku emails --bucket-id bkt_...
-revdoku email eml_... --bucket-id bkt_...
-revdoku email-status eml_... --bucket-id bkt_... --read false
-revdoku email-download eml_... --bucket-id bkt_... --attachment-id df_... --output attachment.pdf
-revdoku email-delete eml_... --bucket-id bkt_... --confirm-delete eml_...
-revdoku email-send --in-reply-to eml_... --text "Thanks, received." --bucket-id bkt_...
-revdoku emails --direction sent --bucket-id bkt_...
+revdoku tickets --bucket-id bkt_... --status open
+revdoku ticket tkt_... --bucket-id bkt_...
+revdoku ticket-messages tkt_... --bucket-id bkt_...
+revdoku ticket-messages tkt_... --message-id eml_... --bucket-id bkt_...
+revdoku ticket-download tkt_... --message-id eml_... --attachment-id df_... --bucket-id bkt_... --output attachment.pdf
+revdoku ticket-reply tkt_... --text "Thanks, received." --bucket-id bkt_...
+revdoku ticket-update tkt_... --status solved --bucket-id bkt_...
+revdoku ticket-message-delete tkt_... --message-id eml_... --bucket-id bkt_... --confirm-delete eml_...
 revdoku upload ./project-files --bucket-id bkt_...
 ```
 
-Run `email-delete` only after you confirm the email ID. `email-send` replies to a sender and never retries.
+A ticket is one conversation with a requester: an email, a message left on the docs site
+(`channel` `chat`) or page feedback. `tickets` lists them, newest activity first; filter with
+`--status`, `--channel`, `--label` and `--updated-after TIME`. `ls` shows each bucket's `email.address`.
 
-Use returned email and attachment IDs for message operations; use paths for file operations.
-`mailbox` reports the receiving address, readiness, and message activity. Revdoku
-receives email and attachments.
-`email-send` sends a reply from the mailbox address. Revdoku sends only replies:
-`--in-reply-to` names a received email, and the reply goes to its sender when that
-sender passed SPF or DMARC. There is no `--to` or `--cc`. Check `delivery.status` with
-`emails --direction sent`. After an uncertain result, check the sent list before
-you send again. A person sends, edits or declines an `awaiting_approval` email in
-the dashboard; do not send it again, or a `declined` email unless a person asks.
-
-`revdoku ls` returns active buckets with permitted addresses, receiving state and email counts.
-Use `ls --status archived` or `ls --status all` for other archive states.
-Use `--query TEXT` to filter the title, permitted email address or ID.
-Use `--limit N` for pages of at most 200 buckets (default 50).
-Continue with `--cursor` set to `data.pagination.next_cursor` while `data.pagination.has_more` is true.
-`files` and `emails` page the same way.
-`data.counts` contains exact active, archived and total counts for the authorized query.
-
-`mailbox.message_count` counts stored emails.
-`mailbox.unread_count` counts emails with shared unread status.
-Null counts mean the email index is being prepared.
-File counts include email representations and attachments.
-
-Create accounts at https://app.revdoku.com/users/sign_up. CLI sign-in uses browser OAuth.
-
-For automation, set `REVDOKU_API_KEY` through your secret manager or environment.
-Set `REVDOKU_BUCKET_ID` to choose a default mailbox.
-Use `--account-id acct_...` when selecting another authorized account. Credentials
-and selection state otherwise live under `~/.revdoku/`; keep them private.
+Use returned ticket, message and attachment IDs for ticket operations; use paths for file operations.
+Run `ticket-message-delete` only after you confirm the message ID.
+`ticket-reply` sends a reply from the bucket's address and never retries. Revdoku sends only replies:
+the reply goes to the ticket's requester, when that requester passed SPF or DMARC.
+There is no `--to` or `--cc`. Check `delivery.status` with `ticket-messages`.
+After an uncertain result, check the ticket's messages before you reply again.
+A person sends, edits or declines an `awaiting_approval` reply in
+the dashboard; do not send it again, or a `declined` reply unless a person asks.
 
 Uploading without an existing mailbox binding can create a bucket and consume
 creation capacity. Pass `--bucket-id` to store files in an existing mailbox. `revdoku create` creates an empty bucket. Omit `--username` to
@@ -125,7 +106,7 @@ revdoku account limits --account-id acct_RETURNED_ID
 
 Returns effective mailbox and file quotas under `data.limits`.
 
-### New email notifications
+### Ticket events
 
 | Command | Purpose |
 | --- | --- |
@@ -133,7 +114,7 @@ Returns effective mailbox and file quotas under `data.limits`.
 | `revdoku webhook-set --bucket-id ID --webhook-url HTTPS_URL` | Set one signed webhook; save the returned secret privately |
 | Add `--rotate-secret` | Replace the signing secret and cancel pending deliveries |
 | `revdoku webhook-delete --bucket-id ID --confirm-delete ID` | Disable deliveries |
-| `revdoku email-subscription --bucket-id ID` | Get a WebSocket URL and short-lived ticket |
+| `revdoku events-subscription --bucket-id ID` | Get a WebSocket URL and a short-lived subscription token |
 
 Use `--account-id ID` to select an authorized account. A running receiver is required. See the [examples](../examples/README.md) for signature verification and WebSocket reconnect/catch-up. Human administrators can inspect delivery attempts and retry failures in **Analytics → Webhooks**.
 
@@ -150,6 +131,8 @@ These commands need an account owner or administrator key with admin access to a
 | `revdoku github connect OWNER/NAME --bucket-id ID` | Copy the repository into a bucket without files. Add `--branch`, `--repo-path` or `--push-revdoku-edits false` |
 | `revdoku github --bucket-id ID` | Show the repository and its sync state. Publish after `last_synced_at` is set |
 | `revdoku github sync --bucket-id ID` | Sync now |
+| `revdoku github branches --bucket-id ID` | List the branches that a preview can show |
+| `revdoku preview --bucket-id ID --branch NAME` | Make a 24-hour preview of that branch. Needs a live site |
 | `revdoku github set --bucket-id ID --auto-commit true` | Change `--auto-publish`, `--push-revdoku-edits` or `--auto-commit` |
 | `revdoku github disconnect --bucket-id ID --confirm-delete ID` | Stop the sync. The bucket keeps its files |
 

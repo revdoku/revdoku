@@ -43,11 +43,11 @@ A publish builds the site in the background. Publish, then read the site until `
 
 | Task | REST | SDK (TypeScript / Python) | CLI | MCP |
 | --- | --- | --- | --- | --- |
-| Connect a GitHub repository | `POST /v1/buckets/{bucket_id}/github_sync` | `connectGithubRepository` / `connect_github_repository` | `revdoku github connect OWNER/NAME --bucket-id ID` | `bucket_github` with `action: "connect"` |
-| Read the GitHub sync state | `GET /v1/buckets/{bucket_id}/github_sync` | `getGithubSync` / `get_github_sync` | `revdoku github --bucket-id ID` | `bucket_github` |
+| Connect a GitHub repository | `POST /v1/buckets/{bucket_id}/github` | `connectGithubRepository` / `connect_github_repository` | `revdoku github connect OWNER/NAME --bucket-id ID` | `bucket_github` with `action: "connect"` |
+| Read the GitHub sync state | `GET /v1/buckets/{bucket_id}/github` | `getGithubSync` / `get_github_sync` | `revdoku github --bucket-id ID` | `bucket_github` |
 | Publish or republish | `POST /v1/buckets/{bucket_id}/publication` | `client.api.publishBucket` / `client.api.publish_bucket` | `revdoku publish --bucket-id ID` | `bucket_publish` |
 | Read the site and its build state | `GET /v1/buckets/{bucket_id}/publication` | `getPublication` / `get_publication` | `revdoku site --bucket-id ID` | `bucket_publication_get` |
-| Make a 24-hour preview | `POST /v1/buckets/{bucket_id}/publication/preview` | `previewBucket` / `preview_bucket` | `revdoku preview --bucket-id ID` | `bucket_publish` with `action: "preview"` |
+| Make a 24-hour preview (`branch` previews a repository branch) | `POST /v1/buckets/{bucket_id}/publication/preview` | `previewBucket` / `preview_bucket` | `revdoku preview --bucket-id ID [--branch NAME]` | `bucket_publish` with `action: "preview"` |
 | Read the preview | `GET /v1/buckets/{bucket_id}/publication/preview` | `getPublicationPreview` / `get_publication_preview` | `revdoku site --preview --bucket-id ID` | `bucket_publication_get` with `preview: true` |
 | Take the site down | `DELETE /v1/buckets/{bucket_id}/publication` | `unpublishBucket` / `unpublish_bucket` | `revdoku unpublish --bucket-id ID` | `bucket_publish` with `action: "unpublish"` |
 
@@ -160,15 +160,15 @@ When you create a key or approve an AI connection, choose its access:
 To give each application customer a mailbox, follow the
 [SaaS mailbox guide](https://revdoku.com/guides/saas-mailboxes.md).
 
-### New email notifications
+### Ticket events
 
 | Use | Connection |
 | --- | --- |
 | Hosted backend | One signed HTTPS webhook per bucket |
-| Local development | WebSocket connection with a short-lived ticket |
+| Local development | WebSocket connection with a short-lived subscription token |
 | Delivery status and retries | Dashboard → Analytics → Webhooks (account administrators) |
 
-Both send a small `email.received` event after the email and attachments are stored. Read content through the email API. Receivers must keep running. An idle AI chat cannot receive background notifications. See the [event API](https://revdoku.com/api.md#webhooks-and-live-subscriptions) and [runnable examples](https://github.com/revdoku/revdoku/tree/main/examples).
+Both send a small `ticket.created` or `ticket.message_received` event after the message and its attachments are stored. Read content through the ticket API. Receivers must keep running. An idle AI chat cannot receive background notifications. See the [event API](https://revdoku.com/api.md#webhooks-and-live-subscriptions) and [runnable examples](https://github.com/revdoku/revdoku/tree/main/examples).
 
 ## Create another bucket
 
@@ -224,40 +224,45 @@ can send to it. Only people and agents with mailbox access can read the saved ma
 
 | Task | REST | CLI | MCP |
 | --- | --- | --- | --- |
-| Inspect an existing receiving address (write access) | `GET /v1/buckets/:id/mailbox` | `revdoku mailbox --bucket-id ID` | `bucket_get` (`email.address`) |
-| List received messages | `GET /v1/buckets/:id/mailbox/emails` | `revdoku emails --bucket-id ID` | `bucket_email_list` |
-| Read one message | `GET /v1/buckets/:id/mailbox/emails/:email_id` | `revdoku email EMAIL_ID --bucket-id ID` | `bucket_email_get` |
-| Mark read/unread or label | `PATCH /v1/buckets/:id/mailbox/emails/:email_id` | `revdoku email-status EMAIL_ID --read true --add-label Leads --bucket-id ID` | `bucket_email_update` |
-| Download an attachment | [Download an attachment](https://revdoku.com/api.md#download-an-attachment) | `revdoku email-download EMAIL_ID --attachment-id ID --bucket-id ID` | `bucket_email_download` |
-| Delete one message | `DELETE /v1/buckets/:id/mailbox/emails/:email_id` | `revdoku email-delete EMAIL_ID --confirm-delete EMAIL_ID --bucket-id ID` | `bucket_email_delete` |
-| Reply to a sender | `POST /v1/buckets/:id/mailbox/emails` | `revdoku email-send --in-reply-to EMAIL_ID --text TEXT --bucket-id ID` | `bucket_email_send` |
-| List sent messages | `GET /v1/buckets/:id/mailbox/emails?direction=sent` | `revdoku emails --direction sent --bucket-id ID` | `bucket_email_list` with `direction: "sent"` |
+| Read the receiving address (write access) | `GET /v1/buckets/:id` (`bucket.email.address`) | `revdoku ls` | `bucket_get` (`email.address`) |
+| List support tickets | `GET /v1/buckets/:id/tickets` | `revdoku tickets --bucket-id ID` | `bucket_ticket_list` |
+| Read one ticket | `GET /v1/buckets/:id/tickets/:ticket_id` | `revdoku ticket TICKET_ID --bucket-id ID` | `bucket_ticket_get` |
+| List a ticket's messages | `GET /v1/buckets/:id/tickets/:ticket_id/messages` | `revdoku ticket-messages TICKET_ID --bucket-id ID` | `bucket_ticket_get` |
+| Read one message | `GET /v1/buckets/:id/tickets/:ticket_id/messages/:message_id` | `revdoku ticket-messages TICKET_ID --message-id MESSAGE_ID --bucket-id ID` | `bucket_ticket_get` |
+| Solve, reopen or label a ticket | `PATCH /v1/buckets/:id/tickets/:ticket_id` | `revdoku ticket-update TICKET_ID --status solved --add-label Leads --bucket-id ID` | `bucket_ticket_update` |
+| Download an attachment | [Download an attachment](https://revdoku.com/api.md#download-an-attachment) | `revdoku ticket-download TICKET_ID --message-id MESSAGE_ID --attachment-id ID --bucket-id ID` | `bucket_ticket_download` |
+| Delete one message | `DELETE /v1/buckets/:id/tickets/:ticket_id/messages/:message_id` | `revdoku ticket-message-delete TICKET_ID --message-id MESSAGE_ID --confirm-delete MESSAGE_ID --bucket-id ID` | `bucket_ticket_message_delete` |
+| Reply to the requester | `POST /v1/buckets/:id/tickets/:ticket_id/messages` | `revdoku ticket-reply TICKET_ID --text TEXT --bucket-id ID` | `bucket_ticket_reply` |
+
+Each conversation is a support ticket: an email, a message that a reader leaves on the docs site
+(`channel` `chat`) or page feedback (`channel` `feedback`). A ticket has messages with `eml_` IDs.
 
 ### Poll for arrivals
 
-1. List messages and process the returned page.
-2. Save `pagination.next_cursor`, including when the page is empty.
-3. Pass that cursor on the next request using the same account, mailbox and filters.
-4. Use a delay and a deadline when waiting for new mail.
+1. List tickets and process the returned pages.
+2. Save the newest `updated_at` of the tickets that you processed.
+3. Pass it as `updated_after` on the next request, with the same account and bucket.
+4. Read the messages of each returned ticket and skip message IDs that you already handled.
+5. Use a delay and a deadline when waiting for new messages.
 
-### Reply to a sender
+### Reply to a ticket
 
-A mailbox sends email from its own address. Sending requires bucket write access.
-Revdoku sends only replies: each email answers a received email and goes to its
-sender, when that sender passed sender authentication.
+A bucket sends email from its own address. Replying requires bucket write access.
+Revdoku sends only replies: each reply answers a ticket and goes to its
+requester, when that requester passed sender authentication.
 
-1. List received messages and choose the message to answer.
-2. Send the reply with `in_reply_to` set to its email ID. This sets the reply
-   headers, the `Re:` subject and the recipient: the original sender. An email whose
-   sender did not pass SPF or DMARC gets no reply (`EMAIL_RECIPIENT_NOT_ALLOWED`).
-3. Read the sent email again and check `delivery.status`.
-4. If the result is unknown or `delivery.status` is `uncertain`, do not send again.
-   List sent messages and check first.
-5. If `delivery.status` is `awaiting_approval`, a person sends, edits or declines the email
-   in the dashboard. Do not send it again. Do not send a `declined` email again unless a person asks.
+1. List open tickets and choose the ticket to answer.
+2. Send the reply to the ticket with `text`. This sets the reply
+   headers, the `Re:` subject and the recipient: the requester. A requester whose
+   email did not pass SPF or DMARC gets no reply (`EMAIL_RECIPIENT_NOT_ALLOWED`).
+3. Read the returned message again and check `delivery.status`.
+4. If the result is unknown or `delivery.status` is `uncertain`, do not reply again.
+   List the ticket's messages and check first.
+5. If `delivery.status` is `awaiting_approval`, a person sends, edits or declines the reply
+   in the dashboard. Do not send it again. Do not send a `declined` reply again unless a person asks.
 
 Sent email uses credits; see the [pricing page](https://app.revdoku.com/pricing) and [`/pricing.json`](https://app.revdoku.com/pricing.json).
-See [Send email](https://revdoku.com/api.md#send-email) for fields, limits and errors.
+See [Reply to a ticket](https://revdoku.com/api.md#reply-to-a-ticket) for fields, limits and errors.
 
 ### Message and attachment behavior
 
@@ -292,7 +297,7 @@ If you already have a task, start with that task.
 5. After setup, send a fresh relevant message through that source.
    A Gmail verification email alone does not prove that forwarding works.
 6. Read the message in Revdoku, or ask your connected AI for the result you chose.
-   With the API, [list and read the message](https://revdoku.com/api.md#emails).
+   With the API, [list and read the message](https://revdoku.com/api.md#tickets).
 
 AI agents: show the actual authorized address as a `mailto:` link with the full address as its text.
 Encode the address in the URL. Ask the user to send an email there.
@@ -302,7 +307,7 @@ Guide Gmail setup without assuming that Revdoku access grants Gmail access.
 When waiting for a message, use a delay and a deadline.
 If the message does not arrive, report that delivery is still unconfirmed.
 
-After the first result, you can add [recurring processing](#new-email-notifications).
+After the first result, you can add [recurring processing](#ticket-events).
 Automatic processing needs a running application or a scheduled agent.
 Connecting MCP alone does not make an idle AI chat monitor your mailbox.
 
@@ -398,7 +403,7 @@ A custom domain for a site is separate: connect it on the site's **Domain** page
 - Connecting a domain does not change existing mailbox addresses.
 - Use the address returned by Revdoku after a confirmed assignment.
 
-See [custom email domains](https://revdoku.com/api.md#custom-email-domains) for the API.
+See [custom email domains](https://revdoku.com/api.md#email-settings) for the API.
 
 ## Connect an AI client
 

@@ -22,7 +22,7 @@ test('all five command-line examples run offline, with pagination and persisted 
     const first = success(run(cwd, 'read-mail', ['--show-body']));
     assert.match(first, /New messages read: 2/); assert.match(first, /Fixture body/);
     assert.match(success(run(cwd, 'read-mail')), /New messages read: 0/);
-    assert.match(success(run(cwd, 'download-attachments', ['eml_first', 'df_note'])), /Saved 5 bytes/);
+    assert.match(success(run(cwd, 'download-attachments', ['tkt_first', 'eml_first', 'df_note'])), /Saved 5 bytes/);
     assert.equal(await readFile(join(cwd, 'downloads/attachment-note.txt'), 'utf8'), 'hello');
     await writeFile(join(cwd, 'notes.txt'), 'fixture upload');
     assert.match(success(run(cwd, 'upload-file', ['notes.txt', 'project/notes.txt'])), /Uploaded and verified 14 bytes/);
@@ -58,9 +58,9 @@ test('published webhook receiver rejects forged/stale requests and deduplicates 
     for (let attempt = 0; !stdout.includes('Listening on') && attempt < 100; attempt++) await new Promise(resolve => setTimeout(resolve, 20));
     const url = stdout.match(/http:\/\/127\.0\.0\.1:\d+\/webhook/)?.[0];
     assert.ok(url, stderr);
-    const body = JSON.stringify({ id: 'email.received:eml_first', type: 'email.received', data: { email_id: 'eml_first', bucket_id: 'bkt_fixture', account_id: 'acct_fixture' } });
+    const body = JSON.stringify({ id: 'ticket.created:eml_first', type: 'ticket.created', data: { ticket_id: 'tkt_first', message_id: 'eml_first', channel: 'email', bucket_id: 'bkt_fixture', account_id: 'acct_fixture' } });
     const timestamp = String(Math.floor(Date.now() / 1000));
-    const headers = { 'Content-Type': 'application/json', 'X-Revdoku-Event-Id': 'email.received:eml_first', 'X-Revdoku-Timestamp': timestamp,
+    const headers = { 'Content-Type': 'application/json', 'X-Revdoku-Event-Id': 'ticket.created:eml_first', 'X-Revdoku-Timestamp': timestamp,
       'X-Revdoku-Signature': 'v1=' + createHmac('sha256', secret).update(timestamp + '.' + body).digest('hex') };
     assert.equal((await fetch(url, { method: 'POST', headers, body: body + ' ' })).status, 401);
     assert.equal((await fetch(url, { method: 'POST', headers: { ...headers, 'X-Revdoku-Timestamp': '1000000000' }, body })).status, 401);
@@ -97,7 +97,7 @@ test('live catch-up emits checkpointed messages even when a later page fails', a
     const messages = output.trim().split('\n').filter(line => line.startsWith('{')).map(line => JSON.parse(line).id);
     assert.deepEqual(messages, ['eml_first', 'eml_second']);
     assert.match(result.stderr, /Catch-up failed/);
-    assert.equal(JSON.parse(await readFile(join(cwd, '.revdoku-examples/acct_fixture-bkt_fixture.json'))).cursor, 'end');
+    assert.equal(JSON.parse(await readFile(join(cwd, '.revdoku-examples/acct_fixture-bkt_fixture.json'))).updated_after, '2026-09-29T00:00:00Z');
   } finally { await rm(cwd, { recursive: true, force: true }); }
 });
 
@@ -117,7 +117,7 @@ test('customer mapping and processing survive restarts without cross-customer or
     const path = join(cwd, '.revdoku-examples/messages-acct_fixture.json');
     const state = JSON.parse(await readFile(path, 'utf8'));
     assert.deepEqual(Object.values(state.messages).map(item => item.customer_id).sort(), ['alice', 'alice', 'bob', 'bob']);
-    state.cursors = {}; // Replay discovery after a lost checkpoint or duplicate event.
+    state.checks = {}; // Replay discovery after a lost check time or duplicate event.
     await writeFile(path, JSON.stringify(state));
     assert.match(success(run(cwd, 'process-customer-mail', [], env)), /processed: 0/);
     await writeFile(path + '.lock', '');

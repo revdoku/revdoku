@@ -75,7 +75,12 @@ UPLOAD_MANIFEST=""
 UPLOAD_LOCAL_MAP=""
 SKIPPED_PATHS=""
 READ_FILE_PATH=""
-EMAIL_ID=""
+TICKET_ID=""
+MESSAGE_ID=""
+STATUS_OPTION=""
+TICKET_CHANNEL=""
+TICKET_LABEL=""
+TICKET_UPDATED_AFTER=""
 EMAIL_USERNAME=""
 EMAIL_DOMAIN=""
 BUCKET_TITLE=""
@@ -83,11 +88,7 @@ EMAIL_ATTACHMENT_ID=""
 LIST_LIMIT=""
 LIST_CURSOR=""
 VERSION_ID=""
-EMAIL_SENDER=""
 EMAIL_SUBJECT=""
-EMAIL_CONVERSATION=""
-EMAIL_READ=""
-EMAIL_DIRECTION=""
 # Newline-separated lists; Bash 3 rejects empty arrays under set -u.
 EMAIL_ATTACHMENTS=""
 EMAIL_ADD_LABELS=""
@@ -95,7 +96,6 @@ EMAIL_REMOVE_LABELS=""
 EMAIL_TEXT=""
 EMAIL_TEXT_FILE=""
 EMAIL_HTML_FILE=""
-EMAIL_IN_REPLY_TO=""
 BUCKET_LIST_STATUS="active"
 BUCKET_LIST_QUERY=""
 BUCKET_LIST_OPTIONS="false"
@@ -213,7 +213,7 @@ detect_agent_name() {
 
 usage() {
   cat <<USAGE
-revdoku: buckets with a mailbox, private files and a site.
+revdoku: buckets with files, a site and support tickets.
 
 Usage: revdoku <command> [PATH] [options]
 
@@ -225,18 +225,19 @@ Usage: revdoku <command> [PATH] [options]
   st, status            Show connection and account status.
   login                 Sign in to an existing account in the browser.
   grant TOKEN           Use a one-time connection token from the web app.
-  mailbox                 Show incoming address, readiness, and email activity.
-  emails                List received emails; returns a resumable polling cursor.
-  email ID              Read decoded email without changing shared read status.
-  email-status ID       Set read status (--read true|false) or labels (--add-label NAME).
-  email-download ID     Download original EML or --attachment-id ID.
-  email-delete ID       Delete an email and attachments; confirm with --confirm-delete ID.
-  email-send            Reply to a received email; it goes to the sender. Does not retry.
+  tickets               List support tickets (email, chat and feedback); newest activity first.
+  ticket ID             Read one ticket: status, channel, requester and labels.
+  ticket-messages ID    List a ticket's messages; --message-id ID reads one message.
+  ticket-reply ID       Reply to the ticket's requester. Does not retry.
                         Uses credits; see https://app.revdoku.com/pricing.json.
-  webhook               Show the mailbox webhook endpoint.
+  ticket-update ID      Set --status open|solved or labels (--add-label NAME).
+  ticket-download ID    Download a message's original EML (--message-id ID) or --attachment-id ID.
+  ticket-message-delete ID  Delete one message and its attachments (--message-id ID);
+                        confirm with --confirm-delete MESSAGE_ID.
+  webhook               Show the bucket's webhook for ticket events.
   webhook-set           Set --webhook-url HTTPS_URL; optionally --rotate-secret.
   webhook-delete        Disable the webhook; requires --confirm-delete BUCKET_ID.
-  email-subscription    Get a short-lived WebSocket ticket for a running client.
+  events-subscription   Get a short-lived subscription token for live ticket events.
   files                 List bucket files.
   read PATH             Read a bucket file; --output FILE saves it locally.
   versions PATH         List one file's versions (PATH or a df_ file ID).
@@ -248,6 +249,7 @@ Usage: revdoku <command> [PATH] [options]
                         --password-file FILE (- reads stdin). Does not retry.
                         Uses credits; see https://app.revdoku.com/pricing.json.
   preview               Make a 24-hour preview with the same options.
+                        --branch NAME previews a branch of the connected repository.
                         Uses credits; see https://app.revdoku.com/pricing.json.
   site                  Show the site: URL, build state and access; --preview for the preview.
   unpublish             Take the site down.
@@ -259,6 +261,7 @@ Usage: revdoku <command> [PATH] [options]
                         --repo-path, --installation-id, --push-revdoku-edits false.
   github set            Change --auto-publish, --push-revdoku-edits or --auto-commit.
   github sync           Sync the repository now.
+  github branches       List the branches that a preview can show.
   github disconnect     Stop syncing; requires --confirm-delete BUCKET_ID. Files stay.
   delete                Preview permanent deletion; requires explicit account/bucket.
   accounts              List accounts granted to this credential.
@@ -274,24 +277,22 @@ Options:
   --account-id ID       Select a granted account for this command.
   --client-name NAME    Client person or business (account create-client).
   --bucket-id ID        Target bucket; overrides the local .revdoku binding.
-  --status active|archived|all          Bucket list filter (default: active).
+  --status active|archived|all          Bucket list filter (default: active); see also tickets.
   --query TEXT                        Bucket title, address or ID filter (ls).
   --limit N   --cursor CURSOR          List page size (maximum 200) and next page.
                                        Use pagination.next_cursor from the last page.
-  --sender ADDRESS     --subject TEXT  Email filters.
-  --direction received|sent|all        Email direction filter (default received).
-  --conversation-id ID                 Filter an email conversation.
-  --in-reply-to EMAIL_ID               email-send: the received email to reply to (required).
-                                       The reply goes to its authenticated sender.
-  --subject TEXT                       email-send subject (default: Re: and the original).
-  --text TEXT | --text-file PATH       email-send plain-text body (- reads stdin).
+  --status open|solved|all             Ticket list filter, or the new status (ticket-update).
+  --channel email|chat|feedback        Ticket list filter: where the ticket started.
+  --label NAME   --updated-after TIME  Ticket list filters (label name; ISO 8601 time).
+  --message-id ID                      One message of a ticket (eml_...).
+  --subject TEXT                       ticket-reply subject (default: Re: and the original).
+  --text TEXT | --text-file PATH       ticket-reply plain-text body (- reads stdin).
   --html-file PATH     --attach FILE_ID   Optional HTML body; attach bucket files.
-  --read true|false                    Email filter or desired read status.
-  --add-label NAME  --remove-label NAME  email-status: custom labels; repeat (10 maximum).
-  --attachment-id ID   --output FILE   Download a selected email attachment.
+  --add-label NAME  --remove-label NAME  ticket-update: custom labels; repeat (10 maximum).
+  --attachment-id ID   --output FILE   Download a selected message attachment.
   --version-id ID                      File version for read or restore.
   --description TEXT   --metadata JSON
-  --username NAME      --domain HOST          Bucket creation address options.
+  --username NAME      --domain HOST          Bucket creation email address options.
   --title TEXT                                Bucket title for create (default: the username).
   --dry-run            Preview an upload locally, without network requests.
   --confirm-delete TOKEN  Execute a reviewed deletion preview (expires in 10 minutes).
@@ -394,40 +395,40 @@ while [[ $# -gt 0 ]]; do
       ;;
     --status|--query)
       [[ $# -ge 2 && -n "$2" ]] || die "$1 requires a value"
+      # --status belongs to ls, tickets and ticket-update; the command decides its values after parsing.
       if [[ "$1" == "--status" ]]; then
-        case "$2" in active|archived|all) BUCKET_LIST_STATUS="$2" ;; *) die "--status must be active, archived or all" ;; esac
+        STATUS_OPTION="$2"
       else
         BUCKET_LIST_QUERY="$2"
+        BUCKET_LIST_OPTIONS="true"
       fi
-      BUCKET_LIST_OPTIONS="true"
       shift 2
       ;;
-    --cursor|--limit|--sender|--subject|--conversation-id|--read|--attachment-id|--version-id)
+    --cursor|--limit|--subject|--attachment-id|--version-id|--message-id|--channel|--label|--updated-after)
       [[ $# -ge 2 && -n "$2" ]] || die "$1 requires a value"
       case "$1" in
         --cursor) LIST_CURSOR="$2" ;;
         --limit) [[ "$2" =~ ^[1-9][0-9]*$ && "$2" -le 200 ]] || die "--limit must be from 1 to 200"; LIST_LIMIT="$2" ;;
         --version-id) VERSION_ID="$2" ;;
-        --sender) EMAIL_SENDER="$2" ;;
         --subject) EMAIL_SUBJECT="$2" ;;
-        --conversation-id) EMAIL_CONVERSATION="$2" ;;
-        --read) [[ "$2" == "true" || "$2" == "false" ]] || die "--read must be true or false"; EMAIL_READ="$2" ;;
         --attachment-id) EMAIL_ATTACHMENT_ID="$2" ;;
+        --message-id) [[ "$2" =~ ^eml_[A-Za-z0-9]+$ ]] || die "--message-id requires a message id (eml_...)"; MESSAGE_ID="$2" ;;
+        --channel) [[ "$2" =~ ^(email|chat|feedback)$ ]] || die "--channel must be email, chat or feedback"; TICKET_CHANNEL="$2" ;;
+        --label) TICKET_LABEL="$2" ;;
+        --updated-after) TICKET_UPDATED_AFTER="$2" ;;
       esac
       shift 2
       ;;
-    --attach|--in-reply-to|--direction|--text|--text-file|--html-file|--add-label|--remove-label)
+    --attach|--text|--text-file|--html-file|--add-label|--remove-label)
       [[ $# -ge 2 && -n "$2" ]] || die "$1 requires a value"
       case "$1" in
-        --attach|--in-reply-to|--direction|--add-label|--remove-label)
+        --attach|--add-label|--remove-label)
           [[ "$2" != *$'\n'* ]] || die "$1 requires a single value" ;;
       esac
       case "$1" in
         --add-label) EMAIL_ADD_LABELS+="$2"$'\n' ;;
         --remove-label) EMAIL_REMOVE_LABELS+="$2"$'\n' ;;
         --attach) [[ "$2" =~ ^df_[A-Za-z0-9]+$ ]] || die "--attach requires a bucket file id"; EMAIL_ATTACHMENTS+="$2"$'\n' ;;
-        --in-reply-to) [[ "$2" =~ ^eml_[A-Za-z0-9]+$ ]] || die "--in-reply-to requires an email id"; EMAIL_IN_REPLY_TO="$2" ;;
-        --direction) [[ "$2" =~ ^(received|sent|all)$ ]] || die "--direction must be received, sent or all"; EMAIL_DIRECTION="$2" ;;
         --text) EMAIL_TEXT="$2" ;;
         --text-file) EMAIL_TEXT_FILE="$2" ;;
         --html-file) EMAIL_HTML_FILE="$2" ;;
@@ -520,7 +521,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ACTION="github"; GITHUB_ACTION="get"
             case "${1:-}" in
-              accounts|setup-link|set|sync|disconnect) GITHUB_ACTION="$1"; shift ;;
+              accounts|setup-link|set|sync|disconnect|branches) GITHUB_ACTION="$1"; shift ;;
               repos)
                 [[ $# -ge 2 && "$2" =~ ^[1-9][0-9]{0,18}$ ]] || die "github repos needs an installation ID from revdoku github accounts"
                 GITHUB_ACTION="repos"; GITHUB_INSTALLATION_ID="$2"; shift 2 ;;
@@ -538,14 +539,12 @@ while [[ $# -gt 0 ]]; do
           st|status)      ACTION="connection_status"; shift ;;
           login)          LOGIN="true"; shift ;;
           grant)          [[ $# -ge 2 && "$2" != -* ]] || die "grant needs the one-time token right after it"; ACTION="exchange_grant"; GRANT_TOKEN="$2"; shift 2 ;;
-          webhook|webhook-set|webhook-delete|email-subscription) ACTION="$1"; shift ;;
-          emails)         ACTION="list_emails"; shift ;;
-          email-send)     ACTION="email-send"; shift ;;
-          email|email-status|email-download|email-delete)
-            [[ $# -ge 2 && "$2" != -* ]] || die "$1 requires an email id"
-            ACTION="$1"; EMAIL_ID="$2"; shift 2 ;;
+          webhook|webhook-set|webhook-delete|events-subscription) ACTION="$1"; shift ;;
+          tickets)        ACTION="list_tickets"; shift ;;
+          ticket|ticket-messages|ticket-reply|ticket-update|ticket-download|ticket-message-delete)
+            [[ $# -ge 2 && "$2" =~ ^tkt_[A-Za-z0-9]+$ ]] || die "$1 requires a ticket id (tkt_...); see revdoku tickets"
+            ACTION="$1"; TICKET_ID="$2"; shift 2 ;;
           files)          ACTION="list_files"; shift ;;
-          mailbox)          ACTION="mailbox_status"; shift ;;
           read)           [[ $# -ge 2 && "$2" != -* ]] || die "read needs a bucket PATH right after it, e.g. revdoku read notes.md --bucket-id ID"; ACTION="read_file"; READ_FILE_PATH="$2"; shift 2 ;;
           versions)       [[ $# -ge 2 && "$2" != -* ]] || die "versions needs a bucket PATH right after it, e.g. revdoku versions notes.md --bucket-id ID"; ACTION="list_versions"; READ_FILE_PATH="$2"; shift 2 ;;
           restore)        [[ $# -ge 2 && "$2" != -* ]] || die "restore needs a bucket PATH right after it, e.g. revdoku restore notes.md --version-id ID --bucket-id ID"; ACTION="restore_version"; READ_FILE_PATH="$2"; shift 2 ;;
@@ -608,25 +607,41 @@ if [[ "$ACTION" == "store" && "$LOGIN" != "true" && "$PATH_EXPLICIT" != "true" ]
   die "upload requires an explicit PATH; use 'revdoku upload .' for this folder"
 fi
 [[ "$DRY_RUN" != "true" || ( "$ACTION" == "store" && "$LOGIN" != "true" ) ]] || die "--dry-run is only available with upload PATH"
-[[ -z "$DELETE_CONFIRMATION" || "$ACTION" == "delete_bucket" || "$ACTION" == "email-delete" || "$ACTION" == "webhook-delete" || "$GITHUB_ACTION" == "disconnect" ]] || die "--confirm-delete is only available with delete, email-delete, webhook-delete or github disconnect"
+[[ -z "$DELETE_CONFIRMATION" || "$ACTION" == "delete_bucket" || "$ACTION" == "ticket-message-delete" || "$ACTION" == "webhook-delete" || "$GITHUB_ACTION" == "disconnect" ]] || die "--confirm-delete is only available with delete, ticket-message-delete, webhook-delete or github disconnect"
 if [[ ( -n "$WEBHOOK_URL" || "$ROTATE_SECRET" == "true" ) && "$ACTION" != "webhook-set" ]]; then
   die "--webhook-url and --rotate-secret require webhook-set"
 fi
-if [[ -n "$EMAIL_ATTACHMENTS$EMAIL_IN_REPLY_TO$EMAIL_TEXT$EMAIL_TEXT_FILE$EMAIL_HTML_FILE" && "$ACTION" != "email-send" ]]; then
-  die "--attach, --in-reply-to, --text, --text-file and --html-file require email-send"
+if [[ -n "$EMAIL_ATTACHMENTS$EMAIL_SUBJECT$EMAIL_TEXT$EMAIL_TEXT_FILE$EMAIL_HTML_FILE" && "$ACTION" != "ticket-reply" ]]; then
+  die "--attach, --subject, --text, --text-file and --html-file require ticket-reply"
 fi
-[[ -z "$EMAIL_DIRECTION" || "$ACTION" == "list_emails" ]] || die "--direction requires emails"
-[[ -z "$EMAIL_ADD_LABELS$EMAIL_REMOVE_LABELS" || "$ACTION" == "email-status" ]] || die "--add-label and --remove-label require email-status"
+[[ -z "$EMAIL_ADD_LABELS$EMAIL_REMOVE_LABELS" || "$ACTION" == "ticket-update" ]] || die "--add-label and --remove-label require ticket-update"
+[[ -z "$TICKET_CHANNEL$TICKET_LABEL$TICKET_UPDATED_AFTER" || "$ACTION" == "list_tickets" ]] || die "--channel, --label and --updated-after require tickets"
+case "$ACTION" in
+  ticket-messages|ticket-download|ticket-message-delete) ;;
+  *) [[ -z "$MESSAGE_ID" ]] || die "--message-id requires ticket-messages, ticket-download or ticket-message-delete" ;;
+esac
+[[ -z "$EMAIL_ATTACHMENT_ID" || "$ACTION" == "ticket-download" ]] || die "--attachment-id requires ticket-download"
+if [[ -n "$STATUS_OPTION" ]]; then
+  case "$ACTION" in
+    list_buckets)
+      [[ "$STATUS_OPTION" =~ ^(active|archived|all)$ ]] || die "--status must be active, archived or all"
+      BUCKET_LIST_STATUS="$STATUS_OPTION" ;;
+    list_tickets) [[ "$STATUS_OPTION" =~ ^(open|solved|all)$ ]] || die "--status must be open, solved or all" ;;
+    ticket-update) [[ "$STATUS_OPTION" =~ ^(open|solved)$ ]] || die "--status must be open or solved" ;;
+    *) die "--status requires ls, tickets or ticket-update" ;;
+  esac
+fi
 if [[ "$BUCKET_LIST_OPTIONS" == "true" && "$ACTION" != "list_buckets" ]]; then
-  die "--status and --query require ls or list"
+  die "--query requires ls or list"
 fi
 case "$ACTION:$GITHUB_ACTION" in
-  list_buckets:|list_files:|list_emails:|list_versions:|github:accounts|github:repos) ;;
-  *) [[ -z "$LIST_LIMIT$LIST_CURSOR" ]] || die "--limit and --cursor require ls, files, emails, versions, github accounts or github repos" ;;
+  list_buckets:|list_files:|list_tickets:|ticket-messages:|list_versions:|github:accounts|github:repos) ;;
+  *) [[ -z "$LIST_LIMIT$LIST_CURSOR" ]] || die "--limit and --cursor require ls, files, tickets, ticket-messages, versions, github accounts or github repos" ;;
 esac
 # Each GitHub option belongs to one or two github commands, so none is silently ignored.
-[[ -z "$GITHUB_BRANCH$GITHUB_REPO_PATH" && ( -z "$GITHUB_INSTALLATION_ID" || "$GITHUB_ACTION" == "repos" ) || "$GITHUB_ACTION" == "connect" ]] ||
-  die "--branch, --repo-path and --installation-id require github connect"
+[[ -z "$GITHUB_BRANCH" || "$GITHUB_ACTION" == "connect" || "$ACTION" == "preview" ]] || die "--branch requires github connect or preview"
+[[ -z "$GITHUB_REPO_PATH" && ( -z "$GITHUB_INSTALLATION_ID" || "$GITHUB_ACTION" == "repos" ) || "$GITHUB_ACTION" == "connect" ]] ||
+  die "--repo-path and --installation-id require github connect"
 [[ -z "$GITHUB_AUTO_PUBLISH$GITHUB_AUTO_COMMIT" || "$GITHUB_ACTION" == "set" ]] || die "--auto-publish and --auto-commit require github set"
 [[ -z "$GITHUB_PUSH_EDITS" || "$GITHUB_ACTION" == "connect" || "$GITHUB_ACTION" == "set" ]] || die "--push-revdoku-edits requires github connect or github set"
 if [[ "$ACTION" == "restore_version" ]]; then
@@ -918,11 +933,11 @@ http_json() {
   if [[ "$method" == "POST" && "$path" == "/api/v1/buckets" ]]; then
     HTTP_TRANSIENT_MAX_ATTEMPTS=0
   fi
-  # Never send an email, a publish or a GitHub connect twice: a publish may already be queued and charged after a
+  # Never send a ticket reply, a publish or a GitHub connect twice: a publish may already be queued and charged after a
   # lost response, and a connect may already copy the repository. Rate limits also return without a retry
   # (the hourly publish limit waits an hour).
   local send_once="false"
-  if [[ "$method" == "POST" && "$path" =~ ^/api/v1/buckets/[^/?]+/(mailbox/emails|publication(/preview)?|github_sync)$ ]]; then
+  if [[ "$method" == "POST" && "$path" =~ ^/api/v1/buckets/[^/?]+/(tickets/[^/?]+/messages|publication(/preview)?|github)$ ]]; then
     HTTP_TRANSIENT_MAX_ATTEMPTS=0
     send_once="true"
   fi
@@ -1252,7 +1267,7 @@ request_email_agent_key() {
     [[ -n "$email" ]] || die "email is required"
 
     payload="$("$JQ_BIN" -nc --arg email "$email" '{email:$email}')"
-    if http_json POST "/api/v1/agent_auth/request_code" "$payload" false >/dev/null; then
+    if http_json POST "/api/v1/auth/sign_in_code" "$payload" false >/dev/null; then
       break
     fi
 
@@ -1266,7 +1281,7 @@ request_email_agent_key() {
   [[ -n "$code" ]] || die "code is required"
 
   payload="$("$JQ_BIN" -nc --arg email "$email" --arg code "$code" '{email:$email, code:$code, label:"Revdoku CLI"}')"
-  if ! response="$(http_json POST "/api/v1/agent_auth/verify_code" "$payload" false)"; then
+  if ! response="$(http_json POST "/api/v1/auth/sign_in_code/verify" "$payload" false)"; then
     die "Could not verify the code. If no code arrived or the code is rejected, use 'revdoku login' and complete browser device sign-in."
   fi
   key="$("$JQ_BIN" -r '.data.api_key // empty' <<<"$response")"
@@ -1288,7 +1303,7 @@ exchange_agent_grant() {
   local token="$1" payload response key account_id account_name
   [[ -n "$token" ]] || die "one-time connection token is required"
   payload="$("$JQ_BIN" -nc --arg grant_token "$token" --arg label "${AGENT_NAME} connection" '{grant_token:$grant_token,label:$label}')"
-  response="$(http_json POST "/api/v1/agent_auth/exchange_grant" "$payload" false)" \
+  response="$(http_json POST "/api/v1/auth/grant/exchange" "$payload" false)" \
     || die "connection token is invalid, expired, or already used"
   key="$("$JQ_BIN" -r '.data.api_key // empty' <<<"$response")"
   account_id="$("$JQ_BIN" -r '.data.account_id // empty' <<<"$response")"
@@ -1342,29 +1357,30 @@ list_buckets() {
   http_json GET "/api/v1/buckets?$(query_string status "$BUCKET_LIST_STATUS" q "$BUCKET_LIST_QUERY" limit "$LIST_LIMIT" cursor "$LIST_CURSOR")" "{}"
 }
 
-# GitHub (REST /buckets/ID/github_sync and /account/github_installations): the repository whose branch, or one
+# GitHub (REST /buckets/ID/github and /account/github/installations): the repository whose branch, or one
 # folder of it, is the bucket's files. A person adds a GitHub account on GitHub: setup-link prints their links.
 github_command() {
   local path body query
   case "$GITHUB_ACTION" in
     accounts|repos)
       query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
-      path="/api/v1/account/github_installations"
+      path="/api/v1/account/github/installations"
       [[ "$GITHUB_ACTION" == "accounts" ]] || path="${path}/${GITHUB_INSTALLATION_ID}/repositories"
       http_json GET "${path}${query:+?$query}" "{}"
       return
       ;;
   esac
   [[ "$BUCKET_ID" =~ ^bkt_[A-Za-z0-9]+$ ]] || die "Provide --bucket-id ID"
-  path="/api/v1/buckets/${BUCKET_ID}/github_sync"
+  path="/api/v1/buckets/${BUCKET_ID}/github"
   case "$GITHUB_ACTION" in
     get) http_json GET "$path" "{}" ;;
     setup-link) http_json GET "${path}/setup_link" "{}" ;;
     sync) http_json POST "${path}/sync" "{}" ;;
+    branches) http_json GET "${path}/branches" "{}" ;;
     connect)
       body="$("$JQ_BIN" -n --arg owner "${GITHUB_REPOSITORY%%/*}" --arg name "${GITHUB_REPOSITORY#*/}" --arg branch "$GITHUB_BRANCH" \
         --arg repo_path "$GITHUB_REPO_PATH" --arg installation "$GITHUB_INSTALLATION_ID" --arg edits "$GITHUB_PUSH_EDITS" \
-        '{github_sync: ({repo_owner: $owner, repo_name: $name}
+        '{github: ({repo_owner: $owner, repo_name: $name}
           + (if $branch != "" then {branch: $branch} else {} end)
           + (if $repo_path != "" then {repo_path: $repo_path} else {} end)
           + (if $installation != "" then {installation_id: ($installation | tonumber)} else {} end)
@@ -1374,7 +1390,7 @@ github_command() {
     set)
       [[ -n "$GITHUB_AUTO_PUBLISH$GITHUB_PUSH_EDITS$GITHUB_AUTO_COMMIT" ]] || die "github set needs --auto-publish, --push-revdoku-edits or --auto-commit"
       body="$("$JQ_BIN" -n --arg publish "$GITHUB_AUTO_PUBLISH" --arg edits "$GITHUB_PUSH_EDITS" --arg commit "$GITHUB_AUTO_COMMIT" \
-        '{github_sync: ((if $publish != "" then {auto_publish: ($publish == "true")} else {} end)
+        '{github: ((if $publish != "" then {auto_publish: ($publish == "true")} else {} end)
           + (if $edits != "" then {push_revdoku_edits: ($edits == "true")} else {} end)
           + (if $commit != "" then {auto_commit: ($commit == "true")} else {} end))}')"
       http_json PATCH "$path" "$body"
@@ -1484,38 +1500,50 @@ download_file_url() {
   die "too many file download redirects"
 }
 
-email_command() {
-  [[ -n "$BUCKET_ID" ]] || die "email commands require --bucket-id or a bound folder"
-  local path="/api/v1/buckets/${BUCKET_ID}/mailbox/emails" query response
-  if [[ "$ACTION" == "list_emails" ]]; then
-    query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR" direction "$EMAIL_DIRECTION" sender "$EMAIL_SENDER" \
-      subject "$EMAIL_SUBJECT" conversation_id "$EMAIL_CONVERSATION" read "$EMAIL_READ")"
+# Support tickets (REST /buckets/ID/tickets): one conversation with a requester, from email, chat or feedback.
+# Messages have eml_ IDs; a reply is a new message of the ticket.
+ticket_command() {
+  [[ -n "$BUCKET_ID" ]] || die "ticket commands require --bucket-id or a bound folder"
+  local path="/api/v1/buckets/${BUCKET_ID}/tickets" query response
+  if [[ "$ACTION" == "list_tickets" ]]; then
+    query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR" status "$STATUS_OPTION" channel "$TICKET_CHANNEL" \
+      label "$TICKET_LABEL" updated_after "$TICKET_UPDATED_AFTER")"
     http_json GET "${path}${query:+?$query}" "{}"
     return
   fi
-  if [[ "$ACTION" == "email-send" ]]; then
-    send_email "$path"
-    return
-  fi
-  [[ "$EMAIL_ID" =~ ^eml_[A-Za-z0-9]+$ ]] || die "invalid email id"
-  path="${path}/${EMAIL_ID}"
+  path="${path}/${TICKET_ID}"
   case "$ACTION" in
-    email)
+    ticket)
       http_json GET "$path" "{}"
       ;;
-    email-status)
-      [[ -n "$EMAIL_READ$EMAIL_ADD_LABELS$EMAIL_REMOVE_LABELS" ]] || die "email-status requires --read true|false, --add-label or --remove-label"
-      http_json PATCH "$path" "$("$JQ_BIN" -nc --arg read "$EMAIL_READ" --arg add "$EMAIL_ADD_LABELS" --arg remove "$EMAIL_REMOVE_LABELS" '
+    ticket-messages)
+      if [[ -n "$MESSAGE_ID" ]]; then
+        [[ -z "$LIST_LIMIT$LIST_CURSOR" ]] || die "--limit and --cursor list messages; omit --message-id"
+        http_json GET "${path}/messages/${MESSAGE_ID}" "{}"
+      else
+        query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
+        http_json GET "${path}/messages${query:+?$query}" "{}"
+      fi
+      ;;
+    ticket-reply)
+      reply_to_ticket "${path}/messages"
+      ;;
+    ticket-update)
+      [[ -n "$STATUS_OPTION$EMAIL_ADD_LABELS$EMAIL_REMOVE_LABELS" ]] || die "ticket-update requires --status open|solved, --add-label or --remove-label"
+      http_json PATCH "$path" "$("$JQ_BIN" -nc --arg status "$STATUS_OPTION" --arg add "$EMAIL_ADD_LABELS" --arg remove "$EMAIL_REMOVE_LABELS" '
         def names: split("\n") | map(select(length > 0));
-        (if $read == "" then {} else {read: ($read == "true")} end)
+        (if $status == "" then {} else {status: $status} end)
         + (if ($add | names | length) > 0 then {add_labels: ($add | names)} else {} end)
         + (if ($remove | names | length) > 0 then {remove_labels: ($remove | names)} else {} end)')"
       ;;
-    email-delete)
-      [[ "$DELETE_CONFIRMATION" == "$EMAIL_ID" ]] || die "To delete this email and its attachments, repeat with --confirm-delete $EMAIL_ID"
-      http_json DELETE "$path" "{}"
+    ticket-message-delete)
+      [[ -n "$MESSAGE_ID" ]] || die "ticket-message-delete requires --message-id ID (see revdoku ticket-messages $TICKET_ID)"
+      [[ "$DELETE_CONFIRMATION" == "$MESSAGE_ID" ]] || die "To delete this message and its attachments, repeat with --confirm-delete $MESSAGE_ID"
+      http_json DELETE "${path}/messages/${MESSAGE_ID}" "{}"
       ;;
-    email-download)
+    ticket-download)
+      [[ -n "$MESSAGE_ID" ]] || die "ticket-download requires --message-id ID (see revdoku ticket-messages $TICKET_ID)"
+      path="${path}/messages/${MESSAGE_ID}"
       if [[ -n "$EMAIL_ATTACHMENT_ID" ]]; then
         [[ "$EMAIL_ATTACHMENT_ID" =~ ^df_[A-Za-z0-9]+$ ]] || die "invalid attachment id"
         path="${path}/attachments/${EMAIL_ATTACHMENT_ID}"
@@ -1528,11 +1556,10 @@ email_command() {
   esac
 }
 
-# Revdoku sends only replies: the server sends to the sender of --in-reply-to and checks limits and permissions.
-send_email() {
+# A reply goes to the ticket's requester: the server chooses the recipient and checks limits and permissions.
+reply_to_ticket() {
   local path="$1" text_file html_file payload
-  [[ -n "$EMAIL_IN_REPLY_TO" ]] || die "email-send requires --in-reply-to EMAIL_ID: Revdoku sends only replies"
-  [[ -n "$EMAIL_TEXT" || -n "$EMAIL_TEXT_FILE" ]] || die "email-send requires --text TEXT or --text-file PATH"
+  [[ -n "$EMAIL_TEXT" || -n "$EMAIL_TEXT_FILE" ]] || die "ticket-reply requires --text TEXT or --text-file PATH"
   [[ -z "$EMAIL_TEXT" || -z "$EMAIL_TEXT_FILE" ]] || die "Use --text or --text-file, not both"
   [[ -z "$EMAIL_TEXT_FILE" || "$EMAIL_TEXT_FILE" == "-" || -f "$EMAIL_TEXT_FILE" ]] || die "--text-file does not exist: $EMAIL_TEXT_FILE"
   [[ -z "$EMAIL_HTML_FILE" || -f "$EMAIL_HTML_FILE" ]] || die "--html-file does not exist: $EMAIL_HTML_FILE"
@@ -1549,17 +1576,17 @@ send_email() {
   fi
   [[ -z "$EMAIL_HTML_FILE" ]] || cat "$EMAIL_HTML_FILE" > "$html_file"
   payload="$("$JQ_BIN" -nc --rawfile text "$text_file" --rawfile html "$html_file" \
-    --arg attachments "$EMAIL_ATTACHMENTS" --arg subject "$EMAIL_SUBJECT" --arg in_reply_to "$EMAIL_IN_REPLY_TO" '
+    --arg attachments "$EMAIL_ATTACHMENTS" --arg subject "$EMAIL_SUBJECT" '
     def list: split("\n") | map(select(. != ""));
-    {in_reply_to: $in_reply_to, subject: $subject, text: $text, html: (if $html == "" then null else $html end),
+    {subject: $subject, text: $text, html: (if $html == "" then null else $html end),
       attachment_ids: ($attachments | list)}
     | with_entries(select(.value != null and .value != "" and .value != []))')" || payload=""
   rm -f "$text_file" "$html_file"
-  [[ -n "$payload" ]] || die "Could not read the email body"
+  [[ -n "$payload" ]] || die "Could not read the reply body"
   if ! http_json POST "$path" "$payload"; then
-    # EMAIL_LABELING_PENDING refuses the send before anything is stored.
+    # EMAIL_LABELING_PENDING refuses the reply before anything is stored.
     if [[ -z "$LAST_HTTP_STATUS" || "$LAST_HTTP_STATUS" == 5* ]] && [[ "$LAST_ERROR_CODE" != "EMAIL_LABELING_PENDING" ]]; then
-      echo "The send result is unknown. Do not send again until 'revdoku emails --direction sent --bucket-id $BUCKET_ID' confirms it was not sent." >&2
+      echo "The reply result is unknown. Do not reply again until 'revdoku ticket-messages $TICKET_ID --bucket-id $BUCKET_ID' confirms it was not sent." >&2
     fi
     return 1
   fi
@@ -1572,7 +1599,7 @@ create_bucket() {
     --argjson metadata "$METADATA_JSON" \
     '{bucket: (({title:$title,description:$description} | with_entries(select(.value != ""))) +
       (if ($metadata | length) > 0 then {metadata: $metadata} else {} end) +
-      {mailbox: ({username:$username,domain:$domain} | with_entries(select(.value != "")))})}')"
+      {email: ({username:$username,domain:$domain} | with_entries(select(.value != "")))})}')"
   http_json POST "/api/v1/buckets" "$payload"
 }
 
@@ -1628,9 +1655,10 @@ publish_request_body() {
     fi
   fi
   # --rawfile keeps the password out of the process arguments.
-  "$JQ_BIN" -n --arg mode "$ACCESS_MODE" --rawfile password "$source" \
+  "$JQ_BIN" -n --arg mode "$ACCESS_MODE" --arg branch "$([[ "$ACTION" == "preview" ]] && printf '%s' "$GITHUB_BRANCH")" --rawfile password "$source" \
     '($password | rtrimstr("\n") | rtrimstr("\r")) as $value
-     | (if $mode == "" then {} else {access_mode: $mode} end) + (if $value == "" then {} else {password: $value} end)'
+     | (if $mode == "" then {} else {access_mode: $mode} end) + (if $value == "" then {} else {password: $value} end)
+       + (if $branch == "" then {} else {branch: $branch} end)'
 }
 
 archive_bucket() {
@@ -1756,7 +1784,7 @@ print_terminal_link_hint() {
 browser_login_link() {
   local payload response url redirect_path
   payload="$("$JQ_BIN" -nc --arg redirect_path "$BROWSER_LOGIN_PATH" '{redirect_path:$redirect_path}')"
-  response="$(http_json POST "/api/v1/agent_auth/browser_login_link" "$payload")"
+  response="$(http_json POST "/api/v1/auth/dashboard_link" "$payload")"
   url="$("$JQ_BIN" -r '.data.url // empty' <<<"$response")"
   redirect_path="$("$JQ_BIN" -r '.data.redirect_path // empty' <<<"$response")"
   [[ -n "$url" ]] || die "browser login response did not include url"
@@ -1803,17 +1831,17 @@ maybe_notify_update() {
 [[ "$DRY_RUN" == "true" || "$ACTION" == "delete_bucket" ]] || maybe_notify_update || true
 
 case "$ACTION" in
-  webhook|webhook-set|webhook-delete|email-subscription)
+  webhook|webhook-set|webhook-delete|events-subscription)
     [[ "$BUCKET_ID" =~ ^bkt_[A-Za-z0-9]+$ ]] || die "Provide --bucket-id ID"
     case "$ACTION" in
-      webhook) http_json GET "/api/v1/buckets/$BUCKET_ID/mailbox/webhook" "{}" ;;
+      webhook) http_json GET "/api/v1/buckets/$BUCKET_ID/webhook" "{}" ;;
       webhook-set)
         [[ -n "$WEBHOOK_URL" ]] || die "Provide --webhook-url HTTPS_URL"
-        http_json PUT "/api/v1/buckets/$BUCKET_ID/mailbox/webhook" "$("$JQ_BIN" -n --arg url "$WEBHOOK_URL" --argjson rotate "$ROTATE_SECRET" '{webhook_url:$url,rotate_secret:$rotate}')" ;;
+        http_json PUT "/api/v1/buckets/$BUCKET_ID/webhook" "$("$JQ_BIN" -n --arg url "$WEBHOOK_URL" --argjson rotate "$ROTATE_SECRET" '{webhook_url:$url,rotate_secret:$rotate}')" ;;
       webhook-delete)
         [[ "$DELETE_CONFIRMATION" == "$BUCKET_ID" ]] || die "Repeat with --confirm-delete $BUCKET_ID to disable this webhook"
-        http_json DELETE "/api/v1/buckets/$BUCKET_ID/mailbox/webhook" "{}" ;;
-      email-subscription) http_json GET "/api/v1/buckets/$BUCKET_ID/mailbox/subscription" "{}" ;;
+        http_json DELETE "/api/v1/buckets/$BUCKET_ID/webhook" "{}" ;;
+      events-subscription) http_json GET "/api/v1/buckets/$BUCKET_ID/events/subscription" "{}" ;;
     esac
     exit 0 ;;
   publish|preview|unpublish|site)
@@ -1844,8 +1872,8 @@ case "$ACTION" in
     http_json GET "/api/v1/accounts" "{}"
     exit 0
     ;;
-  list_emails|email|email-status|email-download|email-delete|email-send)
-    email_command
+  list_tickets|ticket|ticket-messages|ticket-reply|ticket-update|ticket-download|ticket-message-delete)
+    ticket_command
     exit 0
     ;;
   create_bucket)
@@ -1854,11 +1882,6 @@ case "$ACTION" in
     ;;
   list_buckets)
     list_buckets
-    exit 0
-    ;;
-  mailbox_status)
-    [[ -n "$BUCKET_ID" ]] || die "mailbox requires --bucket-id or a bound folder"
-    http_json GET "/api/v1/buckets/${BUCKET_ID}/mailbox" "{}"
     exit 0
     ;;
   list_files)

@@ -19,9 +19,9 @@ const info = await stat(local);
 if (!info.isFile() || info.size > 64 * 1024 * 1024)
     throw new Error('Choose a file of at most 64 MiB.');
 const bytes = await readFile(local);
-const descriptor = await fetch('https://api.revdoku.com/v1/direct_uploads', {
+const descriptor = await fetch(`https://api.revdoku.com/v1/buckets/${bucketId}/uploads`, {
     method: 'POST', headers, redirect: 'error', signal: AbortSignal.timeout(30000),
-    body: JSON.stringify({ account_id: accountId, bucket_id: bucketId, path,
+    body: JSON.stringify({ account_id: accountId, path,
         blob: { filename: basename(path), byte_size: bytes.length, content_type: 'application/octet-stream',
             purpose: 'bucket_file', checksum: createHash('md5').update(bytes).digest('base64'),
             sha256: createHash('sha256').update(bytes).digest('hex') } }),

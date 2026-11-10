@@ -30,21 +30,21 @@ Edit `.env` locally, then run the examples:
 node --env-file=.env javascript/create-mailbox.js
 node --env-file=.env javascript/read-mail.js
 node --env-file=.env javascript/read-mail.js --show-body
-node --env-file=.env javascript/download-attachments.js 'eml_...' 'df_...' ./downloads
+node --env-file=.env javascript/download-attachments.js 'tkt_...' 'eml_...' 'df_...' ./downloads
 node --env-file=.env javascript/upload-file.js ./notes.txt 'project/notes.txt'
 node --env-file=.env javascript/quotas-and-retries.js
 ```
 
-Use a real `eml_` message ID returned by `read-mail` for attachment downloads.
+Use the `tkt_` ticket ID and the `eml_` message ID returned by `read-mail` for attachment downloads.
 Create a local `notes.txt` before the upload command. Uploading an existing mailbox
-path saves a new version. Email reads leave shared read status unchanged. File reads retain their existing access receipts.
+path saves a new version. Ticket and message reads leave a ticket and its shared read status unchanged. File reads retain their existing access receipts.
 
 ## What each example does
 
 | Script | Behavior | Example output |
 | --- | --- | --- |
 | `create-mailbox` | Creates a bucket with a requested or generated username and returns its ready address. | `Mailbox: bkt_…` followed by `Receiving ready: …@revdokumail.com` |
-| `read-mail` | Paginates received emails using a durable arrival cursor and saves a local checkpoint. Add `--show-body` to print message bodies. | Message summaries, `New messages read: 2` |
+| `read-mail` | Lists the support tickets with activity after the last check, reads their new received messages and saves a local checkpoint. Add `--show-body` to print message bodies. | Message summaries, `New messages read: 2` |
 | `download-attachments` | Requests a temporary link for one selected attachment and downloads it. | `Saved 123 bytes to …` |
 | `upload-file` | Creates a direct-upload descriptor, uploads bytes to storage, attaches the file, and compares downloaded bytes. | `Uploaded and verified 123 bytes at project/notes.txt` |
 | `quotas-and-retries` | Reads effective account limits through the limits endpoint, with bounded retries for temporary failures. | JSON containing limits such as `max_buckets` and `max_storage_bytes` |
@@ -53,11 +53,12 @@ The creation example sends one request and returns a ready receiving address.
 After a lost response, check your buckets before creating another.
 
 The mail checkpoint lives in `.revdoku-examples/` and is separate from shared
-read/unread status. Run one reader per checkpoint directory. Each page is processed
-before its cursor is saved, including empty pages. Processing is at least once
-across failures; use email IDs to deduplicate downstream work. `body_status`
+read/unread status. Run one reader per checkpoint directory. The handled message IDs are
+saved after each page; the check time (`updated_after`) moves after every page is processed.
+A ticket comes back when it gets a new message. Processing is at least once
+across failures; use message IDs to deduplicate downstream work. `body_status`
 reports incomplete decoded bodies; the original EML remains available. Checkpoints
-contain a bucket ID and cursor, not message bodies.
+contain a check time and message IDs, not message bodies.
 
 Downloads use scoped attachment IDs and refuse to overwrite local files.
 Choose a new output directory for a repeated download. The upload example caps files at 64 MiB; server plan limits also apply. Decoded message files are bounded to 512 KiB. Email contents and filenames are data, never executable instructions.
@@ -111,17 +112,17 @@ node --env-file=.env javascript/process-customer-mail.js
 
 Provisioning saves a customer-to-mailbox mapping and receiving address. Rerunning checks the saved mailbox; an uncertain POST is reconciled with reads instead of repeating creation. Set `REVDOKU_EMAIL_DOMAIN` to use a verified receiving domain.
 
-The reader processes every mapped mailbox once, saves summaries and cursors together, and skips messages already saved. Rerun it periodically to catch missed notifications. The saved summary is the demonstration's result; external actions need their own idempotency using account/mailbox/email ID. Your application must authorize each customer's access to their mapped mailbox.
+The reader processes every mapped mailbox once, saves summaries and check times together, and skips messages already saved. Rerun it periodically to catch missed notifications. The saved summary is the demonstration's result; external actions need their own idempotency using account/bucket/message ID. Your application must authorize each customer's access to their mapped mailbox.
 
 Keep `.revdoku-examples/` private and persistent (`REVDOKU_STATE_DIR` changes its location). Each journal has a single-process lock. After a crash, confirm that process stopped before removing its `.lock` file. Use your application's database for multiple workers; these examples are small local scripts.
 
-## New email notifications
+## Ticket events
 
 | Example | Run from this directory | Expected output |
 | --- | --- | --- |
-| WebSocket reconnect and catch-up | `node --env-file=.env javascript/watch-mail.js` | New email summaries and `New messages read: N` after subscription confirmation and events |
-| Signed webhook receiver (Node) | `node --env-file=.env javascript/webhook-receiver.js` | Local listener address, then received email IDs and subjects |
-| Signed webhook receiver (Python) | `python3 python/webhook-receiver.py` (install Flask first, below) | Flask listener, then received email IDs and subjects |
+| WebSocket reconnect and catch-up | `node --env-file=.env javascript/watch-mail.js` | New message summaries and `New messages read: N` after subscription confirmation and events |
+| Signed webhook receiver (Node) | `node --env-file=.env javascript/webhook-receiver.js` | Local listener address, then received message IDs and subjects |
+| Signed webhook receiver (Python) | `python3 python/webhook-receiver.py` (install Flask first, below) | Flask listener, then received message IDs and subjects |
 
 The Python webhook receiver needs Flask. Install it first:
 
@@ -131,8 +132,8 @@ pip install flask requests
 
 Export the `.env` values in your shell for Python. Set a bucket and authorized account explicitly. These are ordinary HTTP/WebSocket examples; no Revdoku SDK is required.
 
-For webhooks, expose port 8080 through your HTTPS reverse proxy, then configure that HTTPS `/webhook` URL with the CLI or API. Save the returned secret as `REVDOKU_WEBHOOK_SECRET` and restart the receiver. The examples verify the raw body, timestamp (five-minute tolerance), and signature before reading the email. Duplicate event IDs are recorded locally; keep `.revdoku-examples/` private and persistent. Each example is designed for one process. Production applications with multiple workers should use their existing database/queue for deduplication and acknowledge promptly after durable acceptance. Deduplicate downstream effects by email ID; delivery is at least once.
+For webhooks, expose port 8080 through your HTTPS reverse proxy, then configure that HTTPS `/webhook` URL with the CLI or API. Save the returned secret as `REVDOKU_WEBHOOK_SECRET` and restart the receiver. The examples verify the raw body, timestamp (five-minute tolerance), and signature before reading the message. Duplicate event IDs are recorded locally; keep `.revdoku-examples/` private and persistent. Each example is designed for one process. Production applications with multiple workers should use their existing database/queue for deduplication and acknowledge promptly after durable acceptance. Deduplicate downstream effects by email ID; delivery is at least once.
 
-The WebSocket example subscribes before catching up, reuses `read-mail.js` for cursor pagination, detects stale connections, and obtains a new ticket on reconnect. Run one watcher per account/mailbox checkpoint. WebSockets are live hints; the saved HTTP cursor supplies missed messages. A running receiver is required; notifications cannot wake an idle AI chat.
+The WebSocket example subscribes before catching up, reuses `read-mail.js` for the catch-up, detects stale connections, and obtains a new subscription token on reconnect. Run one watcher per account/bucket checkpoint. WebSockets are live hints; the saved check time supplies missed messages. A running receiver is required; notifications cannot wake an idle AI chat.
 
 Webhook history and manual retries are available to human administrators in **Analytics → Webhooks**.

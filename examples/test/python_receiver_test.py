@@ -25,10 +25,11 @@ class ReceiverTest(unittest.TestCase):
                 receiver = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(receiver)
                 client = receiver.app.test_client()
-                body = json.dumps({'id': 'email.received:eml_fixture', 'type': 'email.received',
-                    'data': {'bucket_id': 'bkt_fixture', 'account_id': 'acct_fixture', 'email_id': 'eml_fixture'}}).encode()
+                body = json.dumps({'id': 'ticket.created:eml_fixture', 'type': 'ticket.created',
+                    'data': {'bucket_id': 'bkt_fixture', 'account_id': 'acct_fixture', 'ticket_id': 'tkt_fixture',
+                        'message_id': 'eml_fixture', 'channel': 'email'}}).encode()
                 timestamp = str(int(time.time()))
-                headers = {'X-Revdoku-Event-Id': 'email.received:eml_fixture', 'X-Revdoku-Timestamp': timestamp,
+                headers = {'X-Revdoku-Event-Id': 'ticket.created:eml_fixture', 'X-Revdoku-Timestamp': timestamp,
                     'X-Revdoku-Signature': 'v1=' + hmac.new(b'fixture-secret', timestamp.encode() + b'.' + body, hashlib.sha256).hexdigest()}
                 with patch.object(receiver.requests, 'get') as get:
                     self.assertEqual(client.post('/webhook', data=body + b' ', headers=headers).status_code, 401)
@@ -39,7 +40,7 @@ class ReceiverTest(unittest.TestCase):
                     get.return_value = Mock(status_code=503)
                     self.assertEqual(client.post('/webhook', data=body, headers=headers).status_code, 503)
                     get.return_value = Mock(status_code=200)
-                    get.return_value.json.return_value = {'data': {'email': {'id': 'eml_fixture', 'subject': 'Fixture'}}}
+                    get.return_value.json.return_value = {'data': {'message': {'id': 'eml_fixture', 'subject': 'Fixture'}}}
                     with patch('builtins.print'):
                         self.assertEqual(client.post('/webhook', data=body, headers=headers).status_code, 204)
                         self.assertEqual(client.post('/webhook', data=body, headers=headers).status_code, 204)

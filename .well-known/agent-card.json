@@ -14,7 +14,7 @@
     {
       "id": "email",
       "name": "Support email of docs sites",
-      "description": "Create a bucket with bucket_create and check mailbox.receiving_enabled. Use bucket_email_list with a saved cursor, bucket_email_get for decoded messages, and bucket_email_download for originals and attachments. ",
+      "description": "Create a bucket with bucket_create and check email.receiving_enabled. Use bucket_ticket_list with updated_after to poll, bucket_ticket_get for a ticket and its decoded messages, and bucket_ticket_download for originals and attachments. ",
       "account_required": true
     },
     {

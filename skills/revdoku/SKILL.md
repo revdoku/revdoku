@@ -106,10 +106,10 @@ Reuse filters and pass `pagination.next_cursor` while `pagination.has_more` is t
 Never report a partial page as complete.
 Use `counts.*` for exact authorized totals.
 
-Label buckets `title (mailbox.address)`, or the address alone, linked to `dashboard_url`.
+Label buckets `title (email.address)`, or the address alone, linked to `dashboard_url`.
 Never use descriptions as names.
 Without an address, label the link Open bucket and explain why.
-Show `mailbox.message_count` as stored emails and `mailbox.unread_count` as unread emails.
+Show `email.message_count` as stored emails and `email.unread_count` as unread emails.
 Null counts mean indexing is incomplete.
 File counts include email representations and attachments; never add them to email counts.
 
@@ -127,45 +127,46 @@ Poll with a deadline for a relevant message.
 Produce results before offering automation.
 Gmail verification alone does not prove forwarding works.
 
-`bucket_create(mailbox: {username: "project-alerts"})` returns a ready bucket.
+`bucket_create(email: {username: "project-alerts"})` returns a ready bucket.
 Its address is `project-alerts@revdokumail.com`, also its site name.
-Omit `mailbox` to generate one. Use the returned address.
+Omit `email` to generate one. Use the returned address.
 `EMAIL_ALREADY_EXISTS` means the name is unavailable. Ask for another name. Do not silently replace rejected names.
 CLI: `create --username NAME`.
 
-Write-authorized `bucket_get` returns `mailbox.address`; CLI `mailbox --bucket-id ID` adds address settings.
+Write-authorized `bucket_get` and CLI `ls` return `email.address`.
 Display the address even when receiving is unavailable.
 Only offer compose links or test emails when `receiving_enabled` is true.
 
-Use `bucket_email_list` and retain `pagination.next_cursor` even on empty pages.
-Poll with the same filters, backoff and a deadline. Read an `eml_` ID through
-`bucket_email_get`. Set read status explicitly
-with `bucket_email_update(read: true|false, add_labels)`. CLI: `emails`, `email ID`,
-`email-status ID --read true|false --add-label NAME`.
+Each conversation (email, site message, feedback) is a ticket.
+Use `bucket_ticket_list`; to poll, pass the newest `updated_at` as `updated_after`,
+with backoff. Read a `tkt_` ID and its messages through
+`bucket_ticket_get`. Update with
+`bucket_ticket_update(status, add_labels)`. CLI: `tickets`, `ticket ID`, `ticket-messages ID`,
+`ticket-update ID --status solved --add-label NAME`.
 
 If `body_status` shows truncated or unavailable text, use the original EML.
-Request `bucket_email_download` for the
+Request `bucket_ticket_download` for the message's
 selected `attachment_id`, or omit it for original EML. Temporary URLs expire in
 15 minutes and need no credential.
 Never forward the API key or OAuth token to these URLs. CLI:
-`email-download EMAIL_ID --attachment-id FILE_ID --bucket-id ID --output PATH`.
+`ticket-download ID --message-id ID --attachment-id FILE_ID --bucket-id ID --output PATH`.
 
-After authorization for that exact email, `bucket_email_delete` removes it and
+After authorization for that exact message, `bucket_ticket_message_delete` removes it and
 its owned files/attachments. CLI:
-`email-delete EMAIL_ID --bucket-id ID --confirm-delete EMAIL_ID`.
+`ticket-message-delete ID --message-id ID --bucket-id ID --confirm-delete MESSAGE_ID`.
 Admin access is required.
 
-## Send email
+## Reply to tickets
 
-Replies only: an email answers a received email, to its authenticated sender;
-no to or cc. The Free plan adds one Revdoku line. Send only when
-`mailbox.sending_enabled` is true. On `EMAIL_LOOP_DETECTED`, stop auto-replies to
+Replies only: a reply answers a ticket, to its authenticated requester;
+no to or cc. The Free plan adds one Revdoku line. Reply only when
+`email.sending_enabled` is true. On `EMAIL_LOOP_DETECTED`, stop auto-replies to
 that address.
 
-1. Reply: `bucket_email_send(in_reply_to, text)` (CLI `email-send --in-reply-to ID --text TEXT`).
-2. Track `delivery.status`: `bucket_email_list(direction: "sent")` (CLI `emails --direction sent`).
+1. Reply: `bucket_ticket_reply(ticket_id, text)` (CLI `ticket-reply ID --text TEXT`).
+2. Track `delivery.status`: `bucket_ticket_get` (CLI `ticket-messages ID`).
 
-Never resend `awaiting_approval` (a person decides) or `declined` (unless asked); after `uncertain`, check the sent list.
+Never resend `awaiting_approval` (a person decides) or `declined` (unless asked); after `uncertain`, check the messages.
 
 ## Docs from GitHub
 
@@ -232,7 +233,7 @@ from the original installation scope. Compare `--version` with status and
 Check custom receiving-domain availability in Account Settings → Domains → Email.
 DNS edits require authorization; prefer unused subdomains. Preserve existing
 addresses, use only returned addresses (no guessed aliases or `+tags`), and poll
-pending setup until active/failed. See the [domain contract](https://revdoku.com/api.md#custom-email-domains).
+pending setup until active/failed. See the [domain contract](https://revdoku.com/api.md#email-settings).
 
 ## Explain the action
 
@@ -241,8 +242,8 @@ Omit unknown reasons, secrets, contents and transcripts.
 
 Read quotas with CLI `account limits` or MCP `account_limits`; relay an error's `upgrade_url`.
 
-## Email events
+## Ticket events
 
 Use `webhook-set --bucket-id ID --webhook-url HTTPS_URL` only for an authorized receiver; keep the returned secret private. `--rotate-secret` cancels pending deliveries. `webhook` reads settings; `webhook-delete --confirm-delete ID` disables them after confirmation.
 
-`email-subscription` returns a WebSocket ticket. Running clients need fresh tickets on reconnect and saved email cursors for catch-up. Neither transport wakes idle chats.
+`events-subscription` returns a WebSocket token. Running clients need fresh tokens on reconnect and `updated_after` for catch-up. Neither transport wakes idle chats.

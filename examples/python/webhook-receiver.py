@@ -36,10 +36,11 @@ def webhook():
     try:
         event = json.loads(body)
         data = event['data']
-        if (event['type'] != 'email.received' or data['bucket_id'] != bucket_id
+        if (event['type'] not in ('ticket.created', 'ticket.message_received') or data['bucket_id'] != bucket_id
                 or (account_id and data['account_id'] != account_id)
                 or event['id'] != request.headers.get('X-Revdoku-Event-Id')
-                or not re.fullmatch(r'eml_[A-Za-z0-9]+', data['email_id'])):
+                or not re.fullmatch(r'tkt_[A-Za-z0-9]+', data['ticket_id'])
+                or not re.fullmatch(r'eml_[A-Za-z0-9]+', data['message_id'])):
             return '', 400
     except (ValueError, KeyError, TypeError):
         return '', 400
@@ -52,14 +53,14 @@ def webhook():
             if db.execute('SELECT 1 FROM processed WHERE id = ?', (event['id'],)).fetchone():
                 return '', 204
             response = requests.get(
-                f"https://api.revdoku.com/v1/buckets/{bucket_id}/mailbox/emails/{data['email_id']}",
+                f"https://api.revdoku.com/v1/buckets/{bucket_id}/tickets/{data['ticket_id']}/messages/{data['message_id']}",
                 params={'account_id': data['account_id']},
                 headers={'Authorization': f'Bearer {api_key}'}, timeout=8, allow_redirects=False)
             if response.status_code != 200:
                 return '', 503, {'Retry-After': '5'}
-            email = response.json()['data']['email']
+            email = response.json()['data']['message']
             print(json.dumps({'id': email['id'], 'subject': email.get('subject')}), flush=True)
-            # Deduplicate downstream effects by email ID too: a process crash
+            # Deduplicate downstream effects by message ID too: a process crash
             # after the effect but before this commit may repeat it.
             db.execute('INSERT INTO processed VALUES (?)', (event['id'],))
         return '', 204

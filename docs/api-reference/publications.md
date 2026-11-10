@@ -286,7 +286,7 @@ Guide: [Sites](https://revdoku.com/api.md#sites)
 
 `POST /v1/buckets/{bucket_id}/publication/preview`
 
-Publishes the bucket's current files at a separate preview address for 24 hours. The site does not change. Uses credits; see https://app.revdoku.com/pricing.json.
+Publishes the bucket's current files at a separate preview address for 24 hours. With branch, the preview shows that branch of the connected GitHub repository at preview-<branch>-<site>. The site does not change. Uses credits; see https://app.revdoku.com/pricing.json.
 
 | Language | Call |
 | --- | --- |
@@ -299,13 +299,14 @@ Publishes the bucket's current files at a separate preview address for 24 hours.
 | --- | --- | --- | --- |
 | `bucket_id` / `bucketId` | string | yes |  |
 
-**Request body** (optional): TypeScript `publishRequest: PublishRequest`, Python `publish_request=PublishRequest(...)`.
+**Request body** (optional): TypeScript `previewRequest: PreviewRequest`, Python `preview_request=PreviewRequest(...)`.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
 | `access_mode` / `accessMode` | string: `public`, `password`, `require_email` | no | Who can open the site. Omit to keep the current setting. Sites are public: password and require_email return 422 PUBLICATION_ACCESS_MODE_INVALID unless Revdoku turned on private sites for the account. |
 | `password` | string | no | Password for access_mode password, 8 to 128 characters. Omit to generate one. |
 | `reason` | string | no | Why you publish, for the activity log. |
+| `branch` | string | no | A branch of the connected GitHub repository, other than the linked branch (see listGithubBranches). The preview then shows that branch, as after a push to it, with the site's access. Needs a live site. Omit to preview the bucket's current files. |
 
 **Examples**
 

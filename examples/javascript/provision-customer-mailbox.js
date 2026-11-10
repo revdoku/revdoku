@@ -46,7 +46,7 @@ try {
             throw new Error('Could not reconcile creation. Check the dashboard; rerun to check again.');
         const pending = mailbox;
         const matches = result.data.buckets.filter((candidate) => {
-            const [username, domain] = (candidate.mailbox?.address || '').split('@');
+            const [username, domain] = (candidate.email?.address || '').split('@');
             // On revdokumail.com the address name is the username; the default title keeps the username as sent.
             return (username === pending.username || candidate.title === pending.username) && (!pending.domain || domain === pending.domain);
         });
@@ -61,7 +61,7 @@ try {
         await save(); // Record intent before the only POST. This is local state, not a server retry key.
         const response = await fetch('https://api.revdoku.com/v1/buckets', {
             method: 'POST', headers, redirect: 'error', signal: AbortSignal.timeout(30000),
-            body: JSON.stringify({ account_id: accountId, bucket: { mailbox: { username: mailbox.username, domain: mailbox.domain } } }),
+            body: JSON.stringify({ account_id: accountId, bucket: { email: { username: mailbox.username, domain: mailbox.domain } } }),
         });
         const result = await response.json();
         const id = response.ok ? result.data?.bucket?.id : result.error?.code === 'EMAIL_NOT_READY' ? result.error.details?.bucket_id : undefined;
@@ -82,9 +82,9 @@ try {
     const result = await response.json();
     if (!response.ok || result.data?.bucket?.id !== mailbox.bucket_id)
         throw new Error('Could not read the saved bucket. No new bucket was created.');
-    const email = result.data.bucket.mailbox;
+    const email = result.data.bucket.email;
     if (!email?.receiving_enabled || !email.address)
-        throw new Error(`Bucket saved: ${mailbox.bucket_id}. Receiving: ${email?.blocked_reason || 'pending'}. Rerun to check this bucket.`);
+        throw new Error(`Bucket saved: ${mailbox.bucket_id}. Receiving: ${email?.receiving_blocked_reason || 'pending'}. Rerun to check this bucket.`);
     mailbox.address = email.address;
     await save();
     console.log(JSON.stringify({ account_id: accountId, ...mailbox }));

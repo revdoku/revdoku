@@ -1,7 +1,7 @@
 # Custom email domains
 
 Built-in domains such as `revdokumail.com` work on every plan, including when
-explicitly supplied as `bucket.mailbox.domain`. For custom domains:
+explicitly supplied as `bucket.email.domain`. For custom domains:
 
 | Error code | Action |
 | --- | --- |

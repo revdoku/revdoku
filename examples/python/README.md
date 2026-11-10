@@ -14,7 +14,7 @@ Set `REVDOKU_API_KEY` in your secret manager or local environment, then run:
 python python/create-mailbox.py
 export REVDOKU_BUCKET_ID=bkt_RETURNED_ID
 python python/read-mail.py
-python python/download-attachment.py eml_RETURNED_ID df_RETURNED_ID attachment.pdf
+python python/download-attachment.py tkt_RETURNED_ID eml_RETURNED_ID df_RETURNED_ID attachment.pdf
 ```
 
 Run from `examples/`. Set `REVDOKU_ACCOUNT_ID` to select another granted account.
@@ -23,9 +23,9 @@ Omit the username to generate one. To choose a name, pass it as the argument;
 list your buckets before deciding whether to create another one.
 
 Creation prints the bucket ID and ready receiving address. Reading prints JSON
-metadata, attachment IDs and `next_cursor`; `--show-body` also prints body text.
-Save the last processed cursor and set `REVDOKU_CURSOR` for the next run. Use the
-same filters and deduplicate downstream effects by email ID. GET requests leave
+metadata with ticket and attachment IDs, then `updated_after`; `--show-body` also prints body text.
+Save the printed `updated_after` and set `REVDOKU_UPDATED_AFTER` for the next run.
+A ticket comes back when it gets a new message, so deduplicate downstream effects by message ID. GET requests leave
 shared read status unchanged. Attachment download prints the saved byte count.
 
 Errors include the API's code and message. For 429 request rate limits, respect `Retry-After`; monthly

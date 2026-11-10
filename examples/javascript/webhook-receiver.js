@@ -41,8 +41,8 @@ const server = createServer(async (request, response) => {
             return;
         }
         const event = JSON.parse(body.toString('utf8'));
-        if (event.type !== 'email.received' || event.data?.bucket_id !== bucketId || (accountId && event.data?.account_id !== accountId) ||
-            event.id !== request.headers['x-revdoku-event-id'] || !/^eml_[A-Za-z0-9]+$/.test(event.data?.email_id)) {
+        if (!['ticket.created', 'ticket.message_received'].includes(event.type) || event.data?.bucket_id !== bucketId || (accountId && event.data?.account_id !== accountId) ||
+            event.id !== request.headers['x-revdoku-event-id'] || !/^tkt_[A-Za-z0-9]+$/.test(event.data?.ticket_id) || !/^eml_[A-Za-z0-9]+$/.test(event.data?.message_id)) {
             response.writeHead(400).end();
             return;
         }
@@ -63,13 +63,13 @@ const server = createServer(async (request, response) => {
         }
         processing.add(eventId);
         claimed = true;
-        const url = new URL(`https://api.revdoku.com/v1/buckets/${encodeURIComponent(bucketId)}/mailbox/emails/${encodeURIComponent(event.data.email_id)}`);
+        const url = new URL(`https://api.revdoku.com/v1/buckets/${encodeURIComponent(bucketId)}/tickets/${encodeURIComponent(event.data.ticket_id)}/messages/${encodeURIComponent(event.data.message_id)}`);
         url.searchParams.set('account_id', event.data.account_id);
         const emailResponse = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` }, redirect: 'error', signal: AbortSignal.timeout(8000) });
         if (!emailResponse.ok)
-            throw new Error(`Read email: HTTP ${emailResponse.status}`);
-        const email = (await emailResponse.json()).data.email;
-        console.log(JSON.stringify({ id: email.id, subject: email.subject }));
+            throw new Error(`Read message: HTTP ${emailResponse.status}`);
+        const email = (await emailResponse.json()).data.message;
+        console.log(JSON.stringify({ id: email.id, ticket_id: event.data.ticket_id, channel: event.data.channel, subject: email.subject }));
         // Save only after processing succeeds. Use email.id to deduplicate your own
         // downstream effects; a crash between processing and saving can repeat them.
         await writeFile(marker, '', { mode: 0o600 });

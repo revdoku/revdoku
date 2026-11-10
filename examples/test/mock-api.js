@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 let upload;
-let emailListAttempts = 0;
+let ticketListAttempts = 0;
+const UPDATED_AT = '2026-09-29T00:00:00Z';
 const mail = { subject: 'Fixture message', from_addresses: [{ address: 'sender@example.test', name: null }], body_text: 'Fixture body',
   body_status: 'complete', received_at: '2026-09-29T00:00:00Z',
   attachments: [{ id: 'df_note', filename: 'note.txt', size_bytes: 5 }] };
@@ -27,36 +28,36 @@ globalThis.fetch = async (input, options = {}) => {
         assert.equal(body.idempotency_key, undefined);
         assert.equal(body.bucket.title, undefined);
         // revdokumail.com takes the username as the bucket's name, with hyphens; a custom domain keeps the exact name. The title is the username.
-        const { username, domain } = body.bucket.mailbox;
+        const { username, domain } = body.bucket.email;
         const mailbox = { id: `bkt_${mailboxes.length + 1}`, title: username,
-          mailbox: { address: domain ? `${username}@${domain}` : `${username.replace(/[._]+/g, '-')}@revdokumail.com`, receiving_enabled: true } };
+          email: { address: domain ? `${username}@${domain}` : `${username.replace(/[._]+/g, '-')}@revdokumail.com`, receiving_enabled: true } };
         mailboxes.push(mailbox);
         writeFileSync('.fixture-mailboxes.json', JSON.stringify(mailboxes));
         if (process.env.FIXTURE_CREATE === 'lost') throw new TypeError('Connection dropped after commit');
         if (process.env.FIXTURE_CREATE === 'not_ready') return Response.json({ error: { code: 'EMAIL_NOT_READY', details: { bucket_id: mailbox.id } } }, { status: 503 });
         return ok({ bucket: mailbox });
       }
-      if (url.pathname === '/v1/buckets') return ok({ buckets: mailboxes.filter(mailbox => [mailbox.title, mailbox.mailbox.address].some(text => text.includes(url.searchParams.get('q')))) });
+      if (url.pathname === '/v1/buckets') return ok({ buckets: mailboxes.filter(mailbox => [mailbox.title, mailbox.email.address].some(text => text.includes(url.searchParams.get('q')))) });
       const mailbox = mailboxes.find(mailbox => mailbox.id === url.pathname.split('/').at(-1));
       assert.ok(mailbox);
-      if (process.env.FIXTURE_CREATE === 'not_ready') mailbox.mailbox = { ...mailbox.mailbox, receiving_enabled: false, blocked_reason: 'routing_pending' };
+      if (process.env.FIXTURE_CREATE === 'not_ready') mailbox.email = { ...mailbox.email, receiving_enabled: false, receiving_blocked_reason: 'routing_pending' };
       return ok({ bucket: mailbox });
     }
     if (url.pathname === '/v1/buckets') {
       assert.equal(body.idempotency_key, undefined);
-      return ok({ bucket: { id: 'bkt_fixture', mailbox: { address: 'fixture@revdokumail.com', receiving_enabled: true, sending_enabled: false }, dashboard_url: 'https://app.revdoku.com/buckets/bkt_fixture' } });
+      return ok({ bucket: { id: 'bkt_fixture', email: { address: 'fixture@revdokumail.com', receiving_enabled: true, sending_enabled: false }, dashboard_url: 'https://app.revdoku.com/buckets/bkt_fixture' } });
     }
-    if (url.pathname.endsWith('/mailbox/subscription')) return ok({ subscription: {
-      token: 'offline-ticket', websocket_url: 'wss://app.revdoku.com/cable', channel: 'EmailReceivedChannel',
+    if (url.pathname.endsWith('/events/subscription')) return ok({ subscription: {
+      token: 'offline-token', websocket_url: 'wss://app.revdoku.com/cable', channel: 'BucketEventsChannel',
       account_id: 'acct_fixture', bucket_id: 'bkt_fixture'
     } });
-    if (url.pathname.endsWith('/emails')) {
-      emailListAttempts++;
+    if (url.pathname.endsWith('/tickets')) {
+      ticketListAttempts++;
       if (process.env.FIXTURE_INDEX_BUILDING === 'always') {
-        assert.ok(emailListAttempts <= 4, 'Read retries must be bounded');
+        assert.ok(ticketListAttempts <= 4, 'Read retries must be bounded');
       }
       if (process.env.FIXTURE_INDEX_BUILDING === 'always' ||
-          (process.env.FIXTURE_INDEX_BUILDING === 'twice' && emailListAttempts <= 2)) {
+          (process.env.FIXTURE_INDEX_BUILDING === 'twice' && ticketListAttempts <= 2)) {
         return Response.json({ error: { code: 'EMAIL_INDEX_BUILDING', message: 'Email index is being prepared' } }, { status: 503 });
       }
       const cursor = url.searchParams.get('cursor');
@@ -66,13 +67,24 @@ globalThis.fetch = async (input, options = {}) => {
           return Response.json({ error: { code: 'UNAVAILABLE', message: 'Later page failed once' } }, { status: 503 });
         } catch (error) { if (error.code !== 'EEXIST') throw error; }
       }
-      return ok({ emails: cursor === 'end' ? [] : [{ id: cursor ? 'eml_second' : 'eml_first' }],
-        pagination: { has_more: !cursor, next_cursor: cursor ? 'end' : 'next' } });
+      // Two tickets on two pages. Nothing changed after the fixture time.
+      if (url.searchParams.get('updated_after') === UPDATED_AT) return ok({ tickets: [], pagination: { has_more: false, next_cursor: null } });
+      return ok({ tickets: [{ id: cursor ? 'tkt_second' : 'tkt_first', channel: 'email', status: 'open', updated_at: UPDATED_AT }],
+        pagination: { has_more: !cursor, next_cursor: cursor ? null : 'next' } });
     }
-    if (url.pathname.endsWith('/attachments/df_note')) return ok({ download: { url: 'https://storage.example/file?path=attachments/note.txt', filename: 'note.txt' } });
-    if (url.pathname.includes('/emails/eml_')) {
+    if (url.pathname.endsWith('/attachments/df_note')) {
+      assert.match(url.pathname, /\/tickets\/tkt_first\/messages\/eml_first\/attachments\/df_note$/);
+      return ok({ download: { url: 'https://storage.example/file?path=attachments/note.txt', filename: 'note.txt' } });
+    }
+    const thread = url.pathname.match(/\/tickets\/tkt_(first|second)\/messages(?:\/(eml_\w+))?$/);
+    if (thread && !thread[2]) {
+      return ok({ messages: [{ id: `eml_${thread[1]}`, direction: 'received', labels: [] }, { id: `eml_${thread[1]}_reply`, direction: 'sent', labels: [] }],
+        pagination: { has_more: false, next_cursor: null } });
+    }
+    if (thread) {
+      assert.equal(thread[2], `eml_${thread[1]}`);
       if (process.env.FIXTURE_EMAIL_DELAY) await new Promise(resolve => setTimeout(resolve, 250));
-      return ok({ email: { id: url.pathname.split('/').at(-1), ...mail } });
+      return ok({ message: { id: thread[2], ticket_id: `tkt_${thread[1]}`, ...mail } });
     }
     if (url.pathname.endsWith('/files') && options.method === 'POST') {
       assert.equal(body.signed_blob_id, 'fixture-signed-id'); assert.equal(body.path, 'project/notes.txt'); return ok({ file: { id: 'df_uploaded' } });
@@ -80,8 +92,8 @@ globalThis.fetch = async (input, options = {}) => {
     if (url.pathname.endsWith('/files/df_uploaded/download')) {
       return ok({ download: { url: 'https://storage.example/file?path=project%2Fnotes.txt' } });
     }
-    if (url.pathname === '/v1/direct_uploads') {
-      assert.equal(body.blob.purpose, 'bucket_file'); assert.equal(body.bucket_id, 'bkt_fixture');
+    if (url.pathname === '/v1/buckets/bkt_fixture/uploads') {
+      assert.equal(body.blob.purpose, 'bucket_file'); assert.equal(body.bucket_id, undefined);
       return ok({ signed_id: 'fixture-signed-id', direct_upload: { url: 'https://storage.example/upload', headers: { 'Content-Type': body.blob.content_type } } });
     }
     if (url.pathname === '/v1/account/limits') {
@@ -103,7 +115,7 @@ if (process.env.FIXTURE_SOCKET_END) {
   globalThis.WebSocket = class extends EventTarget {
     constructor(url) {
       super();
-      assert.equal(new URL(url).searchParams.get('email_subscription_token'), 'offline-ticket');
+      assert.equal(new URL(url).searchParams.get('subscription_token'), 'offline-token');
       setTimeout(() => this.dispatchEvent(new Event('open')), 0);
     }
     send() {
@@ -119,16 +131,16 @@ if (process.env.FIXTURE_WATCH_RECOVERY) {
     closed = false;
     constructor(url) {
       super();
-      assert.equal(new URL(url).searchParams.get('email_subscription_token'), 'offline-ticket');
+      assert.equal(new URL(url).searchParams.get('subscription_token'), 'offline-token');
       setTimeout(() => this.dispatchEvent(new Event('open')), 0);
     }
     send() {
       this.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ type: 'confirm_subscription' }) }));
       this.timer = setInterval(() => {
         let cursor;
-        try { cursor = JSON.parse(readFileSync('.revdoku-examples/acct_fixture-bkt_fixture.json', 'utf8')).cursor; }
+        try { cursor = JSON.parse(readFileSync('.revdoku-examples/acct_fixture-bkt_fixture.json', 'utf8')).updated_after; }
         catch (error) { if (error.code !== 'ENOENT') throw error; }
-        if (cursor === 'end') {
+        if (cursor === UPDATED_AT) {
           this.dispatchEvent(new MessageEvent('message', { data: JSON.stringify({ type: 'disconnect', reconnect: false }) }));
         }
       }, 20);

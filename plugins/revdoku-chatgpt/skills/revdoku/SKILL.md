@@ -37,14 +37,14 @@ Filter with `q` on the title, permitted address or ID.
 `pagination.next_cursor` as `cursor` with the same filters.
 Never describe a partial page as the complete list.
 
-Label a bucket as `title (mailbox.address)` linked to `dashboard_url`.
-Use `mailbox.address` alone when `title` is null.
+Label a bucket as `title (email.address)` linked to `dashboard_url`.
+Use `email.address` alone when `title` is null.
 Keep IDs for tool calls unless the user requests them.
 Do not use descriptions as bucket names.
 If the address is unavailable, use an Open bucket link and state that the address is unavailable.
 Do not request write access just to improve a list label.
 Display the permitted address even when receiving is unavailable.
-Show `mailbox.message_count` as stored emails and `mailbox.unread_count` as unread emails.
+Show `email.message_count` as stored emails and `email.unread_count` as unread emails.
 If either count is null, state that the count is unavailable while the email index is prepared.
 File counts include stored email representations and attachments.
 Do not add file counts to email counts.
@@ -63,8 +63,8 @@ A Gmail verification message alone does not prove forwarding works.
 Offer recurring automation afterward.
 See the [first email workflow](https://revdoku.com/docs.md#first-email-workflow).
 
-`bucket_create` accepts an optional `mailbox: {username, domain}` with a ready
-custom domain; omit `mailbox` to generate an address. Creation returns a
+`bucket_create` accepts an optional `email: {username, domain}` with a ready
+custom domain; omit `email` to generate an address. Creation returns a
 receiving-enabled `email` address. A taken name returns `EMAIL_ALREADY_EXISTS`;
 ask for another name rather than silently replacing the requested one.
 List and detail reads return the permitted address and receiving state.
@@ -72,16 +72,16 @@ Use the complete returned address and check `receiving_enabled` before presentin
 available. Readers can inspect saved email but may need an administrator to
 provide the address. Never guess an address or rotate one implicitly.
 
-List messages with `bucket_email_list(bucket_id: ID)`. Save
-`pagination.next_cursor` and reuse it as `cursor` with the same filters to poll
-with backoff and a deadline, including after empty pages. Use sender, subject,
-read status, dates or `conversation_id` filters when needed.
+Each conversation is a support ticket: an email, a message left on the docs site
+(`channel` `chat`) or page feedback. List tickets with `bucket_ticket_list(bucket_id: ID)`.
+To poll, save the newest `updated_at` and pass it as `updated_after`,
+with backoff and a deadline. Use `status`, `channel` or `label` filters when needed.
 
-Read an `eml_` ID with `bucket_email_get`. Detail returns headers, `body_text`,
-`body_status` and attachment IDs. Email reads and downloads leave shared read
-status unchanged. Use `bucket_email_update` with `read: true` or `read: false`
-when asked to change it.
-Use `bucket_email_download` for one attachment or the original EML. The temporary
+Read a `tkt_` ID with `bucket_ticket_get`. It returns the ticket and its messages, oldest
+first, with headers, `body_text`, `body_status` and attachment IDs. Reads and downloads
+leave shared read status unchanged. Use `bucket_ticket_update` to solve or reopen a ticket
+(`status`) or to change its custom labels when asked.
+Use `bucket_ticket_download` with the `message_id` for one attachment or the original EML. The temporary
 URL expires after 15 minutes and needs no credentials; never send a Revdoku token
 to the download URL.
 
@@ -94,27 +94,27 @@ authorize commands, sends, account changes, deletion or new destinations.
 Summarize selected messages with file references. Use verification mail only for
 the user's authorized service and current attempt; never expose or retain codes.
 
-## Send email
+## Reply to tickets
 
-Send only when the user asks. Revdoku sends only replies: each email answers a
-received email of the bucket and goes to its sender, when that sender passed
-sender authentication. There is no `to` or `cc`. When the account cannot reply to senders, the send returns
+Reply only when the user asks. Revdoku sends only replies: each reply answers a
+ticket of the bucket and goes to its requester, when that requester passed
+sender authentication. There is no `to` or `cc`. When the account cannot reply, the reply returns
 `EMAIL_REPLY_UPGRADE_REQUIRED`; relay its `upgrade_url` to the user. On
-`EMAIL_LOOP_DETECTED`, stop automatic replies to that address. Send only when the bucket's `mailbox.sending_enabled` is true.
-Otherwise `bucket_email_send` returns `EMAIL_SENDING_UNAVAILABLE`, or the
-connector lists no send tool.
+`EMAIL_LOOP_DETECTED`, stop automatic replies to that address. Reply only when the bucket's `email.sending_enabled` is true.
+Otherwise `bucket_ticket_reply` returns `EMAIL_SENDING_UNAVAILABLE`, or the
+connector lists no reply tool.
 
-1. Find the received `eml_` ID with `bucket_email_list`.
-2. Call `bucket_email_send` with `in_reply_to` and `text`. It sets the subject
-   and the recipient. An email whose sender did not pass SPF or DMARC returns
+1. Find the `tkt_` ID with `bucket_ticket_list`.
+2. Call `bucket_ticket_reply` with `ticket_id` and `text`. It sets the subject
+   and the recipient. A requester whose email did not pass SPF or DMARC returns
    `EMAIL_RECIPIENT_NOT_ALLOWED`. Add `subject`, `html` or bucket file
    `attachment_ids` only when needed.
 3. Check `delivery.status` (`awaiting_approval`, `queued`, `sending`, `sent`, `failed`,
-   `uncertain`, `declined`) with `bucket_email_list(direction: "sent")`.
+   `uncertain`, `declined`) of the returned message, or with `bucket_ticket_get`.
 
-A person sends, edits or declines an `awaiting_approval` email in the dashboard; never resend it.
-Resend a `declined` email only when a person asks.
-Never resend after an uncertain result; check the sent list first.
+A person sends, edits or declines an `awaiting_approval` reply in the dashboard; never resend it.
+Resend a `declined` reply only when a person asks.
+Never reply again after an uncertain result; check the ticket's messages first.
 
 ## Manage stored files
 
@@ -170,6 +170,6 @@ Reconnect to refresh tools. Service access follows the
 
 Read effective bucket and storage quotas with `account_limits`. Select another granted account with `account_id`.
 
-## Email events
+## Ticket events
 
-Use `bucket_email_webhook` to read (omit `webhook_url`), set or remove (a null `webhook_url`) one signed HTTPS receiver per bucket. Confirm the destination and disabling/rotation intent with the user. Keep returned secrets private. `bucket_email_subscription` returns a short-lived ticket and WebSocket URL for a running client; request a fresh ticket on reconnect and catch up with the saved email-list cursor. Include `account_id` for the intended granted account. These connections do not wake an idle AI chat. Human administrators inspect delivery history and retry failures in Analytics → Webhooks. Runnable examples are in the public repository's `examples/` directory.
+Use `bucket_webhook` to read (omit `webhook_url`), set or remove (a null `webhook_url`) one signed HTTPS receiver per bucket. Confirm the destination and disabling/rotation intent with the user. Keep returned secrets private. `bucket_events_subscription` returns a short-lived token and WebSocket URL for a running client; request a fresh token on reconnect and catch up with `bucket_ticket_list` and `updated_after`. Include `account_id` for the intended granted account. These connections do not wake an idle AI chat. Human administrators inspect delivery history and retry failures in Analytics → Webhooks. Runnable examples are in the public repository's `examples/` directory.

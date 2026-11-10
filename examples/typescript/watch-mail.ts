@@ -13,7 +13,7 @@ let backoff = 1000;
 let catchup = Promise.resolve();
 while (!stopped) {
   try {
-    const ticketUrl = new URL(`https://api.revdoku.com/v1/buckets/${bucketId}/mailbox/subscription`);
+    const ticketUrl = new URL(`https://api.revdoku.com/v1/buckets/${bucketId}/events/subscription`);
     if (accountId) ticketUrl.searchParams.set('account_id', accountId);
     const response = await fetch(ticketUrl, { headers: { Authorization: `Bearer ${apiKey}` }, redirect: 'error', signal: AbortSignal.timeout(30000) });
     const result = await response.json();
@@ -25,7 +25,7 @@ while (!stopped) {
     const url = new URL(subscription.websocket_url);
     // The API returns the app's cable endpoint; never put the reusable API key in the URL.
     if (url.protocol !== 'wss:') throw new Error('Expected a secure WebSocket URL.');
-    url.searchParams.set('email_subscription_token', subscription.token);
+    url.searchParams.set('subscription_token', subscription.token);
     const ws = new WebSocket(url, 'actioncable-v1-json');
     socket = ws;
     const identifier = JSON.stringify({ channel: subscription.channel, account_id: subscription.account_id, bucket_id: subscription.bucket_id });
@@ -36,11 +36,11 @@ while (!stopped) {
       pending = true;
       if (reading) return;
       reading = true;
-      // Reuse the ordinary HTTP example: it paginates and saves a durable cursor.
+      // Reuse the ordinary HTTP example: it lists the changed tickets and saves a durable checkpoint.
       catchup = catchup.then(async () => {
         while (pending && !stopped) {
           pending = false;
-          // Emit each processed page before its cursor advances, even if a later page fails.
+          // Emit each processed page before the checkpoint moves, even if a later page fails.
           await new Promise<void>((resolve, reject) => {
             const child = spawn(process.execPath, [fileURLToPath(new URL('./read-mail.js', import.meta.url))], { stdio: ['ignore', 'inherit', 'inherit'] });
             child.once('error', reject);
@@ -57,7 +57,7 @@ while (!stopped) {
         try {
           const frame = JSON.parse(String(message.data));
           if (frame.type === 'confirm_subscription') { backoff = 1000; readNewMail(); }
-          if (frame.message?.type === 'email.received') readNewMail();
+          if (frame.message?.type === 'ticket.created' || frame.message?.type === 'ticket.message_received') readNewMail();
           if (frame.type === 'reject_subscription' || (frame.type === 'disconnect' && frame.reconnect === false)) {
             console.error('Subscription ended. Check the API key and bucket permissions.');
             stopped = true;
