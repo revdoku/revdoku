@@ -1,5 +1,12 @@
 # Revdoku Changelog
 
+## 1.0.649 — 2026-11-11
+
+### Added
+
+- Each Ask AI conversation on your docs site is now a support ticket with its own number. Read it as a conversation in the new AI chats folder of Support, and solve or reopen it there.
+- A message that a visitor leaves after an AI chat joins the ticket of that chat, so the questions, the AI's answers and your reply are in one place.
+
 ## 1.0.648 — 2026-11-11
 
 ### Added
