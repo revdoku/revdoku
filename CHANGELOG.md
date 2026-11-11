@@ -1,5 +1,22 @@
 # Revdoku Changelog
 
+## 1.0.650 — 2026-11-11
+
+### Added
+
+- Read a site's analytics by section: send `section` (`agents`, `humans`, `pages`, `search`, `ask_ai` or `gaps`) to `GET /v1/buckets/{bucket_id}/analytics`, or to the MCP tool `bucket_publication_get`. Each section has the lists that the dashboard shows.
+- Use the `gaps` section to find what your docs do not answer: questions that Ask AI could not answer, searches without results, pages that readers marked as not helpful and missing pages. Each page names its source file, so an AI agent can update the docs.
+
+### Improved
+
+- Analytics of a site has its own pages in the sidebar: Overview, AI agents, Humans, Pages, Search and Ask AI. Each page shows only its own lists, and a list without data is not shown.
+- The Ask AI numbers of the traffic widget open the Ask AI conversations.
+- AI chats comes right after Inbox in Support.
+
+### Fixed
+
+- A link to the Analytics of a site opens Analytics, not Logs.
+
 ## 1.0.649 — 2026-11-11
 
 ### Added
