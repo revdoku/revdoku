@@ -1,5 +1,23 @@
 # Revdoku Changelog
 
+## 1.0.647 — 2026-11-11
+
+### Added
+
+- Create a bucket that starts with a docs site: send `bucket.template` (`docs-api` or `docs-product`) in the API, `template` in the MCP tool `bucket_create`, or `--template` in `revdoku create`.
+- Start from the new `docs-product` template for the docs of a web, mobile or desktop app.
+- Describe your product when you start, and the docs site begins with its name and a short summary.
+- Docs pages give search engines and link previews their own data: the page's address, title and description, and structured data (JSON-LD) with its place in the site.
+
+### Improved
+
+- Ask on a docs site: "Was this helpful?" with Yes and No, sources in one line that opens, and a clearer answer when the docs do not cover a question.
+- Ask on a docs site keeps a passed security check while you move between pages.
+- Docs pages: the header lines up with the page list on wide screens, and the Pages menu on phones shows that it opens.
+- The sitemap of a site of uploaded HTML pages lists every page.
+- Site settings have "Hide this site from search engines", off by default. Previews are always hidden from search engines.
+- The API and MCP guides follow the order of a first integration and show how to preview a branch.
+
 ## 1.0.646 — 2026-11-11
 
 ### Added
