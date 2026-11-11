@@ -1,5 +1,20 @@
 # Revdoku Changelog
 
+## 1.0.648 — 2026-11-11
+
+### Added
+
+- See the search history of your docs site in Analytics: each search, and whether the visitor opened a page, found nothing or opened no page.
+- See the activity of AI agents on your docs site in Analytics: each search with its number of results, and each page that an agent read through the site's MCP server.
+- Read a site's analytics with `GET /v1/buckets/{bucket_id}/analytics`, or with `analytics` in the MCP tool `bucket_publication_get`.
+
+### Improved
+
+- The dashboard starts with a bucket switcher in the sidebar, and bucket lists show the site address.
+- The traffic widget stacks AI agents, humans and bots in one chart, with a comparison to the period before.
+- Critical notifications open as a dialog.
+- A search that you send to Ask on a docs site starts an AI conversation and is no longer counted as a search.
+
 ## 1.0.647 — 2026-11-11
 
 ### Added
