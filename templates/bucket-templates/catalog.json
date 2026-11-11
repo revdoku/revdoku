@@ -2,9 +2,9 @@
   "version": 1,
   "templates": [
     {
-      "key": "docs-starter",
-      "version": "2026-11-06",
-      "name": "Docs starter",
+      "key": "docs-api",
+      "version": "2026-11-11",
+      "name": "API docs",
       "description": "A docs site for an API: Markdown and MDX pages, a docs.json navigation, an OpenAPI reference with an API console, and an API tester app.",
       "kind": "docs",
       "entrypoint": "docs",
@@ -57,6 +57,72 @@
           "sha256": "f087035f6a581070c64f84dcac48595dde2bcf0dde4086b1859c4f1d0ed16e45",
           "byte_size": 4550,
           "content_type": "text/html"
+        }
+      ]
+    },
+    {
+      "key": "docs-product",
+      "version": "2026-11-11",
+      "name": "Product docs",
+      "description": "A docs site for a web, mobile or desktop app: getting started, how-to guides, FAQ, troubleshooting and a changelog.",
+      "kind": "docs",
+      "entrypoint": "docs",
+      "files": [
+        {
+          "path": "docs.json",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/docs-product/docs.json",
+          "sha256": "88971d07e2f82ce746052b81bb3e8686c85c911922939166afd8a544aaafe7e4",
+          "byte_size": 435,
+          "content_type": "application/json"
+        },
+        {
+          "path": "index.mdx",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/docs-product/index.mdx",
+          "sha256": "16b73424f5275387e6ae1f376ed318ca45564e01757e4fa1c03daf73f85765ea",
+          "byte_size": 751,
+          "content_type": "text/markdown"
+        },
+        {
+          "path": "getting-started.mdx",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/docs-product/getting-started.mdx",
+          "sha256": "5ca41e632dbe14dd8b0c0a55b2c98171c4e6b227746af1386fb267aa7de815bd",
+          "byte_size": 797,
+          "content_type": "text/markdown"
+        },
+        {
+          "path": "guides/invite-your-team.md",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/docs-product/guides/invite-your-team.md",
+          "sha256": "2f3adaed7e4e3eea25099d65b13bc62dc5c9fa5e63df77cba91d9a34e400834d",
+          "byte_size": 721,
+          "content_type": "text/markdown"
+        },
+        {
+          "path": "guides/import-your-data.md",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/docs-product/guides/import-your-data.md",
+          "sha256": "094db5334c17c9c77f53940f632c217f401de3becd1987e164fcd9be995dc17a",
+          "byte_size": 728,
+          "content_type": "text/markdown"
+        },
+        {
+          "path": "faq.mdx",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/docs-product/faq.mdx",
+          "sha256": "051b8f38fb2260bbcf2b0ec0a065c59794f843c385b7b564dbeb9ac311ba9b05",
+          "byte_size": 758,
+          "content_type": "text/markdown"
+        },
+        {
+          "path": "troubleshooting.md",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/docs-product/troubleshooting.md",
+          "sha256": "c289ca526b2f1bdf0c4363c73e583dd520af7bdf0303258d021de93c325c0691",
+          "byte_size": 746,
+          "content_type": "text/markdown"
+        },
+        {
+          "path": "changelog.mdx",
+          "url": "https://raw.githubusercontent.com/revdoku/revdoku/main/templates/bucket-templates/docs-product/changelog.mdx",
+          "sha256": "7c40db6383c84db578ac4070fdf8ebfe5d31fb3be6e06407982ec2e299429361",
+          "byte_size": 396,
+          "content_type": "text/markdown"
         }
       ]
     },
