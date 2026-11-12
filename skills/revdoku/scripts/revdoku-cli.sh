@@ -84,6 +84,7 @@ TICKET_UPDATED_AFTER=""
 EMAIL_USERNAME=""
 EMAIL_DOMAIN=""
 BUCKET_TITLE=""
+BUCKET_TEMPLATE=""
 EMAIL_ATTACHMENT_ID=""
 LIST_LIMIT=""
 LIST_CURSOR=""
@@ -105,6 +106,7 @@ GITHUB_INSTALLATION_ID=""
 GITHUB_BRANCH=""
 GITHUB_REPO_PATH=""
 GITHUB_PUSH_EDITS=""
+GITHUB_BUCKET_FILES=""
 GITHUB_AUTO_PUBLISH=""
 GITHUB_AUTO_COMMIT=""
 OUTPUT_PATH=""
@@ -220,12 +222,12 @@ Usage: revdoku <command> [PATH] [options]
   upload PATH           Save the selected local file or folder (use . explicitly).
                         Opens browser sign-in when credentials are missing.
   ls, list              List active buckets with titles, addresses and email counts.
-  create                Create a bucket; optionally choose --username, --domain and --title.
+  create                Create a bucket; optionally choose --username, --domain, --title and --template docs-api|docs-product.
   o, open               Open this bucket in the dashboard.
   st, status            Show connection and account status.
   login                 Sign in to an existing account in the browser.
   grant TOKEN           Use a one-time connection token from the web app.
-  tickets               List support tickets (email, chat and feedback); newest activity first.
+  tickets               List support tickets (email and chat); newest activity first.
   ticket ID             Read one ticket: status, channel, requester and labels.
   ticket-messages ID    List a ticket's messages; --message-id ID reads one message.
   ticket-reply ID       Reply to the ticket's requester. Does not retry.
@@ -257,8 +259,9 @@ Usage: revdoku <command> [PATH] [options]
   github accounts       List GitHub accounts connected to the account.
   github repos ID       List the repositories of one connected GitHub account.
   github setup-link     Print the links a person opens to add a GitHub account.
-  github connect OWNER/NAME  Copy a repository into an empty bucket. Optional --branch,
+  github connect OWNER/NAME  Copy a repository into a bucket. Optional --branch,
                         --repo-path, --installation-id, --push-revdoku-edits false.
+                        A bucket with files needs --bucket-files replace or copy.
   github set            Change --auto-publish, --push-revdoku-edits or --auto-commit.
   github sync           Sync the repository now.
   github branches       List the branches that a preview can show.
@@ -346,6 +349,9 @@ while [[ $# -gt 0 ]]; do
         --installation-id) [[ "$2" =~ ^[1-9][0-9]{0,18}$ ]] || die "--installation-id must be the number from revdoku github accounts"; GITHUB_INSTALLATION_ID="$2" ;;
       esac
       shift 2 ;;
+    --bucket-files)
+      [[ $# -ge 2 && ( "$2" == "replace" || "$2" == "copy" ) ]] || die "--bucket-files is replace or copy"
+      GITHUB_BUCKET_FILES="$2"; shift 2 ;;
     --auto-publish|--push-revdoku-edits|--auto-commit)
       [[ $# -ge 2 && ( "$2" == "true" || "$2" == "false" ) ]] || die "$1 must be true or false"
       case "$1" in
@@ -375,6 +381,11 @@ while [[ $# -gt 0 ]]; do
     --title)
       [[ $# -ge 2 && -n "$2" ]] || die "--title requires a value"
       BUCKET_TITLE="$2"
+      shift 2
+      ;;
+    --template)
+      [[ $# -ge 2 && -n "$2" ]] || die "--template requires a value"
+      BUCKET_TEMPLATE="$2"
       shift 2
       ;;
     --account-id)
@@ -644,6 +655,7 @@ esac
   die "--repo-path and --installation-id require github connect"
 [[ -z "$GITHUB_AUTO_PUBLISH$GITHUB_AUTO_COMMIT" || "$GITHUB_ACTION" == "set" ]] || die "--auto-publish and --auto-commit require github set"
 [[ -z "$GITHUB_PUSH_EDITS" || "$GITHUB_ACTION" == "connect" || "$GITHUB_ACTION" == "set" ]] || die "--push-revdoku-edits requires github connect or github set"
+[[ -z "$GITHUB_BUCKET_FILES" || "$GITHUB_ACTION" == "connect" ]] || die "--bucket-files requires github connect"
 if [[ "$ACTION" == "restore_version" ]]; then
   VERSION_ID="${VERSION_ID:-$RESTORE_VERSION_ID}"
   [[ -n "$VERSION_ID" ]] || die "restore requires --version-id ID (see revdoku versions PATH)"
@@ -655,6 +667,9 @@ if [[ -n "$EMAIL_USERNAME$EMAIL_DOMAIN" && "$ACTION" != "create_bucket" ]]; then
 fi
 if [[ -n "$BUCKET_TITLE" && "$ACTION" != "create_bucket" ]]; then
   die "--title requires create"
+fi
+if [[ -n "$BUCKET_TEMPLATE" && "$ACTION" != "create_bucket" ]]; then
+  die "--template requires create"
 fi
 if [[ "$ACTION" == "delete_bucket" ]]; then
   [[ "$BUCKET_EXPLICIT" == "true" && -n "$BUCKET_ID" && -n "$ACCOUNT_ID" ]] || die "delete requires explicit --account-id and --bucket-id"
@@ -1380,11 +1395,13 @@ github_command() {
     connect)
       body="$("$JQ_BIN" -n --arg owner "${GITHUB_REPOSITORY%%/*}" --arg name "${GITHUB_REPOSITORY#*/}" --arg branch "$GITHUB_BRANCH" \
         --arg repo_path "$GITHUB_REPO_PATH" --arg installation "$GITHUB_INSTALLATION_ID" --arg edits "$GITHUB_PUSH_EDITS" \
+        --arg files "$GITHUB_BUCKET_FILES" \
         '{github: ({repo_owner: $owner, repo_name: $name}
           + (if $branch != "" then {branch: $branch} else {} end)
           + (if $repo_path != "" then {repo_path: $repo_path} else {} end)
           + (if $installation != "" then {installation_id: ($installation | tonumber)} else {} end)
-          + (if $edits != "" then {push_revdoku_edits: ($edits == "true")} else {} end))}')"
+          + (if $edits != "" then {push_revdoku_edits: ($edits == "true")} else {} end)
+          + (if $files != "" then {bucket_files: $files} else {} end))}')"
       http_json POST "$path" "$body"
       ;;
     set)
@@ -1500,7 +1517,7 @@ download_file_url() {
   die "too many file download redirects"
 }
 
-# Support tickets (REST /buckets/ID/tickets): one conversation with a requester, from email, chat or feedback.
+# Support tickets (REST /buckets/ID/tickets): one conversation with a requester, from email or chat (feedback: earlier feedback emails).
 # Messages have eml_ IDs; a reply is a new message of the ticket.
 ticket_command() {
   [[ -n "$BUCKET_ID" ]] || die "ticket commands require --bucket-id or a bound folder"
@@ -1595,9 +1612,9 @@ reply_to_ticket() {
 create_bucket() {
   local payload
   payload="$("$JQ_BIN" -nc --arg description "$DESCRIPTION" --arg title "$BUCKET_TITLE" \
-    --arg username "$EMAIL_USERNAME" --arg domain "$EMAIL_DOMAIN" \
+    --arg username "$EMAIL_USERNAME" --arg domain "$EMAIL_DOMAIN" --arg template "$BUCKET_TEMPLATE" \
     --argjson metadata "$METADATA_JSON" \
-    '{bucket: (({title:$title,description:$description} | with_entries(select(.value != ""))) +
+    '{bucket: (({title:$title,description:$description,template:$template} | with_entries(select(.value != ""))) +
       (if ($metadata | length) > 0 then {metadata: $metadata} else {} end) +
       {email: ({username:$username,domain:$domain} | with_entries(select(.value != "")))})}')"
   http_json POST "/api/v1/buckets" "$payload"
@@ -2003,7 +2020,7 @@ content_type_for() {
     avi) echo "video/x-msvideo" ;;
     mkv) echo "video/x-matroska" ;;
     mpg|mpeg) echo "video/mpeg" ;;
-    ts) echo "video/mp2t" ;;
+    ts|tsx|mts|cts) echo "text/plain" ;;
     m3u8) echo "application/vnd.apple.mpegurl" ;;
     mp3) echo "audio/mpeg" ;;
     ogg|oga) echo "audio/ogg" ;;

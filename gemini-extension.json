@@ -1,7 +1,7 @@
 {
   "name": "revdoku",
-  "version": "1.0.576",
-  "description": "Mailboxes for AI agents, with private file storage. Receive and read messages and attachments, upload selected files, and write, restore, or organize stored files. Supports mailbox archiving, permanent deletion, and agency client account creation when explicitly requested and authorized.  File storage supports reads and writes.",
+  "version": "1.0.580",
+  "description": "Revdoku publishes your docs as a site from GitHub or uploaded files. AI agents read the site through its MCP server, visitors ask questions, and support requests arrive as tickets. Connect your AI app to create buckets, edit and publish docs, read site analytics and answer tickets.",
   "mcpServers": {
     "revdoku": {
       "httpUrl": "https://mcp.revdoku.com"

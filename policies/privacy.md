@@ -1,6 +1,6 @@
 # Privacy Policy
 
-*Version: 2026-11-09 · Updated: November 9, 2026*
+*Version: 2026-11-12 · Updated: November 12, 2026*
 
 Revdoku, at [revdoku.com](https://revdoku.com), publishes documentation sites from GitHub repositories, with a support mailbox for each site, private file storage and collaboration for people and authorized agents. Revdoku, Armenia operates the website and the Service. This notice covers personal information on our website and Service. Contact [support@revdoku.com](mailto:support@revdoku.com?subject=Privacy) with privacy questions or requests.
 
@@ -19,7 +19,15 @@ Private storage is not public publication. Administrators, members and agents ac
 
 Revdoku controls account, website, security and billing processing. We generally process customers' files and emails on their instructions; customers remain responsible for their lawful basis and notices. A [Data Processing Agreement](https://revdoku.com/data-processing-agreement/) is available on request for business customers.
 
-**AI agents.** A built-in AI agent checks incoming email for prompt injection and similar risks and labels it, for example as Junk. It is off by default, and account administrators can turn it on. AI agents that you set up read email only as their settings allow. All AI runs on Amazon Web Services (Amazon Bedrock) in the same region as your account's data, and AWS does not keep the data or use it to train models. AI can miss harmful content or label an email wrongly. We do not guarantee its results and, to the extent the law permits, are not responsible for them (see section 7 of the [Terms of Use](https://revdoku.com/terms/)). We do not use AI on high-security accounts.
+**Visitors of docs sites.** A customer can publish a documentation site with Revdoku. For the visitors of that site, the customer decides what is collected and why, and Revdoku handles the data for the customer:
+
+- **Ask.** We keep each question that a visitor asks, the answer, the page and the time. An AI on Amazon Bedrock reads the question to answer it. When a visitor sends a message to the site's support team, we keep the name and email address that the visitor typed, for the reply.
+- **Search.** We keep the text of a search, the page where it started and the page that the visitor opened.
+- **Page views.** We count page views without cookies. We use the visitor's IP address for security limits and for counts by country. We do not store the IP address with a question, a search or a page view.
+
+Questions, searches and page counts are kept for the customer's plan period, 400 days or up to 2 years. Messages to a support team stay until the customer deletes them. A visitor who uses Do Not Track or Global Privacy Control, or the "Disable analytics" button on the site's Privacy page, is not counted and has no searches kept. Visitors can send privacy requests to the site's owner or to us.
+
+**AI agents.** A built-in AI agent checks incoming email for prompt injection and similar risks and labels it, for example as Junk. It is on for new accounts, and account administrators can turn it off or on. AI agents that you set up read email only as their settings allow. All AI runs on Amazon Web Services (Amazon Bedrock) in the same region as your account's data, and AWS does not keep the data or use it to train models. AI can miss harmful content or label an email wrongly. We do not guarantee its results and, to the extent the law permits, are not responsible for them (see section 7 of the [Terms of Use](https://revdoku.com/terms/)). We do not use AI on high-security accounts.
 
 Where applicable, our legal bases are providing a requested contract, legitimate interests in operating and protecting the Service, compliance with legal duties, and consent where required. Acknowledging this notice is not consent to unrelated optional processing.
 
@@ -54,6 +62,7 @@ You can delete content through available controls or request account deletion th
 - File backups keep deleted and earlier file versions for up to 365 days.
 - Raw incoming email waits at Amazon for up to 7 days for delivery. Our raw copy for processing is deleted after 30 days.
 - Activity logs are kept for your plan's period, 30 or 90 days.
+- Questions, searches and page counts of the visitors of a published docs site are kept for your plan's period, 400 days or up to 2 years.
 - Database backups expire within 90 days. Server and security logs expire within 365 days.
 - Records of blocked email attempts are kept for 90 days.
 - Email addresses from unfinished sign-ups are kept until sign-up is finished or you ask us to delete them.
@@ -65,6 +74,6 @@ Copies already received by other people or external tools are outside our contro
 
 Depending on applicable law, you may request access, correction, deletion or a portable copy, object to or restrict processing, withdraw consent, authorize a representative, or complain to a supervisory authority. Contact support; we may verify identity/authority and explain lawful exceptions. For customer-controlled content, contact its administrator; we can assist. We do not discriminate for exercising applicable privacy rights.
 
-Cookies and similar storage support sessions, security, preferences and attribution. Browser controls can restrict them, although essential features may stop working. We do not currently change our practices in response to “Do Not Track.” We do not sell data or share it for targeted advertising, including when Global Privacy Control is enabled. External services have their own tracking practices.
+Cookies and similar storage support sessions, security, preferences and attribution. Browser controls can restrict them, although essential features may stop working. On published docs sites, “Do Not Track” and Global Privacy Control turn off visitor analytics and search history. In the app we do not currently change our practices in response to “Do Not Track.” We do not sell data or share it for targeted advertising, including when Global Privacy Control is enabled. External services have their own tracking practices.
 
 The Service is for adults, not directed to children under 18. Contact us if a child has created an account. We will post updates here before they take effect and may also notify users by email or in the Service, except where law or urgent security requires otherwise; consent will be requested where required.
