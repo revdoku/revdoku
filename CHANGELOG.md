@@ -1,5 +1,30 @@
 # Revdoku Changelog
 
+## 1.0.651 — 2026-11-12
+
+### Added
+
+- Choose the layout of a docs site on the new Appearance page: the layouts show as cards, and Save stores your choice.
+- See the search index of a docs site on the new Search page.
+- Set up Ask on its own page: turn the AI Support Agent and the Human Support Agent on or off, and choose when visitors can leave a message. The page shows the chats, questions and answers of the last 30 days.
+- Filter the chats of a site: All, Answered, Unanswered, Not helpful and Open.
+- See the country of a visitor who asked a question without leaving a message.
+- Add the security check for Ask on a custom domain with the new guide: https://docs.revdoku.com/guides/ask-security-check/
+
+### Improved
+
+- Save a layout or an Ask change without a rebuild of the site. The page says when to republish.
+- Find the address, the badge, search engines and Unpublish on a shorter Settings page. Auto-publish and Edits in Revdoku are on the GitHub page.
+- See all DNS records of a custom domain at once during setup. A live domain keeps them in one closed row.
+- See your custom domain in the site link of the bucket row as soon as it is live.
+- Give a visitor who marks an answer as not helpful the message form with the question already in it.
+- See in each chat how long ago it started, its state, links to the pages on your site, and formatted answers.
+- Find Ask AI under its new name, Ask, in the dashboard, on docs sites and on the pricing page.
+
+### Fixed
+
+- Show a republish note on the Domain page after a custom domain goes live, so that the sitemap and the page links use the new domain.
+
 ## 1.0.650 — 2026-11-11
 
 ### Added
@@ -122,7 +147,7 @@
 - See what each action costs in the FAQ of the pricing page and in `credits.costs` of https://app.revdoku.com/pricing.json.
 - Get `402 INSUFFICIENT_CREDITS` from `POST /v1/buckets/{bucket_id}/publication`, `POST /v1/buckets/{bucket_id}/publication/preview`, the `bucket_publish` MCP tool, `revdoku publish` and `revdoku preview` when the account has too few credits. Nothing is built, and the dashboard shows the error with an upgrade link for people who manage billing.
 - See "Publishing paused: not enough credits" on the Site page when a GitHub push could not publish. The commit shows "Not enough credits to publish", and the site keeps its version. When credits arrive, the waiting push publishes.
-- Change the docs layout and Ask AI of a live site without credits: a settings save rebuilds the site with the files it already serves.
+- Change the docs layout and Ask AI of a live site on its Settings page.
 
 ## 1.0.642 — 2026-11-10
 
