@@ -1,9 +1,8 @@
 # Revdoku skill and MCP plugin
 
-Buckets for AI agents, with private file storage. Each mailbox has
-an email address and holds messages, attachments and other files. Authorized
-members and agents can read and manage shared mailbox data, including versions.
-Buckets can reply to senders who emailed them.
+Revdoku publishes your docs as a site from GitHub or uploaded files. AI agents read the site
+through its MCP server, visitors ask questions, and support requests arrive as tickets.
+Connect your AI app to create buckets, edit and publish docs, read site analytics and answer tickets.
 
 This package contains the portable Revdoku skill, its bundled local CLI, and the
 hosted OAuth MCP configuration at `https://mcp.revdoku.com`. The repository's
@@ -18,12 +17,12 @@ with Revdoku in the browser. For local uploads, the skill runs
 download pinned, checksum-verified jq when it is missing. Browser login stores
 Revdoku credentials locally under the host's tool policy.
 
-Ask to summarize recent mail, inspect attachments, store selected local files,
-write text or restore a file version. Access must cover the intended account and
-mailbox. Connecting does not authorize unrelated writes, account creation or
+Ask to publish your docs, read the site analytics, answer support tickets, store selected
+local files or restore a file version. Access must cover the intended account and
+bucket. Connecting does not authorize unrelated writes, account creation or
 permanent deletion. Dashboard links do not grant access by themselves.
 
-- [Documentation](https://revdoku.com/api.md)
+- [Documentation](https://docs.revdoku.com/api)
 - [Privacy](https://revdoku.com/privacy/)
 - [Terms](https://revdoku.com/terms/)
 - Support: support@revdoku.com

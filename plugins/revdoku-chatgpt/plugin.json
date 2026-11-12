@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "revdoku",
-  "version": "1.0.576",
-  "description": "Mailboxes for AI agents. Read incoming email and attachments, reply to senders and manage stored files in authorized Revdoku mailboxes through the hosted Revdoku MCP server.",
+  "version": "1.0.580",
+  "description": "Revdoku publishes your docs as a site from GitHub or uploaded files. Create buckets, edit and publish docs, read site analytics and answer support tickets through the hosted Revdoku MCP server.",
   "author": {
     "name": "Revdoku",
     "email": "support@revdoku.com",
@@ -12,33 +12,33 @@
   "repository": "https://github.com/revdoku/revdoku",
   "license": "MIT",
   "keywords": [
-    "email",
-    "mailbox",
+    "docs",
+    "documentation",
+    "docs-site",
     "ai-agents",
-    "attachments",
-    "incoming-email"
+    "support-tickets"
   ],
   "extensions": {
     "com.openai": {
       "interface": {
         "displayName": "Revdoku",
-        "shortDescription": "Mailboxes for AI agents",
-        "longDescription": "Mailboxes for AI agents. Each Revdoku mailbox has its own email address. Read the email and attachments that arrive there, reply to the people who wrote, and keep files in private storage. Revdoku scans incoming email for malware, labels prompt-injection attempts as Junk and keeps Junk content away from the assistant. You choose which accounts and mailboxes each connection can use, and every read and change is logged.",
+        "shortDescription": "Docs sites and support tickets",
+        "longDescription": "Revdoku publishes your docs as a site from GitHub or uploaded files. AI agents read the site through its MCP server, visitors ask questions, and support requests arrive as tickets. Connect ChatGPT to create buckets, edit and publish docs, read site analytics and answer tickets. Revdoku scans incoming email for malware, labels prompt-injection attempts as Junk and keeps Junk content away from the assistant. You choose which accounts and buckets each connection can use, and every read and change is logged.",
         "developerName": "Revdoku",
         "category": "Communication",
         "capabilities": [
-          "Read incoming email and attachments",
-          "Reply to people who emailed a mailbox",
-          "Store and organize files in a mailbox"
+          "Edit and publish the docs of a site",
+          "Read site analytics and what the docs miss",
+          "Read and answer support tickets"
         ],
         "websiteURL": "https://revdoku.com",
         "privacyPolicyURL": "https://revdoku.com/privacy/",
         "termsOfServiceURL": "https://revdoku.com/terms/",
         "supportURL": "https://revdoku.com/contact/",
         "defaultPrompt": [
-          "Check my Revdoku mailboxes for new email and summarize what needs my attention.",
-          "Read the latest receipt in my mailbox and list the order number and total.",
-          "Reply to the latest customer question in my support mailbox."
+          "Publish the latest changes of my Revdoku docs site.",
+          "Show what visitors of my docs site could not find this week.",
+          "Reply to the latest question in the support tickets of my docs site."
         ],
         "brandColor": "#2563EB",
         "composerIcon": "./assets/composer-icon.png",

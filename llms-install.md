@@ -1,12 +1,13 @@
 # Revdoku agent setup
 
-Revdoku provides buckets: each has a mailbox with its own address, private files and an optional site.
-Connect to create and manage buckets, read messages and attachments, and store files.
+Revdoku publishes docs as a site from GitHub or uploaded files. AI agents read the site through its MCP server,
+visitors ask questions, and support requests arrive as tickets. A bucket holds the files, the site and the support mailbox.
+Connect to create buckets, edit and publish docs, read site analytics and answer tickets.
 Verify the account and granted access with a read, then complete the requested task.
 
 | Task | Connection |
 | --- | --- |
-| Application backend | [REST API](https://revdoku.com/api.md) with a normal API key |
+| Application backend | [REST API](https://docs.revdoku.com/api) with a normal API key |
 | Local coding assistant | Skill with bundled CLI |
 | Desktop or cloud assistant | [Hosted MCP setup](https://revdoku.com/connect/) |
 | Chat app that cannot add connectors | [No connector available](#no-connector-available) |
@@ -17,7 +18,7 @@ are instructions for one of these methods; they do not require another credentia
 ## Public prompt
 
 ```text
-Connect Revdoku so you can create and manage email mailboxes for my AI agents, read emails and attachments, and store files. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access. Continue my task. If I have no task yet, help me choose a first email workflow using https://revdoku.com/docs.md#first-email-workflow. Reuse my mailbox. Show its actual address as a mailto link only when receiving is ready and access permits it. Ask me to send an email there, use the address for relevant notifications, or set up Gmail forwarding. After a relevant message arrives, help me get the result I chose, including a reply to its sender if I ask. Offer recurring automation afterward without implying that this connection runs it. If you cannot connect tools in this chat, do not send me to a terminal. Tell me to sign up or sign in, open https://app.revdoku.com/buckets, copy my mailbox address, and forward an email there. Then I can paste that email or attach its files here for you to work with.
+Connect Revdoku so you can create buckets, edit and publish my docs, read site analytics and answer support tickets. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do. If I have no task yet, ask whether to publish docs from a GitHub repository or start from a template, then publish and show the site address.
 ```
 
 ## Account setup
@@ -26,19 +27,18 @@ Connect Revdoku so you can create and manage email mailboxes for my AI agents, r
 2. If you need an account, complete [browser signup](https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect).
 3. Sign in through the browser to authorize the connection.
 
-Signup creates the first bucket. List the accessible buckets after connecting. Reuse that bucket for the task, or create another only when needed.
+List the accessible buckets after connecting. Create one when there is none.
 With write access, check `email.receiving_enabled` before sharing an address.
 Read-only connections cannot see the address. They verify access by listing authorized
 buckets and reading an existing message; ask the operator for the address when needed. Show the account
 ID and granted scope. Browser account switching does not change a tool credential's
 default: use an explicit `account_id` or CLI `--account-id` for the intended account.
 
-## First email workflow
+## First task
 
-If the user has a task, continue it after connection. Otherwise, help them [choose and complete a first email workflow](https://revdoku.com/docs.md#first-email-workflow).
-Show the authorized, ready address as a `mailto:` link. Ask the user to send an email there.
-Offer direct use of the address or [Gmail forwarding](https://revdoku.com/blog/how-to-set-up-auto-forwarding-from-gmail-to-revdoku-s-email/) for future messages.
-Read a relevant message and produce the chosen result before offering recurring automation.
+If the user has a task, continue it after connection. Otherwise, ask whether to publish docs from a GitHub repository
+or to start from a docs template. See [Publish your first docs site](https://docs.revdoku.com/docs-sites#publish-your-first-docs-site).
+Publish the site and show its address. Then offer the next step: edit a page, read the site analytics or answer a support ticket.
 
 ## Agent rules
 
@@ -127,9 +127,9 @@ Check `email.receiving_enabled`, then use `bucket_ticket_list` with `updated_aft
 to poll. Read `tkt_` IDs and their messages with `bucket_ticket_get`; download attachments or the original
 with `bucket_ticket_download`.
 If not ready, explain `receiving_blocked_reason`; do not assume a paused or unknown bucket
-can receive. Read quotas with `account_limits`. Personal
-notification frequency is managed in Account Settings → Notifications.
-See the [email contract](https://revdoku.com/api.md#tickets).
+can receive. Read quotas with `account_limits`. Each person manages
+notification emails in Account Settings → Notifications.
+See the [email contract](https://docs.revdoku.com/api#tickets).
 If the user has no account, follow Account setup above.
 
 If the host does not support MCP or the agent needs local/binary files, use the

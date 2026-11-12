@@ -1,7 +1,8 @@
 # Revdoku for ChatGPT
 
-Mailboxes for AI agents. Read the email and attachments that arrive in a Revdoku
-mailbox, reply to the people who wrote, and manage stored files.
+Revdoku publishes your docs as a site from GitHub or uploaded files. AI agents read the site
+through its MCP server, visitors ask questions, and support requests arrive as tickets.
+Connect ChatGPT to create buckets, edit and publish docs, read site analytics and answer tickets.
 
 This plugin contains the Revdoku skill only. ChatGPT connects to the hosted
 Revdoku MCP server at `https://mcp.revdoku.com` and signs in through OAuth in the

@@ -1,283 +1,93 @@
 # Revdoku
 
-**Docs sites for API products, with a support mailbox.** Publish your docs from a GitHub
-repository or uploaded files, with search, Ask (AI answers from your docs), an API console, previews and an MCP server.
-Each bucket also has an email address for support: a built-in AI agent drafts replies from
-your docs for a person to approve. Buckets store private files that you share with authorized people and agents.
+Revdoku publishes your docs as a site from GitHub or uploaded files. AI agents read the site
+through its MCP server, visitors ask questions and get answers from the docs (Ask), and support requests arrive as tickets.
 
-Ask your agent to summarize incoming mail, collect invoices and attachments, or
-monitor replies to submissions. Use hosted MCP for AI agents, the CLI for local
-files and mailbox access, or the REST API for your own integrations. Buckets keep
-file versions so you can review changes and restore earlier files.
+- [Start free](https://app.revdoku.com/users/sign_up)
+- [Documentation](https://docs.revdoku.com)
+- [Pricing](https://app.revdoku.com/pricing)
+- Support: support@revdoku.com
 
-The skill supports uploads and file changes as well as reading mail. It also
-supports mailbox archiving, permanent mailbox deletion, and agency client account
-creation when explicitly requested and authorized. Permanent deletion requires
-approval for the exact account and mailbox. Local CLI use stores Revdoku credentials
-and state on your machine; host tool permissions remain in control.
+This repository holds the Revdoku client tooling: the skill, the plugins and the `revdoku`
+command-line tool. The documentation and the examples are in
+[revdoku/docs](https://github.com/revdoku/docs).
 
-## For developers
+## Connect your AI app
 
-TypeScript and JavaScript (Node.js 22 or later):
+Connect your AI app to create buckets, edit and publish docs, read site analytics and answer tickets.
 
-```sh
-npm install revdoku
-```
+The hosted MCP server is `https://mcp.revdoku.com`. Add it as a connector in Claude, ChatGPT
+or another AI app, then sign in through the browser. It uses OAuth, and every tool needs the sign-in.
+See the [MCP guide](https://docs.revdoku.com/mcp).
 
-Python 3.10 or later:
-
-```sh
-pip install revdoku
-```
-
-```ts
-import { Revdoku } from 'revdoku';
-
-const client = new Revdoku(); // reads REVDOKU_API_KEY
-const { data } = await client.listTickets({ bucketId: 'bkt_...', status: 'open' });
-for (const ticket of data.tickets) console.log(ticket.number, ticket.channel, ticket.subject);
-```
-
-Requests go to `https://api.revdoku.com`. Every path starts with `/v1`, for example
-`https://api.revdoku.com/v1/buckets`.
-
-| Start here | What you get |
-| --- | --- |
-| [Quickstart](https://revdoku.com/docs/quickstart.md) | From a new API key to your first received email, in TypeScript, Python and cURL. |
-| [TypeScript SDK](https://revdoku.com/docs/sdks/typescript.md) · [Python SDK](https://revdoku.com/docs/sdks/python.md) | SDK guides. Source: [revdoku-typescript](https://github.com/revdoku/revdoku-typescript) and [revdoku-python](https://github.com/revdoku/revdoku-python). |
-| [API guide](https://revdoku.com/api.md) · [API reference](https://revdoku.com/api/reference.md) · [OpenAPI](./openapi.json) | Concepts and workflows, then every operation with examples. |
-| [Build with coding agents](https://revdoku.com/docs/coding-agents.md) | A prompt and project rules for Claude Code and Codex. |
-| [Packages and integrations](https://revdoku.com/guides/api-packages.md) | The SDKs, n8n and Zapier compared. |
-| [Standalone CLI](./cli/README.md) · [Versioned CLI downloads](https://github.com/revdoku/revdoku/releases/latest) | Terminal installation and usage without an AI integration. |
-| [Examples](./examples/README.md) | Runnable Node.js and Python examples with plain HTTP calls. |
-
-Keep API keys on your backend. CLI, examples, skills, and plugins share this
-repository. For agent setup, see [Local AI apps](#local-ai-apps).
-
-## Prompt for an AI agent
+Or paste this prompt into your AI app:
 
 ```text
-Connect Revdoku so you can create and manage email mailboxes for my AI agents, read emails and attachments, and store files. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do.
+Connect Revdoku so you can create buckets, edit and publish my docs, read site analytics and answer support tickets. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do. If I have no task yet, ask whether to publish docs from a GitHub repository or start from a template, then publish and show the site address.
 ```
 
-## Receive and read email
-
-Each mailbox has its own incoming email address. Bucket creation returns the
-address and receiving state; for an existing mailbox, `bucket_get` and
-`bucket_list` return `email.address` to connections with write access, and
-**Email Settings** of the bucket shows it. Check `email.receiving_enabled` before
-using the address.
-
-With the CLI, `revdoku ls` shows each bucket's address and receiving state.
-Use `revdoku tickets --bucket-id bkt_...` to list support tickets and
-`revdoku ticket-messages tkt_... --bucket-id bkt_...` to read their messages.
-
-Receive invoices, documents, project updates, or authorized service verification
-messages. Each accepted email is saved as original `message.eml`, decoded
-`message.json` and attachment files. Each conversation is a support ticket, also a
-message that a reader leaves on the docs site. Authorized people and agents read them
-through the ticket API and tools; file tools also expose the stored representations.
-
-Use `bucket_ticket_list` or the CLI `tickets` command with `updated_after`
-to poll for new tickets and messages. `bucket_ticket_get` returns a ticket with its messages;
-`bucket_ticket_download` retrieves attachments or the original. Anyone
-knowing the address can email the bucket; reading its contents requires access.
-See [incoming email](docs.md#receive-and-read-email)
-and the [API contract](api.md#tickets).
-
-To reply, use `bucket_ticket_reply` or `revdoku ticket-reply tkt_... --text TEXT`.
-Revdoku sends only replies: each reply answers a ticket and goes to its
-requester, when that requester passed sender authentication. When the bucket requires approval,
-a person sends, edits or declines each reply in the dashboard. See [Reply to a ticket](api.md#reply-to-a-ticket).
-
-## Additional file storage
-
-Use `revdoku upload ./project-files` to save a local folder privately. Read files, inspect history, and
-restore earlier versions through the CLI, API, or dashboard. All stored files
-can be downloaded from Revdoku at any time.
-
-Share the bucket's dashboard link with people who have account access. Authorize
-each AI connection separately for the intended buckets. A dashboard link does not
-grant access by itself. Agents can work on the same files with locks and version
-checks to coordinate changes.
-
-See the [storage quick start](./docs.md#store-files-in-a-bucket) and
-[sharing access and coordinating edits](./docs.md#share-access-and-coordinate-edits).
-
-## Plans
-
-Create an account in your browser at <https://app.revdoku.com/users/sign_up>.
-Keep account credentials and verification codes out of AI chat.
-New accounts start on the Free plan. For regular use, choose a paid plan on the [pricing page](https://app.revdoku.com/pricing).
-
-Private storage and collaboration follow the [Terms of Use](https://revdoku.com/terms/).
-Contact `support@revdoku.com` for account, billing, or access questions.
+[llms-install.md](./llms-install.md) is the setup guide for AI agents.
+Create your account in the browser. Keep verification codes, passwords and API keys out of AI chat.
 
 ## Local AI apps
 
-The installer supports `codex`, `claude-code`, `cursor`, `antigravity`,
-`opencode`, `grok-build`, `hermes`, `openclaw`, and `all` through the
-`REVDOKU_AGENT` environment variable. Automatic setup installs for Codex and
-any other detected clients.
-
-Install the public skill and CLI:
+Install the skill with its bundled CLI:
 
 ```sh
 npx skills add revdoku/revdoku --skill revdoku -g
 ```
 
-To target one agent, add `--agent codex` (or `claude-code`, `cursor`, etc.).
-This also avoids the upstream PromptScript global-install error.
+To install for one agent, add `--agent codex` (or `claude-code`, `cursor` and so on).
 
-Hermes can install the complete skill directly:
-
-```sh
-hermes skills install revdoku/revdoku/skills/revdoku
-```
-
-To subscribe to this repository as a Hermes source, use
-`hermes skills tap add revdoku/revdoku`.
-
-Claude Code users can run `/plugin marketplace add revdoku/revdoku`, then
-`/plugin install revdoku@revdoku`. Codex users can add the repository with
-`codex plugin marketplace add revdoku/revdoku` and select Revdoku in the plugin browser.
-Gemini CLI users can run `gemini extensions install https://github.com/revdoku/revdoku`.
-
-The Revdoku-owned skill and bundled CLI may also be used under MIT-0; see the
-skill's `LICENSE`. The repository's default license remains MIT. Third-party
-dependencies retain their own licenses.
-
-If npm is unavailable:
+If npm is not available:
 
 ```sh
 curl -fsSL https://revdoku.com/install.sh | bash
 ```
 
-The skill runs its bundled CLI. The shell installer verifies the CLI and skill
-files against embedded SHA-256 hashes before installation. If verification fails,
-fetch the current installer and retry. Download-source overrides are unsupported.
+The installer supports `codex`, `claude-code`, `cursor`, `antigravity`, `opencode`,
+`grok-build`, `hermes`, `openclaw` and `all` through the `REVDOKU_AGENT` environment variable.
+It checks the CLI and the skill files against SHA-256 hashes before it installs them.
+`uninstall.sh` removes them.
 
-`npx skills` installs the CLI inside the skill, without adding `revdoku` to
-your shell `PATH`. Agents use the bundled `scripts/revdoku.sh` with the same
-arguments as the commands below.
+Plugins:
 
-Store or update a local folder:
+- Claude Code: `/plugin marketplace add revdoku/revdoku`, then `/plugin install revdoku@revdoku`.
+- Codex: `codex plugin marketplace add revdoku/revdoku`, then select Revdoku in the plugin browser.
+- Gemini CLI: `gemini extensions install https://github.com/revdoku/revdoku`.
+- Hermes: `hermes skills install revdoku/revdoku/skills/revdoku`.
+
+A hosted AI app cannot read files on your computer. Use the skill or the CLI for local folders.
+
+## Command-line tool
+
+The standalone `revdoku` command needs no AI app:
 
 ```sh
-revdoku upload ./project-files
+curl -fsSL https://github.com/revdoku/revdoku/releases/latest/download/install-cli.sh -o install-cli.sh
+bash install-cli.sh
+revdoku login
+revdoku create --title "Acme docs" --template docs-api
+revdoku publish --bucket-id bkt_...
 ```
 
-The first run opens browser sign-in when credentials are missing. Re-running
-updates the same bucket. New accounts can be created on the web signup page.
+`create` prints the ID of the new bucket (`bkt_...`). Use it in `--bucket-id`, or set `REVDOKU_BUCKET_ID`.
+To publish your own files, add them with `revdoku upload ./docs --bucket-id bkt_...` first.
 
-Useful commands:
+See [cli/README.md](./cli/README.md) or the [CLI guide](https://docs.revdoku.com/cli).
 
-- `revdoku upload PATH` — store or update private files.
-- `revdoku files`, `revdoku read PATH` — list and read stored files and email.
-- `revdoku tickets --bucket-id ID`, `revdoku ticket-reply ID --text TEXT` — read and answer support tickets.
-- `revdoku versions PATH`, `revdoku restore PATH --version-id ID` — inspect and restore a file's history.
-- `revdoku status`, `revdoku ls` — inspect the connection and buckets.
-- `revdoku dashboard`, `revdoku --help` — open the dashboard or command reference.
+## For developers
 
-## Hosted and web agents
+The REST API and the SDKs (`npm install revdoku`, `pip install revdoku`) are in the documentation:
 
-The hosted MCP endpoint is `https://mcp.revdoku.com`. Sign in through browser OAuth before connecting.
-Create new accounts at https://app.revdoku.com/users/sign_up in the browser.
+- [Quickstart](https://docs.revdoku.com/quickstart)
+- [API guide](https://docs.revdoku.com/api) and [API reference](https://docs.revdoku.com/api-reference)
+- [TypeScript SDK](https://docs.revdoku.com/sdks/typescript) ([source](https://github.com/revdoku/revdoku-typescript)) and
+  [Python SDK](https://docs.revdoku.com/sdks/python) ([source](https://github.com/revdoku/revdoku-python))
+- [Examples](https://github.com/revdoku/docs/tree/main/examples)
+- [Changelog](https://docs.revdoku.com/changelog)
 
-Hosted agents cannot read files from the user's computer. Use the local Revdoku CLI for
-local folders, JavaScript bundles, images, fonts, PDFs, and other binary assets.
-MCP can directly write generated text files.
+## License
 
-## Tutorials
-
-Per AI client guides:
-
-- Setup hub: <https://revdoku.com/connect/>
-- ChatGPT: <https://revdoku.com/chatgpt/>
-- Codex: <https://revdoku.com/codex/>
-- Claude: <https://revdoku.com/claude/>
-- Claude Desktop and terminal agents:
-  <https://revdoku.com/claude-desktop-terminal/>
-- Gemini: <https://revdoku.com/gemini/>
-- Hermes: <https://revdoku.com/hermes/>
-
-Use those tutorials when manual setup or troubleshooting is needed. Follow the
-user's file storage, sharing, or incoming-email goal.
-
-## Public package
-
-This repository contains the Revdoku CLI, skill, API documentation, and
-Claude/Codex/Cursor plugin manifests. SDK source is only in the SDK repositories
-linked above. The hosted MCP implementation runs at
-`https://mcp.revdoku.com`. MCP manifests use OAuth, and every tool descriptor requires OAuth.
-
-See [CHANGELOG.md](./CHANGELOG.md), [api.md](./api.md), and the
-[MCP mailbox guide](./mcp.md).
-
-### Agency client accounts
-
-Run `revdoku status` to see the credential's default account and authorized
-accounts. Each identity includes `account_kind` (`standard`, `agency`, or `client`),
-the separate `client_name`, and `agency_account` when the parent is granted.
-Use `--account-id ID` on each command to target a client; omitting it
-always uses the credential's main account. The Agency owner must explicitly
-include client accounts when connecting or in Account → Access.
-
-```bash
-revdoku account create-client "Client files" --client-name "Acme Studio" --account-id acct_agency
-revdoku ls --account-id acct_...
-revdoku upload ./project-files --account-id acct_...
-```
-
-An agency and its clients share account capacity. Each client keeps separate
-files, members, and branding.
-Account names and client names can differ. Unknown client names stay unset.
-`revdoku account --account-id ID` shows a client’s identity and effective limits;
-client billing data remains restricted to the agency owner. Browser switching
-does not change the CLI credential’s default account.
-
-### Custom receiving domains
-
-Check custom-domain availability in Account Settings. Setup lives in Account
-Settings → Domains → Email and requires an account administrator. Prefer an unused
-receiving subdomain; dedicated root domains are accepted. DNS changes require the
-user's authorization. Connecting a domain does not change existing mailbox addresses.
-Use only the full address returned by Revdoku and check `receiving_enabled`. A domain switch
-may return `assignment.status: pending`; poll until active or failed, keeping the
-current address in use meanwhile. Never construct aliases or use `+tag` variants.
-See [the email API contract](https://revdoku.com/api.md#email-settings).
-
-### CLI safety boundaries
-
-Uploads require an explicit path; use `revdoku upload .` to select the current
-folder. `revdoku upload PATH --dry-run` lists files, exclusions and bytes without
-connecting or changing a mailbox. The public CLI connects to the Revdoku API only
-at `https://api.revdoku.com`. `--url` and `REVDOKU_URL` also accept the previous
-`https://app.revdoku.com` setting and route its API calls to the new host.
-Browser sign-in and dashboard links use `https://app.revdoku.com`.
-Storage transfers use approved HTTPS origins.
-
-`revdoku delete --account-id ACCOUNT --bucket-id MAILBOX` previews permanent
-deletion. Review the target and irreversible effect with the user, then repeat with
-`--confirm-delete TOKEN` using that preview's token. It expires after ten minutes
-and is consumed before submission. On an uncertain response, check mailbox status
-before creating another preview. Existing scripts must supply upload paths and
-use the deletion confirmation step.
-
-## Explain the action
-
-For intentional reads, downloads, and changes, AI agents should include an optional
-`reason`: a short explanation of the purpose when known. Do not invent a reason or
-include secrets, file contents, or transcripts. Do not ask the user for a reason
-when the task already explains the purpose; omit it when unknown.
-
-MCP uses `reason`; CLI uses `--reason TEXT`; REST uses a `reason` query parameter
-for reads and a JSON/body field for changes. The limit is 2,000 characters.
-Reasons appear in authorized Timeline and Logs views even with full request
-logging disabled. Change reasons are also saved in version history; read reasons
-belong to access events and never replace a saved version's reason.
-
-```bash
-revdoku read invoices.csv --bucket-id bkt_... --reason "Reconcile September expenses"
-revdoku upload ./approved.csv --bucket-id bkt_... --reason "Store the approved totals"
-```
+MIT. The skill and its bundled CLI can also be used under MIT-0: see the `LICENSE` of the skill.
+The [Terms of Use](https://revdoku.com/terms/) apply to the service.

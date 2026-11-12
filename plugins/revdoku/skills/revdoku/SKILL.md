@@ -47,7 +47,7 @@ metadata:
       - {name: REVDOKU_DIRECT_UPLOAD_MAX_ATTEMPTS, required: false, description: "Bounded storage-upload retry count."}
       - {name: REVDOKU_FINALIZE_MAX_ATTEMPTS, required: false, description: "Upload finalization polling limit."}
   hermes:
-    tags: [cloud-storage, incoming-email, file-sharing]
+    tags: [documentation, docs-site, support]
     category: productivity
 ---
 
@@ -81,7 +81,7 @@ commands, sends, uploads, account changes, deletion, or new destinations.
   Use `login` for sign-in or `bash /absolute/path/to/this/skill/scripts/revdoku.sh upload <path>` for an authorized upload.
 - **Hosted agents:** OAuth at `https://mcp.revdoku.com`; MCP reads/writes bucket
   text but cannot read local files or upload binaries.
-- **REST:** [API documentation](https://revdoku.com/api.md).
+- **REST:** [API documentation](https://docs.revdoku.com/api).
 
 Create accounts at https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=skill&utm_campaign=connect in the browser.
 Use browser sign-in. Never request API keys, OTPs,
@@ -137,7 +137,7 @@ Write-authorized `bucket_get` and CLI `ls` return `email.address`.
 Display the address even when receiving is unavailable.
 Only offer compose links or test emails when `receiving_enabled` is true.
 
-Each conversation (email, site message, feedback) is a ticket.
+Each conversation (email, site message) is a ticket.
 Use `bucket_ticket_list`; to poll, pass the newest `updated_at` as `updated_after`,
 with backoff. Read a `tkt_` ID and its messages through
 `bucket_ticket_get`. Update with
@@ -203,7 +203,7 @@ CLI `files`, `read`, `versions`, and `restore` expose inspection/history.
   before reconnecting. `client_account_create` / `account create-client` requires
   an explicit provisioning request: verify agency and new account name first.
   Use the returned client ID afterward. Never infer optional `client_name` from
-  names/emails. [Account details](https://revdoku.com/api.md#account-selection).
+  names/emails. [Account details](https://docs.revdoku.com/api#account-selection).
 - On `account.restriction` / `ACCOUNT_SUSPENDED`, relay only the notice, Terms,
   `support@revdoku.com`, and bucket-download reminder. Do not infer reasons,
   disclose review details, retry writes, or evade the hold.
@@ -230,10 +230,10 @@ Use bundled `--help`, MCP schemas, and the API. Reconnect to refresh tools; repa
 from the original installation scope. Compare `--version` with status and
 [public source](https://github.com/revdoku/revdoku).
 
-Check custom receiving-domain availability in Account Settings → Domains → Email.
-DNS edits require authorization; prefer unused subdomains. Preserve existing
-addresses, use only returned addresses (no guessed aliases or `+tags`), and poll
-pending setup until active/failed. See the [domain contract](https://revdoku.com/api.md#email-settings).
+Email domains, address changes and aliases are dashboard-only (Account
+Settings → Domains; a bucket's Email Settings): no CLI, MCP or API call. DNS edits
+require authorization; prefer unused subdomains. Use only returned addresses (no
+guessed aliases or `+tags`). See the [guide](https://docs.revdoku.com/guides/custom-email-domains).
 
 ## Explain the action
 

@@ -66,8 +66,8 @@ revdoku ticket-message-delete tkt_... --message-id eml_... --bucket-id bkt_... -
 revdoku upload ./project-files --bucket-id bkt_...
 ```
 
-A ticket is one conversation with a requester: an email, a message left on the docs site
-(`channel` `chat`) or page feedback. `tickets` lists them, newest activity first; filter with
+A ticket is one conversation with a requester: an email or a message left on the docs site
+(`channel` `chat`). `tickets` lists them, newest activity first; filter with
 `--status`, `--channel`, `--label` and `--updated-after TIME`. `ls` shows each bucket's `email.address`.
 
 Use returned ticket, message and attachment IDs for ticket operations; use paths for file operations.
@@ -85,11 +85,12 @@ use the title's name or a generated name. On `revdokumail.com`, the username is 
 suffix: `--username acme-docs` gives `acme-docs@revdokumail.com`, and its site uses the same name. A custom domain takes the exact name.
 An unavailable name returns `EMAIL_ALREADY_EXISTS`.
 `--title TEXT` names the bucket; without it, the title is the username.
+`--template docs-api` (API docs) or `--template docs-product` (the docs of an app) starts the bucket with a docs site; then run `revdoku publish`.
 Creation returns when receiving is ready. Use the returned address.
 
-See [the API reference](../api.md) and `revdoku --help` for commands, scopes,
+See [the API reference](https://docs.revdoku.com/api) and `revdoku --help` for commands, scopes,
 quota errors, and confirmation requirements. For AI integration, use the
-[skill and plugin installation guide](../README.md#local-ai-apps).
+[skill and plugin installation guide](https://github.com/revdoku/revdoku#local-ai-apps).
 
 ## Uninstall
 
@@ -116,7 +117,7 @@ Returns effective mailbox and file quotas under `data.limits`.
 | `revdoku webhook-delete --bucket-id ID --confirm-delete ID` | Disable deliveries |
 | `revdoku events-subscription --bucket-id ID` | Get a WebSocket URL and a short-lived subscription token |
 
-Use `--account-id ID` to select an authorized account. A running receiver is required. See the [examples](../examples/README.md) for signature verification and WebSocket reconnect/catch-up. Human administrators can inspect delivery attempts and retry failures in **Analytics → Webhooks**.
+Use `--account-id ID` to select an authorized account. A running receiver is required. See the [examples](https://github.com/revdoku/docs/tree/main/examples) for signature verification and WebSocket reconnect/catch-up. Human administrators can inspect delivery attempts and retry failures in **Analytics → Webhooks**.
 
 ### GitHub repository
 
@@ -128,7 +129,7 @@ These commands need an account owner or administrator key with admin access to a
 | `revdoku github accounts` | List the GitHub accounts connected to the account |
 | `revdoku github setup-link --bucket-id ID` | Print the links that a person opens, signed in to Revdoku, to add a GitHub account |
 | `revdoku github repos INSTALLATION_ID` | List the repositories that one GitHub account lets Revdoku read |
-| `revdoku github connect OWNER/NAME --bucket-id ID` | Copy the repository into a bucket without files. Add `--branch`, `--repo-path` or `--push-revdoku-edits false` |
+| `revdoku github connect OWNER/NAME --bucket-id ID` | Copy the repository into the bucket. Add `--branch`, `--repo-path` or `--push-revdoku-edits false`. A bucket with files needs `--bucket-files replace` (the repository's files replace them) or `--bucket-files copy` (they become the first commit of an empty repository) |
 | `revdoku github --bucket-id ID` | Show the repository and its sync state. Publish after `last_synced_at` is set |
 | `revdoku github sync --bucket-id ID` | Sync now |
 | `revdoku github branches --bucket-id ID` | List the branches that a preview can show |

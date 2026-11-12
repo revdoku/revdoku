@@ -19,16 +19,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.4'
-      - run: npm ci --ignore-scripts --prefix examples
-      - run: npm run check --prefix examples
-      - run: bash test/public-contract-smoke.sh
-      - run: bash cli/package-release.sh "$RUNNER_TEMP/cli-assets"
+      # This repository holds client tooling only. Its contract checks run before each publication, from the source.
+      - name: Check the scripts
+        shell: bash
+        run: |
+          bash -n install.sh
+          bash -n uninstall.sh
+          bash -n cli/install.sh
+          bash -n cli/revdoku
+          sh -n skills/revdoku/scripts/revdoku.sh
+          cmp skills/revdoku/SKILL.md plugins/revdoku/skills/revdoku/SKILL.md
+      - name: Check and package the CLI
+        run: bash cli/package-release.sh "$RUNNER_TEMP/cli-assets"
 
   release:
     if: startsWith(github.ref, 'refs/tags/cli-v')
@@ -55,7 +57,7 @@ jobs:
 
           Download `install-cli.sh` and run `bash install-cli.sh`. It verifies the executable's SHA-256 checksum before installation. For manual installation, verify `revdoku` against `SHA256SUMS` before running it.
 
-          See [CLI usage](https://github.com/revdoku/revdoku/blob/main/cli/README.md) and [JavaScript / TypeScript examples](https://github.com/revdoku/revdoku/tree/main/examples) for incoming email and storage workflows.
+          See the [CLI guide](https://docs.revdoku.com/cli) and the [Revdoku documentation](https://docs.revdoku.com).
           NOTES
           gh release create "$GITHUB_REF_NAME" --verify-tag --draft \
             --title "Revdoku CLI ${GITHUB_REF_NAME#cli-v}" --notes-file "$RUNNER_TEMP/cli-notes.md" \

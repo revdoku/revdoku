@@ -61,7 +61,7 @@ Guide Gmail setup without assuming Gmail access.
 Poll with a deadline for a fresh relevant message, then produce the chosen result.
 A Gmail verification message alone does not prove forwarding works.
 Offer recurring automation afterward.
-See the [first email workflow](https://revdoku.com/docs.md#first-email-workflow).
+See the [first email workflow](https://docs.revdoku.com/buckets#first-email-workflow).
 
 `bucket_create` accepts an optional `email: {username, domain}` with a ready
 custom domain; omit `email` to generate an address. Creation returns a
@@ -72,8 +72,8 @@ Use the complete returned address and check `receiving_enabled` before presentin
 available. Readers can inspect saved email but may need an administrator to
 provide the address. Never guess an address or rotate one implicitly.
 
-Each conversation is a support ticket: an email, a message left on the docs site
-(`channel` `chat`) or page feedback. List tickets with `bucket_ticket_list(bucket_id: ID)`.
+Each conversation is a support ticket: an email or a message left on the docs site
+(`channel` `chat`). List tickets with `bucket_ticket_list(bucket_id: ID)`.
 To poll, save the newest `updated_at` and pass it as `updated_after`,
 with backoff and a deadline. Use `status`, `channel` or `label` filters when needed.
 
@@ -129,7 +129,7 @@ installed Revdoku CLI.
 Writes require the requested destination and content. Pass the bucket
 `version_id` from your last read as `expected_bucket_version`; on conflict, read
 and reconcile. MCP tools return the same resources and field names as the
-[REST API](https://revdoku.com/api.md).
+[REST API](https://docs.revdoku.com/api).
 Respect edit locks and release locks you acquire with `bucket_lock` and `unlock: true`. Locks never
 block incoming email. Dashboard links do not grant access; share them only with
 authorized members.
@@ -165,7 +165,7 @@ change. Keep it under 2,000 characters; omit secrets, contents and transcripts.
 Omit unknown reasons. Reasons appear in Timeline/Logs; change reasons also appear
 in versions.
 
-Use the connector's current schemas and [API documentation](https://revdoku.com/api.md).
+Use the connector's current schemas and [API documentation](https://docs.revdoku.com/api).
 Reconnect to refresh tools. Service access follows [pricing](https://app.revdoku.com/pricing)
 and the [Terms](https://revdoku.com/terms/).
 
