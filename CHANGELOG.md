@@ -1,5 +1,20 @@
 # Revdoku Changelog
 
+## 1.0.652 — 2026-11-12
+
+### Added
+
+- Get an email as soon as a visitor leaves a message or emails your support address.
+- Get a daily recap of your docs site: the questions without an answer, the searches without results and the feedback comments.
+- Choose your emails in Account Settings → Notifications: New support requests, Daily recap and Weekly recap.
+- See page feedback comments in Support → AI chats.
+
+### Improved
+
+- Get the weekly recap on every plan while you have a live site. It now shows AI agents, Ask, support requests, searches and feedback.
+- See the page where a visitor asked a question or left a message.
+- New accounts start with the built-in AI filter on. Administrators can turn it off in the Agents view of a bucket.
+
 ## 1.0.651 — 2026-11-12
 
 ### Added
