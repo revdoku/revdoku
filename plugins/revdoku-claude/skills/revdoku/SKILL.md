@@ -116,23 +116,25 @@ A person sends, edits or declines an `awaiting_approval` reply in the dashboard;
 Resend a `declined` reply only when a person asks.
 Never reply again after an uncertain result; check the ticket's messages first.
 
-## Manage stored files
+## Bucket files
 
-`bucket_file_read` returns text inline or a temporary download link.
-`bucket_file_write` writes text files; `append: true` adds text to one existing
-file. `bucket_file_reorganize` renames, moves and copies files on the server.
-Files under `_email/` are read-only; use the email tools to change email. Hosted
-MCP cannot read the user's local filesystem or upload local binary files. For a
-requested local upload, direct the user to the Revdoku dashboard or the separately
-installed Revdoku CLI.
+`_repo/` is a read-only copy of the bucket's GitHub repository: Revdoku never
+writes to it. To change a file of `_repo/`, change it on GitHub; the next sync
+copies it, and auto-publish updates the site. `_kb/` is the knowledge base, the
+only files you write: Markdown pages (`.md`, `.mdx`) and images (`.jpg`, `.png`,
+`.webp`). `_kb/public/` is published under the site's help folder; `_kb/private/`
+is never published and holds notes for the support team. Write to `_kb/public/`
+only when the user asks for a public article: it needs publish access. A write
+never publishes; publish when the user asks.
 
-Writes require the requested destination and content. Pass the bucket
-`version_id` from your last read as `expected_bucket_version`; on conflict, read
-and reconcile. MCP tools return the same resources and field names as the
-[REST API](https://docs.revdoku.com/api).
-Respect edit locks and release locks you acquire with `bucket_lock` and `unlock: true`. Locks never
-block incoming email. Dashboard links do not grant access; share them only with
-authorized members.
+`bucket_file_read` returns text inline or a temporary download link, and lists a
+file's versions with `versions: true`. `bucket_file_write` writes a page or a
+small image; `bucket_file_move` renames or moves a file; `bucket_file_delete`
+deletes one and keeps its versions, and `bucket_file_write` with
+`restore_version_id` brings it back. Email is no file: use the ticket tools.
+Hosted MCP cannot read the user's local filesystem. MCP tools return the same
+resources and field names as the [REST API](https://docs.revdoku.com/api).
+Dashboard links do not grant access; share them only with authorized members.
 
 Check restrictions, quotas and action availability. Never split work or retry to
 bypass a limit. On `ACCOUNT_SUSPENDED`, relay only the returned notice, Terms,
