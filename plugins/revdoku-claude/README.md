@@ -1,8 +1,8 @@
 # Revdoku for Claude
 
-Revdoku publishes your docs as a site from GitHub or uploaded files. AI agents read the site
+Revdoku publishes your docs as a site from a GitHub repository. AI agents read the site
 through its MCP server, visitors ask questions, and support requests arrive as tickets.
-Connect Claude to create buckets, edit and publish docs, read site analytics and answer tickets.
+Connect Claude to create buckets, connect GitHub, publish docs, read site analytics and answer tickets.
 
 This plugin includes the Revdoku skill and hosted MCP connector at
 `https://mcp.revdoku.com`. It runs no local programs and downloads no executable
@@ -42,9 +42,7 @@ Connection does not authorize every operation. Archiving, permanent deletion and
 agency client creation require the user's requested scope and applicable access.
 Dashboard links grant no access by themselves.
 
-Hosted MCP cannot access local filesystem paths or upload local binary files.
-For those tasks use the dashboard or the separately installed
-[Revdoku CLI](https://github.com/revdoku/revdoku/tree/main/cli).
+A bucket's files are a read-only copy of its GitHub repository. Change the files on GitHub.
 
 ## Support
 

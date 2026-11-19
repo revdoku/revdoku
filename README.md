@@ -1,6 +1,6 @@
 # Revdoku
 
-Revdoku publishes your docs as a site from GitHub or uploaded files. AI agents read the site
+Revdoku publishes your docs as a site from a GitHub repository. AI agents read the site
 through its MCP server, visitors ask questions and get answers from the docs (Ask), and support requests arrive as tickets.
 
 - [Start free](https://app.revdoku.com/users/sign_up)
@@ -14,7 +14,7 @@ command-line tool. The documentation and the examples are in
 
 ## Connect your AI app
 
-Connect your AI app to create buckets, edit and publish docs, read site analytics and answer tickets.
+Connect your AI app to create buckets, connect GitHub, publish docs, read site analytics and answer tickets.
 
 The hosted MCP server is `https://mcp.revdoku.com`. Add it as a connector in Claude, ChatGPT
 or another AI app, then sign in through the browser. It uses OAuth, and every tool needs the sign-in.
@@ -23,7 +23,7 @@ See the [MCP guide](https://docs.revdoku.com/mcp).
 Or paste this prompt into your AI app:
 
 ```text
-Connect Revdoku so you can create buckets, edit and publish my docs, read site analytics and answer support tickets. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do. If I have no task yet, ask whether to publish docs from a GitHub repository or start from a template, then publish and show the site address.
+Connect Revdoku so you can create buckets, connect GitHub and publish my docs, read site analytics and answer support tickets. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do. If I have no task yet, ask which GitHub repository holds my docs (a new one can start as a copy of a Revdoku template repository on GitHub), then connect it, publish and show the site address.
 ```
 
 [llms-install.md](./llms-install.md) is the setup guide for AI agents.
@@ -57,7 +57,6 @@ Plugins:
 - Gemini CLI: `gemini extensions install https://github.com/revdoku/revdoku`.
 - Hermes: `hermes skills install revdoku/revdoku/skills/revdoku`.
 
-A hosted AI app cannot read files on your computer. Use the skill or the CLI for local folders.
 
 ## Command-line tool
 
@@ -67,12 +66,13 @@ The standalone `revdoku` command needs no AI app:
 curl -fsSL https://github.com/revdoku/revdoku/releases/latest/download/install-cli.sh -o install-cli.sh
 bash install-cli.sh
 revdoku login
-revdoku create --title "Acme docs" --template docs-api
+revdoku create --title "Acme docs"
+revdoku github connect acme/docs --bucket-id bkt_...
 revdoku publish --bucket-id bkt_...
 ```
 
 `create` prints the ID of the new bucket (`bkt_...`). Use it in `--bucket-id`, or set `REVDOKU_BUCKET_ID`.
-To publish your own files, add them with `revdoku upload ./docs --bucket-id bkt_...` first.
+Revdoku only reads the repository. To change the docs, change them on GitHub.
 
 See [cli/README.md](./cli/README.md) or the [CLI guide](https://docs.revdoku.com/cli).
 

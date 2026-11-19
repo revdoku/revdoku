@@ -29,16 +29,10 @@ installed_client_version() {
 BASE_URL="${REVDOKU_URL:-$DEFAULT_URL}"
 API_KEY="${REVDOKU_API_KEY:-}"
 DESCRIPTION="${REVDOKU_BUCKET_DESCRIPTION:-}"
-UPLOAD_MODE="${REVDOKU_UPLOAD_MODE:-auto}"
 BUCKET_ID="${REVDOKU_BUCKET_ID:-}"
 METADATA_JSON="${REVDOKU_BUCKET_METADATA:-}"
-RESTORE_VERSION_ID="${REVDOKU_RESTORE_VERSION_ID:-}"
 ACTION_REASON=""
 BROWSER_LOGIN_PATH="${REVDOKU_BROWSER_LOGIN_PATH:-/buckets}"
-APPEND_TEXT_PATH="${REVDOKU_APPEND_TEXT_PATH:-}"
-APPEND_TEXT_CONTENT="${REVDOKU_APPEND_TEXT_CONTENT:-}"
-APPEND_TEXT_CONTENT_FILE="${REVDOKU_APPEND_TEXT_CONTENT_FILE:-}"
-APPEND_TEXT_NEWLINE_BEFORE="${REVDOKU_APPEND_TEXT_NEWLINE_BEFORE:-true}"
 GRANT_TOKEN=""
 ACCOUNT_ID=""
 CLIENT_ACCOUNT_NAME=""
@@ -53,28 +47,23 @@ fi
 AGENT_RUN_ID="${REVDOKU_AGENT_RUN_ID:-}"
 AGENT_PROJECT="${REVDOKU_AGENT_PROJECT:-}"
 AGENT_TASK="${REVDOKU_AGENT_TASK:-}"
-BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE="${REVDOKU_BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE:-25}"
-MAILBOX_UPLOAD_CLIENT_SESSION_KEY="${REVDOKU_BUCKET_UPLOAD_CLIENT_SESSION_KEY:-}"
 HTTP_TRANSIENT_MAX_ATTEMPTS="${REVDOKU_HTTP_TRANSIENT_MAX_ATTEMPTS:-5}"
 HTTP_RETRYABLE_CONFLICT_MAX_ATTEMPTS="${REVDOKU_HTTP_RETRYABLE_CONFLICT_MAX_ATTEMPTS:-12}"
 HTTP_LOCK_MAX_ATTEMPTS="${REVDOKU_HTTP_LOCK_MAX_ATTEMPTS:-3}"
-DIRECT_UPLOAD_MAX_ATTEMPTS="${REVDOKU_DIRECT_UPLOAD_MAX_ATTEMPTS:-5}"
 LOGIN="false"
-ACTION="store"
-PATH_TO_STORE=""
-PATH_EXPLICIT="false"
+ACTION=""
+# The folder whose .revdoku file names the bucket of read commands.
+PATH_TO_STORE="."
 BUCKET_EXPLICIT="false"
-DRY_RUN="false"
 DELETE_CONFIRMATION=""
 WEBHOOK_URL=""
 ROTATE_SECRET="false"
 ACCESS_MODE=""
 PASSWORD_FILE=""
 SITE_PREVIEW="false"
-UPLOAD_MANIFEST=""
-UPLOAD_LOCAL_MAP=""
-SKIPPED_PATHS=""
 READ_FILE_PATH=""
+NEW_FILE_PATH=""
+LOCAL_FILE=""
 TICKET_ID=""
 MESSAGE_ID=""
 STATUS_OPTION=""
@@ -84,10 +73,10 @@ TICKET_UPDATED_AFTER=""
 EMAIL_USERNAME=""
 EMAIL_DOMAIN=""
 BUCKET_TITLE=""
-BUCKET_TEMPLATE=""
 EMAIL_ATTACHMENT_ID=""
 LIST_LIMIT=""
 LIST_CURSOR=""
+LIST_FOLDER=""
 VERSION_ID=""
 EMAIL_SUBJECT=""
 # Newline-separated lists; Bash 3 rejects empty arrays under set -u.
@@ -95,6 +84,8 @@ EMAIL_ATTACHMENTS=""
 EMAIL_ADD_LABELS=""
 EMAIL_REMOVE_LABELS=""
 EMAIL_TEXT=""
+TICKET_NOTE=""
+TICKET_NOTE_SET="false"
 EMAIL_TEXT_FILE=""
 EMAIL_HTML_FILE=""
 BUCKET_LIST_STATUS="active"
@@ -105,14 +96,10 @@ GITHUB_REPOSITORY=""
 GITHUB_INSTALLATION_ID=""
 GITHUB_BRANCH=""
 GITHUB_REPO_PATH=""
-GITHUB_PUSH_EDITS=""
 GITHUB_BUCKET_FILES=""
 GITHUB_AUTO_PUBLISH=""
-GITHUB_AUTO_COMMIT=""
 OUTPUT_PATH=""
-SHOW_UPLOAD_HINT="false"
-# Project-local binding (.revdoku): remembers the bucket so `revdoku upload`
-# updates the same stored files. Populated from the target dir, --bucket-id overrides.
+# Project-local binding (.revdoku): names the bucket of this folder. --bucket-id overrides it.
 REVDOKU_PROJECT_FILE=""
 BOUND_BUCKET_ID=""
 BINDING_EXISTED="false"
@@ -194,7 +181,7 @@ atomic_private_write() {
   fi
 }
 
-# Identify the AI agent or tool driving this CLI so uploads are attributed to
+# Identify the AI agent or tool driving this CLI so its requests are attributed to
 # the real caller (claude-code, codex, ...) instead of a generic "cli".
 # Precedence: --agent flag / REVDOKU_AGENT_NAME override this entirely; this
 # function only runs as the fallback. Always degrades safely to "cli".
@@ -219,10 +206,9 @@ revdoku: buckets with files, a site and support tickets.
 
 Usage: revdoku <command> [PATH] [options]
 
-  upload PATH           Save the selected local file or folder (use . explicitly).
-                        Opens browser sign-in when credentials are missing.
   ls, list              List active buckets with titles, addresses and email counts.
-  create                Create a bucket; optionally choose --username, --domain, --title and --template docs-api|docs-product.
+  create                Create a bucket; optionally choose --username, --domain and --title.
+                        Its files come from GitHub: revdoku github connect OWNER/NAME.
   o, open               Open this bucket in the dashboard.
   st, status            Show connection and account status.
   login                 Sign in to an existing account in the browser.
@@ -232,7 +218,7 @@ Usage: revdoku <command> [PATH] [options]
   ticket-messages ID    List a ticket's messages; --message-id ID reads one message.
   ticket-reply ID       Reply to the ticket's requester. Does not retry.
                         Uses credits; see https://app.revdoku.com/pricing.json.
-  ticket-update ID      Set --status open|solved or labels (--add-label NAME).
+  ticket-update ID      Set --status open|pending|solved, --note TEXT or labels (--add-label NAME).
   ticket-download ID    Download a message's original EML (--message-id ID) or --attachment-id ID.
   ticket-message-delete ID  Delete one message and its attachments (--message-id ID);
                         confirm with --confirm-delete MESSAGE_ID.
@@ -243,8 +229,19 @@ Usage: revdoku <command> [PATH] [options]
   files                 List bucket files.
   read PATH             Read a bucket file; --output FILE saves it locally.
   versions PATH         List one file's versions (PATH or a df_ file ID).
-  restore PATH          Restore one file version; requires --version-id ID.
-  append PATH           Append text; --content TEXT or --content-file FILE.
+  write PATH --file FILE
+                        Write one knowledge base file: a page (.md, .mdx; - reads
+                        stdin) or an image (.jpg, .png, .webp). PATH is in
+                        _kb/public/ or _kb/private/. The site shows a public
+                        file after the next publish. A public page with the
+                        front matter line do_not_publish: true stays off the
+                        site; the site's AI still answers from it.
+  mv PATH NEW_PATH      Move or rename a knowledge base file.
+  rm PATH               Delete a knowledge base file. Its versions stay: keep
+                        the file id of the answer to restore it.
+  restore PATH|FILE_ID --version-id ID
+                        Make an earlier version of a knowledge base file current.
+                        A deleted file comes back: use its file id (df_...).
   archive | unarchive    Manage a bucket.
   publish               Publish the bucket's files as its site, where the account can publish.
                         Optional --access-mode public|password|require_email and
@@ -255,14 +252,15 @@ Usage: revdoku <command> [PATH] [options]
                         Uses credits; see https://app.revdoku.com/pricing.json.
   site                  Show the site: URL, build state and access; --preview for the preview.
   unpublish             Take the site down.
-  github                Show the GitHub repository whose branch is the bucket's files.
+  github                Show the GitHub repository whose branch is copied into _repo/.
   github accounts       List GitHub accounts connected to the account.
   github repos ID       List the repositories of one connected GitHub account.
   github setup-link     Print the links a person opens to add a GitHub account.
   github connect OWNER/NAME  Copy a repository into a bucket. Optional --branch,
-                        --repo-path, --installation-id, --push-revdoku-edits false.
-                        A bucket with files needs --bucket-files replace or copy.
-  github set            Change --auto-publish, --push-revdoku-edits or --auto-commit.
+                        --repo-path, --installation-id. Revdoku only reads
+                        the repository. A bucket with files needs
+                        --bucket-files replace.
+  github set            Change --auto-publish.
   github sync           Sync the repository now.
   github branches       List the branches that a preview can show.
   github disconnect     Stop syncing; requires --confirm-delete BUCKET_ID. Files stay.
@@ -284,7 +282,8 @@ Options:
   --query TEXT                        Bucket title, address or ID filter (ls).
   --limit N   --cursor CURSOR          List page size (maximum 200) and next page.
                                        Use pagination.next_cursor from the last page.
-  --status open|solved|all             Ticket list filter, or the new status (ticket-update).
+  --status open|pending|solved|all     Ticket list filter, or the new status (ticket-update, without all).
+  --folder PATH                        files: only this folder, for example _kb/private.
   --channel email|chat|feedback        Ticket list filter: where the ticket started.
   --label NAME   --updated-after TIME  Ticket list filters (label name; ISO 8601 time).
   --message-id ID                      One message of a ticket (eml_...).
@@ -292,23 +291,24 @@ Options:
   --text TEXT | --text-file PATH       ticket-reply plain-text body (- reads stdin).
   --html-file PATH     --attach FILE_ID   Optional HTML body; attach bucket files.
   --add-label NAME  --remove-label NAME  ticket-update: custom labels; repeat (10 maximum).
+  --note TEXT                          ticket-update: the team's internal note, never sent ("" removes it).
   --attachment-id ID   --output FILE   Download a selected message attachment.
-  --version-id ID                      File version for read or restore.
+  --version-id ID                      File version for read and restore.
+  --file FILE                          Local file for write (- reads stdin).
   --description TEXT   --metadata JSON
   --username NAME      --domain HOST          Bucket creation email address options.
   --title TEXT                                Bucket title for create (default: the username).
-  --dry-run            Preview an upload locally, without network requests.
   --confirm-delete TOKEN  Execute a reviewed deletion preview (expires in 10 minutes).
   --api-key KEY        API credential (or REVDOKU_API_KEY / $CREDENTIALS_PATH).
-  --agent NAME         Attribute uploads (default: auto-detected).
-  --upload-mode MODE   auto or direct (default: auto).
+  --agent NAME         Name the AI agent or tool that runs the CLI (default: auto-detected).
   --version            Print installed client version.
   -h, --help           Show this help.
 
 Examples:
-  revdoku upload ./project-files
+  revdoku github connect acme/docs --bucket-id bkt_...
   revdoku files --bucket-id bkt_...
-  revdoku read notes.md --bucket-id bkt_... --reason "Review project decisions"
+  revdoku read _repo/notes.md --bucket-id bkt_... --reason "Review project decisions"
+  revdoku write _kb/private/refunds.md --file refunds.md --bucket-id bkt_...
   revdoku dashboard
 
 Plans: https://app.revdoku.com/pricing
@@ -316,7 +316,7 @@ USAGE
 }
 
 # ---------------------------------------------------------------------------
-# Command parsing. The first non-option token is the verb (upload, ls, open …);
+# Command parsing. The first non-option token is the verb (ls, files, read …);
 # options may appear before or after it. A bare path (`revdoku .`) stores files;
 # no args at all shows status + a hint. The most common verb is the shortest.
 # ---------------------------------------------------------------------------
@@ -350,15 +350,11 @@ while [[ $# -gt 0 ]]; do
       esac
       shift 2 ;;
     --bucket-files)
-      [[ $# -ge 2 && ( "$2" == "replace" || "$2" == "copy" ) ]] || die "--bucket-files is replace or copy"
+      [[ $# -ge 2 && "$2" == "replace" ]] || die "--bucket-files is replace"
       GITHUB_BUCKET_FILES="$2"; shift 2 ;;
-    --auto-publish|--push-revdoku-edits|--auto-commit)
+    --auto-publish)
       [[ $# -ge 2 && ( "$2" == "true" || "$2" == "false" ) ]] || die "$1 must be true or false"
-      case "$1" in
-        --auto-publish) GITHUB_AUTO_PUBLISH="$2" ;;
-        --push-revdoku-edits) GITHUB_PUSH_EDITS="$2" ;;
-        --auto-commit) GITHUB_AUTO_COMMIT="$2" ;;
-      esac
+      GITHUB_AUTO_PUBLISH="$2"
       shift 2 ;;
     --url)
       [[ $# -ge 2 ]] || die "--url requires a value"
@@ -381,11 +377,6 @@ while [[ $# -gt 0 ]]; do
     --title)
       [[ $# -ge 2 && -n "$2" ]] || die "--title requires a value"
       BUCKET_TITLE="$2"
-      shift 2
-      ;;
-    --template)
-      [[ $# -ge 2 && -n "$2" ]] || die "--template requires a value"
-      BUCKET_TEMPLATE="$2"
       shift 2
       ;;
     --account-id)
@@ -415,10 +406,11 @@ while [[ $# -gt 0 ]]; do
       fi
       shift 2
       ;;
-    --cursor|--limit|--subject|--attachment-id|--version-id|--message-id|--channel|--label|--updated-after)
+    --cursor|--limit|--folder|--subject|--attachment-id|--version-id|--message-id|--channel|--label|--updated-after)
       [[ $# -ge 2 && -n "$2" ]] || die "$1 requires a value"
       case "$1" in
         --cursor) LIST_CURSOR="$2" ;;
+        --folder) LIST_FOLDER="$2" ;;
         --limit) [[ "$2" =~ ^[1-9][0-9]*$ && "$2" -le 200 ]] || die "--limit must be from 1 to 200"; LIST_LIMIT="$2" ;;
         --version-id) VERSION_ID="$2" ;;
         --subject) EMAIL_SUBJECT="$2" ;;
@@ -428,6 +420,12 @@ while [[ $# -gt 0 ]]; do
         --label) TICKET_LABEL="$2" ;;
         --updated-after) TICKET_UPDATED_AFTER="$2" ;;
       esac
+      shift 2
+      ;;
+    --note)
+      # An empty text is a value here: it removes the note.
+      [[ $# -ge 2 ]] || die "--note requires a value"
+      TICKET_NOTE="$2"; TICKET_NOTE_SET="true"
       shift 2
       ;;
     --attach|--text|--text-file|--html-file|--add-label|--remove-label)
@@ -461,33 +459,15 @@ while [[ $# -gt 0 ]]; do
       OUTPUT_PATH="$2"
       shift 2
       ;;
+    --file)
+      [[ $# -ge 2 ]] || die "--file requires a value"
+      LOCAL_FILE="$2"
+      shift 2
+      ;;
     --reason)
       [[ $# -ge 2 ]] || die "--reason requires a value"
       ACTION_REASON="$2"
       shift 2
-      ;;
-    --content)
-      [[ $# -ge 2 ]] || die "--content requires a value"
-      APPEND_TEXT_CONTENT="$2"
-      shift 2
-      ;;
-    --content-file)
-      [[ $# -ge 2 ]] || die "--content-file requires a local file path or -"
-      APPEND_TEXT_CONTENT_FILE="$2"
-      shift 2
-      ;;
-    --no-newline-before)
-      APPEND_TEXT_NEWLINE_BEFORE="false"
-      shift
-      ;;
-    --upload-mode)
-      [[ $# -ge 2 ]] || die "--upload-mode requires a value"
-      UPLOAD_MODE="$2"
-      shift 2
-      ;;
-    --dry-run)
-      DRY_RUN="true"
-      shift
       ;;
     --confirm-delete)
       [[ $# -ge 2 && -n "$2" ]] || die "--confirm-delete requires a preview token"
@@ -518,14 +498,16 @@ while [[ $# -gt 0 ]]; do
       ;;
     *)
       if [[ "$VERB_SEEN" == "true" ]]; then
-        [[ "$PATH_EXPLICIT" == "false" && "$ACTION" == "store" ]] || die "unexpected positional argument"
-        PATH_TO_STORE="$1"
-        PATH_EXPLICIT="true"
-        shift
+        die "unexpected positional argument"
       else
         VERB_SEEN="true"
         case "$1" in
-          upload|put)     shift ;;
+          upload|put|append)
+            die "Write a knowledge base file with: revdoku write _kb/private/NAME.md --file FILE. The files of _repo/ come from the GitHub repository. Change the files on GitHub." ;;
+          write)          [[ $# -ge 2 && "$2" != -* ]] || die "write needs a bucket PATH right after it, e.g. revdoku write _kb/private/refunds.md --file refunds.md"; ACTION="write_file"; READ_FILE_PATH="$2"; shift 2 ;;
+          mv)             [[ $# -ge 3 && "$2" != -* && "$3" != -* ]] || die "mv needs the file's PATH and its NEW_PATH, e.g. revdoku mv _kb/private/a.md _kb/public/a.md"; ACTION="move_file"; READ_FILE_PATH="$2"; NEW_FILE_PATH="$3"; shift 3 ;;
+          rm)             [[ $# -ge 2 && "$2" != -* ]] || die "rm needs a bucket PATH right after it, e.g. revdoku rm _kb/private/old.md"; ACTION="delete_file"; READ_FILE_PATH="$2"; shift 2 ;;
+          restore)        [[ $# -ge 2 && "$2" != -* ]] || die "restore needs a bucket PATH right after it, e.g. revdoku restore _kb/private/a.md --version-id ID"; ACTION="restore_file"; READ_FILE_PATH="$2"; shift 2 ;;
           publish|preview|site) ACTION="$1"; shift ;;
           unpublish|down) ACTION="unpublish"; shift ;;
           github)
@@ -558,8 +540,6 @@ while [[ $# -gt 0 ]]; do
           files)          ACTION="list_files"; shift ;;
           read)           [[ $# -ge 2 && "$2" != -* ]] || die "read needs a bucket PATH right after it, e.g. revdoku read notes.md --bucket-id ID"; ACTION="read_file"; READ_FILE_PATH="$2"; shift 2 ;;
           versions)       [[ $# -ge 2 && "$2" != -* ]] || die "versions needs a bucket PATH right after it, e.g. revdoku versions notes.md --bucket-id ID"; ACTION="list_versions"; READ_FILE_PATH="$2"; shift 2 ;;
-          restore)        [[ $# -ge 2 && "$2" != -* ]] || die "restore needs a bucket PATH right after it, e.g. revdoku restore notes.md --version-id ID --bucket-id ID"; ACTION="restore_version"; READ_FILE_PATH="$2"; shift 2 ;;
-          append)         [[ $# -ge 2 && "$2" != -* ]] || die "append needs a bucket PATH right after it, e.g. revdoku append leads.csv --bucket-id ID --content-file new.csv"; ACTION="append_text_file"; APPEND_TEXT_PATH="$2"; shift 2 ;;
           archive)        ACTION="archive_bucket"; shift ;;
           unarchive)      ACTION="unarchive_bucket"; shift ;;
           delete)         ACTION="delete_bucket"; shift ;;
@@ -581,14 +561,7 @@ while [[ $# -gt 0 ]]; do
           help)           usage; exit 0 ;;
           version)        printf '%s\n' "$(installed_client_version)"; exit 0 ;;
           *)
-            # An existing or path-like token selects files to store.
-            if [[ -e "$1" || "$1" == .* || "$1" == /* || "$1" == \~* ]]; then
-              PATH_TO_STORE="$1"
-              PATH_EXPLICIT="true"
-              shift
-            else
-              die "unknown command: $1 (run 'revdoku --help')"
-            fi
+            die "unknown command: $1 (run 'revdoku --help')"
             ;;
         esac
       fi
@@ -596,32 +569,20 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# No arguments shows status + a hint. Uploads always require an explicit path.
-if [[ "$VERB_SEEN" == "false" && "$ACTION" == "store" && "$LOGIN" != "true" ]]; then
-  if [[ "$ORIGINAL_ARGC" -eq 0 ]]; then
-    ACTION="connection_status"
-    SHOW_UPLOAD_HINT="true"
-  fi
+# No arguments shows the connection status.
+if [[ -z "$ACTION" && "$LOGIN" != "true" ]]; then
+  [[ "$ORIGINAL_ARGC" -eq 0 ]] || die "Choose a command (run 'revdoku --help')"
+  ACTION="connection_status"
 fi
 
-if [[ -z "$PATH_TO_STORE" ]]; then
-  if [[ -n "${1:-}" ]]; then
-    PATH_TO_STORE="$1"
-    PATH_EXPLICIT="true"
-  else
-    PATH_TO_STORE="."
-  fi
-fi
 BASE_URL="${BASE_URL%/}"
 validate_base_url
-if [[ "$ACTION" == "store" && "$LOGIN" != "true" && "$PATH_EXPLICIT" != "true" ]]; then
-  die "upload requires an explicit PATH; use 'revdoku upload .' for this folder"
-fi
-[[ "$DRY_RUN" != "true" || ( "$ACTION" == "store" && "$LOGIN" != "true" ) ]] || die "--dry-run is only available with upload PATH"
 [[ -z "$DELETE_CONFIRMATION" || "$ACTION" == "delete_bucket" || "$ACTION" == "ticket-message-delete" || "$ACTION" == "webhook-delete" || "$GITHUB_ACTION" == "disconnect" ]] || die "--confirm-delete is only available with delete, ticket-message-delete, webhook-delete or github disconnect"
 if [[ ( -n "$WEBHOOK_URL" || "$ROTATE_SECRET" == "true" ) && "$ACTION" != "webhook-set" ]]; then
   die "--webhook-url and --rotate-secret require webhook-set"
 fi
+[[ "$TICKET_NOTE_SET" != "true" || "$ACTION" == "ticket-update" ]] || die "--note requires ticket-update"
+[[ -z "$LIST_FOLDER" || "$ACTION" == "list_files" ]] || die "--folder requires files"
 if [[ -n "$EMAIL_ATTACHMENTS$EMAIL_SUBJECT$EMAIL_TEXT$EMAIL_TEXT_FILE$EMAIL_HTML_FILE" && "$ACTION" != "ticket-reply" ]]; then
   die "--attach, --subject, --text, --text-file and --html-file require ticket-reply"
 fi
@@ -637,8 +598,8 @@ if [[ -n "$STATUS_OPTION" ]]; then
     list_buckets)
       [[ "$STATUS_OPTION" =~ ^(active|archived|all)$ ]] || die "--status must be active, archived or all"
       BUCKET_LIST_STATUS="$STATUS_OPTION" ;;
-    list_tickets) [[ "$STATUS_OPTION" =~ ^(open|solved|all)$ ]] || die "--status must be open, solved or all" ;;
-    ticket-update) [[ "$STATUS_OPTION" =~ ^(open|solved)$ ]] || die "--status must be open or solved" ;;
+    list_tickets) [[ "$STATUS_OPTION" =~ ^(open|pending|solved|all)$ ]] || die "--status must be open, pending, solved or all" ;;
+    ticket-update) [[ "$STATUS_OPTION" =~ ^(open|pending|solved)$ ]] || die "--status must be open, pending or solved" ;;
     *) die "--status requires ls, tickets or ticket-update" ;;
   esac
 fi
@@ -653,23 +614,17 @@ esac
 [[ -z "$GITHUB_BRANCH" || "$GITHUB_ACTION" == "connect" || "$ACTION" == "preview" ]] || die "--branch requires github connect or preview"
 [[ -z "$GITHUB_REPO_PATH" && ( -z "$GITHUB_INSTALLATION_ID" || "$GITHUB_ACTION" == "repos" ) || "$GITHUB_ACTION" == "connect" ]] ||
   die "--repo-path and --installation-id require github connect"
-[[ -z "$GITHUB_AUTO_PUBLISH$GITHUB_AUTO_COMMIT" || "$GITHUB_ACTION" == "set" ]] || die "--auto-publish and --auto-commit require github set"
-[[ -z "$GITHUB_PUSH_EDITS" || "$GITHUB_ACTION" == "connect" || "$GITHUB_ACTION" == "set" ]] || die "--push-revdoku-edits requires github connect or github set"
+[[ -z "$GITHUB_AUTO_PUBLISH" || "$GITHUB_ACTION" == "set" ]] || die "--auto-publish requires github set"
 [[ -z "$GITHUB_BUCKET_FILES" || "$GITHUB_ACTION" == "connect" ]] || die "--bucket-files requires github connect"
-if [[ "$ACTION" == "restore_version" ]]; then
-  VERSION_ID="${VERSION_ID:-$RESTORE_VERSION_ID}"
-  [[ -n "$VERSION_ID" ]] || die "restore requires --version-id ID (see revdoku versions PATH)"
-elif [[ -n "$VERSION_ID" && "$ACTION" != "read_file" ]]; then
+if [[ -n "$VERSION_ID" && "$ACTION" != "read_file" && "$ACTION" != "restore_file" ]]; then
   die "--version-id requires read or restore"
 fi
+[[ -z "$LOCAL_FILE" || "$ACTION" == "write_file" ]] || die "--file requires write"
 if [[ -n "$EMAIL_USERNAME$EMAIL_DOMAIN" && "$ACTION" != "create_bucket" ]]; then
   die "--username and --domain require create"
 fi
 if [[ -n "$BUCKET_TITLE" && "$ACTION" != "create_bucket" ]]; then
   die "--title requires create"
-fi
-if [[ -n "$BUCKET_TEMPLATE" && "$ACTION" != "create_bucket" ]]; then
-  die "--template requires create"
 fi
 if [[ "$ACTION" == "delete_bucket" ]]; then
   [[ "$BUCKET_EXPLICIT" == "true" && -n "$BUCKET_ID" && -n "$ACCOUNT_ID" ]] || die "delete requires explicit --account-id and --bucket-id"
@@ -698,9 +653,7 @@ if [[ -z "$API_KEY" && -f "$CREDENTIALS_PATH" ]]; then
   CREDENTIALS_PATH="$(local_file_path "$CREDENTIALS_PATH")"
   [[ ! -L "$CREDENTIALS_PATH" ]] || die "refusing symlink credentials"
   API_KEY_FROM_CREDENTIALS="true"
-  if [[ "$DRY_RUN" != "true" ]]; then
-    API_KEY="$(tr -d '\r\n' < "$CREDENTIALS_PATH")"
-  fi
+  API_KEY="$(tr -d '\r\n' < "$CREDENTIALS_PATH")"
 fi
 
 if [[ -z "$BUCKET_ID" && "$API_KEY_FROM_CREDENTIALS" == "true" && -f "$DEFAULT_BUCKET_PATH" ]]; then
@@ -712,8 +665,8 @@ fi
 if [[ -n "${REVDOKU_MAILBOX_ID:-}" && -z "${REVDOKU_BUCKET_ID:-}" && "$BUCKET_EXPLICIT" != "true" ]]; then
   die "Rename REVDOKU_MAILBOX_ID to REVDOKU_BUCKET_ID, or use --bucket-id."
 fi
-# A .revdoku file binds this folder to a bucket for upload/read commands.
-# An explicit --bucket-id takes precedence. The binding is excluded from uploads.
+# A .revdoku file binds this folder to a bucket for read commands.
+# An explicit --bucket-id takes precedence.
 if [[ -d "$PATH_TO_STORE" || ! -e "$PATH_TO_STORE" ]]; then
   REVDOKU_PROJECT_FILE="${PATH_TO_STORE%/}/.revdoku"
 else
@@ -737,59 +690,10 @@ fi
 for header_value in "$API_KEY" "$AGENT_NAME" "$AGENT_CLIENT" "$AGENT_VERSION" "$AGENT_RUN_ID" "$AGENT_PROJECT" "$AGENT_TASK"; do
   [[ "$header_value" != *[[:cntrl:]]* ]] || die "control characters are not allowed in request headers"
 done
-# Persist (or refresh) the .revdoku binding for a directory project after a
-# successful upload. Silent unless it is the first time we bind.
-write_project_binding() {
-  local bucket="$1" url="$2"
-  [[ "${REVDOKU_WRITE_BINDING:-true}" == "true" ]] || return 0
-  [[ -n "$bucket" && -n "$REVDOKU_PROJECT_FILE" ]] || return 0
-  [[ -d "$PATH_TO_STORE" ]] || return 0
-  {
-    printf '# Revdoku project binding — created by `revdoku upload`. Safe to commit or gitignore.\n'
-    printf 'bucket_id=%s\n' "$bucket"
-    if [[ -n "$url" ]]; then printf 'url=%s\n' "$url"; fi
-  } | atomic_private_write "$REVDOKU_PROJECT_FILE" || return 1
-  if [[ "$BINDING_EXISTED" != "true" ]]; then
-    echo "Bound this folder to $bucket (.revdoku). Next time just run: revdoku upload ." >&2
-    BINDING_EXISTED="true"
-  fi
-}
-
 if [[ -n "$METADATA_JSON" ]]; then
   METADATA_JSON="$(printf "%s" "$METADATA_JSON" | "$JQ_BIN" -c 'if type == "object" then . else error("metadata must be a JSON object") end')" || die "--metadata must be a JSON object"
 else
   METADATA_JSON="{}"
-fi
-
-normalize_optional_bool() {
-  local name="$1"
-  local value="$2"
-  [[ -n "$value" ]] || return 0
-  case "$value" in
-    true|1|yes|on)
-      printf "true"
-      ;;
-    false|0|no|off)
-      printf "false"
-      ;;
-    *)
-      die "$name must be true or false"
-      ;;
-  esac
-}
-
-APPEND_TEXT_NEWLINE_BEFORE="$(normalize_optional_bool "REVDOKU_APPEND_TEXT_NEWLINE_BEFORE" "$APPEND_TEXT_NEWLINE_BEFORE")"
-APPEND_TEXT_NEWLINE_BEFORE="${APPEND_TEXT_NEWLINE_BEFORE:-true}"
-
-if [[ "$ACTION" == "append_text_file" ]]; then
-  [[ -n "$BUCKET_ID" ]] || die "append requires --bucket-id"
-  [[ -n "$APPEND_TEXT_PATH" ]] || die "append requires a bucket-relative PATH"
-  if [[ -n "$APPEND_TEXT_CONTENT" && -n "$APPEND_TEXT_CONTENT_FILE" ]]; then
-    die "use either --content or --content-file with append, not both"
-  fi
-  if [[ -z "$APPEND_TEXT_CONTENT" && -z "$APPEND_TEXT_CONTENT_FILE" ]]; then
-    die "append requires --content or --content-file"
-  fi
 fi
 
 account_request_path() {
@@ -866,9 +770,6 @@ http_success_json_replay_allowed() {
     GET:*)
       return 0
       ;;
-    POST:*/upload_sessions|POST:*/upload_sessions/*/uploads|POST:*/upload_sessions/*/finalize|POST:*/upload_sessions/*/finalize_batch)
-      return 0
-      ;;
     *)
       return 1
       ;;
@@ -882,9 +783,6 @@ http_conflict_retry_allowed() {
     GET:*)
       return 0
       ;;
-    POST:*/upload_sessions|POST:*/upload_sessions/*/uploads|POST:*/upload_sessions/*/finalize|POST:*/upload_sessions/*/finalize_batch)
-      return 0
-      ;;
     *)
       return 1
       ;;
@@ -892,16 +790,7 @@ http_conflict_retry_allowed() {
 }
 
 http_lock_retry_allowed() {
-  local method="$1"
-  local path="$2"
-  case "$method:$path" in
-    POST:*/files/append_text)
-      return 0
-      ;;
-    *)
-      return 1
-      ;;
-  esac
+  return 1
 }
 
 lock_detail_summary() {
@@ -1329,39 +1218,32 @@ exchange_agent_grant() {
   [[ -n "$account_id" ]] && echo "Account: $account_id" >&2
 }
 
-if [[ "$DRY_RUN" != "true" ]]; then
-  if [[ "$ACTION" == "exchange_grant" ]]; then
-    exchange_agent_grant "$GRANT_TOKEN"
-    echo "Connection complete. You can return to your AI agent." >&2
-    exit 0
-  fi
+if [[ "$ACTION" == "exchange_grant" ]]; then
+  exchange_agent_grant "$GRANT_TOKEN"
+  echo "Connection complete. You can return to your AI agent." >&2
+  exit 0
+fi
 
-  # Bare `revdoku` with no saved credentials: show a friendly hint instead of
-  # forcing the interactive login flow.
-  if [[ "$ACTION" == "connection_status" && "$SHOW_UPLOAD_HINT" == "true" && -z "$API_KEY" ]]; then
-    echo "Revdoku CLI — not signed in yet." >&2
-    echo "  Sign in:   revdoku login" >&2
-    echo "  Upload:    revdoku upload PATH" >&2
-    echo "  Commands:  revdoku --help" >&2
-    exit 0
-  fi
+# Bare `revdoku` with no saved credentials: show a friendly hint instead of
+# forcing the interactive login flow.
+if [[ "$ACTION" == "connection_status" && "$ORIGINAL_ARGC" -eq 0 && -z "$API_KEY" ]]; then
+  echo "Revdoku CLI — not signed in yet." >&2
+  echo "  Sign in:   revdoku login" >&2
+  echo "  Commands:  revdoku --help" >&2
+  exit 0
+fi
 
-  if [[ "$LOGIN" == "true" || -z "$API_KEY" ]]; then
-    request_agent_key
-  fi
+if [[ "$LOGIN" == "true" || -z "$API_KEY" ]]; then
+  request_agent_key
+fi
 
-  if [[ "$LOGIN" == "true" && "$ACTION" == "store" && "$PATH_EXPLICIT" == "false" ]]; then
-    echo "Login complete. Credentials saved to $CREDENTIALS_PATH." >&2
-    echo "Next: revdoku upload PATH, or revdoku dashboard." >&2
-    exit 0
-  fi
+if [[ "$LOGIN" == "true" && -z "$ACTION" ]]; then
+  echo "Login complete. Credentials saved to $CREDENTIALS_PATH." >&2
+  echo "Next: revdoku ls, or revdoku dashboard." >&2
+  exit 0
+fi
 
-  [[ -n "$API_KEY" ]] || die "REVDOKU_API_KEY is required"
-  case "$UPLOAD_MODE" in
-    auto|direct) ;;
-    *) die "--upload-mode must be auto or direct" ;;
-  esac
-fi # network authentication is skipped by upload --dry-run
+[[ -n "$API_KEY" ]] || die "REVDOKU_API_KEY is required"
 # Build "name=value&..." from name/value pairs, omitting empty values.
 query_string() {
   "$JQ_BIN" -rn '$ARGS.positional | [range(0; length; 2) as $i | {key: .[$i], value: .[$i + 1]}]
@@ -1394,22 +1276,18 @@ github_command() {
     branches) http_json GET "${path}/branches" "{}" ;;
     connect)
       body="$("$JQ_BIN" -n --arg owner "${GITHUB_REPOSITORY%%/*}" --arg name "${GITHUB_REPOSITORY#*/}" --arg branch "$GITHUB_BRANCH" \
-        --arg repo_path "$GITHUB_REPO_PATH" --arg installation "$GITHUB_INSTALLATION_ID" --arg edits "$GITHUB_PUSH_EDITS" \
+        --arg repo_path "$GITHUB_REPO_PATH" --arg installation "$GITHUB_INSTALLATION_ID" \
         --arg files "$GITHUB_BUCKET_FILES" \
         '{github: ({repo_owner: $owner, repo_name: $name}
           + (if $branch != "" then {branch: $branch} else {} end)
           + (if $repo_path != "" then {repo_path: $repo_path} else {} end)
           + (if $installation != "" then {installation_id: ($installation | tonumber)} else {} end)
-          + (if $edits != "" then {push_revdoku_edits: ($edits == "true")} else {} end)
           + (if $files != "" then {bucket_files: $files} else {} end))}')"
       http_json POST "$path" "$body"
       ;;
     set)
-      [[ -n "$GITHUB_AUTO_PUBLISH$GITHUB_PUSH_EDITS$GITHUB_AUTO_COMMIT" ]] || die "github set needs --auto-publish, --push-revdoku-edits or --auto-commit"
-      body="$("$JQ_BIN" -n --arg publish "$GITHUB_AUTO_PUBLISH" --arg edits "$GITHUB_PUSH_EDITS" --arg commit "$GITHUB_AUTO_COMMIT" \
-        '{github: ((if $publish != "" then {auto_publish: ($publish == "true")} else {} end)
-          + (if $edits != "" then {push_revdoku_edits: ($edits == "true")} else {} end)
-          + (if $commit != "" then {auto_commit: ($commit == "true")} else {} end))}')"
+      [[ -n "$GITHUB_AUTO_PUBLISH" ]] || die "github set needs --auto-publish"
+      body="$("$JQ_BIN" -n --arg publish "$GITHUB_AUTO_PUBLISH" '{github: {auto_publish: ($publish == "true")}}')"
       http_json PATCH "$path" "$body"
       ;;
     disconnect)
@@ -1422,7 +1300,7 @@ github_command() {
 list_files() {
   [[ -n "$BUCKET_ID" ]] || die "files requires --bucket-id (or a remembered selected bucket)"
   local query
-  query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
+  query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR" folder "$LIST_FOLDER")"
   http_json GET "/api/v1/buckets/${BUCKET_ID}/files${query:+?$query}" "{}"
 }
 
@@ -1447,14 +1325,6 @@ list_versions() {
   http_json GET "/api/v1/buckets/${BUCKET_ID}/files/${file_id}/versions${query:+?$query}" "{}"
 }
 
-restore_version() {
-  [[ -n "$BUCKET_ID" ]] || die "restore requires --bucket-id"
-  local file_id
-  file_id="$(file_id_for_path)" || return 1
-  http_json POST "/api/v1/buckets/${BUCKET_ID}/files/${file_id}/versions/${VERSION_ID}/restore" "{}"
-}
-
-# Content reads use a temporary link. Downloading marks the version read.
 read_file() {
   [[ -n "$BUCKET_ID" && -n "$READ_FILE_PATH" ]] || die "read requires a bucket and PATH"
   local file_id query response
@@ -1462,6 +1332,75 @@ read_file() {
   query="$(query_string version_id "$VERSION_ID")"
   response="$(http_json GET "/api/v1/buckets/${BUCKET_ID}/files/${file_id}/download${query:+?$query}" "{}")" || return 1
   download_link "$response" "$READ_FILE_PATH"
+}
+
+# The knowledge base, _kb/: the only bucket files that a client writes. The server holds the rules (paths, file types,
+# sizes, publish permission); these commands send the request and print its answer.
+INLINE_IMAGE_MAX_BYTES=262144
+
+write_file() {
+  [[ -n "$BUCKET_ID" && -n "$READ_FILE_PATH" ]] || die "write requires a bucket and PATH"
+  [[ -n "$LOCAL_FILE" ]] || die "write requires --file FILE (- reads stdin)"
+  local source lower payload size checksum sha256 link url status header_args=() name value
+  lower="$(printf '%s' "$READ_FILE_PATH" | tr '[:upper:]' '[:lower:]')"
+  source="$(mktemp)"
+  trap "rm -f $(printf '%q ' "$source")" EXIT
+  if [[ "$LOCAL_FILE" == "-" ]]; then
+    cat > "$source"
+  else
+    [[ -f "$LOCAL_FILE" ]] || die "--file does not exist: $LOCAL_FILE"
+    cat -- "$LOCAL_FILE" > "$source"
+  fi
+  case "$lower" in
+    *.md|*.mdx)
+      payload="$("$JQ_BIN" -nc --arg path "$READ_FILE_PATH" --rawfile content "$source" '{path: $path, content: $content}')" || die "Could not read the page" ;;
+    *.jpg|*.jpeg|*.png|*.webp)
+      size="$(wc -c < "$source" | tr -d '[:space:]')"
+      if [[ "$size" -le "$INLINE_IMAGE_MAX_BYTES" ]]; then
+        payload="$(base64 < "$source" | tr -d '\n\r' | "$JQ_BIN" -Rsc --arg path "$READ_FILE_PATH" '{path: $path, content_base64: .}')" || die "Could not read the image"
+      else
+        # A larger image goes to storage through an upload link, then becomes the file.
+        checksum="$(openssl dgst -md5 -binary < "$source" | base64 | tr -d '\n\r')"
+        sha256="$(openssl dgst -sha256 -r < "$source" | cut -d ' ' -f 1)"
+        payload="$("$JQ_BIN" -nc --arg path "$READ_FILE_PATH" --argjson size "$size" --arg checksum "$checksum" --arg sha256 "$sha256" \
+          '{path: $path, byte_size: $size, checksum: $checksum, sha256: $sha256}')"
+        link="$(http_json POST "/api/v1/buckets/${BUCKET_ID}/uploads" "$payload")" || return 1
+        url="$("$JQ_BIN" -er '.data.upload.url' <<<"$link")" || die "upload response did not include url"
+        validate_transfer_url "$url" || die "untrusted upload URL"
+        while IFS=$'\t' read -r name value; do
+          [[ -n "$name" ]] && header_args+=(-H "$name: $value")
+        done < <("$JQ_BIN" -r '.data.upload.headers | to_entries[] | select((.key + .value) | test("[\r\n\t]") | not) | [.key, .value] | @tsv' <<<"$link")
+        status="$(safe_curl -sS -o /dev/null -w "%{http_code}" -X PUT "${header_args[@]}" --data-binary "@$source" --url "$url")" || die "The image was not uploaded"
+        http_status_success "$status" || die "The image was not uploaded (HTTP $status)"
+        payload="$("$JQ_BIN" -c --arg path "$READ_FILE_PATH" '{path: $path, signed_blob_id: .data.signed_blob_id}' <<<"$link")"
+      fi ;;
+    *) die "write takes a Markdown page (.md, .mdx) or an image (.jpg, .png, .webp)" ;;
+  esac
+  rm -f "$source"
+  http_json POST "/api/v1/buckets/${BUCKET_ID}/files" "$payload"
+}
+
+move_file() {
+  [[ -n "$BUCKET_ID" && -n "$READ_FILE_PATH" && -n "$NEW_FILE_PATH" ]] || die "mv requires a bucket, PATH and NEW_PATH"
+  local file_id
+  file_id="$(file_id_for_path)" || return 1
+  http_json POST "/api/v1/buckets/${BUCKET_ID}/files/${file_id}/move" "$("$JQ_BIN" -nc --arg path "$NEW_FILE_PATH" '{new_path: $path}')"
+}
+
+delete_file() {
+  [[ -n "$BUCKET_ID" && -n "$READ_FILE_PATH" ]] || die "rm requires a bucket and PATH"
+  local file_id
+  file_id="$(file_id_for_path)" || return 1
+  http_json DELETE "/api/v1/buckets/${BUCKET_ID}/files/${file_id}" "{}"
+}
+
+restore_file() {
+  [[ -n "$BUCKET_ID" && -n "$READ_FILE_PATH" ]] || die "restore requires a bucket and PATH"
+  [[ -n "$VERSION_ID" ]] || die "restore requires --version-id ID (see revdoku versions PATH)"
+  validate_id version_id "$VERSION_ID"
+  local file_id
+  file_id="$(file_id_for_path)" || return 1
+  http_json POST "/api/v1/buckets/${BUCKET_ID}/files/${file_id}/versions/${VERSION_ID}/restore" "{}"
 }
 
 # Fetch data.download.url from an API response. The link carries its own
@@ -1546,10 +1485,12 @@ ticket_command() {
       reply_to_ticket "${path}/messages"
       ;;
     ticket-update)
-      [[ -n "$STATUS_OPTION$EMAIL_ADD_LABELS$EMAIL_REMOVE_LABELS" ]] || die "ticket-update requires --status open|solved, --add-label or --remove-label"
-      http_json PATCH "$path" "$("$JQ_BIN" -nc --arg status "$STATUS_OPTION" --arg add "$EMAIL_ADD_LABELS" --arg remove "$EMAIL_REMOVE_LABELS" '
+      [[ -n "$STATUS_OPTION$EMAIL_ADD_LABELS$EMAIL_REMOVE_LABELS" || "$TICKET_NOTE_SET" == "true" ]] || die "ticket-update requires --status open|pending|solved, --note, --add-label or --remove-label"
+      http_json PATCH "$path" "$("$JQ_BIN" -nc --arg status "$STATUS_OPTION" --arg add "$EMAIL_ADD_LABELS" --arg remove "$EMAIL_REMOVE_LABELS" \
+        --arg note "$TICKET_NOTE" --arg note_set "$TICKET_NOTE_SET" '
         def names: split("\n") | map(select(length > 0));
         (if $status == "" then {} else {status: $status} end)
+        + (if $note_set == "true" then {internal_note: $note} else {} end)
         + (if ($add | names | length) > 0 then {add_labels: ($add | names)} else {} end)
         + (if ($remove | names | length) > 0 then {remove_labels: ($remove | names)} else {} end)')"
       ;;
@@ -1562,7 +1503,7 @@ ticket_command() {
       [[ -n "$MESSAGE_ID" ]] || die "ticket-download requires --message-id ID (see revdoku ticket-messages $TICKET_ID)"
       path="${path}/messages/${MESSAGE_ID}"
       if [[ -n "$EMAIL_ATTACHMENT_ID" ]]; then
-        [[ "$EMAIL_ATTACHMENT_ID" =~ ^df_[A-Za-z0-9]+$ ]] || die "invalid attachment id"
+        [[ "$EMAIL_ATTACHMENT_ID" =~ ^eat_[A-Za-z0-9]+$ ]] || die "invalid attachment id"
         path="${path}/attachments/${EMAIL_ATTACHMENT_ID}"
       else
         path="${path}/raw"
@@ -1612,55 +1553,14 @@ reply_to_ticket() {
 create_bucket() {
   local payload
   payload="$("$JQ_BIN" -nc --arg description "$DESCRIPTION" --arg title "$BUCKET_TITLE" \
-    --arg username "$EMAIL_USERNAME" --arg domain "$EMAIL_DOMAIN" --arg template "$BUCKET_TEMPLATE" \
+    --arg username "$EMAIL_USERNAME" --arg domain "$EMAIL_DOMAIN" \
     --argjson metadata "$METADATA_JSON" \
-    '{bucket: (({title:$title,description:$description,template:$template} | with_entries(select(.value != ""))) +
+    '{bucket: (({title:$title,description:$description} | with_entries(select(.value != ""))) +
       (if ($metadata | length) > 0 then {metadata: $metadata} else {} end) +
       {email: ({username:$username,domain:$domain} | with_entries(select(.value != "")))})}')"
   http_json POST "/api/v1/buckets" "$payload"
 }
 
-append_text_file() {
-  local content_file tmp_content payload response path
-  [[ -n "$BUCKET_ID" ]] || die "append requires --bucket-id"
-  [[ -n "$APPEND_TEXT_PATH" ]] || die "append requires a bucket-relative PATH"
-
-  tmp_content=""
-  if [[ -n "$APPEND_TEXT_CONTENT_FILE" ]]; then
-    if [[ "$APPEND_TEXT_CONTENT_FILE" == "-" ]]; then
-      tmp_content="$(mktemp)"
-      cat > "$tmp_content"
-      content_file="$tmp_content"
-    else
-      [[ -f "$APPEND_TEXT_CONTENT_FILE" ]] || die "--content-file does not exist: $APPEND_TEXT_CONTENT_FILE"
-      content_file="$APPEND_TEXT_CONTENT_FILE"
-    fi
-  else
-    tmp_content="$(mktemp)"
-    printf "%s" "$APPEND_TEXT_CONTENT" > "$tmp_content"
-    content_file="$tmp_content"
-  fi
-
-  if [[ ! -s "$content_file" ]]; then
-    [[ -z "$tmp_content" ]] || rm -f "$tmp_content"
-    die "append content must not be empty"
-  fi
-
-  path="$APPEND_TEXT_PATH"
-  payload="$("$JQ_BIN" -Rs \
-    --arg path "$path" \
-    --argjson newline_before "$APPEND_TEXT_NEWLINE_BEFORE" \
-    '{path:$path, content: ., newline_before:$newline_before}' < "$content_file")"
-  if ! response="$(http_json POST "/api/v1/buckets/${BUCKET_ID}/files/append_text" "$payload")"; then
-    [[ -z "$tmp_content" ]] || rm -f "$tmp_content"
-    return 1
-  fi
-  [[ -z "$tmp_content" ]] || rm -f "$tmp_content"
-  printf "%s\n" "$response"
-}
-
-# The access settings of a publish or preview. The password comes from a file or
-# standard input, never from the command line.
 publish_request_body() {
   local source="/dev/null"
   if [[ -n "$PASSWORD_FILE" ]]; then
@@ -1845,7 +1745,7 @@ maybe_notify_update() {
   fi
 }
 
-[[ "$DRY_RUN" == "true" || "$ACTION" == "delete_bucket" ]] || maybe_notify_update || true
+[[ "$ACTION" == "delete_bucket" ]] || maybe_notify_update || true
 
 case "$ACTION" in
   webhook|webhook-set|webhook-delete|events-subscription)
@@ -1913,12 +1813,20 @@ case "$ACTION" in
     list_versions
     exit 0
     ;;
-  restore_version)
-    restore_version
+  write_file)
+    write_file
     exit 0
     ;;
-  append_text_file)
-    append_text_file
+  move_file)
+    move_file
+    exit 0
+    ;;
+  delete_file)
+    delete_file
+    exit 0
+    ;;
+  restore_file)
+    restore_file
     exit 0
     ;;
   archive_bucket)
@@ -1943,8 +1851,8 @@ case "$ACTION" in
     ;;
   connection_status)
     connection_status
-    if [[ "$SHOW_UPLOAD_HINT" == "true" ]]; then
-      echo "Tip: run 'revdoku upload .' to save this folder, or 'revdoku --help' for all commands." >&2
+    if [[ "$ORIGINAL_ARGC" -eq 0 ]]; then
+      echo "Tip: run 'revdoku --help' for all commands." >&2
     fi
     exit 0
     ;;
@@ -1954,668 +1862,4 @@ case "$ACTION" in
     ;;
 esac
 
-[[ -e "$PATH_TO_STORE" ]] || die "$PATH_TO_STORE does not exist"
-[[ ! -L "$PATH_TO_STORE" ]] || die "symlink upload paths are not supported"
-
-abs_path() {
-  local path="$1"
-  if [[ -d "$path" ]]; then
-    (cd "$path" && pwd -P)
-  else
-    local dir base
-    dir="$(dirname "$path")"
-    base="$(basename "$path")"
-    printf "%s/%s" "$(cd "$dir" && pwd -P)" "$base"
-  fi
-}
-
-ROOT_PATH="$(abs_path "$PATH_TO_STORE")"
-if [[ -d "$ROOT_PATH" ]]; then
-  REVDOKU_PROJECT_FILE="$ROOT_PATH/.revdoku"
-fi
-
-effective_metadata_json() {
-  printf "%s" "$METADATA_JSON"
-}
-
-content_type_for() {
-  local file="$1"
-  local lower="${file##*.}"
-  lower="$(printf "%s" "$lower" | tr '[:upper:]' '[:lower:]')"
-  case "$lower" in
-    html|htm) echo "text/html" ;;
-    css|csss|scss|sass|less|styl|stylus) echo "text/css" ;;
-    js|mjs|cjs) echo "text/javascript" ;;
-    map) echo "application/json" ;;
-    webmanifest) echo "application/manifest+json" ;;
-    json) echo "application/json" ;;
-    txt) echo "text/plain" ;;
-    md) echo "text/markdown" ;;
-    png) echo "image/png" ;;
-    apng) echo "image/apng" ;;
-    jpg|jpe|jpeg|jfif|pjp|pjpeg) echo "image/jpeg" ;;
-    webp) echo "image/webp" ;;
-    gif) echo "image/gif" ;;
-    avif) echo "image/avif" ;;
-    bmp) echo "image/bmp" ;;
-    ico|cur) echo "image/x-icon" ;;
-    heic|heics) echo "image/heic" ;;
-    heif|heifs) echo "image/heif" ;;
-    jp2) echo "image/jp2" ;;
-    svg) echo "image/svg+xml" ;;
-    woff) echo "font/woff" ;;
-    woff2) echo "font/woff2" ;;
-    ttf) echo "font/ttf" ;;
-    otf) echo "font/otf" ;;
-    wasm) echo "application/wasm" ;;
-    pdf) echo "application/pdf" ;;
-    xml) echo "application/xml" ;;
-    rss) echo "application/rss+xml" ;;
-    atom) echo "application/atom+xml" ;;
-    mp4) echo "video/mp4" ;;
-    mov) echo "video/quicktime" ;;
-    webm) echo "video/webm" ;;
-    m4v) echo "video/x-m4v" ;;
-    ogv) echo "video/ogg" ;;
-    avi) echo "video/x-msvideo" ;;
-    mkv) echo "video/x-matroska" ;;
-    mpg|mpeg) echo "video/mpeg" ;;
-    ts|tsx|mts|cts) echo "text/plain" ;;
-    m3u8) echo "application/vnd.apple.mpegurl" ;;
-    mp3) echo "audio/mpeg" ;;
-    ogg|oga) echo "audio/ogg" ;;
-    wav) echo "audio/wav" ;;
-    m4a) echo "audio/mp4" ;;
-    aac) echo "audio/aac" ;;
-    flac) echo "audio/flac" ;;
-    opus) echo "audio/opus" ;;
-    *) echo "application/octet-stream" ;;
-  esac
-}
-
-file_size() {
-  wc -c < "$1" | tr -d '[:space:]'
-}
-
-md5_base64() {
-  openssl dgst -md5 -binary "$1" | base64 | tr -d '\r\n'
-}
-
-sha256_file() {
-  if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum "$1" | awk '{print $1}'
-  elif command -v shasum >/dev/null 2>&1; then
-    shasum -a 256 "$1" | awk '{print $1}'
-  else
-    openssl dgst -sha256 "$1" | awk '{print $2}'
-  fi
-}
-
-# The server stores paths in Unicode NFC. macOS can return decomposed (NFD)
-# names, so compose them before they become upload paths.
-nfc_text() {
-  local LC_ALL=C
-  case "$1" in
-    *[!\ -~]*) ;;
-    *) printf '%s' "$1"; return ;;
-  esac
-  perl -MUnicode::Normalize -CSA -e 'print NFC($ARGV[0])' -- "$1" 2>/dev/null || printf '%s' "$1"
-}
-
-relative_path_for() {
-  local file="$1"
-  if [[ -f "$ROOT_PATH" ]]; then
-    nfc_text "$(basename "$file")"
-  else
-    nfc_text "$(printf "%s/%s" "$(basename "$ROOT_PATH")" "${file#"$ROOT_PATH"/}")"
-  fi
-}
-
-file_identity() {
-  local value
-  if value="$(stat -c '%d:%i' "$1" 2>/dev/null)"; then
-    printf '%s' "$value"
-  else
-    stat -f '%d:%i' "$1"
-  fi
-}
-
-local_file_for_relative_path() {
-  local rel="$1" entry file
-  [[ -n "$rel" && "$rel" != /* && "$rel" != *'\'* ]] || return 1
-  case "/$rel/" in *'/../'*|*'/./'*|*'//'*) return 1 ;; esac
-  entry="$("$JQ_BIN" -ce --arg rel "$rel" '[.[] | select(.path == $rel)] | if length == 1 then .[0] else error("unknown upload path") end' "$UPLOAD_LOCAL_MAP")" || return 1
-  file="$("$JQ_BIN" -r '.local_path' <<<"$entry")"
-  [[ -f "$file" ]] && no_symlink_components "$file" || return 1
-  [[ "$(file_identity "$file")" == "$("$JQ_BIN" -r '.identity' <<<"$entry")" ]] || return 1
-  [[ "$(file_size "$file")" == "$("$JQ_BIN" -r '.byte_size' <<<"$entry")" ]] || return 1
-  [[ "$(sha256_file "$file")" == "$("$JQ_BIN" -r '.sha256' <<<"$entry")" ]] || return 1
-  printf '%s' "$file"
-}
-
-validate_upload_descriptors() {
-  local response="$1" requested="$2"
-  "$JQ_BIN" -e --argjson requested "$requested" '
-    .data.uploads as $uploads |
-    ($uploads | type == "array") and
-    ([$uploads[].path] | length == (unique | length)) and
-    all($uploads[]; .path as $p | ($p | type == "string") and
-      ([$requested[] | select(.path == $p)] | length == 1))' <<<"$response" >/dev/null || {
-      echo "error: upload response contains unknown or duplicate paths" >&2
-      return 1
-    }
-}
-
-create_bucket_id() {
-  local payload response id
-  payload="$(bucket_payload)"
-  response="$(http_json POST "/api/v1/buckets" "$payload")" ||
-    die "bucket create failed; to store files in an existing bucket, pass --bucket-id ID (see 'revdoku ls')"
-  id="$("$JQ_BIN" -r '.data.bucket.id // empty' <<<"$response")"
-  validate_id bucket_id "$id"
-  printf "%s" "$id"
-}
-
-bucket_payload() {
-  "$JQ_BIN" -nc \
-    --arg description "$DESCRIPTION" \
-    --argjson metadata "$(effective_metadata_json)" \
-    '{bucket: ({metadata: $metadata} + (if $description != "" then {description: $description} else {} end))}'
-}
-
-bucket_update_payload() {
-  "$JQ_BIN" -nc \
-    --arg description "$DESCRIPTION" \
-    --argjson metadata "$METADATA_JSON" \
-    '{bucket: ((if $description != "" then {description: $description} else {} end)
-      + (if ($metadata | length) > 0 then {metadata: $metadata} else {} end))}'
-}
-
-bucket_update_needed() {
-  [[ "$METADATA_JSON" != "{}" || -n "$DESCRIPTION" ]]
-}
-
-put_direct_upload() {
-  local upload_json="$1"
-  local file="$2"
-  local url header_args=() body_file status curl_status attempt delay
-  LAST_DIRECT_UPLOAD_STATUS=""
-  url="$("$JQ_BIN" -r '.url // empty' <<<"$upload_json")"
-  validate_transfer_url "$url" || { echo "error: upload destination is not approved" >&2; return 1; }
-  "$JQ_BIN" -e '(.headers // {}) | type == "object" and all(to_entries[];
-    (.key | test("^[A-Za-z0-9-]+$")) and
-    (.key | ascii_downcase | test("^(content-type|content-md5|content-length|content-disposition|x-amz-[a-z0-9-]+)$")) and
-    (.value | type == "string" and (test("[\\x00-\\x1f\\x7f]") | not)))' <<<"$upload_json" >/dev/null || {
-      echo "error: unsafe storage upload headers" >&2
-      return 1
-    }
-  while IFS= read -r header; do
-    header_args+=(-H "$header")
-  done < <("$JQ_BIN" -r '.headers // {} | to_entries[] | .key + ": " + .value' <<<"$upload_json")
-
-  attempt=0
-  while true; do
-    [[ "$(local_file_for_relative_path "$(relative_path_for "$file")")" == "$file" ]] || { echo "error: selected upload file changed" >&2; return 1; }
-    body_file="$(mktemp)"
-    # Bash 3 with nounset treats an empty array as unset.
-    if status="$(safe_curl -sS -o "$body_file" -w "%{http_code}" -X PUT ${header_args[@]+"${header_args[@]}"} --data-binary "@${file}" --url "$url")"; then
-      curl_status=0
-    else
-      curl_status=$?
-    fi
-
-    if [[ "$curl_status" == "0" ]] && http_status_success "$status"; then
-      LAST_DIRECT_UPLOAD_STATUS="$status"
-      rm -f "$body_file"
-      return 0
-    fi
-
-    if (( attempt < DIRECT_UPLOAD_MAX_ATTEMPTS )) && { [[ "$curl_status" != "0" ]] || http_status_retryable "$status"; }; then
-      attempt=$((attempt + 1))
-      delay="$(retry_delay_for_attempt "$attempt")"
-      if [[ "$curl_status" != "0" ]]; then
-        echo "Direct upload network error; retrying in ${delay}s (${attempt}/${DIRECT_UPLOAD_MAX_ATTEMPTS})..." >&2
-      else
-        echo "Direct upload HTTP $status; retrying in ${delay}s (${attempt}/${DIRECT_UPLOAD_MAX_ATTEMPTS})..." >&2
-      fi
-      rm -f "$body_file"
-      sleep "$delay"
-      continue
-    fi
-
-    if [[ "$curl_status" != "0" ]]; then
-      LAST_DIRECT_UPLOAD_STATUS=""
-      echo "error: direct upload failed (curl exit $curl_status)" >&2
-    else
-      LAST_DIRECT_UPLOAD_STATUS="$status"
-      echo "error: direct upload failed (HTTP $status)" >&2
-      if [[ -s "$body_file" ]]; then
-        cat "$body_file" >&2
-      fi
-    fi
-    rm -f "$body_file"
-    return 1
-  done
-}
-
-upload_file_direct() {
-  local bucket_id="$1"
-  local file="$2"
-  local file_list
-  file_list="$(mktemp)"
-  printf "%s\0" "$file" > "$file_list"
-  store_bucket_session_upload "$bucket_id" "$file_list"
-  local status=$?
-  rm -f "$file_list"
-  return "$status"
-}
-
-upload_file() {
-  local bucket_id="$1"
-  local file="$2"
-  local rel
-  rel="$(relative_path_for "$file")"
-  echo "Uploading $rel" >&2
-
-  upload_file_direct "$bucket_id" "$file"
-}
-
-bucket_upload_session_manifest_json() {
-  local file_list="$1"
-  local manifest_lines converted_map rel filename content_type size checksum sha256 identity
-  manifest_lines="$(mktemp "$upload_session_tmp/manifest.XXXXXX")" || return 1
-  converted_map="$(mktemp "$upload_session_tmp/map.XXXXXX")" || return 1
-  : > "$UPLOAD_LOCAL_MAP"
-  while IFS= read -r -d '' file; do
-    no_symlink_components "$file" || return 1
-    identity="$(file_identity "$file")"
-    rel="$(relative_path_for "$file")"
-    filename="$(basename "$file")"
-    content_type="$(content_type_for "$file")"
-    size="$(file_size "$file")"
-    checksum="$(md5_base64 "$file")"
-    sha256="$(sha256_file "$file")"
-    "$JQ_BIN" -nc --arg path "$rel" --arg local_path "$file" --arg identity "$identity" --arg sha256 "$sha256" --argjson byte_size "$size" \
-      '{path:$path,local_path:$local_path,identity:$identity,sha256:$sha256,byte_size:$byte_size}' >> "$UPLOAD_LOCAL_MAP"
-    "$JQ_BIN" -nc \
-      --arg path "$rel" \
-      --argjson byte_size "$size" \
-      --arg content_type "$content_type" \
-      --arg checksum "$checksum" \
-      --arg sha256 "$sha256" \
-      '{path:$path, byte_size:$byte_size, content_type:$content_type, checksum:$checksum, sha256:$sha256}' >> "$manifest_lines"
-  done < "$file_list"
-  "$JQ_BIN" -sc '.' "$UPLOAD_LOCAL_MAP" > "$converted_map" || return 1
-  mv "$converted_map" "$UPLOAD_LOCAL_MAP" || return 1
-  "$JQ_BIN" -sc '.' "$manifest_lines"
-  rm -f "$manifest_lines"
-}
-
-bucket_upload_session_client_key() {
-  local bucket_id="$1"
-  local manifest_json="$2"
-  local digest
-  if [[ -n "$MAILBOX_UPLOAD_CLIENT_SESSION_KEY" ]]; then
-    printf "%s" "$MAILBOX_UPLOAD_CLIENT_SESSION_KEY"
-    return 0
-  fi
-  digest="$(printf "%s:%s:%s" "$bucket_id" "$manifest_json" "$ACTION_REASON" | openssl dgst -sha256 -hex | awk '{print $2}')"
-  printf "cli:%s:%s" "$bucket_id" "$digest"
-}
-
-bucket_upload_session_payload() {
-  local client_session_key="$1"
-  local expected_file_count="$2"
-  "$JQ_BIN" -nc \
-    --arg client_session_key "$client_session_key" \
-    --argjson expected_file_count "$expected_file_count" \
-    '{client_session_key: $client_session_key, expected_file_count: $expected_file_count}'
-}
-
-prepare_bucket_upload_descriptors() {
-  local bucket_id="$1"
-  local session_id="$2"
-  local batch_json="$3"
-  local payload
-  payload="$("$JQ_BIN" -nc --argjson files "$batch_json" '{files: $files}')"
-  http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions/${session_id}/uploads" "$payload"
-}
-
-finalize_bucket_upload_session() {
-  local bucket_id="$1"
-  local session_id="$2"
-  local complete="${3:-true}"
-  local payload response pending attempts=0 remaining
-  local max_attempts="${REVDOKU_FINALIZE_MAX_ATTEMPTS:-1000}"
-  [[ -n "$session_id" ]] || return 0
-  "$JQ_BIN" -nc --argjson complete "$complete" '{complete:$complete}' | {
-    payload="$(cat)"
-    while :; do
-      response="$(http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions/${session_id}/finalize" "$payload")" || return 1
-      pending="$("$JQ_BIN" -r '.data.finalize_pending // false' <<<"$response")"
-      [[ "$pending" == "true" && "$complete" == "true" ]] || return 0
-      attempts=$((attempts + 1))
-      remaining="$("$JQ_BIN" -r '.data.remaining_files_count // .data.bucket_upload_session.remaining_files_count // empty' <<<"$response" 2>/dev/null || true)"
-      if (( attempts == 1 || attempts % 5 == 0 )); then
-        if [[ -n "$remaining" && "$remaining" != "null" ]]; then
-          echo "Still finalizing ${remaining} file(s)… (attempt ${attempts})" >&2
-        else
-          echo "Still finalizing files… (attempt ${attempts})" >&2
-        fi
-      fi
-      if (( attempts >= max_attempts )); then
-        echo "Timed out finalizing the upload session after ${attempts} attempts (~$((attempts * 2 / 60)) min)." >&2
-        echo "Files may still be processing in the background; re-run the command to resume." >&2
-        return 1
-      fi
-      sleep 2
-    done
-  }
-}
-
-finalize_bucket_upload_session_batch() {
-  local bucket_id="$1"
-  local session_id="$2"
-  local limit="${3:-100}"
-  local attempts=0 missing_entry_json missing_path
-  [[ -n "$session_id" ]] || return 0
-  "$JQ_BIN" -nc --argjson limit "$limit" '{limit:$limit}' | {
-    local payload
-    payload="$(cat)"
-    while :; do
-      if http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions/${session_id}/finalize_batch" "$payload" >/dev/null; then
-        return 0
-      fi
-
-      if [[ "${LAST_ERROR_CODE:-}" == "DIRECT_UPLOAD_NOT_FOUND" && "$attempts" -lt "$BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE" ]]; then
-        missing_entry_json="$LAST_ERROR_DETAILS_JSON"
-        missing_path="$("$JQ_BIN" -r '.path // empty' <<<"$missing_entry_json" 2>/dev/null || true)"
-        if [[ -n "$missing_path" ]] && upload_bucket_session_missing_entry "$bucket_id" "$session_id" "$missing_entry_json"; then
-          attempts=$((attempts + 1))
-          echo "Retrying bucket upload batch finalize after refreshing $missing_path." >&2
-          continue
-        fi
-      fi
-
-      return 1
-    done
-  }
-}
-
-upload_bucket_session_missing_entry() {
-  local bucket_id="$1"
-  local session_id="$2"
-  local entry_json="$3"
-  local rel file response upload_json
-
-  rel="$("$JQ_BIN" -r '.path // empty' <<<"$entry_json" 2>/dev/null || true)"
-  [[ -n "$rel" ]] || return 1
-  file="$(local_file_for_relative_path "$rel")" || {
-    echo "error: upload session asked to refresh unknown upload path: $rel" >&2
-    return 1
-  }
-
-  echo "Refreshing missing direct upload for $rel." >&2
-  entry_json="$("$JQ_BIN" -ce --arg rel "$rel" 'map(select(.path == $rel))[0] // error("unknown retry path")' <<<"$UPLOAD_MANIFEST")" || return 1
-  response="$(prepare_bucket_upload_descriptors "$bucket_id" "$session_id" "[$entry_json]")" || return 1
-  validate_upload_descriptors "$response" "[$entry_json]" || return 1
-  upload_json="$("$JQ_BIN" -c '.data.uploads[0].upload // empty' <<<"$response")"
-  [[ -n "$upload_json" && "$upload_json" != "null" ]] || return 1
-
-  echo "Uploading $rel" >&2
-  put_direct_upload "$upload_json" "$file"
-}
-
-store_bucket_session_upload() (
-  local bucket_id="$1"
-  local file_list="$2"
-  local manifest_json payload response session_id upload_line rel upload_json file batch_json batch_response expected_file_count client_session_key failed=0 finalized=0 entry_json refresh_response uploaded_index=0
-  local upload_session_tmp
-  upload_session_tmp="$(mktemp -d "${TMPDIR:-/tmp}/revdoku-upload.XXXXXX")" || return 1
-  trap 'rm -rf "$upload_session_tmp"' EXIT
-  trap 'exit 130' INT
-  trap 'exit 143' TERM
-  trap 'exit 129' HUP
-  UPLOAD_LOCAL_MAP="$upload_session_tmp/local-map.json"
-  manifest_json="$(bucket_upload_session_manifest_json "$file_list")" || { rm -f "$UPLOAD_LOCAL_MAP"; return 1; }
-  UPLOAD_MANIFEST="$manifest_json"
-  expected_file_count="$("$JQ_BIN" -r 'length' <<<"$manifest_json")"
-  client_session_key="$(bucket_upload_session_client_key "$bucket_id" "$manifest_json")"
-  payload="$(bucket_upload_session_payload "$client_session_key" "$expected_file_count")"
-  response="$(http_json POST "/api/v1/buckets/${bucket_id}/upload_sessions" "$payload")" || return 1
-  session_id="$("$JQ_BIN" -r '.data.bucket_upload_session.id // empty' <<<"$response")"
-  validate_id upload_session_id "$session_id"
-  echo "Bucket upload session: $session_id" >&2
-
-  while IFS= read -r batch_json; do
-    [[ -n "$batch_json" && "$batch_json" != "[]" ]] || continue
-    batch_response="$(prepare_bucket_upload_descriptors "$bucket_id" "$session_id" "$batch_json")" || {
-      failed=1
-      break
-    }
-    validate_upload_descriptors "$batch_response" "$batch_json" || { failed=1; break; }
-    while IFS= read -r upload_line; do
-      [[ -n "$upload_line" ]] || continue
-      rel="$("$JQ_BIN" -r '.path' <<<"$upload_line")"
-      upload_json="$("$JQ_BIN" -c '.upload' <<<"$upload_line")"
-      file="$(local_file_for_relative_path "$rel")" || {
-        echo "error: upload session asked for unknown upload path: $rel" >&2
-        failed=1
-        break
-      }
-      uploaded_index=$((uploaded_index + 1))
-      echo "Uploading ${uploaded_index}/${expected_file_count}: $rel" >&2
-      if ! put_direct_upload "$upload_json" "$file"; then
-        if [[ "${LAST_DIRECT_UPLOAD_STATUS:-}" == "403" || "${LAST_DIRECT_UPLOAD_STATUS:-}" == "404" ]]; then
-          entry_json="$("$JQ_BIN" -c --arg rel "$rel" 'map(select(.path == $rel))[0] // empty' <<<"$batch_json")"
-          if [[ -n "$entry_json" ]] && refresh_response="$(prepare_bucket_upload_descriptors "$bucket_id" "$session_id" "[$entry_json]")"; then
-            validate_upload_descriptors "$refresh_response" "[$entry_json]" || { failed=1; break; }
-            upload_json="$("$JQ_BIN" -c '.data.uploads[0].upload // empty' <<<"$refresh_response")"
-            if [[ -n "$upload_json" ]] && put_direct_upload "$upload_json" "$file"; then
-              continue
-            fi
-          fi
-        fi
-        echo "error: upload failed for $rel" >&2
-        failed=1
-        break
-      fi
-    done < <("$JQ_BIN" -c '.data.uploads[]?' <<<"$batch_response")
-    [[ "$failed" == "0" ]] || break
-
-    if ! finalize_bucket_upload_session_batch "$bucket_id" "$session_id" "$BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE"; then
-      failed=1
-      break
-    fi
-  done < <("$JQ_BIN" -c --argjson size "$BUCKET_UPLOAD_DESCRIPTOR_BATCH_SIZE" 'range(0; length; $size) as $i | .[$i:($i + $size)]' <<<"$manifest_json")
-
-  if [[ "$failed" == "0" ]] && finalize_bucket_upload_session "$bucket_id" "$session_id" true; then
-    finalized=1
-  else
-    failed=1
-  fi
-  if [[ "$finalized" != "1" ]]; then
-    finalize_bucket_upload_session "$bucket_id" "$session_id" false >/dev/null 2>&1 || true
-  fi
-  rm -f "$UPLOAD_LOCAL_MAP"
-  return "$failed"
-)
-
-bucket_id_for_storage() {
-  if [[ -n "$BUCKET_ID" ]]; then
-    if bucket_update_needed; then
-      local payload
-      payload="$(bucket_update_payload)"
-      http_json PATCH "/api/v1/buckets/${BUCKET_ID}" "$payload" >/dev/null
-    fi
-    printf "%s" "$BUCKET_ID"
-  else
-    create_bucket_id
-  fi
-}
-
-store_bucket() {
-  local bucket_id bucket_id_file file_list
-  file_list="$(mktemp)"
-  if ! collect_files > "$file_list"; then
-    rm -f "$file_list"
-    return 1
-  fi
-  if [[ ! -s "$file_list" ]]; then
-    rm -f "$file_list"
-    die "no files found to store after safety exclusions"
-  fi
-
-  bucket_id_file="$(mktemp)"
-  if ! bucket_id_for_storage > "$bucket_id_file"; then
-    rm -f "$bucket_id_file" "$file_list"
-    return 1
-  fi
-  bucket_id="$(cat "$bucket_id_file")"
-  rm -f "$bucket_id_file"
-  [[ -n "$bucket_id" ]] || {
-    rm -f "$file_list"
-    die "bucket id is required before uploading files"
-  }
-  echo "Bucket: $bucket_id" >&2
-  echo "Saved bucket: $bucket_id" >&2
-  store_bucket_session_upload "$bucket_id" "$file_list" || {
-    rm -f "$file_list"
-    return 1
-  }
-  rm -f "$file_list"
-  printf "%s" "$bucket_id"
-}
-
-collect_files() {
-  if [[ -f "$ROOT_PATH" ]]; then
-    if should_skip_storage_path "$ROOT_PATH"; then
-      die "refusing to store file from Revdoku upload safety list: $(basename "$ROOT_PATH")"
-    fi
-    printf "%s\0" "$ROOT_PATH"
-    return
-  fi
-
-  find -P "$ROOT_PATH" \
-    \( -type d \( -name ".git" -o -name ".hg" -o -name ".svn" -o -name ".revdoku" -o -name ".terraform" -o -name ".cache" -o -name ".parcel-cache" -o -name ".turbo" -o -name ".vite" -o -name ".next" -o -name ".astro" -o -name "node_modules" -o -name ".aws" -o -name ".ssh" -o -name ".gnupg" -o -name ".azure" \) -prune -print0 \) \
-    -o \( -type f -o -type l \) -print0 |
-    while IFS= read -r -d '' file; do
-      if [[ -L "$file" ]] || should_skip_storage_path "$file"; then
-        echo "Skipping file from Revdoku upload safety list: $(relative_path_for "$file")" >&2
-        if [[ -n "$SKIPPED_PATHS" ]]; then
-          "$JQ_BIN" -nc --arg path "$(relative_path_for "$file")" '{path:$path,reason:"upload safety exclusion or symlink"}' >> "$SKIPPED_PATHS"
-        fi
-        continue
-      fi
-      printf "%s\0" "$file"
-    done
-}
-
-should_skip_storage_path() {
-  local file="$1"
-  local rel name lower_rel lower_name part extension state_file confirmation_directory
-  # Match path names only: return success to EXCLUDE these credential stores.
-  # Never open or upload their contents; this is independent of server policy.
-  case "$file" in
-    */.aws|*/.aws/*|*/.ssh|*/.ssh/*|*/.gnupg|*/.gnupg/*|*/.azure|*/.azure/*|*/.config/gcloud/*|*/.docker/config.json|*/.kube/config|*/.codex/auth.json|*/.claude/.credentials.json)
-      return 0 ;;
-  esac
-  # Keep the client's private state out even when its config paths are inside
-  # the selected folder. A custom credential location must not expose sibling
-  # bucket selections, version/update stamps, or deletion preview tokens.
-  for state_file in "$CREDENTIALS_PATH" "$DEFAULT_BUCKET_PATH" "$CLIENT_VERSION_FILE" "$UPDATE_CHECK_STAMP"; do
-    if [[ -e "$state_file" && "$file" == "$(abs_path "$state_file")" ]]; then
-      return 0
-    fi
-  done
-  confirmation_directory="${REVDOKU_CONFIG_DIR}/delete-confirmations"
-  if [[ -d "$confirmation_directory" ]]; then
-    confirmation_directory="$(abs_path "$confirmation_directory")"
-    if [[ "$file" == "$confirmation_directory" || "$file" == "$confirmation_directory/"* ]]; then
-      return 0
-    fi
-  fi
-  rel="$(relative_path_for "$file")"
-  name="$(basename "$file")"
-  lower_rel="$(printf "%s" "$rel" | tr '[:upper:]' '[:lower:]')"
-  lower_name="$(printf "%s" "$name" | tr '[:upper:]' '[:lower:]')"
-
-  # The pattern lines below are GENERATED from apps/web/config/upload_safety.json by
-  # scripts/generate-cli-upload-safety.rb so the CLI's local skip-list never drifts
-  # from the server policy (the server is the hard gate; this is a local-UX mirror).
-  # Edit the JSON and re-run the generator — do not hand-edit between the markers.
-  IFS='/' read -r -a path_parts <<< "$lower_rel"
-  for part in "${path_parts[@]}"; do
-    case "$part" in
-      # >>> revdoku:generated local_only_basenames
-      .ds_store|__macosx|.localized|.appledouble|.lsoverride|.documentrevisions-v100|.fseventsd|.spotlight-v100|.temporaryitems|.trashes|.volumeicon.icns|.appledb|.appledesktop|.apdisk|network\ trash\ folder|temporary\ items|thumbs.db|thumbs.db:encryptable|ehthumbs.db|ehthumbs_vista.db|desktop.ini|\$recycle.bin|system\ volume\ information|.directory|.trash|lost+found|.git|.hg|.svn|.revdoku|.terraform|.cache|.parcel-cache|.turbo|.vite|.next|.astro|node_modules)
-      # <<< revdoku:generated local_only_basenames
-        return 0
-        ;;
-      # >>> revdoku:generated local_only_name_globs
-      ._*|.trash-*|.fuse_hidden*|.nfs*)
-      # <<< revdoku:generated local_only_name_globs
-        return 0
-        ;;
-      agents.md|claude.md)
-        # Keep local agent-instruction files out of bulk uploads.
-        return 0
-        ;;
-      # >>> revdoku:generated prohibited_basenames
-      .env|.npmrc|.pypirc|.netrc|id_rsa|id_rsa.pub|id_dsa|id_dsa.pub|id_ecdsa|id_ecdsa.pub|id_ed25519|id_ed25519.pub)
-      # <<< revdoku:generated prohibited_basenames
-        return 0
-        ;;
-      # >>> revdoku:generated prohibited_name_globs
-      .env.*|env.local|env.production|env.staging|env.development|env.test|*.pem|*.key|*.p12|*.pfx|*.crt|*.cer|*.der|*.kdb|*.jks|*.mobileprovision|api-token.*|api_key.*|credentials.*|credential.*|secrets.*|secret.*|*.secret|*.secrets|private-key.*|private_key.*)
-      # <<< revdoku:generated prohibited_name_globs
-        return 0
-        ;;
-    esac
-  done
-
-  extension="${lower_name##*.}"
-  if [[ "$lower_name" == *.* && "$extension" != "$lower_name" ]]; then
-    case ".${extension}" in
-      # >>> revdoku:generated prohibited_extensions
-      .exe|.com|.scr|.pif|.cpl|.dll|.sys|.drv|.msi|.msp|.app|.dmg|.pkg|.deb|.rpm|.apk|.ipa|.jar|.jnlp|.run|.bin|.lnk|.pem|.key|.p12|.pfx|.crt|.cer|.der|.kdb|.jks|.mobileprovision|.zip|.zipx|.tar|.rar|.gz|.gzip|.tgz|.bz2|.tbz|.tbz2|.xz|.txz|.7z|.z|.lz|.lzma|.lz4|.zst|.zstd|.cab|.arj|.lzh|.lha|.war|.ear|.iso|.img|.vhd|.vhdx|.vmdk)
-      # <<< revdoku:generated prohibited_extensions
-        return 0
-        ;;
-    esac
-  fi
-
-  return 1
-}
-
-if [[ "$DRY_RUN" == "true" ]]; then
-  preview_files="$(mktemp)"
-  SKIPPED_PATHS="$(mktemp)"
-  preview_lines="$(mktemp)"
-  trap 'rm -f "$preview_files" "$SKIPPED_PATHS" "$preview_lines"' EXIT
-  collect_files > "$preview_files"
-  while IFS= read -r -d '' file; do
-    "$JQ_BIN" -nc --arg path "$(relative_path_for "$file")" --argjson bytes "$(file_size "$file")" '{path:$path,bytes:$bytes}' >> "$preview_lines"
-  done < "$preview_files"
-  "$JQ_BIN" -n --slurpfile files "$preview_lines" --slurpfile skipped "$SKIPPED_PATHS" \
-    --arg root "$ROOT_PATH" --arg origin "$BASE_URL" --arg account "$ACCOUNT_ID" --arg bucket "$BUCKET_ID" \
-    '{dry_run:true,root:$root,api_origin:$origin,account_id:($account|if . == "" then null else . end),
-      bucket_id:($bucket|if . == "" then null else . end),creates_bucket:($bucket == ""),
-      files:$files,file_count:($files|length),bytes:([$files[].bytes]|add // 0),skipped:$skipped}'
-  exit 0
-fi
-
-bucket_id_file="$(mktemp)"
-if ! store_bucket > "$bucket_id_file"; then
-  rm -f "$bucket_id_file"
-  die "bucket store failed"
-fi
-bucket_id="$(cat "$bucket_id_file")"
-rm -f "$bucket_id_file"
-echo "Saved bucket: $bucket_id" >&2
-
-# stdout stays the bucket ID for scripts; the dashboard link goes to stderr.
-echo "View in Revdoku: $APP_URL/buckets/view?id=$bucket_id" >&2
-write_project_binding "$bucket_id" ""
-print_terminal_link_hint
-printf "%s\n" "$bucket_id"
+die "Choose a command (run 'revdoku --help')"

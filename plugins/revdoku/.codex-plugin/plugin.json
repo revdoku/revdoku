@@ -1,7 +1,7 @@
 {
   "name": "revdoku",
-  "version": "1.0.580",
-  "description": "Revdoku publishes your docs as a site from GitHub or uploaded files. AI agents read the site through its MCP server, visitors ask questions, and support requests arrive as tickets. Connect your AI app to create buckets, edit and publish docs, read site analytics and answer tickets. The skill uploads local files with its bundled command-line tool.",
+  "version": "1.0.585",
+  "description": "Revdoku publishes your docs as a site from a GitHub repository. AI agents read the site through its MCP server, visitors ask questions, and support requests arrive as tickets. Connect your AI app to create buckets, connect GitHub, publish docs, read site analytics and answer tickets. The skill uploads local files with its bundled command-line tool.",
   "author": {
     "name": "Revdoku",
     "url": "https://revdoku.com"
@@ -26,7 +26,7 @@
   "interface": {
     "displayName": "Revdoku",
     "shortDescription": "Docs sites, AI answers and support tickets.",
-    "longDescription": "Revdoku publishes your docs as a site from GitHub or uploaded files. AI agents read the site through its MCP server, visitors ask questions, and support requests arrive as tickets. Connect your AI app to create buckets, edit and publish docs, read site analytics and answer tickets. The skill uploads local files with its bundled command-line tool.",
+    "longDescription": "Revdoku publishes your docs as a site from a GitHub repository. AI agents read the site through its MCP server, visitors ask questions, and support requests arrive as tickets. Connect your AI app to create buckets, connect GitHub, publish docs, read site analytics and answer tickets. The skill uploads local files with its bundled command-line tool.",
     "developerName": "Revdoku",
     "category": "Coding",
     "capabilities": [

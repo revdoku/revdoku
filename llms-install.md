@@ -1,8 +1,8 @@
 # Revdoku agent setup
 
-Revdoku publishes docs as a site from GitHub or uploaded files. AI agents read the site through its MCP server,
+Revdoku publishes docs as a site from a GitHub repository. AI agents read the site through its MCP server,
 visitors ask questions, and support requests arrive as tickets. A bucket holds the files, the site and the support mailbox.
-Connect to create buckets, edit and publish docs, read site analytics and answer tickets.
+Connect to create buckets, connect GitHub, publish docs, read site analytics and answer tickets.
 Verify the account and granted access with a read, then complete the requested task.
 
 | Task | Connection |
@@ -18,7 +18,7 @@ are instructions for one of these methods; they do not require another credentia
 ## Public prompt
 
 ```text
-Connect Revdoku so you can create buckets, edit and publish my docs, read site analytics and answer support tickets. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do. If I have no task yet, ask whether to publish docs from a GitHub repository or start from a template, then publish and show the site address.
+Connect Revdoku so you can create buckets, connect GitHub and publish my docs, read site analytics and answer support tickets. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do. If I have no task yet, ask which GitHub repository holds my docs (a new one can start as a copy of a Revdoku template repository on GitHub), then connect it, publish and show the site address.
 ```
 
 ## Account setup
@@ -36,9 +36,9 @@ default: use an explicit `account_id` or CLI `--account-id` for the intended acc
 
 ## First task
 
-If the user has a task, continue it after connection. Otherwise, ask whether to publish docs from a GitHub repository
-or to start from a docs template. See [Publish your first docs site](https://docs.revdoku.com/docs-sites#publish-your-first-docs-site).
-Publish the site and show its address. Then offer the next step: edit a page, read the site analytics or answer a support ticket.
+If the user has a task, continue it after connection. Otherwise, ask which GitHub repository holds the docs.
+A new repository can start as a copy of a Revdoku template repository on GitHub. See [Publish your first docs site](https://docs.revdoku.com/docs-sites#publish-your-first-docs-site).
+Publish the site and show its address. Then offer the next step: read the site analytics, suggest a page change in the repository or answer a support ticket.
 
 ## Agent rules
 
@@ -51,8 +51,8 @@ Publish the site and show its address. Then offer the next step: edit a page, re
 - Follow the account setup flow above. Hosted MCP requires browser OAuth before connecting.
 - If you are an AI agent that uses the Revdoku dashboard in a browser, choose what the
   mailbox is for and create it in the setup steps after signup, then choose **Are you an AI agent?**.
-- Use `revdoku upload` for files and folders. Share the dashboard link with authorized
-  people; the link itself does not grant access.
+- A bucket's files are a read-only copy of its GitHub repository. Change the files on GitHub.
+  Share the dashboard link with authorized people; the link itself does not grant access.
 
 ## Choose access
 
@@ -100,17 +100,17 @@ Otherwise:
 curl -fsSL https://revdoku.com/install.sh | bash
 ```
 
-To save the requested files in a private mailbox, run:
+To connect a GitHub repository to a bucket and publish it, run:
 
 ```sh
-revdoku upload <folder>
+revdoku github connect OWNER/NAME --bucket-id bkt_...
+revdoku publish --bucket-id bkt_...
 ```
 
 With `npx skills`, run the bundled `scripts/revdoku.sh` from the installed
 skill directory in place of `revdoku`; this install does not add a CLI to `PATH`.
 
-Without credentials, the CLI opens browser sign-in. Re-running the upload
-updates the same bucket. Use `revdoku files`, `revdoku read PATH`, and
+Run `revdoku login` to sign in in the browser. Use `revdoku files`, `revdoku read PATH`, and
 `revdoku versions PATH` to inspect its files and their history.
 
 ## Hosted MCP agent
@@ -158,6 +158,5 @@ Confirm my Revdoku account ID and granted access. List the buckets you can acces
 ask which to use, and read its latest message if one exists. Do not change anything.
 ```
 
-Incoming email keeps arriving while a bucket-wide edit lock is held. Prefer
-individual file locks or revision checks. Human administrators inspect receiving
-holds and logs in the dashboard.
+A bucket's files are a read-only copy of its GitHub repository: change them on GitHub.
+Human administrators inspect receiving holds and logs in the dashboard.
