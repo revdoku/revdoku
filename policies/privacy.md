@@ -1,6 +1,6 @@
 # Privacy Policy
 
-*Version: 2026-11-14 · Updated: November 14, 2026*
+*Version: 2026-11-19 · Updated: November 19, 2026*
 
 Revdoku, at [revdoku.com](https://revdoku.com), publishes documentation sites from GitHub repositories, with a support mailbox for each site, private file storage and collaboration for people and authorized agents. Revdoku, Armenia operates the website and the Service. This notice covers personal information on our website and Service. Contact [support@revdoku.com](mailto:support@revdoku.com?subject=Privacy) with privacy questions or requests.
 
@@ -21,7 +21,7 @@ Revdoku controls account, website, security and billing processing. We generally
 
 **Visitors of docs sites.** A customer can publish a documentation site with Revdoku. For the visitors of that site, the customer decides what is collected and why, and Revdoku handles the data for the customer:
 
-- **Ask.** We keep each question that a visitor asks, the answer, the page and the time. An AI on Amazon Bedrock reads the question to answer it. When a visitor sends a message to the site's support team, we keep the name and email address that the visitor typed, for the reply.
+- **Ask.** We keep each question that a visitor asks, the answer, the page and the time. An AI on Amazon Bedrock reads the question to answer it. When a visitor sends a message to the site's support team, we keep the email address that the visitor typed, for the reply.
 - **Search.** We keep the text of a search, the page where it started, the page that the visitor opened and the visitor's country. We keep no country with a search that the visitor sends to Ask.
 - **Page views.** We count page views without cookies. We use the visitor's IP address for security limits and for counts by country. We do not store the IP address with a question, a search or a page view.
 
