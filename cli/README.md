@@ -146,6 +146,7 @@ These commands need an account owner or administrator key with admin access to a
 | `revdoku github sync --bucket-id ID` | Sync now |
 | `revdoku github branches --bucket-id ID` | List the branches that a preview can show |
 | `revdoku preview --bucket-id ID --branch NAME` | Make a 24-hour preview of that branch. Needs a live site |
+| `revdoku publish --bucket-id ID --support-link URL` | Publish, and send visitors who want a person to your support page (an `https` page such as your GitHub Discussions). `--support form\|form_email\|email\|link` sets the way without a new link |
 | `revdoku github set --bucket-id ID --auto-publish false` | Change `--auto-publish` |
 | `revdoku github disconnect --bucket-id ID --confirm-delete ID` | Stop the sync. The bucket keeps its files |
 

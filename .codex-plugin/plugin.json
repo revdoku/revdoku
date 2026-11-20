@@ -1,6 +1,6 @@
 {
   "name": "revdoku",
-  "version": "1.0.585",
+  "version": "1.0.586",
   "description": "Revdoku publishes your docs as a site from a GitHub repository. AI agents read the site through its MCP server, visitors ask questions, and support requests arrive as tickets. Connect your AI app to create buckets, connect GitHub, publish docs, read site analytics and answer tickets. The skill uploads local files with its bundled command-line tool.",
   "author": {
     "name": "Revdoku",

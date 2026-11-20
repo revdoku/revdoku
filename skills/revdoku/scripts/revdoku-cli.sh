@@ -60,6 +60,8 @@ WEBHOOK_URL=""
 ROTATE_SECRET="false"
 ACCESS_MODE=""
 PASSWORD_FILE=""
+SUPPORT_HANDOFF=""
+SUPPORT_LINK=""
 SITE_PREVIEW="false"
 READ_FILE_PATH=""
 NEW_FILE_PATH=""
@@ -246,6 +248,8 @@ Usage: revdoku <command> [PATH] [options]
   publish               Publish the bucket's files as its site, where the account can publish.
                         Optional --access-mode public|password|require_email and
                         --password-file FILE (- reads stdin). Does not retry.
+                        --support form|form_email|email|link sets how visitors reach
+                        a person; --support-link URL sends them to your support page.
                         Uses credits; see https://app.revdoku.com/pricing.json.
   preview               Make a 24-hour preview with the same options.
                         --branch NAME previews a branch of the connected repository.
@@ -340,6 +344,12 @@ while [[ $# -gt 0 ]]; do
     --password-file)
       [[ $# -ge 2 ]] || die "--password-file requires a path, or - for standard input"
       PASSWORD_FILE="$2"; shift 2 ;;
+    --support)
+      [[ $# -ge 2 && "$2" =~ ^(form|form_email|email|link)$ ]] || die "--support must be form, form_email, email or link"
+      SUPPORT_HANDOFF="$2"; shift 2 ;;
+    --support-link)
+      [[ $# -ge 2 && "$2" == https://* ]] || die "--support-link requires an https URL"
+      SUPPORT_LINK="$2"; shift 2 ;;
     --preview) SITE_PREVIEW="true"; shift ;;
     --branch|--repo-path|--installation-id)
       [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "$1 requires a value"
@@ -1572,10 +1582,12 @@ publish_request_body() {
     fi
   fi
   # --rawfile keeps the password out of the process arguments.
-  "$JQ_BIN" -n --arg mode "$ACCESS_MODE" --arg branch "$([[ "$ACTION" == "preview" ]] && printf '%s' "$GITHUB_BRANCH")" --rawfile password "$source" \
+  if [[ -n "$SUPPORT_HANDOFF$SUPPORT_LINK" && "$ACTION" != "publish" ]]; then die "--support and --support-link work with publish only"; fi
+  "$JQ_BIN" -n --arg mode "$ACCESS_MODE" --arg handoff "$SUPPORT_HANDOFF" --arg link "$SUPPORT_LINK" --arg branch "$([[ "$ACTION" == "preview" ]] && printf '%s' "$GITHUB_BRANCH")" --rawfile password "$source" \
     '($password | rtrimstr("\n") | rtrimstr("\r")) as $value
      | (if $mode == "" then {} else {access_mode: $mode} end) + (if $value == "" then {} else {password: $value} end)
-       + (if $branch == "" then {} else {branch: $branch} end)'
+       + (if $branch == "" then {} else {branch: $branch} end)
+       + (if $handoff == "" then {} else {support_handoff: $handoff} end) + (if $link == "" then {} else {support_link_url: $link} end)'
 }
 
 archive_bucket() {
