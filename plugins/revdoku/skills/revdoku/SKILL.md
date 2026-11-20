@@ -161,6 +161,7 @@ Never resend `awaiting_approval` (a person decides) or `declined` (unless asked)
 Admin keys: `github accounts`, `github repos ID`, `github connect OWNER/NAME --bucket-id ID`
 (never retried). Missing account: give the person `github setup-link` `install_url`.
 Poll `github` until `last_synced_at`, then `publish`.
+`publish --support-link URL` sends visitors who want a person to a support page; `--support form|form_email|email|link` sets the way.
 
 ## Bucket files
 
