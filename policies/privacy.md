@@ -1,6 +1,6 @@
 # Privacy Policy
 
-*Version: 2026-11-19 · Updated: November 19, 2026*
+*Version: 2026-11-21 · Updated: November 21, 2026*
 
 Revdoku, at [revdoku.com](https://revdoku.com), publishes documentation sites from GitHub repositories, with a support mailbox for each site, private file storage and collaboration for people and authorized agents. Revdoku, Armenia operates the website and the Service. This notice covers personal information on our website and Service. Contact [support@revdoku.com](mailto:support@revdoku.com?subject=Privacy) with privacy questions or requests.
 
@@ -40,7 +40,7 @@ Our servers, database and email receiving and sending run on Amazon Web Services
 | Provider | Purpose | Location |
 | --- | --- | --- |
 | Amazon Web Services | Servers, database and database backups, incoming and outgoing email, spam and virus checks, encryption keys and AI agents (Amazon Bedrock) | Northern Virginia, United States |
-| Cloudflare | File storage and file backups (R2), published websites, network, DNS, and protection from attacks and bots (Turnstile). It carries app, API and MCP traffic to our servers. | Files and backups: eastern United States. Network: the Cloudflare data center nearest to each visitor |
+| Cloudflare | File storage and file backups (R2), published websites, network, DNS, and protection from attacks and bots (Turnstile). It carries app, API and MCP traffic to our servers. When you ask Revdoku to scan a website, Cloudflare reads the public pages of that website for us. | Files and backups: eastern United States. Network: the Cloudflare data center nearest to each visitor |
 | Polar | Payments, as merchant of record | United States |
 | Google | Our support and business email (Google Workspace), including service alerts | United States and other countries |
 | Google | Sign in with Google, only if you use it | United States and other countries |
