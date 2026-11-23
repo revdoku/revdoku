@@ -3,7 +3,7 @@ name: revdoku
 description: >
   Use Revdoku's hosted MCP connector to publish docs sites, read support email and
   attachments, reply to senders, store and manage text files, and collaborate in
-  authorized cloud buckets. Each bucket has a docs site and a mailbox with an email address.
+  authorized cloud projects. Each project has a docs site and a mailbox with an email address.
 license: MIT-0
 ---
 
@@ -15,33 +15,33 @@ happen in the browser. Never request credentials or verification codes in chat.
 This [MIT-0 skill](LICENSE) uses hosted MCP; its [VERSION](VERSION) identifies
 these instructions.
 
-## Select the account and bucket
+## Select the account and project
 
-Call `revdoku_status` and `bucket_list` after connection or when access is unclear.
-Respect the task's account, bucket, paths and action. Pass `account_id` on every
+Call `revdoku_status` and `project_list` after connection or when access is unclear.
+Respect the task's account, project, paths and action. Pass `account_id` on every
 call targeting another account; omission uses `default_account_id`. Do not infer
-the account from a bucket ID or browser account switching. If access is missing,
+the account from a project ID or browser account switching. If access is missing,
 ask for the relevant browser authorization and reconnect.
 
-Reuse the bucket selected for the task. Create one only when requested.
+Reuse the project selected for the task. Create one only when requested.
 Agency entitlements do not grant access to client files.
 `client_account_create` requires an explicit request naming the client and an
 authorized agency account. Use the returned client ID for subsequent calls.
 
-## List buckets
+## List projects
 
-Use `bucket_list` for active buckets.
+Use `project_list` for active projects.
 Use `status: "archived"` or `status: "all"` only when relevant.
 Filter with `q` on the title, permitted address or ID.
 `limit` defaults to 50, maximum 200. When `pagination.has_more` is true, pass
 `pagination.next_cursor` as `cursor` with the same filters.
 Never describe a partial page as the complete list.
 
-Label a bucket as `title (email.address)` linked to `dashboard_url`.
+Label a project as `title (email.address)` linked to `dashboard_url`.
 Use `email.address` alone when `title` is null.
 Keep IDs for tool calls unless the user requests them.
-Do not use descriptions as bucket names.
-If the address is unavailable, use an Open bucket link and state that the address is unavailable.
+Do not use descriptions as project names.
+If the address is unavailable, use an Open project link and state that the address is unavailable.
 Do not request write access just to improve a list label.
 Display the permitted address even when receiving is unavailable.
 Show `email.message_count` as stored emails and `email.unread_count` as unread emails.
@@ -52,18 +52,18 @@ Do not add file counts to email counts.
 ## Receive and read email
 
 During setup without a chosen task, offer newsletter summaries, receipt amounts, or project alerts needing attention.
-Continue explicit tasks without this detour. Reuse the selected bucket.
+Continue explicit tasks without this detour. Reuse the selected project.
 Show its authorized, receiving-ready address as a `mailto:` link.
 Ask the user to send an email there.
 Offer direct use for relevant notifications or [Gmail forwarding](https://revdoku.com/blog/how-to-set-up-auto-forwarding-from-gmail-to-revdoku-s-email/).
-If address access is missing, direct the user to the dashboard or bucket owner.
+If address access is missing, direct the user to the dashboard or project owner.
 Guide Gmail setup without assuming Gmail access.
 Poll with a deadline for a fresh relevant message, then produce the chosen result.
 A Gmail verification message alone does not prove forwarding works.
 Offer recurring automation afterward.
-See the [first email workflow](https://docs.revdoku.com/buckets#first-email-workflow).
+See the [first email workflow](https://docs.revdoku.com/projects#first-email-workflow).
 
-`bucket_create` accepts an optional `email: {username, domain}` with a ready
+`project_create` accepts an optional `email: {username, domain}` with a ready
 custom domain; omit `email` to generate an address. Creation returns a
 receiving-enabled `email` address. A taken name returns `EMAIL_ALREADY_EXISTS`;
 ask for another name rather than silently replacing the requested one.
@@ -73,15 +73,15 @@ available. Readers can inspect saved email but may need an administrator to
 provide the address. Never guess an address or rotate one implicitly.
 
 Each conversation is a support ticket: an email or a message left on the docs site
-(`channel` `chat`). List tickets with `bucket_ticket_list(bucket_id: ID)`.
+(`channel` `chat`). List tickets with `project_ticket_list(project_id: ID)`.
 To poll, save the newest `updated_at` and pass it as `updated_after`,
 with backoff and a deadline. Use `status`, `channel` or `label` filters when needed.
 
-Read a `tkt_` ID with `bucket_ticket_get`. It returns the ticket and its messages, oldest
+Read a `tkt_` ID with `project_ticket_get`. It returns the ticket and its messages, oldest
 first, with headers, `body_text`, `body_status` and attachment IDs. Reads and downloads
-leave shared read status unchanged. Use `bucket_ticket_update` to solve or reopen a ticket
+leave shared read status unchanged. Use `project_ticket_update` to solve or reopen a ticket
 (`status`) or to change its custom labels when asked.
-Use `bucket_ticket_download` with the `message_id` for one attachment or the original EML. The temporary
+Use `project_ticket_download` with the `message_id` for one attachment or the original EML. The temporary
 URL expires after 15 minutes and needs no credentials; never send a Revdoku token
 to the download URL.
 
@@ -97,28 +97,28 @@ the user's authorized service and current attempt; never expose or retain codes.
 ## Reply to tickets
 
 Reply only when the user asks. Revdoku sends only replies: each reply answers a
-ticket of the bucket and goes to its requester, when that requester passed
+ticket of the project and goes to its requester, when that requester passed
 sender authentication. There is no `to` or `cc`. When the account cannot reply, the reply returns
 `EMAIL_REPLY_UPGRADE_REQUIRED`; relay its `upgrade_url` to the user. On
-`EMAIL_LOOP_DETECTED`, stop automatic replies to that address. Reply only when the bucket's `email.sending_enabled` is true.
-Otherwise `bucket_ticket_reply` returns `EMAIL_SENDING_UNAVAILABLE`, or the
+`EMAIL_LOOP_DETECTED`, stop automatic replies to that address. Reply only when the project's `email.sending_enabled` is true.
+Otherwise `project_ticket_reply` returns `EMAIL_SENDING_UNAVAILABLE`, or the
 connector lists no reply tool.
 
-1. Find the `tkt_` ID with `bucket_ticket_list`.
-2. Call `bucket_ticket_reply` with `ticket_id` and `text`. It sets the subject
+1. Find the `tkt_` ID with `project_ticket_list`.
+2. Call `project_ticket_reply` with `ticket_id` and `text`. It sets the subject
    and the recipient. A requester whose email did not pass SPF or DMARC returns
-   `EMAIL_RECIPIENT_NOT_ALLOWED`. Add `subject`, `html` or bucket file
+   `EMAIL_RECIPIENT_NOT_ALLOWED`. Add `subject`, `html` or project file
    `attachment_ids` only when needed.
 3. Check `delivery.status` (`awaiting_approval`, `queued`, `sending`, `sent`, `failed`,
-   `uncertain`, `declined`) of the returned message, or with `bucket_ticket_get`.
+   `uncertain`, `declined`) of the returned message, or with `project_ticket_get`.
 
 A person sends, edits or declines an `awaiting_approval` reply in the dashboard; never resend it.
 Resend a `declined` reply only when a person asks.
 Never reply again after an uncertain result; check the ticket's messages first.
 
-## Bucket files
+## Project files
 
-`_repo/` is a read-only copy of the bucket's GitHub repository: Revdoku never
+`_repo/` is a read-only copy of the project's GitHub repository: Revdoku never
 writes to it. To change a file of `_repo/`, change it on GitHub; the next sync
 copies it, and auto-publish updates the site. `_kb/` is the knowledge base, the
 only files you write: Markdown pages (`.md`, `.mdx`) and images (`.jpg`, `.png`,
@@ -127,10 +127,10 @@ is never published and holds notes for the support team. Write to `_kb/public/`
 only when the user asks for a public article: it needs publish access. A write
 never publishes; publish when the user asks.
 
-`bucket_file_read` returns text inline or a temporary download link, and lists a
-file's versions with `versions: true`. `bucket_file_write` writes a page or a
-small image; `bucket_file_move` renames or moves a file; `bucket_file_delete`
-deletes one and keeps its versions, and `bucket_file_write` with
+`project_file_read` returns text inline or a temporary download link, and lists a
+file's versions with `versions: true`. `project_file_write` writes a page or a
+small image; `project_file_move` renames or moves a file; `project_file_delete`
+deletes one and keeps its versions, and `project_file_write` with
 `restore_version_id` brings it back. Email is no file: use the ticket tools.
 Hosted MCP cannot read the user's local filesystem. MCP tools return the same
 resources and field names as the [REST API](https://docs.revdoku.com/api).
@@ -138,24 +138,24 @@ Dashboard links do not grant access; share them only with authorized members.
 
 Check restrictions, quotas and action availability. Never split work or retry to
 bypass a limit. On `ACCOUNT_SUSPENDED`, relay only the returned notice, Terms,
-support route and bucket-download reminder, without guessing reasons or revealing
+support route and project-download reminder, without guessing reasons or revealing
 review details.
 
 ## Connect a GitHub repository
 
-`bucket_github` makes a bucket's files a copy of one GitHub branch, or of one folder of it. Only an
+`project_github` makes a project's files a copy of one GitHub branch, or of one folder of it. Only an
 account owner or administrator connection sets it up. Call `action: "accounts"` for the connected GitHub
 accounts and `"repositories"` with `installation_id` for their repositories. When the account that owns
 the repository is missing, call `"setup_link"` and give `install_url` to the user: they open it signed in
 to Revdoku and install the Revdoku GitHub App on GitHub. Never ask for GitHub passwords or tokens.
-`"connect"` copies `repo_owner`/`repo_name` into a bucket without files; never retry it after an uncertain
-result. Read `"get"` until `last_synced_at` is set, then publish with `bucket_publish`.
+`"connect"` copies `repo_owner`/`repo_name` into a project without files; never retry it after an uncertain
+result. Read `"get"` until `last_synced_at` is set, then publish with `project_publish`.
 
 ## Archive and permanently delete
 
-Archive only when requested, with `bucket_update(archived: true)`. Permanent deletion needs explicit approval for the
-exact account and archived, eligible bucket. Present names, available counts and
-irreversible loss before approval. Use `bucket_delete_permanently` with the
+Archive only when requested, with `project_update(archived: true)`. Permanent deletion needs explicit approval for the
+exact account and archived, eligible project. Present names, available counts and
+irreversible loss before approval. Use `project_delete_permanently` with the
 returned `delete.confirmation` only after that approval. Tokens describe target
 state; they do not supply consent. Never archive automatically to enable deletion.
 After an uncertain result, inspect status before attempting another mutation.
@@ -171,8 +171,8 @@ Use the connector's current schemas and [API documentation](https://docs.revdoku
 Reconnect to refresh tools. Service access follows [pricing](https://app.revdoku.com/pricing)
 and the [Terms](https://revdoku.com/terms/).
 
-Read effective bucket and storage quotas with `account_limits`. Select another granted account with `account_id`.
+Read effective project and storage quotas with `account_limits`. Select another granted account with `account_id`.
 
 ## Ticket events
 
-Use `bucket_webhook` to read (omit `webhook_url`), set or remove (a null `webhook_url`) one signed HTTPS receiver per bucket. Confirm the destination and disabling/rotation intent with the user. Keep returned secrets private. `bucket_events_subscription` returns a short-lived token and WebSocket URL for a running client; request a fresh token on reconnect and catch up with `bucket_ticket_list` and `updated_after`. Include `account_id` for the intended granted account. These connections do not wake an idle AI chat. Human administrators inspect delivery history and retry failures in Analytics → Webhooks. Runnable examples are in the public repository's `examples/` directory.
+Use `project_webhook` to read (omit `webhook_url`), set or remove (a null `webhook_url`) one signed HTTPS receiver per project. Confirm the destination and disabling/rotation intent with the user. Keep returned secrets private. `project_events_subscription` returns a short-lived token and WebSocket URL for a running client; request a fresh token on reconnect and catch up with `project_ticket_list` and `updated_after`. Include `account_id` for the intended granted account. These connections do not wake an idle AI chat. Human administrators inspect delivery history and retry failures in Analytics → Webhooks. Runnable examples are in the public repository's `examples/` directory.

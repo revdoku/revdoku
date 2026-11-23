@@ -7,7 +7,7 @@ DEFAULT_URL="https://api.revdoku.com"
 APP_URL="https://app.revdoku.com"
 MCP_RESOURCE="https://mcp.revdoku.com"
 CREDENTIALS_PATH="${REVDOKU_CREDENTIALS:-${HOME}/.revdoku/credentials}"
-DEFAULT_BUCKET_PATH="${REVDOKU_DEFAULT_BUCKET_FILE:-${CREDENTIALS_PATH}.bucket}"
+DEFAULT_PROJECT_PATH="${REVDOKU_DEFAULT_PROJECT_FILE:-${CREDENTIALS_PATH}.project}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEVICE_CODE_GRANT_TYPE="urn:ietf:params:oauth:grant-type:device_code"
 
@@ -28,11 +28,11 @@ installed_client_version() {
 
 BASE_URL="${REVDOKU_URL:-$DEFAULT_URL}"
 API_KEY="${REVDOKU_API_KEY:-}"
-DESCRIPTION="${REVDOKU_BUCKET_DESCRIPTION:-}"
-BUCKET_ID="${REVDOKU_BUCKET_ID:-}"
-METADATA_JSON="${REVDOKU_BUCKET_METADATA:-}"
+DESCRIPTION="${REVDOKU_PROJECT_DESCRIPTION:-}"
+PROJECT_ID="${REVDOKU_PROJECT_ID:-}"
+METADATA_JSON="${REVDOKU_PROJECT_METADATA:-}"
 ACTION_REASON=""
-BROWSER_LOGIN_PATH="${REVDOKU_BROWSER_LOGIN_PATH:-/buckets}"
+BROWSER_LOGIN_PATH="${REVDOKU_BROWSER_LOGIN_PATH:-/projects}"
 GRANT_TOKEN=""
 ACCOUNT_ID=""
 CLIENT_ACCOUNT_NAME=""
@@ -45,16 +45,15 @@ if [[ -z "$AGENT_VERSION" ]]; then
   [[ "$AGENT_VERSION" == "unknown" ]] && AGENT_VERSION="0.1.0"
 fi
 AGENT_RUN_ID="${REVDOKU_AGENT_RUN_ID:-}"
-AGENT_PROJECT="${REVDOKU_AGENT_PROJECT:-}"
 AGENT_TASK="${REVDOKU_AGENT_TASK:-}"
 HTTP_TRANSIENT_MAX_ATTEMPTS="${REVDOKU_HTTP_TRANSIENT_MAX_ATTEMPTS:-5}"
 HTTP_RETRYABLE_CONFLICT_MAX_ATTEMPTS="${REVDOKU_HTTP_RETRYABLE_CONFLICT_MAX_ATTEMPTS:-12}"
 HTTP_LOCK_MAX_ATTEMPTS="${REVDOKU_HTTP_LOCK_MAX_ATTEMPTS:-3}"
 LOGIN="false"
 ACTION=""
-# The folder whose .revdoku file names the bucket of read commands.
+# The folder whose .revdoku file names the project of read commands.
 PATH_TO_STORE="."
-BUCKET_EXPLICIT="false"
+PROJECT_EXPLICIT="false"
 DELETE_CONFIRMATION=""
 WEBHOOK_URL=""
 ROTATE_SECRET="false"
@@ -74,7 +73,7 @@ TICKET_LABEL=""
 TICKET_UPDATED_AFTER=""
 EMAIL_USERNAME=""
 EMAIL_DOMAIN=""
-BUCKET_TITLE=""
+PROJECT_TITLE=""
 EMAIL_ATTACHMENT_ID=""
 LIST_LIMIT=""
 LIST_CURSOR=""
@@ -90,20 +89,20 @@ TICKET_NOTE=""
 TICKET_NOTE_SET="false"
 EMAIL_TEXT_FILE=""
 EMAIL_HTML_FILE=""
-BUCKET_LIST_STATUS="active"
-BUCKET_LIST_QUERY=""
-BUCKET_LIST_OPTIONS="false"
+PROJECT_LIST_STATUS="active"
+PROJECT_LIST_QUERY=""
+PROJECT_LIST_OPTIONS="false"
 GITHUB_ACTION=""
 GITHUB_REPOSITORY=""
 GITHUB_INSTALLATION_ID=""
 GITHUB_BRANCH=""
 GITHUB_REPO_PATH=""
-GITHUB_BUCKET_FILES=""
+GITHUB_PROJECT_FILES=""
 GITHUB_AUTO_PUBLISH=""
 OUTPUT_PATH=""
-# Project-local binding (.revdoku): names the bucket of this folder. --bucket-id overrides it.
+# Project-local binding (.revdoku): names the project of this folder. --project-id overrides it.
 REVDOKU_PROJECT_FILE=""
-BOUND_BUCKET_ID=""
+BOUND_PROJECT_ID=""
 BINDING_EXISTED="false"
 LAST_HTTP_STATUS=""
 LAST_ERROR_CODE=""
@@ -204,14 +203,14 @@ detect_agent_name() {
 
 usage() {
   cat <<USAGE
-revdoku: buckets with files, a site and support tickets.
+revdoku: projects with files, a site and support tickets.
 
 Usage: revdoku <command> [PATH] [options]
 
-  ls, list              List active buckets with titles, addresses and email counts.
-  create                Create a bucket; optionally choose --username, --domain and --title.
+  ls, list              List active projects with titles, addresses and email counts.
+  create                Create a project; optionally choose --username, --domain and --title.
                         Its files come from GitHub: revdoku github connect OWNER/NAME.
-  o, open               Open this bucket in the dashboard.
+  o, open               Open this project in the dashboard.
   st, status            Show connection and account status.
   login                 Sign in to an existing account in the browser.
   grant TOKEN           Use a one-time connection token from the web app.
@@ -224,12 +223,12 @@ Usage: revdoku <command> [PATH] [options]
   ticket-download ID    Download a message's original EML (--message-id ID) or --attachment-id ID.
   ticket-message-delete ID  Delete one message and its attachments (--message-id ID);
                         confirm with --confirm-delete MESSAGE_ID.
-  webhook               Show the bucket's webhook for ticket events.
+  webhook               Show the project's webhook for ticket events.
   webhook-set           Set --webhook-url HTTPS_URL; optionally --rotate-secret.
-  webhook-delete        Disable the webhook; requires --confirm-delete BUCKET_ID.
+  webhook-delete        Disable the webhook; requires --confirm-delete PROJECT_ID.
   events-subscription   Get a short-lived subscription token for live ticket events.
-  files                 List bucket files.
-  read PATH             Read a bucket file; --output FILE saves it locally.
+  files                 List project files.
+  read PATH             Read a project file; --output FILE saves it locally.
   versions PATH         List one file's versions (PATH or a df_ file ID).
   write PATH --file FILE
                         Write one knowledge base file: a page (.md, .mdx; - reads
@@ -244,8 +243,8 @@ Usage: revdoku <command> [PATH] [options]
   restore PATH|FILE_ID --version-id ID
                         Make an earlier version of a knowledge base file current.
                         A deleted file comes back: use its file id (df_...).
-  archive | unarchive    Manage a bucket.
-  publish               Publish the bucket's files as its site, where the account can publish.
+  archive | unarchive    Manage a project.
+  publish               Publish the project's files as its site, where the account can publish.
                         Optional --access-mode public|password|require_email and
                         --password-file FILE (- reads stdin). Does not retry.
                         --support form|form_email|email|link sets how visitors reach
@@ -260,17 +259,17 @@ Usage: revdoku <command> [PATH] [options]
   github accounts       List GitHub accounts connected to the account.
   github repos ID       List the repositories of one connected GitHub account.
   github setup-link     Print the links a person opens to add a GitHub account.
-  github connect OWNER/NAME  Copy a repository into a bucket. Optional --branch,
+  github connect OWNER/NAME  Copy a repository into a project. Optional --branch,
                         --repo-path, --installation-id. Revdoku only reads
-                        the repository. A bucket with files needs
-                        --bucket-files replace.
+                        the repository. A project with files needs
+                        --project-files replace.
   github set            Change --auto-publish.
   github sync           Sync the repository now.
   github branches       List the branches that a preview can show.
-  github disconnect     Stop syncing; requires --confirm-delete BUCKET_ID. Files stay.
-  delete                Preview permanent deletion; requires explicit account/bucket.
+  github disconnect     Stop syncing; requires --confirm-delete PROJECT_ID. Files stay.
+  delete                Preview permanent deletion; requires explicit account/project.
   accounts              List accounts granted to this credential.
-  account limits                 Read effective bucket and storage quotas
+  account limits                 Read effective project and storage quotas
   account get ID        Read one granted account.
   account               Account identity and effective limits.
   account create-client NAME     Create a client account within an authorized agency.
@@ -281,9 +280,9 @@ Options:
                         AI agents should explain intentional reads and changes.
   --account-id ID       Select a granted account for this command.
   --client-name NAME    Client person or business (account create-client).
-  --bucket-id ID        Target bucket; overrides the local .revdoku binding.
-  --status active|archived|all          Bucket list filter (default: active); see also tickets.
-  --query TEXT                        Bucket title, address or ID filter (ls).
+  --project-id ID        Target project; overrides the local .revdoku binding.
+  --status active|archived|all          Project list filter (default: active); see also tickets.
+  --query TEXT                        Project title, address or ID filter (ls).
   --limit N   --cursor CURSOR          List page size (maximum 200) and next page.
                                        Use pagination.next_cursor from the last page.
   --status open|pending|solved|all     Ticket list filter, or the new status (ticket-update, without all).
@@ -293,15 +292,15 @@ Options:
   --message-id ID                      One message of a ticket (eml_...).
   --subject TEXT                       ticket-reply subject (default: Re: and the original).
   --text TEXT | --text-file PATH       ticket-reply plain-text body (- reads stdin).
-  --html-file PATH     --attach FILE_ID   Optional HTML body; attach bucket files.
+  --html-file PATH     --attach FILE_ID   Optional HTML body; attach project files.
   --add-label NAME  --remove-label NAME  ticket-update: custom labels; repeat (10 maximum).
   --note TEXT                          ticket-update: the team's internal note, never sent ("" removes it).
   --attachment-id ID   --output FILE   Download a selected message attachment.
   --version-id ID                      File version for read and restore.
   --file FILE                          Local file for write (- reads stdin).
   --description TEXT   --metadata JSON
-  --username NAME      --domain HOST          Bucket creation email address options.
-  --title TEXT                                Bucket title for create (default: the username).
+  --username NAME      --domain HOST          Project creation email address options.
+  --title TEXT                                Project title for create (default: the username).
   --confirm-delete TOKEN  Execute a reviewed deletion preview (expires in 10 minutes).
   --api-key KEY        API credential (or REVDOKU_API_KEY / $CREDENTIALS_PATH).
   --agent NAME         Name the AI agent or tool that runs the CLI (default: auto-detected).
@@ -309,10 +308,10 @@ Options:
   -h, --help           Show this help.
 
 Examples:
-  revdoku github connect acme/docs --bucket-id bkt_...
-  revdoku files --bucket-id bkt_...
-  revdoku read _repo/notes.md --bucket-id bkt_... --reason "Review project decisions"
-  revdoku write _kb/private/refunds.md --file refunds.md --bucket-id bkt_...
+  revdoku github connect acme/docs --project-id prj_...
+  revdoku files --project-id prj_...
+  revdoku read _repo/notes.md --project-id prj_... --reason "Review project decisions"
+  revdoku write _kb/private/refunds.md --file refunds.md --project-id prj_...
   revdoku dashboard
 
 Plans: https://app.revdoku.com/pricing
@@ -359,9 +358,9 @@ while [[ $# -gt 0 ]]; do
         --installation-id) [[ "$2" =~ ^[1-9][0-9]{0,18}$ ]] || die "--installation-id must be the number from revdoku github accounts"; GITHUB_INSTALLATION_ID="$2" ;;
       esac
       shift 2 ;;
-    --bucket-files)
-      [[ $# -ge 2 && "$2" == "replace" ]] || die "--bucket-files is replace"
-      GITHUB_BUCKET_FILES="$2"; shift 2 ;;
+    --project-files)
+      [[ $# -ge 2 && "$2" == "replace" ]] || die "--project-files is replace"
+      GITHUB_PROJECT_FILES="$2"; shift 2 ;;
     --auto-publish)
       [[ $# -ge 2 && ( "$2" == "true" || "$2" == "false" ) ]] || die "$1 must be true or false"
       GITHUB_AUTO_PUBLISH="$2"
@@ -386,7 +385,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --title)
       [[ $# -ge 2 && -n "$2" ]] || die "--title requires a value"
-      BUCKET_TITLE="$2"
+      PROJECT_TITLE="$2"
       shift 2
       ;;
     --account-id)
@@ -399,10 +398,10 @@ while [[ $# -gt 0 ]]; do
       CLIENT_DISPLAY_NAME="$2"
       shift 2
       ;;
-    --bucket-id)
-      [[ $# -ge 2 ]] || die "--bucket-id requires a value"
-      BUCKET_ID="$2"
-      BUCKET_EXPLICIT="true"
+    --project-id)
+      [[ $# -ge 2 ]] || die "--project-id requires a value"
+      PROJECT_ID="$2"
+      PROJECT_EXPLICIT="true"
       shift 2
       ;;
     --status|--query)
@@ -411,8 +410,8 @@ while [[ $# -gt 0 ]]; do
       if [[ "$1" == "--status" ]]; then
         STATUS_OPTION="$2"
       else
-        BUCKET_LIST_QUERY="$2"
-        BUCKET_LIST_OPTIONS="true"
+        PROJECT_LIST_QUERY="$2"
+        PROJECT_LIST_OPTIONS="true"
       fi
       shift 2
       ;;
@@ -447,7 +446,7 @@ while [[ $# -gt 0 ]]; do
       case "$1" in
         --add-label) EMAIL_ADD_LABELS+="$2"$'\n' ;;
         --remove-label) EMAIL_REMOVE_LABELS+="$2"$'\n' ;;
-        --attach) [[ "$2" =~ ^df_[A-Za-z0-9]+$ ]] || die "--attach requires a bucket file id"; EMAIL_ATTACHMENTS+="$2"$'\n' ;;
+        --attach) [[ "$2" =~ ^df_[A-Za-z0-9]+$ ]] || die "--attach requires a project file id"; EMAIL_ATTACHMENTS+="$2"$'\n' ;;
         --text) EMAIL_TEXT="$2" ;;
         --text-file) EMAIL_TEXT_FILE="$2" ;;
         --html-file) EMAIL_HTML_FILE="$2" ;;
@@ -514,10 +513,10 @@ while [[ $# -gt 0 ]]; do
         case "$1" in
           upload|put|append)
             die "Write a knowledge base file with: revdoku write _kb/private/NAME.md --file FILE. The files of _repo/ come from the GitHub repository. Change the files on GitHub." ;;
-          write)          [[ $# -ge 2 && "$2" != -* ]] || die "write needs a bucket PATH right after it, e.g. revdoku write _kb/private/refunds.md --file refunds.md"; ACTION="write_file"; READ_FILE_PATH="$2"; shift 2 ;;
+          write)          [[ $# -ge 2 && "$2" != -* ]] || die "write needs a project PATH right after it, e.g. revdoku write _kb/private/refunds.md --file refunds.md"; ACTION="write_file"; READ_FILE_PATH="$2"; shift 2 ;;
           mv)             [[ $# -ge 3 && "$2" != -* && "$3" != -* ]] || die "mv needs the file's PATH and its NEW_PATH, e.g. revdoku mv _kb/private/a.md _kb/public/a.md"; ACTION="move_file"; READ_FILE_PATH="$2"; NEW_FILE_PATH="$3"; shift 3 ;;
-          rm)             [[ $# -ge 2 && "$2" != -* ]] || die "rm needs a bucket PATH right after it, e.g. revdoku rm _kb/private/old.md"; ACTION="delete_file"; READ_FILE_PATH="$2"; shift 2 ;;
-          restore)        [[ $# -ge 2 && "$2" != -* ]] || die "restore needs a bucket PATH right after it, e.g. revdoku restore _kb/private/a.md --version-id ID"; ACTION="restore_file"; READ_FILE_PATH="$2"; shift 2 ;;
+          rm)             [[ $# -ge 2 && "$2" != -* ]] || die "rm needs a project PATH right after it, e.g. revdoku rm _kb/private/old.md"; ACTION="delete_file"; READ_FILE_PATH="$2"; shift 2 ;;
+          restore)        [[ $# -ge 2 && "$2" != -* ]] || die "restore needs a project PATH right after it, e.g. revdoku restore _kb/private/a.md --version-id ID"; ACTION="restore_file"; READ_FILE_PATH="$2"; shift 2 ;;
           publish|preview|site) ACTION="$1"; shift ;;
           unpublish|down) ACTION="unpublish"; shift ;;
           github)
@@ -535,9 +534,9 @@ while [[ $# -gt 0 ]]; do
             ;;
           p|sites|analytics|i|init)
             die "This command is unavailable. Use revdoku --help for the available commands." ;;
-          ls|list)        ACTION="list_buckets"; shift ;;
+          ls|list)        ACTION="list_projects"; shift ;;
           accounts)       ACTION="list_accounts"; shift ;;
-          create)         ACTION="create_bucket"; shift ;;
+          create)         ACTION="create_project"; shift ;;
           o|open)         ACTION="open_dashboard"; shift ;;
           st|status)      ACTION="connection_status"; shift ;;
           login)          LOGIN="true"; shift ;;
@@ -548,11 +547,11 @@ while [[ $# -gt 0 ]]; do
             [[ $# -ge 2 && "$2" =~ ^tkt_[A-Za-z0-9]+$ ]] || die "$1 requires a ticket id (tkt_...); see revdoku tickets"
             ACTION="$1"; TICKET_ID="$2"; shift 2 ;;
           files)          ACTION="list_files"; shift ;;
-          read)           [[ $# -ge 2 && "$2" != -* ]] || die "read needs a bucket PATH right after it, e.g. revdoku read notes.md --bucket-id ID"; ACTION="read_file"; READ_FILE_PATH="$2"; shift 2 ;;
-          versions)       [[ $# -ge 2 && "$2" != -* ]] || die "versions needs a bucket PATH right after it, e.g. revdoku versions notes.md --bucket-id ID"; ACTION="list_versions"; READ_FILE_PATH="$2"; shift 2 ;;
-          archive)        ACTION="archive_bucket"; shift ;;
-          unarchive)      ACTION="unarchive_bucket"; shift ;;
-          delete)         ACTION="delete_bucket"; shift ;;
+          read)           [[ $# -ge 2 && "$2" != -* ]] || die "read needs a project PATH right after it, e.g. revdoku read notes.md --project-id ID"; ACTION="read_file"; READ_FILE_PATH="$2"; shift 2 ;;
+          versions)       [[ $# -ge 2 && "$2" != -* ]] || die "versions needs a project PATH right after it, e.g. revdoku versions notes.md --project-id ID"; ACTION="list_versions"; READ_FILE_PATH="$2"; shift 2 ;;
+          archive)        ACTION="archive_project"; shift ;;
+          unarchive)      ACTION="unarchive_project"; shift ;;
+          delete)         ACTION="delete_project"; shift ;;
           account)
             shift
             if [[ "${1:-}" == "create-client" ]]; then
@@ -587,7 +586,7 @@ fi
 
 BASE_URL="${BASE_URL%/}"
 validate_base_url
-[[ -z "$DELETE_CONFIRMATION" || "$ACTION" == "delete_bucket" || "$ACTION" == "ticket-message-delete" || "$ACTION" == "webhook-delete" || "$GITHUB_ACTION" == "disconnect" ]] || die "--confirm-delete is only available with delete, ticket-message-delete, webhook-delete or github disconnect"
+[[ -z "$DELETE_CONFIRMATION" || "$ACTION" == "delete_project" || "$ACTION" == "ticket-message-delete" || "$ACTION" == "webhook-delete" || "$GITHUB_ACTION" == "disconnect" ]] || die "--confirm-delete is only available with delete, ticket-message-delete, webhook-delete or github disconnect"
 if [[ ( -n "$WEBHOOK_URL" || "$ROTATE_SECRET" == "true" ) && "$ACTION" != "webhook-set" ]]; then
   die "--webhook-url and --rotate-secret require webhook-set"
 fi
@@ -605,19 +604,19 @@ esac
 [[ -z "$EMAIL_ATTACHMENT_ID" || "$ACTION" == "ticket-download" ]] || die "--attachment-id requires ticket-download"
 if [[ -n "$STATUS_OPTION" ]]; then
   case "$ACTION" in
-    list_buckets)
+    list_projects)
       [[ "$STATUS_OPTION" =~ ^(active|archived|all)$ ]] || die "--status must be active, archived or all"
-      BUCKET_LIST_STATUS="$STATUS_OPTION" ;;
+      PROJECT_LIST_STATUS="$STATUS_OPTION" ;;
     list_tickets) [[ "$STATUS_OPTION" =~ ^(open|pending|solved|all)$ ]] || die "--status must be open, pending, solved or all" ;;
     ticket-update) [[ "$STATUS_OPTION" =~ ^(open|pending|solved)$ ]] || die "--status must be open, pending or solved" ;;
     *) die "--status requires ls, tickets or ticket-update" ;;
   esac
 fi
-if [[ "$BUCKET_LIST_OPTIONS" == "true" && "$ACTION" != "list_buckets" ]]; then
+if [[ "$PROJECT_LIST_OPTIONS" == "true" && "$ACTION" != "list_projects" ]]; then
   die "--query requires ls or list"
 fi
 case "$ACTION:$GITHUB_ACTION" in
-  list_buckets:|list_files:|list_tickets:|ticket-messages:|list_versions:|github:accounts|github:repos) ;;
+  list_projects:|list_files:|list_tickets:|ticket-messages:|list_versions:|github:accounts|github:repos) ;;
   *) [[ -z "$LIST_LIMIT$LIST_CURSOR" ]] || die "--limit and --cursor require ls, files, tickets, ticket-messages, versions, github accounts or github repos" ;;
 esac
 # Each GitHub option belongs to one or two github commands, so none is silently ignored.
@@ -625,19 +624,19 @@ esac
 [[ -z "$GITHUB_REPO_PATH" && ( -z "$GITHUB_INSTALLATION_ID" || "$GITHUB_ACTION" == "repos" ) || "$GITHUB_ACTION" == "connect" ]] ||
   die "--repo-path and --installation-id require github connect"
 [[ -z "$GITHUB_AUTO_PUBLISH" || "$GITHUB_ACTION" == "set" ]] || die "--auto-publish requires github set"
-[[ -z "$GITHUB_BUCKET_FILES" || "$GITHUB_ACTION" == "connect" ]] || die "--bucket-files requires github connect"
+[[ -z "$GITHUB_PROJECT_FILES" || "$GITHUB_ACTION" == "connect" ]] || die "--project-files requires github connect"
 if [[ -n "$VERSION_ID" && "$ACTION" != "read_file" && "$ACTION" != "restore_file" ]]; then
   die "--version-id requires read or restore"
 fi
 [[ -z "$LOCAL_FILE" || "$ACTION" == "write_file" ]] || die "--file requires write"
-if [[ -n "$EMAIL_USERNAME$EMAIL_DOMAIN" && "$ACTION" != "create_bucket" ]]; then
+if [[ -n "$EMAIL_USERNAME$EMAIL_DOMAIN" && "$ACTION" != "create_project" ]]; then
   die "--username and --domain require create"
 fi
-if [[ -n "$BUCKET_TITLE" && "$ACTION" != "create_bucket" ]]; then
+if [[ -n "$PROJECT_TITLE" && "$ACTION" != "create_project" ]]; then
   die "--title requires create"
 fi
-if [[ "$ACTION" == "delete_bucket" ]]; then
-  [[ "$BUCKET_EXPLICIT" == "true" && -n "$BUCKET_ID" && -n "$ACCOUNT_ID" ]] || die "delete requires explicit --account-id and --bucket-id"
+if [[ "$ACTION" == "delete_project" ]]; then
+  [[ "$PROJECT_EXPLICIT" == "true" && -n "$PROJECT_ID" && -n "$ACCOUNT_ID" ]] || die "delete requires explicit --account-id and --project-id"
 fi
 [[ -n "$AGENT_NAME" ]] || AGENT_NAME="$(detect_agent_name)"
 
@@ -666,17 +665,17 @@ if [[ -z "$API_KEY" && -f "$CREDENTIALS_PATH" ]]; then
   API_KEY="$(tr -d '\r\n' < "$CREDENTIALS_PATH")"
 fi
 
-if [[ -z "$BUCKET_ID" && "$API_KEY_FROM_CREDENTIALS" == "true" && -f "$DEFAULT_BUCKET_PATH" ]]; then
-  [[ ! -L "$DEFAULT_BUCKET_PATH" ]] || die "refusing symlink bucket selection"
-  BUCKET_ID="$(tr -d '\r\n' < "$DEFAULT_BUCKET_PATH")"
+if [[ -z "$PROJECT_ID" && "$API_KEY_FROM_CREDENTIALS" == "true" && -f "$DEFAULT_PROJECT_PATH" ]]; then
+  [[ ! -L "$DEFAULT_PROJECT_PATH" ]] || die "refusing symlink project selection"
+  PROJECT_ID="$(tr -d '\r\n' < "$DEFAULT_PROJECT_PATH")"
 fi
 
-# Earlier releases read REVDOKU_MAILBOX_ID. Stop rather than create a new bucket.
-if [[ -n "${REVDOKU_MAILBOX_ID:-}" && -z "${REVDOKU_BUCKET_ID:-}" && "$BUCKET_EXPLICIT" != "true" ]]; then
-  die "Rename REVDOKU_MAILBOX_ID to REVDOKU_BUCKET_ID, or use --bucket-id."
+# Earlier releases read REVDOKU_MAILBOX_ID. Stop rather than create a new project.
+if [[ -n "${REVDOKU_MAILBOX_ID:-}" && -z "${REVDOKU_PROJECT_ID:-}" && "$PROJECT_EXPLICIT" != "true" ]]; then
+  die "Rename REVDOKU_MAILBOX_ID to REVDOKU_PROJECT_ID, or use --project-id."
 fi
-# A .revdoku file binds this folder to a bucket for read commands.
-# An explicit --bucket-id takes precedence.
+# A .revdoku file binds this folder to a project for read commands.
+# An explicit --project-id takes precedence.
 if [[ -d "$PATH_TO_STORE" || ! -e "$PATH_TO_STORE" ]]; then
   REVDOKU_PROJECT_FILE="${PATH_TO_STORE%/}/.revdoku"
 else
@@ -685,19 +684,19 @@ fi
 [[ ! -L "$REVDOKU_PROJECT_FILE" ]] || die "refusing symlink project binding"
 if [[ -f "$REVDOKU_PROJECT_FILE" ]]; then
   BINDING_EXISTED="true"
-  # Earlier releases wrote mailbox_id=. Stop rather than create a new bucket for this folder.
-  if [[ "$BUCKET_EXPLICIT" != "true" ]] && LC_ALL=C grep -q '^mailbox_id=' "$REVDOKU_PROJECT_FILE"; then
-    die "Replace mailbox_id with bucket_id in .revdoku, or use --bucket-id."
+  # Earlier releases wrote mailbox_id=. Stop rather than create a new project for this folder.
+  if [[ "$PROJECT_EXPLICIT" != "true" ]] && LC_ALL=C grep -q '^mailbox_id=' "$REVDOKU_PROJECT_FILE"; then
+    die "Replace mailbox_id with project_id in .revdoku, or use --project-id."
   fi
-  BOUND_BUCKET_ID="$(sed -n 's/^bucket_id=//p' "$REVDOKU_PROJECT_FILE" 2>/dev/null | head -n1 | tr -d '\r')"
+  BOUND_PROJECT_ID="$(sed -n 's/^project_id=//p' "$REVDOKU_PROJECT_FILE" 2>/dev/null | head -n1 | tr -d '\r')"
 fi
-if [[ -z "$BUCKET_ID" && -n "$BOUND_BUCKET_ID" ]]; then
-  BUCKET_ID="$BOUND_BUCKET_ID"
+if [[ -z "$PROJECT_ID" && -n "$BOUND_PROJECT_ID" ]]; then
+  PROJECT_ID="$BOUND_PROJECT_ID"
 fi
-[[ -z "$BUCKET_ID" ]] || validate_id bucket_id "$BUCKET_ID"
+[[ -z "$PROJECT_ID" ]] || validate_id project_id "$PROJECT_ID"
 [[ -z "$ACCOUNT_ID" ]] || validate_id account_id "$ACCOUNT_ID"
 [[ -z "$VERSION_ID" ]] || validate_id version_id "$VERSION_ID"
-for header_value in "$API_KEY" "$AGENT_NAME" "$AGENT_CLIENT" "$AGENT_VERSION" "$AGENT_RUN_ID" "$AGENT_PROJECT" "$AGENT_TASK"; do
+for header_value in "$API_KEY" "$AGENT_NAME" "$AGENT_CLIENT" "$AGENT_VERSION" "$AGENT_RUN_ID" "$AGENT_TASK"; do
   [[ "$header_value" != *[[:cntrl:]]* ]] || die "control characters are not allowed in request headers"
 done
 if [[ -n "$METADATA_JSON" ]]; then
@@ -747,7 +746,7 @@ http_status_retryable() {
 
 http_error_code_retryable() {
   case "${1:-}" in
-    DATABASE_BUSY_RETRY|BUCKET_DELETE_BUSY|BUCKET_DELETE_ENQUEUE_FAILED)
+    DATABASE_BUSY_RETRY|PROJECT_DELETE_BUSY|PROJECT_DELETE_ENQUEUE_FAILED)
       return 0
       ;;
     *)
@@ -823,7 +822,6 @@ agent_header_args() {
     "-H" "X-Revdoku-Agent-Client: ${AGENT_CLIENT}" \
     "-H" "X-Revdoku-Agent-Version: ${AGENT_VERSION}"
   [[ -n "$AGENT_RUN_ID" ]] && printf "%s\0" "-H" "X-Revdoku-Agent-Run-Id: ${AGENT_RUN_ID}"
-  [[ -n "$AGENT_PROJECT" ]] && printf "%s\0" "-H" "X-Revdoku-Agent-Project: ${AGENT_PROJECT}"
   [[ -n "$AGENT_TASK" ]] && printf "%s\0" "-H" "X-Revdoku-Agent-Task: ${AGENT_TASK}"
 }
 
@@ -844,14 +842,14 @@ http_json() {
   local HTTP_TRANSIENT_MAX_ATTEMPTS="$HTTP_TRANSIENT_MAX_ATTEMPTS"
   [[ "$method" != "DELETE" ]] || HTTP_TRANSIENT_MAX_ATTEMPTS=0
   # Creation has no replay key. A lost or failed response may follow a commit.
-  if [[ "$method" == "POST" && "$path" == "/api/v1/buckets" ]]; then
+  if [[ "$method" == "POST" && "$path" == "/api/v1/projects" ]]; then
     HTTP_TRANSIENT_MAX_ATTEMPTS=0
   fi
   # Never send a ticket reply, a publish or a GitHub connect twice: a publish may already be queued and charged after a
   # lost response, and a connect may already copy the repository. Rate limits also return without a retry
   # (the hourly publish limit waits an hour).
   local send_once="false"
-  if [[ "$method" == "POST" && "$path" =~ ^/api/v1/buckets/[^/?]+/(tickets/[^/?]+/messages|publication(/preview)?|github)$ ]]; then
+  if [[ "$method" == "POST" && "$path" =~ ^/api/v1/projects/[^/?]+/(tickets/[^/?]+/messages|publication(/preview)?|github)$ ]]; then
     HTTP_TRANSIENT_MAX_ATTEMPTS=0
     send_once="true"
   fi
@@ -938,7 +936,7 @@ http_json() {
     retry_after="$("$JQ_BIN" -r '.error.details.retry_after // empty' "$body_file" 2>/dev/null || true)"
     details_json="$("$JQ_BIN" -c '.error.details // {}' "$body_file" 2>/dev/null || printf '{}')"
 
-    # Plan limits also answer 429 (for example BUCKET_CREATION_LIMIT_REACHED); only rate limits clear on retry.
+    # Plan limits also answer 429 (for example PROJECT_CREATION_LIMIT_REACHED); only rate limits clear on retry.
     if [[ "$method" != "DELETE" && "$send_once" != "true" && "$status" == "429" && "$attempt" -lt 20 ]] &&
       [[ -z "$code" || "$code" == *RATE_LIMIT* ]]; then
       [[ "$retry_after" =~ ^[0-9]+$ && "$retry_after" -gt 0 ]] || retry_after=5
@@ -956,7 +954,7 @@ http_json() {
       continue
     fi
 
-    if [[ "$status" == "423" && ( "$code" == "BUCKET_LOCKED" || "$code" == "FILE_LOCKED" ) ]] && http_lock_retry_allowed "$method" "$path" && (( attempt < HTTP_LOCK_MAX_ATTEMPTS )); then
+    if [[ "$status" == "423" && ( "$code" == "PROJECT_LOCKED" || "$code" == "FILE_LOCKED" ) ]] && http_lock_retry_allowed "$method" "$path" && (( attempt < HTTP_LOCK_MAX_ATTEMPTS )); then
       attempt=$((attempt + 1))
       delay="$(retry_delay_for_attempt "$attempt" "$retry_after")"
       echo "Locked while calling $path ($(lock_detail_summary "$details_json")); retrying in ${delay}s (${attempt}/${HTTP_LOCK_MAX_ATTEMPTS})..." >&2
@@ -987,12 +985,12 @@ http_json() {
     "$JQ_BIN" -r '[["Install the Revdoku GitHub App", .install_url?], ["Or connect a GitHub account that has it", .authorization_url?],
       ["Give the App access on GitHub", .settings_url?]][] | select((.[1] | type) == "string" and (.[1] | test("^https://[^\\s\\p{Cc}]+$")))
       | "\(.[0]): \(.[1])"' <<<"$details_json" >&2 2>/dev/null || true
-    if [[ "$status" == "423" && ( "$code" == "BUCKET_LOCKED" || "$code" == "FILE_LOCKED" ) ]]; then
+    if [[ "$status" == "423" && ( "$code" == "PROJECT_LOCKED" || "$code" == "FILE_LOCKED" ) ]]; then
       echo "Lock details: $(lock_detail_summary "$details_json")" >&2
     fi
     if [[ "$auth" == "true" ]]; then
       if [[ "$code" == "ACCOUNT_ACCESS_UNAVAILABLE" ]]; then
-        echo "This connection uses bucket-scoped agent credentials, which cannot read account-level status. Verify the connection with 'revdoku status', or open Revdoku in a browser for account details." >&2
+        echo "This connection uses project-scoped agent credentials, which cannot read account-level status. Verify the connection with 'revdoku status', or open Revdoku in a browser for account details." >&2
       elif [[ "$status" == "401" || "$status" == "403" ]]; then
         echo "Run 'revdoku login' to reconnect and save a fresh Revdoku API key." >&2
       fi
@@ -1062,7 +1060,7 @@ save_api_key() {
   [[ -n "$key" ]] || die "API key is required"
   [[ "$key" != *[[:cntrl:]]* ]] || die "invalid credential"
   printf "%s\n" "$key" | atomic_private_write "$CREDENTIALS_PATH" || return 1
-  rm -f "$DEFAULT_BUCKET_PATH"
+  rm -f "$DEFAULT_PROJECT_PATH"
   echo "Saved Revdoku API key to $CREDENTIALS_PATH" >&2
   echo "This is a one-time setup. Future runs will reuse the saved key automatically." >&2
   API_KEY="$key"
@@ -1083,12 +1081,12 @@ open_browser_url() {
   return 1
 }
 
-# Open the selected bucket in the authenticated dashboard.
+# Open the selected project in the authenticated dashboard.
 open_dashboard() {
-  if [[ -n "$BUCKET_ID" ]]; then
-    BROWSER_LOGIN_PATH="/buckets/view?id=$BUCKET_ID"
+  if [[ -n "$PROJECT_ID" ]]; then
+    BROWSER_LOGIN_PATH="/projects/view?id=$PROJECT_ID"
   else
-    BROWSER_LOGIN_PATH="/buckets"
+    BROWSER_LOGIN_PATH="/projects"
   fi
   browser_login_link
 }
@@ -1260,12 +1258,12 @@ query_string() {
     | map(select(.value != "") | (.key + "=" + (.value | @uri))) | join("&")' --args "$@"
 }
 
-list_buckets() {
-  http_json GET "/api/v1/buckets?$(query_string status "$BUCKET_LIST_STATUS" q "$BUCKET_LIST_QUERY" limit "$LIST_LIMIT" cursor "$LIST_CURSOR")" "{}"
+list_projects() {
+  http_json GET "/api/v1/projects?$(query_string status "$PROJECT_LIST_STATUS" q "$PROJECT_LIST_QUERY" limit "$LIST_LIMIT" cursor "$LIST_CURSOR")" "{}"
 }
 
-# GitHub (REST /buckets/ID/github and /account/github/installations): the repository whose branch, or one
-# folder of it, is the bucket's files. A person adds a GitHub account on GitHub: setup-link prints their links.
+# GitHub (REST /projects/ID/github and /account/github/installations): the repository whose branch, or one
+# folder of it, is the project's files. A person adds a GitHub account on GitHub: setup-link prints their links.
 github_command() {
   local path body query
   case "$GITHUB_ACTION" in
@@ -1277,8 +1275,8 @@ github_command() {
       return
       ;;
   esac
-  [[ "$BUCKET_ID" =~ ^bkt_[A-Za-z0-9]+$ ]] || die "Provide --bucket-id ID"
-  path="/api/v1/buckets/${BUCKET_ID}/github"
+  [[ "$PROJECT_ID" =~ ^prj_[A-Za-z0-9]+$ ]] || die "Provide --project-id ID"
+  path="/api/v1/projects/${PROJECT_ID}/github"
   case "$GITHUB_ACTION" in
     get) http_json GET "$path" "{}" ;;
     setup-link) http_json GET "${path}/setup_link" "{}" ;;
@@ -1287,12 +1285,12 @@ github_command() {
     connect)
       body="$("$JQ_BIN" -n --arg owner "${GITHUB_REPOSITORY%%/*}" --arg name "${GITHUB_REPOSITORY#*/}" --arg branch "$GITHUB_BRANCH" \
         --arg repo_path "$GITHUB_REPO_PATH" --arg installation "$GITHUB_INSTALLATION_ID" \
-        --arg files "$GITHUB_BUCKET_FILES" \
+        --arg files "$GITHUB_PROJECT_FILES" \
         '{github: ({repo_owner: $owner, repo_name: $name}
           + (if $branch != "" then {branch: $branch} else {} end)
           + (if $repo_path != "" then {repo_path: $repo_path} else {} end)
           + (if $installation != "" then {installation_id: ($installation | tonumber)} else {} end)
-          + (if $files != "" then {bucket_files: $files} else {} end))}')"
+          + (if $files != "" then {project_files: $files} else {} end))}')"
       http_json POST "$path" "$body"
       ;;
     set)
@@ -1301,17 +1299,17 @@ github_command() {
       http_json PATCH "$path" "$body"
       ;;
     disconnect)
-      [[ "$DELETE_CONFIRMATION" == "$BUCKET_ID" ]] || die "Repeat with --confirm-delete $BUCKET_ID to disconnect the repository. The bucket keeps its files."
+      [[ "$DELETE_CONFIRMATION" == "$PROJECT_ID" ]] || die "Repeat with --confirm-delete $PROJECT_ID to disconnect the repository. The project keeps its files."
       http_json DELETE "$path" "{}"
       ;;
   esac
 }
 
 list_files() {
-  [[ -n "$BUCKET_ID" ]] || die "files requires --bucket-id (or a remembered selected bucket)"
+  [[ -n "$PROJECT_ID" ]] || die "files requires --project-id (or a remembered selected project)"
   local query
   query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR" folder "$LIST_FOLDER")"
-  http_json GET "/api/v1/buckets/${BUCKET_ID}/files${query:+?$query}" "{}"
+  http_json GET "/api/v1/projects/${PROJECT_ID}/files${query:+?$query}" "{}"
 }
 
 # Prints the ID of the current file at READ_FILE_PATH, or the given df_ file ID.
@@ -1321,35 +1319,35 @@ file_id_for_path() {
     printf '%s' "$READ_FILE_PATH"
     return 0
   fi
-  response="$(http_json GET "/api/v1/buckets/${BUCKET_ID}/files/by_path?$(query_string path "$READ_FILE_PATH")" "{}")" || return 1
+  response="$(http_json GET "/api/v1/projects/${PROJECT_ID}/files/by_path?$(query_string path "$READ_FILE_PATH")" "{}")" || return 1
   id="$("$JQ_BIN" -r '.data.file.id // empty' <<<"$response")"
   validate_id file_id "$id"
   printf '%s' "$id"
 }
 
 list_versions() {
-  [[ -n "$BUCKET_ID" ]] || die "versions requires --bucket-id"
+  [[ -n "$PROJECT_ID" ]] || die "versions requires --project-id"
   local file_id query
   file_id="$(file_id_for_path)" || return 1
   query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
-  http_json GET "/api/v1/buckets/${BUCKET_ID}/files/${file_id}/versions${query:+?$query}" "{}"
+  http_json GET "/api/v1/projects/${PROJECT_ID}/files/${file_id}/versions${query:+?$query}" "{}"
 }
 
 read_file() {
-  [[ -n "$BUCKET_ID" && -n "$READ_FILE_PATH" ]] || die "read requires a bucket and PATH"
+  [[ -n "$PROJECT_ID" && -n "$READ_FILE_PATH" ]] || die "read requires a project and PATH"
   local file_id query response
   file_id="$(file_id_for_path)" || return 1
   query="$(query_string version_id "$VERSION_ID")"
-  response="$(http_json GET "/api/v1/buckets/${BUCKET_ID}/files/${file_id}/download${query:+?$query}" "{}")" || return 1
+  response="$(http_json GET "/api/v1/projects/${PROJECT_ID}/files/${file_id}/download${query:+?$query}" "{}")" || return 1
   download_link "$response" "$READ_FILE_PATH"
 }
 
-# The knowledge base, _kb/: the only bucket files that a client writes. The server holds the rules (paths, file types,
+# The knowledge base, _kb/: the only project files that a client writes. The server holds the rules (paths, file types,
 # sizes, publish permission); these commands send the request and print its answer.
 INLINE_IMAGE_MAX_BYTES=262144
 
 write_file() {
-  [[ -n "$BUCKET_ID" && -n "$READ_FILE_PATH" ]] || die "write requires a bucket and PATH"
+  [[ -n "$PROJECT_ID" && -n "$READ_FILE_PATH" ]] || die "write requires a project and PATH"
   [[ -n "$LOCAL_FILE" ]] || die "write requires --file FILE (- reads stdin)"
   local source lower payload size checksum sha256 link url status header_args=() name value
   lower="$(printf '%s' "$READ_FILE_PATH" | tr '[:upper:]' '[:lower:]')"
@@ -1374,7 +1372,7 @@ write_file() {
         sha256="$(openssl dgst -sha256 -r < "$source" | cut -d ' ' -f 1)"
         payload="$("$JQ_BIN" -nc --arg path "$READ_FILE_PATH" --argjson size "$size" --arg checksum "$checksum" --arg sha256 "$sha256" \
           '{path: $path, byte_size: $size, checksum: $checksum, sha256: $sha256}')"
-        link="$(http_json POST "/api/v1/buckets/${BUCKET_ID}/uploads" "$payload")" || return 1
+        link="$(http_json POST "/api/v1/projects/${PROJECT_ID}/uploads" "$payload")" || return 1
         url="$("$JQ_BIN" -er '.data.upload.url' <<<"$link")" || die "upload response did not include url"
         validate_transfer_url "$url" || die "untrusted upload URL"
         while IFS=$'\t' read -r name value; do
@@ -1387,30 +1385,30 @@ write_file() {
     *) die "write takes a Markdown page (.md, .mdx) or an image (.jpg, .png, .webp)" ;;
   esac
   rm -f "$source"
-  http_json POST "/api/v1/buckets/${BUCKET_ID}/files" "$payload"
+  http_json POST "/api/v1/projects/${PROJECT_ID}/files" "$payload"
 }
 
 move_file() {
-  [[ -n "$BUCKET_ID" && -n "$READ_FILE_PATH" && -n "$NEW_FILE_PATH" ]] || die "mv requires a bucket, PATH and NEW_PATH"
+  [[ -n "$PROJECT_ID" && -n "$READ_FILE_PATH" && -n "$NEW_FILE_PATH" ]] || die "mv requires a project, PATH and NEW_PATH"
   local file_id
   file_id="$(file_id_for_path)" || return 1
-  http_json POST "/api/v1/buckets/${BUCKET_ID}/files/${file_id}/move" "$("$JQ_BIN" -nc --arg path "$NEW_FILE_PATH" '{new_path: $path}')"
+  http_json POST "/api/v1/projects/${PROJECT_ID}/files/${file_id}/move" "$("$JQ_BIN" -nc --arg path "$NEW_FILE_PATH" '{new_path: $path}')"
 }
 
 delete_file() {
-  [[ -n "$BUCKET_ID" && -n "$READ_FILE_PATH" ]] || die "rm requires a bucket and PATH"
+  [[ -n "$PROJECT_ID" && -n "$READ_FILE_PATH" ]] || die "rm requires a project and PATH"
   local file_id
   file_id="$(file_id_for_path)" || return 1
-  http_json DELETE "/api/v1/buckets/${BUCKET_ID}/files/${file_id}" "{}"
+  http_json DELETE "/api/v1/projects/${PROJECT_ID}/files/${file_id}" "{}"
 }
 
 restore_file() {
-  [[ -n "$BUCKET_ID" && -n "$READ_FILE_PATH" ]] || die "restore requires a bucket and PATH"
+  [[ -n "$PROJECT_ID" && -n "$READ_FILE_PATH" ]] || die "restore requires a project and PATH"
   [[ -n "$VERSION_ID" ]] || die "restore requires --version-id ID (see revdoku versions PATH)"
   validate_id version_id "$VERSION_ID"
   local file_id
   file_id="$(file_id_for_path)" || return 1
-  http_json POST "/api/v1/buckets/${BUCKET_ID}/files/${file_id}/versions/${VERSION_ID}/restore" "{}"
+  http_json POST "/api/v1/projects/${PROJECT_ID}/files/${file_id}/versions/${VERSION_ID}/restore" "{}"
 }
 
 # Fetch data.download.url from an API response. The link carries its own
@@ -1466,11 +1464,11 @@ download_file_url() {
   die "too many file download redirects"
 }
 
-# Support tickets (REST /buckets/ID/tickets): one conversation with a requester, from email or chat (feedback: earlier feedback emails).
+# Support tickets (REST /projects/ID/tickets): one conversation with a requester, from email or chat (feedback: earlier feedback emails).
 # Messages have eml_ IDs; a reply is a new message of the ticket.
 ticket_command() {
-  [[ -n "$BUCKET_ID" ]] || die "ticket commands require --bucket-id or a bound folder"
-  local path="/api/v1/buckets/${BUCKET_ID}/tickets" query response
+  [[ -n "$PROJECT_ID" ]] || die "ticket commands require --project-id or a bound folder"
+  local path="/api/v1/projects/${PROJECT_ID}/tickets" query response
   if [[ "$ACTION" == "list_tickets" ]]; then
     query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR" status "$STATUS_OPTION" channel "$TICKET_CHANNEL" \
       label "$TICKET_LABEL" updated_after "$TICKET_UPDATED_AFTER")"
@@ -1554,21 +1552,21 @@ reply_to_ticket() {
   if ! http_json POST "$path" "$payload"; then
     # EMAIL_LABELING_PENDING refuses the reply before anything is stored.
     if [[ -z "$LAST_HTTP_STATUS" || "$LAST_HTTP_STATUS" == 5* ]] && [[ "$LAST_ERROR_CODE" != "EMAIL_LABELING_PENDING" ]]; then
-      echo "The reply result is unknown. Do not reply again until 'revdoku ticket-messages $TICKET_ID --bucket-id $BUCKET_ID' confirms it was not sent." >&2
+      echo "The reply result is unknown. Do not reply again until 'revdoku ticket-messages $TICKET_ID --project-id $PROJECT_ID' confirms it was not sent." >&2
     fi
     return 1
   fi
 }
 
-create_bucket() {
+create_project() {
   local payload
-  payload="$("$JQ_BIN" -nc --arg description "$DESCRIPTION" --arg title "$BUCKET_TITLE" \
+  payload="$("$JQ_BIN" -nc --arg description "$DESCRIPTION" --arg title "$PROJECT_TITLE" \
     --arg username "$EMAIL_USERNAME" --arg domain "$EMAIL_DOMAIN" \
     --argjson metadata "$METADATA_JSON" \
-    '{bucket: (({title:$title,description:$description} | with_entries(select(.value != ""))) +
+    '{project: (({title:$title,description:$description} | with_entries(select(.value != ""))) +
       (if ($metadata | length) > 0 then {metadata: $metadata} else {} end) +
       {email: ({username:$username,domain:$domain} | with_entries(select(.value != "")))})}')"
-  http_json POST "/api/v1/buckets" "$payload"
+  http_json POST "/api/v1/projects" "$payload"
 }
 
 publish_request_body() {
@@ -1590,18 +1588,18 @@ publish_request_body() {
        + (if $handoff == "" then {} else {support_handoff: $handoff} end) + (if $link == "" then {} else {support_link_url: $link} end)'
 }
 
-archive_bucket() {
-  [[ -n "$BUCKET_ID" ]] || die "archive requires --bucket-id"
-  http_json POST "/api/v1/buckets/${BUCKET_ID}/archive" "{}"
+archive_project() {
+  [[ -n "$PROJECT_ID" ]] || die "archive requires --project-id"
+  http_json POST "/api/v1/projects/${PROJECT_ID}/archive" "{}"
 }
 
-unarchive_bucket() {
-  [[ -n "$BUCKET_ID" ]] || die "unarchive requires --bucket-id"
-  http_json POST "/api/v1/buckets/${BUCKET_ID}/unarchive" "{}"
+unarchive_project() {
+  [[ -n "$PROJECT_ID" ]] || die "unarchive requires --project-id"
+  http_json POST "/api/v1/projects/${PROJECT_ID}/unarchive" "{}"
 }
 
-delete_bucket() {
-  local bucket_response account_response state token directory path claimed now expires payload response
+delete_project() {
+  local project_response account_response state token directory path claimed now expires payload response
   directory="$REVDOKU_CONFIG_DIR/delete-confirmations"
   [[ ! -L "$directory" ]] || die "refusing symlink confirmation storage"
   if [[ -d "$directory" ]]; then
@@ -1612,27 +1610,27 @@ delete_bucket() {
     [[ "$DELETE_CONFIRMATION" =~ ^[a-f0-9]{64}$ ]] || die "invalid deletion preview token"
     path="$directory/$DELETE_CONFIRMATION.json"
     [[ -f "$path" && ! -L "$path" ]] || die "deletion preview is missing or already consumed"
-    "$JQ_BIN" -e --argjson now "$now" --arg origin "$BASE_URL" --arg account "$ACCOUNT_ID" --arg bucket "$BUCKET_ID" \
-      '.expires_at > $now and .state.origin == $origin and .state.account.id == $account and .state.bucket.id == $bucket' "$path" >/dev/null || die "deletion preview expired or targets differ; preview again"
+    "$JQ_BIN" -e --argjson now "$now" --arg origin "$BASE_URL" --arg account "$ACCOUNT_ID" --arg project "$PROJECT_ID" \
+      '.expires_at > $now and .state.origin == $origin and .state.account.id == $account and .state.project.id == $project' "$path" >/dev/null || die "deletion preview expired or targets differ; preview again"
   fi
-  bucket_response="$(http_json GET "/api/v1/buckets/${BUCKET_ID}" "{}")" || return 1
+  project_response="$(http_json GET "/api/v1/projects/${PROJECT_ID}" "{}")" || return 1
   account_response="$(http_json GET "/api/v1/accounts/${ACCOUNT_ID}" "{}")" || return 1
   # The preview binds the confirmation to the file-tree version, the settings
   # version and the counts. Any change between preview and confirm stops it.
-  state="$(printf '%s\n%s\n' "$bucket_response" "$account_response" | "$JQ_BIN" -csS --arg origin "$BASE_URL" '
-    .[0].data.bucket as $b | .[1].data.account as $account |
+  state="$(printf '%s\n%s\n' "$project_response" "$account_response" | "$JQ_BIN" -csS --arg origin "$BASE_URL" '
+    .[0].data.project as $b | .[1].data.account as $account |
     if (($b.metadata_version | type == "string" and length > 0) and
         ($b | has("version_id")) and ($b.version_id | . == null or type == "string") and
         ($b.version_number | type == "number") and ($b.files_count | type == "number")) | not
-    then error("Incomplete bucket deletion state; update the client or review in the dashboard") else
+    then error("Incomplete project deletion state; update the client or review in the dashboard") else
     {origin:$origin, account:($account | {id,name}),
-     bucket:($b | {id, email:{address:.email.address}, account_id, archived, archived_at, metadata_version,
+     project:($b | {id, email:{address:.email.address}, account_id, archived, archived_at, metadata_version,
        version_id, version_number, files_count, storage_bytes, delete, dashboard_url})}
     end')" || return 1
-  "$JQ_BIN" -e --arg account "$ACCOUNT_ID" --arg bucket "$BUCKET_ID" '
-    .account.id == $account and .bucket.id == $bucket and
-    (.bucket.account_id == null or .bucket.account_id == $account) and
-    .bucket.archived == true and .bucket.delete.allowed == true and (.bucket.delete.confirmation | type == "string" and length > 0)' <<<"$state" >/dev/null || die "bucket is not eligible for deletion in the selected account; review its action guidance in the dashboard"
+  "$JQ_BIN" -e --arg account "$ACCOUNT_ID" --arg project "$PROJECT_ID" '
+    .account.id == $account and .project.id == $project and
+    (.project.account_id == null or .project.account_id == $account) and
+    .project.archived == true and .project.delete.allowed == true and (.project.delete.confirmation | type == "string" and length > 0)' <<<"$state" >/dev/null || die "project is not eligible for deletion in the selected account; review its action guidance in the dashboard"
 
   if [[ -z "$DELETE_CONFIRMATION" ]]; then
     mkdir -p -- "$directory"
@@ -1644,23 +1642,23 @@ delete_bucket() {
     "$JQ_BIN" -cn --argjson state "$state" --argjson expires "$expires" \
       '{state:$state,expires_at:$expires}' | atomic_private_write "$directory/$token.json"
     "$JQ_BIN" -cn --argjson state "$state" --arg token "$token" --argjson expires "$expires" \
-      '$state | del(.bucket.delete.confirmation) | {success:true, data:(. + {
+      '$state | del(.project.delete.confirmation) | {success:true, data:(. + {
         preview:true, irreversible:true, confirmation_token:$token, expires_at:$expires,
-        dashboard_url:.bucket.dashboard_url,
-        notice:"Permanently deletes this bucket, its emails, files and versions. Obtain user approval for this exact target before --confirm-delete."})}'
+        dashboard_url:.project.dashboard_url,
+        notice:"Permanently deletes this project, its emails, files and versions. Obtain user approval for this exact target before --confirm-delete."})}'
     return 0
   fi
 
-  "$JQ_BIN" -e --argjson state "$state" --argjson now "$(date +%s)" '.state == $state and .expires_at > $now' "$path" >/dev/null || die "bucket deletion state changed; preview again"
+  "$JQ_BIN" -e --argjson state "$state" --argjson now "$(date +%s)" '.state == $state and .expires_at > $now' "$path" >/dev/null || die "project deletion state changed; preview again"
   claimed="$(mktemp "$directory/.consumed.XXXXXX")"
   if ! mv "$path" "$claimed" 2>/dev/null; then
     rm -f "$claimed"
     die "deletion preview was already consumed"
   fi
   rm -f "$claimed"
-  payload="$("$JQ_BIN" -c '{confirmation:.bucket.delete.confirmation}' <<<"$state")"
-  if ! response="$(http_json DELETE "/api/v1/buckets/${BUCKET_ID}" "$payload")"; then
-    echo "Deletion was not confirmed. Check bucket status before creating another preview; this token is consumed." >&2
+  payload="$("$JQ_BIN" -c '{confirmation:.project.delete.confirmation}' <<<"$state")"
+  if ! response="$(http_json DELETE "/api/v1/projects/${PROJECT_ID}" "$payload")"; then
+    echo "Deletion was not confirmed. Check project status before creating another preview; this token is consumed." >&2
     return 1
   fi
   printf '%s\n' "$response"
@@ -1757,32 +1755,32 @@ maybe_notify_update() {
   fi
 }
 
-[[ "$ACTION" == "delete_bucket" ]] || maybe_notify_update || true
+[[ "$ACTION" == "delete_project" ]] || maybe_notify_update || true
 
 case "$ACTION" in
   webhook|webhook-set|webhook-delete|events-subscription)
-    [[ "$BUCKET_ID" =~ ^bkt_[A-Za-z0-9]+$ ]] || die "Provide --bucket-id ID"
+    [[ "$PROJECT_ID" =~ ^prj_[A-Za-z0-9]+$ ]] || die "Provide --project-id ID"
     case "$ACTION" in
-      webhook) http_json GET "/api/v1/buckets/$BUCKET_ID/webhook" "{}" ;;
+      webhook) http_json GET "/api/v1/projects/$PROJECT_ID/webhook" "{}" ;;
       webhook-set)
         [[ -n "$WEBHOOK_URL" ]] || die "Provide --webhook-url HTTPS_URL"
-        http_json PUT "/api/v1/buckets/$BUCKET_ID/webhook" "$("$JQ_BIN" -n --arg url "$WEBHOOK_URL" --argjson rotate "$ROTATE_SECRET" '{webhook_url:$url,rotate_secret:$rotate}')" ;;
+        http_json PUT "/api/v1/projects/$PROJECT_ID/webhook" "$("$JQ_BIN" -n --arg url "$WEBHOOK_URL" --argjson rotate "$ROTATE_SECRET" '{webhook_url:$url,rotate_secret:$rotate}')" ;;
       webhook-delete)
-        [[ "$DELETE_CONFIRMATION" == "$BUCKET_ID" ]] || die "Repeat with --confirm-delete $BUCKET_ID to disable this webhook"
-        http_json DELETE "/api/v1/buckets/$BUCKET_ID/webhook" "{}" ;;
-      events-subscription) http_json GET "/api/v1/buckets/$BUCKET_ID/events/subscription" "{}" ;;
+        [[ "$DELETE_CONFIRMATION" == "$PROJECT_ID" ]] || die "Repeat with --confirm-delete $PROJECT_ID to disable this webhook"
+        http_json DELETE "/api/v1/projects/$PROJECT_ID/webhook" "{}" ;;
+      events-subscription) http_json GET "/api/v1/projects/$PROJECT_ID/events/subscription" "{}" ;;
     esac
     exit 0 ;;
   publish|preview|unpublish|site)
-    [[ "$BUCKET_ID" =~ ^bkt_[A-Za-z0-9]+$ ]] || die "Provide --bucket-id ID"
+    [[ "$PROJECT_ID" =~ ^prj_[A-Za-z0-9]+$ ]] || die "Provide --project-id ID"
     [[ "$SITE_PREVIEW" != "true" || "$ACTION" == "site" ]] || die "--preview works with site only. Use revdoku preview to publish a preview."
     case "$ACTION" in
-      site) http_json GET "/api/v1/buckets/$BUCKET_ID/publication$([[ "$SITE_PREVIEW" == "true" ]] && printf '/preview')" "{}" ;;
-      unpublish) http_json DELETE "/api/v1/buckets/$BUCKET_ID/publication" "{}" ;;
+      site) http_json GET "/api/v1/projects/$PROJECT_ID/publication$([[ "$SITE_PREVIEW" == "true" ]] && printf '/preview')" "{}" ;;
+      unpublish) http_json DELETE "/api/v1/projects/$PROJECT_ID/publication" "{}" ;;
       *)
         # A failed password read must stop here: an empty body would publish the site without protection.
         publish_body="$(publish_request_body)" || exit 1
-        http_json POST "/api/v1/buckets/$BUCKET_ID/publication$([[ "$ACTION" == "preview" ]] && printf '/preview')" "$publish_body" ;;
+        http_json POST "/api/v1/projects/$PROJECT_ID/publication$([[ "$ACTION" == "preview" ]] && printf '/preview')" "$publish_body" ;;
     esac
     exit 0 ;;
   github)
@@ -1805,12 +1803,12 @@ case "$ACTION" in
     ticket_command
     exit 0
     ;;
-  create_bucket)
-    create_bucket
+  create_project)
+    create_project
     exit 0
     ;;
-  list_buckets)
-    list_buckets
+  list_projects)
+    list_projects
     exit 0
     ;;
   list_files)
@@ -1841,16 +1839,16 @@ case "$ACTION" in
     restore_file
     exit 0
     ;;
-  archive_bucket)
-    archive_bucket
+  archive_project)
+    archive_project
     exit 0
     ;;
-  unarchive_bucket)
-    unarchive_bucket
+  unarchive_project)
+    unarchive_project
     exit 0
     ;;
-  delete_bucket)
-    delete_bucket
+  delete_project)
+    delete_project
     exit 0
     ;;
   create_client_account)

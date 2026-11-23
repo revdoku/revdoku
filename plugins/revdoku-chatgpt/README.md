@@ -2,7 +2,7 @@
 
 Revdoku publishes your docs as a site from a GitHub repository. AI agents read the site
 through its MCP server, visitors ask questions, and support requests arrive as tickets.
-Connect ChatGPT to create buckets, connect GitHub, publish docs, read site analytics and answer tickets.
+Connect ChatGPT to create projects, connect GitHub, publish docs, read site analytics and answer tickets.
 
 This plugin contains the Revdoku skill only. ChatGPT connects to the hosted
 Revdoku MCP server at `https://mcp.revdoku.com` and signs in through OAuth in the

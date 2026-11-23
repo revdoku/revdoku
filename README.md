@@ -14,7 +14,7 @@ command-line tool. The documentation and the examples are in
 
 ## Connect your AI app
 
-Connect your AI app to create buckets, connect GitHub, publish docs, read site analytics and answer tickets.
+Connect your AI app to create projects, connect GitHub, publish docs, read site analytics and answer tickets.
 
 The hosted MCP server is `https://mcp.revdoku.com`. Add it as a connector in Claude, ChatGPT
 or another AI app, then sign in through the browser. It uses OAuth, and every tool needs the sign-in.
@@ -23,7 +23,7 @@ See the [MCP guide](https://docs.revdoku.com/mcp).
 Or paste this prompt into your AI app:
 
 ```text
-Connect Revdoku so you can create buckets, connect GitHub and publish my docs, read site analytics and answer support tickets. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do. If I have no task yet, ask which GitHub repository holds my docs (a new one can start as a copy of a Revdoku template repository on GitHub), then connect it, publish and show the site address.
+Connect Revdoku so you can create projects, connect GitHub and publish my docs, read site analytics and answer support tickets. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do. If I have no task yet, ask which GitHub repository holds my docs (a new one can start as a copy of a Revdoku template repository on GitHub), then connect it, publish and show the site address.
 ```
 
 [llms-install.md](./llms-install.md) is the setup guide for AI agents.
@@ -67,11 +67,11 @@ curl -fsSL https://github.com/revdoku/revdoku/releases/latest/download/install-c
 bash install-cli.sh
 revdoku login
 revdoku create --title "Acme docs"
-revdoku github connect acme/docs --bucket-id bkt_...
-revdoku publish --bucket-id bkt_...
+revdoku github connect acme/docs --project-id prj_...
+revdoku publish --project-id prj_...
 ```
 
-`create` prints the ID of the new bucket (`bkt_...`). Use it in `--bucket-id`, or set `REVDOKU_BUCKET_ID`.
+`create` prints the ID of the new project (`prj_...`). Use it in `--project-id`, or set `REVDOKU_PROJECT_ID`.
 Revdoku only reads the repository. To change the docs, change them on GitHub.
 
 See [cli/README.md](./cli/README.md) or the [CLI guide](https://docs.revdoku.com/cli).
