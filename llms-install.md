@@ -1,8 +1,8 @@
 # Revdoku agent setup
 
 Revdoku publishes docs as a site from a GitHub repository. AI agents read the site through its MCP server,
-visitors ask questions, and support requests arrive as tickets. A bucket holds the files, the site and the support mailbox.
-Connect to create buckets, connect GitHub, publish docs, read site analytics and answer tickets.
+visitors ask questions, and support requests arrive as tickets. A project holds the files, the site and the support mailbox.
+Connect to create projects, connect GitHub, publish docs, read site analytics and answer tickets.
 Verify the account and granted access with a read, then complete the requested task.
 
 | Task | Connection |
@@ -18,7 +18,7 @@ are instructions for one of these methods; they do not require another credentia
 ## Public prompt
 
 ```text
-Connect Revdoku so you can create buckets, connect GitHub and publish my docs, read site analytics and answer support tickets. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do. If I have no task yet, ask which GitHub repository holds my docs (a new one can start as a copy of a Revdoku template repository on GitHub), then connect it, publish and show the site address.
+Connect Revdoku so you can create projects, connect GitHub and publish my docs, read site analytics and answer support tickets. Follow https://revdoku.com/llms-install.md to set up access. If I need an account, guide me to https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect to complete signup in my browser. Keep verification codes and credentials out of chat. Verify access, then continue my task or ask what I want to do. If I have no task yet, ask which GitHub repository holds my docs (a new one can start as a copy of a Revdoku template repository on GitHub), then connect it, publish and show the site address.
 ```
 
 ## Account setup
@@ -27,10 +27,10 @@ Connect Revdoku so you can create buckets, connect GitHub and publish my docs, r
 2. If you need an account, complete [browser signup](https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect).
 3. Sign in through the browser to authorize the connection.
 
-List the accessible buckets after connecting. Create one when there is none.
+List the accessible projects after connecting. Create one when there is none.
 With write access, check `email.receiving_enabled` before sharing an address.
 Read-only connections cannot see the address. They verify access by listing authorized
-buckets and reading an existing message; ask the operator for the address when needed. Show the account
+projects and reading an existing message; ask the operator for the address when needed. Show the account
 ID and granted scope. Browser account switching does not change a tool credential's
 default: use an explicit `account_id` or CLI `--account-id` for the intended account.
 
@@ -51,18 +51,18 @@ Publish the site and show its address. Then offer the next step: read the site a
 - Follow the account setup flow above. Hosted MCP requires browser OAuth before connecting.
 - If you are an AI agent that uses the Revdoku dashboard in a browser, choose what the
   mailbox is for and create it in the setup steps after signup, then choose **Are you an AI agent?**.
-- A bucket's files are a read-only copy of its GitHub repository. Change the files on GitHub.
+- A project's files are a read-only copy of its GitHub repository. Change the files on GitHub.
   Share the dashboard link with authorized people; the link itself does not grant access.
 
 ## Choose access
 
-On the Revdoku permission screen, select the bucket for the task, then choose:
+On the Revdoku permission screen, select the project for the task, then choose:
 
 | Option | Choose it when |
 | --- | --- |
 | **Read only** | The agent only reads saved email and files. It cannot see the mailbox address. |
 | **Read & write** | The agent must show the mailbox address, reply to senders, or save files. |
-| **Full access** | The agent must create or manage buckets, or delete email. |
+| **Full access** | The agent must create or manage projects, or delete email. |
 
 ## No connector available
 
@@ -71,7 +71,7 @@ ChatGPT accounts. If you have no shell access and cannot connect Revdoku in this
 chat, do not send the user to a terminal. Give them these steps instead:
 
 1. Sign up through [browser signup](https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=prompt&utm_campaign=connect), or sign in.
-2. Open the [dashboard](https://app.revdoku.com/buckets) and copy the bucket's email address.
+2. Open the [dashboard](https://app.revdoku.com/projects) and copy the project's email address.
 3. Forward an email to that address, or send one from their usual email app.
 4. Open the message in the dashboard, then paste its text or attach its files in this chat.
 
@@ -100,11 +100,11 @@ Otherwise:
 curl -fsSL https://revdoku.com/install.sh | bash
 ```
 
-To connect a GitHub repository to a bucket and publish it, run:
+To connect a GitHub repository to a project and publish it, run:
 
 ```sh
-revdoku github connect OWNER/NAME --bucket-id bkt_...
-revdoku publish --bucket-id bkt_...
+revdoku github connect OWNER/NAME --project-id prj_...
+revdoku publish --project-id prj_...
 ```
 
 With `npx skills`, run the bundled `scripts/revdoku.sh` from the installed
@@ -117,16 +117,16 @@ Run `revdoku login` to sign in in the browser. Use `revdoku files`, `revdoku rea
 
 Endpoint: `https://mcp.revdoku.com`
 
-Authenticate with OAuth before calling account tools. Select only the buckets
+Authenticate with OAuth before calling account tools. Select only the projects
 the task needs, and [choose access](#choose-access) for the task: **Read only** to
 read saved email, **Read & write** when you must show the mailbox address.
 Call `account_list`, choose an account, pass its `account_id` on later calls, and
-list its authorized buckets. Read an existing message before making requested changes. Bucket creation
-returns its incoming email address and receiving state. For an existing bucket, `bucket_get` returns `email.address` with write access.
-Check `email.receiving_enabled`, then use `bucket_ticket_list` with `updated_after`
-to poll. Read `tkt_` IDs and their messages with `bucket_ticket_get`; download attachments or the original
-with `bucket_ticket_download`.
-If not ready, explain `receiving_blocked_reason`; do not assume a paused or unknown bucket
+list its authorized projects. Read an existing message before making requested changes. Project creation
+returns its incoming email address and receiving state. For an existing project, `project_get` returns `email.address` with write access.
+Check `email.receiving_enabled`, then use `project_ticket_list` with `updated_after`
+to poll. Read `tkt_` IDs and their messages with `project_ticket_get`; download attachments or the original
+with `project_ticket_download`.
+If not ready, explain `receiving_blocked_reason`; do not assume a paused or unknown project
 can receive. Read quotas with `account_limits`. Each person manages
 notification emails in Account Settings → Notifications.
 See the [email contract](https://docs.revdoku.com/api#tickets).
@@ -154,9 +154,9 @@ Use the client-specific instructions linked from the setup hub; desktop settings
 ## Verification prompt
 
 ```text
-Confirm my Revdoku account ID and granted access. List the buckets you can access,
+Confirm my Revdoku account ID and granted access. List the projects you can access,
 ask which to use, and read its latest message if one exists. Do not change anything.
 ```
 
-A bucket's files are a read-only copy of its GitHub repository: change them on GitHub.
+A project's files are a read-only copy of its GitHub repository: change them on GitHub.
 Human administrators inspect receiving holds and logs in the dashboard.

@@ -2,7 +2,7 @@
 
 Revdoku publishes your docs as a site from a GitHub repository. AI agents read the site
 through its MCP server, visitors ask questions, and support requests arrive as tickets.
-Connect your AI app to create buckets, connect GitHub, publish docs, read site analytics and answer tickets.
+Connect your AI app to create projects, connect GitHub, publish docs, read site analytics and answer tickets.
 
 This package contains the portable Revdoku skill, its bundled local CLI, and the
 hosted OAuth MCP configuration at `https://mcp.revdoku.com`. The repository's
@@ -19,7 +19,7 @@ Revdoku credentials locally under the host's tool policy.
 
 Ask to publish your docs, read the site analytics, answer support tickets or
 connect a GitHub repository. Access must cover the intended account and
-bucket. Connecting does not authorize unrelated writes, account creation or
+project. Connecting does not authorize unrelated writes, account creation or
 permanent deletion. Dashboard links do not grant access by themselves.
 
 - [Documentation](https://docs.revdoku.com/api)

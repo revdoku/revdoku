@@ -2,7 +2,7 @@
 
 Revdoku publishes your docs as a site from a GitHub repository. AI agents read the site
 through its MCP server, visitors ask questions, and support requests arrive as tickets.
-Connect Claude to create buckets, connect GitHub, publish docs, read site analytics and answer tickets.
+Connect Claude to create projects, connect GitHub, publish docs, read site analytics and answer tickets.
 
 This plugin includes the Revdoku skill and hosted MCP connector at
 `https://mcp.revdoku.com`. It runs no local programs and downloads no executable
@@ -13,7 +13,7 @@ read environment credentials or install the Revdoku CLI.
 
 In Claude, add the plugin, open its Connectors tab, and add/connect Revdoku.
 Sign in or create a Revdoku account in the browser, then authorize the appropriate
-account and bucket access. Installing the plugin alone does not connect the service.
+account and project access. Installing the plugin alone does not connect the service.
 
 For Claude Code, the self-hosted marketplace is also available:
 
@@ -34,7 +34,7 @@ This marketplace installation is independent of Anthropic's directory review.
 
 The connector reads and changes authorized cloud data, including email contents,
 attachments, filenames and account metadata. Requests and selected
-content go to Revdoku over HTTPS. Revdoku stores bucket content and action records
+content go to Revdoku over HTTPS. Revdoku stores project content and action records
 under its [Privacy Policy](https://revdoku.com/privacy/). The plugin communicates
 through its declared Revdoku connector and has no separate telemetry service.
 
@@ -42,7 +42,7 @@ Connection does not authorize every operation. Archiving, permanent deletion and
 agency client creation require the user's requested scope and applicable access.
 Dashboard links grant no access by themselves.
 
-A bucket's files are a read-only copy of its GitHub repository. Change the files on GitHub.
+A project's files are a read-only copy of its GitHub repository. Change the files on GitHub.
 
 ## Support
 

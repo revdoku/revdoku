@@ -1,6 +1,6 @@
 # Revdoku CLI
 
-A Revdoku bucket is the project of one docs site: its files, the published site, the site analytics and the support email with its tickets (the dashboard calls it a site). Use the CLI
+A Revdoku project holds one docs site: its files, the published site, the site analytics and the support email with its tickets. Use the CLI
 from your terminal or automation to publish sites, read and answer support requests and store files. This standalone installation adds one `revdoku` executable. It does not
 install skills, plugins, or AI app configuration.
 
@@ -54,48 +54,48 @@ revdoku accounts
 revdoku account get acct_...
 revdoku ls
 revdoku create --username acme-orders
-revdoku files --bucket-id bkt_...
-revdoku tickets --bucket-id bkt_... --status open
-revdoku ticket tkt_... --bucket-id bkt_...
-revdoku ticket-messages tkt_... --bucket-id bkt_...
-revdoku ticket-messages tkt_... --message-id eml_... --bucket-id bkt_...
-revdoku ticket-download tkt_... --message-id eml_... --attachment-id eat_... --bucket-id bkt_... --output attachment.pdf
-revdoku ticket-reply tkt_... --text "Thanks, received." --bucket-id bkt_...
-revdoku ticket-update tkt_... --status solved --bucket-id bkt_...
-revdoku ticket-update tkt_... --note "Promised a refund by Friday." --bucket-id bkt_...
-revdoku tickets --status pending --bucket-id bkt_...
-revdoku ticket-message-delete tkt_... --message-id eml_... --bucket-id bkt_... --confirm-delete eml_...
-revdoku github connect OWNER/NAME --bucket-id bkt_...
+revdoku files --project-id prj_...
+revdoku tickets --project-id prj_... --status open
+revdoku ticket tkt_... --project-id prj_...
+revdoku ticket-messages tkt_... --project-id prj_...
+revdoku ticket-messages tkt_... --message-id eml_... --project-id prj_...
+revdoku ticket-download tkt_... --message-id eml_... --attachment-id eat_... --project-id prj_... --output attachment.pdf
+revdoku ticket-reply tkt_... --text "Thanks, received." --project-id prj_...
+revdoku ticket-update tkt_... --status solved --project-id prj_...
+revdoku ticket-update tkt_... --note "Promised a refund by Friday." --project-id prj_...
+revdoku tickets --status pending --project-id prj_...
+revdoku ticket-message-delete tkt_... --message-id eml_... --project-id prj_... --confirm-delete eml_...
+revdoku github connect OWNER/NAME --project-id prj_...
 ```
 
 A ticket is one conversation with a requester: an email or a message left on the docs site
 (`channel` `chat`). `tickets` lists them, newest activity first; filter with
-`--status`, `--channel`, `--label` and `--updated-after TIME`. `ls` shows each bucket's `email.address`.
+`--status`, `--channel`, `--label` and `--updated-after TIME`. `ls` shows each project's `email.address`.
 
 Use returned ticket, message and attachment IDs for ticket operations; use paths for file operations.
 Run `ticket-message-delete` only after you confirm the message ID.
-`ticket-reply` sends a reply from the bucket's address and never retries. Revdoku sends only replies:
+`ticket-reply` sends a reply from the project's address and never retries. Revdoku sends only replies:
 the reply goes to the ticket's requester, when that requester passed SPF or DMARC.
 There is no `--to` or `--cc`. Check `delivery.status` with `ticket-messages`.
 After an uncertain result, check the ticket's messages before you reply again.
 A person sends, edits or declines an `awaiting_approval` reply in
 the dashboard; do not send it again, or a `declined` reply unless a person asks.
 
-`revdoku create` creates an empty bucket. Omit `--username` to
-use the title's name or a generated name. On `revdokumail.com`, the username is the bucket's name, with no
+`revdoku create` creates an empty project. Omit `--username` to
+use the title's name or a generated name. On `revdokumail.com`, the username is the project's name, with no
 suffix: `--username acme-docs` gives `acme-docs@revdokumail.com`, and its site uses the same name. A custom domain takes the exact name.
 An unavailable name returns `EMAIL_ALREADY_EXISTS`.
-`--title TEXT` names the bucket; without it, the title is the username.
-A bucket's `_repo/` folder is a read-only copy of its GitHub repository: connect one with `revdoku github connect`, then run `revdoku publish`.
+`--title TEXT` names the project; without it, the title is the username.
+A project's `_repo/` folder is a read-only copy of its GitHub repository: connect one with `revdoku github connect`, then run `revdoku publish`.
 Its `_kb/` folder is the knowledge base, which you write: `_kb/public/` is published with the site, and `_kb/private/` is never published.
 
 | Command | What it does |
 | --- | --- |
-| `revdoku write _kb/private/refunds.md --file refunds.md --bucket-id ID` | Write a page (`.md`, `.mdx`) or an image (`.jpg`, `.png`, `.webp`). `--file -` reads a page from standard input |
-| `revdoku mv _kb/private/refunds.md _kb/public/refunds.md --bucket-id ID` | Move or rename a knowledge base file. A move to or from `_kb/public/` needs publish access |
-| `revdoku rm _kb/private/old.md --bucket-id ID` | Delete a knowledge base file. Its versions stay: keep the file ID of the answer |
-| `revdoku restore _kb/private/refunds.md --version-id ID --bucket-id ID` | Make an earlier version current. `revdoku versions PATH` lists the versions. For a deleted file, use its file ID (`df_...`) in place of the path: it comes back |
-| `revdoku files --folder _kb/private --bucket-id ID` | List the files of one folder |
+| `revdoku write _kb/private/refunds.md --file refunds.md --project-id ID` | Write a page (`.md`, `.mdx`) or an image (`.jpg`, `.png`, `.webp`). `--file -` reads a page from standard input |
+| `revdoku mv _kb/private/refunds.md _kb/public/refunds.md --project-id ID` | Move or rename a knowledge base file. A move to or from `_kb/public/` needs publish access |
+| `revdoku rm _kb/private/old.md --project-id ID` | Delete a knowledge base file. Its versions stay: keep the file ID of the answer |
+| `revdoku restore _kb/private/refunds.md --version-id ID --project-id ID` | Make an earlier version current. `revdoku versions PATH` lists the versions. For a deleted file, use its file ID (`df_...`) in place of the path: it comes back |
+| `revdoku files --folder _kb/private --project-id ID` | List the files of one folder |
 
 A write never publishes: run `revdoku publish` to show the public files on the site.
 Creation returns when receiving is ready. Use the returned address.
@@ -106,7 +106,7 @@ quota errors, and confirmation requirements. For AI integration, use the
 
 ## Uninstall
 
-Remove the executable from the directory you selected. Your remote buckets and
+Remove the executable from the directory you selected. Your remote projects and
 files remain. Remove `~/.revdoku/` separately only if you also want to remove
 saved local credentials and preferences.
 
@@ -123,31 +123,31 @@ Returns effective mailbox and file quotas under `data.limits`.
 
 | Command | Purpose |
 | --- | --- |
-| `revdoku webhook --bucket-id ID` | Read the configured endpoint |
-| `revdoku webhook-set --bucket-id ID --webhook-url HTTPS_URL` | Set one signed webhook; save the returned secret privately |
+| `revdoku webhook --project-id ID` | Read the configured endpoint |
+| `revdoku webhook-set --project-id ID --webhook-url HTTPS_URL` | Set one signed webhook; save the returned secret privately |
 | Add `--rotate-secret` | Replace the signing secret and cancel pending deliveries |
-| `revdoku webhook-delete --bucket-id ID --confirm-delete ID` | Disable deliveries |
-| `revdoku events-subscription --bucket-id ID` | Get a WebSocket URL and a short-lived subscription token |
+| `revdoku webhook-delete --project-id ID --confirm-delete ID` | Disable deliveries |
+| `revdoku events-subscription --project-id ID` | Get a WebSocket URL and a short-lived subscription token |
 
 Use `--account-id ID` to select an authorized account. A running receiver is required. See the [examples](https://github.com/revdoku/docs/tree/main/examples) for signature verification and WebSocket reconnect/catch-up. Human administrators can inspect delivery attempts and retry failures in **Analytics → Webhooks**.
 
 ### GitHub repository
 
-A bucket's files can be a copy of one branch of a GitHub repository, or of one folder of it.
-These commands need an account owner or administrator key with admin access to all buckets.
+A project's files can be a copy of one branch of a GitHub repository, or of one folder of it.
+These commands need an account owner or administrator key with admin access to all projects.
 
 | Command | Purpose |
 | --- | --- |
 | `revdoku github accounts` | List the GitHub accounts connected to the account |
-| `revdoku github setup-link --bucket-id ID` | Print the links that a person opens, signed in to Revdoku, to add a GitHub account |
+| `revdoku github setup-link --project-id ID` | Print the links that a person opens, signed in to Revdoku, to add a GitHub account |
 | `revdoku github repos INSTALLATION_ID` | List the repositories that one GitHub account lets Revdoku read |
-| `revdoku github connect OWNER/NAME --bucket-id ID` | Copy the repository into the bucket. Revdoku only reads the repository. Add `--branch` or `--repo-path`. A bucket with files needs `--bucket-files replace` (the repository's files replace them) |
-| `revdoku github --bucket-id ID` | Show the repository and its sync state. Publish after `last_synced_at` is set |
-| `revdoku github sync --bucket-id ID` | Sync now |
-| `revdoku github branches --bucket-id ID` | List the branches that a preview can show |
-| `revdoku preview --bucket-id ID --branch NAME` | Make a 24-hour preview of that branch. Needs a live site |
-| `revdoku publish --bucket-id ID --support-link URL` | Publish, and send visitors who want a person to your support page (an `https` page such as your GitHub Discussions). `--support form\|form_email\|email\|link` sets the way without a new link |
-| `revdoku github set --bucket-id ID --auto-publish false` | Change `--auto-publish` |
-| `revdoku github disconnect --bucket-id ID --confirm-delete ID` | Stop the sync. The bucket keeps its files |
+| `revdoku github connect OWNER/NAME --project-id ID` | Copy the repository into the project. Revdoku only reads the repository. Add `--branch` or `--repo-path`. A project with files needs `--project-files replace` (the repository's files replace them) |
+| `revdoku github --project-id ID` | Show the repository and its sync state. Publish after `last_synced_at` is set |
+| `revdoku github sync --project-id ID` | Sync now |
+| `revdoku github branches --project-id ID` | List the branches that a preview can show |
+| `revdoku preview --project-id ID --branch NAME` | Make a 24-hour preview of that branch. Needs a live site |
+| `revdoku publish --project-id ID --support-link URL` | Publish, and send visitors who want a person to your support page (an `https` page such as your GitHub Discussions). `--support form\|form_email\|email\|link` sets the way without a new link |
+| `revdoku github set --project-id ID --auto-publish false` | Change `--auto-publish` |
+| `revdoku github disconnect --project-id ID --confirm-delete ID` | Stop the sync. The project keeps its files |
 
 `github connect` never retries. When the GitHub account is not connected, it prints the links for the person.
