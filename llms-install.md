@@ -7,7 +7,7 @@ Verify the account and granted access with a read, then complete the requested t
 
 | Task | Connection |
 | --- | --- |
-| Application backend | [REST API](https://docs.revdoku.com/api) with a normal API key |
+| Application backend | [REST API](https://support.revdoku.com/docs/api) with a normal API key |
 | Local coding assistant | Skill with bundled CLI |
 | Desktop or cloud assistant | [Hosted MCP setup](https://revdoku.com/connect/) |
 | Chat app that cannot add connectors | [No connector available](#no-connector-available) |
@@ -37,7 +37,7 @@ default: use an explicit `account_id` or CLI `--account-id` for the intended acc
 ## First task
 
 If the user has a task, continue it after connection. Otherwise, ask which GitHub repository holds the docs.
-A new repository can start as a copy of a Revdoku template repository on GitHub. See [Publish your first docs site](https://docs.revdoku.com/docs-sites#publish-your-first-docs-site).
+A new repository can start as a copy of a Revdoku template repository on GitHub. See [Publish your first docs site](https://support.revdoku.com/docs/docs-sites#publish-your-first-docs-site).
 Publish the site and show its address. Then offer the next step: read the site analytics, suggest a page change in the repository or answer a support ticket.
 
 ## Agent rules
@@ -129,7 +129,7 @@ with `project_ticket_download`.
 If not ready, explain `receiving_blocked_reason`; do not assume a paused or unknown project
 can receive. Read quotas with `account_limits`. Each person manages
 notification emails in Account Settings → Notifications.
-See the [email contract](https://docs.revdoku.com/api#tickets).
+See the [email contract](https://support.revdoku.com/docs/api#tickets).
 If the user has no account, follow Account setup above.
 
 If the host does not support MCP or the agent needs local/binary files, use the

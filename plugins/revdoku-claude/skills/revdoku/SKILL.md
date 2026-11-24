@@ -61,7 +61,7 @@ Guide Gmail setup without assuming Gmail access.
 Poll with a deadline for a fresh relevant message, then produce the chosen result.
 A Gmail verification message alone does not prove forwarding works.
 Offer recurring automation afterward.
-See the [first email workflow](https://docs.revdoku.com/projects#first-email-workflow).
+See the [first email workflow](https://support.revdoku.com/docs/projects#first-email-workflow).
 
 `project_create` accepts an optional `email: {username, domain}` with a ready
 custom domain; omit `email` to generate an address. Creation returns a
@@ -133,7 +133,7 @@ small image; `project_file_move` renames or moves a file; `project_file_delete`
 deletes one and keeps its versions, and `project_file_write` with
 `restore_version_id` brings it back. Email is no file: use the ticket tools.
 Hosted MCP cannot read the user's local filesystem. MCP tools return the same
-resources and field names as the [REST API](https://docs.revdoku.com/api).
+resources and field names as the [REST API](https://support.revdoku.com/docs/api).
 Dashboard links do not grant access; share them only with authorized members.
 
 Check restrictions, quotas and action availability. Never split work or retry to
@@ -167,7 +167,7 @@ change. Keep it under 2,000 characters; omit secrets, contents and transcripts.
 Omit unknown reasons. Reasons appear in Timeline/Logs; change reasons also appear
 in versions.
 
-Use the connector's current schemas and [API documentation](https://docs.revdoku.com/api).
+Use the connector's current schemas and [API documentation](https://support.revdoku.com/docs/api).
 Reconnect to refresh tools. Service access follows [pricing](https://app.revdoku.com/pricing)
 and the [Terms](https://revdoku.com/terms/).
 

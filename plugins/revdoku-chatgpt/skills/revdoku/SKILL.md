@@ -61,7 +61,7 @@ Guide Gmail setup without assuming Gmail access.
 Poll with a deadline for a fresh relevant message, then produce the chosen result.
 A Gmail verification message alone does not prove forwarding works.
 Offer recurring automation afterward.
-See the [first email workflow](https://docs.revdoku.com/projects#first-email-workflow).
+See the [first email workflow](https://support.revdoku.com/docs/projects#first-email-workflow).
 
 `project_create` accepts an optional `email: {username, domain}` with a ready
 custom domain; omit `email` to generate an address. Creation returns a
@@ -128,7 +128,7 @@ requested local upload, direct the user to the Revdoku dashboard.
 Writes require the requested destination and content. Pass the project
 `version_id` from your last read as `expected_project_version`; on conflict, read
 and reconcile. MCP tools return the same resources and field names as the
-[REST API](https://docs.revdoku.com/api).
+[REST API](https://support.revdoku.com/docs/api).
 Respect edit locks and release locks you acquire with `project_lock` and `unlock: true`. Locks never
 block incoming email. Dashboard links do not grant access; share them only with
 authorized members.
@@ -164,7 +164,7 @@ change. Keep it under 2,000 characters; omit secrets, contents and transcripts.
 Omit unknown reasons. Reasons appear in Timeline/Logs; change reasons also appear
 in versions.
 
-Use the connector's current schemas and [API documentation](https://docs.revdoku.com/api).
+Use the connector's current schemas and [API documentation](https://support.revdoku.com/docs/api).
 Reconnect to refresh tools. Service access follows the
 [Terms](https://revdoku.com/terms/).
 

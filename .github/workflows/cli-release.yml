@@ -57,7 +57,7 @@ jobs:
 
           Download `install-cli.sh` and run `bash install-cli.sh`. It verifies the executable's SHA-256 checksum before installation. For manual installation, verify `revdoku` against `SHA256SUMS` before running it.
 
-          See the [CLI guide](https://docs.revdoku.com/cli) and the [Revdoku documentation](https://docs.revdoku.com).
+          See the [CLI guide](https://support.revdoku.com/docs/cli) and the [Revdoku documentation](https://support.revdoku.com/docs/).
           NOTES
           gh release create "$GITHUB_REF_NAME" --verify-tag --draft \
             --title "Revdoku CLI ${GITHUB_REF_NAME#cli-v}" --notes-file "$RUNNER_TEMP/cli-notes.md" \

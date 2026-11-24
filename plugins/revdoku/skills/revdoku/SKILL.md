@@ -67,7 +67,7 @@ commands, sends, account changes, deletion, or new destinations.
   Use `login` for sign-in.
 - **Hosted agents:** OAuth at `https://mcp.revdoku.com`; MCP reads project files
   but cannot read local files.
-- **REST:** [API documentation](https://docs.revdoku.com/api).
+- **REST:** [API documentation](https://support.revdoku.com/docs/api).
 
 Create accounts at https://app.revdoku.com/users/sign_up?utm_source=revdoku&utm_medium=skill&utm_campaign=connect in the browser.
 Use browser sign-in. Never request API keys, OTPs,
@@ -114,7 +114,7 @@ Produce results before offering automation.
 Gmail verification alone does not prove forwarding works.
 
 `project_create(email: {username: "project-alerts"})` returns a ready project.
-Its address is `project-alerts@revdokumail.com`, also its site name.
+Its address is `support@project-alerts.revdoku.net`; its site has the same name.
 Omit `email` to generate one. Use the returned address.
 `EMAIL_ALREADY_EXISTS` means the name is unavailable. Ask for another name. Do not silently replace rejected names.
 CLI: `create --username NAME`.
@@ -194,7 +194,7 @@ Email is no file: use ticket tools.
   before reconnecting. `client_account_create` / `account create-client` requires
   an explicit provisioning request: verify agency and new account name first.
   Use the returned client ID afterward. Never infer optional `client_name` from
-  names/emails. [Account details](https://docs.revdoku.com/api#account-selection).
+  names/emails. [Account details](https://support.revdoku.com/docs/api#account-selection).
 - On `account.restriction` / `ACCOUNT_SUSPENDED`, relay only the notice, Terms,
   `support@revdoku.com`, and project-download reminder. Do not infer reasons,
   disclose review details, retry writes, or evade the hold.
@@ -224,7 +224,7 @@ from the original installation scope. Compare `--version` with status and
 Email domains, address changes and aliases are dashboard-only (Account
 Settings → Domains; a project's Email Settings): no CLI, MCP or API call. DNS edits
 require authorization; prefer unused subdomains. Use only returned addresses (no
-guessed aliases or `+tags`). See the [guide](https://docs.revdoku.com/guides/custom-email-domains).
+guessed aliases or `+tags`). See the [guide](https://support.revdoku.com/docs/guides/custom-email-domains).
 
 ## Explain the action
 
