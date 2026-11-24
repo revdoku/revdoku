@@ -22,7 +22,7 @@ connect a GitHub repository. Access must cover the intended account and
 project. Connecting does not authorize unrelated writes, account creation or
 permanent deletion. Dashboard links do not grant access by themselves.
 
-- [Documentation](https://docs.revdoku.com/api)
+- [Documentation](https://support.revdoku.com/docs/api)
 - [Privacy](https://revdoku.com/privacy/)
 - [Terms](https://revdoku.com/terms/)
 - Support: support@revdoku.com

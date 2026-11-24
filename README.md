@@ -4,7 +4,7 @@ Revdoku publishes your docs as a site from a GitHub repository. AI agents read t
 through its MCP server, visitors ask questions and get answers from the docs (Ask), and support requests arrive as tickets.
 
 - [Start free](https://app.revdoku.com/users/sign_up)
-- [Documentation](https://docs.revdoku.com)
+- [Documentation](https://support.revdoku.com/docs/)
 - [Pricing](https://app.revdoku.com/pricing)
 - Support: support@revdoku.com
 
@@ -18,7 +18,7 @@ Connect your AI app to create projects, connect GitHub, publish docs, read site 
 
 The hosted MCP server is `https://mcp.revdoku.com`. Add it as a connector in Claude, ChatGPT
 or another AI app, then sign in through the browser. It uses OAuth, and every tool needs the sign-in.
-See the [MCP guide](https://docs.revdoku.com/mcp).
+See the [MCP guide](https://support.revdoku.com/docs/mcp).
 
 Or paste this prompt into your AI app:
 
@@ -74,18 +74,18 @@ revdoku publish --project-id prj_...
 `create` prints the ID of the new project (`prj_...`). Use it in `--project-id`, or set `REVDOKU_PROJECT_ID`.
 Revdoku only reads the repository. To change the docs, change them on GitHub.
 
-See [cli/README.md](./cli/README.md) or the [CLI guide](https://docs.revdoku.com/cli).
+See [cli/README.md](./cli/README.md) or the [CLI guide](https://support.revdoku.com/docs/cli).
 
 ## For developers
 
 The REST API and the SDKs (`npm install revdoku`, `pip install revdoku`) are in the documentation:
 
-- [Quickstart](https://docs.revdoku.com/quickstart)
-- [API guide](https://docs.revdoku.com/api) and [API reference](https://docs.revdoku.com/api-reference)
-- [TypeScript SDK](https://docs.revdoku.com/sdks/typescript) ([source](https://github.com/revdoku/revdoku-typescript)) and
-  [Python SDK](https://docs.revdoku.com/sdks/python) ([source](https://github.com/revdoku/revdoku-python))
+- [Quickstart](https://support.revdoku.com/docs/quickstart)
+- [API guide](https://support.revdoku.com/docs/api) and [API reference](https://support.revdoku.com/docs/api-reference)
+- [TypeScript SDK](https://support.revdoku.com/docs/sdks/typescript) ([source](https://github.com/revdoku/revdoku-typescript)) and
+  [Python SDK](https://support.revdoku.com/docs/sdks/python) ([source](https://github.com/revdoku/revdoku-python))
 - [Examples](https://github.com/revdoku/docs/tree/main/examples)
-- [Changelog](https://docs.revdoku.com/changelog)
+- [Changelog](https://support.revdoku.com/docs/changelog)
 
 ## License
 

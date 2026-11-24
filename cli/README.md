@@ -82,8 +82,8 @@ A person sends, edits or declines an `awaiting_approval` reply in
 the dashboard; do not send it again, or a `declined` reply unless a person asks.
 
 `revdoku create` creates an empty project. Omit `--username` to
-use the title's name or a generated name. On `revdokumail.com`, the username is the project's name, with no
-suffix: `--username acme-docs` gives `acme-docs@revdokumail.com`, and its site uses the same name. A custom domain takes the exact name.
+use the title's name or a generated name. Every project gets an incoming email address on the built-in domain: the username is the
+project's name, so `--username acme-docs` gives `support@acme-docs.revdoku.net`, and its site uses the same name. A custom domain takes the exact name.
 An unavailable name returns `EMAIL_ALREADY_EXISTS`.
 `--title TEXT` names the project; without it, the title is the username.
 A project's `_repo/` folder is a read-only copy of its GitHub repository: connect one with `revdoku github connect`, then run `revdoku publish`.
@@ -100,7 +100,7 @@ Its `_kb/` folder is the knowledge base, which you write: `_kb/public/` is publi
 A write never publishes: run `revdoku publish` to show the public files on the site.
 Creation returns when receiving is ready. Use the returned address.
 
-See [the API reference](https://docs.revdoku.com/api) and `revdoku --help` for commands, scopes,
+See [the API reference](https://support.revdoku.com/docs/api) and `revdoku --help` for commands, scopes,
 quota errors, and confirmation requirements. For AI integration, use the
 [skill and plugin installation guide](https://github.com/revdoku/revdoku#local-ai-apps).
 

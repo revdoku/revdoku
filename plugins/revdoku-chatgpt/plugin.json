@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "revdoku",
-  "version": "1.0.587",
+  "version": "1.0.588",
   "description": "Revdoku publishes your docs as a site from a GitHub repository. Create projects, connect GitHub, publish docs, read site analytics and answer support tickets through the hosted Revdoku MCP server.",
   "author": {
     "name": "Revdoku",

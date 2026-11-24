@@ -46,7 +46,7 @@ A project's files are a read-only copy of its GitHub repository. Change the file
 
 ## Support
 
-- [Documentation](https://docs.revdoku.com/api)
+- [Documentation](https://support.revdoku.com/docs/api)
 - [Terms](https://revdoku.com/terms/)
 - [Service pricing](https://app.revdoku.com/pricing)
 - Contact: support@revdoku.com
