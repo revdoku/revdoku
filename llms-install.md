@@ -103,9 +103,12 @@ curl -fsSL https://revdoku.com/install.sh | bash
 To connect a GitHub repository to a project and publish it, run:
 
 ```sh
-revdoku github connect OWNER/NAME --project-id prj_...
+revdoku github scan OWNER/NAME --project-id prj_...
+revdoku github connect OWNER/NAME --repo-path FOLDER --project-id prj_...
 revdoku publish --project-id prj_...
 ```
+
+FOLDER is `recommended_path` of the scan. When it is null (the whole repository), omit `--repo-path`.
 
 With `npx skills`, run the bundled `scripts/revdoku.sh` from the installed
 skill directory in place of `revdoku`; this install does not add a CLI to `PATH`.
