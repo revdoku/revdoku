@@ -237,6 +237,7 @@ Usage: revdoku <command> [PATH] [options]
   ticket ID             Read one ticket: status, channel, requester and labels.
   ticket-messages ID    List a ticket's messages; --message-id ID reads one message.
   ticket-reply ID       Reply to the ticket's requester. Does not retry.
+                        Uses credits; see https://app.revdoku.com/pricing.json.
   ticket-draft ID       Let Revdoku's AI reply drafter write a reply, and wait for it.
                         Sends nothing. --read shows the newest draft without a new one.
                         Uses credits; see https://app.revdoku.com/pricing.json.
