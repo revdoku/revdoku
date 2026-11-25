@@ -627,7 +627,7 @@ while [[ $# -gt 0 ]]; do
             esac
             ;;
           # Removed names answer what replaced them.
-          p)              die "revdoku p was removed. Use revdoku publish." ;;
+          p)              die "The command p was removed. Use revdoku publish." ;;
           sites)          die "revdoku sites was removed. Use revdoku ls for the projects and revdoku site for the site of one." ;;
           analytics)      die "revdoku analytics was removed. Read GET /v1/projects/PROJECT_ID/analytics: https://support.revdoku.com/docs/api" ;;
           i|init)         die "revdoku init was removed. Use revdoku create, then revdoku github connect OWNER/NAME." ;;
