@@ -67,11 +67,13 @@ curl -fsSL https://github.com/revdoku/revdoku/releases/latest/download/install-c
 bash install-cli.sh
 revdoku login
 revdoku create --title "Acme docs"
-revdoku github connect acme/docs --project-id prj_...
+revdoku github scan acme/docs --project-id prj_...
+revdoku github connect acme/docs --repo-path docs --project-id prj_...
 revdoku publish --project-id prj_...
 ```
 
 `create` prints the ID of the new project (`prj_...`). Use it in `--project-id`, or set `REVDOKU_PROJECT_ID`.
+`github scan` prints `recommended_path`, the docs folder of the repository: pass it as `--repo-path`, because a site serves every file of the folder.
 Revdoku only reads the repository. To change the docs, change them on GitHub.
 
 See [cli/README.md](./cli/README.md) or the [CLI guide](https://support.revdoku.com/docs/cli).

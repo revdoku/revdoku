@@ -49,6 +49,9 @@ AGENT_TASK="${REVDOKU_AGENT_TASK:-}"
 HTTP_TRANSIENT_MAX_ATTEMPTS="${REVDOKU_HTTP_TRANSIENT_MAX_ATTEMPTS:-5}"
 HTTP_RETRYABLE_CONFLICT_MAX_ATTEMPTS="${REVDOKU_HTTP_RETRYABLE_CONFLICT_MAX_ATTEMPTS:-12}"
 HTTP_LOCK_MAX_ATTEMPTS="${REVDOKU_HTTP_LOCK_MAX_ATTEMPTS:-3}"
+# Background work (a publish, a GitHub copy, a draft): how long a command waits for ready or failed, and how often it reads.
+WORK_WAIT_SECONDS="${REVDOKU_WAIT_SECONDS:-300}"
+WORK_WAIT_INTERVAL="${REVDOKU_WAIT_INTERVAL:-3}"
 LOGIN="false"
 ACTION=""
 # The folder whose .revdoku file names the project of read commands.
@@ -60,8 +63,19 @@ ROTATE_SECRET="false"
 ACCESS_MODE=""
 PASSWORD_FILE=""
 SUPPORT_HANDOFF=""
+EMAIL_ALLOWLIST=""
+EMAIL_ALLOWLIST_SET="false"
 SUPPORT_LINK=""
+CONFIRM_SOURCE_CODE=""
 SITE_PREVIEW="false"
+WAIT_FOR_WORK="true"
+DRAFT_READ="false"
+SCAN_STOP="false"
+# Newline-separated website addresses of revdoku scan.
+SCAN_URLS=""
+SCAN_MAX_ARTICLES=""
+DESCRIPTION_SET="false"
+SETTINGS_ACTION=""
 READ_FILE_PATH=""
 NEW_FILE_PATH=""
 LOCAL_FILE=""
@@ -87,6 +101,9 @@ EMAIL_REMOVE_LABELS=""
 EMAIL_TEXT=""
 TICKET_NOTE=""
 TICKET_NOTE_SET="false"
+TICKET_EXPECTED_NOTE=""
+TICKET_EXPECTED_NOTE_SET="false"
+EXPECTED_PROJECT_VERSION=""
 EMAIL_TEXT_FILE=""
 EMAIL_HTML_FILE=""
 PROJECT_LIST_STATUS="active"
@@ -209,7 +226,9 @@ Usage: revdoku <command> [PATH] [options]
 
   ls, list              List active projects with titles, addresses and email counts.
   create                Create a project; optionally choose --username, --domain and --title.
+                        Does not retry: after an uncertain result, read revdoku ls first.
                         Its files come from GitHub: revdoku github connect OWNER/NAME.
+  update                Change the project's --title TEXT or --description TEXT.
   o, open               Open this project in the dashboard.
   st, status            Show connection and account status.
   login                 Sign in to an existing account in the browser.
@@ -218,8 +237,12 @@ Usage: revdoku <command> [PATH] [options]
   ticket ID             Read one ticket: status, channel, requester and labels.
   ticket-messages ID    List a ticket's messages; --message-id ID reads one message.
   ticket-reply ID       Reply to the ticket's requester. Does not retry.
+  ticket-draft ID       Let Revdoku's AI reply drafter write a reply, and wait for it.
+                        Sends nothing. --read shows the newest draft without a new one.
                         Uses credits; see https://app.revdoku.com/pricing.json.
   ticket-update ID      Set --status open|pending|solved, --note TEXT or labels (--add-label NAME).
+                        --expected-note TEXT is the note that you read ("" for none):
+                        another stored note answers TICKET_NOTE_CONFLICT.
   ticket-download ID    Download a message's original EML (--message-id ID) or --attachment-id ID.
   ticket-message-delete ID  Delete one message and its attachments (--message-id ID);
                         confirm with --confirm-delete MESSAGE_ID.
@@ -243,37 +266,56 @@ Usage: revdoku <command> [PATH] [options]
   restore PATH|FILE_ID --version-id ID
                         Make an earlier version of a knowledge base file current.
                         A deleted file comes back: use its file id (df_...).
+  scan URL...           Scan a public website: an AI writes one article per page
+                        into _kb/public/. One URL reads it and its linked pages;
+                        more read exactly those. Optional --max-articles N.
+                        Does not retry. Waits for the scan. --read shows the
+                        newest scan; --stop stops it (written articles stay).
+                        Uses credits; see https://app.revdoku.com/pricing.json.
   archive | unarchive    Manage a project.
   publish               Publish the project's files as its site, where the account can publish.
                         Optional --access-mode public|password|require_email and
                         --password-file FILE (- reads stdin). Does not retry.
-                        --support form|form_email|email|link sets how visitors reach
-                        a person; --support-link URL sends them to your support page.
+                        Waits until the site is ready or failed.
+                        --support form|form_email|email|link|none sets how visitors
+                        reach a person (none: no way to a person); --support-link URL
+                        sends them to your support page. --email-allowlist A,B sets
+                        who passes the email-code gate ("" removes the list).
+                        A first publish of a repository folder that looks like
+                        source code needs --confirm-source-code (every file is public).
                         Uses credits; see https://app.revdoku.com/pricing.json.
   preview               Make a 24-hour preview with the same options.
                         --branch NAME previews a branch of the connected repository.
                         Uses credits; see https://app.revdoku.com/pricing.json.
-  site                  Show the site: URL, build state and access; --preview for the preview.
-  unpublish             Take the site down.
+  site                  Show the site: URL, status and access; --preview for the preview.
+                        Publish again while publication.republish_reasons has a reason.
+  settings              Show the site settings: layout, Ask, support, navigation and more.
+  settings set --file FILE
+                        Change the settings of a JSON object (- reads stdin);
+                        null removes one. It publishes nothing.
+  unpublish             Take the site down. It goes offline in the background.
   github                Show the GitHub repository whose branch is copied into _repo/.
   github accounts       List GitHub accounts connected to the account.
   github repos ID       List the repositories of one connected GitHub account.
   github setup-link     Print the links a person opens to add a GitHub account.
+  github scan [OWNER/NAME]  List the docs folders of a branch and the recommended
+                        folder; without OWNER/NAME, the connected repository.
+                        Optional --branch, --repo-path, --installation-id.
   github connect OWNER/NAME  Copy a repository into a project. Optional --branch,
                         --repo-path, --installation-id. Revdoku only reads
                         the repository. A project with files needs
-                        --project-files replace.
+                        --project-files replace. Does not retry. Waits for the copy.
   github set            Change --auto-publish.
-  github sync           Sync the repository now.
-  github branches       List the branches that a preview can show.
+  github sync           Sync the repository now, and wait for the copy.
+  github branches       List the branches that a preview can show, in pages.
   github disconnect     Stop syncing; requires --confirm-delete PROJECT_ID. Files stay.
   delete                Preview permanent deletion; requires explicit account/project.
   accounts              List accounts granted to this credential.
   account limits                 Read effective project and storage quotas
   account get ID        Read one granted account.
-  account               Account identity and effective limits.
+  account               The status and the limits of the account, in one answer.
   account create-client NAME     Create a client account within an authorized agency.
-  dashboard             Print the dashboard URL; normal sign-in is required.
+  dashboard             Print a dashboard link (dashboard_link.url); normal sign-in is required.
 
 Options:
   --reason TEXT         Optional purpose for this action (up to 2000 characters).
@@ -281,6 +323,10 @@ Options:
   --account-id ID       Select a granted account for this command.
   --client-name NAME    Client person or business (account create-client).
   --project-id ID        Target project; overrides the local .revdoku binding.
+  --no-wait             publish, preview, scan, github connect, github sync and ticket-draft
+                        start work in the background and wait until its status is
+                        ready or failed (exit 1 when failed, 2 when it still runs
+                        after 5 minutes). --no-wait answers at once.
   --status active|archived|all          Project list filter (default: active); see also tickets.
   --query TEXT                        Project title, address or ID filter (ls).
   --limit N   --cursor CURSOR          List page size (maximum 200) and next page.
@@ -295,12 +341,16 @@ Options:
   --html-file PATH     --attach FILE_ID   Optional HTML body; attach project files.
   --add-label NAME  --remove-label NAME  ticket-update: custom labels; repeat (10 maximum).
   --note TEXT                          ticket-update: the team's internal note, never sent ("" removes it).
+  --expected-note TEXT                 ticket-update with --note: the note that you read ("" for no note).
   --attachment-id ID   --output FILE   Download a selected message attachment.
   --version-id ID                      File version for read and restore.
   --file FILE                          Local file for write (- reads stdin).
+  --expected-project-version ID        write, mv, rm and restore: the project_version that you read.
+                                       When the project changed since, the answer is
+                                       PROJECT_VERSION_CONFLICT and nothing changes.
   --description TEXT   --metadata JSON
   --username NAME      --domain HOST          Project creation email address options.
-  --title TEXT                                Project title for create (default: the username).
+  --title TEXT                                Project title for create (default: the username) or update.
   --confirm-delete TOKEN  Execute a reviewed deletion preview (expires in 10 minutes).
   --api-key KEY        API credential (or REVDOKU_API_KEY / $CREDENTIALS_PATH).
   --agent NAME         Name the AI agent or tool that runs the CLI (default: auto-detected).
@@ -308,7 +358,8 @@ Options:
   -h, --help           Show this help.
 
 Examples:
-  revdoku github connect acme/docs --project-id prj_...
+  revdoku github scan acme/docs --project-id prj_...
+  revdoku github connect acme/docs --repo-path docs --project-id prj_...
   revdoku files --project-id prj_...
   revdoku read _repo/notes.md --project-id prj_... --reason "Review project decisions"
   revdoku write _kb/private/refunds.md --file refunds.md --project-id prj_...
@@ -344,12 +395,23 @@ while [[ $# -gt 0 ]]; do
       [[ $# -ge 2 ]] || die "--password-file requires a path, or - for standard input"
       PASSWORD_FILE="$2"; shift 2 ;;
     --support)
-      [[ $# -ge 2 && "$2" =~ ^(form|form_email|email|link)$ ]] || die "--support must be form, form_email, email or link"
+      [[ $# -ge 2 && "$2" =~ ^(form|form_email|email|link|none)$ ]] || die "--support must be form, form_email, email, link or none"
       SUPPORT_HANDOFF="$2"; shift 2 ;;
+    --email-allowlist)
+      # Addresses and domains apart by commas; an empty value removes the list.
+      [[ $# -ge 2 ]] || die "--email-allowlist requires a comma-separated list, or \"\" to remove it"
+      EMAIL_ALLOWLIST="$2"; EMAIL_ALLOWLIST_SET="true"; shift 2 ;;
     --support-link)
       [[ $# -ge 2 && "$2" == https://* ]] || die "--support-link requires an https URL"
       SUPPORT_LINK="$2"; shift 2 ;;
     --preview) SITE_PREVIEW="true"; shift ;;
+    --confirm-source-code) CONFIRM_SOURCE_CODE="true"; shift ;;
+    --no-wait) WAIT_FOR_WORK="false"; shift ;;
+    --read) DRAFT_READ="true"; shift ;;
+    --stop) SCAN_STOP="true"; shift ;;
+    --max-articles)
+      [[ $# -ge 2 && "$2" =~ ^[1-9][0-9]*$ ]] || die "--max-articles must be a whole number from 1"
+      SCAN_MAX_ARTICLES="$2"; shift 2 ;;
     --branch|--repo-path|--installation-id)
       [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "$1 requires a value"
       case "$1" in
@@ -380,7 +442,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --description)
       [[ $# -ge 2 ]] || die "--description requires a value"
-      DESCRIPTION="$2"
+      DESCRIPTION="$2"; DESCRIPTION_SET="true"
       shift 2
       ;;
     --title)
@@ -435,6 +497,17 @@ while [[ $# -gt 0 ]]; do
       # An empty text is a value here: it removes the note.
       [[ $# -ge 2 ]] || die "--note requires a value"
       TICKET_NOTE="$2"; TICKET_NOTE_SET="true"
+      shift 2
+      ;;
+    --expected-note)
+      # An empty text is a value here: the ticket had no note when it was read.
+      [[ $# -ge 2 ]] || die "--expected-note requires a value"
+      TICKET_EXPECTED_NOTE="$2"; TICKET_EXPECTED_NOTE_SET="true"
+      shift 2
+      ;;
+    --expected-project-version)
+      [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "--expected-project-version requires a project version id"
+      EXPECTED_PROJECT_VERSION="$2"
       shift 2
       ;;
     --attach|--text|--text-file|--html-file|--add-label|--remove-label)
@@ -506,7 +579,12 @@ while [[ $# -gt 0 ]]; do
       die "unknown option: $1 (run 'revdoku --help')"
       ;;
     *)
-      if [[ "$VERB_SEEN" == "true" ]]; then
+      # The addresses of scan and the word set of settings may come before or after the options.
+      if [[ "$VERB_SEEN" == "true" && "$ACTION" == "website_scan" ]]; then
+        SCAN_URLS+="$1"$'\n'; shift
+      elif [[ "$VERB_SEEN" == "true" && "$ACTION" == "settings" && "$SETTINGS_ACTION" == "get" && "$1" == "set" ]]; then
+        SETTINGS_ACTION="set"; shift
+      elif [[ "$VERB_SEEN" == "true" ]]; then
         die "unexpected positional argument"
       else
         VERB_SEEN="true"
@@ -518,6 +596,15 @@ while [[ $# -gt 0 ]]; do
           rm)             [[ $# -ge 2 && "$2" != -* ]] || die "rm needs a project PATH right after it, e.g. revdoku rm _kb/private/old.md"; ACTION="delete_file"; READ_FILE_PATH="$2"; shift 2 ;;
           restore)        [[ $# -ge 2 && "$2" != -* ]] || die "restore needs a project PATH right after it, e.g. revdoku restore _kb/private/a.md --version-id ID"; ACTION="restore_file"; READ_FILE_PATH="$2"; shift 2 ;;
           publish|preview|site) ACTION="$1"; shift ;;
+          # The site settings: read them, or change the fields of a JSON object (settings set --file FILE).
+          settings)
+            shift; ACTION="settings"; SETTINGS_ACTION="get"
+            if [[ "${1:-}" == "set" ]]; then SETTINGS_ACTION="set"; shift; fi ;;
+          # A website scan: scan URL... starts one; --read reads the newest; --stop stops the one that runs.
+          scan)
+            shift; ACTION="website_scan"
+            while [[ $# -ge 1 && "$1" != -* ]]; do SCAN_URLS+="$1"$'\n'; shift; done ;;
+          update)         ACTION="update_project"; shift ;;
           unpublish|down) ACTION="unpublish"; shift ;;
           github)
             shift
@@ -530,10 +617,20 @@ while [[ $# -gt 0 ]]; do
               connect)
                 [[ $# -ge 2 && "$2" =~ ^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+$ ]] || die "github connect needs OWNER/NAME, for example acme/docs"
                 GITHUB_ACTION="connect"; GITHUB_REPOSITORY="$2"; shift 2 ;;
+              scan)
+                GITHUB_ACTION="scan"; shift
+                # Without OWNER/NAME the scan reads the connected repository.
+                if [[ $# -ge 1 && "$1" != -* ]]; then
+                  [[ "$1" =~ ^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+$ ]] || die "github scan takes OWNER/NAME, for example acme/docs"
+                  GITHUB_REPOSITORY="$1"; shift
+                fi ;;
             esac
             ;;
-          p|sites|analytics|i|init)
-            die "This command is unavailable. Use revdoku --help for the available commands." ;;
+          # Removed names answer what replaced them.
+          p)              die "revdoku p was removed. Use revdoku publish." ;;
+          sites)          die "revdoku sites was removed. Use revdoku ls for the projects and revdoku site for the site of one." ;;
+          analytics)      die "revdoku analytics was removed. Read GET /v1/projects/PROJECT_ID/analytics: https://support.revdoku.com/docs/api" ;;
+          i|init)         die "revdoku init was removed. Use revdoku create, then revdoku github connect OWNER/NAME." ;;
           ls|list)        ACTION="list_projects"; shift ;;
           accounts)       ACTION="list_accounts"; shift ;;
           create)         ACTION="create_project"; shift ;;
@@ -543,7 +640,7 @@ while [[ $# -gt 0 ]]; do
           grant)          [[ $# -ge 2 && "$2" != -* ]] || die "grant needs the one-time token right after it"; ACTION="exchange_grant"; GRANT_TOKEN="$2"; shift 2 ;;
           webhook|webhook-set|webhook-delete|events-subscription) ACTION="$1"; shift ;;
           tickets)        ACTION="list_tickets"; shift ;;
-          ticket|ticket-messages|ticket-reply|ticket-update|ticket-download|ticket-message-delete)
+          ticket|ticket-messages|ticket-reply|ticket-draft|ticket-update|ticket-download|ticket-message-delete)
             [[ $# -ge 2 && "$2" =~ ^tkt_[A-Za-z0-9]+$ ]] || die "$1 requires a ticket id (tkt_...); see revdoku tickets"
             ACTION="$1"; TICKET_ID="$2"; shift 2 ;;
           files)          ACTION="list_files"; shift ;;
@@ -591,6 +688,11 @@ if [[ ( -n "$WEBHOOK_URL" || "$ROTATE_SECRET" == "true" ) && "$ACTION" != "webho
   die "--webhook-url and --rotate-secret require webhook-set"
 fi
 [[ "$TICKET_NOTE_SET" != "true" || "$ACTION" == "ticket-update" ]] || die "--note requires ticket-update"
+[[ "$TICKET_EXPECTED_NOTE_SET" != "true" || ( "$ACTION" == "ticket-update" && "$TICKET_NOTE_SET" == "true" ) ]] || die "--expected-note requires ticket-update with --note"
+case "$ACTION" in
+  write_file|move_file|delete_file|restore_file) ;;
+  *) [[ -z "$EXPECTED_PROJECT_VERSION" ]] || die "--expected-project-version requires write, mv, rm or restore" ;;
+esac
 [[ -z "$LIST_FOLDER" || "$ACTION" == "list_files" ]] || die "--folder requires files"
 if [[ -n "$EMAIL_ATTACHMENTS$EMAIL_SUBJECT$EMAIL_TEXT$EMAIL_TEXT_FILE$EMAIL_HTML_FILE" && "$ACTION" != "ticket-reply" ]]; then
   die "--attach, --subject, --text, --text-file and --html-file require ticket-reply"
@@ -616,25 +718,38 @@ if [[ "$PROJECT_LIST_OPTIONS" == "true" && "$ACTION" != "list_projects" ]]; then
   die "--query requires ls or list"
 fi
 case "$ACTION:$GITHUB_ACTION" in
-  list_projects:|list_files:|list_tickets:|ticket-messages:|list_versions:|github:accounts|github:repos) ;;
-  *) [[ -z "$LIST_LIMIT$LIST_CURSOR" ]] || die "--limit and --cursor require ls, files, tickets, ticket-messages, versions, github accounts or github repos" ;;
+  list_projects:|list_files:|list_tickets:|ticket-messages:|list_versions:|github:accounts|github:repos|github:branches) ;;
+  *) [[ -z "$LIST_LIMIT$LIST_CURSOR" ]] || die "--limit and --cursor require ls, files, tickets, ticket-messages, versions, github accounts, github repos or github branches" ;;
 esac
 # Each GitHub option belongs to one or two github commands, so none is silently ignored.
-[[ -z "$GITHUB_BRANCH" || "$GITHUB_ACTION" == "connect" || "$ACTION" == "preview" ]] || die "--branch requires github connect or preview"
-[[ -z "$GITHUB_REPO_PATH" && ( -z "$GITHUB_INSTALLATION_ID" || "$GITHUB_ACTION" == "repos" ) || "$GITHUB_ACTION" == "connect" ]] ||
-  die "--repo-path and --installation-id require github connect"
+[[ -z "$GITHUB_BRANCH" || "$GITHUB_ACTION" == "connect" || "$GITHUB_ACTION" == "scan" || "$ACTION" == "preview" ]] || die "--branch requires github connect, github scan or preview"
+[[ -z "$GITHUB_REPO_PATH" && ( -z "$GITHUB_INSTALLATION_ID" || "$GITHUB_ACTION" == "repos" ) || "$GITHUB_ACTION" == "connect" || "$GITHUB_ACTION" == "scan" ]] ||
+  die "--repo-path and --installation-id require github connect or github scan"
+[[ -z "$CONFIRM_SOURCE_CODE" || "$ACTION" == "publish" ]] || die "--confirm-source-code works with publish only"
 [[ -z "$GITHUB_AUTO_PUBLISH" || "$GITHUB_ACTION" == "set" ]] || die "--auto-publish requires github set"
 [[ -z "$GITHUB_PROJECT_FILES" || "$GITHUB_ACTION" == "connect" ]] || die "--project-files requires github connect"
 if [[ -n "$VERSION_ID" && "$ACTION" != "read_file" && "$ACTION" != "restore_file" ]]; then
   die "--version-id requires read or restore"
 fi
-[[ -z "$LOCAL_FILE" || "$ACTION" == "write_file" ]] || die "--file requires write"
+[[ -z "$LOCAL_FILE" || "$ACTION" == "write_file" || "$SETTINGS_ACTION" == "set" ]] || die "--file requires write or settings set"
+[[ "$DRAFT_READ" != "true" || "$ACTION" == "ticket-draft" || "$ACTION" == "website_scan" ]] || die "--read requires ticket-draft or scan"
+[[ "$SCAN_STOP" != "true" && -z "$SCAN_MAX_ARTICLES" || "$ACTION" == "website_scan" ]] || die "--stop and --max-articles require scan"
+if [[ "$ACTION" == "website_scan" ]]; then
+  # One choice: start (addresses), --read or --stop.
+  scan_choices=0
+  [[ -z "$SCAN_URLS" ]] || scan_choices=$((scan_choices + 1))
+  [[ "$DRAFT_READ" != "true" ]] || scan_choices=$((scan_choices + 1))
+  [[ "$SCAN_STOP" != "true" ]] || scan_choices=$((scan_choices + 1))
+  [[ "$scan_choices" -eq 1 ]] || die "scan takes website addresses (scan acme.com), --read or --stop"
+  [[ -z "$SCAN_MAX_ARTICLES" || -n "$SCAN_URLS" ]] || die "--max-articles requires scan with addresses"
+fi
 if [[ -n "$EMAIL_USERNAME$EMAIL_DOMAIN" && "$ACTION" != "create_project" ]]; then
   die "--username and --domain require create"
 fi
-if [[ -n "$PROJECT_TITLE" && "$ACTION" != "create_project" ]]; then
-  die "--title requires create"
+if [[ -n "$PROJECT_TITLE" && "$ACTION" != "create_project" && "$ACTION" != "update_project" ]]; then
+  die "--title requires create or update"
 fi
+[[ "$DESCRIPTION_SET" != "true" || "$ACTION" == "create_project" || "$ACTION" == "update_project" ]] || die "--description requires create or update"
 if [[ "$ACTION" == "delete_project" ]]; then
   [[ "$PROJECT_EXPLICIT" == "true" && -n "$PROJECT_ID" && -n "$ACCOUNT_ID" ]] || die "delete requires explicit --account-id and --project-id"
 fi
@@ -696,6 +811,7 @@ fi
 [[ -z "$PROJECT_ID" ]] || validate_id project_id "$PROJECT_ID"
 [[ -z "$ACCOUNT_ID" ]] || validate_id account_id "$ACCOUNT_ID"
 [[ -z "$VERSION_ID" ]] || validate_id version_id "$VERSION_ID"
+[[ -z "$EXPECTED_PROJECT_VERSION" ]] || validate_id expected_project_version "$EXPECTED_PROJECT_VERSION"
 for header_value in "$API_KEY" "$AGENT_NAME" "$AGENT_CLIENT" "$AGENT_VERSION" "$AGENT_RUN_ID" "$AGENT_TASK"; do
   [[ "$header_value" != *[[:cntrl:]]* ]] || die "control characters are not allowed in request headers"
 done
@@ -733,9 +849,11 @@ http_status_success() {
   [[ "$status" =~ ^[0-9]+$ ]] && (( status >= 200 && status < 300 ))
 }
 
+# A 429 is never a transient error: only the rate-limit branch of http_json handles it, and a long wait or a plan
+# limit is told, not retried.
 http_status_retryable() {
   case "${1:-}" in
-    408|425|429|500|502|503|504)
+    408|425|500|502|503|504)
       return 0
       ;;
     *)
@@ -808,7 +926,7 @@ lock_detail_summary() {
     def present: select(. != null and . != "");
     (.locked_by_api_key.label // .locked_by.name // .locked_by.email // .locked_by_api_key.id // .locked_by.id // "another actor") as $owner
     | (.message // .kind // "" | tostring) as $message
-    | (.locked_until // "" | tostring) as $until
+    | (.expires_at // "" | tostring) as $until
     | "locked by " + $owner
       + (if ($message | length) > 0 then " (" + $message + ")" else "" end)
       + (if ($until | length) > 0 then " until " + $until else "" end)
@@ -845,29 +963,34 @@ http_json() {
   if [[ "$method" == "POST" && "$path" == "/api/v1/projects" ]]; then
     HTTP_TRANSIENT_MAX_ATTEMPTS=0
   fi
-  # Never send a ticket reply, a publish or a GitHub connect twice: a publish may already be queued and charged after a
+  # Never send a ticket reply, a publish, a GitHub connect or a website scan twice: a publish may already be queued and charged after a
   # lost response, and a connect may already copy the repository. Rate limits also return without a retry
   # (the hourly publish limit waits an hour).
   local send_once="false"
-  if [[ "$method" == "POST" && "$path" =~ ^/api/v1/projects/[^/?]+/(tickets/[^/?]+/messages|publication(/preview)?|github)$ ]]; then
+  if [[ "$method" == "POST" && "$path" =~ ^/api/v1/projects/[^/?]+/(tickets/[^/?]+/(messages|draft)|publication(/preview)?|github|website_scan)$ ]]; then
+    HTTP_TRANSIENT_MAX_ATTEMPTS=0
+    send_once="true"
+  fi
+  # A client account has no replay key, a connection token works once, and a webhook answers a new secret once.
+  if [[ ( "$method" == "POST" && "$path" =~ ^/api/v1/(accounts|auth/grant/exchange)$ ) || ( "$method" == "PUT" && "$path" =~ ^/api/v1/projects/[^/?]+/webhook$ ) ]]; then
     HTTP_TRANSIENT_MAX_ATTEMPTS=0
     send_once="true"
   fi
   if [[ -n "$ACCOUNT_ID" && "$auth" == "true" && "$path" == /api/v1/* ]]; then
-    if [[ "$method" == "GET" || "$method" == "HEAD" ]]; then
+    if [[ "$method" == "GET" || "$method" == "HEAD" || "$method" == "DELETE" ]]; then
       path="$(account_request_path "$path")"
     else
       payload="$("$JQ_BIN" -c --arg account_id "$ACCOUNT_ID" '. + {account_id: $account_id}' <<<"$payload")"
     fi
   fi
   if [[ -n "$ACTION_REASON" && "$auth" == "true" && "$path" == /api/v1/* ]]; then
-    if [[ "$method" == "GET" || "$method" == "HEAD" ]]; then
+    if [[ "$method" == "GET" || "$method" == "HEAD" || "$method" == "DELETE" ]]; then
       path="$(reason_request_path "$path")"
     else
       payload="$("$JQ_BIN" -c --arg reason "$ACTION_REASON" '. + {reason: $reason}' <<<"$payload")"
     fi
   fi
-  local body_file status message code request_id retry_after details_json upgrade_url attempt curl_status delay agent_args=()
+  local body_file status message code request_id retry_after details_json upgrade_url next_action browser_url attempt curl_status delay agent_args=()
   LAST_HTTP_STATUS=""
   LAST_ERROR_CODE=""
   LAST_ERROR_MESSAGE=""
@@ -933,12 +1056,15 @@ http_json() {
     message="$("$JQ_BIN" -r '.error.message // .error_description // .message // empty' "$body_file" 2>/dev/null || true)"
     code="$("$JQ_BIN" -r '.error.code // .error // empty' "$body_file" 2>/dev/null || true)"
     request_id="$("$JQ_BIN" -r '.error.request_id // .request_id // empty' "$body_file" 2>/dev/null || true)"
-    retry_after="$("$JQ_BIN" -r '.error.details.retry_after // empty' "$body_file" 2>/dev/null || true)"
+    retry_after="$("$JQ_BIN" -r '.error.details.retry_after_seconds // empty' "$body_file" 2>/dev/null || true)"
     details_json="$("$JQ_BIN" -c '.error.details // {}' "$body_file" 2>/dev/null || printf '{}')"
+    next_action="$("$JQ_BIN" -r '.error.next_action? // empty | strings | select(test("^[a-z_]{1,64}$"))' "$body_file" 2>/dev/null || true)"
+    browser_url="$("$JQ_BIN" -r '.error.browser_url? // empty | strings | select(test("^https://[^\\s\\p{Cc}]+$"))' "$body_file" 2>/dev/null || true)"
 
     # Plan limits also answer 429 (for example PROJECT_CREATION_LIMIT_REACHED); only rate limits clear on retry.
+    # A wait above a minute (a sign-in code limit, a daily limit) is told, not slept through.
     if [[ "$method" != "DELETE" && "$send_once" != "true" && "$status" == "429" && "$attempt" -lt 20 ]] &&
-      [[ -z "$code" || "$code" == *RATE_LIMIT* ]]; then
+      [[ -z "$code" || "$code" == *RATE_LIMIT* ]] && [[ ! "$retry_after" =~ ^[0-9]+$ || "$retry_after" -le 60 ]]; then
       [[ "$retry_after" =~ ^[0-9]+$ && "$retry_after" -gt 0 ]] || retry_after=5
       attempt=$((attempt + 1))
       echo "Rate limited while calling $path; retrying in ${retry_after}s..." >&2
@@ -981,6 +1107,10 @@ http_json() {
     echo "error: $message" >&2
     upgrade_url="$("$JQ_BIN" -r '.upgrade_url? // empty | strings | select(test("^https?://[^\\s\\p{Cc}]+$"))' <<<"$details_json" 2>/dev/null || true)"
     [[ -z "$upgrade_url" ]] || echo "Upgrade: $upgrade_url" >&2
+    # What the caller does next (error.next_action), for example upgrade_plan or retry_after_delay.
+    [[ -z "$next_action" ]] || echo "Next action: $next_action" >&2
+    # The page of that action for a person, when it is not the upgrade link above.
+    [[ -z "$browser_url" || "$browser_url" == "$upgrade_url" ]] || echo "Open: $browser_url" >&2
     # A person's step on GitHub (GITHUB_APP_NOT_INSTALLED, GITHUB_SYNC_REPO_UNAVAILABLE): the links to give them.
     "$JQ_BIN" -r '[["Install the Revdoku GitHub App", .install_url?], ["Or connect a GitHub account that has it", .authorization_url?],
       ["Give the App access on GitHub", .settings_url?]][] | select((.[1] | type) == "string" and (.[1] | test("^https://[^\\s\\p{Cc}]+$")))
@@ -991,11 +1121,56 @@ http_json() {
     if [[ "$auth" == "true" ]]; then
       if [[ "$code" == "ACCOUNT_ACCESS_UNAVAILABLE" ]]; then
         echo "This connection uses project-scoped agent credentials, which cannot read account-level status. Verify the connection with 'revdoku status', or open Revdoku in a browser for account details." >&2
-      elif [[ "$status" == "401" || "$status" == "403" ]]; then
+      elif [[ "$status" == "401" ]]; then
+        # Only a refused key. A 403 is a missing permission or a plan limit: a new sign-in does not change it.
         echo "Run 'revdoku login' to reconnect and save a fresh Revdoku API key." >&2
       fi
     fi
     return 1
+  done
+}
+
+# Background work has one contract (WorkStatus): the resource of a start says status queued or processing, and a
+# read of the same resource says ready or failed, with error {code, message}. This prints the answer of the start
+# with the resource as it is at the end. Exit 0: ready. 1: failed. 2: it still runs after the wait.
+wait_for_work() {
+  local path="$1" key="$2" first="$3" response="$3" status waiting shown="" started="$SECONDS"
+  if [[ "$WAIT_FOR_WORK" != "true" ]]; then
+    printf '%s\n' "$first"
+    return 0
+  fi
+  while true; do
+    # A resource that is not there yet reads as null. Work that was started is not done then: wait for it.
+    if "$JQ_BIN" -e --arg key "$key" '.data[$key] == null' <<<"$response" >/dev/null; then
+      status="queued"
+    else
+      status="$("$JQ_BIN" -r --arg key "$key" '.data[$key].status? // empty' <<<"$response")"
+    fi
+    case "$status" in
+      queued|processing) ;;
+      *)
+        "$JQ_BIN" -c --arg key "$key" --argjson last "$response" '.data[$key] = $last.data[$key]' <<<"$first"
+        [[ "$status" == "failed" ]] || return 0
+        echo "error: $("$JQ_BIN" -r --arg key "$key" '.data[$key].error? // {} | "\(.message // "It failed.") (\(.code // "FAILED"))"' <<<"$response")" >&2
+        # The links of the error, as the other error output prints them (rule 22). An error with a plan link names upgrade_plan.
+        "$JQ_BIN" -r --arg key "$key" '.data[$key].error? // {}
+          | ((.upgrade_url? // "") | if type == "string" and test("^https?://[^\\s\\p{Cc}]+$") then . else "" end) as $url
+          | ((.next_action? // (if $url != "" then "upgrade_plan" else "" end)) | if type == "string" and test("^[a-z_]{1,64}$") then . else "" end) as $next
+          | (if $url != "" then "Upgrade: \($url)" else empty end), (if $next != "" then "Next action: \($next)" else empty end)' <<<"$response" >&2 2>/dev/null || true
+        return 1 ;;
+    esac
+    if (( SECONDS - started >= WORK_WAIT_SECONDS )); then
+      "$JQ_BIN" -c --arg key "$key" --argjson last "$response" '.data[$key] = $last.data[$key]' <<<"$first"
+      echo "Still $status after ${WORK_WAIT_SECONDS}s. Read it again later." >&2
+      return 2
+    fi
+    waiting="$("$JQ_BIN" -r --arg key "$key" '.data[$key].waiting_for? // empty' <<<"$response")"
+    if [[ "$status${waiting:+ $waiting}" != "$shown" ]]; then
+      shown="$status${waiting:+ $waiting}"
+      echo "Waiting: $status${waiting:+ (waits for $waiting)}" >&2
+    fi
+    sleep "$WORK_WAIT_INTERVAL"
+    response="$(http_json GET "$path" "{}")" || return 1
   done
 }
 
@@ -1196,7 +1371,7 @@ request_email_agent_key() {
   if ! response="$(http_json POST "/api/v1/auth/sign_in_code/verify" "$payload" false)"; then
     die "Could not verify the code. If no code arrived or the code is rejected, use 'revdoku login' and complete browser device sign-in."
   fi
-  key="$("$JQ_BIN" -r '.data.api_key // empty' <<<"$response")"
+  key="$("$JQ_BIN" -r '.data.connection.api_key // empty' <<<"$response")"
   [[ -n "$key" ]] || die "verification did not return an API key. Use 'revdoku login' and complete browser device sign-in."
 
   save_api_key "$key" || return 1
@@ -1217,9 +1392,9 @@ exchange_agent_grant() {
   payload="$("$JQ_BIN" -nc --arg grant_token "$token" --arg label "${AGENT_NAME} connection" '{grant_token:$grant_token,label:$label}')"
   response="$(http_json POST "/api/v1/auth/grant/exchange" "$payload" false)" \
     || die "connection token is invalid, expired, or already used"
-  key="$("$JQ_BIN" -r '.data.api_key // empty' <<<"$response")"
-  account_id="$("$JQ_BIN" -r '.data.account_id // empty' <<<"$response")"
-  account_name="$("$JQ_BIN" -r '.data.account_name // empty' <<<"$response")"
+  key="$("$JQ_BIN" -r '.data.connection.api_key // empty' <<<"$response")"
+  account_id="$("$JQ_BIN" -r '.data.connection.account_id // empty' <<<"$response")"
+  account_name="$("$JQ_BIN" -r '.data.connection.account_name // empty' <<<"$response")"
   [[ -n "$key" ]] || die "connection response did not include an API key"
   save_api_key "$key" || return 1
   echo "Connected to Revdoku${account_name:+: $account_name}." >&2
@@ -1265,7 +1440,7 @@ list_projects() {
 # GitHub (REST /projects/ID/github and /account/github/installations): the repository whose branch, or one
 # folder of it, is the project's files. A person adds a GitHub account on GitHub: setup-link prints their links.
 github_command() {
-  local path body query
+  local path body query response
   case "$GITHUB_ACTION" in
     accounts|repos)
       query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
@@ -1280,22 +1455,37 @@ github_command() {
   case "$GITHUB_ACTION" in
     get) http_json GET "$path" "{}" ;;
     setup-link) http_json GET "${path}/setup_link" "{}" ;;
-    sync) http_json POST "${path}/sync" "{}" ;;
-    branches) http_json GET "${path}/branches" "{}" ;;
+    scan)
+      # The query of a scan: the fields of a connect. Nothing changes.
+      if [[ -n "$GITHUB_REPOSITORY" ]]; then
+        query="$(query_string repo_owner "${GITHUB_REPOSITORY%%/*}" repo_name "${GITHUB_REPOSITORY#*/}" branch "$GITHUB_BRANCH" \
+          repo_path "$GITHUB_REPO_PATH" installation_id "$GITHUB_INSTALLATION_ID")"
+      else
+        query="$(query_string branch "$GITHUB_BRANCH" repo_path "$GITHUB_REPO_PATH" installation_id "$GITHUB_INSTALLATION_ID")"
+      fi
+      http_json GET "${path}/scan${query:+?$query}" "{}" ;;
+    sync)
+      # A copy that runs already answers GITHUB_SYNC_IN_PROGRESS. That is an error: this command sent no copy.
+      response="$(http_json POST "${path}/sync" "{}")" || return 1
+      wait_for_work "$path" github "$response" ;;
+    branches)
+      query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
+      http_json GET "${path}/branches${query:+?$query}" "{}" ;;
     connect)
       body="$("$JQ_BIN" -n --arg owner "${GITHUB_REPOSITORY%%/*}" --arg name "${GITHUB_REPOSITORY#*/}" --arg branch "$GITHUB_BRANCH" \
         --arg repo_path "$GITHUB_REPO_PATH" --arg installation "$GITHUB_INSTALLATION_ID" \
         --arg files "$GITHUB_PROJECT_FILES" \
-        '{github: ({repo_owner: $owner, repo_name: $name}
+        '{repo_owner: $owner, repo_name: $name}
           + (if $branch != "" then {branch: $branch} else {} end)
           + (if $repo_path != "" then {repo_path: $repo_path} else {} end)
           + (if $installation != "" then {installation_id: ($installation | tonumber)} else {} end)
-          + (if $files != "" then {project_files: $files} else {} end))}')"
-      http_json POST "$path" "$body"
+          + (if $files != "" then {project_files: $files} else {} end)')"
+      response="$(http_json POST "$path" "$body")" || return 1
+      wait_for_work "$path" github "$response"
       ;;
     set)
       [[ -n "$GITHUB_AUTO_PUBLISH" ]] || die "github set needs --auto-publish"
-      body="$("$JQ_BIN" -n --arg publish "$GITHUB_AUTO_PUBLISH" '{github: {auto_publish: ($publish == "true")}}')"
+      body="$("$JQ_BIN" -n --arg publish "$GITHUB_AUTO_PUBLISH" '{auto_publish: ($publish == "true")}')"
       http_json PATCH "$path" "$body"
       ;;
     disconnect)
@@ -1371,7 +1561,7 @@ write_file() {
         checksum="$(openssl dgst -md5 -binary < "$source" | base64 | tr -d '\n\r')"
         sha256="$(openssl dgst -sha256 -r < "$source" | cut -d ' ' -f 1)"
         payload="$("$JQ_BIN" -nc --arg path "$READ_FILE_PATH" --argjson size "$size" --arg checksum "$checksum" --arg sha256 "$sha256" \
-          '{path: $path, byte_size: $size, checksum: $checksum, sha256: $sha256}')"
+          '{path: $path, size_bytes: $size, checksum: $checksum, sha256: $sha256}')"
         link="$(http_json POST "/api/v1/projects/${PROJECT_ID}/uploads" "$payload")" || return 1
         url="$("$JQ_BIN" -er '.data.upload.url' <<<"$link")" || die "upload response did not include url"
         validate_transfer_url "$url" || die "untrusted upload URL"
@@ -1380,26 +1570,34 @@ write_file() {
         done < <("$JQ_BIN" -r '.data.upload.headers | to_entries[] | select((.key + .value) | test("[\r\n\t]") | not) | [.key, .value] | @tsv' <<<"$link")
         status="$(safe_curl -sS -o /dev/null -w "%{http_code}" -X PUT "${header_args[@]}" --data-binary "@$source" --url "$url")" || die "The image was not uploaded"
         http_status_success "$status" || die "The image was not uploaded (HTTP $status)"
-        payload="$("$JQ_BIN" -c --arg path "$READ_FILE_PATH" '{path: $path, signed_blob_id: .data.signed_blob_id}' <<<"$link")"
+        payload="$("$JQ_BIN" -c --arg path "$READ_FILE_PATH" '{path: $path, signed_blob_id: .data.upload.signed_blob_id}' <<<"$link")"
       fi ;;
     *) die "write takes a Markdown page (.md, .mdx) or an image (.jpg, .png, .webp)" ;;
   esac
   rm -f "$source"
-  http_json POST "/api/v1/projects/${PROJECT_ID}/files" "$payload"
+  http_json POST "/api/v1/projects/${PROJECT_ID}/files" "$(with_expected_project_version "$payload")"
+}
+
+# The project version that the caller read (--expected-project-version): the server changes nothing when it is stale.
+with_expected_project_version() {
+  "$JQ_BIN" -c --arg version "$EXPECTED_PROJECT_VERSION" 'if $version == "" then . else . + {expected_project_version: $version} end' <<<"$1"
 }
 
 move_file() {
   [[ -n "$PROJECT_ID" && -n "$READ_FILE_PATH" && -n "$NEW_FILE_PATH" ]] || die "mv requires a project, PATH and NEW_PATH"
   local file_id
   file_id="$(file_id_for_path)" || return 1
-  http_json POST "/api/v1/projects/${PROJECT_ID}/files/${file_id}/move" "$("$JQ_BIN" -nc --arg path "$NEW_FILE_PATH" '{new_path: $path}')"
+  http_json POST "/api/v1/projects/${PROJECT_ID}/files/${file_id}/move" "$(with_expected_project_version "$("$JQ_BIN" -nc --arg path "$NEW_FILE_PATH" '{new_path: $path}')")"
 }
 
 delete_file() {
   [[ -n "$PROJECT_ID" && -n "$READ_FILE_PATH" ]] || die "rm requires a project and PATH"
   local file_id
   file_id="$(file_id_for_path)" || return 1
-  http_json DELETE "/api/v1/projects/${PROJECT_ID}/files/${file_id}" "{}"
+  # A delete takes it in the query, as it takes the reason.
+  local query=""
+  [[ -z "$EXPECTED_PROJECT_VERSION" ]] || query="?expected_project_version=$("$JQ_BIN" -rn --arg value "$EXPECTED_PROJECT_VERSION" '$value | @uri')"
+  http_json DELETE "/api/v1/projects/${PROJECT_ID}/files/${file_id}${query}" "{}"
 }
 
 restore_file() {
@@ -1408,7 +1606,7 @@ restore_file() {
   validate_id version_id "$VERSION_ID"
   local file_id
   file_id="$(file_id_for_path)" || return 1
-  http_json POST "/api/v1/projects/${PROJECT_ID}/files/${file_id}/versions/${VERSION_ID}/restore" "{}"
+  http_json POST "/api/v1/projects/${PROJECT_ID}/files/${file_id}/versions/${VERSION_ID}/restore" "$(with_expected_project_version "{}")"
 }
 
 # Fetch data.download.url from an API response. The link carries its own
@@ -1492,13 +1690,26 @@ ticket_command() {
     ticket-reply)
       reply_to_ticket "${path}/messages"
       ;;
+    ticket-draft)
+      # --read: the newest draft of the ticket, without a new one.
+      if [[ "$DRAFT_READ" == "true" ]]; then
+        http_json GET "${path}/draft" "{}"
+        return
+      fi
+      # The draft is written in the background. A start is not sent twice: it uses credits.
+      # A draft that is written already answers DRAFT_IN_PROGRESS. That is an error: this command started no draft.
+      response="$(http_json POST "${path}/draft" "{}")" || return 1
+      wait_for_work "${path}/draft" draft "$response"
+      ;;
     ticket-update)
       [[ -n "$STATUS_OPTION$EMAIL_ADD_LABELS$EMAIL_REMOVE_LABELS" || "$TICKET_NOTE_SET" == "true" ]] || die "ticket-update requires --status open|pending|solved, --note, --add-label or --remove-label"
       http_json PATCH "$path" "$("$JQ_BIN" -nc --arg status "$STATUS_OPTION" --arg add "$EMAIL_ADD_LABELS" --arg remove "$EMAIL_REMOVE_LABELS" \
-        --arg note "$TICKET_NOTE" --arg note_set "$TICKET_NOTE_SET" '
+        --arg note "$TICKET_NOTE" --arg note_set "$TICKET_NOTE_SET" --arg expected "$TICKET_EXPECTED_NOTE" --arg expected_set "$TICKET_EXPECTED_NOTE_SET" '
         def names: split("\n") | map(select(length > 0));
         (if $status == "" then {} else {status: $status} end)
         + (if $note_set == "true" then {internal_note: $note} else {} end)
+        # The note that the caller read; an empty text means that the ticket had no note.
+        + (if $expected_set == "true" then {expected_internal_note: (if $expected == "" then null else $expected end)} else {} end)
         + (if ($add | names | length) > 0 then {add_labels: ($add | names)} else {} end)
         + (if ($remove | names | length) > 0 then {remove_labels: ($remove | names)} else {} end)')"
       ;;
@@ -1517,7 +1728,7 @@ ticket_command() {
         path="${path}/raw"
       fi
       response="$(http_json GET "$path" "{}")" || return 1
-      download_link "$response" "$("$JQ_BIN" -r '.data.download.filename // "download"' <<<"$response")"
+      download_link "$response" "$("$JQ_BIN" -r '.data.download.name // "download"' <<<"$response")"
       ;;
   esac
 }
@@ -1545,7 +1756,7 @@ reply_to_ticket() {
     --arg attachments "$EMAIL_ATTACHMENTS" --arg subject "$EMAIL_SUBJECT" '
     def list: split("\n") | map(select(. != ""));
     {subject: $subject, text: $text, html: (if $html == "" then null else $html end),
-      attachment_ids: ($attachments | list)}
+      file_ids: ($attachments | list)}
     | with_entries(select(.value != null and .value != "" and .value != []))')" || payload=""
   rm -f "$text_file" "$html_file"
   [[ -n "$payload" ]] || die "Could not read the reply body"
@@ -1563,9 +1774,9 @@ create_project() {
   payload="$("$JQ_BIN" -nc --arg description "$DESCRIPTION" --arg title "$PROJECT_TITLE" \
     --arg username "$EMAIL_USERNAME" --arg domain "$EMAIL_DOMAIN" \
     --argjson metadata "$METADATA_JSON" \
-    '{project: (({title:$title,description:$description} | with_entries(select(.value != ""))) +
+    '({title:$title,description:$description} | with_entries(select(.value != ""))) +
       (if ($metadata | length) > 0 then {metadata: $metadata} else {} end) +
-      {email: ({username:$username,domain:$domain} | with_entries(select(.value != "")))})}')"
+      {email: ({username:$username,domain:$domain} | with_entries(select(.value != "")))}')"
   http_json POST "/api/v1/projects" "$payload"
 }
 
@@ -1581,11 +1792,65 @@ publish_request_body() {
   fi
   # --rawfile keeps the password out of the process arguments.
   if [[ -n "$SUPPORT_HANDOFF$SUPPORT_LINK" && "$ACTION" != "publish" ]]; then die "--support and --support-link work with publish only"; fi
-  "$JQ_BIN" -n --arg mode "$ACCESS_MODE" --arg handoff "$SUPPORT_HANDOFF" --arg link "$SUPPORT_LINK" --arg branch "$([[ "$ACTION" == "preview" ]] && printf '%s' "$GITHUB_BRANCH")" --rawfile password "$source" \
+  if [[ "$EMAIL_ALLOWLIST_SET" == "true" && "$ACTION" != "publish" ]]; then die "--email-allowlist works with publish only"; fi
+  # A preview of a branch takes the site's access: the server refuses access_mode and password with branch.
+  if [[ "$ACTION" == "preview" && -n "$GITHUB_BRANCH" && -n "$ACCESS_MODE$PASSWORD_FILE" ]]; then die "--access-mode and --password-file do not work with preview --branch"; fi
+  "$JQ_BIN" -n --arg mode "$ACCESS_MODE" --arg handoff "$SUPPORT_HANDOFF" --arg link "$SUPPORT_LINK" --arg branch "$([[ "$ACTION" == "preview" ]] && printf '%s' "$GITHUB_BRANCH")" \
+    --arg confirm "$CONFIRM_SOURCE_CODE" --arg allowlist "$EMAIL_ALLOWLIST" --arg allowlist_set "$EMAIL_ALLOWLIST_SET" --rawfile password "$source" \
     '($password | rtrimstr("\n") | rtrimstr("\r")) as $value
      | (if $mode == "" then {} else {access_mode: $mode} end) + (if $value == "" then {} else {password: $value} end)
        + (if $branch == "" then {} else {branch: $branch} end)
-       + (if $handoff == "" then {} else {support_handoff: $handoff} end) + (if $link == "" then {} else {support_link_url: $link} end)'
+       + (if $confirm == "" then {} else {confirm_source_code: true} end)
+       + (if $handoff == "" and $link == "" then {} else {support: ({handoff: $handoff, link_url: $link} | with_entries(select(.value != "")))} end)
+       + (if $allowlist_set == "true" then {email_allowlist: ($allowlist | split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(. != "")))} else {} end)'
+}
+
+# PATCH /projects/ID with the title and the description: the only project fields that this command changes.
+update_project() {
+  [[ "$PROJECT_ID" =~ ^prj_[A-Za-z0-9]+$ ]] || die "update requires --project-id ID"
+  [[ -n "$PROJECT_TITLE" || "$DESCRIPTION_SET" == "true" ]] || die "update needs --title TEXT or --description TEXT"
+  http_json PATCH "/api/v1/projects/${PROJECT_ID}" "$("$JQ_BIN" -nc --arg title "$PROJECT_TITLE" --arg description "$DESCRIPTION" --arg description_set "$DESCRIPTION_SET" '
+    (if $title == "" then {} else {title: $title} end) + (if $description_set == "true" then {description: $description} else {} end)')"
+}
+
+# The site settings (REST /projects/ID/site_settings). settings set sends the fields of a JSON object; null removes a
+# setting. A change never publishes: publish while publication.republish_reasons has a reason.
+site_settings_command() {
+  [[ "$PROJECT_ID" =~ ^prj_[A-Za-z0-9]+$ ]] || die "Provide --project-id ID"
+  local path="/api/v1/projects/${PROJECT_ID}/site_settings" source body
+  if [[ "$SETTINGS_ACTION" == "get" ]]; then
+    http_json GET "$path" "{}"
+    return
+  fi
+  [[ -n "$LOCAL_FILE" ]] || die "settings set needs --file FILE: a JSON object of the settings to change (- reads stdin)"
+  source="/dev/stdin"
+  if [[ "$LOCAL_FILE" != "-" ]]; then
+    [[ -f "$LOCAL_FILE" ]] || die "--file does not exist: $LOCAL_FILE"
+    source="$LOCAL_FILE"
+  fi
+  body="$("$JQ_BIN" -c 'if type == "object" then . else error("not an object") end' < "$source" 2>/dev/null)" || die "--file must hold one JSON object"
+  http_json PATCH "$path" "$body"
+}
+
+# A website scan (REST /projects/ID/website_scan): an AI writes articles into _kb/public/ from the pages of a website.
+# A start is never sent twice: it uses credits. It waits for the scan, as publish does.
+website_scan_command() {
+  [[ "$PROJECT_ID" =~ ^prj_[A-Za-z0-9]+$ ]] || die "Provide --project-id ID"
+  local path="/api/v1/projects/${PROJECT_ID}/website_scan" body response
+  if [[ "$DRAFT_READ" == "true" ]]; then
+    http_json GET "$path" "{}"
+    return
+  fi
+  if [[ "$SCAN_STOP" == "true" ]]; then
+    http_json DELETE "$path" "{}"
+    return
+  fi
+  body="$("$JQ_BIN" -nc --arg urls "$SCAN_URLS" --arg max "$SCAN_MAX_ARTICLES" '
+    {urls: ($urls | split("\n") | map(select(length > 0)))} + (if $max == "" then {} else {max_articles: ($max | tonumber)} end)')"
+  # A scan that runs already answers WEBSITE_SCAN_RUNNING. That is an error: it can read other addresses, and this
+  # command started no scan. Read it with revdoku scan --read.
+  response="$(http_json POST "$path" "$body")" || return 1
+  wait_for_work "$path" website_scan "$response"
 }
 
 archive_project() {
@@ -1599,7 +1864,7 @@ unarchive_project() {
 }
 
 delete_project() {
-  local project_response account_response state token directory path claimed now expires payload response
+  local project_response account_response state token directory path claimed now expires payload response confirmation
   directory="$REVDOKU_CONFIG_DIR/delete-confirmations"
   [[ ! -L "$directory" ]] || die "refusing symlink confirmation storage"
   if [[ -d "$directory" ]]; then
@@ -1620,17 +1885,17 @@ delete_project() {
   state="$(printf '%s\n%s\n' "$project_response" "$account_response" | "$JQ_BIN" -csS --arg origin "$BASE_URL" '
     .[0].data.project as $b | .[1].data.account as $account |
     if (($b.metadata_version | type == "string" and length > 0) and
-        ($b | has("version_id")) and ($b.version_id | . == null or type == "string") and
+        ($b | has("project_version")) and ($b.project_version | . == null or type == "string") and
         ($b.version_number | type == "number") and ($b.files_count | type == "number")) | not
     then error("Incomplete project deletion state; update the client or review in the dashboard") else
     {origin:$origin, account:($account | {id,name}),
-     project:($b | {id, email:{address:.email.address}, account_id, archived, archived_at, metadata_version,
-       version_id, version_number, files_count, storage_bytes, delete, dashboard_url})}
+     project:($b | {id, email:{address:.email.address}, account_id, status, archived_at, metadata_version,
+       project_version, version_number, files_count, storage_bytes, delete, dashboard_url})}
     end')" || return 1
   "$JQ_BIN" -e --arg account "$ACCOUNT_ID" --arg project "$PROJECT_ID" '
     .account.id == $account and .project.id == $project and
     (.project.account_id == null or .project.account_id == $account) and
-    .project.archived == true and .project.delete.allowed == true and (.project.delete.confirmation | type == "string" and length > 0)' <<<"$state" >/dev/null || die "project is not eligible for deletion in the selected account; review its action guidance in the dashboard"
+    .project.status == "archived" and .project.delete.allowed == true and (.project.delete.confirmation | type == "string" and length > 0)' <<<"$state" >/dev/null || die "project is not eligible for deletion in the selected account; review its action guidance in the dashboard"
 
   if [[ -z "$DELETE_CONFIRMATION" ]]; then
     mkdir -p -- "$directory"
@@ -1641,11 +1906,12 @@ delete_project() {
     expires=$((now + 600))
     "$JQ_BIN" -cn --argjson state "$state" --argjson expires "$expires" \
       '{state:$state,expires_at:$expires}' | atomic_private_write "$directory/$token.json"
-    "$JQ_BIN" -cn --argjson state "$state" --arg token "$token" --argjson expires "$expires" \
-      '$state | del(.project.delete.confirmation) | {success:true, data:(. + {
-        preview:true, irreversible:true, confirmation_token:$token, expires_at:$expires,
-        dashboard_url:.project.dashboard_url,
-        notice:"Permanently deletes this project, its emails, files and versions. Obtain user approval for this exact target before --confirm-delete."})}'
+    # The project and the account as their reads answer them. A time is UTC ISO 8601 with six fraction digits (rule 7).
+    printf '%s\n%s\n' "$project_response" "$account_response" | "$JQ_BIN" -cs --arg token "$token" --argjson expires "$expires" '
+      .[0].data.project as $project | .[1].data.account as $account |
+      {success:true, data:{project:$project, account:$account, preview:true, irreversible:true, confirmation_token:$token,
+        expires_at:($expires | strftime("%Y-%m-%dT%H:%M:%S.000000Z")), dashboard_url:$project.dashboard_url}}'
+    echo "Permanently deletes this project, its emails, files and versions. Obtain user approval for this exact target before --confirm-delete." >&2
     return 0
   fi
 
@@ -1656,28 +1922,18 @@ delete_project() {
     die "deletion preview was already consumed"
   fi
   rm -f "$claimed"
-  payload="$("$JQ_BIN" -c '{confirmation:.project.delete.confirmation}' <<<"$state")"
-  if ! response="$(http_json DELETE "/api/v1/projects/${PROJECT_ID}" "$payload")"; then
+  # The confirmation is a query parameter of the delete (rule 12 of the contract).
+  confirmation="$("$JQ_BIN" -r '.project.delete.confirmation | @uri' <<<"$state")"
+  if ! response="$(http_json DELETE "/api/v1/projects/${PROJECT_ID}?confirmation=${confirmation}" "{}")"; then
     echo "Deletion was not confirmed. Check project status before creating another preview; this token is consumed." >&2
     return 1
   fi
   printf '%s\n' "$response"
 }
 
+# The answer of GET /v1/status, as the API sends it.
 connection_status() {
-  http_json GET "/api/v1/status" "{}" | "$JQ_BIN" -c '{
-    success: (.success // true),
-    data: {
-      connected: (.data.connected // true),
-      account: .data.account,
-      user: .data.user,
-      default_account_id: .data.default_account_id,
-      accounts: .data.accounts,
-      connection: .data.connection,
-      features: .data.features,
-      dashboard_url: .data.dashboard_url
-    }
-  }'
+  http_json GET "/api/v1/status" "{}"
 }
 
 create_client_account() {
@@ -1686,20 +1942,14 @@ create_client_account() {
   http_json POST "/api/v1/accounts" "$payload"
 }
 
+# Two reads in one envelope. Each value is the resource of its operation, unchanged:
+# status of GET /v1/status and limits of GET /v1/account/limits.
 account_status() {
-  local identity limits
-  identity="$(http_json GET "/api/v1/status" "{}")" || return 1
+  local status limits
+  status="$(http_json GET "/api/v1/status" "{}")" || return 1
   limits="$(http_json GET "/api/v1/account/limits" "{}")" || return 1
-  "$JQ_BIN" -nc --argjson identity "$identity" --argjson limits "$limits" '{
-    success: true,
-    data: {
-      account: $identity.data.account,
-      default_account_id: $identity.data.default_account_id,
-      accounts: $identity.data.accounts,
-      limits: $limits.data.limits,
-      usage: $limits.data.usage
-    }
-  }'
+  "$JQ_BIN" -nc --argjson status "$status" --argjson limits "$limits" \
+    '{success: true, data: {status: $status.data.status, limits: $limits.data.limits}}'
 }
 
 print_terminal_link_hint() {
@@ -1708,24 +1958,25 @@ print_terminal_link_hint() {
   fi
 }
 
+# Prints the answer of POST /v1/auth/dashboard_link. The notes for people go to standard error.
 browser_login_link() {
   local payload response url redirect_path
   payload="$("$JQ_BIN" -nc --arg redirect_path "$BROWSER_LOGIN_PATH" '{redirect_path:$redirect_path}')"
-  response="$(http_json POST "/api/v1/auth/dashboard_link" "$payload")"
-  url="$("$JQ_BIN" -r '.data.url // empty' <<<"$response")"
-  redirect_path="$("$JQ_BIN" -r '.data.redirect_path // empty' <<<"$response")"
+  response="$(http_json POST "/api/v1/auth/dashboard_link" "$payload")" || return 1
+  url="$("$JQ_BIN" -r '.data.dashboard_link.url // empty' <<<"$response")"
+  redirect_path="$("$JQ_BIN" -r '.data.dashboard_link.redirect_path // empty' <<<"$response")"
   [[ -n "$url" ]] || die "browser login response did not include url"
   validate_api_url "$url"
   echo "Open Revdoku: $url" >&2
   [[ -n "$redirect_path" ]] && echo "Destination: $redirect_path" >&2
   echo "Sign in normally if your browser does not already have a Revdoku session." >&2
   print_terminal_link_hint
-  printf "%s\n" "$url"
+  printf '%s\n' "$response"
 }
 
 # Best-effort, throttled (~24h), never-blocking notice when the server advertises
 # a newer client/connector version than the one install.sh stamped. Compares the
-# server's /api/v1/status client_version against ~/.revdoku/client_version and
+# server's /api/v1/status status.client_version against ~/.revdoku/client_version and
 # only nudges when the server version is strictly newer (numeric compare via jq;
 # avoids relying on `sort -V`, which is unavailable on busybox/older BSD sort).
 maybe_notify_update() {
@@ -1747,7 +1998,7 @@ maybe_notify_update() {
   [[ "$installed" != "unknown" ]] || return 0
   body="$(safe_curl -fsS --max-time 5 --url "$(api_url "/api/v1/status")" -H "Authorization: Bearer $API_KEY" -H "Accept: application/json" 2>/dev/null || true)"
   [[ -n "$body" ]] || return 0
-  latest="$("$JQ_BIN" -r '.data.client_version // empty' <<<"$body" 2>/dev/null || true)"
+  latest="$("$JQ_BIN" -r '.data.status.client_version // empty' <<<"$body" 2>/dev/null || true)"
   [[ -n "$latest" && "$latest" != "$installed" ]] || return 0
   if "$JQ_BIN" -ne --arg inst "$installed" --arg lat "$latest" \
     '($inst | split(".") | map(tonumber? // 0)) < ($lat | split(".") | map(tonumber? // 0))' >/dev/null 2>&1; then
@@ -1764,7 +2015,7 @@ case "$ACTION" in
       webhook) http_json GET "/api/v1/projects/$PROJECT_ID/webhook" "{}" ;;
       webhook-set)
         [[ -n "$WEBHOOK_URL" ]] || die "Provide --webhook-url HTTPS_URL"
-        http_json PUT "/api/v1/projects/$PROJECT_ID/webhook" "$("$JQ_BIN" -n --arg url "$WEBHOOK_URL" --argjson rotate "$ROTATE_SECRET" '{webhook_url:$url,rotate_secret:$rotate}')" ;;
+        http_json PUT "/api/v1/projects/$PROJECT_ID/webhook" "$("$JQ_BIN" -n --arg url "$WEBHOOK_URL" --argjson rotate "$ROTATE_SECRET" '{url:$url,rotate_secret:$rotate}')" ;;
       webhook-delete)
         [[ "$DELETE_CONFIRMATION" == "$PROJECT_ID" ]] || die "Repeat with --confirm-delete $PROJECT_ID to disable this webhook"
         http_json DELETE "/api/v1/projects/$PROJECT_ID/webhook" "{}" ;;
@@ -1775,16 +2026,40 @@ case "$ACTION" in
     [[ "$PROJECT_ID" =~ ^prj_[A-Za-z0-9]+$ ]] || die "Provide --project-id ID"
     [[ "$SITE_PREVIEW" != "true" || "$ACTION" == "site" ]] || die "--preview works with site only. Use revdoku preview to publish a preview."
     case "$ACTION" in
-      site) http_json GET "/api/v1/projects/$PROJECT_ID/publication$([[ "$SITE_PREVIEW" == "true" ]] && printf '/preview')" "{}" ;;
-      unpublish) http_json DELETE "/api/v1/projects/$PROJECT_ID/publication" "{}" ;;
+      site)
+        # A project without a site (or without a preview) reads publication null.
+        site_response="$(http_json GET "/api/v1/projects/$PROJECT_ID/publication$([[ "$SITE_PREVIEW" == "true" ]] && printf '/preview')" "{}")" || exit 1
+        printf '%s\n' "$site_response"
+        if "$JQ_BIN" -e '.data.publication == null' <<<"$site_response" >/dev/null; then
+          echo "This project has no $([[ "$SITE_PREVIEW" == "true" ]] && printf 'preview' || printf 'site') yet. Publish with: revdoku $([[ "$SITE_PREVIEW" == "true" ]] && printf 'preview' || printf 'publish') --project-id $PROJECT_ID" >&2
+        fi ;;
+      # A delete answers {deleted: true, id}. The site goes offline in the background: revdoku site shows it.
+      unpublish) http_json DELETE "/api/v1/projects/$PROJECT_ID/publication" "{}" || exit 1 ;;
       *)
         # A failed password read must stop here: an empty body would publish the site without protection.
         publish_body="$(publish_request_body)" || exit 1
-        http_json POST "/api/v1/projects/$PROJECT_ID/publication$([[ "$ACTION" == "preview" ]] && printf '/preview')" "$publish_body" ;;
+        publish_path="/api/v1/projects/$PROJECT_ID/publication"
+        [[ "$ACTION" != "preview" ]] || publish_path="${publish_path}/preview"
+        # Work that runs already (a publish, a preview or an unpublish) answers PUBLICATION_PUBLISH_IN_PROGRESS.
+        # That is an error: this command sent no build. The start is not sent again.
+        publish_response="$(http_json POST "$publish_path" "$publish_body")" || exit 1
+        wait_for_work "$publish_path" publication "$publish_response" ;;
     esac
     exit 0 ;;
   github)
     github_command
+    exit 0
+    ;;
+  settings)
+    site_settings_command
+    exit 0
+    ;;
+  website_scan)
+    website_scan_command
+    exit 0
+    ;;
+  update_project)
+    update_project
     exit 0
     ;;
   account_limits)
@@ -1796,10 +2071,11 @@ case "$ACTION" in
     exit 0
     ;;
   list_accounts)
-    http_json GET "/api/v1/accounts" "{}"
+    accounts_query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
+    http_json GET "/api/v1/accounts${accounts_query:+?$accounts_query}" "{}"
     exit 0
     ;;
-  list_tickets|ticket|ticket-messages|ticket-reply|ticket-update|ticket-download|ticket-message-delete)
+  list_tickets|ticket|ticket-messages|ticket-reply|ticket-draft|ticket-update|ticket-download|ticket-message-delete)
     ticket_command
     exit 0
     ;;
