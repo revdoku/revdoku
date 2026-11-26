@@ -18,7 +18,7 @@ CLIENT_VERSION_FILE="${REVDOKU_CLIENT_VERSION_FILE:-${REVDOKU_CONFIG_DIR}/client
 UPDATE_CHECK_STAMP="${REVDOKU_CONFIG_DIR}/.update_check"
 
 installed_client_version() {
-  printf '%s' '1.0.591'
+  printf '%s' '1.0.592'
 }
 
 BASE_URL="${REVDOKU_URL:-$DEFAULT_URL}"
@@ -63,6 +63,7 @@ EMAIL_ALLOWLIST_SET="false"
 SUPPORT_LINK=""
 CONFIRM_SOURCE_CODE=""
 SITE_PREVIEW="false"
+SITE_PREVIEWS="false"
 WAIT_FOR_WORK="true"
 DRAFT_READ="false"
 SCAN_STOP="false"
@@ -73,6 +74,12 @@ DESCRIPTION_SET="false"
 SETTINGS_ACTION=""
 READ_FILE_PATH=""
 NEW_FILE_PATH=""
+ARTICLE_ID=""
+ARTICLE_VISIBILITY=""
+ARTICLE_SLUG=""
+ARTICLE_DO_NOT_PUBLISH=""
+ARTICLE_IMAGE_NAME=""
+ARTICLE_IMAGE_ARTICLE_ID=""
 LOCAL_FILE=""
 TICKET_ID=""
 MESSAGE_ID=""
@@ -80,6 +87,8 @@ STATUS_OPTION=""
 TICKET_CHANNEL=""
 TICKET_LABEL=""
 TICKET_UPDATED_AFTER=""
+TICKET_NUMBER=""
+TICKET_REQUESTER=""
 EMAIL_USERNAME=""
 EMAIL_DOMAIN=""
 PROJECT_TITLE=""
@@ -99,6 +108,7 @@ TICKET_NOTE_SET="false"
 TICKET_EXPECTED_NOTE=""
 TICKET_EXPECTED_NOTE_SET="false"
 EXPECTED_PROJECT_VERSION=""
+EXPECTED_VERSION_ID=""
 EMAIL_TEXT_FILE=""
 EMAIL_HTML_FILE=""
 PROJECT_LIST_STATUS="active"
@@ -229,6 +239,7 @@ Usage: revdoku <command> [PATH] [options]
   login                 Sign in to an existing account in the browser.
   grant TOKEN           Use a one-time connection token from the web app.
   tickets               List support tickets (email and chat); newest activity first.
+                        --number N finds one ticket; --requester EMAIL the tickets of one person.
   ticket ID             Read one ticket: status, channel, requester and labels.
   ticket-messages ID    List a ticket's messages; --message-id ID reads one message.
   ticket-reply ID       Reply to the ticket's requester. Does not retry.
@@ -249,19 +260,27 @@ Usage: revdoku <command> [PATH] [options]
   files                 List project files.
   read PATH             Read a project file; --output FILE saves it locally.
   versions PATH         List one file's versions (PATH or a df_ file ID).
-  write PATH --file FILE
-                        Write one knowledge base file: a page (.md, .mdx; - reads
-                        stdin) or an image (.jpg, .png, .webp). PATH is in
-                        _kb/public/ or _kb/private/. The site shows a public
-                        file after the next publish. A public page with the
-                        front matter line do_not_publish: true stays off the
-                        site; the site's AI still answers from it.
-  mv PATH NEW_PATH      Move or rename a knowledge base file.
-  rm PATH               Delete a knowledge base file. Its versions stay: keep
-                        the file id of the answer to restore it.
-  restore PATH|FILE_ID --version-id ID
-                        Make an earlier version of a knowledge base file current.
-                        A deleted file comes back: use its file id (df_...).
+  articles              List the knowledge base: the public articles of the Help Center
+                        and the private notes; --public or --private for one of them.
+  article ID            Read one article with its Markdown text.
+  article create --visibility public|private --file FILE
+                        Create an article from Markdown (- reads stdin). Its first
+                        # heading names it; --slug billing/refunds chooses the path.
+                        It never replaces an article. Does not retry.
+  article update ID     Change --file FILE (the text), --slug, --visibility or
+                        --do-not-publish true|false. Does not retry.
+  article delete ID     Delete an article. Its versions stay: restore brings it back.
+  article restore ID --version-id ID
+                        Make an earlier version current; a deleted article comes back.
+  article versions ID   List the versions of an article.
+  article images        List the images of the knowledge base; --public or --private.
+  article image --file FILE --article-id ID | --visibility public|private
+                        Add an image (.jpg, .png, .webp) beside the articles and
+                        print the Markdown link for the article's text. Optional --name.
+                        A public article or image needs publish access. A write never
+                        publishes: the site shows it after the next publish. A public
+                        article with --do-not-publish true stays off the site; the
+                        site's AI still answers from it.
   scan URL...           Scan a public website: an AI writes one article per page
                         into _kb/public/. One URL reads it and its linked pages;
                         more read exactly those. Optional --max-articles N.
@@ -283,7 +302,8 @@ Usage: revdoku <command> [PATH] [options]
   preview               Make a 24-hour preview with the same options.
                         --branch NAME previews a branch of the connected repository.
                         Uses credits; see https://app.revdoku.com/pricing.json.
-  site                  Show the site: URL, status and access; --preview for the preview.
+  site                  Show the site: URL, status and access; --preview for the newest preview,
+                        --previews for every preview with its branch.
                         Publish again while publication.republish_reasons has a reason.
   settings              Show the site settings: layout, Ask, support, navigation and more.
   settings set --file FILE
@@ -331,6 +351,7 @@ Options:
   --folder PATH                        files: only this folder, for example _kb/private.
   --channel email|chat|feedback        Ticket list filter: where the ticket started.
   --label NAME   --updated-after TIME  Ticket list filters (label name; ISO 8601 time).
+  --number N   --requester EMAIL       Ticket list filters (ticket number; the address that opened it).
   --message-id ID                      One message of a ticket (eml_...).
   --subject TEXT                       ticket-reply subject (default: Re: and the original).
   --text TEXT | --text-file PATH       ticket-reply plain-text body (- reads stdin).
@@ -339,11 +360,17 @@ Options:
   --note TEXT                          ticket-update: the team's internal note, never sent ("" removes it).
   --expected-note TEXT                 ticket-update with --note: the note that you read ("" for no note).
   --attachment-id ID   --output FILE   Download a selected message attachment.
-  --version-id ID                      File version for read and restore.
-  --file FILE                          Local file for write (- reads stdin).
-  --expected-project-version ID        write, mv, rm and restore: the project_version that you read.
+  --version-id ID                      File version for read and article restore.
+  --file FILE                          Local file for article create, update and image, and settings set (- reads stdin).
+  --visibility public|private          article create, update (moves it) and image; --public and --private list one kind.
+  --slug SLUG   --do-not-publish true|false   article create and update.
+  --name NAME   --article-id ID        article image: the file name, and the article whose folder gets the image.
+  --expected-project-version ID        article create, update, delete, restore and image: the project_version that you read.
                                        When the project changed since, the answer is
                                        PROJECT_VERSION_CONFLICT and nothing changes.
+  --expected-version-id ID             article update, delete and restore: the article's version_id that
+                                       you read. When the article changed since, the answer is
+                                       ARTICLE_VERSION_CONFLICT and nothing changes.
   --description TEXT   --metadata JSON
   --username NAME      --domain HOST          Project creation email address options.
   --title TEXT                                Project title for create (default: the username) or update.
@@ -358,7 +385,7 @@ Examples:
   revdoku github connect acme/docs --repo-path docs --project-id prj_...
   revdoku files --project-id prj_...
   revdoku read _repo/notes.md --project-id prj_... --reason "Review project decisions"
-  revdoku write _kb/private/refunds.md --file refunds.md --project-id prj_...
+  revdoku article create --visibility private --file refunds.md --project-id prj_...
   revdoku dashboard
 
 Plans: https://app.revdoku.com/pricing
@@ -401,6 +428,7 @@ while [[ $# -gt 0 ]]; do
       [[ $# -ge 2 && "$2" == https://* ]] || die "--support-link requires an https URL"
       SUPPORT_LINK="$2"; shift 2 ;;
     --preview) SITE_PREVIEW="true"; shift ;;
+    --previews) SITE_PREVIEWS="true"; shift ;;
     --confirm-source-code) CONFIRM_SOURCE_CODE="true"; shift ;;
     --no-wait) WAIT_FOR_WORK="false"; shift ;;
     --read) DRAFT_READ="true"; shift ;;
@@ -473,7 +501,7 @@ while [[ $# -gt 0 ]]; do
       fi
       shift 2
       ;;
-    --cursor|--limit|--folder|--subject|--attachment-id|--version-id|--message-id|--channel|--label|--updated-after)
+    --cursor|--limit|--folder|--subject|--attachment-id|--version-id|--message-id|--channel|--label|--updated-after|--requester)
       [[ $# -ge 2 && -n "$2" ]] || die "$1 requires a value"
       case "$1" in
         --cursor) LIST_CURSOR="$2" ;;
@@ -486,6 +514,7 @@ while [[ $# -gt 0 ]]; do
         --channel) [[ "$2" =~ ^(email|chat|feedback)$ ]] || die "--channel must be email, chat or feedback"; TICKET_CHANNEL="$2" ;;
         --label) TICKET_LABEL="$2" ;;
         --updated-after) TICKET_UPDATED_AFTER="$2" ;;
+        --requester) TICKET_REQUESTER="$2" ;;
       esac
       shift 2
       ;;
@@ -501,6 +530,28 @@ while [[ $# -gt 0 ]]; do
       TICKET_EXPECTED_NOTE="$2"; TICKET_EXPECTED_NOTE_SET="true"
       shift 2
       ;;
+    --visibility)
+      [[ $# -ge 2 && "$2" =~ ^(public|private)$ ]] || die "--visibility must be public or private"
+      ARTICLE_VISIBILITY="$2"; shift 2 ;;
+    --public|--private) ARTICLE_VISIBILITY="${1#--}"; shift ;;
+    --slug)
+      [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "--slug requires a value, such as billing/refunds"
+      ARTICLE_SLUG="$2"; shift 2 ;;
+    --do-not-publish)
+      [[ $# -ge 2 && "$2" =~ ^(true|false)$ ]] || die "--do-not-publish must be true or false"
+      ARTICLE_DO_NOT_PUBLISH="$2"; shift 2 ;;
+    --name)
+      [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "--name requires a file name, such as diagram.png"
+      ARTICLE_IMAGE_NAME="$2"; shift 2 ;;
+    --article-id)
+      [[ $# -ge 2 && "$2" =~ ^df_[A-Za-z0-9]+$ ]] || die "--article-id requires an article id (df_...)"
+      ARTICLE_IMAGE_ARTICLE_ID="$2"; shift 2 ;;
+    --number)
+      [[ $# -ge 2 && "$2" =~ ^[1-9][0-9]{0,8}$ ]] || die "--number requires a ticket number, such as 12"
+      TICKET_NUMBER="$2"; shift 2 ;;
+    --expected-version-id)
+      [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "--expected-version-id requires the article's version_id"
+      EXPECTED_VERSION_ID="$2"; shift 2 ;;
     --expected-project-version)
       [[ $# -ge 2 && -n "$2" && "$2" != -* ]] || die "--expected-project-version requires a project version id"
       EXPECTED_PROJECT_VERSION="$2"
@@ -586,11 +637,27 @@ while [[ $# -gt 0 ]]; do
         VERB_SEEN="true"
         case "$1" in
           upload|put|append)
-            die "Write a knowledge base file with: revdoku write _kb/private/NAME.md --file FILE. The files of _repo/ come from the GitHub repository. Change the files on GitHub." ;;
-          write)          [[ $# -ge 2 && "$2" != -* ]] || die "write needs a project PATH right after it, e.g. revdoku write _kb/private/refunds.md --file refunds.md"; ACTION="write_file"; READ_FILE_PATH="$2"; shift 2 ;;
-          mv)             [[ $# -ge 3 && "$2" != -* && "$3" != -* ]] || die "mv needs the file's PATH and its NEW_PATH, e.g. revdoku mv _kb/private/a.md _kb/public/a.md"; ACTION="move_file"; READ_FILE_PATH="$2"; NEW_FILE_PATH="$3"; shift 3 ;;
-          rm)             [[ $# -ge 2 && "$2" != -* ]] || die "rm needs a project PATH right after it, e.g. revdoku rm _kb/private/old.md"; ACTION="delete_file"; READ_FILE_PATH="$2"; shift 2 ;;
-          restore)        [[ $# -ge 2 && "$2" != -* ]] || die "restore needs a project PATH right after it, e.g. revdoku restore _kb/private/a.md --version-id ID"; ACTION="restore_file"; READ_FILE_PATH="$2"; shift 2 ;;
+            die "Write an article with: revdoku article create --visibility private --file FILE. The files of _repo/ come from the GitHub repository. Change the files on GitHub." ;;
+          # The knowledge base is written through its articles (user request 2026-11-26).
+          write)          die "revdoku write was removed. Use revdoku article create, revdoku article update or revdoku article image." ;;
+          mv)             die "revdoku mv was removed. Use revdoku article update ID --slug SLUG or --visibility public|private." ;;
+          rm)             die "revdoku rm was removed. Use revdoku article delete ID." ;;
+          restore)        die "revdoku restore was removed. Use revdoku article restore ID --version-id ID." ;;
+          articles)       ACTION="list_articles"; shift ;;
+          article)
+            shift
+            case "${1:-}" in
+              create) ACTION="article_create"; shift ;;
+              image) ACTION="article_image"; shift ;;
+              images) ACTION="article_images"; shift ;;
+              update|delete|restore|versions)
+                [[ $# -ge 2 && "$2" =~ ^df_[A-Za-z0-9]+$ ]] || die "article $1 needs an article id (df_...); see revdoku articles"
+                ACTION="article_$1"; ARTICLE_ID="$2"; shift 2 ;;
+              df_*)
+                [[ "$1" =~ ^df_[A-Za-z0-9]+$ ]] || die "article needs an article id (df_...)"
+                ACTION="get_article"; ARTICLE_ID="$1"; shift ;;
+              *) die "article takes an article id (df_...) or create, update, delete, restore, versions, image or images" ;;
+            esac ;;
           publish|preview|site) ACTION="$1"; shift ;;
           # The site settings: read them, or change the fields of a JSON object (settings set --file FILE).
           settings)
@@ -686,15 +753,24 @@ fi
 [[ "$TICKET_NOTE_SET" != "true" || "$ACTION" == "ticket-update" ]] || die "--note requires ticket-update"
 [[ "$TICKET_EXPECTED_NOTE_SET" != "true" || ( "$ACTION" == "ticket-update" && "$TICKET_NOTE_SET" == "true" ) ]] || die "--expected-note requires ticket-update with --note"
 case "$ACTION" in
-  write_file|move_file|delete_file|restore_file) ;;
-  *) [[ -z "$EXPECTED_PROJECT_VERSION" ]] || die "--expected-project-version requires write, mv, rm or restore" ;;
+  article_create|article_update|article_delete|article_restore|article_image) ;;
+  *) [[ -z "$EXPECTED_PROJECT_VERSION" ]] || die "--expected-project-version requires article create, update, delete, restore or image" ;;
 esac
+[[ -z "$EXPECTED_VERSION_ID" || "$ACTION" =~ ^article_(update|delete|restore)$ ]] || die "--expected-version-id requires article update, delete or restore"
+[[ "$SITE_PREVIEWS" != "true" || "$ACTION" == "site" ]] || die "--previews works with site only"
+[[ "$ACTION" != "site" || "$SITE_PREVIEWS" == "true" || -z "$LIST_LIMIT$LIST_CURSOR" ]] || die "--limit and --cursor require site --previews"
+case "$ACTION" in
+  list_articles|article_images|article_create|article_update|article_image) ;;
+  *) [[ -z "$ARTICLE_VISIBILITY" ]] || die "--visibility, --public and --private require articles, article images or article create, update or image" ;;
+esac
+[[ -z "$ARTICLE_SLUG$ARTICLE_DO_NOT_PUBLISH" || "$ACTION" == "article_create" || "$ACTION" == "article_update" ]] || die "--slug and --do-not-publish require article create or update"
+[[ -z "$ARTICLE_IMAGE_NAME$ARTICLE_IMAGE_ARTICLE_ID" || "$ACTION" == "article_image" ]] || die "--name and --article-id require article image"
 [[ -z "$LIST_FOLDER" || "$ACTION" == "list_files" ]] || die "--folder requires files"
 if [[ -n "$EMAIL_ATTACHMENTS$EMAIL_SUBJECT$EMAIL_TEXT$EMAIL_TEXT_FILE$EMAIL_HTML_FILE" && "$ACTION" != "ticket-reply" ]]; then
   die "--attach, --subject, --text, --text-file and --html-file require ticket-reply"
 fi
 [[ -z "$EMAIL_ADD_LABELS$EMAIL_REMOVE_LABELS" || "$ACTION" == "ticket-update" ]] || die "--add-label and --remove-label require ticket-update"
-[[ -z "$TICKET_CHANNEL$TICKET_LABEL$TICKET_UPDATED_AFTER" || "$ACTION" == "list_tickets" ]] || die "--channel, --label and --updated-after require tickets"
+[[ -z "$TICKET_CHANNEL$TICKET_LABEL$TICKET_UPDATED_AFTER$TICKET_NUMBER$TICKET_REQUESTER" || "$ACTION" == "list_tickets" ]] || die "--channel, --label, --updated-after, --number and --requester require tickets"
 case "$ACTION" in
   ticket-messages|ticket-download|ticket-message-delete) ;;
   *) [[ -z "$MESSAGE_ID" ]] || die "--message-id requires ticket-messages, ticket-download or ticket-message-delete" ;;
@@ -714,8 +790,8 @@ if [[ "$PROJECT_LIST_OPTIONS" == "true" && "$ACTION" != "list_projects" ]]; then
   die "--query requires ls or list"
 fi
 case "$ACTION:$GITHUB_ACTION" in
-  list_projects:|list_files:|list_tickets:|ticket-messages:|list_versions:|github:accounts|github:repos|github:branches) ;;
-  *) [[ -z "$LIST_LIMIT$LIST_CURSOR" ]] || die "--limit and --cursor require ls, files, tickets, ticket-messages, versions, github accounts, github repos or github branches" ;;
+  list_projects:|list_files:|list_tickets:|ticket-messages:|list_versions:|list_articles:|article_versions:|article_images:|site:|github:accounts|github:repos|github:branches) ;;
+  *) [[ -z "$LIST_LIMIT$LIST_CURSOR" ]] || die "--limit and --cursor require ls, files, articles, article versions, tickets, ticket-messages, versions, github accounts, github repos or github branches" ;;
 esac
 # Each GitHub option belongs to one or two github commands, so none is silently ignored.
 [[ -z "$GITHUB_BRANCH" || "$GITHUB_ACTION" == "connect" || "$GITHUB_ACTION" == "scan" || "$ACTION" == "preview" ]] || die "--branch requires github connect, github scan or preview"
@@ -724,10 +800,13 @@ esac
 [[ -z "$CONFIRM_SOURCE_CODE" || "$ACTION" == "publish" ]] || die "--confirm-source-code works with publish only"
 [[ -z "$GITHUB_AUTO_PUBLISH" || "$GITHUB_ACTION" == "set" ]] || die "--auto-publish requires github set"
 [[ -z "$GITHUB_PROJECT_FILES" || "$GITHUB_ACTION" == "connect" ]] || die "--project-files requires github connect"
-if [[ -n "$VERSION_ID" && "$ACTION" != "read_file" && "$ACTION" != "restore_file" ]]; then
-  die "--version-id requires read or restore"
+if [[ -n "$VERSION_ID" && "$ACTION" != "read_file" && "$ACTION" != "article_restore" ]]; then
+  die "--version-id requires read or article restore"
 fi
-[[ -z "$LOCAL_FILE" || "$ACTION" == "write_file" || "$SETTINGS_ACTION" == "set" ]] || die "--file requires write or settings set"
+case "$ACTION" in
+  article_create|article_update|article_image) ;;
+  *) [[ -z "$LOCAL_FILE" || "$SETTINGS_ACTION" == "set" ]] || die "--file requires article create, update or image, or settings set" ;;
+esac
 [[ "$DRAFT_READ" != "true" || "$ACTION" == "ticket-draft" || "$ACTION" == "website_scan" ]] || die "--read requires ticket-draft or scan"
 [[ "$SCAN_STOP" != "true" && -z "$SCAN_MAX_ARTICLES" || "$ACTION" == "website_scan" ]] || die "--stop and --max-articles require scan"
 if [[ "$ACTION" == "website_scan" ]]; then
@@ -959,11 +1038,12 @@ http_json() {
   if [[ "$method" == "POST" && "$path" == "/api/v1/projects" ]]; then
     HTTP_TRANSIENT_MAX_ATTEMPTS=0
   fi
-  # Never send a ticket reply, a publish, a GitHub connect or a website scan twice: a publish may already be queued and charged after a
+  # Never send a ticket reply, a publish, a GitHub connect, a website scan or an article write twice: a publish may already be queued and charged after a
   # lost response, and a connect may already copy the repository. Rate limits also return without a retry
   # (the hourly publish limit waits an hour).
   local send_once="false"
-  if [[ "$method" == "POST" && "$path" =~ ^/api/v1/projects/[^/?]+/(tickets/[^/?]+/(messages|draft)|publication(/preview)?|github|website_scan)$ ]]; then
+  if [[ "$method" == "POST" && "$path" =~ ^/api/v1/projects/[^/?]+/(tickets/[^/?]+/(messages|draft)|publication(/preview)?|github|website_scan|articles(/images)?|articles/[^/?]+/restore)$ ]] ||
+    [[ "$method" == "PATCH" && "$path" =~ ^/api/v1/projects/[^/?]+/articles/[^/?]+$ ]]; then
     HTTP_TRANSIENT_MAX_ATTEMPTS=0
     send_once="true"
   fi
@@ -1528,81 +1608,145 @@ read_file() {
   download_link "$response" "$READ_FILE_PATH"
 }
 
-# The knowledge base, _kb/: the only project files that a client writes. The server holds the rules (paths, file types,
-# sizes, publish permission); these commands send the request and print its answer.
+# The knowledge base, _kb/: its articles (the public articles of the Help Center and the private notes) and their images.
+# The server holds the rules (slugs, file types, sizes, publish permission); these commands send the request and print its answer.
 INLINE_IMAGE_MAX_BYTES=262144
 
-write_file() {
-  [[ -n "$PROJECT_ID" && -n "$READ_FILE_PATH" ]] || die "write requires a project and PATH"
-  [[ -n "$LOCAL_FILE" ]] || die "write requires --file FILE (- reads stdin)"
-  local source lower payload size checksum sha256 link url status header_args=() name value
-  lower="$(printf '%s' "$READ_FILE_PATH" | tr '[:upper:]' '[:lower:]')"
-  source="$(mktemp)"
-  trap "rm -f $(printf '%q ' "$source")" EXIT
+# The versions that the caller read (--expected-project-version, --expected-version-id): the server changes nothing when one is stale.
+with_expected_project_version() {
+  "$JQ_BIN" -c --arg version "$EXPECTED_PROJECT_VERSION" --arg article "$EXPECTED_VERSION_ID" '
+    (if $version == "" then . else . + {expected_project_version: $version} end)
+    | if $article == "" then . else . + {expected_version_id: $article} end' <<<"$1"
+}
+
+# Prints the text of --file (- reads stdin) into the file named by $1.
+read_local_file() {
   if [[ "$LOCAL_FILE" == "-" ]]; then
-    cat > "$source"
+    cat > "$1"
   else
     [[ -f "$LOCAL_FILE" ]] || die "--file does not exist: $LOCAL_FILE"
-    cat -- "$LOCAL_FILE" > "$source"
+    cat -- "$LOCAL_FILE" > "$1"
   fi
-  case "$lower" in
-    *.md|*.mdx)
-      payload="$("$JQ_BIN" -nc --arg path "$READ_FILE_PATH" --rawfile content "$source" '{path: $path, content: $content}')" || die "Could not read the page" ;;
-    *.jpg|*.jpeg|*.png|*.webp)
-      size="$(wc -c < "$source" | tr -d '[:space:]')"
-      if [[ "$size" -le "$INLINE_IMAGE_MAX_BYTES" ]]; then
-        payload="$(base64 < "$source" | tr -d '\n\r' | "$JQ_BIN" -Rsc --arg path "$READ_FILE_PATH" '{path: $path, content_base64: .}')" || die "Could not read the image"
-      else
-        # A larger image goes to storage through an upload link, then becomes the file.
-        checksum="$(openssl dgst -md5 -binary < "$source" | base64 | tr -d '\n\r')"
-        sha256="$(openssl dgst -sha256 -r < "$source" | cut -d ' ' -f 1)"
-        payload="$("$JQ_BIN" -nc --arg path "$READ_FILE_PATH" --argjson size "$size" --arg checksum "$checksum" --arg sha256 "$sha256" \
-          '{path: $path, size_bytes: $size, checksum: $checksum, sha256: $sha256}')"
-        link="$(http_json POST "/api/v1/projects/${PROJECT_ID}/uploads" "$payload")" || return 1
-        url="$("$JQ_BIN" -er '.data.upload.url' <<<"$link")" || die "upload response did not include url"
-        validate_transfer_url "$url" || die "untrusted upload URL"
-        while IFS=$'\t' read -r name value; do
-          [[ -n "$name" ]] && header_args+=(-H "$name: $value")
-        done < <("$JQ_BIN" -r '.data.upload.headers | to_entries[] | select((.key + .value) | test("[\r\n\t]") | not) | [.key, .value] | @tsv' <<<"$link")
-        status="$(safe_curl -sS -o /dev/null -w "%{http_code}" -X PUT "${header_args[@]}" --data-binary "@$source" --url "$url")" || die "The image was not uploaded"
-        http_status_success "$status" || die "The image was not uploaded (HTTP $status)"
-        payload="$("$JQ_BIN" -c --arg path "$READ_FILE_PATH" '{path: $path, signed_blob_id: .data.upload.signed_blob_id}' <<<"$link")"
-      fi ;;
-    *) die "write takes a Markdown page (.md, .mdx) or an image (.jpg, .png, .webp)" ;;
-  esac
+}
+
+list_articles() {
+  [[ -n "$PROJECT_ID" ]] || die "articles requires --project-id (or a remembered selected project)"
+  local query
+  query="$(query_string visibility "$ARTICLE_VISIBILITY" limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
+  http_json GET "/api/v1/projects/${PROJECT_ID}/articles${query:+?$query}" "{}"
+}
+
+get_article() {
+  [[ -n "$PROJECT_ID" ]] || die "article requires --project-id"
+  http_json GET "/api/v1/projects/${PROJECT_ID}/articles/${ARTICLE_ID}" "{}"
+}
+
+article_images() {
+  [[ -n "$PROJECT_ID" ]] || die "article images requires --project-id"
+  local query
+  query="$(query_string visibility "$ARTICLE_VISIBILITY" limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
+  http_json GET "/api/v1/projects/${PROJECT_ID}/articles/images${query:+?$query}" "{}"
+}
+
+article_versions() {
+  [[ -n "$PROJECT_ID" ]] || die "article versions requires --project-id"
+  local query
+  query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
+  http_json GET "/api/v1/projects/${PROJECT_ID}/articles/${ARTICLE_ID}/versions${query:+?$query}" "{}"
+}
+
+# The fields of create and update: content from --file, then the options that were given.
+article_payload() {
+  local source="$1"
+  "$JQ_BIN" -nc --arg visibility "$ARTICLE_VISIBILITY" --arg slug "$ARTICLE_SLUG" --arg dnp "$ARTICLE_DO_NOT_PUBLISH" \
+    --rawfile content "$source" --arg has_content "$([[ -n "$LOCAL_FILE" ]] && echo yes)" '
+      {}
+      | if $has_content == "yes" then . + {content: $content} else . end
+      | if $visibility != "" then . + {visibility: $visibility} else . end
+      | if $slug != "" then . + {slug: $slug} else . end
+      | if $dnp != "" then . + {do_not_publish: ($dnp == "true")} else . end'
+}
+
+article_create() {
+  [[ -n "$PROJECT_ID" ]] || die "article create requires --project-id"
+  [[ -n "$ARTICLE_VISIBILITY" ]] || die "article create requires --visibility public or private"
+  [[ -n "$LOCAL_FILE" ]] || die "article create requires --file FILE with the Markdown text (- reads stdin)"
+  local source payload
+  source="$(mktemp)"
+  trap "rm -f $(printf '%q ' "$source")" EXIT
+  read_local_file "$source"
+  payload="$(article_payload "$source")" || die "Could not read the article"
   rm -f "$source"
-  http_json POST "/api/v1/projects/${PROJECT_ID}/files" "$(with_expected_project_version "$payload")"
+  http_json POST "/api/v1/projects/${PROJECT_ID}/articles" "$(with_expected_project_version "$payload")"
 }
 
-# The project version that the caller read (--expected-project-version): the server changes nothing when it is stale.
-with_expected_project_version() {
-  "$JQ_BIN" -c --arg version "$EXPECTED_PROJECT_VERSION" 'if $version == "" then . else . + {expected_project_version: $version} end' <<<"$1"
+article_update() {
+  [[ -n "$PROJECT_ID" ]] || die "article update requires --project-id"
+  [[ -n "$LOCAL_FILE$ARTICLE_SLUG$ARTICLE_VISIBILITY$ARTICLE_DO_NOT_PUBLISH" ]] || die "article update needs --file, --slug, --visibility or --do-not-publish"
+  local source payload
+  source="$(mktemp)"
+  trap "rm -f $(printf '%q ' "$source")" EXIT
+  [[ -z "$LOCAL_FILE" ]] || read_local_file "$source"
+  payload="$(article_payload "$source")" || die "Could not read the article"
+  rm -f "$source"
+  http_json PATCH "/api/v1/projects/${PROJECT_ID}/articles/${ARTICLE_ID}" "$(with_expected_project_version "$payload")"
 }
 
-move_file() {
-  [[ -n "$PROJECT_ID" && -n "$READ_FILE_PATH" && -n "$NEW_FILE_PATH" ]] || die "mv requires a project, PATH and NEW_PATH"
-  local file_id
-  file_id="$(file_id_for_path)" || return 1
-  http_json POST "/api/v1/projects/${PROJECT_ID}/files/${file_id}/move" "$(with_expected_project_version "$("$JQ_BIN" -nc --arg path "$NEW_FILE_PATH" '{new_path: $path}')")"
-}
-
-delete_file() {
-  [[ -n "$PROJECT_ID" && -n "$READ_FILE_PATH" ]] || die "rm requires a project and PATH"
-  local file_id
-  file_id="$(file_id_for_path)" || return 1
+article_delete() {
+  [[ -n "$PROJECT_ID" ]] || die "article delete requires --project-id"
   # A delete takes it in the query, as it takes the reason.
-  local query=""
-  [[ -z "$EXPECTED_PROJECT_VERSION" ]] || query="?expected_project_version=$("$JQ_BIN" -rn --arg value "$EXPECTED_PROJECT_VERSION" '$value | @uri')"
-  http_json DELETE "/api/v1/projects/${PROJECT_ID}/files/${file_id}${query}" "{}"
+  local query
+  query="$(query_string expected_project_version "$EXPECTED_PROJECT_VERSION" expected_version_id "$EXPECTED_VERSION_ID")"
+  http_json DELETE "/api/v1/projects/${PROJECT_ID}/articles/${ARTICLE_ID}${query:+?$query}" "{}"
 }
 
-restore_file() {
-  [[ -n "$PROJECT_ID" && -n "$READ_FILE_PATH" ]] || die "restore requires a project and PATH"
-  [[ -n "$VERSION_ID" ]] || die "restore requires --version-id ID (see revdoku versions PATH)"
+article_restore() {
+  [[ -n "$PROJECT_ID" ]] || die "article restore requires --project-id"
+  [[ -n "$VERSION_ID" ]] || die "article restore requires --version-id ID (see revdoku article versions ID)"
   validate_id version_id "$VERSION_ID"
-  local file_id
-  file_id="$(file_id_for_path)" || return 1
-  http_json POST "/api/v1/projects/${PROJECT_ID}/files/${file_id}/versions/${VERSION_ID}/restore" "$(with_expected_project_version "{}")"
+  http_json POST "/api/v1/projects/${PROJECT_ID}/articles/${ARTICLE_ID}/restore" \
+    "$(with_expected_project_version "$("$JQ_BIN" -nc --arg version "$VERSION_ID" '{version_id: $version}')")"
+}
+
+# An image beside the articles: inline up to 256 KB, else through an upload link.
+article_image() {
+  [[ -n "$PROJECT_ID" ]] || die "article image requires --project-id"
+  [[ -n "$LOCAL_FILE" && "$LOCAL_FILE" != "-" ]] || die "article image requires --file FILE (an image file)"
+  [[ -n "$ARTICLE_IMAGE_ARTICLE_ID$ARTICLE_VISIBILITY" ]] || die "article image requires --article-id ID or --visibility public|private"
+  local source name where payload size checksum sha256 link url status header_args=() header value
+  name="${ARTICLE_IMAGE_NAME:-$(basename -- "$LOCAL_FILE" | tr '[:upper:]' '[:lower:]')}"
+  case "$name" in
+    *.jpg|*.jpeg|*.png|*.webp) ;;
+    *) die "article image takes a .jpg, .png or .webp image" ;;
+  esac
+  source="$(mktemp)"
+  trap "rm -f $(printf '%q ' "$source")" EXIT
+  read_local_file "$source"
+  where="$("$JQ_BIN" -nc --arg name "$name" --arg article "$ARTICLE_IMAGE_ARTICLE_ID" --arg visibility "$ARTICLE_VISIBILITY" '
+    {name: $name}
+    | if $article != "" then . + {article_id: $article} else . end
+    | if $visibility != "" then . + {visibility: $visibility} else . end')"
+  size="$(wc -c < "$source" | tr -d '[:space:]')"
+  if [[ "$size" -le "$INLINE_IMAGE_MAX_BYTES" ]]; then
+    payload="$(base64 < "$source" | tr -d '\n\r' | "$JQ_BIN" -Rsc --argjson where "$where" '$where + {content_base64: .}')" || die "Could not read the image"
+  else
+    # A larger image goes to storage through an upload link, then becomes the image.
+    checksum="$(openssl dgst -md5 -binary < "$source" | base64 | tr -d '\n\r')"
+    sha256="$(openssl dgst -sha256 -r < "$source" | cut -d ' ' -f 1)"
+    payload="$("$JQ_BIN" -c --argjson size "$size" --arg checksum "$checksum" --arg sha256 "$sha256" \
+      '. + {size_bytes: $size, checksum: $checksum, sha256: $sha256}' <<<"$where")"
+    link="$(http_json POST "/api/v1/projects/${PROJECT_ID}/articles/images/uploads" "$payload")" || return 1
+    url="$("$JQ_BIN" -er '.data.upload.url' <<<"$link")" || die "upload response did not include url"
+    validate_transfer_url "$url" || die "untrusted upload URL"
+    while IFS=$'\t' read -r header value; do
+      [[ -n "$header" ]] && header_args+=(-H "$header: $value")
+    done < <("$JQ_BIN" -r '.data.upload.headers | to_entries[] | select((.key + .value) | test("[\r\n\t]") | not) | [.key, .value] | @tsv' <<<"$link")
+    status="$(safe_curl -sS -o /dev/null -w "%{http_code}" -X PUT "${header_args[@]}" --data-binary "@$source" --url "$url")" || die "The image was not uploaded"
+    http_status_success "$status" || die "The image was not uploaded (HTTP $status)"
+    payload="$("$JQ_BIN" -c --argjson where "$where" '$where + {signed_blob_id: .data.upload.signed_blob_id}' <<<"$link")"
+  fi
+  rm -f "$source"
+  http_json POST "/api/v1/projects/${PROJECT_ID}/articles/images" "$(with_expected_project_version "$payload")"
 }
 
 # Fetch data.download.url from an API response. The link carries its own
@@ -1665,7 +1809,7 @@ ticket_command() {
   local path="/api/v1/projects/${PROJECT_ID}/tickets" query response
   if [[ "$ACTION" == "list_tickets" ]]; then
     query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR" status "$STATUS_OPTION" channel "$TICKET_CHANNEL" \
-      label "$TICKET_LABEL" updated_after "$TICKET_UPDATED_AFTER")"
+      label "$TICKET_LABEL" updated_after "$TICKET_UPDATED_AFTER" number "$TICKET_NUMBER" requester "$TICKET_REQUESTER")"
     http_json GET "${path}${query:+?$query}" "{}"
     return
   fi
@@ -2023,6 +2167,11 @@ case "$ACTION" in
     [[ "$SITE_PREVIEW" != "true" || "$ACTION" == "site" ]] || die "--preview works with site only. Use revdoku preview to publish a preview."
     case "$ACTION" in
       site)
+        if [[ "$SITE_PREVIEWS" == "true" ]]; then
+          query="$(query_string limit "$LIST_LIMIT" cursor "$LIST_CURSOR")"
+          http_json GET "/api/v1/projects/$PROJECT_ID/publication/previews${query:+?$query}" "{}" || exit 1
+          exit 0
+        fi
         # A project without a site (or without a preview) reads publication null.
         site_response="$(http_json GET "/api/v1/projects/$PROJECT_ID/publication$([[ "$SITE_PREVIEW" == "true" ]] && printf '/preview')" "{}")" || exit 1
         printf '%s\n' "$site_response"
@@ -2095,20 +2244,8 @@ case "$ACTION" in
     list_versions
     exit 0
     ;;
-  write_file)
-    write_file
-    exit 0
-    ;;
-  move_file)
-    move_file
-    exit 0
-    ;;
-  delete_file)
-    delete_file
-    exit 0
-    ;;
-  restore_file)
-    restore_file
+  list_articles|get_article|article_versions|article_images|article_create|article_update|article_delete|article_restore|article_image)
+    "$ACTION"
     exit 0
     ;;
   archive_project)

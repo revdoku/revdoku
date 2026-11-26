@@ -49,7 +49,7 @@ Use write/admin permissions only when required.
 | Capability | Required scope |
 | --- | --- |
 | Read mail/files | Relevant messages, attachments, and paths in the requested project. Email reads leave shared status unchanged; file reads can record receipts. |
-| Change projects | Requested project creation and updates, GitHub connection, publishing and ticket replies. File writes reach only the knowledge base, `_kb/`. |
+| Change projects | Requested project creation and updates, GitHub connection, publishing and ticket replies. Writes reach only the articles of the knowledge base, `_kb/`. |
 | Archive/delete | Requested archive; permanent deletion requires exact-target approval and the confirmation flow below. |
 | Create agency clients | Explicit request for a named client account in the selected agency. |
 | Local execution | Bundled Bash wrapper, selected files, Revdoku credentials/state, and disclosed HTTPS requests. |
@@ -155,7 +155,7 @@ A reply is sent at once. `awaiting_approval` marks a draft of Revdoku's own agen
 
 Admin keys, in order:
 1. `github accounts`, `github repos ID`, `github scan OWNER/NAME`, then `github connect OWNER/NAME --repo-path` its `recommended_path` (never retried). Missing account: give the person `github setup-link` `install_url`.
-2. `scan URL...` (MCP `project_website_scan`) writes articles into `_kb/public/` from a website's pages; never retried; off unless enabled for the account.
+2. `scan URL...` (MCP `project_website_scan`) writes articles into `_kb/public/` from a website's pages; never retried; only the owner's work-email website.
 3. `publish`. `PUBLICATION_SOURCE_CODE`: add `--confirm-source-code` only with the person's consent.
 4. `settings` / `settings set --file FILE` (MCP `project_publish(action: "settings")`): layout, Ask, `support` (or `none`), navigation, color, redirects; null removes one. Publish again while `site` lists `republish_reasons`.
 
@@ -166,17 +166,16 @@ On `PROJECT_LIMIT_REACHED`, use a project from `ls`; `update --title TEXT` renam
 
 `_repo/` is a read-only copy of its GitHub repository: Revdoku never writes to it.
 Change its files on GitHub: the next sync copies them.
-`_kb/` is the knowledge base, the only files you write: Markdown pages (`.md`, `.mdx`)
-and images (`.jpg`, `.png`, `.webp`). `_kb/public/` is published under the site's help
-folder; `_kb/private/` is never published and holds notes for the support team.
-Write to `_kb/public/` only when the user asks for a public article: it needs publish
-access. A write never publishes; publish when the user asks.
-A public page with front matter `do_not_publish: true` stays off the site, and the site's
-AI still answers from it: only facts visitors may know.
-MCP: `project_file_list`, `project_file_read`, `project_file_write`, `project_file_move`,
-`project_file_delete`. CLI: `files`, `read`, `versions`, `write PATH --file FILE`,
-`mv`, `rm`, `restore`. A delete keeps versions: a restore brings the file back.
-Changes take what you read: `expected_project_version` (project `project_version`; CLI `--expected-project-version`) for files,
+`_kb/` is the knowledge base, written only through articles: public articles of the Help
+Center (`_kb/public/`, published with the site) and private notes (`_kb/private/`, never
+published, for the support team), with images. Write a public article only when the user
+asks: it needs publish access. A write never publishes; publish when the user asks.
+A public article with `do_not_publish` stays off the site, and the site's AI still
+answers from it: only facts visitors may know.
+MCP: `project_article_read`, `project_article_write` (create, update, delete, restore, image).
+CLI: `articles`, `article ID`, `article create --visibility --file`, `article update|delete|restore ID`,
+`article image`. Read files: `files`, `read`, `versions`. A delete keeps versions: restore brings it back.
+Changes take what you read: `expected_project_version` (project `project_version`; CLI `--expected-project-version`) for articles,
 `expected_internal_note` (CLI `--expected-note`) for a note. A stale value changes nothing.
 Email is no file: use ticket tools.
 

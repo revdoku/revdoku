@@ -60,7 +60,7 @@ Offer direct use for relevant notifications or [Gmail forwarding](https://revdok
 If address access is missing, direct the user to the dashboard or project owner.
 Poll with a deadline for a fresh relevant message, then produce the chosen result.
 A Gmail verification message alone does not prove forwarding works.
-See the [first email workflow](https://support.revdoku.com/docs/projects#first-email-workflow).
+See [Support tickets](https://support.revdoku.com/docs/tickets).
 
 `project_create(email: {username: "project-alerts"})` returns a ready project.
 Its address is `support@project-alerts.revdoku.net`; its site has the same name.
@@ -144,21 +144,20 @@ On `PROJECT_LIMIT_REACHED`, use an existing project; `project_update` with `titl
 `_repo/` is a read-only copy of the project's GitHub repository: Revdoku never
 writes to it. To change a file of `_repo/`, change it on GitHub; the next sync
 copies it, and auto-publish updates the site. `_kb/` is the knowledge base, the
-only files you write: Markdown pages (`.md`, `.mdx`) and images (`.jpg`, `.png`,
-`.webp`). `_kb/public/` is published under the site's help folder; `_kb/private/`
-is never published and holds notes for the support team. Write to `_kb/public/`
-only when the user asks for a public article: it needs publish access. A write
-never publishes; publish when the user asks. A public page with front matter
-`do_not_publish: true` stays off the site, and the site's AI still answers from it:
-only facts visitors may know.
+only part that you write, through its articles: public articles of the Help Center
+(`_kb/public/`, published with the site) and private notes (`_kb/private/`, never
+published, for the support team), with their images. Write a public article only
+when the user asks: it needs publish access. A write never publishes; publish when
+the user asks. A public article with `do_not_publish` stays off the site, and the
+site's AI still answers from it: only facts visitors may know.
 
-`project_file_read` returns text inline or a temporary download link, and lists a
-file's versions with `action: "versions"`. `project_file_write` writes a page or a
-small image; `project_file_move` renames or moves a file; `project_file_delete`
-deletes one and keeps its versions, and `project_file_write` with
-`action: "restore"` and `version_id` brings it back. A write, a move, a delete and a
-restore take `expected_project_version`, the project's `project_version` that you read: a
-stale value changes nothing. Email is no file: use the ticket tools.
+`project_article_read` lists articles, reads one with its Markdown, or lists its
+versions. `project_article_write` creates an article (never retried), updates its
+content, slug, visibility or `do_not_publish`, deletes one (its versions stay),
+restores a version, and adds an image whose `markdown` goes into the text. A change
+takes `expected_project_version`, the project's `project_version` that you read: a
+stale value changes nothing. `project_file_read` returns a file's text inline or a
+temporary download link. Email is no file: use the ticket tools.
 Hosted MCP cannot read the user's local filesystem. MCP tools return the same
 resources and field names as the [REST API](https://support.revdoku.com/docs/api).
 Dashboard links do not grant access; share them only with authorized members.
