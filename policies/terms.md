@@ -1,8 +1,8 @@
 # Terms of Use
 
-*Version: 2026-11-17 · Updated: November 17, 2026 · Effective for existing users: December 17, 2026*
+*Version: 2026-11-26 · Updated: November 26, 2026*
 
-Existing users stay on the [previous Terms](https://revdoku.com/policies/terms-2026-11-07.md) until December 17, 2026.
+[Previous version](https://revdoku.com/policies/terms-2026-11-17.md)
 
 These Terms are between you and Revdoku, Armenia (**Revdoku**, **we** or **us**). They govern Revdoku's docs sites and website publishing, cloud storage, incoming email, collaboration, APIs, CLI and connected agents (the **Service**). They include the [Acceptable Use Policy](https://revdoku.com/acceptable-use/) (**AUP**) and, for published sites, the [Website Publishing Policy](https://revdoku.com/website-publishing-policy/). Our [Privacy Policy](https://revdoku.com/privacy/) explains personal-data handling. These Terms apply when you accept them; changes for existing users follow the notice process below.
 
@@ -38,7 +38,7 @@ Prices, billing periods and limits are disclosed before purchase. Recurring subs
 
 Cancel through billing controls or request support. Cancellation stops renewals; paid access continues through the paid period unless restricted as described above.
 
-**Refunds.** Where a Free plan is offered, you can use it to try the Service before you pay. Fees are nonrefundable except as required by law, applicable payment-provider terms or an express agreement. A valid restriction for your breach does not by itself create a refund entitlement. Requesting a refund or exercising a lawful dispute right is not itself a violation. Cancellation does not erase charges already lawfully owed.
+**Refunds.** Where a Free plan is offered, you can use it to try the Service before you pay. Fees are nonrefundable except as required by law, applicable payment-provider terms or an express agreement. Cancelling a subscription gives no refund: your plan keeps working until the end of the period you paid for. A valid restriction for your breach does not by itself create a refund entitlement. Requesting a refund or exercising a lawful dispute right is not itself a violation. Cancellation does not erase charges already lawfully owed.
 
 ## 6. Beta, changes and termination
 
