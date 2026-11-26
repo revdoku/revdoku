@@ -37,7 +37,7 @@ default: use an explicit `account_id` or CLI `--account-id` for the intended acc
 ## First task
 
 If the user has a task, continue it after connection. Otherwise, ask which GitHub repository holds the docs.
-A new repository can start as a copy of a Revdoku template repository on GitHub. See [Publish your first docs site](https://support.revdoku.com/docs/docs-sites#publish-your-first-docs-site).
+A new repository can start as a copy of a Revdoku template repository on GitHub. See [Set up your support portal](https://support.revdoku.com/docs/get-started).
 Publish the site and show its address. Then offer the next step: read the site analytics, suggest a page change in the repository or answer a support ticket.
 
 ## Agent rules

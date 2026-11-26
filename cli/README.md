@@ -1,219 +1,191 @@
 # Revdoku CLI
 
-A Revdoku project holds one docs site: its files, the published site, the site analytics and the support email with its tickets. Use the CLI
-from your terminal or automation to publish sites, read and answer support requests and store files. This standalone installation adds one `revdoku` executable. It does not
-install skills, plugins, or AI app configuration.
+`revdoku` works with your support portals from the terminal and CI jobs: connect GitHub, publish, write articles, and read and answer support tickets. It prints the JSON of the [Revdoku API](https://support.revdoku.com/docs/api).
 
 ## Install
 
-Use macOS, Linux, or Windows through WSL, with Bash, curl, OpenSSL, jq, base64 and
-find available. For example, install jq with `brew install jq` on macOS or your
-Linux package manager.
-
-Download the installer from the [latest CLI release](https://github.com/revdoku/revdoku/releases/latest):
+You need macOS, Linux or Windows with WSL, and Bash, curl, OpenSSL, jq, base64 and find. For example, install jq with `brew install jq` on macOS.
 
 ```sh
 curl -fsSL https://github.com/revdoku/revdoku/releases/latest/download/install-cli.sh -o install-cli.sh
 bash install-cli.sh
 export PATH="$HOME/.local/bin:$PATH"
 revdoku --version
-revdoku --help
 ```
 
-The installer verifies the executable against its embedded SHA-256 checksum
-before replacing it. It defaults to `~/.local/bin`; use
-`bash install-cli.sh --dir /your/bin` to choose a directory. It leaves shell
-configuration unchanged. To update, download and run the latest installer again.
+The installer checks the SHA-256 checksum of the executable before it installs it in `~/.local/bin`. `--dir /your/bin` chooses another folder. To update, run the latest installer again.
 
-### Direct download or pinned version
-
-Each `cli-vX.Y.Z` release includes `revdoku`, `install-cli.sh`, `LICENSE`, and
-`SHA256SUMS`. Select a version on the Releases page, download the executable and
-checksums from that same release, and verify before running. Run this in the
-directory with those two downloaded files:
+To pin a version, download `revdoku` and `SHA256SUMS` from one [release](https://github.com/revdoku/revdoku/releases), and check the file before you run it:
 
 ```sh
-expected=$(awk '$2 == "revdoku" { print $1 }' SHA256SUMS)
-actual=$(openssl dgst -sha256 revdoku | awk '{print $NF}')
-if test -n "$expected" && test "$actual" = "$expected"; then
-  chmod +x revdoku && ./revdoku --version
-else
-  echo 'Checksum mismatch; do not run this download.' >&2
-fi
+test "$(openssl dgst -sha256 revdoku | awk '{print $NF}')" = "$(awk '$2 == "revdoku" { print $1 }' SHA256SUMS)" && chmod +x revdoku
 ```
 
-The executable is a readable Bash script, shared by supported architectures.
-Its version is embedded, so it also works outside an installed skill.
-
-## Connect and use
+## Sign in
 
 ```sh
-revdoku login
-revdoku status
-revdoku accounts
-revdoku account get acct_...
-revdoku ls
-revdoku create --username acme-orders
-revdoku files --project-id prj_...
-revdoku tickets --project-id prj_... --status open
-revdoku ticket tkt_... --project-id prj_...
-revdoku ticket-messages tkt_... --project-id prj_...
-revdoku ticket-messages tkt_... --message-id eml_... --project-id prj_...
-revdoku ticket-download tkt_... --message-id eml_... --attachment-id eat_... --project-id prj_... --output attachment.pdf
-revdoku ticket-draft tkt_... --project-id prj_...
-revdoku ticket-reply tkt_... --text "Thanks, received." --project-id prj_...
-revdoku ticket-update tkt_... --status solved --project-id prj_...
-revdoku ticket-update tkt_... --note "Promised a refund by Friday." --expected-note "" --project-id prj_...
-revdoku tickets --status pending --project-id prj_...
-revdoku ticket-message-delete tkt_... --message-id eml_... --project-id prj_... --confirm-delete eml_...
-revdoku github scan OWNER/NAME --project-id prj_...
-revdoku github connect OWNER/NAME --repo-path docs --project-id prj_...
-revdoku scan acme.com --project-id prj_...
+revdoku login    # sign in in the browser
+revdoku status   # the account and the connection
+revdoku ls       # your projects
+```
+
+On a server or in CI, set `REVDOKU_API_KEY` to an API key from the dashboard (**Connect** → **Connect via API**) in place of `revdoku login`.
+
+Most commands work on one project. Pass `--project-id prj_...`, or set `REVDOKU_PROJECT_ID`.
+
+## Publish your portal from GitHub
+
+```sh
+# Find the docs folder, connect it, then publish.
+revdoku github scan acme/docs --project-id prj_...
+revdoku github connect acme/docs --repo-path docs --project-id prj_...
 revdoku publish --project-id prj_...
-revdoku settings set --file settings.json --project-id prj_...
-revdoku update --title "Acme Docs" --project-id prj_...
+revdoku site --project-id prj_...
 ```
 
-A ticket is one conversation with a requester: an email or a message left on the docs site
-(`channel` `chat`). `tickets` lists them, newest activity first; filter with
-`--status`, `--channel`, `--label` and `--updated-after TIME`. `ls` shows each project's `email.address`.
+When the GitHub account is not connected yet, `github connect` prints the link that a person opens to install the Revdoku GitHub App.
 
-Use returned ticket, message and attachment IDs for ticket operations; use paths for file operations.
-Run `ticket-message-delete` only after you confirm the message ID.
-`ticket-reply` sends a reply from the project's address and never retries. Revdoku sends only replies:
-the reply goes to the ticket's requester, when that requester passed SPF or DMARC.
-There is no `--to` or `--cc`. Check `delivery.status` with `ticket-messages`.
-`ticket-update --note TEXT` replaces the team's internal note. Add `--expected-note TEXT`, the note that you read
-(`""` for a ticket without a note): when someone changed the note since, the answer is `TICKET_NOTE_CONFLICT` and nothing changes.
-After an uncertain result, check the ticket's messages before you reply again.
-A reply is sent at once. A message with `delivery.status` `awaiting_approval` is a draft of Revdoku's own agent
-that a person sends in the dashboard; do not send it again, or a `declined` reply unless a person asks.
-`ticket-draft` lets Revdoku's AI reply drafter write a reply from the project's docs, and waits for it. It sends nothing:
-send the text with `ticket-reply`. `ticket-draft ID --read` shows the newest draft without a new one.
+## Answer support tickets
 
-## Background work
+```sh
+revdoku tickets --status open --project-id prj_...
+revdoku ticket-messages tkt_... --project-id prj_...
+# The AI writes a draft from your docs. Nothing is sent.
+revdoku ticket-draft tkt_... --project-id prj_...
+revdoku ticket-reply tkt_... --text "Thanks! Here is how…" --project-id prj_...
+revdoku ticket-update tkt_... --status solved --project-id prj_...
+```
 
-A publish, a preview, the copy of a GitHub repository, a website scan and a draft run in the background. Each has `status`:
-`queued`, `processing`, `ready` or `failed`. A failed one has `error` with a `code` and a `message`.
-`publish`, `preview`, `scan`, `github connect`, `github sync` and `ticket-draft` wait until the status is `ready` or `failed`,
-then print the answer. The exit code is 0 when it is ready, 1 when it failed and 2 when it still runs after 5 minutes.
-A start that meets work that runs (`PUBLICATION_PUBLISH_IN_PROGRESS`, `GITHUB_SYNC_IN_PROGRESS`, `WEBSITE_SCAN_RUNNING` or `DRAFT_IN_PROGRESS`)
-is an error: the command sent no work, so it prints the error and its `next_action` and exits 1 without a wait. It does not send the start again.
-`--no-wait` answers at once; read the resource later with `site`, `github`, `scan --read` or `ticket-draft ID --read`.
-A read of a resource that does not exist yet answers it as `null`: `site` of a project without a site prints `{"success": true, "data": {"publication": null}}`.
-While a command waits for work that it started, `null` is not the end: it reads again.
-`unpublish` does not wait. It prints the answer of a delete, `{"success": true, "data": {"deleted": true, "id": "..."}}`, and the site goes offline in the background:
-`site` then shows `live` false and `offline_reason` `unpublished`. A second `unpublish` answers `PUBLICATION_NOT_FOUND`.
+## Write an article
 
-`revdoku create` creates an empty project. Omit `--username` to
-use the title's name or a generated name. Every project gets an incoming email address on the built-in domain: the username is the
-project's name, so `--username acme-docs` gives `support@acme-docs.revdoku.net`, and its site uses the same name. A custom domain takes the exact name.
-An unavailable name returns `EMAIL_ALREADY_EXISTS`.
-`--title TEXT` names the project; without it, the title is the username. `revdoku update --title TEXT` renames a project, and
-`--description TEXT` changes its description: the only fields that `update` changes.
-A project's `_repo/` folder is a read-only copy of its GitHub repository: scan it with `revdoku github scan`, connect one with `revdoku github connect`, then run `revdoku publish`.
-Its `_kb/` folder is the knowledge base, which you write: `_kb/public/` is published with the site, and `_kb/private/` is never published.
+```sh
+revdoku article create --visibility public --file refunds.md --project-id prj_...
+revdoku publish --project-id prj_...
+```
+
+A public article is on your portal after the next publish. `--visibility private` makes a private note, which is never published. `_repo/` is the read-only copy of your GitHub repository.
+
+## Commands
+
+### Account
 
 | Command | What it does |
 | --- | --- |
-| `revdoku write _kb/private/refunds.md --file refunds.md --project-id ID` | Write a page (`.md`, `.mdx`) or an image (`.jpg`, `.png`, `.webp`). `--file -` reads a page from standard input |
-| `revdoku mv _kb/private/refunds.md _kb/public/refunds.md --project-id ID` | Move or rename a knowledge base file. A move to or from `_kb/public/` needs publish access |
-| `revdoku rm _kb/private/old.md --project-id ID` | Delete a knowledge base file. Its versions stay: keep the file ID of the answer |
-| `revdoku restore _kb/private/refunds.md --version-id ID --project-id ID` | Make an earlier version current. `revdoku versions PATH` lists the versions. For a deleted file, use its file ID (`df_...`) in place of the path: it comes back |
-| `revdoku files --folder _kb/private --project-id ID` | List the files of one folder |
+| `status` | The connection, the account and the versions. |
+| `accounts`, `account get ID` | The accounts that the connection reaches, and one account. |
+| `account limits` | The limits of the plan and the credits. |
+| `account create-client NAME` | Create a client account of an agency. `--client-name` names the client. |
+| `dashboard` | Print a link to the dashboard. |
 
-`write`, `mv`, `rm` and `restore` take `--expected-project-version ID`, the `project_version` of the project that you read
-(`revdoku ls`). When the project changed since, the answer is `PROJECT_VERSION_CONFLICT` and nothing changes.
-A write never publishes: run `revdoku publish` to show the public files on the site.
-Creation returns when receiving is ready. Use the returned address.
+### Projects
 
-See [the API reference](https://support.revdoku.com/docs/api) and `revdoku --help` for commands, scopes,
-quota errors, and confirmation requirements. For AI integration, use the
-[skill and plugin installation guide](https://github.com/revdoku/revdoku#local-ai-apps).
+| Command | What it does |
+| --- | --- |
+| `ls` | List projects. `--status`, `--query`, `--limit` and `--cursor` filter and page. |
+| `create` | Create a project. `--username` names its site and support address, `--title` names the project. |
+| `update` | Change `--title` or `--description`. |
+| `open` | Open the project in the dashboard. |
+| `archive`, `unarchive` | Archive or unarchive a project. |
+| `delete` | Preview the permanent deletion of an archived project, then confirm with `--confirm-delete`. |
+
+### Tickets
+
+| Command | What it does |
+| --- | --- |
+| `tickets` | List tickets, newest activity first. Filter with `--status`, `--channel`, `--label`, `--updated-after TIME`, `--number N` and `--requester EMAIL`. |
+| `ticket ID` | Read one ticket. |
+| `ticket-messages ID` | List the messages of a ticket. `--message-id ID` reads one message. |
+| `ticket-draft ID` | Let the AI reply drafter write a reply, and wait for it. It sends nothing. `--read` shows the newest draft. |
+| `ticket-reply ID` | Reply to the customer, with `--text`, `--text-file` or `--html-file`. `--attach FILE_ID` attaches a project file. |
+| `ticket-update ID` | Change `--status`, `--note` (with `--expected-note`, the note that you read) or labels (`--add-label`, `--remove-label`). |
+| `ticket-download ID` | Download an attachment (`--message-id`, `--attachment-id`) or the original email, to `--output FILE`. |
+| `ticket-message-delete ID` | Delete one message (`--message-id`). Confirm with `--confirm-delete MESSAGE_ID`. |
+
+### Events
+
+| Command | What it does |
+| --- | --- |
+| `webhook`, `webhook-set`, `webhook-delete` | Read, set (`--webhook-url`, `--rotate-secret`) or turn off the webhook of ticket events. |
+| `events-subscription` | Get a short-lived token for live ticket events. |
+
+### Articles
+
+| Command | What it does |
+| --- | --- |
+| `articles` | List the articles, newest change first. `--public` or `--private` lists one kind. |
+| `article ID` | Read one article with its Markdown text. |
+| `article create --visibility public\|private --file FILE` | Create an article from Markdown. Its first `#` heading names it, and `--slug billing/refunds` chooses its path. `--file -` reads standard input. It never replaces an article. |
+| `article update ID` | Change the text (`--file`), `--slug`, `--visibility` (a move) or `--do-not-publish true\|false`. |
+| `article delete ID` | Delete an article. Its versions stay. |
+| `article versions ID` | List the versions of an article. |
+| `article images` | List the images. `--public` or `--private` lists one kind. |
+| `article restore ID --version-id ID` | Make an earlier version current. A deleted article comes back. |
+| `article image --file FILE` | Add an image (`.jpg`, `.png`, `.webp`) to the folder of an article (`--article-id ID`), or with `--visibility` to the top of a folder. The answer's `image.markdown` is the link for the article. |
+| `scan URL...` | Scan a website: the AI writes one article per page. `--max-articles N` limits them. `--read` shows the newest scan, `--stop` stops it. |
+
+`article create`, `update`, `delete`, `restore` and `image` take `--expected-project-version`, the `project_version` that you read. When the project changed since, nothing changes. `update`, `delete` and `restore` also take `--expected-version-id`, the article's `version_id`, which only a change of that article makes stale. A public article or image needs publish access. A write never publishes: run `revdoku publish`.
+
+A public article with `--do-not-publish true` stays off the site, and the site's AI Support Agent still answers visitors from it. Put only facts that visitors may know there.
+
+### Files
+
+| Command | What it does |
+| --- | --- |
+| `files` | List files. `--folder _repo/docs` lists one folder. |
+| `read PATH` | Read a file. `--output FILE` saves it. |
+| `versions PATH` | List the versions of a file. |
+
+### Site
+
+| Command | What it does |
+| --- | --- |
+| `publish` | Publish the site, and wait until it is ready. `--support form\|form_email\|email\|link\|none` and `--support-link URL` choose how visitors reach your team. |
+| `preview` | Make a 24-hour preview. `--branch NAME` previews a branch of the connected repository. |
+| `site` | Show the site: its address, status and `republish_reasons`. `--preview` shows the newest preview, `--previews` every preview with its branch. |
+| `settings` | Show the site settings. |
+| `settings set --file FILE` | Change the settings in a JSON file. `null` removes a setting. Then publish again. |
+| `unpublish` | Take the site offline. |
+
+```json
+{"layout": "notebook", "ask": {"title": "Questions"}, "primary_color": "#2563eb"}
+```
+
+### GitHub
+
+| Command | What it does |
+| --- | --- |
+| `github` | Show the connected repository and the status of its copy. |
+| `github accounts`, `github repos ID` | The connected GitHub accounts, and the repositories of one. |
+| `github setup-link` | Print the links that a person opens to add a GitHub account. |
+| `github scan [OWNER/NAME]` | Find the docs folders of a repository. Nothing changes. |
+| `github connect OWNER/NAME` | Copy a repository into the project. `--repo-path`, `--branch`. A project with files needs `--project-files replace`. |
+| `github sync` | Sync now, and wait for the copy. |
+| `github set --auto-publish false` | Publish by hand after each push. |
+| `github branches` | List the branches that a preview can show. |
+| `github disconnect` | Stop the sync. Confirm with `--confirm-delete PROJECT_ID`. The files stay. |
+
+## Options
+
+| Option | Meaning |
+| --- | --- |
+| `--project-id ID` | The project. Or set `REVDOKU_PROJECT_ID`. |
+| `--account-id ID` | Another account that the connection reaches. |
+| `--reason TEXT` | Why you read or change something. It shows in the activity log. |
+| `--no-wait` | Answer at once, without waiting for background work. |
+| `--api-key KEY` | An API key. Or set `REVDOKU_API_KEY`. |
+
+`revdoku --help` lists every command and option.
+
+## Output and background work
+
+Each command prints the JSON of the API on standard output. Notes for people go to standard error.
+
+`publish`, `preview`, `scan`, `github connect`, `github sync` and `ticket-draft` start work in the background and wait for it. The exit code is `0` when it is ready, `1` when it failed and `2` when it still runs after 5 minutes. Read it later with `site`, `github`, `scan --read` or `ticket-draft ID --read`.
+
+Commands that change something never retry by themselves. After an unknown result, read the resource before you run the command again. Deletes show a preview first and need `--confirm-delete`.
 
 ## Uninstall
 
-Remove the executable from the directory you selected. Your remote projects and
-files remain. Remove `~/.revdoku/` separately only if you also want to remove
-saved local credentials and preferences.
+Delete the `revdoku` executable. To also remove your saved sign-in, delete `~/.revdoku/`. Your projects stay.
 
-### Status and account limits
-
-These commands print the JSON of the API on standard output. Notes for people go to standard error.
-
-```sh
-revdoku status
-revdoku account limits
-revdoku account limits --account-id acct_RETURNED_ID
-revdoku account
-```
-
-`revdoku status` prints the answer of `GET /v1/status`: `data.status` has the account, the connection, the user,
-`server_version`, `client_version` and `dashboard_url`. The connection has the shape of the answer of a sign-in, with `api_key` null.
-`revdoku account limits` prints the answer of `GET /v1/account/limits`: one resource, `data.limits`, with the effective project, email and file
-quotas, `credit_balance` (`left`, `monthly`, `next_refill_at`) and `usage` (null for a connection that may not read it).
-`revdoku account` prints two resources in one answer: `data.status` (of `GET /v1/status`) and `data.limits` (of `GET /v1/account/limits`).
-
-### Ticket events
-
-| Command | Purpose |
-| --- | --- |
-| `revdoku webhook --project-id ID` | Read the configured endpoint |
-| `revdoku webhook-set --project-id ID --webhook-url HTTPS_URL` | Set one signed webhook; save the returned secret privately |
-| Add `--rotate-secret` | Replace the signing secret and cancel pending deliveries |
-| `revdoku webhook-delete --project-id ID --confirm-delete ID` | Disable deliveries |
-| `revdoku events-subscription --project-id ID` | Get a WebSocket URL and a short-lived subscription token |
-
-Use `--account-id ID` to select an authorized account. A running receiver is required. See the [examples](https://github.com/revdoku/docs/tree/main/examples) for signature verification and WebSocket reconnect/catch-up. Human administrators can inspect delivery attempts and retry failures in **Analytics → Webhooks**.
-
-### GitHub repository
-
-A project's files can be a copy of one branch of a GitHub repository, or of one folder of it.
-These commands need an account owner or administrator key with admin access to all projects.
-
-| Command | Purpose |
-| --- | --- |
-| `revdoku github accounts` | List the GitHub accounts connected to the account |
-| `revdoku github setup-link --project-id ID` | Print the links that a person opens, signed in to Revdoku, to add a GitHub account |
-| `revdoku github repos INSTALLATION_ID` | List the repositories that one GitHub account lets Revdoku read |
-| `revdoku github scan OWNER/NAME --project-id ID` | Read the file list of a branch and print `scan`: the docs folders with their format, `recommended_path`, and whether a folder looks like a site (`publishable`, `not_publishable_reason`). Nothing changes. Add `--branch`, `--repo-path` or `--installation-id`. Without `OWNER/NAME` it scans the connected repository |
-| `revdoku github connect OWNER/NAME --project-id ID` | Copy the repository into the project. Revdoku only reads the repository. Add `--branch` or `--repo-path` (a folder of the branch, such as the scan's `recommended_path`; else `GITHUB_SYNC_PATH_NOT_FOUND`). A project with files needs `--project-files replace` (the repository's files replace them) |
-| `revdoku github --project-id ID` | Show the repository and the `status` of its copy |
-| `revdoku github sync --project-id ID` | Sync now, and wait for the copy |
-| `revdoku github branches --project-id ID` | List the branches that a preview can show, in pages (`--limit`, `--cursor`) |
-| `revdoku preview --project-id ID --branch NAME` | Make a 24-hour preview of that branch. Needs a live site |
-| `revdoku publish --project-id ID --support-link URL` | Publish, and send visitors who want a person to your support page (an `https` page such as your GitHub Discussions). `--support form\|form_email\|email\|link\|none` sets the way without a new link; `none` leaves no way to a person |
-| `revdoku publish --project-id ID --access-mode require_email --email-allowlist A,B` | Publish a site that only the listed addresses and domains open (the email-code gate). `--email-allowlist ""` removes the list. Private sites need Revdoku to turn them on for the account |
-| `revdoku publish --project-id ID --confirm-source-code` | Publish a repository folder that looks like source code. Without it, a publish of such a folder without a live site answers `PUBLICATION_SOURCE_CODE` and builds nothing: a site serves every file of the folder. Use it only when the person agrees |
-| `revdoku github set --project-id ID --auto-publish false` | Change `--auto-publish` |
-| `revdoku github disconnect --project-id ID --confirm-delete ID` | Stop the sync. The project keeps its files |
-
-`github connect` never retries. When the GitHub account is not connected, it prints the links for the person.
-
-### Articles from a website
-
-`revdoku scan URL... --project-id ID` (the addresses may come before or after the options) reads the public pages of a website, and an AI writes one article per page into `_kb/public/`.
-One address reads that page and the pages it links; two or more addresses read exactly those pages. `--max-articles N` writes at most N articles.
-The scan never replaces a file, and the articles wait for the next publish. It runs in the background and the command waits for it.
-It is never sent again after an uncertain result: read it with `revdoku scan --read`. `revdoku scan --stop` stops the scan that runs;
-the articles that it wrote stay. The scan is off unless Revdoku turned it on for the account (`WEBSITE_SCAN_UNAVAILABLE`), one scan runs
-per project (`WEBSITE_SCAN_RUNNING`), and a daily limit applies (`WEBSITE_SCAN_LIMIT_REACHED`). Uses credits; see https://app.revdoku.com/pricing.json.
-
-### Site settings
-
-`revdoku settings --project-id ID` prints `site_settings`: the layout, the knowledge base address (`kb_path`), search indexing,
-the badge, Ask, the way to a person (`support`), the header and footer (`navigation`), the color, the announcement, the redirect and
-header rules (`redirects`, `headers`) and the analytics switches (`analytics`). A field is `null` when the project has no setting;
-`support.handoff` is the way in force (`form` by default, `none` when no person can be reached). `revdoku settings set --file FILE --project-id ID` sends the fields of a JSON object
-(`--file -` reads standard input). Only the fields that it sends change, and `null` removes a setting:
-
-```json
-{"layout": "notebook", "ask": {"title": "Questions"}, "navigation": {"links": [{"label": "Pricing", "href": "/pricing"}]}, "primary_color": "#2563eb"}
-```
-
-A change never publishes. `revdoku site` lists `republish_reasons` while the live site is older than the settings: run `revdoku publish` again.
-A setting that the plan does not have answers `SITE_SETTING_UPGRADE_REQUIRED` with an upgrade link, only for a value that changes.
-The analytics switches apply to the live site at once; the redirect and header rules reach it with the next publish.
-The custom domain, the site address and the Email and Tickets settings change only in the dashboard.
-A refused publish changes nothing, also not `--support`. A first publish that waits for the first copy is checked when the copy is done:
-`site` then shows `status` `failed` with `error.code` `PUBLICATION_SOURCE_CODE`.
+For AI apps, see the [skill and plugin guide](https://github.com/revdoku/revdoku#local-ai-apps).
